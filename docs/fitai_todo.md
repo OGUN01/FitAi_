@@ -5,14 +5,16 @@
 This document provides a comprehensive, step-by-step TODO list for building FitAI from start to finish. Tasks are organized by phases and priority levels to ensure systematic development.
 
 **Priority Levels:**
+
 - 🔴 **P1**: Critical - Must be completed before proceeding
-- 🟡 **P2**: High - Important for core functionality  
+- 🟡 **P2**: High - Important for core functionality
 - 🟢 **P3**: Medium - Nice to have features
 - 🔵 **P4**: Low - Future enhancements
 
 ## Phase 1: Project Setup & Foundation (Week 1-2)
 
 ### 🔴 P1: Environment Setup
+
 - [ ] Install Node.js (v18+)
 - [ ] Install Expo CLI (`npm install -g @expo/cli@latest`)
 - [ ] Install EAS CLI (`npm install -g eas-cli@latest`)
@@ -21,6 +23,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Setup emulators/simulators
 
 ### 🔴 P1: Project Initialization
+
 - [ ] Create new Expo project (`npx create-expo-app FitAI --template`)
 - [ ] Configure TypeScript
 - [ ] Setup folder structure as per frontend.md
@@ -35,6 +38,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   ```
 
 ### 🔴 P1: Development Tools Setup
+
 - [ ] Configure ESLint and Prettier
 - [ ] Setup Jest testing framework
 - [ ] Configure TypeScript strict mode
@@ -43,16 +47,18 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Setup Git repository and .gitignore
 
 ### 🟡 P2: Design System Foundation
+
 - [ ] Create color palette (colors.ts)
 - [ ] Define typography system (typography.ts)
 - [ ] Create base UI components:
   - [ ] Button component
-  - [ ] Input component  
+  - [ ] Input component
   - [ ] Card component
   - [ ] LoadingSpinner component
   - [ ] Modal component
 
 ### 🟡 P2: Navigation Setup
+
 - [ ] Configure React Navigation
 - [ ] Create navigation types
 - [ ] Setup stack navigator structure
@@ -62,7 +68,9 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## Phase 2: UI Development (Week 3-8)
 
 ### 🔴 P1: Onboarding Screens
+
 #### Personal Information Screen
+
 - [ ] Create PersonalInfoScreen component
 - [ ] Build form with validation:
   - [ ] Name input with validation
@@ -88,6 +96,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Continue button with navigation
 
 #### Workout Preferences Screen
+
 - [ ] Create WorkoutPreferencesScreen component
 - [ ] Workout type selection:
   - [ ] Home Workout option
@@ -118,6 +127,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Navigation (Back/Continue)
 
 #### Diet Preferences Screen
+
 - [ ] Create DietPreferencesScreen component
 - [ ] Dietary type selection:
   - [ ] Vegetarian option
@@ -151,11 +161,12 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Navigation (Back/Continue)
 
 #### Body Analysis Screen
+
 - [ ] Create BodyAnalysisScreen component
 - [ ] Camera permissions handling
 - [ ] Photo capture interface:
   - [ ] Front view photo section
-  - [ ] Side view photo section  
+  - [ ] Side view photo section
   - [ ] Back view photo section (optional)
 - [ ] Photo capture functionality:
   - [ ] Take photo with camera
@@ -172,6 +183,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Navigation (Back/Continue/Skip)
 
 #### Review Screen
+
 - [ ] Create ReviewScreen component
 - [ ] Summary sections:
   - [ ] Personal information summary
@@ -190,6 +202,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Main App Screens Foundation
 
 #### Home Screen (Dashboard)
+
 - [ ] Create HomeScreen component
 - [ ] Header section:
   - [ ] Greeting with user name
@@ -221,6 +234,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Pull-to-refresh functionality
 
 #### Workout Screen
+
 - [ ] Create WorkoutScreen component
 - [ ] Week view header:
   - [ ] Current week display
@@ -241,7 +255,8 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] Loading states
   - [ ] Plan regeneration option
 
-#### Diet Screen  
+#### Diet Screen
+
 - [ ] Create DietScreen component
 - [ ] Today's meals section:
   - [ ] Meal cards (Breakfast, Lunch, Snack, Dinner)
@@ -262,6 +277,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] Shopping list generation
 
 #### Profile Screen
+
 - [ ] Create ProfileScreen component
 - [ ] User information section:
   - [ ] Profile photo
@@ -281,6 +297,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] Help and support
 
 ### 🟡 P2: Plus Menu Components
+
 - [ ] Create PlusMenuModal component
 - [ ] Menu options:
   - [ ] Body Analysis option
@@ -294,6 +311,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Close functionality
 
 ### 🟡 P2: Additional UI Components
+
 - [ ] Create ProgressChart component
 - [ ] Create CalorieChart component
 - [ ] Create WeightChart component
@@ -303,6 +321,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Create NutritionSummary component
 
 ### 🟢 P3: Animations & Polish
+
 - [ ] Add screen transitions
 - [ ] Add loading animations
 - [ ] Add micro-interactions
@@ -315,6 +334,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Zustand Stores
 
 #### User Store
+
 - [ ] Create userStore.ts
 - [ ] User state management:
   - [ ] User profile data
@@ -337,6 +357,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] State validation
 
 #### Workout Store
+
 - [ ] Create workoutStore.ts
 - [ ] Workout state:
   - [ ] Current week plan
@@ -359,6 +380,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] updateWeeklyProgress action
 
 #### Diet Store
+
 - [ ] Create dietStore.ts
 - [ ] Diet state:
   - [ ] Current diet plan
@@ -376,6 +398,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] logWaterIntake action
 
 #### App Store
+
 - [ ] Create appStore.ts
 - [ ] App state:
   - [ ] Network status
@@ -389,6 +412,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
   - [ ] clearError action
 
 ### 🟡 P2: Local Storage & Caching
+
 - [ ] Setup AsyncStorage integration
 - [ ] Create local database schema (SQLite)
 - [ ] Implement data persistence
@@ -396,6 +420,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Offline data sync strategy
 
 ### 🟡 P2: Validation & Error Handling
+
 - [ ] Create validation utilities
 - [ ] Form validation helpers
 - [ ] Error boundary components
@@ -407,6 +432,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Supabase Setup
 
 #### Project Configuration
+
 - [ ] Create Supabase project
 - [ ] Configure environment variables
 - [ ] Setup local development environment
@@ -414,6 +440,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Initialize Supabase project
 
 #### Database Schema
+
 - [ ] Create users table
 - [ ] Create workout_plans table
 - [ ] Create diet_plans table
@@ -426,6 +453,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Create indexes for performance
 
 #### Row Level Security
+
 - [ ] Enable RLS on all tables
 - [ ] Create user policies
 - [ ] Create workout plan policies
@@ -435,6 +463,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Test policy enforcement
 
 #### Storage Buckets
+
 - [ ] Create user-photos bucket
 - [ ] Create food-images bucket
 - [ ] Create exercise-media bucket
@@ -444,6 +473,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: API Services
 
 #### Authentication Service
+
 - [ ] Create authService.ts
 - [ ] Implement signUp function
 - [ ] Implement signIn function
@@ -454,6 +484,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Error handling and validation
 
 #### Workout Service
+
 - [ ] Create workoutService.ts
 - [ ] Implement createWorkoutPlan function
 - [ ] Implement getCurrentWeekPlan function
@@ -464,6 +495,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Implement getExercises function
 
 #### Diet Service
+
 - [ ] Create dietService.ts
 - [ ] Implement createDietPlan function
 - [ ] Implement getCurrentDietPlan function
@@ -475,6 +507,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Implement getFoodById function
 
 #### Body Analysis Service
+
 - [ ] Create bodyAnalysisService.ts
 - [ ] Implement createAnalysis function
 - [ ] Implement getLatestAnalysis function
@@ -482,6 +515,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Implement updateAnalysis function
 
 #### Storage Service
+
 - [ ] Create storageService.ts
 - [ ] Implement uploadImage function
 - [ ] Implement deleteImage function
@@ -490,6 +524,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Image compression utilities
 
 ### 🟡 P2: Data Seeding
+
 - [ ] Create exercise data seed
 - [ ] Create Indian food data seed
 - [ ] Create common food data seed
@@ -501,6 +536,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Google Gemini Integration
 
 #### Service Setup
+
 - [ ] Create geminiService.ts
 - [ ] Configure API credentials
 - [ ] Setup rate limiting
@@ -508,6 +544,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Error handling and retries
 
 #### Food Recognition
+
 - [ ] Implement analyzeFoodImage function
 - [ ] Create food analysis prompts
 - [ ] Image preprocessing utilities
@@ -516,6 +553,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Handle edge cases and errors
 
 #### Body Analysis
+
 - [ ] Implement analyzeBodyPhotos function
 - [ ] Create body analysis prompts
 - [ ] Multi-photo processing
@@ -523,6 +561,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Confidence scoring
 
 #### Workout Generation
+
 - [ ] Implement generateWorkoutPlan function
 - [ ] Create workout generation prompts
 - [ ] Exercise database integration
@@ -530,6 +569,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Progressive difficulty logic
 
 #### Diet Plan Generation
+
 - [ ] Implement generateDietPlan function
 - [ ] Create diet generation prompts
 - [ ] Nutrition database integration
@@ -539,6 +579,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: External Nutrition APIs
 
 #### Multi-API Router
+
 - [ ] Create nutritionApiRouter.ts
 - [ ] Implement API priority logic
 - [ ] Health monitoring system
@@ -546,6 +587,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Cache management
 
 #### FatSecret API
+
 - [ ] Create fatSecretAPI.ts
 - [ ] Implement food search
 - [ ] Implement nutrition lookup
@@ -553,18 +595,21 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Response formatting
 
 #### API Ninjas Integration
+
 - [ ] Create apiNinjasAPI.ts
 - [ ] Natural language processing
 - [ ] Nutrition data formatting
 - [ ] Error handling
 
 #### Indian Food Database
+
 - [ ] Create indianFoodDatabaseAPI.ts
 - [ ] Local database queries
 - [ ] Fuzzy matching algorithm
 - [ ] Portion size calculations
 
 ### 🟡 P2: AI Enhancement Services
+
 - [ ] Create aiEnhancementService.ts
 - [ ] Hybrid analysis combining AI + APIs
 - [ ] Personalized recommendations
@@ -572,6 +617,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] User feedback integration
 
 ### 🟡 P2: Performance Optimization
+
 - [ ] Image compression optimization
 - [ ] API response caching
 - [ ] Batch processing implementation
@@ -583,6 +629,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Core Feature Integration
 
 #### Onboarding Integration
+
 - [ ] Connect forms to backend
 - [ ] User account creation
 - [ ] Data validation and storage
@@ -590,6 +637,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Onboarding completion flow
 
 #### Food Recognition Integration
+
 - [ ] Camera integration
 - [ ] Image capture and upload
 - [ ] AI analysis integration
@@ -598,6 +646,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Offline handling
 
 #### Workout Integration
+
 - [ ] AI workout generation
 - [ ] Plan storage and retrieval
 - [ ] Session tracking
@@ -605,6 +654,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] History management
 
 #### Diet Integration
+
 - [ ] AI diet plan generation
 - [ ] Meal logging workflow
 - [ ] Nutrition calculation
@@ -612,6 +662,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Plan adjustments
 
 #### Body Analysis Integration
+
 - [ ] Photo capture and upload
 - [ ] AI analysis processing
 - [ ] Progress comparison
@@ -621,6 +672,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🟡 P2: Advanced Features
 
 #### Sync & Offline Support
+
 - [ ] Implement offline data storage
 - [ ] Background sync functionality
 - [ ] Conflict resolution
@@ -628,6 +680,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Connectivity monitoring
 
 #### Notifications
+
 - [ ] Setup push notifications
 - [ ] Workout reminders
 - [ ] Meal logging reminders
@@ -635,6 +688,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Achievement notifications
 
 #### Progress Tracking
+
 - [ ] Weight tracking
 - [ ] Body measurement logging
 - [ ] Progress photo comparison
@@ -642,6 +696,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Goal adjustment
 
 ### 🟢 P3: Polish Features
+
 - [ ] Dark mode support
 - [ ] Accessibility improvements
 - [ ] Internationalization setup
@@ -651,6 +706,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## Phase 7: Testing (Week 22-24)
 
 ### 🔴 P1: Unit Testing
+
 - [ ] Setup Jest configuration
 - [ ] Test utility functions
 - [ ] Test store actions and reducers
@@ -660,6 +716,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Achieve 80%+ code coverage
 
 ### 🔴 P1: Component Testing
+
 - [ ] Test UI components
 - [ ] Test form validation
 - [ ] Test navigation flows
@@ -668,6 +725,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Test loading states
 
 ### 🔴 P1: Integration Testing
+
 - [ ] Test API integrations
 - [ ] Test database operations
 - [ ] Test authentication flow
@@ -675,6 +733,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Test offline functionality
 
 ### 🟡 P2: E2E Testing
+
 - [ ] Setup Detox configuration
 - [ ] Test onboarding flow
 - [ ] Test food recognition flow
@@ -683,6 +742,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Test main navigation
 
 ### 🟡 P2: AI Testing
+
 - [ ] Create test dataset
 - [ ] Test food recognition accuracy
 - [ ] Test body analysis accuracy
@@ -691,6 +751,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Performance benchmarking
 
 ### 🟡 P2: Device Testing
+
 - [ ] Test on Android devices
 - [ ] Test on iOS devices
 - [ ] Test on different screen sizes
@@ -699,6 +760,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Test battery consumption
 
 ### 🟢 P3: Accessibility Testing
+
 - [ ] Screen reader compatibility
 - [ ] Color contrast validation
 - [ ] Touch target size verification
@@ -710,6 +772,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ### 🔴 P1: Production Setup
 
 #### Environment Configuration
+
 - [ ] Setup production Supabase project
 - [ ] Configure production environment variables
 - [ ] Setup production API keys
@@ -717,6 +780,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Setup error tracking (Sentry)
 
 #### App Store Preparation
+
 - [ ] Create app store listings
 - [ ] Prepare app screenshots
 - [ ] Write app descriptions
@@ -724,6 +788,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Generate app icons and assets
 
 #### Build Configuration
+
 - [ ] Setup EAS build profiles
 - [ ] Configure Android signing
 - [ ] Configure iOS certificates
@@ -731,6 +796,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Optimize bundle size
 
 ### 🔴 P1: Deployment
+
 - [ ] Deploy backend to production
 - [ ] Run database migrations
 - [ ] Deploy edge functions
@@ -738,6 +804,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Setup monitoring dashboards
 
 #### Android Deployment
+
 - [ ] Build production APK/AAB
 - [ ] Upload to Google Play Console
 - [ ] Configure store listing
@@ -745,6 +812,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Monitor review process
 
 #### iOS Deployment (if applicable)
+
 - [ ] Build production IPA
 - [ ] Upload to App Store Connect
 - [ ] Configure store listing
@@ -752,6 +820,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Monitor review process
 
 ### 🟡 P2: Post-Launch
+
 - [ ] Monitor app performance
 - [ ] Track user feedback
 - [ ] Monitor error rates
@@ -761,6 +830,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## Phase 9: Post-Launch Optimization (Week 27+)
 
 ### 🟡 P2: Performance Optimization
+
 - [ ] Analyze performance metrics
 - [ ] Optimize slow queries
 - [ ] Improve AI response times
@@ -768,6 +838,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Optimize battery consumption
 
 ### 🟡 P2: User Feedback Integration
+
 - [ ] Collect user feedback
 - [ ] Analyze usage patterns
 - [ ] Identify pain points
@@ -775,6 +846,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Plan feature updates
 
 ### 🟢 P3: Feature Enhancements
+
 - [ ] Advanced analytics
 - [ ] Social features
 - [ ] Wearable integration
@@ -782,6 +854,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Premium features
 
 ### 🟢 P3: Scaling Preparation
+
 - [ ] Database optimization
 - [ ] API rate limiting
 - [ ] Cost optimization
@@ -791,6 +864,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## Daily Development Checklist
 
 ### 📋 Daily Tasks
+
 - [ ] Check and respond to issues
 - [ ] Run tests before commits
 - [ ] Update documentation
@@ -800,6 +874,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Track progress in TODO
 
 ### 📋 Weekly Tasks
+
 - [ ] Review progress against timeline
 - [ ] Update stakeholders
 - [ ] Performance testing
@@ -808,6 +883,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Backup verification
 
 ### 📋 Pre-Release Checklist
+
 - [ ] All tests passing
 - [ ] Code coverage > 80%
 - [ ] Performance benchmarks met
@@ -820,6 +896,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## Tools & Resources
 
 ### 📱 Development Tools
+
 - [ ] Android Studio
 - [ ] Xcode (macOS)
 - [ ] VS Code with React Native extensions
@@ -827,6 +904,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Reactotron for state debugging
 
 ### 🧪 Testing Tools
+
 - [ ] Jest for unit testing
 - [ ] Detox for E2E testing
 - [ ] Maestro for UI testing
@@ -834,6 +912,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] BrowserStack for device testing
 
 ### 📊 Monitoring Tools
+
 - [ ] Sentry for error tracking
 - [ ] Firebase Analytics
 - [ ] Supabase Analytics
@@ -841,6 +920,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] Crash reporting
 
 ### 📚 Documentation
+
 - [ ] README.md
 - [ ] API documentation
 - [ ] Component documentation
@@ -852,6 +932,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 ## 🎯 Success Criteria
 
 ### Technical Goals
+
 - [ ] App launches in < 3 seconds
 - [ ] Food recognition in < 5 seconds
 - [ ] 95%+ crash-free rate
@@ -859,6 +940,7 @@ This document provides a comprehensive, step-by-step TODO list for building FitA
 - [ ] 4.5+ app store rating
 
 ### Business Goals
+
 - [ ] Complete onboarding flow
 - [ ] Daily active usage
 - [ ] User retention > 70% (Day 7)

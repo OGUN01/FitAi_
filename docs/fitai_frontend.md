@@ -7,12 +7,14 @@ This document provides comprehensive guidance for building the FitAI mobile appl
 ## Technology Stack
 
 ### Core Technologies
+
 - **React Native**: 0.73+
 - **Expo SDK**: 50+
 - **TypeScript**: For type safety and better development experience
 - **NativeWind**: Tailwind CSS for React Native styling
 
 ### Dependencies
+
 ```json
 {
   "dependencies": {
@@ -135,6 +137,7 @@ src/
 ## Design System
 
 ### Color Palette
+
 ```typescript
 // utils/colors.ts
 export const colors = {
@@ -185,11 +188,12 @@ export const colors = {
     700: '#404040',
     800: '#262626',
     900: '#171717',
-  }
+  },
 };
 ```
 
 ### Typography
+
 ```typescript
 // utils/typography.ts
 export const typography = {
@@ -213,13 +217,14 @@ export const typography = {
     tight: 1.2,
     normal: 1.4,
     relaxed: 1.6,
-  }
+  },
 };
 ```
 
 ### Component Specifications
 
 #### Base Button Component
+
 ```typescript
 // components/ui/Button.tsx
 import React from 'react';
@@ -246,35 +251,35 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses = 'rounded-xl flex-row items-center justify-center';
-  
+
   const variantClasses = {
     primary: 'bg-primary-500 active:bg-primary-600',
     secondary: 'bg-secondary-500 active:bg-secondary-600',
     outline: 'border-2 border-primary-500 bg-transparent active:bg-primary-50',
     ghost: 'bg-transparent active:bg-neutral-100'
   };
-  
+
   const sizeClasses = {
     sm: 'px-3 py-2 min-h-[32px]',
     md: 'px-4 py-3 min-h-[44px]',
     lg: 'px-6 py-4 min-h-[52px]'
   };
-  
+
   const textVariantClasses = {
     primary: 'text-white font-semibold',
     secondary: 'text-white font-semibold',
     outline: 'text-primary-500 font-semibold',
     ghost: 'text-neutral-700 font-medium'
   };
-  
+
   const textSizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
     lg: 'text-lg'
   };
-  
+
   const disabledClasses = disabled || loading ? 'opacity-50' : '';
-  
+
   const buttonClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${disabledClasses} ${className || ''}`;
   const textClasses = `${textVariantClasses[variant]} ${textSizeClasses[size]}`;
 
@@ -285,9 +290,9 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading && (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'outline' || variant === 'ghost' ? '#0ea5e9' : '#ffffff'} 
+        <ActivityIndicator
+          size="small"
+          color={variant === 'outline' || variant === 'ghost' ? '#0ea5e9' : '#ffffff'}
           className="mr-2"
         />
       )}
@@ -300,6 +305,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```
 
 #### Input Component
+
 ```typescript
 // components/ui/Input.tsx
 import React, { forwardRef } from 'react';
@@ -328,15 +334,15 @@ export const Input = forwardRef<TextInput, InputProps>(({
   ...props
 }, ref) => {
   const baseClasses = 'flex-1 text-base text-neutral-900 font-regular';
-  
+
   const containerVariantClasses = {
     default: 'border-b border-neutral-200 focus:border-primary-500',
     filled: 'bg-neutral-100 rounded-xl px-4',
     outline: 'border border-neutral-300 rounded-xl px-4 focus:border-primary-500'
   };
-  
+
   const containerClasses = `flex-row items-center min-h-[48px] ${containerVariantClasses[variant]}`;
-  
+
   return (
     <StyledView className="w-full">
       {label && (
@@ -344,28 +350,28 @@ export const Input = forwardRef<TextInput, InputProps>(({
           {label}
         </StyledText>
       )}
-      
+
       <StyledView className={containerClasses}>
         {leftIcon && (
           <StyledView className="mr-3">
             {leftIcon}
           </StyledView>
         )}
-        
+
         <StyledTextInput
           ref={ref}
           className={`${baseClasses} ${className || ''}`}
           placeholderTextColor="#a3a3a3"
           {...props}
         />
-        
+
         {rightIcon && (
           <StyledView className="ml-3">
             {rightIcon}
           </StyledView>
         )}
       </StyledView>
-      
+
       {error && (
         <StyledText className="text-sm text-error-500 mt-1">
           {error}
@@ -377,6 +383,7 @@ export const Input = forwardRef<TextInput, InputProps>(({
 ```
 
 #### Card Component
+
 ```typescript
 // components/ui/Card.tsx
 import React from 'react';
@@ -398,22 +405,22 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const baseClasses = 'bg-white rounded-2xl';
-  
+
   const variantClasses = {
     default: '',
     elevated: 'shadow-lg shadow-neutral-200',
     outlined: 'border border-neutral-200'
   };
-  
+
   const paddingClasses = {
     none: '',
     sm: 'p-3',
     md: 'p-4',
     lg: 'p-6'
   };
-  
+
   const cardClasses = `${baseClasses} ${variantClasses[variant]} ${paddingClasses[padding]} ${className || ''}`;
-  
+
   return (
     <StyledView className={cardClasses} {...props}>
       {children}
@@ -427,6 +434,7 @@ export const Card: React.FC<CardProps> = ({
 ### Onboarding Screens
 
 #### Personal Information Screen
+
 ```typescript
 // screens/onboarding/PersonalInfoScreen.tsx
 import React, { useState } from 'react';
@@ -452,9 +460,9 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
     fitnessGoals: [],
     activityLevel: ''
   });
-  
+
   const [errors, setErrors] = useState<Partial<PersonalInfoForm>>({});
-  
+
   const fitnessGoalOptions: { id: FitnessGoals; label: string; description: string }[] = [
     { id: 'weight_loss', label: 'Weight Loss', description: 'Lose weight and burn fat' },
     { id: 'muscle_gain', label: 'Muscle Gain', description: 'Build lean muscle mass' },
@@ -463,7 +471,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
     { id: 'strength', label: 'Strength', description: 'Increase overall strength' },
     { id: 'endurance', label: 'Endurance', description: 'Improve cardiovascular health' }
   ];
-  
+
   const activityLevels = [
     { id: 'sedentary', label: 'Sedentary', description: 'Little to no exercise' },
     { id: 'lightly_active', label: 'Lightly Active', description: 'Light exercise 1-3 days/week' },
@@ -473,7 +481,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PersonalInfoForm> = {};
-    
+
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.age || parseInt(formData.age) < 13 || parseInt(formData.age) > 100) {
       newErrors.age = 'Please enter a valid age (13-100)';
@@ -492,7 +500,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
       newErrors.fitnessGoals = 'Please select at least one fitness goal';
     }
     if (!formData.activityLevel) newErrors.activityLevel = 'Please select your activity level';
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -514,8 +522,8 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      className="flex-1 bg-neutral-50" 
+    <KeyboardAvoidingView
+      className="flex-1 bg-neutral-50"
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StyledScrollView className="flex-1 px-6 pt-12">
@@ -544,7 +552,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
           <StyledText className="text-xl font-semibold text-neutral-900 mb-4">
             Personal Information
           </StyledText>
-          
+
           <Input
             label="Full Name"
             placeholder="Enter your full name"
@@ -553,7 +561,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
             error={errors.name}
             className="mb-4"
           />
-          
+
           <StyledView className="flex-row space-x-4 mb-4">
             <StyledView className="flex-1">
               <Input
@@ -565,7 +573,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
                 error={errors.age}
               />
             </StyledView>
-            
+
             <StyledView className="flex-1">
               <StyledText className="text-sm font-medium text-neutral-700 mb-2">
                 Gender
@@ -590,7 +598,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
               )}
             </StyledView>
           </StyledView>
-          
+
           <StyledView className="flex-row space-x-4 mb-4">
             <StyledView className="flex-1">
               <Input
@@ -602,7 +610,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
                 error={errors.height}
               />
             </StyledView>
-            
+
             <StyledView className="flex-1">
               <Input
                 label="Current Weight (kg)"
@@ -614,7 +622,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
               />
             </StyledView>
           </StyledView>
-          
+
           <Input
             label="Target Weight (kg)"
             placeholder="65"
@@ -634,7 +642,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
           <StyledText className="text-sm text-neutral-600 mb-4">
             Select all that apply to you
           </StyledText>
-          
+
           <StyledView className="space-y-3">
             {fitnessGoalOptions.map((goal) => (
               <Button
@@ -658,7 +666,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
               </Button>
             ))}
           </StyledView>
-          
+
           {errors.fitnessGoals && (
             <StyledText className="text-sm text-error-500 mt-2">
               {errors.fitnessGoals}
@@ -671,7 +679,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
           <StyledText className="text-xl font-semibold text-neutral-900 mb-4">
             Current Activity Level
           </StyledText>
-          
+
           <StyledView className="space-y-3">
             {activityLevels.map((level) => (
               <Button
@@ -695,7 +703,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
               </Button>
             ))}
           </StyledView>
-          
+
           {errors.activityLevel && (
             <StyledText className="text-sm text-error-500 mt-2">
               {errors.activityLevel}
@@ -716,6 +724,7 @@ export const PersonalInfoScreen: React.FC = ({ navigation }) => {
 ```
 
 #### Body Analysis Screen
+
 ```typescript
 // screens/onboarding/BodyAnalysisScreen.tsx
 import React, { useState } from 'react';
@@ -737,7 +746,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
     side: null,
     back: null
   });
-  
+
   const [currentPhotoType, setCurrentPhotoType] = useState<'front' | 'side' | 'back' | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [cameraPermission, requestCameraPermission] = Camera.useCameraPermissions();
@@ -749,7 +758,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
       pose: '🧍‍♂️'
     },
     side: {
-      title: 'Side View', 
+      title: 'Side View',
       description: 'Turn to your side, stand straight with arms at your sides',
       pose: '🚶‍♂️'
     },
@@ -768,7 +777,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
         return;
       }
     }
-    
+
     setCurrentPhotoType(type);
     setShowCamera(true);
   };
@@ -805,7 +814,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
       Alert.alert('Photos Required', 'Please take front and side photos to continue');
       return;
     }
-    
+
     updateBodyPhotos(photos);
     navigation.navigate('Review');
   };
@@ -813,7 +822,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
   const PhotoCard = ({ type, required = false }: { type: 'front' | 'side' | 'back', required?: boolean }) => {
     const instruction = photoInstructions[type];
     const hasPhoto = photos[type];
-    
+
     return (
       <Card className="mb-4">
         <StyledView className="items-center">
@@ -824,24 +833,24 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
           <StyledText className="text-sm text-neutral-600 text-center mb-4">
             {instruction.description}
           </StyledText>
-          
+
           {hasPhoto ? (
             <StyledView className="items-center">
-              <StyledImage 
-                source={{ uri: photos[type] }} 
+              <StyledImage
+                source={{ uri: photos[type] }}
                 className="w-24 h-32 rounded-xl mb-3"
                 resizeMode="cover"
               />
               <StyledView className="flex-row space-x-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onPress={() => takePhoto(type)}
                 >
                   Retake
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onPress={() => selectFromGallery(type)}
                 >
@@ -851,15 +860,15 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
             </StyledView>
           ) : (
             <StyledView className="flex-row space-x-2">
-              <Button 
-                variant="primary" 
+              <Button
+                variant="primary"
                 size="sm"
                 onPress={() => takePhoto(type)}
               >
                 Take Photo
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onPress={() => selectFromGallery(type)}
               >
@@ -874,7 +883,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
 
   if (showCamera) {
     return (
-      <CameraView 
+      <CameraView
         onCapture={handleCameraCapture}
         onClose={() => {
           setShowCamera(false);
@@ -915,7 +924,7 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
                 Your Privacy Matters
               </StyledText>
               <StyledText className="text-sm text-primary-800">
-                Photos are stored securely and encrypted. Only you can access them. 
+                Photos are stored securely and encrypted. Only you can access them.
                 They're used solely for your progress tracking and AI analysis.
               </StyledText>
             </StyledView>
@@ -947,9 +956,9 @@ export const BodyAnalysisScreen: React.FC = ({ navigation }) => {
         <Button onPress={handleNext} size="lg">
           Continue to Review
         </Button>
-        
-        <Button 
-          variant="ghost" 
+
+        <Button
+          variant="ghost"
           onPress={() => navigation.navigate('Review')}
           className="mt-2"
         >
@@ -967,7 +976,7 @@ const CameraView: React.FC<{
   instructions?: { title: string; description: string };
 }> = ({ onCapture, onClose, instructions }) => {
   const [camera, setCamera] = useState<Camera | null>(null);
-  
+
   const takePicture = async () => {
     if (camera) {
       const photo = await camera.takePictureAsync({
@@ -980,7 +989,7 @@ const CameraView: React.FC<{
 
   return (
     <StyledView className="flex-1">
-      <Camera 
+      <Camera
         ref={setCamera}
         className="flex-1"
         type={CameraType.back}
@@ -1002,21 +1011,21 @@ const CameraView: React.FC<{
         {/* Camera Controls */}
         <StyledView className="absolute bottom-8 left-0 right-0 px-6">
           <StyledView className="flex-row justify-center items-center">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onPress={onClose}
               className="bg-black/50 mr-8"
             >
               <StyledText className="text-white">Cancel</StyledText>
             </Button>
-            
+
             <StyledView className="w-20 h-20 rounded-full bg-white border-4 border-neutral-300 items-center justify-center">
-              <Button 
+              <Button
                 onPress={takePicture}
                 className="w-16 h-16 rounded-full bg-white"
               />
             </StyledView>
-            
+
             <StyledView className="w-16 ml-8" />
           </StyledView>
         </StyledView>
@@ -1029,6 +1038,7 @@ const CameraView: React.FC<{
 ### Main App Screens
 
 #### Home Screen (Dashboard)
+
 ```typescript
 // screens/main/HomeScreen.tsx
 import React, { useEffect, useState } from 'react';
@@ -1127,9 +1137,9 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                 {formatDate(new Date())}
               </StyledText>
             </StyledView>
-            
-            <Button 
-              variant="ghost" 
+
+            <Button
+              variant="ghost"
               onPress={() => navigation.navigate('Profile')}
               className="bg-white/10"
             >
@@ -1148,9 +1158,9 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                   Calories Consumed
                 </StyledText>
               </StyledView>
-              
+
               <StyledView className="w-px h-8 bg-white/20" />
-              
+
               <StyledView className="items-center flex-1">
                 <StyledText className="text-white text-2xl font-bold">
                   {dailyNutrition?.remaining || dailyNutrition?.target || 0}
@@ -1159,9 +1169,9 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                   Calories Remaining
                 </StyledText>
               </StyledView>
-              
+
               <StyledView className="w-px h-8 bg-white/20" />
-              
+
               <StyledView className="items-center flex-1">
                 <StyledText className="text-white text-2xl font-bold">
                   {todaysWorkout?.completed ? '✅' : '⏱️'}
@@ -1213,8 +1223,8 @@ export const HomeScreen: React.FC = ({ navigation }) => {
               <StyledText className="text-lg font-semibold text-neutral-900">
                 Today's Workout
               </StyledText>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onPress={() => navigation.navigate('Workout')}
               >
@@ -1245,7 +1255,7 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                 </StyledView>
 
                 {!todaysWorkout.completed && (
-                  <Button 
+                  <Button
                     onPress={() => navigation.navigate('WorkoutSession', { workoutId: todaysWorkout.id })}
                   >
                     Start Workout
@@ -1258,8 +1268,8 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                 <StyledText className="text-neutral-600 text-center">
                   No workout scheduled for today
                 </StyledText>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onPress={() => navigation.navigate('WorkoutGeneration')}
                   className="mt-3"
@@ -1276,8 +1286,8 @@ export const HomeScreen: React.FC = ({ navigation }) => {
               <StyledText className="text-lg font-semibold text-neutral-900">
                 Today's Meals
               </StyledText>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onPress={() => navigation.navigate('Diet')}
               >
@@ -1318,12 +1328,12 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                   {dailyNutrition?.consumed || 0} / {dailyNutrition?.target || 0} cal
                 </StyledText>
               </StyledView>
-              
+
               <StyledView className="h-2 bg-neutral-200 rounded-full overflow-hidden">
-                <StyledView 
+                <StyledView
                   className="h-full bg-primary-500 rounded-full"
-                  style={{ 
-                    width: `${Math.min((dailyNutrition?.consumed || 0) / (dailyNutrition?.target || 1) * 100, 100)}%` 
+                  style={{
+                    width: `${Math.min((dailyNutrition?.consumed || 0) / (dailyNutrition?.target || 1) * 100, 100)}%`
                   }}
                 />
               </StyledView>
@@ -1336,8 +1346,8 @@ export const HomeScreen: React.FC = ({ navigation }) => {
               <StyledText className="text-lg font-semibold text-neutral-900">
                 This Week's Progress
               </StyledText>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onPress={() => navigation.navigate('Progress')}
               >
@@ -1354,7 +1364,7 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                   Workouts{'\n'}Completed
                 </StyledText>
               </StyledView>
-              
+
               <StyledView className="items-center">
                 <StyledText className="text-2xl font-bold text-success-600">
                   {weeklyProgress?.avgCalorieAdherence || 0}%
@@ -1363,7 +1373,7 @@ export const HomeScreen: React.FC = ({ navigation }) => {
                   Diet Goal{'\n'}Adherence
                 </StyledText>
               </StyledView>
-              
+
               <StyledView className="items-center">
                 <StyledText className="text-2xl font-bold text-secondary-600">
                   {weeklyProgress?.bodyPhotos || 0}
@@ -1384,19 +1394,25 @@ export const HomeScreen: React.FC = ({ navigation }) => {
 ## State Management with Zustand
 
 ### User Store
+
 ```typescript
 // stores/userStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User, PersonalInfoForm, WorkoutPreferences, DietPreferences } from '../types/user';
+import {
+  User,
+  PersonalInfoForm,
+  WorkoutPreferences,
+  DietPreferences,
+} from '../types/user';
 
 interface UserState {
   // User data
   user: User | null;
   isOnboarded: boolean;
   isAuthenticated: boolean;
-  
+
   // Onboarding data
   personalInfo: PersonalInfoForm | null;
   workoutPreferences: WorkoutPreferences | null;
@@ -1406,13 +1422,17 @@ interface UserState {
     side: string | null;
     back: string | null;
   } | null;
-  
+
   // Actions
   setUser: (user: User) => void;
   updatePersonalInfo: (info: PersonalInfoForm) => void;
   updateWorkoutPreferences: (prefs: WorkoutPreferences) => void;
   updateDietPreferences: (prefs: DietPreferences) => void;
-  updateBodyPhotos: (photos: { front: string | null; side: string | null; back: string | null }) => void;
+  updateBodyPhotos: (photos: {
+    front: string | null;
+    side: string | null;
+    back: string | null;
+  }) => void;
   completeOnboarding: () => void;
   logout: () => void;
   clearOnboardingData: () => void;
@@ -1431,19 +1451,19 @@ export const useUserStore = create<UserState>()(
       bodyPhotos: null,
 
       // Actions
-      setUser: (user) => set({ user, isAuthenticated: true }),
+      setUser: user => set({ user, isAuthenticated: true }),
 
-      updatePersonalInfo: (info) => set({ personalInfo: info }),
+      updatePersonalInfo: info => set({ personalInfo: info }),
 
-      updateWorkoutPreferences: (prefs) => set({ workoutPreferences: prefs }),
+      updateWorkoutPreferences: prefs => set({ workoutPreferences: prefs }),
 
-      updateDietPreferences: (prefs) => set({ dietPreferences: prefs }),
+      updateDietPreferences: prefs => set({ dietPreferences: prefs }),
 
-      updateBodyPhotos: (photos) => set({ bodyPhotos: photos }),
+      updateBodyPhotos: photos => set({ bodyPhotos: photos }),
 
       completeOnboarding: () => {
         const { personalInfo, workoutPreferences, dietPreferences } = get();
-        
+
         if (personalInfo && workoutPreferences && dietPreferences) {
           const user: User = {
             id: Date.now().toString(), // Temporary ID
@@ -1454,39 +1474,41 @@ export const useUserStore = create<UserState>()(
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
-          
-          set({ 
-            user, 
+
+          set({
+            user,
             isOnboarded: true,
             // Keep onboarding data for potential API sync
           });
         }
       },
 
-      logout: () => set({ 
-        user: null, 
-        isAuthenticated: false, 
-        isOnboarded: false 
-      }),
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+          isOnboarded: false,
+        }),
 
-      clearOnboardingData: () => set({
-        personalInfo: null,
-        workoutPreferences: null,
-        dietPreferences: null,
-        bodyPhotos: null,
-      }),
+      clearOnboardingData: () =>
+        set({
+          personalInfo: null,
+          workoutPreferences: null,
+          dietPreferences: null,
+          bodyPhotos: null,
+        }),
     }),
     {
       name: 'user-storage',
       storage: {
-        getItem: async (name) => {
+        getItem: async name => {
           const value = await AsyncStorage.getItem(name);
           return value ? JSON.parse(value) : null;
         },
         setItem: async (name, value) => {
           await AsyncStorage.setItem(name, JSON.stringify(value));
         },
-        removeItem: async (name) => {
+        removeItem: async name => {
           await AsyncStorage.removeItem(name);
         },
       },
@@ -1496,6 +1518,7 @@ export const useUserStore = create<UserState>()(
 ```
 
 ### Workout Store
+
 ```typescript
 // stores/workoutStore.ts
 import { create } from 'zustand';
@@ -1512,15 +1535,15 @@ interface WorkoutState {
     totalWorkouts: number;
     streakDays: number;
   } | null;
-  
+
   // History
   completedWorkouts: WorkoutSession[];
   workoutHistory: WorkoutPlan[];
-  
+
   // Loading states
   isGenerating: boolean;
   isLoading: boolean;
-  
+
   // Actions
   setCurrentWeekPlan: (plan: WorkoutPlan) => void;
   setTodaysWorkout: (workout: Workout) => void;
@@ -1545,7 +1568,7 @@ export const useWorkoutStore = create<WorkoutState>()(
       isLoading: false,
 
       // Actions
-      setCurrentWeekPlan: (plan) => {
+      setCurrentWeekPlan: plan => {
         set({ currentWeekPlan: plan });
         // Update today's workout based on current day
         const today = new Date().getDay();
@@ -1553,9 +1576,9 @@ export const useWorkoutStore = create<WorkoutState>()(
         set({ todaysWorkout });
       },
 
-      setTodaysWorkout: (workout) => set({ todaysWorkout: workout }),
+      setTodaysWorkout: workout => set({ todaysWorkout: workout }),
 
-      startWorkoutSession: (workout) => {
+      startWorkoutSession: workout => {
         const session: WorkoutSession = {
           id: Date.now().toString(),
           workoutId: workout.id,
@@ -1571,31 +1594,31 @@ export const useWorkoutStore = create<WorkoutState>()(
         set({ activeSession: session });
       },
 
-      updateActiveSession: (updates) => {
+      updateActiveSession: updates => {
         const { activeSession } = get();
         if (activeSession) {
           set({ activeSession: { ...activeSession, ...updates } });
         }
       },
 
-      completeWorkoutSession: (session) => {
+      completeWorkoutSession: session => {
         const completed = {
           ...session,
           completedAt: new Date().toISOString(),
           status: 'completed' as const,
         };
-        
+
         set(state => ({
           activeSession: null,
           completedWorkouts: [...state.completedWorkouts, completed],
         }));
-        
+
         // Update today's workout as completed
         const { todaysWorkout } = get();
         if (todaysWorkout) {
           set({ todaysWorkout: { ...todaysWorkout, completed: true } });
         }
-        
+
         // Update weekly progress
         get().updateWeeklyProgress();
       },
@@ -1615,29 +1638,29 @@ export const useWorkoutStore = create<WorkoutState>()(
 
       updateWeeklyProgress: () => {
         const { completedWorkouts, currentWeekPlan } = get();
-        
+
         if (!currentWeekPlan) return;
-        
+
         const startOfWeek = new Date();
         startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        
+
         const thisWeekCompleted = completedWorkouts.filter(session => {
           const sessionDate = new Date(session.startedAt);
           return sessionDate >= startOfWeek;
         });
-        
+
         const progress = {
           workoutsCompleted: thisWeekCompleted.length,
           totalWorkouts: currentWeekPlan.workouts.length,
           streakDays: calculateStreakDays(completedWorkouts),
         };
-        
+
         set({ weeklyProgress: progress });
       },
     }),
     {
       name: 'workout-storage',
-      partialize: (state) => ({
+      partialize: state => ({
         currentWeekPlan: state.currentWeekPlan,
         completedWorkouts: state.completedWorkouts,
         workoutHistory: state.workoutHistory,
@@ -1656,6 +1679,7 @@ function calculateStreakDays(completedWorkouts: WorkoutSession[]): number {
 ## Navigation Setup
 
 ### App Navigator
+
 ```typescript
 // navigation/AppNavigator.tsx
 import React from 'react';
@@ -1697,6 +1721,7 @@ export const AppNavigator: React.FC = () => {
 ```
 
 ### Main Tab Navigator
+
 ```typescript
 // navigation/MainTabNavigator.tsx
 import React from 'react';
@@ -1768,7 +1793,7 @@ export const MainTabNavigator: React.FC = () => {
             tabBarIcon: ({ focused }) => <TabIcon name="Home" focused={focused} />,
           }}
         />
-        
+
         <Tab.Screen
           name="Workout"
           component={WorkoutScreen}
@@ -1776,7 +1801,7 @@ export const MainTabNavigator: React.FC = () => {
             tabBarIcon: ({ focused }) => <TabIcon name="Workout" focused={focused} />,
           }}
         />
-        
+
         <Tab.Screen
           name="Plus"
           component={View} // Dummy component
@@ -1786,7 +1811,7 @@ export const MainTabNavigator: React.FC = () => {
             ),
           }}
         />
-        
+
         <Tab.Screen
           name="Diet"
           component={DietScreen}
@@ -1794,7 +1819,7 @@ export const MainTabNavigator: React.FC = () => {
             tabBarIcon: ({ focused }) => <TabIcon name="Diet" focused={focused} />,
           }}
         />
-        
+
         <Tab.Screen
           name="Profile"
           component={ProfileScreen}

@@ -5,6 +5,7 @@
 FitAI is built as a modern, scalable mobile application using React Native and Expo, with a serverless backend powered by Supabase and AI capabilities through Google Gemini Flash 2.5.
 
 ### Architecture Principles
+
 - **Mobile-First**: Optimized for Android devices with future iOS support
 - **Offline-First**: Core functionality available without internet
 - **AI-Enhanced**: Intelligent features powered by modern LLMs
@@ -28,6 +29,7 @@ FitAI is built as a modern, scalable mobile application using React Native and E
 ## Frontend Architecture (React Native + Expo)
 
 ### Technology Stack
+
 - **Framework**: React Native 0.73+ with Expo SDK 50+
 - **Navigation**: React Navigation v6
 - **State Management**: Zustand
@@ -38,6 +40,7 @@ FitAI is built as a modern, scalable mobile application using React Native and E
 - **Camera**: Expo Camera
 
 ### Project Structure
+
 ```
 src/
 ├── components/           # Reusable UI components
@@ -74,6 +77,7 @@ src/
 ```
 
 ### State Management Strategy
+
 Using Zustand for lightweight, performant state management:
 
 ```javascript
@@ -87,13 +91,14 @@ export const useUserStore = create(
       user: null,
       isOnboarded: false,
       preferences: {},
-      
-      setUser: (user) => set({ user }),
-      setOnboarded: (status) => set({ isOnboarded: status }),
-      updatePreferences: (prefs) => set({ 
-        preferences: { ...get().preferences, ...prefs } 
-      }),
-      
+
+      setUser: user => set({ user }),
+      setOnboarded: status => set({ isOnboarded: status }),
+      updatePreferences: prefs =>
+        set({
+          preferences: { ...get().preferences, ...prefs },
+        }),
+
       logout: () => set({ user: null, isOnboarded: false }),
     }),
     {
@@ -106,6 +111,7 @@ export const useUserStore = create(
 ### Offline-First Strategy
 
 #### Local Data Storage
+
 ```javascript
 // services/storage/localDatabase.js
 import * as SQLite from 'expo-sqlite';
@@ -126,7 +132,7 @@ class LocalDatabase {
           updated_at DATETIME
         )
       `);
-      
+
       // Workout plans
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS workout_plans (
@@ -137,7 +143,7 @@ class LocalDatabase {
           created_at DATETIME
         )
       `);
-      
+
       // Diet plans
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS diet_plans (
@@ -148,7 +154,7 @@ class LocalDatabase {
           created_at DATETIME
         )
       `);
-      
+
       // Meal logs
       tx.executeSql(`
         CREATE TABLE IF NOT EXISTS meal_logs (
@@ -166,12 +172,13 @@ class LocalDatabase {
 ```
 
 #### Sync Strategy
+
 ```javascript
 // services/storage/syncManager.js
 class SyncManager {
   async syncWhenOnline() {
     if (!navigator.onLine) return;
-    
+
     try {
       await this.syncMealLogs();
       await this.syncProgress();
@@ -183,7 +190,7 @@ class SyncManager {
 
   async syncMealLogs() {
     const unsyncedLogs = await this.getUnsyncedMealLogs();
-    
+
     for (const log of unsyncedLogs) {
       try {
         await api.uploadMealLog(log);
@@ -201,13 +208,14 @@ class SyncManager {
 ### Database Schema
 
 #### Users Table
+
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   -- Personal Information
   name TEXT,
   age INTEGER,
@@ -215,13 +223,13 @@ CREATE TABLE users (
   height DECIMAL(5,2), -- in cm
   current_weight DECIMAL(5,2), -- in kg
   target_weight DECIMAL(5,2), -- in kg
-  
+
   -- Preferences
   fitness_goals TEXT[], -- array of goals
   activity_level TEXT CHECK (activity_level IN ('sedentary', 'lightly_active', 'moderately_active', 'very_active')),
   workout_preferences JSONB,
   diet_preferences JSONB,
-  
+
   -- Settings
   units TEXT DEFAULT 'metric', -- metric or imperial
   timezone TEXT DEFAULT 'UTC',
@@ -230,67 +238,70 @@ CREATE TABLE users (
 ```
 
 #### Workout Plans Table
+
 ```sql
 CREATE TABLE workout_plans (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   week_start DATE,
   week_end DATE,
   plan_type TEXT, -- 'ai_generated', 'custom', 'template'
-  
+
   plan_data JSONB, -- Contains the full workout plan
   generation_params JSONB, -- Parameters used for AI generation
-  
+
   is_active BOOLEAN DEFAULT true,
-  
+
   UNIQUE(user_id, week_start)
 );
 ```
 
 #### Diet Plans Table
+
 ```sql
 CREATE TABLE diet_plans (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   plan_start DATE,
   plan_end DATE,
   plan_type TEXT, -- 'ai_generated', 'custom'
-  
+
   daily_calorie_target INTEGER,
   macros JSONB, -- protein, carbs, fats targets
   meal_plan JSONB, -- 14-day meal plan data
   generation_params JSONB,
-  
+
   is_active BOOLEAN DEFAULT true,
-  
+
   UNIQUE(user_id, plan_start)
 );
 ```
 
 #### Meal Logs Table
+
 ```sql
 CREATE TABLE meal_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   logged_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   meal_date DATE,
   meal_type TEXT CHECK (meal_type IN ('breakfast', 'lunch', 'snack', 'dinner')),
-  
+
   -- Food Recognition Data
   image_url TEXT, -- Stored in Supabase Storage
   recognized_foods JSONB, -- AI recognition results
   manual_adjustments JSONB, -- User corrections
-  
+
   -- Nutritional Information
   total_calories INTEGER,
   macros JSONB, -- protein, carbs, fats
   confidence_score DECIMAL(3,2), -- AI confidence 0-1
-  
+
   -- Metadata
   recognition_method TEXT DEFAULT 'ai', -- 'ai', 'manual', 'barcode'
   processing_time_ms INTEGER
@@ -298,23 +309,24 @@ CREATE TABLE meal_logs (
 ```
 
 #### Body Analysis Table
+
 ```sql
 CREATE TABLE body_analysis (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   analysis_date DATE,
-  
+
   -- Photos
   front_photo_url TEXT,
   side_photo_url TEXT,
   back_photo_url TEXT,
-  
+
   -- AI Analysis Results
   ai_analysis JSONB, -- Body composition estimates
   confidence_scores JSONB, -- Confidence for each metric
-  
+
   -- Manual Measurements (optional)
   weight DECIMAL(5,2),
   body_fat_percentage DECIMAL(4,2),
@@ -324,18 +336,19 @@ CREATE TABLE body_analysis (
 ```
 
 #### Workout Sessions Table
+
 ```sql
 CREATE TABLE workout_sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   workout_plan_id UUID REFERENCES workout_plans(id),
-  
+
   started_at TIMESTAMP WITH TIME ZONE,
   completed_at TIMESTAMP WITH TIME ZONE,
-  
+
   planned_workout JSONB, -- Original workout plan
   actual_workout JSONB, -- What was actually completed
-  
+
   duration_minutes INTEGER,
   calories_burned INTEGER,
   completion_percentage DECIMAL(5,2),
@@ -347,6 +360,7 @@ CREATE TABLE workout_sessions (
 ### Supabase Configuration
 
 #### Row Level Security (RLS) Policies
+
 ```sql
 -- Users can only see their own data
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -362,6 +376,7 @@ CREATE POLICY "Users can insert own workout plans" ON workout_plans FOR INSERT W
 ```
 
 #### Storage Buckets
+
 ```javascript
 // Storage configuration for images
 const buckets = {
@@ -374,13 +389,14 @@ const buckets = {
     public: false,
     allowedMimeTypes: ['image/jpeg', 'image/png'],
     fileSizeLimit: 5242880, // 5MB
-  }
+  },
 };
 ```
 
 ### Edge Functions
 
 #### Food Recognition Function
+
 ```javascript
 // supabase/functions/food-recognition/index.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -390,14 +406,14 @@ const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY')!);
 Deno.serve(async (req) => {
   try {
     const { imageBase64, userPreferences } = await req.json();
-    
+
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    
+
     const prompt = `
       Analyze this food image and provide a structured response:
-      
+
       User preferences: ${JSON.stringify(userPreferences)}
-      
+
       Return a JSON object with:
       {
         "foods": [
@@ -418,7 +434,7 @@ Deno.serve(async (req) => {
         "suggestions": ["Add more vegetables", "Consider portion size"]
       }
     `;
-    
+
     const result = await model.generateContent([
       prompt,
       {
@@ -428,13 +444,13 @@ Deno.serve(async (req) => {
         }
       }
     ]);
-    
+
     const analysis = JSON.parse(result.response.text());
-    
+
     return new Response(JSON.stringify(analysis), {
       headers: { 'Content-Type': 'application/json' }
     });
-    
+
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
@@ -445,11 +461,12 @@ Deno.serve(async (req) => {
 ```
 
 #### Workout Generation Function
+
 ```javascript
 // supabase/functions/generate-workout/index.ts
 export default async function generateWorkout(req) {
   const { userProfile, preferences, currentWeek } = await req.json();
-  
+
   const prompt = `
     Generate a personalized 7-day workout plan for:
     
@@ -470,7 +487,7 @@ export default async function generateWorkout(req) {
     
     Return structured JSON with daily workouts.
   `;
-  
+
   const workout = await generateWithGemini(prompt);
   return workout;
 }
@@ -481,6 +498,7 @@ export default async function generateWorkout(req) {
 ### Gemini Flash 2.5 Integration
 
 #### Service Configuration
+
 ```javascript
 // services/ai/geminiService.js
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -488,32 +506,32 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 class GeminiService {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.EXPO_PUBLIC_GEMINI_API_KEY);
-    this.model = this.genAI.getGenerativeModel({ 
+    this.model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
-        responseMimeType: 'application/json'
-      }
+        responseMimeType: 'application/json',
+      },
     });
   }
 
   async analyzeFoodImage(imageUri, userPreferences = {}) {
     try {
       const imageBase64 = await this.convertImageToBase64(imageUri);
-      
+
       const prompt = this.buildFoodAnalysisPrompt(userPreferences);
-      
+
       const result = await this.model.generateContent([
         prompt,
         {
           inlineData: {
             data: imageBase64,
-            mimeType: 'image/jpeg'
-          }
-        }
+            mimeType: 'image/jpeg',
+          },
+        },
       ]);
 
       return JSON.parse(result.response.text());
@@ -624,7 +642,7 @@ class GeminiService {
       
       Be conservative and clearly state limitations of photo-based analysis.
     `;
-    
+
     return await this.generateStructuredResponse(prompt, photos);
   }
 
@@ -694,7 +712,7 @@ class GeminiService {
         }
       }
     `;
-    
+
     return await this.generateStructuredResponse(prompt);
   }
 
@@ -776,7 +794,7 @@ class GeminiService {
       4. Varied to prevent boredom
       5. Suitable for meal prep where possible
     `;
-    
+
     return await this.generateStructuredResponse(prompt);
   }
 }
@@ -785,6 +803,7 @@ class GeminiService {
 ### Nutrition APIs Integration
 
 #### API Router Service
+
 ```javascript
 // services/nutrition/nutritionApiRouter.js
 class NutritionApiRouter {
@@ -793,9 +812,9 @@ class NutritionApiRouter {
       fatSecret: new FatSecretAPI(),
       apiNinjas: new ApiNinjasAPI(),
       usda: new USDAFoodDataAPI(),
-      bonHappetee: new BonHappeteeAPI() // For Indian foods
+      bonHappetee: new BonHappeteeAPI(), // For Indian foods
     };
-    
+
     this.cache = new NutritionCache();
   }
 
@@ -807,7 +826,7 @@ class NutritionApiRouter {
 
     // Try APIs in order of preference
     const apiOrder = this.determineApiOrder(foodName);
-    
+
     for (const apiName of apiOrder) {
       try {
         const result = await this.apis[apiName].search(foodName, quantity);
@@ -825,8 +844,15 @@ class NutritionApiRouter {
   }
 
   determineApiOrder(foodName) {
-    const indianFoodKeywords = ['dal', 'curry', 'biryani', 'roti', 'sabzi', 'samosa'];
-    const isIndianFood = indianFoodKeywords.some(keyword => 
+    const indianFoodKeywords = [
+      'dal',
+      'curry',
+      'biryani',
+      'roti',
+      'sabzi',
+      'samosa',
+    ];
+    const isIndianFood = indianFoodKeywords.some(keyword =>
       foodName.toLowerCase().includes(keyword)
     );
 
@@ -842,30 +868,27 @@ class NutritionApiRouter {
 ## Performance Optimization
 
 ### Image Processing Optimization
+
 ```javascript
 // utils/imageProcessor.js
 class ImageProcessor {
   static async compressForAI(imageUri, maxSize = 1024) {
     const manipResult = await ImageManipulator.manipulateAsync(
       imageUri,
-      [
-        { resize: { width: maxSize } }
-      ],
+      [{ resize: { width: maxSize } }],
       {
         compress: 0.8,
         format: ImageManipulator.SaveFormat.JPEG,
       }
     );
-    
+
     return manipResult.uri;
   }
 
   static async generateThumbnail(imageUri, size = 200) {
     return await ImageManipulator.manipulateAsync(
       imageUri,
-      [
-        { resize: { width: size, height: size } }
-      ],
+      [{ resize: { width: size, height: size } }],
       {
         compress: 0.6,
         format: ImageManipulator.SaveFormat.JPEG,
@@ -876,6 +899,7 @@ class ImageProcessor {
 ```
 
 ### Caching Strategy
+
 ```javascript
 // services/cache/cacheManager.js
 class CacheManager {
@@ -913,7 +937,7 @@ class CacheManager {
   }
 
   async set(key, value, ttlSeconds = 3600) {
-    const expiry = Date.now() + (ttlSeconds * 1000);
+    const expiry = Date.now() + ttlSeconds * 1000;
     const cacheData = { value, expiry };
 
     // Store in memory cache
@@ -932,6 +956,7 @@ class CacheManager {
 ## Security Considerations
 
 ### API Key Management
+
 ```javascript
 // config/security.js
 class SecurityManager {
@@ -959,6 +984,7 @@ class SecurityManager {
 ```
 
 ### Data Privacy
+
 ```javascript
 // services/privacy/dataPrivacy.js
 class DataPrivacyManager {
@@ -986,6 +1012,7 @@ class DataPrivacyManager {
 ## Monitoring and Analytics
 
 ### Performance Monitoring
+
 ```javascript
 // services/monitoring/performanceMonitor.js
 class PerformanceMonitor {
@@ -996,14 +1023,14 @@ class PerformanceMonitor {
         const duration = performance.now() - startTime;
         this.logPerformance(operation, duration);
         return duration;
-      }
+      },
     };
   }
 
   static logPerformance(operation, duration) {
     // Log to analytics service
     console.log(`Performance: ${operation} took ${duration}ms`);
-    
+
     if (duration > this.getThreshold(operation)) {
       console.warn(`Slow operation detected: ${operation}`);
     }
@@ -1011,17 +1038,18 @@ class PerformanceMonitor {
 
   static getThreshold(operation) {
     const thresholds = {
-      'food_recognition': 5000, // 5 seconds
-      'workout_generation': 10000, // 10 seconds
-      'image_upload': 15000, // 15 seconds
+      food_recognition: 5000, // 5 seconds
+      workout_generation: 10000, // 10 seconds
+      image_upload: 15000, // 15 seconds
     };
-    
+
     return thresholds[operation] || 3000;
   }
 }
 ```
 
 ### Error Tracking
+
 ```javascript
 // services/monitoring/errorTracker.js
 class ErrorTracker {
@@ -1062,6 +1090,7 @@ class ErrorTracker {
 ## Deployment Architecture
 
 ### Environment Configuration
+
 ```javascript
 // config/environment.js
 const environments = {
@@ -1082,13 +1111,14 @@ const environments = {
     supabaseKey: 'your-prod-anon-key',
     geminiApiKey: 'your-prod-gemini-key',
     apiBaseUrl: 'https://api.fitai.app',
-  }
+  },
 };
 
 export const config = environments[process.env.NODE_ENV || 'development'];
 ```
 
 ### Build Configuration
+
 ```javascript
 // app.config.js
 export default {
@@ -1102,17 +1132,17 @@ export default {
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.fitai.app'
+      bundleIdentifier: 'com.fitai.app',
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF',
       },
       package: 'com.fitai.app',
       versionCode: 1,
@@ -1121,30 +1151,32 @@ export default {
         'READ_EXTERNAL_STORAGE',
         'WRITE_EXTERNAL_STORAGE',
         'INTERNET',
-        'ACCESS_NETWORK_STATE'
-      ]
+        'ACCESS_NETWORK_STATE',
+      ],
     },
     web: {
-      favicon: './assets/favicon.png'
+      favicon: './assets/favicon.png',
     },
     extra: {
       eas: {
-        projectId: 'your-eas-project-id'
-      }
-    }
-  }
+        projectId: 'your-eas-project-id',
+      },
+    },
+  },
 };
 ```
 
 ## Scalability Considerations
 
 ### Database Optimization
+
 - **Indexing Strategy**: Create indexes on frequently queried columns
 - **Query Optimization**: Use database views for complex queries
 - **Data Archiving**: Archive old data to maintain performance
 - **Connection Pooling**: Use Supabase connection pooling for high traffic
 
 ### API Rate Limiting
+
 ```javascript
 // services/api/rateLimiter.js
 class RateLimiter {
@@ -1153,7 +1185,7 @@ class RateLimiter {
       gemini: { calls: 1000, window: 3600 }, // 1000 calls per hour
       nutrition: { calls: 5000, window: 86400 }, // 5000 calls per day
     };
-    
+
     this.usage = new Map();
   }
 
@@ -1161,22 +1193,22 @@ class RateLimiter {
     const key = `${service}_${userId}`;
     const now = Date.now();
     const limit = this.limits[service];
-    
+
     if (!this.usage.has(key)) {
-      this.usage.set(key, { count: 0, resetTime: now + (limit.window * 1000) });
+      this.usage.set(key, { count: 0, resetTime: now + limit.window * 1000 });
     }
-    
+
     const usage = this.usage.get(key);
-    
+
     if (now > usage.resetTime) {
       usage.count = 0;
-      usage.resetTime = now + (limit.window * 1000);
+      usage.resetTime = now + limit.window * 1000;
     }
-    
+
     if (usage.count >= limit.calls) {
       throw new Error(`Rate limit exceeded for ${service}`);
     }
-    
+
     usage.count++;
     return true;
   }

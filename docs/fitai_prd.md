@@ -6,7 +6,7 @@
 **Version:** 1.0 MVP  
 **Platform:** Android (React Native with Expo)  
 **Target Market:** Universal (Primary: India)  
-**Development Approach:** UI First → Backend → AI Integration  
+**Development Approach:** UI First → Backend → AI Integration
 
 FitAI is an AI-powered fitness application that provides personalized workout plans, diet recommendations, and progress tracking through advanced computer vision and nutrition analysis.
 
@@ -25,6 +25,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Target Users
 
 ### Primary Users
+
 - **Health-conscious individuals** (18-45 years)
 - **Busy professionals** seeking efficient fitness solutions
 - **Beginners** looking for guided fitness journeys
@@ -33,18 +34,21 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ### User Personas
 
 **1. Working Professional (Priya, 28)**
+
 - Limited time for gym
 - Wants home workouts
 - Needs quick meal logging
 - Values progress tracking
 
 **2. Fitness Beginner (Raj, 24)**
+
 - New to fitness
 - Needs guidance and motivation
 - Wants to understand nutrition
 - Budget-conscious
 
 **3. Health Enthusiast (Anita, 35)**
+
 - Already active
 - Wants to optimize results
 - Interested in body composition
@@ -55,7 +59,9 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ### 1. Onboarding Flow (5 Screens)
 
 #### Screen 1: Personal Information
+
 **Required Fields:**
+
 - Name
 - Age
 - Gender
@@ -66,7 +72,9 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Activity Level (Sedentary, Lightly Active, Moderately Active, Very Active)
 
 #### Screen 2: Workout Preferences
+
 **Required Fields:**
+
 - Workout Type Preference
   - Home Workout (bodyweight, minimal equipment)
   - Gym Workout (full equipment access)
@@ -94,7 +102,9 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
   - Advanced
 
 #### Screen 3: Diet Preferences
+
 **Required Fields:**
+
 - Dietary Type
   - Vegetarian
   - Vegan
@@ -127,7 +137,9 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
   - Premium
 
 #### Screen 4: Body Analysis
+
 **Features:**
+
 - Photo capture interface
   - Front view (required)
   - Side view (required)
@@ -138,7 +150,9 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Privacy and consent information
 
 #### Screen 5: Review & Confirmation
+
 **Features:**
+
 - Summary of all entered information
 - Edit options for each section
 - Terms and conditions
@@ -148,26 +162,31 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ### 2. Main Application Interface
 
 #### Bottom Navigation
+
 - **Home** (Dashboard)
-- **Workout** 
+- **Workout**
 - **Diet**
 - **Profile**
 - **"+" Icon** (Quick Actions Menu)
 
 #### Home Screen (Dashboard)
+
 **Quick Stats Section:**
+
 - Current date and greeting
 - Daily calorie intake progress (consumed/target)
 - Today's workout status (completed/pending)
 - Weekly progress overview
 
 **Quick Actions:**
+
 - "Log Meal" (camera icon)
 - "Start Today's Workout"
 - "Log Water Intake"
 - "Body Check-in" (photo)
 
 **Daily Overview Cards:**
+
 - Diet Status
   - Breakfast (logged/pending)
   - Lunch (logged/pending)
@@ -181,18 +200,22 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
   - Next workout preview
 
 **Weekly Progress:**
+
 - Weight tracking graph
 - Workout completion rate
 - Calorie intake trends
 
 #### Workout Screen
+
 **Top Section:**
+
 - Current week view (7 days)
 - Today highlighted
 - Next workout day visible
 - Week navigation (swipe/arrows)
 
 **Today's Workout:**
+
 - Workout name and type
 - Estimated duration
 - Exercise count
@@ -200,19 +223,23 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - "Start Workout" CTA
 
 **Workout Details:**
+
 - Exercise list with preview images
 - Sets and reps information
 - Rest time between exercises
 - Alternative exercises (if applicable)
 
 **Weekly Overview:**
+
 - 7-day workout schedule
 - Completed workouts marked
 - Rest days indicated
 - Progress tracking
 
 #### Diet Screen
+
 **Today's Meals:**
+
 - Breakfast section
 - Lunch section
 - Snack section (if applicable)
@@ -220,12 +247,14 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Each with "Log Meal" option
 
 **Nutrition Tracking:**
+
 - Daily calorie intake progress bar
 - Macronutrient breakdown (protein, carbs, fats)
 - Water intake tracker
 - Micronutrient highlights
 
 **Meal Logging:**
+
 - Camera capture for food images
 - AI-powered food recognition
 - Manual food search and selection
@@ -233,25 +262,30 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Custom meal creation
 
 **Diet Plan:**
+
 - 14-day meal suggestions
 - Meal swapping options
 - Shopping list generation
 - Recipe details and instructions
 
 #### Profile Screen
+
 **User Information:**
+
 - Profile photo
 - Current stats (weight, BMI)
 - Goal progress
 - Achievements/badges
 
 **Progress Tracking:**
+
 - Body photos timeline
 - Weight/measurement graphs
 - Workout completion stats
 - Diet adherence metrics
 
 **Settings:**
+
 - Account settings
 - Notification preferences
 - Units (metric/imperial)
@@ -259,6 +293,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Help and support
 
 ### 3. Plus Menu (Quick Actions)
+
 - **Body Analysis**: Take new progress photos
 - **Progress Photos**: View body transformation timeline
 - **Meal Planning**: AI-generated meal suggestions
@@ -270,16 +305,18 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Technical Requirements
 
 ### Platform Specifications
+
 - **Framework**: React Native with Expo Managed Workflow
 - **Minimum Android Version**: Android 8.0 (API level 26)
 - **Target Android Version**: Android 14 (API level 34)
-- **Device Requirements**: 
+- **Device Requirements**:
   - 3GB RAM minimum
   - 2GB storage space
   - Camera access
   - Internet connectivity (for initial setup and sync)
 
 ### Performance Requirements
+
 - **App Launch Time**: < 3 seconds
 - **Image Processing**: < 5 seconds for food recognition
 - **Offline Functionality**: Core features work without internet
@@ -287,6 +324,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - **Battery Optimization**: Minimal background activity
 
 ### AI Integration Requirements
+
 - **Primary AI Model**: Google Gemini Flash 2.5
 - **Food Recognition**: 80%+ accuracy target
 - **Body Analysis**: Basic composition estimation
@@ -294,12 +332,13 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - **Diet Planning**: Region-specific meal recommendations
 
 ### Data Storage Requirements
-- **Local Storage**: 
+
+- **Local Storage**:
   - User preferences and settings
   - Generated workout plans (1 week)
   - Generated diet plans (2 weeks)
   - Cached food database
-- **Cloud Storage**: 
+- **Cloud Storage**:
   - User progress data
   - Body photos (encrypted)
   - Workout completion history
@@ -308,18 +347,21 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## User Experience Requirements
 
 ### Onboarding Experience
+
 - **Completion Time**: 5-7 minutes
 - **Progress Indication**: Clear step indicators
 - **Skip Options**: Allow users to complete later (with limitations)
 - **Data Validation**: Real-time validation with helpful error messages
 
 ### Core App Experience
+
 - **Navigation**: Intuitive bottom tab navigation
 - **Loading States**: Smooth transitions and loading indicators
 - **Offline Messaging**: Clear indication of offline mode
 - **Error Handling**: Graceful error handling with retry options
 
 ### Accessibility Requirements
+
 - **Screen Reader Support**: VoiceOver/TalkBack compatibility
 - **Color Contrast**: WCAG 2.1 AA compliance
 - **Font Sizing**: Scalable text for visually impaired users
@@ -328,6 +370,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Business Requirements
 
 ### Monetization Strategy (Future)
+
 - **Freemium Model**: Core features free, premium features paid
 - **Premium Features** (Phase 2):
   - Advanced body analysis
@@ -337,12 +380,14 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
   - Export data capabilities
 
 ### Analytics Requirements
+
 - **User Engagement**: Daily/weekly active users
 - **Feature Adoption**: Onboarding completion rate, feature usage
 - **Performance Metrics**: App performance, error rates
 - **User Feedback**: In-app rating and feedback system
 
 ### Privacy & Security
+
 - **Data Protection**: GDPR/CCPA compliance
 - **Photo Storage**: Encrypted storage with user consent
 - **Data Retention**: User-controlled data deletion
@@ -351,15 +396,17 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Success Metrics
 
 ### Primary KPIs
+
 - **User Retention**: 70% Day 7, 40% Day 30
 - **Onboarding Completion**: 80% completion rate
 - **Daily Engagement**: 60% daily active users among weekly actives
-- **Feature Adoption**: 
+- **Feature Adoption**:
   - Meal logging: 70% of users
   - Workout completion: 60% of users
   - Body photo tracking: 40% of users
 
 ### Secondary KPIs
+
 - **App Store Rating**: 4.5+ stars
 - **User-Generated Content**: Photos, meal logs, workout completions
 - **Referral Rate**: 15% of users refer others
@@ -368,6 +415,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Development Timeline
 
 ### Phase 1: UI Development (4-6 weeks)
+
 - Onboarding flow implementation
 - Main app interface development
 - Basic navigation and state management
@@ -375,6 +423,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - UI/UX testing and refinement
 
 ### Phase 2: Backend Integration (3-4 weeks)
+
 - Supabase setup and configuration
 - Database schema implementation
 - User authentication system
@@ -382,6 +431,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - API endpoints for CRUD operations
 
 ### Phase 3: AI Integration (4-5 weeks)
+
 - Gemini Flash 2.5 integration
 - Food recognition implementation
 - Body analysis features
@@ -389,6 +439,7 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 - Nutrition API integration
 
 ### Phase 4: Testing & Optimization (2-3 weeks)
+
 - End-to-end testing
 - Performance optimization
 - Bug fixes and refinements
@@ -400,18 +451,21 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Risk Assessment
 
 ### Technical Risks
+
 - **AI Accuracy**: Food recognition may not meet accuracy targets
 - **API Limitations**: Free tier limitations of external APIs
 - **Performance**: Image processing may be slow on older devices
 - **Offline Sync**: Complex data synchronization challenges
 
 ### Business Risks
+
 - **Market Competition**: Established players with more resources
 - **User Adoption**: Difficulty in acquiring initial user base
 - **Retention**: Users may lose interest after initial enthusiasm
 - **Monetization**: Challenges in converting free users to paid
 
 ### Mitigation Strategies
+
 - **MVP Approach**: Start with core features, iterate based on feedback
 - **Performance Testing**: Regular testing on various device configurations
 - **User Research**: Continuous user feedback and feature validation
@@ -420,18 +474,21 @@ To create a comprehensive, AI-driven fitness companion that makes healthy living
 ## Future Roadmap
 
 ### Version 1.1 (3 months post-launch)
+
 - iOS version development
 - Social features (friend connections, challenges)
 - Advanced progress analytics
 - Integration with wearable devices
 
 ### Version 1.2 (6 months post-launch)
+
 - Premium subscription features
 - Personal trainer marketplace
 - Advanced meal planning with shopping lists
 - Community features and user-generated content
 
 ### Version 2.0 (12 months post-launch)
+
 - AI-powered personal coaching
 - AR-based workout form correction
 - Advanced body composition analysis

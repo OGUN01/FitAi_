@@ -21,19 +21,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "src/**/*",
-    "App.tsx",
-    "index.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    ".expo",
-    "ios",
-    "android"
-  ]
+  "include": ["src/**/*", "App.tsx", "index.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "build", ".expo", "ios", "android"]
 }

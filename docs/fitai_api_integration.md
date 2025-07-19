@@ -9,6 +9,7 @@ This document covers the integration of AI services (primarily Google Gemini Fla
 ### Google Gemini Flash 2.5 Integration
 
 #### Service Configuration
+
 ```typescript
 // services/ai/geminiService.ts
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -25,27 +26,27 @@ export class GeminiService {
   constructor() {
     const apiKey = ConfigService.get('GEMINI_API_KEY');
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.model = this.genAI.getGenerativeModel({ 
+    this.model = this.genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
       generationConfig: {
         temperature: 0.3, // Lower for consistent nutrition analysis
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
-        responseMimeType: 'application/json'
-      }
+        responseMimeType: 'application/json',
+      },
     });
-    
+
     this.rateLimiter = new RateLimiter({
       maxRequests: 1000,
       timeWindow: 3600000, // 1 hour
     });
-    
+
     this.cache = new CacheService();
   }
 
   async analyzeFoodImage(
-    imageUri: string, 
+    imageUri: string,
     userContext: UserContext
   ): Promise<FoodAnalysisResult> {
     try {
@@ -61,10 +62,10 @@ export class GeminiService {
 
       // Prepare image for analysis
       const imageBase64 = await this.prepareImageForAI(imageUri);
-      
+
       // Generate analysis prompt
       const prompt = this.buildFoodAnalysisPrompt(userContext);
-      
+
       // Call Gemini API
       const startTime = performance.now();
       const result = await this.model.generateContent([
@@ -72,19 +73,19 @@ export class GeminiService {
         {
           inlineData: {
             data: imageBase64,
-            mimeType: 'image/jpeg'
-          }
-        }
+            mimeType: 'image/jpeg',
+          },
+        },
       ]);
 
       const processingTime = performance.now() - startTime;
-      
+
       // Parse and validate response
       const analysis = this.parseAndValidateResponse(result.response.text());
-      
+
       // Enhance with external nutrition data
       const enhancedAnalysis = await this.enhanceWithNutritionAPIs(analysis);
-      
+
       // Add metadata
       enhancedAnalysis.metadata = {
         processingTimeMs: processingTime,
@@ -95,13 +96,12 @@ export class GeminiService {
 
       // Cache result
       await this.cache.set(
-        `food_analysis_${cacheKey}`, 
-        enhancedAnalysis, 
+        `food_analysis_${cacheKey}`,
+        enhancedAnalysis,
         3600 // 1 hour cache
       );
 
       return enhancedAnalysis;
-      
     } catch (error) {
       console.error('Food analysis failed:', error);
       throw new AIServiceError('Failed to analyze food image', error);
@@ -196,7 +196,7 @@ export class GeminiService {
   ): Promise<BodyAnalysisResult> {
     try {
       const prompt = this.buildBodyAnalysisPrompt(previousAnalysis);
-      
+
       const imageParts = await Promise.all([
         photos.front ? this.prepareImageForAI(photos.front) : null,
         photos.side ? this.prepareImageForAI(photos.side) : null,
@@ -205,14 +205,12 @@ export class GeminiService {
 
       const content = [
         prompt,
-        ...imageParts
-          .filter(Boolean)
-          .map((imageBase64, index) => ({
-            inlineData: {
-              data: imageBase64,
-              mimeType: 'image/jpeg'
-            }
-          }))
+        ...imageParts.filter(Boolean).map((imageBase64, index) => ({
+          inlineData: {
+            data: imageBase64,
+            mimeType: 'image/jpeg',
+          },
+        })),
       ];
 
       const result = await this.model.generateContent(content);
@@ -283,14 +281,18 @@ export class GeminiService {
     preferences: WorkoutPreferences
   ): Promise<WorkoutPlan> {
     try {
-      const prompt = this.buildWorkoutGenerationPrompt(userProfile, preferences);
-      
+      const prompt = this.buildWorkoutGenerationPrompt(
+        userProfile,
+        preferences
+      );
+
       const result = await this.model.generateContent(prompt);
       const workoutPlan = this.parseAndValidateResponse(result.response.text());
-      
+
       // Validate exercises against our database
-      const validatedPlan = await this.validateAndEnhanceWorkoutPlan(workoutPlan);
-      
+      const validatedPlan =
+        await this.validateAndEnhanceWorkoutPlan(workoutPlan);
+
       return validatedPlan;
     } catch (error) {
       console.error('Workout generation failed:', error);
@@ -304,13 +306,14 @@ export class GeminiService {
   ): Promise<DietPlan> {
     try {
       const prompt = this.buildDietGenerationPrompt(userProfile, preferences);
-      
+
       const result = await this.model.generateContent(prompt);
       const dietPlan = this.parseAndValidateResponse(result.response.text());
-      
+
       // Enhance with accurate nutrition data
-      const enhancedPlan = await this.enhanceDietPlanWithNutritionData(dietPlan);
-      
+      const enhancedPlan =
+        await this.enhanceDietPlanWithNutritionData(dietPlan);
+
       return enhancedPlan;
     } catch (error) {
       console.error('Diet generation failed:', error);
@@ -324,21 +327,21 @@ export class GeminiService {
     const compressedUri = await ImageProcessor.compressForAI(imageUri, {
       maxWidth: 1024,
       maxHeight: 1024,
-      quality: 0.8
+      quality: 0.8,
     });
-    
+
     return await FileService.convertToBase64(compressedUri);
   }
 
   private parseAndValidateResponse(responseText: string): any {
     try {
       const parsed = JSON.parse(responseText);
-      
+
       // Validate required fields
       if (!this.validateResponseStructure(parsed)) {
         throw new Error('Invalid response structure from AI');
       }
-      
+
       return parsed;
     } catch (error) {
       console.error('Failed to parse AI response:', responseText);
@@ -356,6 +359,7 @@ export class GeminiService {
 ### External Nutrition APIs Integration
 
 #### Multi-API Router Service
+
 ```typescript
 // services/nutrition/nutritionApiRouter.ts
 import { FatSecretAPI } from './providers/fatSecretAPI';
@@ -399,7 +403,7 @@ export class NutritionApiRouter {
   private apis: Record<string, any>;
   private cache: NutritionCache;
   private healthMonitor: ApiHealthMonitor;
-  
+
   constructor() {
     this.apis = {
       fatSecret: new FatSecretAPI(),
@@ -408,15 +412,17 @@ export class NutritionApiRouter {
       bonHappetee: new BonHappeteeAPI(),
       indianDB: new IndianFoodDatabaseAPI(),
     };
-    
+
     this.cache = new NutritionCache();
     this.healthMonitor = new ApiHealthMonitor();
   }
 
-  async getNutritionData(query: NutritionQuery): Promise<NutritionResult | null> {
+  async getNutritionData(
+    query: NutritionQuery
+  ): Promise<NutritionResult | null> {
     // Generate cache key
     const cacheKey = this.generateCacheKey(query);
-    
+
     // Check cache first
     const cached = await this.cache.get(cacheKey);
     if (cached && this.isCacheValid(cached)) {
@@ -425,30 +431,29 @@ export class NutritionApiRouter {
 
     // Determine API priority order
     const apiOrder = this.determineApiPriority(query);
-    
+
     // Try APIs in order
     for (const apiName of apiOrder) {
       try {
         const api = this.apis[apiName];
-        
+
         // Check API health
-        if (!await this.healthMonitor.isHealthy(apiName)) {
+        if (!(await this.healthMonitor.isHealthy(apiName))) {
           console.warn(`${apiName} is unhealthy, skipping`);
           continue;
         }
 
         const result = await this.callApiWithTimeout(api, query, 10000); // 10s timeout
-        
+
         if (result && this.validateNutritionResult(result)) {
           // Cache successful result
           await this.cache.set(cacheKey, result, this.getCacheTTL(apiName));
-          
+
           // Update API health metrics
           this.healthMonitor.recordSuccess(apiName);
-          
+
           return result;
         }
-        
       } catch (error) {
         console.warn(`${apiName} failed for query:`, query, error.message);
         this.healthMonitor.recordFailure(apiName, error);
@@ -462,21 +467,35 @@ export class NutritionApiRouter {
 
   private determineApiPriority(query: NutritionQuery): string[] {
     const { foodName, cuisineType } = query;
-    
+
     // Indian food keywords
     const indianKeywords = [
-      'dal', 'curry', 'biryani', 'roti', 'sabzi', 'samosa', 'dosa', 'idli',
-      'chapati', 'paratha', 'rajma', 'chole', 'paneer', 'masala', 'tadka'
+      'dal',
+      'curry',
+      'biryani',
+      'roti',
+      'sabzi',
+      'samosa',
+      'dosa',
+      'idli',
+      'chapati',
+      'paratha',
+      'rajma',
+      'chole',
+      'paneer',
+      'masala',
+      'tadka',
     ];
-    
+
     // Check if it's likely Indian food
-    const isIndianFood = indianKeywords.some(keyword => 
-      foodName.toLowerCase().includes(keyword)
-    ) || cuisineType?.toLowerCase().includes('indian');
-    
+    const isIndianFood =
+      indianKeywords.some(keyword =>
+        foodName.toLowerCase().includes(keyword)
+      ) || cuisineType?.toLowerCase().includes('indian');
+
     // Branded food indicators
     const hasBrandIndicators = query.brandName || query.barcode;
-    
+
     if (isIndianFood) {
       return ['bonHappetee', 'indianDB', 'fatSecret', 'apiNinjas', 'usda'];
     } else if (hasBrandIndicators) {
@@ -486,13 +505,18 @@ export class NutritionApiRouter {
     }
   }
 
-  private async callApiWithTimeout(api: any, query: NutritionQuery, timeout: number): Promise<any> {
+  private async callApiWithTimeout(
+    api: any,
+    query: NutritionQuery,
+    timeout: number
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('API timeout'));
       }, timeout);
 
-      api.search(query)
+      api
+        .search(query)
         .then((result: any) => {
           clearTimeout(timer);
           resolve(result);
@@ -520,7 +544,7 @@ export class NutritionApiRouter {
       quantity: query.quantity || '100g',
       brand: query.brandName?.toLowerCase().trim(),
     };
-    
+
     return `nutrition_${btoa(JSON.stringify(normalized))}`;
   }
 
@@ -539,13 +563,14 @@ export class NutritionApiRouter {
       bonHappetee: 86400, // 24 hours
       indianDB: 604800, // 7 days (static database)
     };
-    
+
     return ttls[apiName] || 43200;
   }
 }
 ```
 
 #### FatSecret API Implementation
+
 ```typescript
 // services/nutrition/providers/fatSecretAPI.ts
 import { BaseNutritionAPI } from './baseNutritionAPI';
@@ -554,7 +579,7 @@ import { RateLimiter } from '../../utils/rateLimiter';
 export class FatSecretAPI extends BaseNutritionAPI {
   private rateLimiter: RateLimiter;
   private baseUrl = 'https://platform.fatsecret.com/rest/server.api';
-  
+
   constructor() {
     super();
     this.rateLimiter = new RateLimiter({
@@ -566,10 +591,10 @@ export class FatSecretAPI extends BaseNutritionAPI {
   async search(query: NutritionQuery): Promise<NutritionResult | null> {
     try {
       await this.rateLimiter.checkLimit('fatsecret');
-      
+
       // Search for food
       const searchResults = await this.searchFoods(query.foodName);
-      
+
       if (!searchResults || searchResults.length === 0) {
         return null;
       }
@@ -577,9 +602,8 @@ export class FatSecretAPI extends BaseNutritionAPI {
       // Get detailed nutrition for best match
       const bestMatch = this.findBestMatch(searchResults, query);
       const nutrition = await this.getFoodNutrition(bestMatch.food_id);
-      
+
       return this.formatResult(nutrition, query);
-      
     } catch (error) {
       console.error('FatSecret API error:', error);
       return null;
@@ -595,7 +619,7 @@ export class FatSecretAPI extends BaseNutritionAPI {
 
     const response = await fetch(`${this.baseUrl}?${params}`, {
       headers: {
-        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_FATSECRET_TOKEN}`,
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_FATSECRET_TOKEN}`,
       },
     });
 
@@ -616,7 +640,7 @@ export class FatSecretAPI extends BaseNutritionAPI {
 
     const response = await fetch(`${this.baseUrl}?${params}`, {
       headers: {
-        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_FATSECRET_TOKEN}`,
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_FATSECRET_TOKEN}`,
       },
     });
 
@@ -630,18 +654,18 @@ export class FatSecretAPI extends BaseNutritionAPI {
   private findBestMatch(results: any[], query: NutritionQuery): any {
     // Simple matching algorithm - can be enhanced
     const searchTerms = query.foodName.toLowerCase().split(' ');
-    
+
     return results.reduce((best, current) => {
       const currentName = current.food_name.toLowerCase();
       const currentScore = searchTerms.reduce((score, term) => {
         return score + (currentName.includes(term) ? 1 : 0);
       }, 0);
-      
+
       const bestName = best.food_name?.toLowerCase() || '';
       const bestScore = searchTerms.reduce((score, term) => {
         return score + (bestName.includes(term) ? 1 : 0);
       }, 0);
-      
+
       return currentScore > bestScore ? current : best;
     }, results[0]);
   }
@@ -649,7 +673,7 @@ export class FatSecretAPI extends BaseNutritionAPI {
   private formatResult(nutrition: any, query: NutritionQuery): NutritionResult {
     const servings = nutrition.food.servings.serving;
     const serving = Array.isArray(servings) ? servings[0] : servings;
-    
+
     return {
       food: {
         name: nutrition.food.food_name,
@@ -674,6 +698,7 @@ export class FatSecretAPI extends BaseNutritionAPI {
 ```
 
 #### API Ninjas Implementation
+
 ```typescript
 // services/nutrition/providers/apiNinjasAPI.ts
 import { BaseNutritionAPI } from './baseNutritionAPI';
@@ -681,7 +706,7 @@ import { BaseNutritionAPI } from './baseNutritionAPI';
 export class ApiNinjasAPI extends BaseNutritionAPI {
   private apiKey: string;
   private baseUrl = 'https://api.api-ninjas.com/v1/nutrition';
-  
+
   constructor() {
     super();
     this.apiKey = process.env.EXPO_PUBLIC_API_NINJAS_KEY!;
@@ -690,25 +715,27 @@ export class ApiNinjasAPI extends BaseNutritionAPI {
   async search(query: NutritionQuery): Promise<NutritionResult | null> {
     try {
       const searchQuery = this.buildSearchQuery(query);
-      
-      const response = await fetch(`${this.baseUrl}?query=${encodeURIComponent(searchQuery)}`, {
-        headers: {
-          'X-Api-Key': this.apiKey,
-        },
-      });
+
+      const response = await fetch(
+        `${this.baseUrl}?query=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            'X-Api-Key': this.apiKey,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`API Ninjas failed: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (!data || data.length === 0) {
         return null;
       }
 
       return this.formatResult(data[0], query);
-      
     } catch (error) {
       console.error('API Ninjas error:', error);
       return null;
@@ -717,11 +744,11 @@ export class ApiNinjasAPI extends BaseNutritionAPI {
 
   private buildSearchQuery(query: NutritionQuery): string {
     let searchQuery = query.foodName;
-    
+
     if (query.quantity) {
       searchQuery = `${query.quantity} ${searchQuery}`;
     }
-    
+
     return searchQuery;
   }
 
@@ -749,13 +776,13 @@ export class ApiNinjasAPI extends BaseNutritionAPI {
 ```
 
 #### Indian Food Database API
+
 ```typescript
 // services/nutrition/providers/indianFoodDatabaseAPI.ts
 import { BaseNutritionAPI } from './baseNutritionAPI';
 import { supabase } from '../../../config/supabase';
 
 export class IndianFoodDatabaseAPI extends BaseNutritionAPI {
-  
   async search(query: NutritionQuery): Promise<NutritionResult | null> {
     try {
       // Search in local Indian food database
@@ -774,7 +801,6 @@ export class IndianFoodDatabaseAPI extends BaseNutritionAPI {
 
       const bestMatch = this.findBestMatch(data, query);
       return this.formatResult(bestMatch, query);
-      
     } catch (error) {
       console.error('Indian Food DB error:', error);
       return null;
@@ -784,34 +810,34 @@ export class IndianFoodDatabaseAPI extends BaseNutritionAPI {
   private findBestMatch(results: any[], query: NutritionQuery): any {
     // Implement fuzzy matching for Indian food names
     const searchTerms = query.foodName.toLowerCase().split(' ');
-    
+
     return results.reduce((best, current) => {
       const currentName = current.name.toLowerCase();
       const currentScore = this.calculateMatchScore(currentName, searchTerms);
-      
+
       const bestName = best.name?.toLowerCase() || '';
       const bestScore = this.calculateMatchScore(bestName, searchTerms);
-      
+
       return currentScore > bestScore ? current : best;
     }, results[0]);
   }
 
   private calculateMatchScore(name: string, searchTerms: string[]): number {
     let score = 0;
-    
+
     searchTerms.forEach(term => {
       if (name.includes(term)) {
         score += term.length; // Longer matching terms get higher scores
       }
     });
-    
+
     return score;
   }
 
   private formatResult(food: any, query: NutritionQuery): NutritionResult {
     const quantity = this.parseQuantity(query.quantity || '100g');
     const multiplier = quantity / 100; // Database values are per 100g
-    
+
     return {
       food: {
         name: food.name,
@@ -819,14 +845,16 @@ export class IndianFoodDatabaseAPI extends BaseNutritionAPI {
         calories: Math.round(food.calories_per_100g * multiplier),
         macros: {
           protein: Math.round(food.protein_g * multiplier * 10) / 10,
-          carbohydrates: Math.round(food.carbohydrates_g * multiplier * 10) / 10,
+          carbohydrates:
+            Math.round(food.carbohydrates_g * multiplier * 10) / 10,
           fats: Math.round(food.fats_g * multiplier * 10) / 10,
           fiber: Math.round(food.fiber_g * multiplier * 10) / 10,
           sugar: Math.round(food.sugar_g * multiplier * 10) / 10,
           sodium: Math.round(food.sodium_mg * multiplier),
         },
-        micronutrients: food.micronutrients ? 
-          this.scaleNutrients(food.micronutrients, multiplier) : undefined,
+        micronutrients: food.micronutrients
+          ? this.scaleNutrients(food.micronutrients, multiplier)
+          : undefined,
       },
       confidence: 0.9, // High confidence for verified local data
       source: 'indian_food_db',
@@ -837,40 +865,44 @@ export class IndianFoodDatabaseAPI extends BaseNutritionAPI {
   private parseQuantity(quantityStr: string): number {
     // Parse quantity strings like "1 cup", "150g", "2 pieces"
     const match = quantityStr.match(/(\d+(?:\.\d+)?)\s*(\w+)/);
-    
+
     if (!match) return 100; // Default to 100g
-    
+
     const [, amount, unit] = match;
     const numAmount = parseFloat(amount);
-    
+
     // Convert common units to grams (approximate)
     const unitConversions = {
-      'g': 1,
-      'kg': 1000,
-      'cup': 240, // Varies by food, but rough average
-      'piece': 50, // Very rough estimate
-      'slice': 30,
-      'tbsp': 15,
-      'tsp': 5,
+      g: 1,
+      kg: 1000,
+      cup: 240, // Varies by food, but rough average
+      piece: 50, // Very rough estimate
+      slice: 30,
+      tbsp: 15,
+      tsp: 5,
     };
-    
+
     const conversion = unitConversions[unit.toLowerCase()] || 100;
     return numAmount * conversion;
   }
 
-  private scaleNutrients(nutrients: Record<string, number>, multiplier: number): Record<string, number> {
+  private scaleNutrients(
+    nutrients: Record<string, number>,
+    multiplier: number
+  ): Record<string, number> {
     const scaled: Record<string, number> = {};
-    
+
     for (const [key, value] of Object.entries(nutrients)) {
       scaled[key] = Math.round(value * multiplier * 10) / 10;
     }
-    
+
     return scaled;
   }
 }
 ```
 
 ### AI Enhancement Service
+
 ```typescript
 // services/ai/aiEnhancementService.ts
 import { GeminiService } from './geminiService';
@@ -922,11 +954,12 @@ export class AIEnhancementService {
       const totalNutrition = this.calculateTotalNutrition(enhancedFoods);
 
       // Generate personalized recommendations
-      const personalizedRecommendations = await this.generatePersonalizedRecommendations(
-        enhancedFoods,
-        totalNutrition,
-        userContext
-      );
+      const personalizedRecommendations =
+        await this.generatePersonalizedRecommendations(
+          enhancedFoods,
+          totalNutrition,
+          userContext
+        );
 
       return {
         ...initialAnalysis,
@@ -945,7 +978,6 @@ export class AIEnhancementService {
           ),
         },
       };
-
     } catch (error) {
       console.error('Enhancement failed:', error);
       return initialAnalysis; // Return original if enhancement fails
@@ -982,9 +1014,8 @@ export class AIEnhancementService {
 
       const result = await this.gemini.model.generateContent(prompt);
       const recommendations = JSON.parse(result.response.text());
-      
+
       return Array.isArray(recommendations) ? recommendations : [];
-      
     } catch (error) {
       console.error('Failed to generate personalized recommendations:', error);
       return [
@@ -996,32 +1027,51 @@ export class AIEnhancementService {
   }
 
   private calculateTotalNutrition(foods: any[]): any {
-    return foods.reduce((total, food) => ({
-      calories: total.calories + (food.calories || 0),
-      macros: {
-        protein: total.macros.protein + (food.macros?.protein || 0),
-        carbohydrates: total.macros.carbohydrates + (food.macros?.carbohydrates || 0),
-        fats: total.macros.fats + (food.macros?.fats || 0),
-        fiber: total.macros.fiber + (food.macros?.fiber || 0),
-        sugar: total.macros.sugar + (food.macros?.sugar || 0),
-        sodium: total.macros.sodium + (food.macros?.sodium || 0),
+    return foods.reduce(
+      (total, food) => ({
+        calories: total.calories + (food.calories || 0),
+        macros: {
+          protein: total.macros.protein + (food.macros?.protein || 0),
+          carbohydrates:
+            total.macros.carbohydrates + (food.macros?.carbohydrates || 0),
+          fats: total.macros.fats + (food.macros?.fats || 0),
+          fiber: total.macros.fiber + (food.macros?.fiber || 0),
+          sugar: total.macros.sugar + (food.macros?.sugar || 0),
+          sodium: total.macros.sodium + (food.macros?.sodium || 0),
+        },
+      }),
+      {
+        calories: 0,
+        macros: {
+          protein: 0,
+          carbohydrates: 0,
+          fats: 0,
+          fiber: 0,
+          sugar: 0,
+          sodium: 0,
+        },
       }
-    }), {
-      calories: 0,
-      macros: { protein: 0, carbohydrates: 0, fats: 0, fiber: 0, sugar: 0, sodium: 0 }
-    });
+    );
   }
 
-  private calculateConfidenceImprovement(originalFoods: any[], enhancedFoods: any[]): number {
-    const originalAvg = originalFoods.reduce((sum, f) => sum + f.confidence, 0) / originalFoods.length;
-    const enhancedAvg = enhancedFoods.reduce((sum, f) => sum + f.confidence, 0) / enhancedFoods.length;
-    
+  private calculateConfidenceImprovement(
+    originalFoods: any[],
+    enhancedFoods: any[]
+  ): number {
+    const originalAvg =
+      originalFoods.reduce((sum, f) => sum + f.confidence, 0) /
+      originalFoods.length;
+    const enhancedAvg =
+      enhancedFoods.reduce((sum, f) => sum + f.confidence, 0) /
+      enhancedFoods.length;
+
     return Math.round((enhancedAvg - originalAvg) * 100) / 100;
   }
 }
 ```
 
 ### Error Handling & Resilience
+
 ```typescript
 // services/ai/errorHandling.ts
 export class AIServiceError extends Error {
@@ -1042,23 +1092,23 @@ export class APIRetryService {
     delayMs: number = 1000
   ): Promise<T> {
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt === maxRetries || !this.isRetryableError(error)) {
           throw error;
         }
-        
+
         // Exponential backoff
         const delay = delayMs * Math.pow(2, attempt - 1);
         await this.sleep(delay);
       }
     }
-    
+
     throw lastError!;
   }
 
@@ -1069,7 +1119,7 @@ export class APIRetryService {
       error.message?.includes('timeout') ||
       error.status === 429 || // Rate limit
       error.status === 503 || // Service unavailable
-      error.status === 502    // Bad gateway
+      error.status === 502 // Bad gateway
     );
   }
 
@@ -1080,6 +1130,7 @@ export class APIRetryService {
 ```
 
 ### Performance Monitoring
+
 ```typescript
 // services/monitoring/performanceMonitor.ts
 export class AIPerformanceMonitor {
@@ -1111,19 +1162,23 @@ export class AIPerformanceMonitor {
 
   getMetrics(operation: string) {
     const records = this.metrics.get(operation) || [];
-    
+
     if (records.length === 0) {
       return null;
     }
 
     const successful = records.filter(r => r.success);
     const failed = records.filter(r => !r.success);
-    
+
     return {
       totalRequests: records.length,
       successRate: successful.length / records.length,
-      averageDuration: successful.reduce((sum, r) => sum + r.duration, 0) / successful.length,
-      p95Duration: this.calculatePercentile(successful.map(r => r.duration), 0.95),
+      averageDuration:
+        successful.reduce((sum, r) => sum + r.duration, 0) / successful.length,
+      p95Duration: this.calculatePercentile(
+        successful.map(r => r.duration),
+        0.95
+      ),
       recentFailures: failed.slice(-5),
     };
   }

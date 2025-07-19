@@ -1,5 +1,5 @@
 ---
-type: "manual"
+type: 'manual'
 ---
 
 # FitAI - Mandatory Code Review Checklist
@@ -9,20 +9,20 @@ This checklist must be completed for every pull request. Failure to meet any of 
 ## Phase 1: Confidence & Planning Verification
 
 - [ ] **100% Confidence Declaration:** Is a complete and valid declaration present in the PR description or linked task?
-    - [ ] Root Cause Identified?
-    - [ ] Precise Location Specified?
-    - [ ] Exact Solution Defined?
-    - [ ] Verification Plan Included?
-    - [ ] Success Criteria Measurable?
+  - [ ] Root Cause Identified?
+  - [ ] Precise Location Specified?
+  - [ ] Exact Solution Defined?
+  - [ ] Verification Plan Included?
+  - [ ] Success Criteria Measurable?
 - [ ] **Evidence Provided:** Does the PR link to or include the evidence (logs, screenshots, network traces) that led to the root cause analysis?
 
 ## Phase 2: Implementation & Code Quality
 
 - [ ] **Adherence to Solution:** Does the implemented code exactly match the proposed solution in the confidence declaration?
 - [ ] **Coding Standards:** Does the code adhere to all rules in `coding-standards.md`?
-    - [ ] No `any` types without justification?
-    - [ ] Correct formatting (ESLint/Prettier pass)?
-    - [ ] Proper naming conventions?
+  - [ ] No `any` types without justification?
+  - [ ] Correct formatting (ESLint/Prettier pass)?
+  - [ ] Proper naming conventions?
 - [ ] **Error Handling:** Is all asynchronous code and potential failure point (e.g., JSON parsing) wrapped in robust `try...catch` blocks?
 - [ ] **Security:** Are there any hardcoded secrets? Is user input handled safely?
 - [ ] **Performance:** Are there any obvious performance bottlenecks (e.g., re-renders in loops, inefficient data processing)?

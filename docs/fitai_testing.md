@@ -7,6 +7,7 @@ This document outlines the comprehensive testing strategy for FitAI, covering un
 ## Testing Architecture
 
 ### Testing Stack
+
 - **Unit Testing**: Jest + React Native Testing Library
 - **Component Testing**: React Native Testing Library
 - **API Testing**: Jest + Supertest
@@ -16,6 +17,7 @@ This document outlines the comprehensive testing strategy for FitAI, covering un
 - **AI Testing**: Custom AI accuracy testing framework
 
 ### Test Environment Setup
+
 ```bash
 # Install testing dependencies
 npm install --save-dev \
@@ -37,43 +39,42 @@ npm install --save-dev \
 ## Unit Testing
 
 ### Jest Configuration
+
 ```javascript
 // jest.config.js
 module.exports = {
   preset: 'react-native',
   setupFilesAfterEnv: [
     '@testing-library/jest-native/extend-expect',
-    '<rootDir>/src/tests/setup.ts'
+    '<rootDir>/src/tests/setup.ts',
   ],
-  testPathIgnorePatterns: [
-    '<rootDir>/node_modules/',
-    '<rootDir>/e2e/'
-  ],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/tests/**',
     '!src/**/__tests__/**',
-    '!src/**/types.ts'
+    '!src/**/types.ts',
   ],
   coverageThreshold: {
     global: {
       branches: 80,
       functions: 80,
       lines: 80,
-      statements: 80
-    }
+      statements: 80,
+    },
   },
   moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|@supabase)/)'
-  ]
+    'node_modules/(?!(react-native|@react-native|expo|@expo|@supabase)/)',
+  ],
 };
 ```
 
 ### Test Setup
+
 ```typescript
 // src/tests/setup.ts
 import 'react-native-gesture-handler/jestSetup';
@@ -150,6 +151,7 @@ global.console = {
 ### Component Testing Examples
 
 #### Button Component Test
+
 ```typescript
 // src/components/ui/__tests__/Button.test.tsx
 import React from 'react';
@@ -161,7 +163,7 @@ describe('Button Component', () => {
     const { getByText } = render(
       <Button>Test Button</Button>
     );
-    
+
     expect(getByText('Test Button')).toBeTruthy();
   });
 
@@ -172,7 +174,7 @@ describe('Button Component', () => {
         Press Me
       </Button>
     );
-    
+
     fireEvent.press(getByText('Press Me'));
     expect(mockOnPress).toHaveBeenCalledTimes(1);
   });
@@ -181,7 +183,7 @@ describe('Button Component', () => {
     const { getByTestId } = render(
       <Button loading>Loading Button</Button>
     );
-    
+
     expect(getByTestId('loading-indicator')).toBeTruthy();
   });
 
@@ -192,7 +194,7 @@ describe('Button Component', () => {
         Loading Button
       </Button>
     );
-    
+
     fireEvent.press(getByText('Loading Button'));
     expect(mockOnPress).not.toHaveBeenCalled();
   });
@@ -203,7 +205,7 @@ describe('Button Component', () => {
         Secondary Button
       </Button>
     );
-    
+
     const button = getByTestId('button');
     expect(button.props.style).toContainEqual(
       expect.objectContaining({
@@ -215,6 +217,7 @@ describe('Button Component', () => {
 ```
 
 #### Screen Component Test
+
 ```typescript
 // src/screens/onboarding/__tests__/PersonalInfoScreen.test.tsx
 import React from 'react';
@@ -285,7 +288,7 @@ describe('PersonalInfoScreen', () => {
 
     // Select fitness goal
     fireEvent.press(getByText('Weight Loss'));
-    
+
     // Select activity level
     fireEvent.press(getByText('Moderately Active'));
 
@@ -329,6 +332,7 @@ describe('PersonalInfoScreen', () => {
 ### Service Testing
 
 #### API Service Test
+
 ```typescript
 // src/services/api/__tests__/authService.test.ts
 import { AuthService } from '../authService';
@@ -413,7 +417,10 @@ describe('AuthService', () => {
         }),
       } as any);
 
-      const result = await AuthService.signIn('test@example.com', 'password123');
+      const result = await AuthService.signIn(
+        'test@example.com',
+        'password123'
+      );
 
       expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: 'test@example.com',
@@ -427,6 +434,7 @@ describe('AuthService', () => {
 ```
 
 #### AI Service Test
+
 ```typescript
 // src/services/ai/__tests__/geminiService.test.ts
 import { GeminiService } from '../geminiService';
@@ -557,7 +565,10 @@ describe('GeminiService', () => {
         equipment: ['none'],
       };
 
-      const result = await geminiService.generateWorkoutPlan(userProfile, preferences);
+      const result = await geminiService.generateWorkoutPlan(
+        userProfile,
+        preferences
+      );
 
       expect(result.planOverview.name).toBe('Beginner Strength Plan');
       expect(result.weeklySchedule).toHaveLength(1);
@@ -569,6 +580,7 @@ describe('GeminiService', () => {
 ### Store Testing
 
 #### Zustand Store Test
+
 ```typescript
 // src/stores/__tests__/userStore.test.ts
 import { useUserStore } from '../userStore';
@@ -682,6 +694,7 @@ describe('UserStore', () => {
 ## Integration Testing
 
 ### API Integration Tests
+
 ```typescript
 // src/tests/integration/apiIntegration.test.ts
 import { AuthService } from '../../services/api/authService';
@@ -690,7 +703,7 @@ import { DietService } from '../../services/api/dietService';
 
 describe('API Integration Tests', () => {
   let testUser: any;
-  
+
   beforeAll(async () => {
     // Create test user
     testUser = await AuthService.signUp(
@@ -773,6 +786,7 @@ describe('API Integration Tests', () => {
 ## End-to-End Testing
 
 ### Detox Configuration
+
 ```javascript
 // .detoxrc.js
 module.exports = {
@@ -783,43 +797,46 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath: 'ios/build/Build/Products/Debug-iphonesimulator/FitAI.app',
-      build: 'xcodebuild -workspace ios/FitAI.xcworkspace -scheme FitAI -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build'
+      build:
+        'xcodebuild -workspace ios/FitAI.xcworkspace -scheme FitAI -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
     },
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
-      build: 'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
-      reversePorts: [8081]
-    }
+      build:
+        'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+      reversePorts: [8081],
+    },
   },
   devices: {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 14'
-      }
+        type: 'iPhone 14',
+      },
     },
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_4_API_30'
-      }
-    }
+        avdName: 'Pixel_4_API_30',
+      },
+    },
   },
   configurations: {
     'ios.sim.debug': {
       device: 'simulator',
-      app: 'ios.debug'
+      app: 'ios.debug',
     },
     'android.emu.debug': {
       device: 'emulator',
-      app: 'android.debug'
-    }
-  }
+      app: 'android.debug',
+    },
+  },
 };
 ```
 
 ### E2E Test Examples
+
 ```typescript
 // e2e/onboarding.e2e.ts
 import { device, expect, element, by } from 'detox';
@@ -836,37 +853,37 @@ describe('Onboarding Flow', () => {
   it('should complete onboarding flow successfully', async () => {
     // Personal Info Screen
     await expect(element(by.text("Let's get to know you"))).toBeVisible();
-    
+
     await element(by.id('name-input')).typeText('John Doe');
     await element(by.id('age-input')).typeText('25');
     await element(by.text('Male')).tap();
     await element(by.id('height-input')).typeText('175');
     await element(by.id('current-weight-input')).typeText('70');
     await element(by.id('target-weight-input')).typeText('65');
-    
+
     await element(by.text('Weight Loss')).tap();
     await element(by.text('Moderately Active')).tap();
-    
+
     await element(by.text('Continue')).tap();
 
     // Workout Preferences Screen
     await expect(element(by.text('Workout Preferences'))).toBeVisible();
-    
+
     await element(by.text('Home Workout')).tap();
     await element(by.text('30-45 minutes')).tap();
     await element(by.text('3 days/week')).tap();
     await element(by.text('None (bodyweight only)')).tap();
     await element(by.text('Beginner')).tap();
-    
+
     await element(by.text('Continue')).tap();
 
     // Diet Preferences Screen
     await expect(element(by.text('Diet Preferences'))).toBeVisible();
-    
+
     await element(by.text('Vegetarian')).tap();
     await element(by.text('North Indian')).tap();
     await element(by.text('Budget-friendly')).tap();
-    
+
     await element(by.text('Continue')).tap();
 
     // Body Analysis Screen (skip for now)
@@ -882,14 +899,17 @@ describe('Onboarding Flow', () => {
 
   it('should validate required fields', async () => {
     await element(by.text('Continue')).tap();
-    
+
     await expect(element(by.text('Name is required'))).toBeVisible();
-    await expect(element(by.text('Please enter a valid age (13-100)'))).toBeVisible();
+    await expect(
+      element(by.text('Please enter a valid age (13-100)'))
+    ).toBeVisible();
   });
 });
 ```
 
 ### Food Recognition E2E Test
+
 ```typescript
 // e2e/foodRecognition.e2e.ts
 import { device, expect, element, by } from 'detox';
@@ -904,23 +924,23 @@ describe('Food Recognition', () => {
   it('should log meal using camera', async () => {
     // Navigate to meal logging
     await element(by.text('Log Meal')).tap();
-    
+
     // Take photo
     await element(by.id('camera-button')).tap();
     await element(by.id('capture-button')).tap();
-    
+
     // Wait for AI analysis
     await waitFor(element(by.text('Analyzing...')))
       .not.toBeVisible()
       .withTimeout(10000);
-    
+
     // Verify food recognition results
     await expect(element(by.id('food-results'))).toBeVisible();
     await expect(element(by.id('total-calories'))).toBeVisible();
-    
+
     // Save meal log
     await element(by.text('Save Meal')).tap();
-    
+
     // Verify meal is logged
     await expect(element(by.text('Meal logged successfully'))).toBeVisible();
   });
@@ -935,6 +955,7 @@ async function completeOnboarding() {
 ## AI Testing Framework
 
 ### Food Recognition Accuracy Testing
+
 ```typescript
 // src/tests/ai/foodRecognitionAccuracy.test.ts
 import { GeminiService } from '../../services/ai/geminiService';
@@ -942,7 +963,7 @@ import { testFoodDataset } from './datasets/foodDataset';
 
 describe('Food Recognition Accuracy', () => {
   let geminiService: GeminiService;
-  
+
   beforeAll(() => {
     geminiService = new GeminiService();
   });
@@ -952,30 +973,30 @@ describe('Food Recognition Accuracy', () => {
       const indianFoodSamples = testFoodDataset.filter(
         item => item.cuisine === 'indian'
       );
-      
+
       let correctIdentifications = 0;
-      
+
       for (const sample of indianFoodSamples) {
         try {
-          const result = await geminiService.analyzeFoodImage(
-            sample.imageUri,
-            { cuisineType: 'indian' }
-          );
-          
+          const result = await geminiService.analyzeFoodImage(sample.imageUri, {
+            cuisineType: 'indian',
+          });
+
           const isCorrect = evaluateFoodIdentification(result, sample.expected);
           if (isCorrect) correctIdentifications++;
-          
+
           // Log results for analysis
           console.log(`${sample.name}: ${isCorrect ? 'CORRECT' : 'INCORRECT'}`);
-          
         } catch (error) {
           console.error(`Failed to analyze ${sample.name}:`, error);
         }
       }
-      
+
       const accuracy = correctIdentifications / indianFoodSamples.length;
-      console.log(`Indian Food Recognition Accuracy: ${(accuracy * 100).toFixed(2)}%`);
-      
+      console.log(
+        `Indian Food Recognition Accuracy: ${(accuracy * 100).toFixed(2)}%`
+      );
+
       expect(accuracy).toBeGreaterThan(0.8);
     }, 60000); // 1 minute timeout for AI processing
 
@@ -992,13 +1013,20 @@ describe('Food Recognition Accuracy', () => {
           expectedCalorieRange: [300, 500],
         },
       ];
-      
+
       for (const testCase of portionTestCases) {
-        const result = await geminiService.analyzeFoodImage(testCase.imageUri, {});
+        const result = await geminiService.analyzeFoodImage(
+          testCase.imageUri,
+          {}
+        );
         const totalCalories = result.totalCalories;
-        
-        expect(totalCalories).toBeGreaterThanOrEqual(testCase.expectedCalorieRange[0]);
-        expect(totalCalories).toBeLessThanOrEqual(testCase.expectedCalorieRange[1]);
+
+        expect(totalCalories).toBeGreaterThanOrEqual(
+          testCase.expectedCalorieRange[0]
+        );
+        expect(totalCalories).toBeLessThanOrEqual(
+          testCase.expectedCalorieRange[1]
+        );
       }
     });
   });
@@ -1007,16 +1035,17 @@ describe('Food Recognition Accuracy', () => {
 function evaluateFoodIdentification(result: any, expected: any): boolean {
   // Check if the primary food item is correctly identified
   const primaryFood = result.foods[0];
-  
+
   // Fuzzy matching for food names
   const nameSimilarity = calculateStringSimilarity(
     primaryFood.name.toLowerCase(),
     expected.name.toLowerCase()
   );
-  
+
   // Calorie accuracy (within 20% margin)
-  const calorieAccuracy = Math.abs(primaryFood.calories - expected.calories) / expected.calories;
-  
+  const calorieAccuracy =
+    Math.abs(primaryFood.calories - expected.calories) / expected.calories;
+
   return nameSimilarity > 0.7 && calorieAccuracy < 0.2;
 }
 
@@ -1028,6 +1057,7 @@ function calculateStringSimilarity(str1: string, str2: string): number {
 ```
 
 ### Test Dataset
+
 ```typescript
 // src/tests/ai/datasets/foodDataset.ts
 export const testFoodDataset = [
@@ -1068,47 +1098,48 @@ export const testFoodDataset = [
 ## Performance Testing
 
 ### Performance Test Suite
+
 ```typescript
 // src/tests/performance/performanceTests.test.ts
 import { PerformanceMonitor } from '../../services/monitoring/performanceMonitor';
 
 describe('Performance Tests', () => {
   let performanceMonitor: PerformanceMonitor;
-  
+
   beforeAll(() => {
     performanceMonitor = new PerformanceMonitor();
   });
 
   it('should load home screen within 2 seconds', async () => {
     const startTime = performance.now();
-    
+
     // Simulate home screen load
     performanceMonitor.startScreenLoad('HomeScreen');
-    
+
     // Wait for screen load completion
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     performanceMonitor.endScreenLoad('HomeScreen');
-    
+
     const endTime = performance.now();
     const loadTime = endTime - startTime;
-    
+
     expect(loadTime).toBeLessThan(2000);
   });
 
   it('should process food image within 5 seconds', async () => {
     const startTime = performance.now();
-    
+
     // Mock food image processing
     const mockImageUri = 'test://food-image.jpg';
-    
+
     try {
       // Simulate AI processing time
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       const endTime = performance.now();
       const processingTime = endTime - startTime;
-      
+
       expect(processingTime).toBeLessThan(5000);
     } catch (error) {
       fail('Food image processing failed');
@@ -1118,20 +1149,20 @@ describe('Performance Tests', () => {
   it('should handle memory efficiently during image processing', () => {
     // Test memory usage during image operations
     const initialMemory = process.memoryUsage().heapUsed;
-    
+
     // Simulate multiple image processing operations
     for (let i = 0; i < 10; i++) {
       // Mock image processing
     }
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
     }
-    
+
     const finalMemory = process.memoryUsage().heapUsed;
     const memoryIncrease = finalMemory - initialMemory;
-    
+
     // Memory increase should be reasonable (less than 50MB)
     expect(memoryIncrease).toBeLessThan(50 * 1024 * 1024);
   });
@@ -1143,9 +1174,10 @@ describe('Performance Tests', () => {
 ### Manual Testing Checklist
 
 #### Onboarding Flow
+
 - [ ] Personal information form validation
 - [ ] Workout preferences selection
-- [ ] Diet preferences selection  
+- [ ] Diet preferences selection
 - [ ] Body analysis photo capture
 - [ ] Review screen displays correct information
 - [ ] Navigation between screens works
@@ -1153,6 +1185,7 @@ describe('Performance Tests', () => {
 - [ ] Form data persistence
 
 #### Food Recognition
+
 - [ ] Camera permission request
 - [ ] Photo capture functionality
 - [ ] AI analysis processing indicator
@@ -1163,6 +1196,7 @@ describe('Performance Tests', () => {
 - [ ] Error handling for poor quality images
 
 #### Workout Features
+
 - [ ] Daily workout display
 - [ ] Exercise instructions clarity
 - [ ] Timer functionality
@@ -1172,6 +1206,7 @@ describe('Performance Tests', () => {
 - [ ] Rest day handling
 
 #### Diet Tracking
+
 - [ ] Meal logging interface
 - [ ] Nutrition summary accuracy
 - [ ] Daily calorie tracking
@@ -1180,6 +1215,7 @@ describe('Performance Tests', () => {
 - [ ] Custom food entry
 
 #### Profile & Settings
+
 - [ ] Profile information editing
 - [ ] Goal modification
 - [ ] Preference updates
@@ -1188,6 +1224,7 @@ describe('Performance Tests', () => {
 - [ ] Account deletion
 
 ### Accessibility Testing
+
 ```typescript
 // Accessibility test helpers
 export const accessibilityTests = {
@@ -1195,13 +1232,13 @@ export const accessibilityTests = {
     // Verify screen reader labels
     expect(component).toHaveAccessibilityLabel();
   },
-  
+
   checkColorContrast: (element: any) => {
     // Verify color contrast ratios
     const styles = element.props.style;
     // Implement contrast ratio checking
   },
-  
+
   checkTouchTargetSize: (element: any) => {
     // Verify minimum touch target size (44px)
     const { width, height } = element.props.style;
@@ -1214,18 +1251,21 @@ export const accessibilityTests = {
 ### Device Testing Matrix
 
 #### Android Devices
+
 - Samsung Galaxy S21 (Android 11)
 - Google Pixel 6 (Android 12)
 - OnePlus 9 (Android 11)
 - Xiaomi Mi 11 (Android 11)
 
-#### iOS Devices  
+#### iOS Devices
+
 - iPhone 13 Pro (iOS 15)
 - iPhone 12 (iOS 15)
 - iPhone SE (iOS 15)
 - iPad Air (iOS 15)
 
 #### Performance Criteria
+
 - App launch time: < 3 seconds
 - Screen navigation: < 500ms
 - Food recognition: < 5 seconds
@@ -1233,21 +1273,24 @@ export const accessibilityTests = {
 - Battery impact: Minimal background usage
 
 ### Bug Reporting Template
+
 ```markdown
 ## Bug Report
 
 **Title:** [Brief description of the issue]
 
 **Environment:**
-- App Version: 
-- Device: 
+
+- App Version:
+- Device:
 - OS Version:
 - Network: WiFi/Cellular
 
 **Steps to Reproduce:**
-1. 
-2. 
-3. 
+
+1.
+2.
+3.
 
 **Expected Behavior:**
 [What should happen]

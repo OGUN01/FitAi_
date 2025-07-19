@@ -9,6 +9,7 @@ This document provides comprehensive instructions for deploying FitAI across dev
 ### Development Environment
 
 #### Prerequisites
+
 ```bash
 # Node.js (LTS version)
 node --version  # Should be 18.x or higher
@@ -27,6 +28,7 @@ npm install -g supabase@latest
 ```
 
 #### Project Setup
+
 ```bash
 # Clone repository
 git clone https://github.com/your-org/fitai-mobile.git
@@ -46,6 +48,7 @@ cp .env.example .env.local
 ```
 
 #### Environment Variables
+
 ```bash
 # .env.local (Development)
 EXPO_PUBLIC_SUPABASE_URL=https://your-dev-project.supabase.co
@@ -59,6 +62,7 @@ EXPO_PUBLIC_SENTRY_DSN=your-sentry-dsn
 ```
 
 ### Staging Environment
+
 ```bash
 # .env.staging
 EXPO_PUBLIC_SUPABASE_URL=https://your-staging-project.supabase.co
@@ -72,6 +76,7 @@ EXPO_PUBLIC_SENTRY_DSN=your-sentry-dsn
 ```
 
 ### Production Environment
+
 ```bash
 # .env.production
 EXPO_PUBLIC_SUPABASE_URL=https://your-prod-project.supabase.co
@@ -89,6 +94,7 @@ EXPO_PUBLIC_SENTRY_DSN=your-sentry-dsn
 ### Database Setup
 
 #### Initial Migration
+
 ```sql
 -- migrations/001_initial_schema.sql
 -- Run in Supabase SQL Editor or via CLI
@@ -108,6 +114,7 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 ```
 
 #### Supabase CLI Deployment
+
 ```bash
 # Initialize Supabase locally
 supabase init
@@ -130,6 +137,7 @@ supabase functions deploy generate-diet-plan
 ### Environment-Specific Supabase Setup
 
 #### Development
+
 ```bash
 # Start local Supabase
 supabase start
@@ -142,6 +150,7 @@ supabase db seed
 ```
 
 #### Staging
+
 ```bash
 # Deploy to staging
 supabase link --project-ref your-staging-ref
@@ -150,6 +159,7 @@ supabase functions deploy --project-ref your-staging-ref
 ```
 
 #### Production
+
 ```bash
 # Deploy to production
 supabase link --project-ref your-prod-ref
@@ -165,6 +175,7 @@ supabase functions deploy --project-ref your-prod-ref
 ### EAS Configuration
 
 #### EAS Project Configuration
+
 ```json
 // eas.json
 {
@@ -220,6 +231,7 @@ supabase functions deploy --project-ref your-prod-ref
 ```
 
 #### App Configuration
+
 ```typescript
 // app.config.ts
 import { ExpoConfig, ConfigContext } from 'expo/config';
@@ -227,7 +239,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 export default ({ config }: ConfigContext): ExpoConfig => {
   const isProduction = process.env.ENVIRONMENT === 'production';
   const isStaging = process.env.ENVIRONMENT === 'staging';
-  
+
   return {
     ...config,
     name: isProduction ? 'FitAI' : `FitAI ${isStaging ? 'Staging' : 'Dev'}`,
@@ -239,23 +251,23 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     splash: {
       image: './assets/splash.png',
       resizeMode: 'contain',
-      backgroundColor: '#ffffff'
+      backgroundColor: '#ffffff',
     },
     assetBundlePatterns: ['**/*'],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: isProduction 
-        ? 'com.fitai.app' 
+      bundleIdentifier: isProduction
+        ? 'com.fitai.app'
         : `com.fitai.app.${isStaging ? 'staging' : 'dev'}`,
-      buildNumber: process.env.BUILD_NUMBER || '1'
+      buildNumber: process.env.BUILD_NUMBER || '1',
     },
     android: {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
-        backgroundColor: '#FFFFFF'
+        backgroundColor: '#FFFFFF',
       },
-      package: isProduction 
-        ? 'com.fitai.app' 
+      package: isProduction
+        ? 'com.fitai.app'
         : `com.fitai.app.${isStaging ? 'staging' : 'dev'}`,
       versionCode: parseInt(process.env.BUILD_NUMBER || '1'),
       permissions: [
@@ -264,11 +276,11 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         'WRITE_EXTERNAL_STORAGE',
         'INTERNET',
         'ACCESS_NETWORK_STATE',
-        'RECORD_AUDIO'
-      ]
+        'RECORD_AUDIO',
+      ],
     },
     web: {
-      favicon: './assets/favicon.png'
+      favicon: './assets/favicon.png',
     },
     plugins: [
       'expo-camera',
@@ -278,8 +290,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         '@sentry/react-native/expo',
         {
           organization: 'your-sentry-org',
-          project: 'fitai-mobile'
-        }
+          project: 'fitai-mobile',
+        },
       ],
       [
         'expo-build-properties',
@@ -287,26 +299,26 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           android: {
             compileSdkVersion: 34,
             targetSdkVersion: 34,
-            buildToolsVersion: '34.0.0'
+            buildToolsVersion: '34.0.0',
           },
           ios: {
-            deploymentTarget: '13.0'
-          }
-        }
-      ]
+            deploymentTarget: '13.0',
+          },
+        },
+      ],
     ],
     extra: {
       eas: {
-        projectId: 'your-eas-project-id'
+        projectId: 'your-eas-project-id',
       },
-      environment: process.env.ENVIRONMENT || 'development'
+      environment: process.env.ENVIRONMENT || 'development',
     },
     updates: {
-      url: 'https://u.expo.dev/your-eas-project-id'
+      url: 'https://u.expo.dev/your-eas-project-id',
     },
     runtimeVersion: {
-      policy: 'sdkVersion'
-    }
+      policy: 'sdkVersion',
+    },
   };
 };
 ```
@@ -314,6 +326,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 ### Build Scripts
 
 #### Package.json Scripts
+
 ```json
 {
   "scripts": {
@@ -321,26 +334,26 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    
+
     "build:dev:android": "eas build --platform android --profile development",
     "build:staging:android": "eas build --platform android --profile preview",
     "build:prod:android": "eas build --platform android --profile production",
-    
+
     "build:dev:ios": "eas build --platform ios --profile development",
     "build:staging:ios": "eas build --platform ios --profile preview",
     "build:prod:ios": "eas build --platform ios --profile production",
-    
+
     "submit:android": "eas submit --platform android --profile production",
     "submit:ios": "eas submit --platform ios --profile production",
-    
+
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    
+
     "lint": "eslint src/**/*.{ts,tsx}",
     "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
     "type-check": "tsc --noEmit",
-    
+
     "generate:types": "supabase gen types typescript --linked > src/types/supabase.ts",
     "db:reset": "supabase db reset",
     "db:migrate": "supabase db push"
@@ -353,6 +366,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 ### GitHub Actions Workflow
 
 #### Main Workflow
+
 ```yaml
 # .github/workflows/main.yml
 name: FitAI CI/CD
@@ -371,29 +385,29 @@ jobs:
   test:
     name: Test & Lint
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Type check
         run: npm run type-check
-        
+
       - name: Lint
         run: npm run lint
-        
+
       - name: Run tests
         run: npm run test:coverage
-        
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -404,33 +418,33 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/develop'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          
+
       - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
           expo-version: ${{ env.EXPO_CLI_VERSION }}
           token: ${{ secrets.EXPO_TOKEN }}
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Build Android (Staging)
         run: |
           export ENVIRONMENT=staging
           eas build --platform android --profile preview --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          
+
       - name: Notify Slack
         uses: 8398a7/action-slack@v3
         with:
@@ -443,26 +457,26 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          
+
       - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
           expo-version: ${{ env.EXPO_CLI_VERSION }}
           token: ${{ secrets.EXPO_TOKEN }}
-          
+
       - name: Install dependencies
         run: npm ci
-        
+
       - name: Build Android (Production)
         run: |
           export ENVIRONMENT=production
@@ -470,13 +484,13 @@ jobs:
           eas build --platform android --profile production --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          
+
       - name: Submit to Play Store
         if: success()
         run: eas submit --platform android --profile production --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          
+
       - name: Create GitHub Release
         if: success()
         uses: actions/create-release@v1
@@ -493,16 +507,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Supabase CLI
         run: |
           curl -fsSL https://supabase.com/install.sh | sh
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          
+
       - name: Deploy Edge Functions
         run: |
           supabase functions deploy food-recognition --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -510,7 +524,7 @@ jobs:
           supabase functions deploy generate-diet-plan --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          
+
       - name: Run Database Migrations
         run: |
           supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -521,6 +535,7 @@ jobs:
 ### Deployment Scripts
 
 #### Automated Deployment Script
+
 ```bash
 #!/bin/bash
 # scripts/deploy.sh
@@ -595,7 +610,7 @@ if [[ "$ENVIRONMENT" == "production" ]]; then
             echo "📤 Submitting to Google Play Store..."
             eas submit --platform android --profile production --non-interactive
         fi
-        
+
         if [[ "$PLATFORM" == "ios" || "$PLATFORM" == "all" ]]; then
             echo "📤 Submitting to App Store..."
             eas submit --platform ios --profile production --non-interactive
@@ -607,6 +622,7 @@ echo "✅ Deployment completed successfully!"
 ```
 
 #### Make script executable
+
 ```bash
 chmod +x scripts/deploy.sh
 
@@ -620,6 +636,7 @@ chmod +x scripts/deploy.sh
 ### Error Tracking with Sentry
 
 #### Sentry Configuration
+
 ```typescript
 // src/config/sentry.ts
 import * as Sentry from '@sentry/react-native';
@@ -647,6 +664,7 @@ export { Sentry };
 ### Performance Monitoring
 
 #### Performance Tracking Setup
+
 ```typescript
 // src/services/monitoring/performanceMonitor.ts
 import { Performance } from 'react-native-performance';
@@ -668,7 +686,7 @@ export class PerformanceMonitor {
     const measures = Performance.getEntriesByName(`${screenName}_load_time`);
     if (measures.length > 0) {
       const loadTime = measures[0].duration;
-      
+
       Analytics.track('Screen Load Time', {
         screen: screenName,
         loadTime: loadTime,
@@ -677,7 +695,11 @@ export class PerformanceMonitor {
     }
   }
 
-  static trackCustomMetric(name: string, value: number, attributes?: Record<string, any>) {
+  static trackCustomMetric(
+    name: string,
+    value: number,
+    attributes?: Record<string, any>
+  ) {
     Analytics.track('Custom Metric', {
       metricName: name,
       value: value,
@@ -690,6 +712,7 @@ export class PerformanceMonitor {
 ## Security Considerations
 
 ### API Key Management
+
 ```typescript
 // src/config/security.ts
 import { ConfigService } from './configService';
@@ -712,11 +735,14 @@ export class SecurityManager {
   static sanitizeErrorMessage(error: Error): string {
     // Remove sensitive information from error messages
     let message = error.message;
-    
+
     // Remove API keys, tokens, etc.
     message = message.replace(/([a-zA-Z0-9_-]{32,})/g, '[REDACTED]');
-    message = message.replace(/(key|token|secret)=([^&\s]+)/gi, '$1=[REDACTED]');
-    
+    message = message.replace(
+      /(key|token|secret)=([^&\s]+)/gi,
+      '$1=[REDACTED]'
+    );
+
     return message;
   }
 }
@@ -725,6 +751,7 @@ export class SecurityManager {
 ### App Signing
 
 #### Android Signing Configuration
+
 ```bash
 # Generate keystore for production
 keytool -genkey -v -keystore fitai-release-key.keystore -alias fitai-release -keyalg RSA -keysize 2048 -validity 10000
@@ -739,6 +766,7 @@ eas secret:create --scope project --name ANDROID_KEY_PASSWORD --value your-key-p
 ## Rollback Procedures
 
 ### Emergency Rollback Script
+
 ```bash
 #!/bin/bash
 # scripts/rollback.sh
@@ -770,21 +798,22 @@ echo "📢 Rollback completed. Please verify all systems are working correctly."
 ## Maintenance Tasks
 
 ### Database Maintenance
+
 ```sql
 -- scripts/maintenance.sql
 
 -- Clean up old meal logs (older than 1 year)
-DELETE FROM meal_logs 
+DELETE FROM meal_logs
 WHERE logged_at < NOW() - INTERVAL '1 year';
 
 -- Clean up temporary user data
-DELETE FROM users 
-WHERE created_at < NOW() - INTERVAL '30 days' 
+DELETE FROM users
+WHERE created_at < NOW() - INTERVAL '30 days'
 AND last_login IS NULL;
 
 -- Update search counts for popular foods
-UPDATE foods 
-SET popularity_score = log_count + search_count 
+UPDATE foods
+SET popularity_score = log_count + search_count
 WHERE updated_at < NOW() - INTERVAL '1 day';
 
 -- Optimize database
@@ -792,6 +821,7 @@ VACUUM ANALYZE;
 ```
 
 ### Log Cleanup Script
+
 ```bash
 #!/bin/bash
 # scripts/cleanup-logs.sh
