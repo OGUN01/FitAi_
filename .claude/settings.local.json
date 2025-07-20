@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rmdir:*)",
+      "Bash(del package-lock.json)",
+      "Bash(rm:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(npx expo prebuild:*)",
+      "Bash(npm install:*)"
+    ],
+    "deny": []
+  }
+}

@@ -9,6 +9,112 @@ export const APP_CONFIG = {
   SUPPORTED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
+// Dark Cosmic Theme - Inspired by CultFit Design
+export const THEME = {
+  colors: {
+    // Primary Colors
+    primary: '#ff6b35', // Orange/Gold accent
+    primaryDark: '#e55a2b',
+    primaryLight: '#ff8c5a',
+
+    // Secondary Colors
+    secondary: '#00d4ff', // Electric blue
+    secondaryDark: '#00b8e6',
+    secondaryLight: '#33ddff',
+
+    // Background Colors
+    background: '#0a0f1c', // Deep dark blue
+    backgroundSecondary: '#1a1f2e', // Slightly lighter dark
+    backgroundTertiary: '#252a3a', // Card backgrounds
+
+    // Surface Colors
+    surface: '#1e2332',
+    surfaceLight: '#2a2f3f',
+
+    // Text Colors
+    text: '#ffffff', // Primary white text
+    textSecondary: '#b0b0b0', // Secondary gray text
+    textMuted: '#8a8a8a', // Muted text
+
+    // Status Colors
+    success: '#4caf50',
+    warning: '#ff9800',
+    error: '#f44336',
+    info: '#2196f3',
+
+    // Utility Colors
+    white: '#ffffff',
+    black: '#000000',
+    transparent: 'transparent',
+
+    // Gradient Colors
+    gradientStart: '#0a0f1c',
+    gradientEnd: '#1a1f2e',
+
+    // Border Colors
+    border: '#333844',
+    borderLight: '#404552',
+  },
+
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    xxl: 24,
+    full: 9999,
+  },
+
+  fontSize: {
+    xs: 12,
+    sm: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+    xxl: 24,
+    xxxl: 32,
+  },
+
+  fontWeight: {
+    light: '300',
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+    extrabold: '800',
+  },
+
+  shadows: {
+    sm: {
+      // Web-compatible shadow
+      boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
+      // Android elevation
+      elevation: 2,
+    },
+    md: {
+      // Web-compatible shadow
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)',
+      // Android elevation
+      elevation: 4,
+    },
+    lg: {
+      // Web-compatible shadow
+      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+      // Android elevation
+      elevation: 8,
+    },
+  },
+};
+
 export const STORAGE_KEYS = {
   USER_DATA: '@fitai_user_data',
   ONBOARDING_DATA: '@fitai_onboarding_data',

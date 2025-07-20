@@ -4,5 +4,8 @@
 export { Button } from './Button';
 export { Input } from './Input';
 export { Card } from './Card';
-export { Modal } from './Modal';
+export { Modal, BottomSheetModal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
+
+// Re-export theme for easy access
+export { THEME } from '../../utils/constants';

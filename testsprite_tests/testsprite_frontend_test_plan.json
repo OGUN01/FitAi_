@@ -1,0 +1,610 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Signup Success",
+    "description": "Verify the user can successfully sign up with valid information and receives proper session initialization.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Signup screen"
+      },
+      {
+        "type": "action",
+        "description": "Input valid email, password, and required profile information"
+      },
+      {
+        "type": "action",
+        "description": "Submit signup form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify signup completes without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user session is created and persisted"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is redirected to onboarding flow"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Signup with Existing Email",
+    "description": "Validate signup fails with an existing email and appropriate error message is shown.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Signup screen"
+      },
+      {
+        "type": "action",
+        "description": "Input email already registered and any password"
+      },
+      {
+        "type": "action",
+        "description": "Submit signup form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an error notification about email already registered is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is not signed in"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "User Login Success",
+    "description": "Ensure user can login with valid credentials and session persists on app restart.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Login screen"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid email and password"
+      },
+      {
+        "type": "action",
+        "description": "Submit login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is logged in and redirected to Home screen"
+      },
+      {
+        "type": "action",
+        "description": "Restart the app"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm session persists and user remains logged in"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "User Login Failure with Wrong Password",
+    "description": "Verify login fails with incorrect password and appropriate error message is shown.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Login screen"
+      },
+      {
+        "type": "action",
+        "description": "Enter valid email and incorrect password"
+      },
+      {
+        "type": "action",
+        "description": "Submit login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message 'Invalid credentials' is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm login is not successful"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Logout Functionality",
+    "description": "Ensure user can log out successfully and session data is cleared.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login with valid credentials"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to Profile screen"
+      },
+      {
+        "type": "action",
+        "description": "Click logout button"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify user is logged out and redirected to Login screen"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify session and sensitive data are cleared"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Complete Onboarding Flow",
+    "description": "Validate new user is able to complete onboarding inputting all required personal, fitness goals and preferences data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login as newly registered user or start onboarding as new user"
+      },
+      {
+        "type": "action",
+        "description": "Input valid personal details (age, gender, weight, height)"
+      },
+      {
+        "type": "action",
+        "description": "Select fitness goals and preferences"
+      },
+      {
+        "type": "action",
+        "description": "Submit onboarding form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify onboarding completes and user is redirected to Home dashboard"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "AI Workout Plan Generation Accuracy",
+    "description": "Test AI generates workout plans that align with user's profile and selected fitness goals.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete onboarding with specific fitness goals (e.g., weight loss, muscle gain)"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to Fitness screen"
+      },
+      {
+        "type": "action",
+        "description": "Request new workout plan generation via AI"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify workout plan is generated without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify workout exercises correspond logically to user's goals (e.g., cardio for weight loss)"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Exercise Instructions and Details Rendering",
+    "description": "Validate that exercise details are displayed correctly, including images, instructions, and targeted muscle groups.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Fitness screen"
+      },
+      {
+        "type": "action",
+        "description": "Open any AI generated workout"
+      },
+      {
+        "type": "action",
+        "description": "Select individual exercise from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify exercise images, descriptions, and muscle group info are fully visible and accurate"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Nutrition Meal Logging and AI Meal Plan Suggestion",
+    "description": "Confirm user can log meals manually and receive AI-generated meal plan suggestions with accurate macro and calorie info.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Diet screen"
+      },
+      {
+        "type": "action",
+        "description": "Manually add meal items from the food database"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify meal logs are saved with correct nutritional values"
+      },
+      {
+        "type": "action",
+        "description": "Request AI meal plan suggestions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI suggestions are generated based on profile and goals"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that macro nutrients and calorie breakdown match suggestion details"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Food Scanner Camera Integration and AI Analysis",
+    "description": "Test camera functionality for food scanning and verify AI analyzes image input to identify food and nutrition info correctly.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Diet screen"
+      },
+      {
+        "type": "action",
+        "description": "Open the camera food scanning feature"
+      },
+      {
+        "type": "action",
+        "description": "Grant camera permission when prompted"
+      },
+      {
+        "type": "action",
+        "description": "Capture image of meal or food item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify image is captured and analyzed successfully"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI identifies food type and estimates nutrition values accurately"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify scanned food is added to meal log with correct macros"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Progress Charts Display and Interaction",
+    "description": "Ensure progress, nutrition, and workout intensity charts render correctly with smooth animations and allow toggling/selecting time ranges.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Progress screen"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify body metrics chart renders with expected data points"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify NutritionChart shows accurate macro trends"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify WorkoutIntensityChart displays properly"
+      },
+      {
+        "type": "action",
+        "description": "Interact with charts to select different time ranges (daily, weekly, monthly)"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure charts update smoothly with animations"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Achievement System Trigger and Display",
+    "description": "Validate achievement milestones trigger appropriately and corresponding notifications and badge displays are accurate.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform actions meeting achievement criteria (e.g., complete 5 workouts, log meals consistently for 7 days)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify achievement notification is shown immediately"
+      },
+      {
+        "type": "assertion",
+        "description": "Navigate to Progress screen and confirm achievement badge is listed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify achievement count updates correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Offline Usage and Automatic Sync",
+    "description": "Test app functionality in offline mode and ensure data syncs correctly when network connection is restored.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Disconnect device from internet"
+      },
+      {
+        "type": "action",
+        "description": "Use app features requiring data input: log workout, add meal, capture progress photo"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify offline data is cached locally without errors"
+      },
+      {
+        "type": "action",
+        "description": "Restore internet connectivity"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify locally cached data syncs automatically to backend"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm synced data is reflected on other devices or backend"
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Camera Permission Denied Handling",
+    "description": "Verify app prompts correctly when camera permission is denied and handles denial gracefully without crashing.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to any screen requesting camera access (food scanner or progress photo)"
+      },
+      {
+        "type": "action",
+        "description": "When prompted, deny camera permission"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm app displays informative message about permission denial"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify camera is disabled and app continues to function without crash"
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Dark Cosmic Theme and Accessibility Compliance",
+    "description": "Check consistent application of dark cosmic theme styles and verify accessibility features such as high contrast and screen reader support.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate through all main screens (Home, Fitness, Diet, Progress, Profile)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dark cosmic theme styling is consistently applied across UI components"
+      },
+      {
+        "type": "assertion",
+        "description": "Validate color contrast ratios meet accessibility standards"
+      },
+      {
+        "type": "action",
+        "description": "Enable screen reader and navigate UI elements"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm screen reader announces content properly and UI elements are accessible"
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Main Navigation Tab Functionality and Gesture Interactions",
+    "description": "Verify the custom tab-based navigation system works correctly including swipe gestures, pull-to-refresh, and long press context menus.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Launch app and observe landing on Home screen"
+      },
+      {
+        "type": "action",
+        "description": "Switch between all main tabs: Home, Fitness, Diet, Progress, Profile"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each tab loads relevant screen quickly and correctly"
+      },
+      {
+        "type": "action",
+        "description": "Perform swipe gestures to change tabs where supported"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm tabs switch correctly via gestures"
+      },
+      {
+        "type": "action",
+        "description": "Use pull-to-refresh gesture on screens that support it (e.g., Progress)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify data refresh occurs smoothly"
+      },
+      {
+        "type": "action",
+        "description": "Perform long press on applicable UI elements to trigger context menus"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify context menus appear and function correctly"
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "Performance of Animations and Screen Loads",
+    "description": "Ensure all advanced animations run smoothly and screen transitions are quick without lag on supported devices.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate through various screens with heavy animations (Home dashboard, charts, workout instructions)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify animations are smooth and do not drop frames"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify screen transitions load promptly under normal conditions"
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "User Profile Update and Persistence",
+    "description": "Verify user can update personal information and fitness goals through Profile screen and changes persist after app restart.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Profile screen"
+      },
+      {
+        "type": "action",
+        "description": "Update personal info fields and fitness goals"
+      },
+      {
+        "type": "action",
+        "description": "Save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify update confirmation is shown"
+      },
+      {
+        "type": "action",
+        "description": "Restart app"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that updated profile data is persisted and correctly loaded"
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "AI Nutrition Analysis Accuracy",
+    "description": "Test that nutrition analysis calculates calories and macros accurately based on logged meals and AI insights.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log multiple meals manually or via food scan"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify calories and macro nutrient calculations are accurate based on food database values"
+      },
+      {
+        "type": "action",
+        "description": "Use AI nutrition analysis feature on logged data"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI insights provide meaningful and correct nutrition recommendations"
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Handling of Invalid Input in Forms",
+    "description": "Verify all input forms (signup, onboarding, profile update, meal log) validate input properly and display error messages for invalid inputs.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to submit signup form with invalid email format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify appropriate error message is shown and submission is blocked"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit onboarding with missing required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify proper validation messages appear"
+      },
+      {
+        "type": "action",
+        "description": "Try meal logging with invalid quantity or food item not in database"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify errors are shown and input is rejected"
+      }
+    ]
+  }
+]
