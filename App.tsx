@@ -8,6 +8,7 @@ import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
 import { THEME } from './src/utils/constants';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
@@ -17,7 +18,18 @@ export default function App() {
 
   // Initialize backend on app start
   useEffect(() => {
-    initializeBackend();
+    const initializeApp = async () => {
+      try {
+        console.log('🚀 FitAI: Starting app initialization...');
+        await initializeBackend();
+        console.log('✅ FitAI: Backend initialization completed');
+      } catch (error) {
+        console.error('❌ FitAI: Backend initialization failed:', error);
+        // Don't throw here, let the app continue with limited functionality
+      }
+    };
+
+    initializeApp();
   }, []);
 
   // Check if user is authenticated and has completed onboarding
@@ -50,15 +62,17 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" backgroundColor={THEME.colors.background} />
+    <ErrorBoundary>
+      <View style={styles.container}>
+        <StatusBar style="light" backgroundColor={THEME.colors.background} />
 
-      {isOnboardingComplete ? (
-        <MainNavigation />
-      ) : (
-        <OnboardingFlow onComplete={handleOnboardingComplete} />
-      )}
-    </View>
+        {isOnboardingComplete ? (
+          <MainNavigation />
+        ) : (
+          <OnboardingFlow onComplete={handleOnboardingComplete} />
+        )}
+      </View>
+    </ErrorBoundary>
   );
 }
 
