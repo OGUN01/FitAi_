@@ -42,10 +42,10 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 
     // Email is optional during onboarding - users can add it later
 
-    // Improved age validation
-    const age = parseFloat(formData.age);
-    if (!formData.age.trim() || isNaN(age) || age < 13 || age > 100) {
-      newErrors.age = 'Please enter a valid age (13-100)';
+    // Improved age validation - use parseInt for consistency with backend
+    const age = parseInt(formData.age);
+    if (!formData.age.trim() || isNaN(age) || age < 13 || age > 120) {
+      newErrors.age = 'Please enter a valid age (13-120)';
     }
 
     if (!formData.gender) {

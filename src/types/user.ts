@@ -61,6 +61,33 @@ export interface RegisterCredentials extends LoginCredentials {
 export interface OnboardingData {
   personalInfo: PersonalInfo;
   fitnessGoals: FitnessGoals;
+  dietPreferences?: {
+    dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
+    allergies: string[];
+    cuisinePreferences: string[];
+    restrictions: string[];
+  };
+  workoutPreferences?: {
+    location: 'home' | 'gym' | 'both';
+    equipment: string[];
+    timePreference: number;
+    intensity: 'beginner' | 'intermediate' | 'advanced';
+    workoutTypes: string[];
+  };
+  bodyAnalysis?: {
+    photos: {
+      front?: string;
+      back?: string;
+      side?: string;
+    };
+    analysis?: {
+      bodyType: string;
+      muscleMass: string;
+      bodyFat: string;
+      fitnessLevel: string;
+      recommendations: string[];
+    };
+  };
   isComplete: boolean;
 }
 

@@ -10,16 +10,22 @@ import {
   Modal,
   RefreshControl,
   ActivityIndicator,
+  TextInput,
+  Animated,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { unifiedAIService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
+import { useAuth } from '../../hooks/useAuth';
+import { useNutritionData } from '../../hooks/useNutritionData';
 import { Meal, DailyMealPlan } from '../../types/ai';
+import { Food } from '../../services/nutritionData';
 
 export const DietScreen: React.FC = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
@@ -36,8 +42,41 @@ export const DietScreen: React.FC = () => {
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // User data for AI generation
+  // Authentication and user data
+  const { user, isAuthenticated } = useAuth();
   const { profile } = useUserStore();
+
+  // Real nutrition data with Track B integration
+  const {
+    foods,
+    foodsLoading,
+    foodsError,
+    loadFoods,
+    userMeals,
+    userMealsLoading,
+    userMealsError,
+    loadUserMeals,
+    dietPreferences,
+    nutritionGoals,
+    dailyNutrition,
+    loadDailyNutrition,
+    logMeal,
+    trackBStatus,
+    refreshAll,
+    clearErrors,
+  } = useNutritionData();
+
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  // Animate in on mount
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleCameraCapture = (imageUri: string) => {
     console.log('Food image captured:', imageUri);
@@ -46,7 +85,7 @@ export const DietScreen: React.FC = () => {
     Alert.alert('Success', 'Food image captured! AI analysis coming soon.');
   };
 
-  // AI Meal Generation Function
+  // AI Meal Generation Function with real user preferences
   const generateAIMeal = async (mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
@@ -61,10 +100,14 @@ export const DietScreen: React.FC = () => {
     setAiError(null);
 
     try {
+      // Use real user diet preferences if available
       const preferences = {
-        dietaryRestrictions: [], // Could be expanded based on user preferences
+        dietaryRestrictions: dietPreferences?.allergies || [],
         cuisinePreference: 'any',
         prepTimeLimit: 30,
+        calorieTarget: nutritionGoals?.daily_calories || 2000,
+        dietType: dietPreferences?.diet_type || [],
+        dislikes: dietPreferences?.dislikes || [],
       };
 
       const response = await unifiedAIService.generateMeal(
@@ -76,6 +119,24 @@ export const DietScreen: React.FC = () => {
 
       if (response.success && response.data) {
         setAiMeals(prev => [response.data!, ...prev]);
+
+        // Optionally save the generated meal to the database
+        if (user?.id && response.data.ingredients && foods.length > 0) {
+          // Convert AI meal to meal log format (simplified)
+          const mealData = {
+            name: response.data.name,
+            type: mealType,
+            foods: response.data.ingredients.slice(0, 3).map((ingredient: any, index: number) => ({
+              food_id: foods[index % foods.length]?.id || foods[0]?.id,
+              quantity_grams: 100, // Default quantity
+            })).filter(f => f.food_id),
+          };
+
+          if (mealData.foods.length > 0) {
+            await logMeal(mealData);
+          }
+        }
+
         Alert.alert(
           'Meal Generated! 🍽️',
           `Your personalized ${mealType} is ready!`,
@@ -142,10 +203,43 @@ export const DietScreen: React.FC = () => {
   };
 
   const handleSearchFood = () => {
-    setShowFoodSearch(true);
-    // TODO: Implement food search functionality
-    Alert.alert('Coming Soon', 'Food search functionality will be available soon!');
+    setShowFoodSearch(!showFoodSearch);
   };
+
+  // Convert real foods to display format for search
+  const convertFoodToDisplay = (food: Food) => ({
+    id: food.id,
+    name: food.name,
+    calories: Math.round(food.calories_per_100g),
+    protein: Math.round(food.protein_per_100g * 10) / 10,
+    carbs: Math.round(food.carbs_per_100g * 10) / 10,
+    fat: Math.round(food.fat_per_100g * 10) / 10,
+    category: food.category,
+  });
+
+  // Real food database from Supabase
+  const foodDatabase = foods.map(convertFoodToDisplay);
+
+  // Load foods when search query changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      const filters: any = {};
+
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+
+      loadFoods(filters);
+    }
+  }, [searchQuery, isAuthenticated, loadFoods]);
+
+  // Filter foods based on search query
+  const filteredFoods = searchQuery
+    ? foodDatabase.filter(food =>
+        food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        food.category.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : foodDatabase;
 
   const handleMealLongPress = (mealId: string, event: any) => {
     const { pageX, pageY } = event.nativeEvent;
@@ -220,34 +314,64 @@ export const DietScreen: React.FC = () => {
     }
   };
 
-  // Static demo meals (fallback)
+  // Enhanced mock meals with detailed nutrition data
   const staticMeals = [
     {
       id: 1,
       type: 'Breakfast',
       time: '8:00 AM',
-      calories: 320,
-      items: ['Oatmeal with berries', 'Greek yogurt', 'Coffee'],
+      calories: 385,
+      items: ['Steel-cut oatmeal with blueberries', 'Greek yogurt (150g)', 'Black coffee', 'Honey (1 tbsp)'],
       icon: '🥣',
       isAIGenerated: false,
+      nutrition: {
+        protein: 18,
+        carbs: 52,
+        fat: 8,
+        fiber: 7,
+        sugar: 22,
+      },
+      prepTime: '10 min',
+      difficulty: 'Easy',
+      rating: 4.6,
     },
     {
       id: 2,
       type: 'Lunch',
       time: '12:30 PM',
-      calories: 450,
-      items: ['Grilled chicken salad', 'Quinoa', 'Avocado'],
+      calories: 485,
+      items: ['Grilled chicken breast (120g)', 'Quinoa salad', 'Mixed greens', 'Avocado (1/2)', 'Olive oil dressing'],
       icon: '🥗',
       isAIGenerated: false,
+      nutrition: {
+        protein: 35,
+        carbs: 28,
+        fat: 22,
+        fiber: 8,
+        sugar: 6,
+      },
+      prepTime: '15 min',
+      difficulty: 'Medium',
+      rating: 4.8,
     },
     {
       id: 3,
       type: 'Snack',
       time: '3:00 PM',
-      calories: 150,
-      items: ['Apple', 'Almonds'],
+      calories: 180,
+      items: ['Medium apple', 'Raw almonds (20g)', 'Water'],
       icon: '🍎',
       isAIGenerated: false,
+      nutrition: {
+        protein: 6,
+        carbs: 18,
+        fat: 12,
+        fiber: 6,
+        sugar: 14,
+      },
+      prepTime: '2 min',
+      difficulty: 'Easy',
+      rating: 4.3,
     },
     {
       id: 4,
@@ -258,6 +382,16 @@ export const DietScreen: React.FC = () => {
       icon: '🍽️',
       planned: true,
       isAIGenerated: false,
+      nutrition: {
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+      },
+      prepTime: '0 min',
+      difficulty: 'N/A',
+      rating: 0,
     },
   ];
 
@@ -265,11 +399,22 @@ export const DietScreen: React.FC = () => {
   const aiMealsDisplay = aiMeals.map(convertAIMealToDisplay);
   const todaysMeals = [...aiMealsDisplay, ...staticMeals];
 
-  const nutritionGoals = {
-    calories: { current: 920, target: 2000 },
-    protein: { current: 45, target: 120 },
-    carbs: { current: 85, target: 250 },
-    fat: { current: 32, target: 67 },
+  // Use real daily nutrition data from Track B
+  const currentNutrition = dailyNutrition || {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    mealsCount: 0,
+  };
+
+  // Use real nutrition goals or defaults
+  const nutritionTargets = {
+    calories: { current: currentNutrition.calories, target: nutritionGoals?.daily_calories || 2000 },
+    protein: { current: currentNutrition.protein, target: nutritionGoals?.daily_protein || 120 },
+    carbs: { current: currentNutrition.carbs, target: nutritionGoals?.daily_carbs || 250 },
+    fat: { current: currentNutrition.fat, target: nutritionGoals?.daily_fat || 67 },
+    fiber: { current: 0, target: 25 }, // Fiber not tracked yet
   };
 
   return (
@@ -290,6 +435,12 @@ export const DietScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.title}>Nutrition</Text>
           <View style={styles.headerButtons}>
+            {/* Track B Status Indicator */}
+            <TouchableOpacity style={styles.statusButton}>
+              <Text style={styles.statusIcon}>
+                {trackBStatus.isConnected ? '🟢' : '🔴'}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
               onPress={generateDailyMealPlan}
@@ -301,11 +452,87 @@ export const DietScreen: React.FC = () => {
                 <Text style={styles.aiButtonText}>🤖 Plan</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.addButton}>
-              <Text style={styles.addIcon}>+</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={handleSearchFood}
+            >
+              <Text style={styles.addIcon}>🔍</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Loading State */}
+        {(foodsLoading || userMealsLoading) && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={THEME.colors.primary} />
+            <Text style={styles.loadingText}>Loading nutrition data...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {(foodsError || userMealsError) && (
+          <Card style={styles.errorCard} variant="outlined">
+            <Text style={styles.errorText}>
+              ⚠️ {foodsError || userMealsError}
+            </Text>
+            <Button
+              title="Retry"
+              onPress={refreshAll}
+              variant="outline"
+              size="sm"
+              style={styles.retryButton}
+            />
+          </Card>
+        )}
+
+        {/* No Authentication State */}
+        {!isAuthenticated && (
+          <Card style={styles.errorCard} variant="outlined">
+            <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
+          </Card>
+        )}
+
+        {/* Food Search */}
+        {showFoodSearch && (
+          <View style={styles.searchSection}>
+            <View style={styles.searchContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search foods..."
+                placeholderTextColor={THEME.colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus
+              />
+              <TouchableOpacity
+                style={styles.clearSearchButton}
+                onPress={() => {
+                  setSearchQuery('');
+                  setShowFoodSearch(false);
+                }}
+              >
+                <Text style={styles.clearSearchText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {searchQuery && (
+              <ScrollView style={styles.foodResults} horizontal showsHorizontalScrollIndicator={false}>
+                {filteredFoods.map((food) => (
+                  <TouchableOpacity key={food.id} style={styles.foodItem}>
+                    <Text style={styles.foodName}>{food.name}</Text>
+                    <Text style={styles.foodCategory}>{food.category}</Text>
+                    <Text style={styles.foodCalories}>{food.calories} cal</Text>
+                    <View style={styles.foodMacros}>
+                      <Text style={styles.foodMacro}>P: {food.protein}g</Text>
+                      <Text style={styles.foodMacro}>C: {food.carbs}g</Text>
+                      <Text style={styles.foodMacro}>F: {food.fat}g</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        )}
 
         {/* Daily Overview */}
         <View style={styles.section}>
@@ -313,39 +540,39 @@ export const DietScreen: React.FC = () => {
           <Card style={styles.overviewCard} variant="elevated">
             <View style={styles.caloriesSection}>
               <View style={styles.caloriesHeader}>
-                <Text style={styles.caloriesConsumed}>{nutritionGoals.calories.current}</Text>
-                <Text style={styles.caloriesTarget}>/ {nutritionGoals.calories.target} cal</Text>
+                <Text style={styles.caloriesConsumed}>{nutritionTargets.calories.current}</Text>
+                <Text style={styles.caloriesTarget}>/ {nutritionTargets.calories.target} cal</Text>
               </View>
               <View style={styles.caloriesProgress}>
                 <View style={styles.progressBar}>
                   <View style={[
-                    styles.progressFill, 
-                    { width: `${(nutritionGoals.calories.current / nutritionGoals.calories.target) * 100}%` }
+                    styles.progressFill,
+                    { width: `${Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100)}%` }
                   ]} />
                 </View>
                 <Text style={styles.remainingText}>
-                  {nutritionGoals.calories.target - nutritionGoals.calories.current} cal remaining
+                  {Math.max(nutritionTargets.calories.target - nutritionTargets.calories.current, 0)} cal remaining
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.macrosGrid}>
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{nutritionGoals.protein.current}g</Text>
+                <Text style={styles.macroValue}>{Math.round(nutritionTargets.protein.current)}g</Text>
                 <Text style={styles.macroLabel}>Protein</Text>
-                <Text style={styles.macroTarget}>of {nutritionGoals.protein.target}g</Text>
+                <Text style={styles.macroTarget}>of {nutritionTargets.protein.target}g</Text>
               </View>
-              
+
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{nutritionGoals.carbs.current}g</Text>
+                <Text style={styles.macroValue}>{Math.round(nutritionTargets.carbs.current)}g</Text>
                 <Text style={styles.macroLabel}>Carbs</Text>
-                <Text style={styles.macroTarget}>of {nutritionGoals.carbs.target}g</Text>
+                <Text style={styles.macroTarget}>of {nutritionTargets.carbs.target}g</Text>
               </View>
-              
+
               <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{nutritionGoals.fat.current}g</Text>
+                <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
                 <Text style={styles.macroLabel}>Fat</Text>
-                <Text style={styles.macroTarget}>of {nutritionGoals.fat.target}g</Text>
+                <Text style={styles.macroTarget}>of {nutritionTargets.fat.target}g</Text>
               </View>
             </View>
           </Card>
@@ -355,12 +582,24 @@ export const DietScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Today's Meals</Text>
           
-          {todaysMeals.map((meal) => (
-            <Card key={meal.id} style={styles.mealCard} variant="outlined">
-              <TouchableOpacity
-                style={styles.mealContent}
-                onLongPress={(event) => handleMealLongPress(meal.id, event)}
-              >
+          {todaysMeals.map((meal, index) => (
+            <Animated.View
+              key={meal.id}
+              style={{
+                opacity: fadeAnim,
+                transform: [{
+                  translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                }],
+              }}
+            >
+              <Card style={styles.mealCard} variant="outlined">
+                <TouchableOpacity
+                  style={styles.mealContent}
+                  onLongPress={(event) => handleMealLongPress(meal.id, event)}
+                >
                 <View style={styles.mealHeader}>
                   <View style={styles.mealInfo}>
                     <View style={styles.mealTitleRow}>
@@ -384,10 +623,34 @@ export const DietScreen: React.FC = () => {
                     </View>
                     
                     {meal.items.length > 0 ? (
-                      <View style={styles.mealItems}>
-                        {meal.items.map((item, index) => (
-                          <Text key={index} style={styles.mealItem}>• {item}</Text>
-                        ))}
+                      <View>
+                        <View style={styles.mealItems}>
+                          {meal.items.map((item, index) => (
+                            <Text key={index} style={styles.mealItem}>• {item}</Text>
+                          ))}
+                        </View>
+                        {meal.nutrition && (
+                          <View style={styles.mealNutrition}>
+                            <Text style={styles.nutritionText}>P: {meal.nutrition.protein}g</Text>
+                            <Text style={styles.nutritionDot}>•</Text>
+                            <Text style={styles.nutritionText}>C: {meal.nutrition.carbs}g</Text>
+                            <Text style={styles.nutritionDot}>•</Text>
+                            <Text style={styles.nutritionText}>F: {meal.nutrition.fat}g</Text>
+                            {meal.prepTime && (
+                              <>
+                                <Text style={styles.nutritionDot}>•</Text>
+                                <Text style={styles.nutritionText}>{meal.prepTime}</Text>
+                              </>
+                            )}
+                          </View>
+                        )}
+                        {meal.rating && meal.rating > 0 && (
+                          <View style={styles.mealRating}>
+                            <Text style={styles.ratingStars}>⭐</Text>
+                            <Text style={styles.ratingText}>{meal.rating}</Text>
+                            <Text style={styles.difficultyText}>• {meal.difficulty}</Text>
+                          </View>
+                        )}
                       </View>
                     ) : (
                       <Text style={styles.plannedText}>Tap to plan your meal</Text>
@@ -403,6 +666,7 @@ export const DietScreen: React.FC = () => {
                 </View>
               </TouchableOpacity>
             </Card>
+            </Animated.View>
           ))}
         </View>
 
@@ -900,5 +1164,166 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
     fontWeight: THEME.fontWeight.medium,
+  },
+
+  // Search styles
+  searchSection: {
+    marginHorizontal: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
+  },
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.borderRadius.md,
+    paddingHorizontal: THEME.spacing.md,
+    ...THEME.shadows.sm,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: 44,
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.text,
+    paddingVertical: THEME.spacing.sm,
+  },
+
+  clearSearchButton: {
+    padding: THEME.spacing.sm,
+    marginLeft: THEME.spacing.sm,
+  },
+
+  clearSearchText: {
+    fontSize: 16,
+    color: THEME.colors.textSecondary,
+  },
+
+  foodResults: {
+    marginTop: THEME.spacing.md,
+    maxHeight: 120,
+  },
+
+  foodItem: {
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.borderRadius.md,
+    padding: THEME.spacing.md,
+    marginRight: THEME.spacing.sm,
+    minWidth: 140,
+    ...THEME.shadows.sm,
+  },
+
+  foodName: {
+    fontSize: THEME.fontSize.sm,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: 2,
+  },
+
+  foodCategory: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textMuted,
+    marginBottom: 4,
+  },
+
+  foodCalories: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.primary,
+    fontWeight: THEME.fontWeight.medium,
+    marginBottom: 4,
+  },
+
+  foodMacros: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  foodMacro: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textSecondary,
+  },
+
+  // Enhanced meal card styles
+  mealNutrition: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: THEME.spacing.lg,
+    marginTop: THEME.spacing.xs,
+  },
+
+  nutritionText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textSecondary,
+  },
+
+  nutritionDot: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textMuted,
+    marginHorizontal: 4,
+  },
+
+  mealRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: THEME.spacing.lg,
+    marginTop: THEME.spacing.xs,
+  },
+
+  ratingStars: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+
+  ratingText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.text,
+    fontWeight: THEME.fontWeight.medium,
+  },
+
+  difficultyText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textMuted,
+    marginLeft: 4,
+  },
+
+  statusButton: {
+    width: 32,
+    height: 32,
+    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: THEME.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  statusIcon: {
+    fontSize: 16,
+  },
+
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.xl,
+  },
+
+  loadingText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    marginTop: THEME.spacing.md,
+  },
+
+  errorCard: {
+    padding: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
+    alignItems: 'center',
+  },
+
+  errorText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.error,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.md,
+  },
+
+  retryButton: {
+    paddingHorizontal: THEME.spacing.lg,
   },
 });

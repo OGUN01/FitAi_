@@ -2,7 +2,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUser } from '../hooks/useUser';
 import { useOffline } from '../hooks/useOffline';
 import { PersonalInfo, FitnessGoals, OnboardingData } from '../types/user';
-import { api } from '../services/api';
+import { api, supabase } from '../services/api';
 
 /**
  * Integration utilities for connecting existing UI components with the new backend
@@ -92,6 +92,101 @@ export const useOnboardingIntegration = () => {
   };
 
   /**
+   * Save diet preferences
+   */
+  const saveDietPreferences = async (dietPreferences: NonNullable<OnboardingData['dietPreferences']>): Promise<{ success: boolean; error?: string }> => {
+    if (!authUser) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('diet_preferences')
+        .upsert({
+          user_id: authUser.id,
+          diet_type: dietPreferences.dietType,
+          allergies: dietPreferences.allergies,
+          cuisine_preferences: dietPreferences.cuisinePreferences,
+          restrictions: dietPreferences.restrictions,
+        });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save diet preferences'
+      };
+    }
+  };
+
+  /**
+   * Save workout preferences
+   */
+  const saveWorkoutPreferences = async (workoutPreferences: NonNullable<OnboardingData['workoutPreferences']>): Promise<{ success: boolean; error?: string }> => {
+    if (!authUser) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('workout_preferences')
+        .upsert({
+          user_id: authUser.id,
+          location: workoutPreferences.location,
+          equipment: workoutPreferences.equipment,
+          time_preference: workoutPreferences.timePreference,
+          intensity: workoutPreferences.intensity,
+          workout_types: workoutPreferences.workoutTypes,
+        });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save workout preferences'
+      };
+    }
+  };
+
+  /**
+   * Save body analysis
+   */
+  const saveBodyAnalysis = async (bodyAnalysis: NonNullable<OnboardingData['bodyAnalysis']>): Promise<{ success: boolean; error?: string }> => {
+    if (!authUser) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('body_analysis')
+        .upsert({
+          user_id: authUser.id,
+          photos: bodyAnalysis.photos,
+          analysis: bodyAnalysis.analysis,
+        });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save body analysis'
+      };
+    }
+  };
+
+  /**
    * Save complete onboarding data
    */
   const saveOnboardingData = async (onboardingData: OnboardingData): Promise<{ success: boolean; error?: string }> => {
@@ -108,11 +203,35 @@ export const useOnboardingIntegration = () => {
         return fitnessGoalsResult;
       }
 
+      // Save diet preferences if provided
+      if (onboardingData.dietPreferences) {
+        const dietResult = await saveDietPreferences(onboardingData.dietPreferences);
+        if (!dietResult.success) {
+          return dietResult;
+        }
+      }
+
+      // Save workout preferences if provided
+      if (onboardingData.workoutPreferences) {
+        const workoutResult = await saveWorkoutPreferences(onboardingData.workoutPreferences);
+        if (!workoutResult.success) {
+          return workoutResult;
+        }
+      }
+
+      // Save body analysis if provided
+      if (onboardingData.bodyAnalysis && Object.keys(onboardingData.bodyAnalysis.photos).length > 0) {
+        const bodyResult = await saveBodyAnalysis(onboardingData.bodyAnalysis);
+        if (!bodyResult.success) {
+          return bodyResult;
+        }
+      }
+
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to save onboarding data' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save onboarding data'
       };
     }
   };
@@ -120,6 +239,9 @@ export const useOnboardingIntegration = () => {
   return {
     savePersonalInfo,
     saveFitnessGoals,
+    saveDietPreferences,
+    saveWorkoutPreferences,
+    saveBodyAnalysis,
     saveOnboardingData,
   };
 };

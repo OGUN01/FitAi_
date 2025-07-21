@@ -9,14 +9,25 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  TextInput,
+  Animated,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { unifiedAIService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
+import { useAuth } from '../../hooks/useAuth';
+import { useFitnessData } from '../../hooks/useFitnessData';
+import { WorkoutAnalytics } from '../../components/fitness/WorkoutAnalytics';
+import { AchievementSystem } from '../../components/fitness/AchievementSystem';
 import { Workout } from '../../types/ai';
+import { Exercise } from '../../services/fitnessData';
 
 export const FitnessScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     workoutId: string | null;
@@ -32,8 +43,38 @@ export const FitnessScreen: React.FC = () => {
   const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  // User data for AI generation
+  // Authentication and user data
+  const { user, isAuthenticated } = useAuth();
   const { profile } = useUserStore();
+
+  // Real fitness data
+  const {
+    exercises,
+    exercisesLoading,
+    exercisesError,
+    loadExercises,
+    userWorkouts,
+    workoutPreferences,
+    fitnessGoals,
+    workoutStats,
+    createWorkout,
+    completeWorkout,
+    startWorkoutSession,
+    getRecommendedExercises,
+    refreshAll,
+  } = useFitnessData();
+
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  // Animate in on mount
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const categories = [
     { id: 'all', label: 'All', icon: '🏋️' },
@@ -42,7 +83,7 @@ export const FitnessScreen: React.FC = () => {
     { id: 'flexibility', label: 'Flexibility', icon: '🧘' },
   ];
 
-  // AI Workout Generation Function
+  // AI Workout Generation Function with real user preferences
   const generateAIWorkout = async (workoutType?: 'strength' | 'cardio' | 'flexibility' | 'hiit') => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
@@ -57,10 +98,13 @@ export const FitnessScreen: React.FC = () => {
     setAiError(null);
 
     try {
+      // Use real user preferences if available
       const preferences = {
         workoutType: workoutType || 'strength',
-        duration: 45, // Default 45 minutes
-        equipment: ['bodyweight', 'dumbbells'], // Default equipment
+        duration: workoutPreferences?.time_preference || 45,
+        equipment: workoutPreferences?.equipment || ['bodyweight', 'dumbbells'],
+        location: workoutPreferences?.location || 'home',
+        intensity: workoutPreferences?.intensity || fitnessGoals?.experience_level || 'intermediate',
       };
 
       const response = await unifiedAIService.generateWorkout(
@@ -71,6 +115,18 @@ export const FitnessScreen: React.FC = () => {
 
       if (response.success && response.data) {
         setAiWorkouts(prev => [response.data!, ...prev]);
+
+        // Optionally save the generated workout to the database
+        if (user?.id) {
+          await createWorkout({
+            name: response.data.name,
+            type: workoutType || 'strength',
+            duration_minutes: response.data.duration,
+            calories_burned: response.data.estimatedCalories,
+            notes: `AI-generated ${workoutType || 'strength'} workout`,
+          });
+        }
+
         Alert.alert(
           'Workout Generated! 🎉',
           `Your personalized ${workoutType || 'strength'} workout is ready!`,
@@ -112,61 +168,74 @@ export const FitnessScreen: React.FC = () => {
     }
   };
 
-  // Static demo workouts (fallback)
-  const staticWorkouts = [
-    {
-      id: 1,
-      title: 'Upper Body Blast',
-      duration: '45 min',
-      difficulty: 'Intermediate',
-      calories: '320 cal',
-      category: 'strength',
-      icon: '💪',
-      exercises: 8,
-      isAIGenerated: false,
-    },
-    {
-      id: 2,
-      title: 'HIIT Cardio',
-      duration: '30 min',
-      difficulty: 'Advanced',
-      calories: '450 cal',
-      category: 'cardio',
-      icon: '🔥',
-      exercises: 6,
-      isAIGenerated: false,
-    },
-    {
-      id: 3,
-      title: 'Morning Yoga',
-      duration: '25 min',
-      difficulty: 'Beginner',
-      calories: '120 cal',
-      category: 'flexibility',
-      icon: '🧘',
-      exercises: 12,
-      isAIGenerated: false,
-    },
-    {
-      id: 4,
-      title: 'Core Crusher',
-      duration: '20 min',
-      difficulty: 'Intermediate',
-      calories: '180 cal',
-      category: 'strength',
-      icon: '⚡',
-      exercises: 6,
-      isAIGenerated: false,
-    },
-  ];
+  // Convert real exercises to workout display format
+  const convertExerciseToWorkout = (exercise: Exercise) => ({
+    id: exercise.id,
+    title: exercise.name,
+    duration: '30 min', // Default duration
+    difficulty: exercise.difficulty_level,
+    calories: `${Math.round(exercise.calories_per_minute * 30)} cal`,
+    category: exercise.category.toLowerCase(),
+    icon: getWorkoutIcon(exercise.category.toLowerCase()),
+    exercises: 1,
+    isAIGenerated: false,
+    description: `${exercise.category} exercise targeting ${exercise.muscle_groups.join(', ')}`,
+    equipment: exercise.equipment,
+    rating: 4.5, // Default rating
+    completions: Math.floor(Math.random() * 1000) + 500, // Random completions for now
+  });
 
-  // Combine AI workouts with static workouts
+  // Convert user workouts to display format
+  const convertUserWorkoutToDisplay = (workout: any) => ({
+    id: workout.id,
+    title: workout.name,
+    duration: workout.duration_minutes ? `${workout.duration_minutes} min` : '30 min',
+    difficulty: 'Intermediate', // Default for now
+    calories: workout.calories_burned ? `${workout.calories_burned} cal` : '200 cal',
+    category: workout.type.toLowerCase(),
+    icon: getWorkoutIcon(workout.type.toLowerCase()),
+    exercises: workout.exercises?.length || 0,
+    isAIGenerated: false,
+    description: workout.notes || `${workout.type} workout`,
+    equipment: ['mixed'],
+    rating: 4.5,
+    completions: 1,
+    isUserWorkout: true,
+    completed_at: workout.completed_at,
+  });
+
+  // Combine all workout sources
   const aiWorkoutsDisplay = aiWorkouts.map(convertAIWorkoutToDisplay);
-  const allWorkouts = [...aiWorkoutsDisplay, ...staticWorkouts];
+  const exerciseWorkouts = exercises.map(convertExerciseToWorkout);
+  const userWorkoutsDisplay = userWorkouts.map(convertUserWorkoutToDisplay);
+  const allWorkouts = [...aiWorkoutsDisplay, ...userWorkoutsDisplay, ...exerciseWorkouts];
 
-  const filteredWorkouts = selectedCategory === 'all'
-    ? allWorkouts
-    : allWorkouts.filter(workout => workout.category === selectedCategory);
+  // Filter workouts by category and search query
+  const filteredWorkouts = allWorkouts.filter(workout => {
+    const matchesCategory = selectedCategory === 'all' || workout.category === selectedCategory;
+    const matchesSearch = !searchQuery ||
+      workout.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workout.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      workout.difficulty.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  // Load exercises when category or search changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      const filters: any = {};
+
+      if (selectedCategory !== 'all') {
+        filters.category = selectedCategory;
+      }
+
+      if (searchQuery) {
+        filters.search = searchQuery;
+      }
+
+      loadExercises(filters);
+    }
+  }, [selectedCategory, searchQuery, isAuthenticated, loadExercises]);
 
   const handleWorkoutLongPress = (workoutId: string, event: any) => {
     const { pageX, pageY } = event.nativeEvent;
@@ -178,12 +247,14 @@ export const FitnessScreen: React.FC = () => {
   };
 
   const handleContextMenuAction = (action: string) => {
-    const workout = workouts.find(w => w.id === contextMenu.workoutId);
+    const workout = filteredWorkouts.find(w => w.id === contextMenu.workoutId);
     setContextMenu({ visible: false, workoutId: null, position: { x: 0, y: 0 } });
 
     switch (action) {
       case 'start':
-        Alert.alert('Start Workout', `Starting ${workout?.title}...`);
+        if (workout) {
+          handleStartWorkout(workout);
+        }
         break;
       case 'favorite':
         Alert.alert('Favorite', `Added ${workout?.title} to favorites!`);
@@ -201,6 +272,53 @@ export const FitnessScreen: React.FC = () => {
     setContextMenu({ visible: false, workoutId: null, position: { x: 0, y: 0 } });
   };
 
+  // Handle starting a workout
+  const handleStartWorkout = async (workout: any) => {
+    if (!user?.id) {
+      Alert.alert('Authentication Required', 'Please sign in to start workouts.');
+      return;
+    }
+
+    try {
+      // If it's an exercise, create a simple workout with that exercise
+      if (workout.id && exercises.find(ex => ex.id === workout.id)) {
+        const exercise = exercises.find(ex => ex.id === workout.id);
+        if (exercise) {
+          const success = await startWorkoutSession({
+            name: `${exercise.name} Workout`,
+            type: exercise.category.toLowerCase(),
+            exercises: [{
+              exercise_id: exercise.id,
+              sets: 3,
+              reps: exercise.category === 'Strength' ? 12 : undefined,
+              duration_seconds: exercise.category !== 'Strength' ? 60 : undefined,
+              rest_seconds: 60,
+            }],
+          });
+
+          if (success) {
+            Alert.alert(
+              'Workout Started! 🎯',
+              `Your ${exercise.name} workout has been created and is ready to begin.`,
+              [{ text: 'Great!' }]
+            );
+          } else {
+            Alert.alert('Error', 'Failed to start workout. Please try again.');
+          }
+        }
+      } else {
+        // For other workout types, show a placeholder
+        Alert.alert(
+          'Start Workout',
+          `Starting ${workout.title}...`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start workout. Please try again.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -208,6 +326,18 @@ export const FitnessScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.title}>Fitness</Text>
           <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[styles.headerButton, showAnalytics && styles.headerButtonActive]}
+              onPress={() => setShowAnalytics(!showAnalytics)}
+            >
+              <Text style={styles.headerButtonIcon}>📊</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.headerButton, showAchievements && styles.headerButtonActive]}
+              onPress={() => setShowAchievements(!showAchievements)}
+            >
+              <Text style={styles.headerButtonIcon}>🏆</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.aiButton, isGeneratingWorkout && styles.aiButtonDisabled]}
               onPress={() => generateAIWorkout()}
@@ -219,41 +349,81 @@ export const FitnessScreen: React.FC = () => {
                 <Text style={styles.aiButtonText}>🤖 AI</Text>
               )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.searchButton}>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => setShowSearch(!showSearch)}
+            >
               <Text style={styles.searchIcon}>🔍</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Current Workout */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Continue Your Workout</Text>
-          <Card style={styles.currentWorkoutCard} variant="elevated">
-            <View style={styles.workoutHeader}>
-              <View style={styles.workoutInfo}>
-                <Text style={styles.currentWorkoutTitle}>Upper Body Strength</Text>
-                <Text style={styles.currentWorkoutProgress}>3 of 8 exercises completed</Text>
-              </View>
-              <View style={styles.workoutIconLarge}>
-                <Text style={styles.workoutEmoji}>💪</Text>
-              </View>
-            </View>
-            
-            <View style={styles.progressSection}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '37.5%' }]} />
-              </View>
-              <Text style={styles.progressText}>15 min remaining</Text>
-            </View>
-            
-            <Button
-              title="Continue Workout"
-              onPress={() => {}}
-              variant="primary"
-              style={styles.continueButton}
+        {/* Search Input */}
+        {showSearch && (
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search workouts..."
+              placeholderTextColor={THEME.colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus
             />
-          </Card>
-        </View>
+            <TouchableOpacity
+              style={styles.clearSearchButton}
+              onPress={() => {
+                setSearchQuery('');
+                setShowSearch(false);
+              }}
+            >
+              <Text style={styles.clearSearchText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Current Workout */}
+        {userWorkouts.length > 0 && !userWorkouts[0].completed_at && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Continue Your Workout</Text>
+            <Card style={styles.currentWorkoutCard} variant="elevated">
+              <View style={styles.workoutHeader}>
+                <View style={styles.workoutInfo}>
+                  <Text style={styles.currentWorkoutTitle}>{userWorkouts[0].name}</Text>
+                  <Text style={styles.currentWorkoutProgress}>
+                    {userWorkouts[0].exercises?.length || 0} exercises planned
+                  </Text>
+                </View>
+                <View style={styles.workoutIconLarge}>
+                  <Text style={styles.workoutEmoji}>
+                    {getWorkoutIcon(userWorkouts[0].type)}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.progressSection}>
+                <View style={styles.progressBar}>
+                  <View style={[styles.progressFill, { width: '0%' }]} />
+                </View>
+                <Text style={styles.progressText}>
+                  {userWorkouts[0].duration_minutes || 30} min planned
+                </Text>
+              </View>
+
+              <Button
+                title="Start Workout"
+                onPress={() => {
+                  Alert.alert(
+                    'Start Workout',
+                    `Starting ${userWorkouts[0].name}...`,
+                    [{ text: 'OK' }]
+                  );
+                }}
+                variant="primary"
+                style={styles.continueButton}
+              />
+            </Card>
+          </View>
+        )}
 
         {/* Categories */}
         <View style={styles.section}>
@@ -305,17 +475,59 @@ export const FitnessScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>
               {selectedCategory === 'all' ? 'All Workouts' : `${categories.find(c => c.id === selectedCategory)?.label} Workouts`}
             </Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
+            <TouchableOpacity onPress={refreshAll}>
+              <Text style={styles.seeAllText}>Refresh</Text>
             </TouchableOpacity>
           </View>
-          
-          {filteredWorkouts.map((workout) => (
-            <Card key={workout.id} style={styles.workoutCard} variant="outlined">
-              <TouchableOpacity
-                style={styles.workoutContent}
-                onLongPress={(event) => handleWorkoutLongPress(workout.id, event)}
-              >
+
+          {/* Loading State */}
+          {exercisesLoading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={THEME.colors.primary} />
+              <Text style={styles.loadingText}>Loading workouts...</Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {exercisesError && (
+            <Card style={styles.errorCard} variant="outlined">
+              <Text style={styles.errorText}>⚠️ {exercisesError}</Text>
+              <Button
+                title="Retry"
+                onPress={() => loadExercises()}
+                variant="outline"
+                size="sm"
+                style={styles.retryButton}
+              />
+            </Card>
+          )}
+
+          {/* No Authentication State */}
+          {!isAuthenticated && (
+            <Card style={styles.errorCard} variant="outlined">
+              <Text style={styles.errorText}>🔐 Please sign in to view personalized workouts</Text>
+            </Card>
+          )}
+
+          {/* Workouts List */}
+          {!exercisesLoading && !exercisesError && isAuthenticated && filteredWorkouts.map((workout, index) => (
+            <Animated.View
+              key={workout.id}
+              style={{
+                opacity: fadeAnim,
+                transform: [{
+                  translateY: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [20, 0],
+                  }),
+                }],
+              }}
+            >
+              <Card style={styles.workoutCard} variant="outlined">
+                <TouchableOpacity
+                  style={styles.workoutContent}
+                  onLongPress={(event) => handleWorkoutLongPress(workout.id, event)}
+                >
                 <View style={styles.workoutHeader}>
                   <View style={styles.workoutInfo}>
                     <View style={styles.workoutTitleRow}>
@@ -333,6 +545,16 @@ export const FitnessScreen: React.FC = () => {
                       <Text style={styles.workoutMetaDot}>•</Text>
                       <Text style={styles.workoutMetaText}>{workout.exercises} exercises</Text>
                     </View>
+                    {workout.description && (
+                      <Text style={styles.workoutDescription}>{workout.description}</Text>
+                    )}
+                    {workout.rating && (
+                      <View style={styles.workoutRating}>
+                        <Text style={styles.ratingStars}>⭐</Text>
+                        <Text style={styles.ratingText}>{workout.rating}</Text>
+                        <Text style={styles.completionsText}>({workout.completions} completed)</Text>
+                      </View>
+                    )}
                   </View>
                   <View style={styles.workoutIcon}>
                     <Text style={styles.workoutEmoji}>{workout.icon}</Text>
@@ -345,7 +567,7 @@ export const FitnessScreen: React.FC = () => {
                   </View>
                   <Button
                     title="Start"
-                    onPress={() => {}}
+                    onPress={() => handleStartWorkout(workout)}
                     variant="outline"
                     size="sm"
                     style={styles.startButton}
@@ -353,29 +575,51 @@ export const FitnessScreen: React.FC = () => {
                 </View>
               </TouchableOpacity>
             </Card>
+            </Animated.View>
           ))}
         </View>
 
+        {/* Analytics Component */}
+        {showAnalytics && (
+          <WorkoutAnalytics />
+        )}
+
+        {/* Achievements Component */}
+        {showAchievements && (
+          <AchievementSystem workoutStats={workoutStats} />
+        )}
+
         {/* Quick Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week</Text>
-          <View style={styles.statsGrid}>
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>5</Text>
-              <Text style={styles.statLabel}>Workouts</Text>
-            </Card>
-            
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>3.2h</Text>
-              <Text style={styles.statLabel}>Total Time</Text>
-            </Card>
-            
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>1,240</Text>
-              <Text style={styles.statLabel}>Calories</Text>
-            </Card>
+        {!showAnalytics && !showAchievements && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>This Week</Text>
+            <View style={styles.statsGrid}>
+              <Card style={styles.statCard} variant="elevated">
+                <Text style={styles.statValue}>
+                  {workoutStats?.totalWorkouts || 0}
+                </Text>
+                <Text style={styles.statLabel}>Workouts</Text>
+              </Card>
+
+              <Card style={styles.statCard} variant="elevated">
+                <Text style={styles.statValue}>
+                  {workoutStats?.totalDuration
+                    ? `${(workoutStats.totalDuration / 60).toFixed(1)}h`
+                    : '0h'
+                  }
+                </Text>
+                <Text style={styles.statLabel}>Total Time</Text>
+              </Card>
+
+              <Card style={styles.statCard} variant="elevated">
+                <Text style={styles.statValue}>
+                  {workoutStats?.totalCalories?.toLocaleString() || '0'}
+                </Text>
+                <Text style={styles.statLabel}>Calories</Text>
+              </Card>
+            </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -466,6 +710,23 @@ const styles = StyleSheet.create({
     gap: 12,
   },
 
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: THEME.borderRadius.lg,
+    backgroundColor: THEME.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  headerButtonActive: {
+    backgroundColor: THEME.colors.primary,
+  },
+
+  headerButtonIcon: {
+    fontSize: 20,
+  },
+
   aiButton: {
     backgroundColor: THEME.colors.primary,
     paddingHorizontal: 12,
@@ -496,6 +757,35 @@ const styles = StyleSheet.create({
   
   searchIcon: {
     fontSize: 20,
+  },
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.borderRadius.md,
+    marginHorizontal: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.md,
+    ...THEME.shadows.sm,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: 44,
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.text,
+    paddingVertical: THEME.spacing.sm,
+  },
+
+  clearSearchButton: {
+    padding: THEME.spacing.sm,
+    marginLeft: THEME.spacing.sm,
+  },
+
+  clearSearchText: {
+    fontSize: 16,
+    color: THEME.colors.textSecondary,
   },
   
   section: {
@@ -697,6 +987,36 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     marginHorizontal: THEME.spacing.xs,
   },
+
+  workoutDescription: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+    marginTop: THEME.spacing.xs,
+    lineHeight: 18,
+  },
+
+  workoutRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: THEME.spacing.xs,
+  },
+
+  ratingStars: {
+    fontSize: 14,
+    marginRight: 4,
+  },
+
+  ratingText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.text,
+    fontWeight: THEME.fontWeight.medium,
+    marginRight: 4,
+  },
+
+  completionsText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textMuted,
+  },
   
   workoutIcon: {
     width: 48,
@@ -778,5 +1098,33 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
     fontWeight: THEME.fontWeight.medium,
+  },
+
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.xl,
+  },
+
+  loadingText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    marginTop: THEME.spacing.md,
+  },
+
+  errorCard: {
+    padding: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
+    alignItems: 'center',
+  },
+
+  errorText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.error,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.md,
+  },
+
+  retryButton: {
+    paddingHorizontal: THEME.spacing.lg,
   },
 });

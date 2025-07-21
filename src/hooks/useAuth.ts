@@ -17,6 +17,10 @@ export interface UseAuthReturn {
   logout: () => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<AuthResponse>;
   resendEmailVerification: (email: string) => Promise<AuthResponse>;
+  signInWithGoogle: () => Promise<any>;
+  linkGoogleAccount: () => Promise<any>;
+  unlinkGoogleAccount: () => Promise<any>;
+  isGoogleLinked: () => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -36,6 +40,10 @@ export const useAuth = (): UseAuthReturn => {
     logout,
     resetPassword,
     resendEmailVerification,
+    signInWithGoogle,
+    linkGoogleAccount,
+    unlinkGoogleAccount,
+    isGoogleLinked,
     clearError,
     initialize,
   } = useAuthStore();
@@ -58,6 +66,10 @@ export const useAuth = (): UseAuthReturn => {
     logout,
     resetPassword,
     resendEmailVerification,
+    signInWithGoogle,
+    linkGoogleAccount,
+    unlinkGoogleAccount,
+    isGoogleLinked,
     clearError,
   };
 };

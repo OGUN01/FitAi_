@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { googleAuthService, GoogleSignInResult } from './googleAuth';
 
 export interface AuthResponse {
   success: boolean;
@@ -272,9 +273,12 @@ class AuthService {
       const sessionData = await AsyncStorage.getItem('auth_session');
       if (sessionData) {
         const session: AuthSession = JSON.parse(sessionData);
-        
-        // Check if session is still valid
-        if (session.expiresAt > Date.now() / 1000) {
+
+        // Check if session is still valid (handle both seconds and milliseconds)
+        const currentTime = Date.now() / 1000; // Current time in seconds
+        const expiresAt = session.expiresAt > 9999999999 ? session.expiresAt / 1000 : session.expiresAt; // Convert to seconds if in milliseconds
+
+        if (expiresAt > currentTime) {
           this.currentSession = session;
           return {
             success: true,
@@ -288,8 +292,44 @@ class AuthService {
 
       // Try to get session from Supabase
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error) {
+        // Try to refresh the session if we have a refresh token
+        if (sessionData) {
+          try {
+            const storedSession: AuthSession = JSON.parse(sessionData);
+
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession({
+              refresh_token: storedSession.refreshToken,
+            });
+
+            if (refreshData.session && !refreshError) {
+              const authUser: AuthUser = {
+                id: refreshData.session.user.id,
+                email: refreshData.session.user.email!,
+                isEmailVerified: refreshData.session.user.email_confirmed_at !== null,
+                lastLoginAt: new Date().toISOString(),
+              };
+
+              this.currentSession = {
+                user: authUser,
+                accessToken: refreshData.session.access_token,
+                refreshToken: refreshData.session.refresh_token,
+                expiresAt: refreshData.session.expires_at || 0,
+              };
+
+              await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+
+              return {
+                success: true,
+                user: authUser,
+              };
+            }
+          } catch (refreshError) {
+            // Session refresh failed, continue to error
+          }
+        }
+
         return {
           success: false,
           error: error.message,
@@ -359,6 +399,48 @@ class AuthService {
         callback(null);
       }
     });
+  }
+
+  /**
+   * Sign in with Google
+   */
+  async signInWithGoogle(): Promise<GoogleSignInResult> {
+    return await googleAuthService.signInWithGoogle();
+  }
+
+  /**
+   * Handle Google OAuth callback
+   */
+  async handleGoogleCallback(url: string): Promise<GoogleSignInResult> {
+    return await googleAuthService.handleGoogleCallback(url);
+  }
+
+  /**
+   * Link Google account to existing user
+   */
+  async linkGoogleAccount(): Promise<GoogleSignInResult> {
+    return await googleAuthService.linkGoogleAccount();
+  }
+
+  /**
+   * Unlink Google account from user
+   */
+  async unlinkGoogleAccount(): Promise<GoogleSignInResult> {
+    return await googleAuthService.unlinkGoogleAccount();
+  }
+
+  /**
+   * Check if user has Google account linked
+   */
+  async isGoogleLinked(): Promise<boolean> {
+    return await googleAuthService.isGoogleLinked();
+  }
+
+  /**
+   * Get Google user info if linked
+   */
+  async getGoogleUserInfo(): Promise<any> {
+    return await googleAuthService.getGoogleUserInfo();
   }
 }
 

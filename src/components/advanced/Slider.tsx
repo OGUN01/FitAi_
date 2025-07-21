@@ -47,7 +47,7 @@ export const Slider: React.FC<SliderProps> = ({
 
   // Calculate thumb position based on value
   React.useEffect(() => {
-    if (sliderWidth > 0) {
+    if (sliderWidth > 24) { // Ensure slider is wide enough
       const percentage = (value - min) / (max - min);
       const position = percentage * (sliderWidth - 24); // 24 is thumb width
 
@@ -72,6 +72,8 @@ export const Slider: React.FC<SliderProps> = ({
     },
 
     onPanResponderMove: (event, gestureState) => {
+      if (sliderWidth <= 24) return; // Prevent calculation with invalid slider width
+
       const { dx } = gestureState;
       const currentPosition = ((value - min) / (max - min)) * (sliderWidth - 24);
       const newPosition = Math.max(0, Math.min(sliderWidth - 24, currentPosition + dx));
@@ -132,11 +134,11 @@ export const Slider: React.FC<SliderProps> = ({
             styles.activeTrack,
             {
               backgroundColor: activeTrackColor,
-              width: thumbPosition.interpolate({
+              width: sliderWidth > 24 ? thumbPosition.interpolate({
                 inputRange: [0, sliderWidth - 24],
                 outputRange: [12, sliderWidth - 12],
                 extrapolate: 'clamp',
-              }),
+              }) : 12,
             },
           ]}
         />

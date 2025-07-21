@@ -1,6 +1,6 @@
 {
   "name": "fitai",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -14,7 +14,9 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:preview": "eas build --platform android --profile preview",
+    "build:production": "eas build --platform android --profile production"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -25,6 +27,7 @@
     "@react-navigation/native": "^7.1.14",
     "@react-navigation/stack": "^7.4.2",
     "@supabase/supabase-js": "^2.52.0",
+
     "expo": "~53.0.20",
     "expo-camera": "^16.1.11",
     "expo-image-picker": "^16.1.4",

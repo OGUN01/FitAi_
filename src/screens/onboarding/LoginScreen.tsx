@@ -29,7 +29,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, signInWithGoogle } = useAuth();
 
   const updateField = (field: keyof LoginCredentials, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -62,7 +62,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setIsLoading(true);
     try {
       const result = await login(formData);
-      
+
       if (result.success) {
         Alert.alert('Success', 'Welcome back!', [
           { text: 'Continue', onPress: onLoginSuccess }
@@ -73,6 +73,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
       console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+
+    try {
+      const response = await signInWithGoogle();
+
+      if (response.success) {
+        Alert.alert('Success', 'Google Sign-In successful!', [
+          { text: 'Continue', onPress: onLoginSuccess }
+        ]);
+      } else {
+        Alert.alert('Google Sign-In Failed', response.error || 'Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Google Sign-In failed. Please try again.');
+      console.error('Google Sign-In error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -116,6 +137,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             fullWidth
             loading={isLoading}
             style={styles.loginButton}
+          />
+
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Button
+            title="🔍 Continue with Google"
+            onPress={handleGoogleSignIn}
+            variant="outline"
+            size="lg"
+            fullWidth
+            loading={isLoading}
+            style={styles.googleButton}
           />
 
           <Button
@@ -184,6 +221,29 @@ const styles = StyleSheet.create({
   loginButton: {
     marginTop: THEME.spacing.lg,
     marginBottom: THEME.spacing.md,
+  },
+
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: THEME.spacing.md,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: THEME.colors.border,
+  },
+
+  dividerText: {
+    marginHorizontal: THEME.spacing.md,
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+  },
+
+  googleButton: {
+    marginBottom: THEME.spacing.md,
+    borderColor: THEME.colors.border,
   },
 
   signUpButton: {

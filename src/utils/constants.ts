@@ -95,22 +95,16 @@ export const THEME = {
 
   shadows: {
     sm: {
-      // Web-compatible shadow
+      // Web-compatible shadow only
       boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
-      // Android elevation
-      elevation: 2,
     },
     md: {
-      // Web-compatible shadow
+      // Web-compatible shadow only
       boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)',
-      // Android elevation
-      elevation: 4,
     },
     lg: {
-      // Web-compatible shadow
+      // Web-compatible shadow only
       boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-      // Android elevation
-      elevation: 8,
     },
   },
 };

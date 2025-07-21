@@ -6,7 +6,17 @@
       "Bash(rm:*)",
       "Bash(npm cache clean:*)",
       "Bash(npx expo prebuild:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(eas whoami:*)",
+      "Bash(eas project:info:*)",
+      "Bash(eas build:configure)",
+      "Bash(eas build:*)",
+      "Bash(npx expo:*)",
+      "Bash(eas:*)",
+      "Bash(mkdir:*)",
+      "Bash(keytool:*)",
+      "Bash(java:*)",
+      "Bash(where java)"
     ],
     "deny": []
   }

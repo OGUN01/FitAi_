@@ -4,16 +4,14 @@ import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { OnboardingFlow } from './src/screens/onboarding/OnboardingFlow';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
 import { PersonalInfo, FitnessGoals } from './src/types/user';
+import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
 import { THEME } from './src/utils/constants';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
 
 export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
-  const [userData, setUserData] = useState<{
-    personalInfo: PersonalInfo;
-    fitnessGoals: FitnessGoals;
-  } | null>(null);
+  const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
 
   const { user, isLoading, isInitialized } = useAuth();
 
@@ -34,10 +32,8 @@ export default function App() {
     }
   }, [user, isLoading, isInitialized]);
 
-  const handleOnboardingComplete = (data: {
-    personalInfo: PersonalInfo;
-    fitnessGoals: FitnessGoals;
-  }) => {
+  const handleOnboardingComplete = (data: OnboardingReviewData) => {
+    console.log('🎉 App: Onboarding completed with data:', data);
     setUserData(data);
     setIsOnboardingComplete(true);
   };
