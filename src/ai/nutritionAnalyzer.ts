@@ -113,7 +113,9 @@ class NutritionAnalyzerService {
         tags: mealData.tags || [],
         isPersonalized: true,
         aiGenerated: true,
-        scheduledTime: this.getDefaultMealTime(mealType)
+        scheduledTime: this.getDefaultMealTime(mealType),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       return {
@@ -253,10 +255,11 @@ class NutritionAnalyzerService {
         dailyPlans,
         calorieTarget,
         macroTargets,
-        dietaryRestrictions: preferences?.dietaryRestrictions || [],
-        goals: fitnessGoals.primaryGoals,
+        dietaryRestrictions: (preferences?.dietaryRestrictions || []) as any[],
+        goals: (fitnessGoals.primaryGoals || []) as any[],
         isActive: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       return {

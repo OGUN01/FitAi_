@@ -61,17 +61,17 @@ async function testWorkoutGeneration() {
     if (response.success && response.data) {
       console.log('✅ Workout generation successful!');
       console.log('📊 Response structure:', {
-        hasTitle: !!response.data.title,
-        hasDescription: !!response.data.description,
-        hasCategory: !!response.data.category,
-        hasDifficulty: !!response.data.difficulty,
-        hasDuration: !!response.data.duration,
-        hasExercises: Array.isArray(response.data.exercises),
-        exerciseCount: response.data.exercises?.length || 0,
-        hasEquipment: Array.isArray(response.data.equipment),
-        hasTargetMuscleGroups: Array.isArray(response.data.targetMuscleGroups)
+        hasTitle: !!(response.data as any).title,
+        hasDescription: !!(response.data as any).description,
+        hasCategory: !!(response.data as any).category,
+        hasDifficulty: !!(response.data as any).difficulty,
+        hasDuration: !!(response.data as any).duration,
+        hasExercises: Array.isArray((response.data as any).exercises),
+        exerciseCount: (response.data as any).exercises?.length || 0,
+        hasEquipment: Array.isArray((response.data as any).equipment),
+        hasTargetMuscleGroups: Array.isArray((response.data as any).targetMuscleGroups)
       });
-      console.log('🎯 Sample exercise:', response.data.exercises?.[0]);
+      console.log('🎯 Sample exercise:', (response.data as any).exercises?.[0]);
       return true;
     } else {
       console.log('❌ Workout generation failed:', response.error);
@@ -99,13 +99,13 @@ async function testNutritionPlanning() {
     if (response.success && response.data) {
       console.log('✅ Nutrition planning successful!');
       console.log('📊 Response structure:', {
-        hasMeals: Array.isArray(response.data.meals),
-        mealCount: response.data.meals?.length || 0,
-        hasDailyTotals: !!response.data.dailyTotals,
-        hasInsights: Array.isArray(response.data.nutritionalInsights),
-        hasMealTimingTips: Array.isArray(response.data.mealTimingTips)
+        hasMeals: Array.isArray((response.data as any).meals),
+        mealCount: (response.data as any).meals?.length || 0,
+        hasDailyTotals: !!(response.data as any).dailyTotals,
+        hasInsights: Array.isArray((response.data as any).nutritionalInsights),
+        hasMealTimingTips: Array.isArray((response.data as any).mealTimingTips)
       });
-      console.log('🍽️ Sample meal:', response.data.meals?.[0]);
+      console.log('🍽️ Sample meal:', (response.data as any).meals?.[0]);
       return true;
     } else {
       console.log('❌ Nutrition planning failed:', response.error);
@@ -133,14 +133,14 @@ async function testMotivationalContent() {
     if (response.success && response.data) {
       console.log('✅ Motivational content successful!');
       console.log('📊 Response structure:', {
-        hasDailyTip: !!response.data.dailyTip,
-        hasEncouragement: !!response.data.encouragement,
-        hasChallenge: !!response.data.challenge,
-        hasQuote: !!response.data.quote,
-        hasFactOfTheDay: !!response.data.factOfTheDay,
-        hasPersonalizedMessage: !!response.data.personalizedMessage
+        hasDailyTip: !!(response.data as any).dailyTip,
+        hasEncouragement: !!(response.data as any).encouragement,
+        hasChallenge: !!(response.data as any).challenge,
+        hasQuote: !!(response.data as any).quote,
+        hasFactOfTheDay: !!(response.data as any).factOfTheDay,
+        hasPersonalizedMessage: !!(response.data as any).personalizedMessage
       });
-      console.log('🎯 Daily tip:', response.data.dailyTip);
+      console.log('🎯 Daily tip:', (response.data as any).dailyTip);
       return true;
     } else {
       console.log('❌ Motivational content failed:', response.error);
@@ -172,19 +172,19 @@ async function testFoodAnalysis() {
     if (response.success && response.data) {
       console.log('✅ Food analysis successful!');
       console.log('📊 Response structure:', {
-        hasName: !!response.data.name,
-        hasCategory: !!response.data.category,
-        hasCalories: !!response.data.calories,
-        hasMacros: !!response.data.macros,
-        hasServingSize: !!response.data.servingSize,
-        hasServingUnit: !!response.data.servingUnit,
-        hasAllergens: Array.isArray(response.data.allergens),
-        hasDietaryLabels: Array.isArray(response.data.dietaryLabels)
+        hasName: !!(response.data as any).name,
+        hasCategory: !!(response.data as any).category,
+        hasCalories: !!(response.data as any).calories,
+        hasMacros: !!(response.data as any).macros,
+        hasServingSize: !!(response.data as any).servingSize,
+        hasServingUnit: !!(response.data as any).servingUnit,
+        hasAllergens: Array.isArray((response.data as any).allergens),
+        hasDietaryLabels: Array.isArray((response.data as any).dietaryLabels)
       });
       console.log('🥗 Food details:', {
-        name: response.data.name,
-        calories: response.data.calories,
-        protein: response.data.macros?.protein
+        name: (response.data as any).name,
+        calories: (response.data as any).calories,
+        protein: (response.data as any).macros?.protein
       });
       return true;
     } else {

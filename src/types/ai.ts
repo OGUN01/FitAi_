@@ -2,228 +2,98 @@
 
 import { PersonalInfo, FitnessGoals } from './user';
 
-// ============================================================================
-// WORKOUT TYPES
-// ============================================================================
+// Re-export types from other modules that AI uses
+export type { 
+  Exercise, 
+  WorkoutSet, 
+  Workout, 
+  WorkoutPlan,
+  CompletedExercise,
+  CompletedSet,
+  WorkoutSession
+} from './workout';
 
-export interface Exercise {
-  id: string;
-  name: string;
-  description: string;
-  instructions: string[];
-  muscleGroups: string[];
-  equipment: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  sets?: number;
-  reps?: number | string; // Can be "8-12" or specific number
-  duration?: number; // in seconds for time-based exercises
-  restTime?: number; // in seconds
-  calories?: number; // estimated calories burned
-  videoUrl?: string;
-  imageUrl?: string;
-  tips?: string[];
-  variations?: string[];
-}
-
-export interface WorkoutSet {
-  exerciseId: string;
-  sets: number;
-  reps: number | string;
-  weight?: number; // in kg
-  duration?: number; // in seconds
-  restTime: number; // in seconds
-  notes?: string;
-  intensity?: string; // e.g., "75% 1RM" or "moderate"
-  tempo?: string; // e.g., "2-1-2-1" (eccentric-pause-concentric-pause)
-  rpe?: number; // Rate of Perceived Exertion (1-10)
-}
-
-export interface Workout {
-  id: string;
-  title: string;
-  description: string;
-  category: 'strength' | 'cardio' | 'flexibility' | 'hiit' | 'yoga' | 'pilates' | 'hybrid';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  duration: number; // in minutes
-  estimatedCalories: number;
-  exercises: WorkoutSet[];
-  warmup?: WorkoutSet[];
-  cooldown?: WorkoutSet[];
-  equipment: string[];
-  targetMuscleGroups: string[];
-  icon: string;
-  tags: string[];
-  isPersonalized: boolean;
-  aiGenerated: boolean;
-  createdAt: string;
-  // Enhanced Gemini 2.5 Flash features
-  progressionTips?: string[];
-  modifications?: string[];
-  nutritionalFocus?: string[];
-  recoveryNotes?: string[];
-  safetyConsiderations?: string[];
-  expectedAdaptations?: string[];
-  periodizationWeek?: number; // For progressive programs
-}
-
-export interface WorkoutPlan {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // in days
-  workouts: Workout[];
-  restDays: number[];
-  progression: {
-    week: number;
-    adjustments: string[];
-  }[];
-  goals: string[];
-  isActive: boolean;
-  createdAt: string;
-}
+export type { 
+  Macronutrients,
+  Micronutrients,
+  Food,
+  MealItem,
+  Meal,
+  DailyMealPlan,
+  NutritionPlan,
+  MealLog,
+  WaterLog,
+  LoggedFood
+} from './diet';
 
 // ============================================================================
-// NUTRITION TYPES
+// AI RESPONSE TYPES
 // ============================================================================
-
-export interface Macronutrients {
-  protein: number; // in grams
-  carbohydrates: number; // in grams
-  fat: number; // in grams
-  fiber: number; // in grams
-}
-
-export interface Micronutrients {
-  vitamins: Record<string, number>;
-  minerals: Record<string, number>;
-}
-
-export interface Food {
-  id: string;
-  name: string;
-  brand?: string;
-  category: string;
-  calories: number; // per 100g
-  macros: Macronutrients;
-  micros?: Micronutrients;
-  servingSize: number; // in grams
-  servingUnit: string; // 'g', 'ml', 'piece', 'cup', etc.
-  allergens: string[];
-  dietaryLabels: string[]; // 'vegan', 'gluten-free', 'organic', etc.
-  barcode?: string;
-  imageUrl?: string;
-  verified: boolean;
-}
-
-export interface MealItem {
-  foodId: string;
-  food: Food;
-  quantity: number; // in serving units
-  calories: number;
-  macros: Macronutrients;
-}
-
-export interface Meal {
-  id: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  name: string;
-  items: MealItem[];
-  totalCalories: number;
-  totalMacros: Macronutrients;
-  prepTime?: number; // in minutes
-  cookTime?: number; // in minutes
-  difficulty?: 'easy' | 'medium' | 'hard';
-  recipe?: {
-    instructions: string[];
-    ingredients: string[];
-  };
-  imageUrl?: string;
-  tags: string[];
-  isPersonalized: boolean;
-  aiGenerated: boolean;
-  scheduledTime?: string; // ISO string
-}
-
-export interface DailyMealPlan {
-  date: string; // ISO date string
-  meals: Meal[];
-  totalCalories: number;
-  totalMacros: Macronutrients;
-  waterIntake: number; // in ml
-  adherence?: number; // 0-100 percentage
-}
-
-export interface NutritionPlan {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // in days
-  dailyPlans: DailyMealPlan[];
-  calorieTarget: number;
-  macroTargets: Macronutrients;
-  dietaryRestrictions: string[];
-  goals: string[];
-  isActive: boolean;
-  createdAt: string;
-}
-
-// ============================================================================
-// AI GENERATION TYPES
-// ============================================================================
-
-export interface AIGenerationContext {
-  userProfile: PersonalInfo;
-  fitnessGoals: FitnessGoals;
-  preferences?: {
-    equipment?: string[];
-    dietaryRestrictions?: string[];
-    cuisinePreferences?: string[];
-    timeConstraints?: {
-      workoutDuration?: number;
-      mealPrepTime?: number;
-    };
-  };
-  currentStats?: {
-    weight?: number;
-    bodyFat?: number;
-    fitnessLevel?: number;
-  };
-  history?: {
-    completedWorkouts?: string[];
-    favoriteExercises?: string[];
-    dislikedFoods?: string[];
-  };
-}
-
-export interface AIWorkoutRequest {
-  context: AIGenerationContext;
-  workoutType?: 'strength' | 'cardio' | 'flexibility' | 'hiit';
-  duration?: number; // in minutes
-  equipment?: string[];
-  targetMuscleGroups?: string[];
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
-}
-
-export interface AINutritionRequest {
-  context: AIGenerationContext;
-  calorieTarget?: number;
-  mealType?: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'full_day';
-  dietaryRestrictions?: string[];
-  cuisinePreference?: string;
-  prepTimeLimit?: number; // in minutes
-}
 
 export interface AIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-  confidence?: number; // 0-100
-  generationTime?: number; // in ms
-  tokensUsed?: number;
-  modelVersion?: string; // e.g., "gemini-2.5-flash"
-  warning?: string; // For partial recoveries or non-critical issues
-  retryCount?: number; // Number of retries attempted
-  safetyRating?: string; // Content safety assessment
+  confidence?: number;  // Add confidence as direct property
+  generationTime?: number;  // Add generationTime as direct property
+  tokensUsed?: number;  // Add tokensUsed as direct property
+  modelVersion?: string;  // Add modelVersion as direct property
+  metadata?: {
+    model?: string;
+    tokensUsed?: number;
+    processingTime?: number;
+    confidence?: number;
+  };
+}
+
+// ============================================================================
+// AI GENERATION PARAMETERS
+// ============================================================================
+
+export interface WorkoutGenerationParams {
+  personalInfo: PersonalInfo;
+  fitnessGoals: FitnessGoals;
+  preferences?: {
+    equipmentAvailable?: string[];
+    workoutDuration?: number; // minutes
+    excludeExercises?: string[];
+    focusMuscles?: string[];
+    intensity?: 'low' | 'moderate' | 'high';
+  };
+  constraints?: {
+    injuries?: string[];
+    limitations?: string[];
+    medicalConditions?: string[];
+  };
+}
+
+export interface NutritionGenerationParams {
+  personalInfo: PersonalInfo;
+  fitnessGoals: FitnessGoals;
+  preferences?: {
+    dietaryRestrictions?: string[];
+    allergies?: string[];
+    cuisinePreferences?: string[];
+    mealComplexity?: 'simple' | 'moderate' | 'complex';
+    budget?: 'low' | 'medium' | 'high';
+  };
+  currentMetrics?: {
+    weight?: number;
+    bodyFat?: number;
+    activityLevel?: string;
+  };
+}
+
+// Add missing type for nutrition analyzer
+export interface AINutritionRequest {
+  personalInfo: PersonalInfo;
+  preferences?: {
+    dietaryRestrictions?: string[];
+    allergies?: string[];
+    cuisinePreferences?: string[];
+  };
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  targetCalories?: number;
 }
 
 // ============================================================================
@@ -231,52 +101,158 @@ export interface AIResponse<T> {
 // ============================================================================
 
 export interface ProgressMetrics {
-  weight: {
-    current: number;
-    change: number;
-    trend: 'increasing' | 'decreasing' | 'stable';
+  weight: number[];
+  bodyFat?: number[];
+  measurements?: {
+    chest?: number[];
+    waist?: number[];
+    hips?: number[];
+    arms?: number[];
+    thighs?: number[];
   };
-  bodyFat?: {
-    current: number;
-    change: number;
-    trend: 'increasing' | 'decreasing' | 'stable';
+  performance?: {
+    strength?: { [exercise: string]: number[] };
+    endurance?: { [activity: string]: number[] };
+    flexibility?: { [test: string]: number[] };
   };
-  muscleMass?: {
-    current: number;
-    change: number;
-    trend: 'increasing' | 'decreasing' | 'stable';
-  };
-  strength: {
-    exercises: Record<string, {
-      maxWeight: number;
-      improvement: number;
-    }>;
-  };
-  endurance: {
-    cardioMinutes: number;
-    improvement: number;
-  };
-  consistency: {
-    workoutStreak: number;
-    nutritionAdherence: number;
-  };
+  dates: string[];
 }
 
 export interface ProgressAnalysis {
-  metrics: ProgressMetrics;
-  insights: string[];
+  summary: string;
+  trends: {
+    weight: 'increasing' | 'decreasing' | 'stable';
+    bodyFat?: 'increasing' | 'decreasing' | 'stable';
+    strength?: 'improving' | 'declining' | 'stable';
+    endurance?: 'improving' | 'declining' | 'stable';
+  };
+  achievements: string[];
   recommendations: string[];
-  goalProgress: {
-    goalId: string;
-    progress: number; // 0-100 percentage
-    estimatedCompletion?: string; // ISO date
-  }[];
-  motivationalMessage: string;
-  nextMilestones: string[];
+  projections?: {
+    weightIn4Weeks?: number;
+    goalCompletionDate?: string;
+    milestones?: { date: string; achievement: string }[];
+  };
+  insights: {
+    strengths: string[];
+    areasForImprovement: string[];
+    nutritionFeedback?: string[];
+    workoutFeedback?: string[];
+  };
 }
 
 // ============================================================================
-// ACHIEVEMENT TYPES
+// MOTIVATIONAL CONTENT TYPES
+// ============================================================================
+
+export interface MotivationalContent {
+  dailyTip: {
+    icon: string;
+    title: string;
+    content: string;
+    category: 'nutrition' | 'exercise' | 'mindset' | 'recovery';
+  };
+  encouragement: {
+    message: string;
+    emoji: string;
+    tone: 'supportive' | 'energetic' | 'calm' | 'challenging';
+  };
+  challenge: {
+    title: string;
+    description: string;
+    reward: string;
+    duration: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+  };
+  quote: {
+    text: string;
+    author: string;
+    context?: string;
+  };
+  factOfTheDay: {
+    fact: string;
+    source?: string;
+    relatedTip?: string;
+  };
+  personalizedMessage: {
+    content: string;
+    basedOn: string; // What data point triggered this message
+    actionItem?: string;
+  };
+}
+
+// ============================================================================
+// AI SERVICE CONFIGURATION
+// ============================================================================
+
+export interface AIServiceConfig {
+  provider: 'gemini' | 'openai' | 'anthropic' | 'demo';
+  apiKey?: string;
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+  frequencyPenalty?: number;
+  presencePenalty?: number;
+  timeout?: number; // milliseconds
+  retryAttempts?: number;
+  cacheResponses?: boolean;
+  structuredOutput?: boolean;
+}
+
+// ============================================================================
+// CACHED AI DATA TYPES
+// ============================================================================
+
+export interface CachedWorkout {
+  workout: Workout;
+  generatedAt: string;
+  expiresAt: string;
+  params: WorkoutGenerationParams;
+}
+
+export interface CachedNutritionPlan {
+  plan: NutritionPlan;
+  generatedAt: string;
+  expiresAt: string;
+  params: NutritionGenerationParams;
+}
+
+export interface CachedMotivation {
+  content: MotivationalContent;
+  generatedAt: string;
+  validUntil: string;
+  userContext: {
+    streak?: number;
+    lastWorkout?: string;
+    mood?: string;
+  };
+}
+
+// ============================================================================
+// AI ANALYTICS TYPES
+// ============================================================================
+
+export interface AIUsageMetrics {
+  totalRequests: number;
+  successfulRequests: number;
+  failedRequests: number;
+  averageResponseTime: number; // milliseconds
+  tokenUsage: {
+    total: number;
+    byFeature: {
+      workouts: number;
+      nutrition: number;
+      progress: number;
+      motivation: number;
+    };
+  };
+  costEstimate?: number; // in USD
+  lastReset: string;
+}
+
+// ============================================================================
+// ACHIEVEMENT SYSTEM TYPES
 // ============================================================================
 
 export interface Achievement {
@@ -284,32 +260,51 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
-  category: 'workout' | 'nutrition' | 'consistency' | 'milestone';
-  difficulty: 'bronze' | 'silver' | 'gold' | 'platinum';
-  criteria: {
-    type: string;
-    value: number;
-    timeframe?: string;
-  };
-  reward?: {
-    points: number;
-    badge?: string;
-    unlocks?: string[];
-  };
-  isUnlocked: boolean;
+  category: 'workout' | 'nutrition' | 'consistency' | 'milestone' | 'social';
+  points: number;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
   unlockedAt?: string;
-  progress?: number; // 0-100 percentage
+  progress?: {
+    current: number;
+    target: number;
+    unit: string;
+  };
+  criteria: {
+    type: 'streak' | 'total' | 'personal_best' | 'challenge' | 'special';
+    value: number;
+    timeframe?: 'daily' | 'weekly' | 'monthly' | 'all_time';
+  };
+  rewards?: {
+    xp?: number;
+    badges?: string[];
+    features?: string[];
+  };
 }
 
-export interface MotivationalContent {
-  dailyTip: string;
-  encouragement: string;
-  challenge?: {
-    title: string;
-    description: string;
-    reward: string;
-    duration: number; // in days
+// ============================================================================
+// ERROR TYPES
+// ============================================================================
+
+export interface AIError {
+  code: string;
+  message: string;
+  details?: any;
+  timestamp: string;
+  retryable: boolean;
+  userMessage?: string;
+}
+
+// ============================================================================
+// DEMO MODE TYPES
+// ============================================================================
+
+export interface DemoModeConfig {
+  enabled: boolean;
+  scenarios: {
+    workout: 'beginner' | 'intermediate' | 'advanced';
+    nutrition: 'weight_loss' | 'muscle_gain' | 'maintenance';
+    progress: 'good' | 'average' | 'needs_improvement';
   };
-  quote?: string;
-  factOfTheDay?: string;
+  simulateDelay?: boolean;
+  delayRange?: [number, number]; // min and max milliseconds
 }

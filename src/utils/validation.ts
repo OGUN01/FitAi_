@@ -2,17 +2,46 @@
 // Comprehensive validation schemas and sanitization functions
 
 import { 
-  LocalStorageSchema,
-  ValidationResult,
-  ValidationError,
-  ValidationWarning,
   OnboardingData,
-  PersonalInfo,
-  FitnessGoals,
   WorkoutSession,
-  MealLog,
-  BodyMeasurement
+  MealLog
 } from '../types/localData';
+
+import {
+  PersonalInfo,
+  FitnessGoals
+} from '../types/user';
+
+// Define missing types locally
+interface LocalStorageSchema {
+  version: string;
+  entities: string[];
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+}
+
+interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+  severity?: 'error' | 'warning';
+}
+
+interface ValidationWarning {
+  field: string;
+  message: string;
+  code: string;
+}
+
+interface BodyMeasurement {
+  weight?: number;
+  height?: number;
+  bodyFat?: number;
+}
 
 // ============================================================================
 // VALIDATION CONSTANTS
@@ -326,7 +355,7 @@ export class ValidationService {
       });
     } else {
       const validGoals = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
-      const invalidGoals = goals.primaryGoals.filter(goal => !validGoals.includes(goal));
+      const invalidGoals = goals.primaryGoals.filter((goal: any) => !validGoals.includes(goal));
       if (invalidGoals.length > 0) {
         errors.push({
           field: 'primaryGoals',

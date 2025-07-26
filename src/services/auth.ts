@@ -35,6 +35,8 @@ class AuthService {
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       const { email, password, confirmPassword } = credentials;
+      console.log('🔐 Auth Service: Attempting register for:', email);
+      console.log('🔐 Auth Service: Password length:', password.length);
 
       // Validate passwords match
       if (password !== confirmPassword) {
@@ -56,7 +58,13 @@ class AuthService {
         email,
         password,
         options: {
-          emailRedirectTo: undefined, // We'll handle email verification in-app
+          // Enable email confirmation for production security
+          emailRedirectTo: undefined, // React Native doesn't need redirect URL
+          data: {
+            // Add user metadata for better tracking
+            signup_source: 'fitai_app',
+            signup_timestamp: new Date().toISOString(),
+          }
         },
       });
 
@@ -67,7 +75,7 @@ class AuthService {
         };
       }
 
-      if (data.user && data.session) {
+      if (data.user) {
         const authUser: AuthUser = {
           id: data.user.id,
           email: data.user.email!,
@@ -75,16 +83,22 @@ class AuthService {
           lastLoginAt: new Date().toISOString(),
         };
 
-        // Save session for persistence
-        const session: AuthSession = {
-          user: authUser,
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-          expiresAt: data.session.expires_at || 0,
-        };
+        // Only save session if email is verified OR if no session exists (email confirmation required)
+        // For unverified users, we don't want to auto-authenticate them
+        if (data.session && data.user.email_confirmed_at) {
+          const session: AuthSession = {
+            user: authUser,
+            accessToken: data.session.access_token,
+            refreshToken: data.session.refresh_token,
+            expiresAt: data.session.expires_at || 0,
+          };
 
-        this.currentSession = session;
-        await AsyncStorage.setItem('auth_session', JSON.stringify(session));
+          this.currentSession = session;
+          await AsyncStorage.setItem('auth_session', JSON.stringify(session));
+        } else {
+          // Don't save session for unverified users - they need to verify email first
+          console.log('🔐 Auth Service: User registered but email not verified, not saving session');
+        }
 
         return {
           success: true,
@@ -110,20 +124,60 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       const { email, password } = credentials;
+      console.log('🔐 Auth Service: Attempting login for:', email);
+      console.log('🔐 Auth Service: Password length:', password.length);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
+      console.log('🔐 Auth Service: Supabase response:', {
+        user: data.user ? `${data.user.email} (${data.user.id})` : 'null',
+        session: data.session ? 'exists' : 'null',
+        error: error?.message
+      });
+
       if (error) {
+        console.log('🔐 Auth Service: Login error details:', {
+          message: error.message,
+          code: error.status,
+          name: error.name
+        });
+
+        // Check if error is related to email verification
+        if (error.message.includes('email') || error.message.includes('confirm') || error.message.includes('verify') || error.message.includes('not confirmed')) {
+          return {
+            success: false,
+            error: 'Please verify your email address before logging in. Check your email for the verification link.',
+          };
+        }
+
+        // Check for invalid login credentials
+        if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+          return {
+            success: false,
+            error: 'Invalid email or password. Please check your credentials and try again.',
+          };
+        }
+
         return {
           success: false,
           error: error.message,
         };
       }
 
+      // Check if user's email is confirmed
+      if (data.user && !data.user.email_confirmed_at) {
+        console.log('🔐 Auth Service: Email not confirmed for user:', data.user.email);
+        return {
+          success: false,
+          error: 'Please verify your email address before logging in. Check your email for the verification link.',
+        };
+      }
+
       if (data.user && data.session) {
+        console.log('🔐 Auth Service: Login successful, creating auth user');
         const authUser: AuthUser = {
           id: data.user.id,
           email: data.user.email!,
@@ -224,6 +278,9 @@ class AuthService {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
+        options: {
+          emailRedirectTo: undefined, // Don't use redirect for React Native
+        },
       });
 
       if (error) {
@@ -240,6 +297,30 @@ class AuthService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Email verification failed',
+      };
+    }
+  }
+
+  /**
+   * Check if user's email is verified
+   */
+  async checkEmailVerification(email: string): Promise<{ isVerified: boolean; error?: string }> {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) {
+        return { isVerified: false, error: error.message };
+      }
+
+      if (user && user.email === email) {
+        return { isVerified: user.email_confirmed_at !== null };
+      }
+
+      return { isVerified: false, error: 'User not found' };
+    } catch (error) {
+      return {
+        isVerified: false,
+        error: error instanceof Error ? error.message : 'Verification check failed'
       };
     }
   }

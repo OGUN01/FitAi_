@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { WelcomeScreen } from './WelcomeScreen';
 import { LoginScreen } from './LoginScreen';
+import { SignUpScreen } from './SignUpScreen';
 import { PersonalInfoScreen } from './PersonalInfoScreen';
 import { GoalsScreen } from './GoalsScreen';
 import { DietPreferencesScreen, DietPreferences } from './DietPreferencesScreen';
@@ -12,13 +13,16 @@ import { PersonalInfo, FitnessGoals, RegisterCredentials } from '../../types/use
 import { THEME } from '../../utils/constants';
 import { useOnboardingIntegration } from '../../utils/integration';
 import { useAuth } from '../../hooks/useAuth';
+import { useUserStore } from '../../stores/userStore';
 
 interface OnboardingFlowProps {
   onComplete: (userData: OnboardingReviewData) => void;
+  startStep?: string;
 }
 
 type OnboardingStep =
   | 'welcome'
+  | 'signup'
   | 'login'
   | 'personal-info'
   | 'goals'
@@ -29,19 +33,86 @@ type OnboardingStep =
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
+  startStep = 'welcome',
 }) => {
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+  const { user, isInitialized, isAuthenticated } = useAuth();
+  const { getCompleteProfile } = useUserStore();
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>(startStep as OnboardingStep);
+  const [hasAutoRedirected, setHasAutoRedirected] = useState(false);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoals | null>(null);
   const [dietPreferences, setDietPreferences] = useState<DietPreferences | null>(null);
   const [workoutPreferences, setWorkoutPreferences] = useState<WorkoutPreferences | null>(null);
   const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(null);
+
+  // Check if user is authenticated and skip to profile setup
+  // Only auto-redirect from welcome screen, not from signup/login flow
+  useEffect(() => {
+    console.log('🎭 OnboardingFlow: Auth state check', {
+      isInitialized,
+      isAuthenticated,
+      user: user ? `${user.email} (verified: ${user.isEmailVerified})` : 'null',
+      currentStep
+    });
+
+    // Only auto-redirect if user is fully authenticated (email verified) and on welcome screen
+    // and we haven't already redirected them (to prevent redirect loops)
+    if (isInitialized && isAuthenticated && currentStep === 'welcome' && !hasAutoRedirected && startStep === 'welcome') {
+      console.log('🎭 OnboardingFlow: User is authenticated and verified, skipping to personal info');
+      setCurrentStep('personal-info');
+      setHasAutoRedirected(true);
+    }
+  }, [isAuthenticated, isInitialized, currentStep, hasAutoRedirected]);
+  
+  // Handle startStep initialization (only run once)
+  useEffect(() => {
+    if (isInitialized && startStep !== 'welcome' && startStep !== currentStep && !hasAutoRedirected) {
+      console.log('🎭 OnboardingFlow: Initializing with start step:', startStep);
+      setCurrentStep(startStep as OnboardingStep);
+      setHasAutoRedirected(true);
+    }
+  }, [isInitialized, startStep]);
+  
+  // Load existing data when resuming onboarding
+  useEffect(() => {
+    const loadExistingData = async () => {
+      if (isInitialized && user && isAuthenticated && startStep !== 'welcome') {
+        console.log('🔄 OnboardingFlow: Loading existing data for resume');
+        try {
+          const profileResponse = await getCompleteProfile(user.id);
+          if (profileResponse.success && profileResponse.data) {
+            const profile = profileResponse.data;
+            
+            // Load personal info if exists
+            if (profile.personalInfo) {
+              console.log('📋 OnboardingFlow: Loading existing personal info');
+              setPersonalInfo(profile.personalInfo);
+            }
+            
+            // Load fitness goals if exists
+            if (profile.fitnessGoals && profile.fitnessGoals.primaryGoals?.length > 0) {
+              console.log('🎯 OnboardingFlow: Loading existing fitness goals');
+              setFitnessGoals(profile.fitnessGoals);
+            }
+          }
+        } catch (error) {
+          console.error('❌ OnboardingFlow: Error loading existing data:', error);
+        }
+      }
+    };
+
+    loadExistingData();
+  }, [isInitialized, user, isAuthenticated, startStep, getCompleteProfile]);
+
   const [isLoading, setIsLoading] = useState(false);
 
   const { saveOnboardingData } = useOnboardingIntegration();
-  const { register, user } = useAuth();
+  const { setGuestMode, register, logout } = useAuth();
 
   const handleWelcomeNext = () => {
+    // Enable guest mode and skip signup - go directly to onboarding
+    setGuestMode(true);
+    console.log('🎭 OnboardingFlow: Starting guest mode onboarding');
     setCurrentStep('personal-info');
   };
 
@@ -49,26 +120,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setCurrentStep('login');
   };
 
-  const handleLoginSuccess = () => {
-    // User is now authenticated, complete onboarding
-    onComplete({
-      personalInfo: {
-        name: '',
-        email: '',
-        age: '',
-        gender: '',
-        height: '',
-        weight: '',
-        activityLevel: '',
-      },
-      fitnessGoals: {
-        primaryGoal: '',
-        targetWeight: '',
-        timeCommitment: '',
-        fitnessLevel: '',
-        preferredWorkouts: [],
-      },
-    });
+  const handleLoginSuccess = async () => {
+    // User is now authenticated, App.tsx will now handle determining
+    // the correct starting step and loading existing data
+    console.log('✅ Login successful, letting App.tsx handle resume logic');
+    // The onboarding flow will be restarted by App.tsx with the correct step
   };
 
   const handleLoginBack = () => {
@@ -76,7 +132,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const handleLoginSignUp = () => {
-    setCurrentStep('personal-info');
+    setCurrentStep('signup');
+  };
+
+  // Sign Up handlers
+  const handleSignUpSuccess = () => {
+    // After successful signup, redirect to login page
+    setCurrentStep('login');
+  };
+
+  const handleSignUpBack = () => {
+    setCurrentStep('welcome');
+  };
+
+  const handleSignUpLogin = () => {
+    setCurrentStep('login');
   };
 
   const handlePersonalInfoNext = async (data: PersonalInfo) => {
@@ -86,8 +156,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setCurrentStep('goals');
   };
 
-  const handlePersonalInfoBack = () => {
-    setCurrentStep('welcome');
+  const handlePersonalInfoBack = async () => {
+    // For authenticated users, we need to allow them to logout and return to welcome
+    if (user && isAuthenticated) {
+      console.log('🔙 PersonalInfo back: Authenticated user wants to go back, logging out');
+      await logout();
+      setHasAutoRedirected(false); // Reset auto-redirect flag
+      setCurrentStep('welcome');
+    } else if (user && !isAuthenticated) {
+      console.log('🔙 PersonalInfo back: Clearing unverified user session');
+      await logout();
+      setHasAutoRedirected(false); // Reset auto-redirect flag
+      setCurrentStep('welcome');
+    } else {
+      // Guest user can go back normally
+      console.log('🔙 PersonalInfo back: Guest user going back to welcome');
+      setCurrentStep('welcome');
+    }
   };
 
   const handleGoalsNext = async (data: FitnessGoals) => {
@@ -213,6 +298,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
+      case 'signup':
+        return (
+          <SignUpScreen
+            onSignUpSuccess={handleSignUpSuccess}
+            onBack={handleSignUpBack}
+            onLogin={handleSignUpLogin}
+          />
+        );
+
       case 'login':
         return (
           <LoginScreen
@@ -300,6 +394,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         );
     }
   };
+
+  console.log('🎭 OnboardingFlow: Rendering step:', currentStep);
 
   return (
     <View style={styles.container}>

@@ -292,12 +292,29 @@ class GeminiService {
           generationConfig.responseMimeType = "text/plain";
         }
 
-        // Create model instance with custom config if needed
-        const modelInstance = options ?
-          genAI!.getGenerativeModel({
-            model: MODEL_NAME,
-            generationConfig
-          }) : model!;
+        // Always create fresh model instance with proper config for structured output
+        const modelInstance = genAI!.getGenerativeModel({
+          model: MODEL_NAME,
+          generationConfig,
+          safetySettings: [
+            {
+              category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+              threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+              threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+              threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            },
+            {
+              category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+              threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            },
+          ],
+        });
 
         console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries}`);
 

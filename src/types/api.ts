@@ -137,7 +137,7 @@ export interface UpdateProfileResponse {
   message: string;
 }
 
-export interface PersonalInfo {
+export interface PersonalInfoRequest {
   age: number;
   gender: 'male' | 'female' | 'other';
   height: number; // cm

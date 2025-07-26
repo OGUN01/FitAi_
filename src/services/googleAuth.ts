@@ -38,7 +38,9 @@ class GoogleAuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'fitai://auth/callback', // Deep link for mobile
+          redirectTo: typeof window !== 'undefined'
+            ? `${window.location.origin}/auth/callback` // Web redirect
+            : 'fitai://auth/callback', // Deep link for mobile
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

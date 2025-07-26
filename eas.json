@@ -15,11 +15,29 @@
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://mqfrwtmkokivoxgukgsz.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyB8R9mFwn3Yguo8NUc4g-e_HnOS5EnqMQg",
+        "EXPO_PUBLIC_APP_NAME": "FitAI",
+        "EXPO_PUBLIC_APP_VERSION": "0.1.0",
+        "EXPO_PUBLIC_ENVIRONMENT": "production",
+        "EXPO_PUBLIC_AI_MODE": "real"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production-aab": {
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://mqfrwtmkokivoxgukgsz.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08",
+        "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyB8R9mFwn3Yguo8NUc4g-e_HnOS5EnqMQg",
+        "EXPO_PUBLIC_APP_NAME": "FitAI",
+        "EXPO_PUBLIC_APP_VERSION": "0.1.0",
+        "EXPO_PUBLIC_ENVIRONMENT": "production",
+        "EXPO_PUBLIC_AI_MODE": "real"
+      },
       "android": {
         "buildType": "app-bundle",
         "gradleCommand": ":app:bundleRelease"

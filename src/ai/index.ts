@@ -7,6 +7,7 @@ export { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 export { workoutGenerator } from './workoutGenerator';
 export { nutritionAnalyzer } from './nutritionAnalyzer';
 export { demoAIService } from './demoService';
+export { weeklyContentGenerator } from './weeklyContentGenerator';
 
 // Feature Engines
 export { workoutEngine } from '../features/workouts/WorkoutEngine';
@@ -26,10 +27,12 @@ export * from '../data/achievements';
 
 import { geminiService } from './gemini';
 import { demoAIService } from './demoService';
+import { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 import { workoutEngine } from '../features/workouts/WorkoutEngine';
 import { nutritionEngine } from '../features/nutrition/NutritionEngine';
+import { weeklyContentGenerator, WeeklyWorkoutPlan, WeeklyMealPlan } from './weeklyContentGenerator';
 import { PersonalInfo, FitnessGoals } from '../types/user';
-import { Workout, Meal, MotivationalContent, AIResponse } from '../types/ai';
+import { Workout, Meal, DailyMealPlan, MotivationalContent, AIResponse } from '../types/ai';
 
 /**
  * Unified AI Service that automatically switches between real AI and demo mode
@@ -83,6 +86,25 @@ class UnifiedAIService {
   }
 
   /**
+   * Generate a daily meal plan with multiple meals
+   */
+  async generateDailyMealPlan(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    preferences?: {
+      calorieTarget?: number;
+      dietaryRestrictions?: string[];
+      cuisinePreference?: string;
+    }
+  ): Promise<AIResponse<DailyMealPlan>> {
+    if (this.isRealAIAvailable()) {
+      return nutritionEngine.generateDailyMealPlan(personalInfo, fitnessGoals, preferences);
+    } else {
+      return demoAIService.generateDemoDailyMealPlan(personalInfo, fitnessGoals, preferences);
+    }
+  }
+
+  /**
    * Generate motivational content
    */
   async generateMotivationalContent(
@@ -116,6 +138,44 @@ class UnifiedAIService {
       );
     } else {
       return demoAIService.generateDemoMotivation(personalInfo, currentStreak);
+    }
+  }
+
+  /**
+   * Generate a weekly workout plan based on user experience level
+   */
+  async generateWeeklyWorkoutPlan(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    weekNumber: number = 1
+  ): Promise<AIResponse<WeeklyWorkoutPlan>> {
+    if (this.isRealAIAvailable()) {
+      return weeklyContentGenerator.generateWeeklyWorkoutPlan(personalInfo, fitnessGoals, weekNumber);
+    } else {
+      // TODO: Add demo weekly workout plan generation
+      return {
+        success: false,
+        error: 'Weekly workout plan generation requires AI service (demo mode not implemented yet)'
+      };
+    }
+  }
+
+  /**
+   * Generate a weekly meal plan with macro tracking
+   */
+  async generateWeeklyMealPlan(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    weekNumber: number = 1
+  ): Promise<AIResponse<WeeklyMealPlan>> {
+    if (this.isRealAIAvailable()) {
+      return weeklyContentGenerator.generateWeeklyMealPlan(personalInfo, fitnessGoals, weekNumber);
+    } else {
+      // TODO: Add demo weekly meal plan generation
+      return {
+        success: false,
+        error: 'Weekly meal plan generation requires AI service (demo mode not implemented yet)'
+      };
     }
   }
 

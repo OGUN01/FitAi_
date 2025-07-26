@@ -8,7 +8,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
-import { Camera as ExpoCamera, CameraType, FlashMode } from 'expo-camera';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Button, THEME } from '../ui';
 
 // Error Boundary Component
@@ -66,27 +66,21 @@ const CameraComponent: React.FC<CameraProps> = ({
   onClose,
   style,
 }) => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState(CameraType.back);
-  const [flashMode, setFlashMode] = useState(FlashMode.off);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [cameraType, setCameraType] = useState<CameraType>('back');
+  const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [isCapturing, setIsCapturing] = useState(false);
-  const cameraRef = useRef<ExpoCamera>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
 
   React.useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await ExpoCamera.requestCameraPermissionsAsync();
-        setHasPermission(status === 'granted');
-      } catch (error) {
-        console.error('Camera permission error:', error);
-        setHasPermission(false);
-        Alert.alert('Error', 'Failed to request camera permissions');
-      }
-    })();
-  }, []);
+    if (!permission) {
+      requestPermission();
+    }
+  }, [permission, requestPermission]);
 
   const takePicture = async () => {
-    if (cameraRef.current && !isCapturing) {
+    if (cameraRef.current && !isCapturing && isCameraReady) {
       setIsCapturing(true);
       try {
         const photo = await cameraRef.current.takePictureAsync({
@@ -96,6 +90,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         });
         onCapture(photo.uri);
       } catch (error) {
+        console.error('Camera capture error:', error);
         Alert.alert('Error', 'Failed to take picture. Please try again.');
       } finally {
         setIsCapturing(false);
@@ -105,17 +100,17 @@ const CameraComponent: React.FC<CameraProps> = ({
 
   const toggleCameraType = () => {
     setCameraType(current => 
-      current === CameraType.back ? CameraType.front : CameraType.back
+      current === 'back' ? 'front' : 'back'
     );
   };
 
   const toggleFlash = () => {
     setFlashMode(current => 
-      current === FlashMode.off ? FlashMode.on : FlashMode.off
+      current === 'off' ? 'on' : 'off'
     );
   };
 
-  if (hasPermission === null) {
+  if (!permission) {
     return (
       <View style={styles.permissionContainer}>
         <ActivityIndicator size="large" color={THEME.colors.primary} />
@@ -124,7 +119,7 @@ const CameraComponent: React.FC<CameraProps> = ({
     );
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
         <Text style={styles.permissionText}>No access to camera</Text>
@@ -173,7 +168,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         <Text style={styles.title}>{getModeTitle()}</Text>
         <TouchableOpacity style={styles.flashButton} onPress={toggleFlash}>
           <Text style={styles.flashIcon}>
-            {flashMode === FlashMode.on ? '⚡' : '⚡'}
+            {flashMode === 'on' ? '⚡' : '⚡'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -185,11 +180,12 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Camera View */}
       <View style={styles.cameraContainer}>
-        <ExpoCamera
+        <CameraView
           ref={cameraRef}
           style={styles.camera}
-          type={cameraType}
-          flashMode={flashMode}
+          facing={cameraType}
+          flash={flashMode}
+          onCameraReady={() => setIsCameraReady(true)}
         >
           {/* Camera Overlay */}
           <View style={styles.overlay}>
@@ -208,7 +204,7 @@ const CameraComponent: React.FC<CameraProps> = ({
               </View>
             )}
           </View>
-        </ExpoCamera>
+        </CameraView>
       </View>
 
       {/* Controls */}

@@ -350,7 +350,9 @@ class DemoAIService {
       ...selectedMeal,
       isPersonalized: true,
       aiGenerated: true,
-      scheduledTime: this.getDefaultMealTime(mealType)
+      scheduledTime: this.getDefaultMealTime(mealType),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     return {
@@ -371,16 +373,38 @@ class DemoAIService {
     await this.delay(800);
 
     const motivationalContent: MotivationalContent = {
-      dailyTip: "Remember to stay hydrated! Aim for 8 glasses of water throughout the day to support your fitness goals.",
-      encouragement: `Great job, ${personalInfo.name}! Every workout brings you closer to your goals. Keep up the amazing work!`,
+      dailyTip: {
+        icon: "💧",
+        title: "Hydration Reminder",
+        content: "Remember to stay hydrated! Aim for 8 glasses of water throughout the day to support your fitness goals.",
+        category: "nutrition"
+      },
+      encouragement: {
+        message: `Great job, ${personalInfo.name}! Every workout brings you closer to your goals. Keep up the amazing work!`,
+        emoji: "💪",
+        tone: "supportive"
+      },
       challenge: {
         title: "7-Day Consistency Challenge",
         description: "Complete a workout every day for the next 7 days",
         reward: "Unlock the 'Week Warrior' achievement and earn 250 points",
-        duration: 7
+        duration: "7 days",
+        difficulty: "medium"
       },
-      quote: "The only bad workout is the one that didn't happen.",
-      factOfTheDay: "Did you know? Regular exercise can boost your mood by releasing endorphins, often called 'feel-good' hormones!"
+      quote: {
+        text: "The only bad workout is the one that didn't happen.",
+        author: "Anonymous",
+        context: "Fitness motivation"
+      },
+      factOfTheDay: {
+        fact: "Did you know? Regular exercise can boost your mood by releasing endorphins, often called 'feel-good' hormones!",
+        source: "Exercise Psychology Research"
+      },
+      personalizedMessage: {
+        content: `Based on your current ${currentStreak}-day streak, you're building amazing consistency!`,
+        basedOn: "Current workout streak",
+        actionItem: "Keep the momentum going with today's workout"
+      }
     };
 
     return {

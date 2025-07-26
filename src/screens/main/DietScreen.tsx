@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
-import { unifiedAIService } from '../../ai';
+import { aiService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';
@@ -110,7 +110,7 @@ export const DietScreen: React.FC = () => {
         dislikes: dietPreferences?.dislikes || [],
       };
 
-      const response = await unifiedAIService.generateMeal(
+      const response = await aiService.generateMeal(
         profile.personalInfo,
         profile.fitnessGoals,
         mealType,
@@ -176,7 +176,7 @@ export const DietScreen: React.FC = () => {
         cuisinePreferences: ['any'],
       };
 
-      const response = await unifiedAIService.generateDailyMealPlan(
+      const response = await aiService.generateDailyMealPlan(
         profile.personalInfo,
         profile.fitnessGoals,
         preferences
@@ -206,40 +206,11 @@ export const DietScreen: React.FC = () => {
     setShowFoodSearch(!showFoodSearch);
   };
 
-  // Convert real foods to display format for search
-  const convertFoodToDisplay = (food: Food) => ({
-    id: food.id,
-    name: food.name,
-    calories: Math.round(food.calories_per_100g),
-    protein: Math.round(food.protein_per_100g * 10) / 10,
-    carbs: Math.round(food.carbs_per_100g * 10) / 10,
-    fat: Math.round(food.fat_per_100g * 10) / 10,
-    category: food.category,
-  });
+  // Note: Removed static food database display to focus on AI-generated personalized meals
+  // The foods from database were generic seed data that interfered with personalization
 
-  // Real food database from Supabase
-  const foodDatabase = foods.map(convertFoodToDisplay);
-
-  // Load foods when search query changes
-  useEffect(() => {
-    if (isAuthenticated) {
-      const filters: any = {};
-
-      if (searchQuery) {
-        filters.search = searchQuery;
-      }
-
-      loadFoods(filters);
-    }
-  }, [searchQuery, isAuthenticated, loadFoods]);
-
-  // Filter foods based on search query
-  const filteredFoods = searchQuery
-    ? foodDatabase.filter(food =>
-        food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        food.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : foodDatabase;
+  // Note: Removed food loading and filtering as we now focus on AI-generated personalized meals
+  // The app no longer loads generic foods from database
 
   const handleMealLongPress = (mealId: string, event: any) => {
     const { pageX, pageY } = event.nativeEvent;
@@ -276,11 +247,14 @@ export const DietScreen: React.FC = () => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call to refresh data
-    setTimeout(() => {
+    try {
+      await refreshAll();
+      clearErrors();
+    } catch (error) {
+      console.warn('Failed to refresh nutrition data:', error);
+    } finally {
       setRefreshing(false);
-      Alert.alert('Refreshed', 'Diet data has been updated!');
-    }, 1500);
+    }
   };
 
   // Convert AI meals to display format
@@ -314,67 +288,40 @@ export const DietScreen: React.FC = () => {
     }
   };
 
-  // Enhanced mock meals with detailed nutrition data
-  const staticMeals = [
+  // Empty meal placeholders for meal planning
+  const emptyMealSlots = [
     {
-      id: 1,
+      id: 'breakfast-slot',
       type: 'Breakfast',
       time: '8:00 AM',
-      calories: 385,
-      items: ['Steel-cut oatmeal with blueberries', 'Greek yogurt (150g)', 'Black coffee', 'Honey (1 tbsp)'],
+      calories: 0,
+      items: [],
       icon: '🥣',
+      planned: true,
       isAIGenerated: false,
-      nutrition: {
-        protein: 18,
-        carbs: 52,
-        fat: 8,
-        fiber: 7,
-        sugar: 22,
-      },
-      prepTime: '10 min',
-      difficulty: 'Easy',
-      rating: 4.6,
     },
     {
-      id: 2,
-      type: 'Lunch',
+      id: 'lunch-slot',
+      type: 'Lunch', 
       time: '12:30 PM',
-      calories: 485,
-      items: ['Grilled chicken breast (120g)', 'Quinoa salad', 'Mixed greens', 'Avocado (1/2)', 'Olive oil dressing'],
+      calories: 0,
+      items: [],
       icon: '🥗',
+      planned: true,
       isAIGenerated: false,
-      nutrition: {
-        protein: 35,
-        carbs: 28,
-        fat: 22,
-        fiber: 8,
-        sugar: 6,
-      },
-      prepTime: '15 min',
-      difficulty: 'Medium',
-      rating: 4.8,
     },
     {
-      id: 3,
+      id: 'snack-slot',
       type: 'Snack',
       time: '3:00 PM',
-      calories: 180,
-      items: ['Medium apple', 'Raw almonds (20g)', 'Water'],
+      calories: 0,
+      items: [],
       icon: '🍎',
+      planned: true,
       isAIGenerated: false,
-      nutrition: {
-        protein: 6,
-        carbs: 18,
-        fat: 12,
-        fiber: 6,
-        sugar: 14,
-      },
-      prepTime: '2 min',
-      difficulty: 'Easy',
-      rating: 4.3,
     },
     {
-      id: 4,
+      id: 'dinner-slot',
       type: 'Dinner',
       time: '7:00 PM',
       calories: 0,
@@ -382,22 +329,37 @@ export const DietScreen: React.FC = () => {
       icon: '🍽️',
       planned: true,
       isAIGenerated: false,
-      nutrition: {
-        protein: 0,
-        carbs: 0,
-        fat: 0,
-        fiber: 0,
-        sugar: 0,
-      },
-      prepTime: '0 min',
-      difficulty: 'N/A',
-      rating: 0,
     },
   ];
 
-  // Combine AI meals with static meals
+  // Convert real user meals to display format
+  const convertUserMealToDisplay = (meal: any) => ({
+    id: meal.id,
+    type: meal.type.charAt(0).toUpperCase() + meal.type.slice(1),
+    time: getMealTime(meal.type),
+    icon: getMealIcon(meal.type),
+    items: meal.foods?.map((f: any) => f.name || 'Unknown food') || [],
+    calories: meal.total_calories || 0,
+    isAIGenerated: false,
+    nutrition: {
+      protein: meal.total_protein || 0,
+      carbs: meal.total_carbs || 0,
+      fat: meal.total_fat || 0,
+    },
+  });
+
+  // Combine AI meals with real logged meals and empty slots
   const aiMealsDisplay = aiMeals.map(convertAIMealToDisplay);
-  const todaysMeals = [...aiMealsDisplay, ...staticMeals];
+  const userMealsDisplay = userMeals?.map(convertUserMealToDisplay) || [];
+  
+  // Show empty slots only if no real meals exist for that meal type
+  const mealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
+  const filledSlots = [...aiMealsDisplay, ...userMealsDisplay];
+  const emptySlots = emptyMealSlots.filter(slot => 
+    !filledSlots.some(meal => meal.type.toLowerCase() === slot.type.toLowerCase())
+  );
+  
+  const todaysMeals = [...aiMealsDisplay, ...userMealsDisplay, ...emptySlots];
 
   // Use real daily nutrition data from Track B
   const currentNutrition = dailyNutrition || {
@@ -456,7 +418,7 @@ export const DietScreen: React.FC = () => {
               style={styles.addButton}
               onPress={handleSearchFood}
             >
-              <Text style={styles.addIcon}>🔍</Text>
+              <Text style={styles.addIcon}>🤖</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -492,45 +454,58 @@ export const DietScreen: React.FC = () => {
           </Card>
         )}
 
-        {/* Food Search */}
+        {/* AI Meal Generation Panel */}
         {showFoodSearch && (
           <View style={styles.searchSection}>
-            <View style={styles.searchContainer}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search foods..."
-                placeholderTextColor={THEME.colors.textSecondary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                autoFocus
-              />
-              <TouchableOpacity
-                style={styles.clearSearchButton}
-                onPress={() => {
-                  setSearchQuery('');
-                  setShowFoodSearch(false);
-                }}
-              >
-                <Text style={styles.clearSearchText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {searchQuery && (
-              <ScrollView style={styles.foodResults} horizontal showsHorizontalScrollIndicator={false}>
-                {filteredFoods.map((food) => (
-                  <TouchableOpacity key={food.id} style={styles.foodItem}>
-                    <Text style={styles.foodName}>{food.name}</Text>
-                    <Text style={styles.foodCategory}>{food.category}</Text>
-                    <Text style={styles.foodCalories}>{food.calories} cal</Text>
-                    <View style={styles.foodMacros}>
-                      <Text style={styles.foodMacro}>P: {food.protein}g</Text>
-                      <Text style={styles.foodMacro}>C: {food.carbs}g</Text>
-                      <Text style={styles.foodMacro}>F: {food.fat}g</Text>
-                    </View>
+            <Card style={styles.aiMealCard} variant="elevated">
+              <View style={styles.aiMealContent}>
+                <Text style={styles.aiMealIcon}>🤖</Text>
+                <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
+                <Text style={styles.aiMealText}>
+                  Create personalized meals based on your dietary preferences and nutrition goals.
+                </Text>
+                <View style={styles.mealTypeButtons}>
+                  <TouchableOpacity 
+                    style={styles.mealTypeButton} 
+                    onPress={() => generateAIMeal('breakfast')}
+                    disabled={isGeneratingMeal}
+                  >
+                    <Text style={styles.mealTypeEmoji}>🥣</Text>
+                    <Text style={styles.mealTypeText}>Breakfast</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+                  <TouchableOpacity 
+                    style={styles.mealTypeButton} 
+                    onPress={() => generateAIMeal('lunch')}
+                    disabled={isGeneratingMeal}
+                  >
+                    <Text style={styles.mealTypeEmoji}>🥗</Text>
+                    <Text style={styles.mealTypeText}>Lunch</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.mealTypeButton} 
+                    onPress={() => generateAIMeal('dinner')}
+                    disabled={isGeneratingMeal}
+                  >
+                    <Text style={styles.mealTypeEmoji}>🍽️</Text>
+                    <Text style={styles.mealTypeText}>Dinner</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.mealTypeButton} 
+                    onPress={() => generateAIMeal('snack')}
+                    disabled={isGeneratingMeal}
+                  >
+                    <Text style={styles.mealTypeEmoji}>🍎</Text>
+                    <Text style={styles.mealTypeText}>Snack</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={styles.closeSearchButton}
+                  onPress={() => setShowFoodSearch(false)}
+                >
+                  <Text style={styles.closeSearchText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
           </View>
         )}
 
@@ -689,8 +664,8 @@ export const DietScreen: React.FC = () => {
               onPress={handleSearchFood}
             >
               <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>🔍</Text>
-                <Text style={styles.actionText}>Search Food</Text>
+                <Text style={styles.actionIcon}>🤖</Text>
+                <Text style={styles.actionText}>AI Meals</Text>
               </Card>
             </TouchableOpacity>
             
@@ -717,20 +692,20 @@ export const DietScreen: React.FC = () => {
             <View style={styles.waterHeader}>
               <Text style={styles.waterIcon}>💧</Text>
               <View style={styles.waterInfo}>
-                <Text style={styles.waterAmount}>6 / 8 glasses</Text>
-                <Text style={styles.waterSubtext}>You're almost there!</Text>
+                <Text style={styles.waterAmount}>0 / 8 glasses</Text>
+                <Text style={styles.waterSubtext}>Start tracking your hydration!</Text>
               </View>
             </View>
             
             <View style={styles.waterProgress}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '75%' }]} />
+                <View style={[styles.progressFill, { width: '0%' }]} />
               </View>
             </View>
             
             <Button
               title="Add Glass"
-              onPress={() => {}}
+              onPress={() => Alert.alert('Water Tracking', 'Water tracking feature coming soon!')}
               variant="outline"
               size="sm"
               style={styles.waterButton}
@@ -1325,5 +1300,75 @@ const styles = StyleSheet.create({
 
   retryButton: {
     paddingHorizontal: THEME.spacing.lg,
+  },
+
+  // AI Meal Generation styles
+  aiMealCard: {
+    padding: THEME.spacing.lg,
+  },
+
+  aiMealContent: {
+    alignItems: 'center',
+  },
+
+  aiMealIcon: {
+    fontSize: 36,
+    marginBottom: THEME.spacing.sm,
+  },
+
+  aiMealTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+    textAlign: 'center',
+  },
+
+  aiMealText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.lg,
+    lineHeight: 20,
+  },
+
+  mealTypeButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: THEME.spacing.md,
+    marginBottom: THEME.spacing.lg,
+  },
+
+  mealTypeButton: {
+    alignItems: 'center',
+    padding: THEME.spacing.md,
+    backgroundColor: THEME.colors.backgroundTertiary,
+    borderRadius: THEME.borderRadius.md,
+    minWidth: 70,
+  },
+
+  mealTypeEmoji: {
+    fontSize: 24,
+    marginBottom: THEME.spacing.xs,
+  },
+
+  mealTypeText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.text,
+    fontWeight: THEME.fontWeight.medium,
+  },
+
+  closeSearchButton: {
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: THEME.spacing.sm,
+    backgroundColor: THEME.colors.backgroundTertiary,
+    borderRadius: THEME.borderRadius.md,
+  },
+
+  closeSearchText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.text,
+    fontWeight: THEME.fontWeight.medium,
   },
 });

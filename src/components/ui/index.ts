@@ -3,6 +3,7 @@
 
 export { Button } from './Button';
 export { Input } from './Input';
+export { PasswordInput } from './PasswordInput';
 export { Card } from './Card';
 export { Modal, BottomSheetModal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';

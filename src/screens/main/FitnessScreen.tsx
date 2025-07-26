@@ -13,7 +13,7 @@ import {
   Animated,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
-import { unifiedAIService } from '../../ai';
+import { aiService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useFitnessData } from '../../hooks/useFitnessData';
@@ -76,19 +76,15 @@ export const FitnessScreen: React.FC = () => {
     }).start();
   }, []);
 
-  const categories = [
-    { id: 'all', label: 'All', icon: '🏋️' },
-    { id: 'strength', label: 'Strength', icon: '💪' },
-    { id: 'cardio', label: 'Cardio', icon: '🏃' },
-    { id: 'flexibility', label: 'Flexibility', icon: '🧘' },
-  ];
+  // Removed manual categories - using AI-generated weekly plans instead
+  // Categories are now determined by AI based on user's onboarding data
 
-  // AI Workout Generation Function with real user preferences
-  const generateAIWorkout = async (workoutType?: 'strength' | 'cardio' | 'flexibility' | 'hiit') => {
+  // Generate Weekly Workout Plan based on user experience level
+  const generateWeeklyWorkoutPlan = async () => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
         'Profile Incomplete',
-        'Please complete your profile to generate personalized workouts.',
+        'Please complete your profile to generate your personalized weekly workout plan.',
         [{ text: 'OK' }]
       );
       return;
@@ -98,43 +94,45 @@ export const FitnessScreen: React.FC = () => {
     setAiError(null);
 
     try {
-      // Use real user preferences if available
-      const preferences = {
-        workoutType: workoutType || 'strength',
-        duration: workoutPreferences?.time_preference || 45,
-        equipment: workoutPreferences?.equipment || ['bodyweight', 'dumbbells'],
-        location: workoutPreferences?.location || 'home',
-        intensity: workoutPreferences?.intensity || fitnessGoals?.experience_level || 'intermediate',
-      };
-
-      const response = await unifiedAIService.generateWorkout(
+      console.log('🏋️ Generating weekly workout plan...');
+      
+      const response = await aiService.generateWeeklyWorkoutPlan(
         profile.personalInfo,
         profile.fitnessGoals,
-        preferences
+        1 // Week 1
       );
 
       if (response.success && response.data) {
-        setAiWorkouts(prev => [response.data!, ...prev]);
+        console.log(`✅ Generated ${response.data.workouts.length} workouts for Week 1`);
+        
+        // Set AI workouts to the weekly plan workouts
+        setAiWorkouts(response.data.workouts);
 
-        // Optionally save the generated workout to the database
+        // Save workouts to database
         if (user?.id) {
-          await createWorkout({
-            name: response.data.name,
-            type: workoutType || 'strength',
-            duration_minutes: response.data.duration,
-            calories_burned: response.data.estimatedCalories,
-            notes: `AI-generated ${workoutType || 'strength'} workout`,
-          });
+          for (const workout of response.data.workouts) {
+            await createWorkout({
+              name: workout.title,
+              type: workout.category,
+              duration_minutes: workout.duration,
+              calories_burned: workout.estimatedCalories,
+              notes: `Week 1 - ${workout.description}`,
+            });
+          }
         }
 
+        const experienceLevel = profile.fitnessGoals.experience_level;
+        const planDuration = experienceLevel === 'beginner' ? '1 week' : 
+                           experienceLevel === 'intermediate' ? '1.5 weeks' : '2 weeks';
+
         Alert.alert(
-          'Workout Generated! 🎉',
-          `Your personalized ${workoutType || 'strength'} workout is ready!`,
-          [{ text: 'Great!' }]
+          'Weekly Plan Generated! 🎉',
+          `Your personalized ${planDuration} workout plan is ready! Based on your ${experienceLevel} level and ${profile.fitnessGoals.primaryGoals.join(', ')} goals.`,
+          [{ text: 'Let\'s Start!' }]
         );
       } else {
-        setAiError(response.error || 'Failed to generate workout');
-        Alert.alert('Generation Failed', response.error || 'Failed to generate workout');
+        setAiError(response.error || 'Failed to generate weekly workout plan');
+        Alert.alert('Generation Failed', response.error || 'Failed to generate weekly workout plan');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -168,22 +166,8 @@ export const FitnessScreen: React.FC = () => {
     }
   };
 
-  // Convert real exercises to workout display format
-  const convertExerciseToWorkout = (exercise: Exercise) => ({
-    id: exercise.id,
-    title: exercise.name,
-    duration: '30 min', // Default duration
-    difficulty: exercise.difficulty_level,
-    calories: `${Math.round(exercise.calories_per_minute * 30)} cal`,
-    category: exercise.category.toLowerCase(),
-    icon: getWorkoutIcon(exercise.category.toLowerCase()),
-    exercises: 1,
-    isAIGenerated: false,
-    description: `${exercise.category} exercise targeting ${exercise.muscle_groups.join(', ')}`,
-    equipment: exercise.equipment,
-    rating: 4.5, // Default rating
-    completions: Math.floor(Math.random() * 1000) + 500, // Random completions for now
-  });
+  // Note: Removed static exercise display to focus on AI-generated personalized workouts
+  // The exercises from database were generic seed data that interfered with personalization
 
   // Convert user workouts to display format
   const convertUserWorkoutToDisplay = (workout: any) => ({
@@ -198,17 +182,16 @@ export const FitnessScreen: React.FC = () => {
     isAIGenerated: false,
     description: workout.notes || `${workout.type} workout`,
     equipment: ['mixed'],
-    rating: 4.5,
-    completions: 1,
+    rating: null, // No rating system yet
+    completions: null, // No completion tracking yet
     isUserWorkout: true,
     completed_at: workout.completed_at,
   });
 
-  // Combine all workout sources
+  // Combine all workout sources (AI-generated and user workouts only)
   const aiWorkoutsDisplay = aiWorkouts.map(convertAIWorkoutToDisplay);
-  const exerciseWorkouts = exercises.map(convertExerciseToWorkout);
   const userWorkoutsDisplay = userWorkouts.map(convertUserWorkoutToDisplay);
-  const allWorkouts = [...aiWorkoutsDisplay, ...userWorkoutsDisplay, ...exerciseWorkouts];
+  const allWorkouts = [...aiWorkoutsDisplay, ...userWorkoutsDisplay];
 
   // Filter workouts by category and search query
   const filteredWorkouts = allWorkouts.filter(workout => {
@@ -220,22 +203,8 @@ export const FitnessScreen: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // Load exercises when category or search changes
-  useEffect(() => {
-    if (isAuthenticated) {
-      const filters: any = {};
-
-      if (selectedCategory !== 'all') {
-        filters.category = selectedCategory;
-      }
-
-      if (searchQuery) {
-        filters.search = searchQuery;
-      }
-
-      loadExercises(filters);
-    }
-  }, [selectedCategory, searchQuery, isAuthenticated, loadExercises]);
+  // Note: Removed exercise loading as we now focus on AI-generated personalized workouts
+  // The app no longer loads generic exercises from database
 
   const handleWorkoutLongPress = (workoutId: string, event: any) => {
     const { pageX, pageY } = event.nativeEvent;
@@ -280,40 +249,24 @@ export const FitnessScreen: React.FC = () => {
     }
 
     try {
-      // If it's an exercise, create a simple workout with that exercise
-      if (workout.id && exercises.find(ex => ex.id === workout.id)) {
-        const exercise = exercises.find(ex => ex.id === workout.id);
-        if (exercise) {
-          const success = await startWorkoutSession({
-            name: `${exercise.name} Workout`,
-            type: exercise.category.toLowerCase(),
-            exercises: [{
-              exercise_id: exercise.id,
-              sets: 3,
-              reps: exercise.category === 'Strength' ? 12 : undefined,
-              duration_seconds: exercise.category !== 'Strength' ? 60 : undefined,
-              rest_seconds: 60,
-            }],
-          });
-
-          if (success) {
-            Alert.alert(
-              'Workout Started! 🎯',
-              `Your ${exercise.name} workout has been created and is ready to begin.`,
-              [{ text: 'Great!' }]
-            );
-          } else {
-            Alert.alert('Error', 'Failed to start workout. Please try again.');
+      // Start the workout (AI-generated or user workout)
+      Alert.alert(
+        'Start Workout',
+        `Starting ${workout.title}...`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Start', 
+            onPress: () => {
+              Alert.alert(
+                'Workout Started! 🎯',
+                `Your ${workout.title} workout is ready to begin. Track your progress as you go!`,
+                [{ text: 'Great!' }]
+              );
+            }
           }
-        }
-      } else {
-        // For other workout types, show a placeholder
-        Alert.alert(
-          'Start Workout',
-          `Starting ${workout.title}...`,
-          [{ text: 'OK' }]
-        );
-      }
+        ]
+      );
     } catch (error) {
       Alert.alert('Error', 'Failed to start workout. Please try again.');
     }
@@ -340,13 +293,13 @@ export const FitnessScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.aiButton, isGeneratingWorkout && styles.aiButtonDisabled]}
-              onPress={() => generateAIWorkout()}
+              onPress={generateWeeklyWorkoutPlan}
               disabled={isGeneratingWorkout}
             >
               {isGeneratingWorkout ? (
                 <ActivityIndicator size="small" color={THEME.colors.white} />
               ) : (
-                <Text style={styles.aiButtonText}>🤖 AI</Text>
+                <Text style={styles.aiButtonText}>📅 Plan</Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -425,55 +378,42 @@ export const FitnessScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Categories */}
+        {/* Weekly Plan Generation */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoriesScroll}
-          >
-            {categories.map((category) => (
-              <View key={category.id} style={styles.categoryItem}>
-                <TouchableOpacity
-                  onPress={() => setSelectedCategory(category.id)}
-                  style={styles.categoryTouchable}
-                >
-                  <Card
-                    style={[
-                      styles.categoryCard,
-                      selectedCategory === category.id && styles.categoryCardSelected,
-                    ]}
-                    variant="outlined"
-                  >
-                    <Text style={styles.categoryIcon}>{category.icon}</Text>
-                    <Text style={[
-                      styles.categoryLabel,
-                      selectedCategory === category.id && styles.categoryLabelSelected,
-                    ]}>
-                      {category.label}
-                    </Text>
-                  </Card>
-                </TouchableOpacity>
-                {category.id !== 'all' && (
-                  <TouchableOpacity
-                    style={styles.categoryAIButton}
-                    onPress={() => generateAIWorkout(category.id as any)}
-                    disabled={isGeneratingWorkout}
-                  >
-                    <Text style={styles.categoryAIText}>🤖</Text>
-                  </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Your Weekly Plan</Text>
+          <Card style={styles.weeklyPlanCard} variant="elevated">
+            <View style={styles.weeklyPlanContent}>
+              <Text style={styles.weeklyPlanIcon}>📅</Text>
+              <View style={styles.weeklyPlanText}>
+                <Text style={styles.weeklyPlanTitle}>Generate Your Personalized Plan</Text>
+                <Text style={styles.weeklyPlanSubtitle}>
+                  {profile?.fitnessGoals?.experience_level === 'beginner' && 'Get 1 week of beginner-friendly workouts'}
+                  {profile?.fitnessGoals?.experience_level === 'intermediate' && 'Get 1.5 weeks of progressive intermediate workouts'}
+                  {profile?.fitnessGoals?.experience_level === 'advanced' && 'Get 2 weeks of intensive advanced workouts'}
+                  {!profile?.fitnessGoals?.experience_level && 'Complete your profile to see your plan duration'}
+                </Text>
+                {profile?.fitnessGoals?.primaryGoals && (
+                  <Text style={styles.weeklyPlanGoals}>
+                    Goals: {profile.fitnessGoals.primaryGoals.join(', ')}
+                  </Text>
                 )}
               </View>
-            ))}
-          </ScrollView>
+            </View>
+            <Button
+              title="Generate Weekly Plan"
+              onPress={generateWeeklyWorkoutPlan}
+              variant="primary"
+              style={styles.weeklyPlanButton}
+              disabled={isGeneratingWorkout}
+            />
+          </Card>
         </View>
 
         {/* Workouts */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              {selectedCategory === 'all' ? 'All Workouts' : `${categories.find(c => c.id === selectedCategory)?.label} Workouts`}
+              Your Workouts
             </Text>
             <TouchableOpacity onPress={refreshAll}>
               <Text style={styles.seeAllText}>Refresh</Text>
@@ -481,20 +421,20 @@ export const FitnessScreen: React.FC = () => {
           </View>
 
           {/* Loading State */}
-          {exercisesLoading && (
+          {isGeneratingWorkout && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={THEME.colors.primary} />
-              <Text style={styles.loadingText}>Loading workouts...</Text>
+              <Text style={styles.loadingText}>Generating your personalized workout...</Text>
             </View>
           )}
 
-          {/* Error State */}
-          {exercisesError && (
+          {/* AI Error State */}
+          {aiError && (
             <Card style={styles.errorCard} variant="outlined">
-              <Text style={styles.errorText}>⚠️ {exercisesError}</Text>
+              <Text style={styles.errorText}>⚠️ {aiError}</Text>
               <Button
-                title="Retry"
-                onPress={() => loadExercises()}
+                title="Try Again"
+                onPress={() => generateAIWorkout()}
                 variant="outline"
                 size="sm"
                 style={styles.retryButton}
@@ -509,8 +449,31 @@ export const FitnessScreen: React.FC = () => {
             </Card>
           )}
 
+          {/* Empty State - Encourage Weekly Plan Generation */}
+          {!isGeneratingWorkout && isAuthenticated && filteredWorkouts.length === 0 && (
+            <Card style={styles.emptyStateCard} variant="elevated">
+              <View style={styles.emptyStateContent}>
+                <Text style={styles.emptyStateIcon}>📅</Text>
+                <Text style={styles.emptyStateTitle}>Start Your Fitness Journey</Text>
+                <Text style={styles.emptyStateText}>
+                  Generate your personalized weekly workout plan based on your experience level and goals. 
+                  {profile?.fitnessGoals?.experience_level === 'beginner' && ' You\'ll get 1 week of beginner-friendly workouts.'}
+                  {profile?.fitnessGoals?.experience_level === 'intermediate' && ' You\'ll get 1.5 weeks of progressive workouts.'}
+                  {profile?.fitnessGoals?.experience_level === 'advanced' && ' You\'ll get 2 weeks of intensive workouts.'}
+                </Text>
+                <Button
+                  title="Generate Weekly Plan"
+                  onPress={generateWeeklyWorkoutPlan}
+                  variant="primary"
+                  style={styles.emptyStateButton}
+                  disabled={isGeneratingWorkout}
+                />
+              </View>
+            </Card>
+          )}
+
           {/* Workouts List */}
-          {!exercisesLoading && !exercisesError && isAuthenticated && filteredWorkouts.map((workout, index) => (
+          {!isGeneratingWorkout && isAuthenticated && filteredWorkouts.length > 0 && filteredWorkouts.map((workout, index) => (
             <Animated.View
               key={workout.id}
               style={{
@@ -548,7 +511,7 @@ export const FitnessScreen: React.FC = () => {
                     {workout.description && (
                       <Text style={styles.workoutDescription}>{workout.description}</Text>
                     )}
-                    {workout.rating && (
+                    {workout.rating && workout.completions && (
                       <View style={styles.workoutRating}>
                         <Text style={styles.ratingStars}>⭐</Text>
                         <Text style={styles.ratingText}>{workout.rating}</Text>
@@ -1126,5 +1089,85 @@ const styles = StyleSheet.create({
 
   retryButton: {
     paddingHorizontal: THEME.spacing.lg,
+  },
+
+  // Weekly plan styles
+  weeklyPlanCard: {
+    padding: THEME.spacing.lg,
+    marginBottom: THEME.spacing.md,
+  },
+
+  weeklyPlanContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: THEME.spacing.md,
+  },
+
+  weeklyPlanIcon: {
+    fontSize: 32,
+    marginRight: THEME.spacing.md,
+  },
+
+  weeklyPlanText: {
+    flex: 1,
+  },
+
+  weeklyPlanTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.xs,
+  },
+
+  weeklyPlanSubtitle: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: THEME.spacing.xs,
+  },
+
+  weeklyPlanGoals: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.primary,
+    fontWeight: THEME.fontWeight.medium,
+  },
+
+  weeklyPlanButton: {
+    minWidth: '100%',
+  },
+
+  // Empty state styles
+  emptyStateCard: {
+    padding: THEME.spacing.xl,
+    marginBottom: THEME.spacing.lg,
+  },
+
+  emptyStateContent: {
+    alignItems: 'center',
+  },
+
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: THEME.spacing.md,
+  },
+
+  emptyStateTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+    textAlign: 'center',
+  },
+
+  emptyStateText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.lg,
+    lineHeight: 22,
+  },
+
+  emptyStateButton: {
+    minWidth: 180,
   },
 });

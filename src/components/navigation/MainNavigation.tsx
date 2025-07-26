@@ -60,7 +60,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const renderScreen = () => {
     switch (activeTab) {
       case 'home':
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToTab={setActiveTab} />;
       case 'fitness':
         return <FitnessScreen />;
       case 'diet':
@@ -70,7 +70,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       case 'profile':
         return <ProfileScreen />;
       default:
-        return <HomeScreen />;
+        return <HomeScreen onNavigateToTab={setActiveTab} />;
     }
   };
 

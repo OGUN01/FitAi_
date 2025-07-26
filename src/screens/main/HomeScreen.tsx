@@ -7,12 +7,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Alert,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { useDashboardIntegration } from '../../utils/integration';
 import { aiService } from '../../ai';
+import { useAuth } from '../../hooks/useAuth';
+interface HomeScreenProps {
+  onNavigateToTab?: (tab: string) => void;
+}
 
-export const HomeScreen: React.FC = () => {
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const {
     getUserStats,
     getHealthMetrics,
@@ -20,6 +25,8 @@ export const HomeScreen: React.FC = () => {
     profile,
     isAuthenticated
   } = useDashboardIntegration();
+
+  const { isGuestMode } = useAuth();
 
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -65,12 +72,41 @@ export const HomeScreen: React.FC = () => {
               <Text style={styles.aiStatus}>🤖 AI-Powered Recommendations Active</Text>
             )}
           </View>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => onNavigateToTab?.('profile')}
+          >
             <View style={styles.profileAvatar}>
-              <Text style={styles.profileInitial}>U</Text>
+              <Text style={styles.profileInitial}>
+                {profile?.personalInfo?.name ? profile.personalInfo.name.charAt(0).toUpperCase() : 'U'}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Guest User Sign-up Prompt */}
+        {isGuestMode && (
+          <View style={styles.section}>
+            <Card style={styles.guestPromptCard} variant="elevated">
+              <View style={styles.guestPromptHeader}>
+                <Text style={styles.guestPromptIcon}>💾</Text>
+                <View style={styles.guestPromptText}>
+                  <Text style={styles.guestPromptTitle}>Save Your Progress</Text>
+                  <Text style={styles.guestPromptSubtitle}>
+                    Create an account to backup your workouts and sync across devices
+                  </Text>
+                </View>
+                <Button
+                  title="Sign Up"
+                  onPress={() => Alert.alert('Sign Up', 'Sign up feature coming soon!')}
+                  variant="primary"
+                  size="sm"
+                  style={styles.guestPromptButton}
+                />
+              </View>
+            </Card>
+          </View>
+        )}
 
         {/* Quick Stats */}
         <View style={styles.statsSection}>
@@ -94,7 +130,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Workout</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'Full workout library coming soon!')}>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -102,24 +138,21 @@ export const HomeScreen: React.FC = () => {
           <Card style={styles.workoutCard} variant="elevated">
             <View style={styles.workoutHeader}>
               <View>
-                <Text style={styles.workoutTitle}>Upper Body Strength</Text>
-                <Text style={styles.workoutSubtitle}>45 min • Intermediate</Text>
+                <Text style={styles.workoutTitle}>Start Your First Workout</Text>
+                <Text style={styles.workoutSubtitle}>Personalized based on your goals</Text>
               </View>
               <View style={styles.workoutIcon}>
-                <Text style={styles.workoutEmoji}>💪</Text>
+                <Text style={styles.workoutEmoji}>🏋️</Text>
               </View>
             </View>
             
-            <View style={styles.workoutProgress}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '30%' }]} />
-              </View>
-              <Text style={styles.progressText}>3 of 10 exercises completed</Text>
-            </View>
+            <Text style={styles.workoutDescription}>
+              Based on your fitness goals: {profile?.fitnessGoals?.primaryGoals?.join(', ') || 'General fitness'}
+            </Text>
             
             <Button
-              title="Continue Workout"
-              onPress={() => {}}
+              title="Generate Workout"
+              onPress={() => Alert.alert('AI Workout', 'AI-powered workout generation coming soon!')}
               variant="primary"
               style={styles.workoutButton}
             />
@@ -130,28 +163,40 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => Alert.alert('Start Workout', 'Workout feature coming soon!')}
+            >
               <Card style={styles.actionCard} variant="outlined">
                 <Text style={styles.actionIcon}>🏋️</Text>
                 <Text style={styles.actionText}>Start Workout</Text>
               </Card>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => Alert.alert('Log Meal', 'Meal logging feature coming soon!')}
+            >
               <Card style={styles.actionCard} variant="outlined">
                 <Text style={styles.actionIcon}>🍎</Text>
                 <Text style={styles.actionText}>Log Meal</Text>
               </Card>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => onNavigateToTab?.('progress')}
+            >
               <Card style={styles.actionCard} variant="outlined">
                 <Text style={styles.actionIcon}>📊</Text>
                 <Text style={styles.actionText}>View Progress</Text>
               </Card>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.actionItem}>
+            <TouchableOpacity 
+              style={styles.actionItem}
+              onPress={() => onNavigateToTab?.('profile')}
+            >
               <Card style={styles.actionCard} variant="outlined">
                 <Text style={styles.actionIcon}>⚙️</Text>
                 <Text style={styles.actionText}>Settings</Text>
@@ -164,29 +209,20 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           
-          <Card style={styles.activityCard} variant="outlined">
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Text style={styles.activityEmoji}>🏃</Text>
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Morning Run</Text>
-                <Text style={styles.activitySubtitle}>30 min • 3.2 km • 245 cal</Text>
-              </View>
-              <Text style={styles.activityTime}>2h ago</Text>
-            </View>
-          </Card>
-          
-          <Card style={styles.activityCard} variant="outlined">
-            <View style={styles.activityItem}>
-              <View style={styles.activityIcon}>
-                <Text style={styles.activityEmoji}>🥗</Text>
-              </View>
-              <View style={styles.activityContent}>
-                <Text style={styles.activityTitle}>Healthy Breakfast</Text>
-                <Text style={styles.activitySubtitle}>Oatmeal with berries • 320 cal</Text>
-              </View>
-              <Text style={styles.activityTime}>4h ago</Text>
+          <Card style={styles.emptyActivityCard} variant="outlined">
+            <View style={styles.emptyActivityContent}>
+              <Text style={styles.emptyActivityIcon}>📈</Text>
+              <Text style={styles.emptyActivityTitle}>Start Your Fitness Journey</Text>
+              <Text style={styles.emptyActivityText}>
+                Complete your first workout or log a meal to see your activity here
+              </Text>
+              <Button
+                title="Get Started"
+                onPress={() => Alert.alert('Get Started', 'Choose from workout or meal logging!')}
+                variant="outline"
+                size="sm"
+                style={styles.emptyActivityButton}
+              />
             </View>
           </Card>
         </View>
@@ -375,6 +411,13 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
   },
   
+  workoutDescription: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+    marginBottom: THEME.spacing.md,
+    lineHeight: 20,
+  },
+
   workoutButton: {
     marginTop: THEME.spacing.sm,
   },
@@ -453,5 +496,79 @@ const styles = StyleSheet.create({
   
   bottomSpacing: {
     height: THEME.spacing.xl,
+  },
+
+  // Guest prompt styles
+  guestPromptCard: {
+    backgroundColor: THEME.colors.primary + '08',
+    borderColor: THEME.colors.primary + '20',
+  },
+
+  guestPromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: THEME.spacing.md,
+  },
+
+  guestPromptIcon: {
+    fontSize: 24,
+    marginRight: THEME.spacing.sm,
+  },
+
+  guestPromptText: {
+    flex: 1,
+    marginRight: THEME.spacing.sm,
+  },
+
+  guestPromptTitle: {
+    fontSize: THEME.fontSize.md,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.xs,
+  },
+
+  guestPromptSubtitle: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+    lineHeight: 18,
+  },
+
+  guestPromptButton: {
+    minWidth: 80,
+  },
+
+  // Empty activity state styles
+  emptyActivityCard: {
+    padding: THEME.spacing.xl,
+  },
+
+  emptyActivityContent: {
+    alignItems: 'center',
+    textAlign: 'center',
+  },
+
+  emptyActivityIcon: {
+    fontSize: 48,
+    marginBottom: THEME.spacing.md,
+  },
+
+  emptyActivityTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+    textAlign: 'center',
+  },
+
+  emptyActivityText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: THEME.spacing.lg,
+  },
+
+  emptyActivityButton: {
+    minWidth: 120,
   },
 });

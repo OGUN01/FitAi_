@@ -1,7 +1,39 @@
 // Jest setup file for React Native testing
 
-// Mock React Native modules
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = require('react-native-reanimated/mock');
+  Reanimated.default.call = () => {};
+  return Reanimated;
+});
+
+// Mock NetInfo
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  fetch: jest.fn(() => Promise.resolve({
+    type: 'wifi',
+    isConnected: true,
+    isInternetReachable: true,
+  })),
+  useNetInfo: jest.fn(() => ({
+    type: 'wifi',
+    isConnected: true,
+    isInternetReachable: true,
+  })),
+}));
+
+// Mock react-native-gesture-handler
+jest.mock('react-native-gesture-handler', () => ({
+  State: {},
+  PanGestureHandler: 'PanGestureHandler',
+  TapGestureHandler: 'TapGestureHandler',
+  TouchableOpacity: 'TouchableOpacity',
+  TouchableHighlight: 'TouchableHighlight',
+  TouchableWithoutFeedback: 'TouchableWithoutFeedback',
+  NativeViewGestureHandler: 'NativeViewGestureHandler',
+  Directions: {},
+}));
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
@@ -51,6 +83,11 @@ jest.mock('./src/stores', () => ({
   useDietStore: jest.fn(),
   useAppStore: jest.fn(),
 }));
+
+// Mock environment variables
+process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.EXPO_PUBLIC_GEMINI_API_KEY = 'test-gemini-key';
 
 // Global test timeout
 jest.setTimeout(10000);

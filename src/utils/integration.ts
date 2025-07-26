@@ -14,7 +14,7 @@ import { api, supabase } from '../services/api';
  */
 export const useOnboardingIntegration = () => {
   const { user: authUser } = useAuth();
-  const { createProfile, createFitnessGoals, updatePersonalInfo, updateFitnessGoalsLocal } = useUser();
+  const { createProfile, updateProfile, createFitnessGoals, updateFitnessGoals, updatePersonalInfo, updateFitnessGoalsLocal } = useUser();
   const { optimisticCreate } = useOffline();
 
   /**
@@ -29,10 +29,8 @@ export const useOnboardingIntegration = () => {
       // Update local state immediately
       updatePersonalInfo(personalInfo);
 
-      // Create profile in database
+      // Try to update profile first, create if it doesn't exist
       const profileData = {
-        id: authUser.id,
-        email: authUser.email,
         name: personalInfo.name,
         age: personalInfo.age ? parseInt(personalInfo.age) : undefined,
         gender: personalInfo.gender as 'male' | 'female' | 'other',
@@ -41,7 +39,18 @@ export const useOnboardingIntegration = () => {
         activity_level: personalInfo.activityLevel as any,
       };
 
-      const response = await createProfile(profileData);
+      // Try update first
+      let response = await updateProfile(authUser.id, profileData);
+      
+      // If update fails (profile doesn't exist), create it
+      if (!response.success) {
+        const createData = {
+          id: authUser.id,
+          email: authUser.email,
+          ...profileData,
+        };
+        response = await createProfile(createData);
+      }
       
       if (!response.success) {
         return { success: false, error: response.error };
@@ -68,15 +77,24 @@ export const useOnboardingIntegration = () => {
       // Update local state immediately
       updateFitnessGoalsLocal(fitnessGoals);
 
-      // Create fitness goals in database
+      // Try to update fitness goals first, create if they don't exist
       const goalsData = {
-        user_id: authUser.id,
         primary_goals: fitnessGoals.primaryGoals,
         time_commitment: fitnessGoals.timeCommitment as any,
         experience_level: fitnessGoals.experience as any,
       };
 
-      const response = await createFitnessGoals(goalsData);
+      // Try update first
+      let response = await updateFitnessGoals(authUser.id, goalsData);
+      
+      // If update fails (goals don't exist), create them
+      if (!response.success) {
+        const createData = {
+          user_id: authUser.id,
+          ...goalsData,
+        };
+        response = await createFitnessGoals(createData);
+      }
       
       if (!response.success) {
         return { success: false, error: response.error };

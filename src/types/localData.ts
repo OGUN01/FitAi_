@@ -2,454 +2,415 @@
 // Comprehensive TypeScript interfaces for local storage schema
 
 import { 
-  OnboardingData, 
   UserProfile, 
   PersonalInfo, 
-  FitnessGoals,
+  FitnessGoals
+} from './user';
+
+import {
   Workout,
   Exercise,
+  WorkoutPlan,
+  CompletedExercise,
+  CompletedSet,
+  WorkoutSession
+} from './workout';
+
+import {
   Meal,
   Food,
-  Achievement
-} from './index';
+  Macronutrients,
+  NutritionPlan,
+  DailyMealPlan
+} from './diet';
+
+import { Achievement } from './ai';
 
 // ============================================================================
-// LOCAL STORAGE SCHEMA
+// ONBOARDING DATA
 // ============================================================================
 
-export interface LocalStorageSchema {
-  version: string;
-  encrypted: boolean;
-  createdAt: string;
-  updatedAt: string;
-  user: LocalUserData;
-  fitness: LocalFitnessData;
-  nutrition: LocalNutritionData;
-  progress: LocalProgressData;
-  metadata: LocalMetadata;
-}
-
-// ============================================================================
-// USER DATA
-// ============================================================================
-
-export interface LocalUserData {
-  onboardingData: OnboardingData | null;
-  preferences: UserPreferences;
-  profile: UserProfile | null;
-  authState: LocalAuthState;
-}
-
-export interface UserPreferences {
-  units: 'metric' | 'imperial';
-  notifications: boolean;
-  darkMode: boolean;
-  language: string;
-  timezone: string;
-  autoSync: boolean;
-  dataRetention: number; // days
-}
-
-export interface LocalAuthState {
-  isAuthenticated: boolean;
-  userId: string | null;
-  email: string | null;
-  lastLoginAt: string | null;
-  sessionToken: string | null;
-  migrationStatus: MigrationStatus;
-}
-
-// ============================================================================
-// FITNESS DATA
-// ============================================================================
-
-export interface LocalFitnessData {
-  workouts: Workout[];
-  exercises: Exercise[];
-  sessions: WorkoutSession[];
-  plans: WorkoutPlan[];
-  customExercises: CustomExercise[];
-}
-
-export interface WorkoutSession {
-  id: string;
-  workoutId: string;
-  userId: string;
+export interface OnboardingData {
+  personalInfo: PersonalInfo;
+  fitnessGoals: FitnessGoals;
+  currentStep: number;
+  isComplete: boolean;
   startedAt: string;
-  completedAt: string | null;
-  duration: number; // minutes
-  caloriesBurned: number;
-  exercises: CompletedExercise[];
-  notes: string;
-  rating: number; // 1-5
-  isCompleted: boolean;
-  syncStatus: SyncStatus;
-}
-
-export interface CompletedExercise {
-  exerciseId: string;
-  sets: CompletedSet[];
-  notes: string;
-  personalRecord: boolean;
-}
-
-export interface CompletedSet {
-  reps: number;
-  weight: number; // kg
-  duration: number; // seconds
-  restTime: number; // seconds
-  rpe: number; // Rate of Perceived Exertion 1-10
-  completed: boolean;
-}
-
-export interface WorkoutPlan {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // days
-  workouts: string[]; // workout IDs
-  restDays: number[];
-  progression: PlanProgression[];
-  goals: string[];
-  isActive: boolean;
-  createdAt: string;
-  syncStatus: SyncStatus;
-}
-
-export interface PlanProgression {
-  week: number;
-  adjustments: string[];
-  targetMetrics: Record<string, number>;
-}
-
-export interface CustomExercise extends Exercise {
-  isCustom: true;
-  createdBy: string;
-  createdAt: string;
-  syncStatus: SyncStatus;
-}
-
-// ============================================================================
-// NUTRITION DATA
-// ============================================================================
-
-export interface LocalNutritionData {
-  meals: Meal[];
-  foods: Food[];
-  logs: MealLog[];
-  plans: NutritionPlan[];
-  customFoods: CustomFood[];
-  waterLogs: WaterLog[];
-}
-
-export interface MealLog {
-  id: string;
-  userId: string;
-  date: string; // ISO date
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  foods: LoggedFood[];
-  totalCalories: number;
-  totalMacros: Macronutrients;
-  notes: string;
-  photos: string[]; // photo URLs
-  syncStatus: SyncStatus;
-}
-
-export interface LoggedFood {
-  foodId: string;
-  quantity: number;
-  unit: string;
-  calories: number;
-  macros: Macronutrients;
-}
-
-export interface Macronutrients {
-  protein: number; // grams
-  carbohydrates: number; // grams
-  fat: number; // grams
-  fiber: number; // grams
-}
-
-export interface NutritionPlan {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // days
-  dailyPlans: DailyMealPlan[];
-  calorieTarget: number;
-  macroTargets: Macronutrients;
-  dietaryRestrictions: string[];
-  goals: string[];
-  isActive: boolean;
-  createdAt: string;
-  syncStatus: SyncStatus;
-}
-
-export interface DailyMealPlan {
-  date: string; // ISO date
-  meals: Meal[];
-  totalCalories: number;
-  totalMacros: Macronutrients;
-  waterTarget: number; // ml
-  adherence: number; // 0-100 percentage
-}
-
-export interface CustomFood extends Food {
-  isCustom: true;
-  createdBy: string;
-  createdAt: string;
-  syncStatus: SyncStatus;
-}
-
-export interface WaterLog {
-  id: string;
-  userId: string;
-  date: string; // ISO date
-  amount: number; // ml
-  timestamp: string;
-  syncStatus: SyncStatus;
-}
-
-// ============================================================================
-// PROGRESS DATA
-// ============================================================================
-
-export interface LocalProgressData {
-  measurements: BodyMeasurement[];
-  photos: ProgressPhoto[];
-  achievements: Achievement[];
-  analytics: ProgressAnalysis[];
-  goals: FitnessGoal[];
-}
-
-export interface BodyMeasurement {
-  id: string;
-  userId: string;
-  date: string; // ISO date
-  weight: number; // kg
-  bodyFat: number | null; // percentage
-  muscleMass: number | null; // kg
-  measurements: BodyMeasurements;
-  notes: string;
-  syncStatus: SyncStatus;
-}
-
-export interface BodyMeasurements {
-  chest: number | null; // cm
-  waist: number | null; // cm
-  hips: number | null; // cm
-  bicep: number | null; // cm
-  thigh: number | null; // cm
-  neck: number | null; // cm
-}
-
-export interface ProgressPhoto {
-  id: string;
-  userId: string;
-  date: string; // ISO date
-  type: 'front' | 'side' | 'back' | 'custom';
-  photoUrl: string;
-  thumbnailUrl: string;
-  notes: string;
-  isPrivate: boolean;
-  syncStatus: SyncStatus;
-}
-
-export interface ProgressAnalysis {
-  id: string;
-  userId: string;
-  date: string; // ISO date
-  period: 'week' | 'month' | 'quarter' | 'year';
-  metrics: ProgressMetrics;
-  insights: string[];
-  recommendations: string[];
-  goalProgress: GoalProgress[];
-  motivationalMessage: string;
-  nextMilestones: string[];
-  syncStatus: SyncStatus;
-}
-
-export interface ProgressMetrics {
-  weight: MetricTrend;
-  bodyFat: MetricTrend | null;
-  muscleMass: MetricTrend | null;
-  strength: StrengthMetrics;
-  endurance: EnduranceMetrics;
-  consistency: ConsistencyMetrics;
-}
-
-export interface MetricTrend {
-  current: number;
-  change: number;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  changePercentage: number;
-}
-
-export interface StrengthMetrics {
-  exercises: Record<string, {
-    maxWeight: number;
-    improvement: number;
-    personalRecords: number;
-  }>;
-  overallImprovement: number;
-}
-
-export interface EnduranceMetrics {
-  cardioMinutes: number;
-  improvement: number;
-  averageHeartRate: number | null;
-  vo2Max: number | null;
-}
-
-export interface ConsistencyMetrics {
-  workoutStreak: number;
-  nutritionAdherence: number; // percentage
-  weeklyWorkouts: number;
-  missedWorkouts: number;
-}
-
-export interface GoalProgress {
-  goalId: string;
-  progress: number; // 0-100 percentage
-  estimatedCompletion: string | null; // ISO date
-  isOnTrack: boolean;
-}
-
-export interface FitnessGoal {
-  id: string;
-  userId: string;
-  title: string;
-  description: string;
-  category: 'weight_loss' | 'muscle_gain' | 'strength' | 'endurance' | 'flexibility' | 'general_fitness';
-  targetValue: number;
-  currentValue: number;
-  unit: string;
-  targetDate: string; // ISO date
-  isCompleted: boolean;
-  completedAt: string | null;
-  priority: 'low' | 'medium' | 'high';
-  syncStatus: SyncStatus;
-}
-
-// ============================================================================
-// METADATA
-// ============================================================================
-
-export interface LocalMetadata {
-  lastSync: string | null; // ISO timestamp
-  migrationStatus: MigrationStatus;
-  conflicts: Conflict[];
-  backups: BackupInfo[];
-  syncQueue: SyncQueueItem[];
-  storageInfo: StorageInfo;
-}
-
-export interface MigrationStatus {
-  isRequired: boolean;
-  isInProgress: boolean;
-  isCompleted: boolean;
-  currentStep: string | null;
-  totalSteps: number;
-  completedSteps: number;
-  startedAt: string | null;
-  completedAt: string | null;
-  errors: string[];
-}
-
-export interface Conflict {
-  id: string;
-  type: 'data_conflict' | 'schema_conflict' | 'sync_conflict';
-  table: string;
-  localData: any;
-  remoteData: any;
-  conflictFields: string[];
-  resolution: ConflictResolution | null;
-  createdAt: string;
-  resolvedAt: string | null;
-}
-
-export interface ConflictResolution {
-  strategy: 'local_wins' | 'remote_wins' | 'merge' | 'user_choice';
-  resolvedData: any;
-  userChoice: boolean;
-}
-
-export interface BackupInfo {
-  id: string;
-  type: 'full' | 'incremental' | 'migration';
-  createdAt: string;
-  size: number; // bytes
-  location: 'local' | 'cloud';
-  path: string;
-  checksum: string;
-  isValid: boolean;
-}
-
-export interface SyncQueueItem {
-  id: string;
-  operation: 'create' | 'update' | 'delete';
-  table: string;
-  data: any;
-  timestamp: string;
-  retryCount: number;
-  maxRetries: number;
-  priority: 'low' | 'normal' | 'high';
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-}
-
-export interface StorageInfo {
-  totalSize: number; // bytes
-  usedSize: number; // bytes
-  availableSize: number; // bytes
-  quotaExceeded: boolean;
-  lastCleanup: string | null;
-  compressionRatio: number;
+  completedAt?: string;
 }
 
 // ============================================================================
 // SYNC STATUS
 // ============================================================================
 
-export type SyncStatus = 'local' | 'synced' | 'pending' | 'conflict' | 'error';
-
-// ============================================================================
-// VALIDATION SCHEMAS
-// ============================================================================
-
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-  warnings: ValidationWarning[];
+export enum SyncStatus {
+  SYNCED = 'synced',
+  PENDING = 'pending',
+  FAILED = 'failed',
+  CONFLICT = 'conflict'
 }
 
-export interface ValidationError {
-  field: string;
-  message: string;
-  code: string;
-  severity: 'error' | 'warning';
-}
-
-export interface ValidationWarning {
-  field: string;
-  message: string;
-  code: string;
+export interface SyncMetadata {
+  lastSyncedAt?: string;
+  lastModifiedAt: string;
+  syncVersion: number;
+  deviceId: string;
+  conflictResolution?: 'local' | 'remote' | 'manual';
 }
 
 // ============================================================================
-// ENCRYPTION TYPES
+// USER DATA
 // ============================================================================
 
-export interface EncryptionConfig {
-  algorithm: 'AES-256-GCM';
-  keyDerivation: 'PBKDF2';
-  iterations: number;
-  saltLength: number;
-  ivLength: number;
+export interface LocalUserProfile extends UserProfile {
+  localId: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+  offlineData?: {
+    cachedWorkouts: string[]; // Workout IDs
+    cachedMeals: string[]; // Meal IDs
+    cachedAchievements: string[]; // Achievement IDs
+  };
 }
 
-export interface EncryptedData {
-  data: string; // base64 encoded encrypted data
-  iv: string; // base64 encoded initialization vector
-  salt: string; // base64 encoded salt
-  tag: string; // base64 encoded authentication tag
+export interface UserSettings {
+  units: 'metric' | 'imperial';
+  language: 'en' | 'es' | 'fr' | 'de' | 'pt';
+  theme: 'light' | 'dark' | 'system';
+  notifications: {
+    workoutReminders: boolean;
+    mealReminders: boolean;
+    waterReminders: boolean;
+    progressUpdates: boolean;
+    motivationalQuotes: boolean;
+    reminderTimes: {
+      workout: string; // HH:MM format
+      breakfast: string;
+      lunch: string;
+      dinner: string;
+      water: string[];
+    };
+  };
+  privacy: {
+    shareProgress: boolean;
+    publicProfile: boolean;
+    allowFriendRequests: boolean;
+    dataCollection: boolean;
+  };
+  accessibility: {
+    fontSize: 'small' | 'medium' | 'large';
+    highContrast: boolean;
+    reduceMotion: boolean;
+    screenReader: boolean;
+  };
 }
+
+// ============================================================================
+// WORKOUT DATA
+// ============================================================================
+
+export interface LocalWorkout extends Workout {
+  localId: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+  isCustom: boolean;
+  isFavorite: boolean;
+  lastPerformed?: string;
+  performanceHistory?: WorkoutPerformance[];
+}
+
+export interface WorkoutPerformance {
+  sessionId: string;
+  performedAt: string;
+  duration: number; // actual duration in minutes
+  caloriesBurned: number;
+  completionRate: number; // 0-1
+  notes?: string;
+  modifications?: string[];
+  difficulty: 'too_easy' | 'just_right' | 'too_hard';
+  mood: 'energetic' | 'normal' | 'tired';
+}
+
+export interface LocalWorkoutPlan extends WorkoutPlan {
+  localId: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+  progress: {
+    startedAt: string;
+    currentWeek: number;
+    currentDay: number;
+    completedWorkouts: string[]; // Workout IDs
+    skippedWorkouts: string[];
+    completionRate: number;
+  };
+}
+
+export interface LocalWorkoutSession extends WorkoutSession {
+  localId: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+  mediaFiles?: {
+    photos: string[]; // Local file paths
+    videos: string[]; // Local file paths
+  };
+}
+
+// ============================================================================
+// NUTRITION DATA
+// ============================================================================
+
+export interface LocalFood extends Food {
+  localId: string;
+  isCustom: boolean;
+  isFavorite: boolean;
+  lastUsed?: string;
+  usageCount: number;
+  userNotes?: string;
+  verificationStatus: 'verified' | 'user_created' | 'ai_suggested';
+}
+
+export interface LoggedFood {
+  id: string;
+  foodId: string;
+  food: LocalFood;
+  quantity: number;
+  unit: string;
+  calories: number;
+  macros: Macronutrients;
+}
+
+// Re-export types to avoid duplication
+export type { Macronutrients } from './diet';
+
+export interface LocalNutritionPlan extends NutritionPlan {
+  localId: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+  isActive: boolean;
+  progress: {
+    startedAt: string;
+    currentDay: number;
+    adherenceRate: number;
+    averageCalories: number;
+    averageMacros: Macronutrients;
+  };
+}
+
+export interface LocalDailyMealPlan extends DailyMealPlan {
+  localId: string;
+  actualIntake?: {
+    calories: number;
+    macros: Macronutrients;
+    meals: MealLog[];
+  };
+  adherenceScore: number;
+  notes?: string;
+}
+
+export interface MealLog {
+  id: string;
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  foods: LoggedFood[];
+  totalCalories: number;
+  totalMacros: Macronutrients;
+  loggedAt: string;
+  photos?: string[]; // Local file paths
+  location?: {
+    name: string;
+    lat?: number;
+    lng?: number;
+  };
+  mood?: 'satisfied' | 'still_hungry' | 'too_full';
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+}
+
+export interface WaterLog {
+  id: string;
+  date: string;
+  amount: number; // ml
+  loggedAt: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+}
+
+// ============================================================================
+// PROGRESS DATA
+// ============================================================================
+
+export interface ProgressEntry {
+  id: string;
+  date: string;
+  type: 'weight' | 'body_fat' | 'measurements' | 'photos' | 'performance';
+  data: {
+    weight?: number; // kg
+    bodyFat?: number; // percentage
+    measurements?: {
+      chest?: number; // cm
+      waist?: number;
+      hips?: number;
+      biceps?: number;
+      thighs?: number;
+      calves?: number;
+    };
+    photos?: {
+      front?: string;
+      side?: string;
+      back?: string;
+    };
+    performance?: {
+      exercise: string;
+      value: number;
+      unit: string;
+    };
+  };
+  notes?: string;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+}
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: string;
+  streakHistory: {
+    startDate: string;
+    endDate: string;
+    length: number;
+    type: 'workout' | 'nutrition' | 'both';
+  }[];
+}
+
+export interface LocalAchievement extends Achievement {
+  localId: string;
+  earnedAt?: string;
+  progress: number;
+  isNew: boolean;
+  syncStatus: SyncStatus;
+  syncMetadata: SyncMetadata;
+}
+
+// ============================================================================
+// CACHE DATA
+// ============================================================================
+
+export interface CacheEntry<T> {
+  key: string;
+  data: T;
+  timestamp: string;
+  expiresAt: string;
+  size: number; // bytes
+  accessCount: number;
+  lastAccessedAt: string;
+}
+
+export interface OfflineQueue {
+  id: string;
+  action: 'create' | 'update' | 'delete' | 'sync';
+  entity: 'workout' | 'meal' | 'progress' | 'user' | 'achievement';
+  entityId: string;
+  data: any;
+  attempts: number;
+  lastAttemptAt?: string;
+  error?: string;
+  priority: 'low' | 'normal' | 'high';
+  createdAt: string;
+}
+
+// ============================================================================
+// APP STATE
+// ============================================================================
+
+export interface AppState {
+  isFirstLaunch: boolean;
+  lastOpenedAt: string;
+  sessionCount: number;
+  installDate: string;
+  appVersion: string;
+  deviceInfo: {
+    model: string;
+    os: string;
+    osVersion: string;
+    screenSize: string;
+  };
+  featureFlags: {
+    [key: string]: boolean;
+  };
+  debugMode: boolean;
+}
+
+export interface NavigationState {
+  currentScreen: string;
+  previousScreen?: string;
+  navigationStack: string[];
+  tabHistory: {
+    [tab: string]: string[];
+  };
+  timestamp: string;
+}
+
+// ============================================================================
+// STORAGE MANAGEMENT
+// ============================================================================
+
+export interface StorageStats {
+  totalSize: number; // bytes
+  usedSize: number;
+  freeSize: number;
+  breakdown: {
+    userData: number;
+    workouts: number;
+    nutrition: number;
+    progress: number;
+    media: number;
+    cache: number;
+  };
+  lastCalculatedAt: string;
+}
+
+export interface StorageQuota {
+  maxTotalSize: number; // bytes
+  maxMediaSize: number;
+  maxCacheSize: number;
+  maxOfflineDataSize: number;
+  warningThreshold: number; // percentage
+  criticalThreshold: number; // percentage
+}
+
+// ============================================================================
+// MIGRATION DATA
+// ============================================================================
+
+export interface MigrationRecord {
+  id: string;
+  fromVersion: string;
+  toVersion: string;
+  startedAt: string;
+  completedAt?: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  migratedEntities: {
+    [entity: string]: {
+      total: number;
+      completed: number;
+      failed: number;
+      errors?: string[];
+    };
+  };
+  rollbackData?: any;
+}
+
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+
+export const isLocalWorkout = (workout: any): workout is LocalWorkout => {
+  return workout && 'localId' in workout && 'syncStatus' in workout;
+};
+
+export const isLocalFood = (food: any): food is LocalFood => {
+  return food && 'localId' in food && 'isCustom' in food;
+};
+
+export const isSyncable = (entity: any): entity is { syncStatus: SyncStatus; syncMetadata: SyncMetadata } => {
+  return entity && 'syncStatus' in entity && 'syncMetadata' in entity;
+};

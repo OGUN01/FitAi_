@@ -9,6 +9,7 @@ interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isGuestMode: boolean;
   error: string | null;
   isInitialized: boolean;
 
@@ -18,6 +19,7 @@ interface AuthState {
   logout: () => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<AuthResponse>;
   resendEmailVerification: (email: string) => Promise<AuthResponse>;
+  checkEmailVerification: (email: string) => Promise<{ isVerified: boolean; error?: string }>;
   signInWithGoogle: () => Promise<any>;
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;
@@ -25,6 +27,8 @@ interface AuthState {
   clearError: () => void;
   initialize: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
+  setGuestMode: (isGuest: boolean) => void;
+  convertGuestToUser: (credentials: RegisterCredentials) => Promise<AuthResponse>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -34,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
       isAuthenticated: false,
+      isGuestMode: false,
       error: null,
       isInitialized: false,
 
@@ -84,9 +89,11 @@ export const useAuthStore = create<AuthState>()(
           const response = await authService.register(credentials);
 
           if (response.success && response.user) {
+            // Only set as authenticated if email is verified
+            // For unverified users after signup, store user data but don't mark as authenticated
             set({
               user: response.user,
-              isAuthenticated: true,
+              isAuthenticated: response.user.isEmailVerified,
               isLoading: false,
               error: null,
             });
@@ -203,6 +210,17 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
+      checkEmailVerification: async (email: string) => {
+        try {
+          return await authService.checkEmailVerification(email);
+        } catch (error) {
+          return {
+            isVerified: false,
+            error: error instanceof Error ? error.message : 'Verification check failed',
+          };
+        }
+      },
+
       clearError: () => {
         set({ error: null });
       },
@@ -210,8 +228,55 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: AuthUser | null) => {
         set({
           user,
-          isAuthenticated: user !== null,
+          isAuthenticated: user !== null && user.isEmailVerified,
+          isGuestMode: false, // Clear guest mode when user authenticates
         });
+      },
+
+      setGuestMode: (isGuest: boolean) => {
+        console.log('🎭 AuthStore: Setting guest mode:', isGuest);
+        set({
+          isGuestMode: isGuest,
+          isAuthenticated: false,
+          user: null,
+          error: null,
+        });
+      },
+
+      convertGuestToUser: async (credentials: RegisterCredentials) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          // First register the user
+          const registerResponse = await get().register(credentials);
+
+          if (registerResponse.success) {
+            // Clear guest mode since user is now authenticated
+            set({
+              isGuestMode: false,
+              isLoading: false
+            });
+
+            // TODO: Trigger migration of guest data to user account
+            console.log('🔄 AuthStore: Guest converted to user, migration needed');
+
+            return registerResponse;
+          } else {
+            set({ isLoading: false });
+            return registerResponse;
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Failed to convert guest to user';
+          set({
+            isLoading: false,
+            error: errorMessage,
+          });
+
+          return {
+            success: false,
+            error: errorMessage,
+          };
+        }
       },
 
       initialize: async () => {
@@ -230,7 +295,7 @@ export const useAuthStore = create<AuthState>()(
             console.log('✅ AuthStore: Session restored successfully for user:', response.user.email);
             set({
               user: response.user,
-              isAuthenticated: true,
+              isAuthenticated: response.user.isEmailVerified,
               isLoading: false,
               isInitialized: true,
               error: null,
@@ -356,6 +421,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isGuestMode: state.isGuestMode,
       }),
     }
   )

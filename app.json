@@ -10,6 +10,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "fitai",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -25,7 +26,10 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.fitai.app",
-      "versionCode": 1,
+      "versionCode": 3,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 21,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",

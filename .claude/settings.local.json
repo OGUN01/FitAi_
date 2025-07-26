@@ -16,8 +16,29 @@
       "Bash(mkdir:*)",
       "Bash(keytool:*)",
       "Bash(java:*)",
-      "Bash(where java)"
+      "Bash(where java)",
+      "Bash(npm ls:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint:*)",
+      "Bash(test:*)",
+      "Bash(npm test:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(find:*)",
+      "Bash(timeout 30s npm start)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "Bash(node:*)",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(npx ts-node:*)",
+      "Bash(npm start)",
+      "Bash(taskkill:*)"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

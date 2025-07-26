@@ -5,6 +5,9 @@
         <domain includeSubdomains="true">googleapis.com</domain>
         <domain includeSubdomains="true">google.com</domain>
         <domain includeSubdomains="true">googleusercontent.com</domain>
+        <domain includeSubdomains="true">expo.dev</domain>
+        <domain includeSubdomains="true">exp.host</domain>
+        <domain includeSubdomains="true">expo.io</domain>
     </domain-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>

@@ -108,147 +108,32 @@ export const ProgressScreen: React.FC = () => {
     bmi: { current: 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
   };
 
-  // Enhanced achievements with categories and rewards
-  const achievements = [
+  // Real achievements would come from user progress data
+  // For now, show empty state or basic achievements based on actual progress
+  const achievements = progressStats ? [
     {
-      id: 1,
-      title: 'First Steps',
-      description: 'Completed your first workout session',
+      id: 'first-entry',
+      title: 'Getting Started',
+      description: 'Added your first progress entry',
       icon: '🎯',
-      date: '2 weeks ago',
-      completed: true,
+      date: progressEntries.length > 0 ? 'Completed' : 'Not yet',
+      completed: progressEntries.length > 0,
       category: 'Milestone',
-      points: 50,
+      points: 25,
       rarity: 'common',
     },
-    {
-      id: 2,
-      title: 'Week Warrior',
-      description: 'Worked out 5 days in a week',
-      icon: '🔥',
-      date: '1 week ago',
-      completed: true,
-      category: 'Consistency',
-      points: 100,
-      rarity: 'uncommon',
-    },
-    {
-      id: 3,
-      title: 'Consistency Champion',
-      description: 'Worked out 10 days in a row',
-      icon: '👑',
-      date: 'In progress',
-      completed: false,
-      progress: 7,
-      target: 10,
-      category: 'Streak',
-      points: 200,
-      rarity: 'rare',
-    },
-    {
-      id: 4,
-      title: 'Calorie Crusher',
-      description: 'Burned 1000+ calories in a single workout',
-      icon: '💪',
-      date: '3 days ago',
-      completed: true,
-      category: 'Performance',
-      points: 150,
-      rarity: 'uncommon',
-    },
-    {
-      id: 5,
-      title: 'Early Bird',
-      description: 'Complete 5 morning workouts',
-      icon: '🌅',
-      date: 'In progress',
-      completed: false,
-      progress: 3,
-      target: 5,
-      category: 'Habit',
-      points: 75,
-      rarity: 'common',
-    },
-    {
-      id: 6,
-      title: 'Weight Loss Hero',
-      description: 'Lost 5kg from starting weight',
-      icon: '⚖️',
-      date: 'In progress',
-      completed: false,
-      progress: 2.3,
-      target: 5.0,
-      category: 'Goal',
-      points: 300,
-      rarity: 'epic',
-    },
-  ];
+  ] : [];
 
-  // Enhanced weekly data with more metrics
+  // Real weekly data would come from user workout/progress history
+  // For now, show empty weekly data or basic chart
   const weeklyData = [
-    {
-      day: 'Mon',
-      workouts: 1,
-      calories: 320,
-      duration: 45,
-      type: 'Strength',
-      intensity: 'High',
-      mood: 'Great',
-    },
-    {
-      day: 'Tue',
-      workouts: 0,
-      calories: 0,
-      duration: 0,
-      type: 'Rest',
-      intensity: 'None',
-      mood: 'Relaxed',
-    },
-    {
-      day: 'Wed',
-      workouts: 1,
-      calories: 450,
-      duration: 35,
-      type: 'HIIT',
-      intensity: 'Very High',
-      mood: 'Energized',
-    },
-    {
-      day: 'Thu',
-      workouts: 1,
-      calories: 380,
-      duration: 50,
-      type: 'Cardio',
-      intensity: 'Medium',
-      mood: 'Good',
-    },
-    {
-      day: 'Fri',
-      workouts: 0,
-      calories: 0,
-      duration: 0,
-      type: 'Rest',
-      intensity: 'None',
-      mood: 'Tired',
-    },
-    {
-      day: 'Sat',
-      workouts: 1,
-      calories: 520,
-      duration: 60,
-      type: 'Full Body',
-      intensity: 'High',
-      mood: 'Motivated',
-    },
-    {
-      day: 'Sun',
-      workouts: 1,
-      calories: 290,
-      duration: 30,
-      type: 'Yoga',
-      intensity: 'Low',
-      mood: 'Peaceful',
-    },
+    { day: 'Mon', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Tue', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Wed', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Thu', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Fri', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Sat', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Sun', workouts: 0, calories: 0, duration: 0 },
   ];
 
   const onRefresh = async () => {
@@ -586,29 +471,27 @@ export const ProgressScreen: React.FC = () => {
           <Card style={styles.summaryCard} variant="elevated">
             <View style={styles.summaryGrid}>
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>24</Text>
+                <Text style={styles.summaryValue}>{progressStats?.totalWorkouts || 0}</Text>
                 <Text style={styles.summaryLabel}>Total Workouts</Text>
               </View>
               
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>18h</Text>
+                <Text style={styles.summaryValue}>{progressStats?.totalDuration ? `${Math.round(progressStats.totalDuration / 60)}h` : '0h'}</Text>
                 <Text style={styles.summaryLabel}>Time Exercised</Text>
               </View>
               
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>7,240</Text>
+                <Text style={styles.summaryValue}>{progressStats?.totalCalories?.toLocaleString() || '0'}</Text>
                 <Text style={styles.summaryLabel}>Calories Burned</Text>
               </View>
               
               <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>12</Text>
+                <Text style={styles.summaryValue}>{progressStats?.currentStreak || 0}</Text>
                 <Text style={styles.summaryLabel}>Day Streak</Text>
               </View>
             </View>
           </Card>
         </View>
-
-        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

@@ -7,7 +7,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Button, Input, THEME } from '../../components/ui';
+import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
 
@@ -29,7 +29,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, signInWithGoogle } = useAuth();
+  const { login, signInWithGoogle, resendEmailVerification } = useAuth();
 
   const updateField = (field: keyof LoginCredentials, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -57,22 +57,79 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   };
 
   const handleLogin = async () => {
+    console.log('🔐 LoginScreen: Starting login process', { email: formData.email });
+
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      const result = await login(formData);
+      console.log('🔐 LoginScreen: Calling login service...');
+      // Ensure we trim the credentials before sending
+      const trimmedCredentials = {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password.trim()
+      };
+      console.log('🔐 LoginScreen: Using credentials:', { email: trimmedCredentials.email });
+      const result = await login(trimmedCredentials);
+      console.log('🔐 LoginScreen: Login result:', { success: result.success, error: result.error });
 
       if (result.success) {
-        Alert.alert('Success', 'Welcome back!', [
-          { text: 'Continue', onPress: onLoginSuccess }
+        // Check if user's email is verified
+        if (result.user && !result.user.isEmailVerified) {
+          Alert.alert(
+            'Email Verification Required',
+            'Please check your email and click the verification link to activate your account before logging in.',
+            [
+              { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
+              { text: 'OK' }
+            ]
+          );
+          return;
+        }
+
+        console.log('🔐 LoginScreen: Login successful, user:', result.user?.email);
+
+        Alert.alert('Success', 'Welcome back! You will now be taken to complete your profile.', [
+          { text: 'Continue', onPress: () => {
+            console.log('🔐 LoginScreen: Calling onLoginSuccess');
+            onLoginSuccess();
+          }}
         ]);
       } else {
-        Alert.alert('Login Failed', result.error || 'Invalid credentials');
+        // Check if error is related to email verification
+        if (result.error?.includes('email') || result.error?.includes('confirm')) {
+          Alert.alert(
+            'Email Verification Required',
+            'Please check your email and click the verification link to activate your account.',
+            [
+              { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
+              { text: 'OK' }
+            ]
+          );
+        } else {
+          console.log('🔐 LoginScreen: Login failed:', result.error);
+          Alert.alert('Login Failed', result.error || 'Invalid credentials');
+        }
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred');
       console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async (email: string) => {
+    setIsLoading(true);
+    try {
+      const result = await resendEmailVerification(email);
+      if (result.success) {
+        Alert.alert('Email Sent', 'Please check your email for the verification link.');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to send verification email');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send verification email');
     } finally {
       setIsLoading(false);
     }
@@ -120,12 +177,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             error={errors.email}
           />
 
-          <Input
+          <PasswordInput
             label="Password"
             placeholder="Enter your password"
             value={formData.password}
             onChangeText={(value) => updateField('password', value)}
-            secureTextEntry
             error={errors.password}
           />
 
@@ -146,13 +202,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </View>
 
           <Button
-            title="🔍 Continue with Google"
-            onPress={handleGoogleSignIn}
+            title="🔍 Continue with Google (Coming Soon)"
+            onPress={() => Alert.alert('Coming Soon', 'Google Sign-In will be available after OAuth configuration.')}
             variant="outline"
             size="lg"
             fullWidth
-            loading={isLoading}
-            style={styles.googleButton}
+            disabled={true}
+            style={[styles.googleButton, { opacity: 0.5 }]}
           />
 
           <Button
