@@ -3,16 +3,21 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Animated,
   Alert,
 } from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
+import { SafeAreaView } from 'react-native';
+import { Button, Card } from '../../components/ui';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { rf, rp, rh, rw } from '../../utils/responsive';
 import { useDashboardIntegration } from '../../utils/integration';
 import { aiService } from '../../ai';
 import { useAuth } from '../../hooks/useAuth';
+import DataRetrievalService from '../../services/dataRetrieval';
+import { useFitnessStore } from '../../stores/fitnessStore';
+import { useNutritionStore } from '../../stores/nutritionStore';
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
 }
@@ -27,13 +32,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   } = useDashboardIntegration();
 
   const { isGuestMode } = useAuth();
+  
+  // Store data
+  const { loadData: loadFitnessData } = useFitnessStore();
+  const { loadData: loadNutritionData } = useNutritionStore();
 
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(30))[0];
+  
+  // State for real data
+  const [todaysData, setTodaysData] = useState<any>(null);
+  const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
-  // Animate in on mount
+  // Load data on mount
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load store data first
+        await DataRetrievalService.loadAllData();
+        
+        // Get current data
+        const todaysInfo = DataRetrievalService.getTodaysData();
+        const weeklyInfo = DataRetrievalService.getWeeklyProgress();
+        const activities = DataRetrievalService.getRecentActivities(5);
+        
+        setTodaysData(todaysInfo);
+        setWeeklyProgress(weeklyInfo);
+        setRecentActivities(activities);
+      } catch (error) {
+        console.error('Failed to load home data:', error);
+      }
+    };
+    
+    loadData();
+    
+    // Animate in
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -52,6 +87,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const healthMetrics = getHealthMetrics();
   const dailyCalories = getDailyCalorieNeeds();
   const aiStatus = aiService.getAIStatus();
+  
+  // Real data from stores
+  const realCaloriesBurned = DataRetrievalService.getTotalCaloriesBurned();
+  const realStreak = weeklyProgress?.streak || 0;
+  const hasRealData = DataRetrievalService.hasDataForHome();
+  const todaysWorkoutInfo = DataRetrievalService.getTodaysWorkoutForHome();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -61,7 +102,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         transform: [{ translateY: slideAnim }],
       }}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+          <View>
+            {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Good Morning! 👋</Text>
@@ -113,15 +155,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
           <Text style={styles.sectionTitle}>Today's Overview</Text>
           <View style={styles.statsGrid}>
             <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>{userStats.totalCaloriesBurned || 0}</Text>
+              <Text style={styles.statValue}>{realCaloriesBurned || userStats.totalCaloriesBurned || 0}</Text>
               <Text style={styles.statLabel}>Calories Burned</Text>
-              <Text style={styles.statSubtext}>🔥 Total progress</Text>
+              <Text style={styles.statSubtext}>🔥 {hasRealData ? 'From workouts' : 'Get started!'}</Text>
             </Card>
 
             <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>{userStats.currentStreak || 0}</Text>
+              <Text style={styles.statValue}>{realStreak || userStats.currentStreak || 0}</Text>
               <Text style={styles.statLabel}>Day Streak</Text>
-              <Text style={styles.statSubtext}>⏱️ Keep it up!</Text>
+              <Text style={styles.statSubtext}>⏱️ {realStreak > 0 ? 'Keep it up!' : 'Start your streak!'}</Text>
             </Card>
           </View>
         </View>
@@ -130,7 +172,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Today's Workout</Text>
-            <TouchableOpacity onPress={() => Alert.alert('Coming Soon', 'Full workout library coming soon!')}>
+            <TouchableOpacity onPress={() => onNavigateToTab?.('fitness')}>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -138,22 +180,82 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
           <Card style={styles.workoutCard} variant="elevated">
             <View style={styles.workoutHeader}>
               <View>
-                <Text style={styles.workoutTitle}>Start Your First Workout</Text>
-                <Text style={styles.workoutSubtitle}>Personalized based on your goals</Text>
+                <Text style={styles.workoutTitle}>
+                  {!todaysWorkoutInfo.hasWeeklyPlan
+                    ? 'Start Your First Workout'
+                    : todaysWorkoutInfo.isRestDay
+                      ? '😴 Rest Day'
+                      : todaysWorkoutInfo.isCompleted
+                        ? '✅ Workout Complete!'
+                        : todaysWorkoutInfo.workout?.title || todaysWorkoutInfo.dayStatus}
+                </Text>
+                <Text style={styles.workoutSubtitle}>
+                  {!todaysWorkoutInfo.hasWeeklyPlan
+                    ? 'Personalized based on your goals'
+                    : todaysWorkoutInfo.isRestDay
+                      ? 'Recovery is just as important as training!'
+                      : todaysWorkoutInfo.hasWorkout
+                        ? `${todaysWorkoutInfo.workout?.duration || 0} min • ${todaysWorkoutInfo.workout?.estimatedCalories || 0} cal`
+                        : 'Ready for today\'s workout?'}
+                </Text>
               </View>
               <View style={styles.workoutIcon}>
-                <Text style={styles.workoutEmoji}>🏋️</Text>
+                <Text style={styles.workoutEmoji}>
+                  {!todaysWorkoutInfo.hasWeeklyPlan
+                    ? '🏋️'
+                    : todaysWorkoutInfo.isRestDay
+                      ? '😴'
+                      : todaysWorkoutInfo.isCompleted
+                        ? '✅'
+                        : todaysWorkoutInfo.workoutType === 'strength'
+                          ? '💪'
+                          : todaysWorkoutInfo.workoutType === 'cardio'
+                            ? '🏃'
+                            : todaysWorkoutInfo.workoutType === 'flexibility'
+                              ? '🧘'
+                              : todaysWorkoutInfo.workoutType === 'hiit'
+                                ? '⚡'
+                                : '🏋️'}
+                </Text>
               </View>
             </View>
-            
+
+            {todaysWorkoutInfo.hasWorkout && !todaysWorkoutInfo.isRestDay && (
+              <View style={styles.workoutProgress}>
+                <View style={styles.progressBar}>
+                  <View style={[
+                    styles.progressFill,
+                    { width: `${todaysData?.progress.workoutProgress || 0}%` }
+                  ]} />
+                </View>
+                <Text style={styles.progressText}>
+                  Progress: {todaysData?.progress.workoutProgress || 0}%
+                </Text>
+              </View>
+            )}
+
             <Text style={styles.workoutDescription}>
-              Based on your fitness goals: {profile?.fitnessGoals?.primaryGoals?.join(', ') || 'General fitness'}
+              {!todaysWorkoutInfo.hasWeeklyPlan
+                ? `Based on your fitness goals: ${profile?.fitnessGoals?.primaryGoals?.join(', ') || 'General fitness'}`
+                : todaysWorkoutInfo.isRestDay
+                  ? 'Use this day to:\n• Gentle stretching or yoga\n• Stay hydrated\n• Get quality sleep'
+                  : todaysWorkoutInfo.hasWorkout
+                    ? todaysWorkoutInfo.workout?.description || 'Ready to continue your workout?'
+                    : 'Ready for today\'s workout?'}
             </Text>
-            
+
             <Button
-              title="Generate Workout"
-              onPress={() => Alert.alert('AI Workout', 'AI-powered workout generation coming soon!')}
-              variant="primary"
+              title={!todaysWorkoutInfo.hasWeeklyPlan
+                ? 'Generate Workout'
+                : todaysWorkoutInfo.isRestDay
+                  ? 'View Weekly Plan'
+                  : todaysWorkoutInfo.hasWorkout
+                    ? (todaysWorkoutInfo.isCompleted ? 'View Details' : 'Continue Workout')
+                    : 'Start Workout'}
+              onPress={() => {
+                onNavigateToTab?.('fitness');
+              }}
+              variant={todaysWorkoutInfo.isRestDay ? "outline" : "primary"}
               style={styles.workoutButton}
             />
           </Card>
@@ -163,23 +265,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionItem}
-              onPress={() => Alert.alert('Start Workout', 'Workout feature coming soon!')}
+              onPress={() => onNavigateToTab?.('fitness')}
             >
               <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>🏋️</Text>
-                <Text style={styles.actionText}>Start Workout</Text>
+                <Text style={styles.actionIcon}>
+                  {todaysWorkoutInfo.isRestDay ? '😴' : '🏋️'}
+                </Text>
+                <Text style={styles.actionText}>
+                  {todaysWorkoutInfo.isRestDay
+                    ? 'Rest Day'
+                    : todaysWorkoutInfo.hasWorkout
+                      ? 'Continue Workout'
+                      : 'Start Workout'}
+                </Text>
               </Card>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.actionItem}
-              onPress={() => Alert.alert('Log Meal', 'Meal logging feature coming soon!')}
+              onPress={() => onNavigateToTab?.('diet')}
             >
               <Card style={styles.actionCard} variant="outlined">
                 <Text style={styles.actionIcon}>🍎</Text>
-                <Text style={styles.actionText}>Log Meal</Text>
+                <Text style={styles.actionText}>{todaysData?.meals.length > 0 ? 'View Meals' : 'Plan Meals'}</Text>
               </Card>
             </TouchableOpacity>
             
@@ -209,27 +319,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
           
-          <Card style={styles.emptyActivityCard} variant="outlined">
-            <View style={styles.emptyActivityContent}>
-              <Text style={styles.emptyActivityIcon}>📈</Text>
-              <Text style={styles.emptyActivityTitle}>Start Your Fitness Journey</Text>
-              <Text style={styles.emptyActivityText}>
-                Complete your first workout or log a meal to see your activity here
-              </Text>
-              <Button
-                title="Get Started"
-                onPress={() => Alert.alert('Get Started', 'Choose from workout or meal logging!')}
-                variant="outline"
-                size="sm"
-                style={styles.emptyActivityButton}
-              />
-            </View>
-          </Card>
+          {recentActivities.length > 0 ? (
+            recentActivities.map((activity) => (
+              <Card key={activity.id} style={styles.activityCard} variant="outlined">
+                <View style={styles.activityItem}>
+                  <View style={styles.activityIcon}>
+                    <Text style={styles.activityEmoji}>
+                      {activity.type === 'workout' ? '🏋️' : '🍎'}
+                    </Text>
+                  </View>
+                  <View style={styles.activityContent}>
+                    <Text style={styles.activityTitle}>{activity.name}</Text>
+                    <Text style={styles.activitySubtitle}>
+                      {activity.type === 'workout' 
+                        ? `${activity.duration} min • ${activity.calories} cal burned`
+                        : `${activity.calories} calories`}
+                    </Text>
+                  </View>
+                  <Text style={styles.activityTime}>
+                    {new Date(activity.completedAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              </Card>
+            ))
+          ) : (
+            <Card style={styles.emptyActivityCard} variant="outlined">
+              <View style={styles.emptyActivityContent}>
+                <Text style={styles.emptyActivityIcon}>📈</Text>
+                <Text style={styles.emptyActivityTitle}>
+                  {hasRealData ? 'Complete Activities to See History' : 'Start Your Fitness Journey'}
+                </Text>
+                <Text style={styles.emptyActivityText}>
+                  {hasRealData 
+                    ? 'Complete workouts and log meals to track your progress here'
+                    : 'Complete your first workout or log a meal to see your activity here'}
+                </Text>
+                <Button
+                  title="Get Started"
+                  onPress={() => onNavigateToTab?.(hasRealData ? 'fitness' : 'fitness')}
+                  variant="outline"
+                  size="sm"
+                  style={styles.emptyActivityButton}
+                />
+              </View>
+            </Card>
+          )}
         </View>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+            {/* Bottom Spacing */}
+            <View style={styles.bottomSpacing} />
+          </View>
+        </ScrollView>
       </Animated.View>
     </SafeAreaView>
   );
@@ -238,7 +378,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -249,183 +389,183 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.md,
+    paddingHorizontal: rp(24),
+    paddingTop: rp(24),
+    paddingBottom: rp(16),
   },
   
   greeting: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   
   userName: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   aiStatus: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.primary,
-    marginTop: THEME.spacing.xs,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   
   profileButton: {
-    padding: THEME.spacing.xs,
+    padding: ResponsiveTheme.spacing.xs,
   },
   
   profileAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: THEME.colors.primary,
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   
   profileInitial: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
   },
   
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   statsSection: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   seeAllText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   
   statsGrid: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   statCard: {
     flex: 1,
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
   
   statValue: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   statLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   statSubtext: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
   
   workoutCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   workoutHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   workoutTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   
   workoutSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   workoutIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rw(48),
+    height: rh(48),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   
   workoutEmoji: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
   
   workoutProgress: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   
   progressBar: {
-    height: 6,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.sm,
-    marginBottom: THEME.spacing.sm,
+    height: rh(6),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   progressFill: {
     height: '100%',
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   
   workoutDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.md,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(20),
   },
 
   workoutButton: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
   
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   actionItem: {
@@ -433,44 +573,44 @@ const styles = StyleSheet.create({
   },
   
   actionCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
   
   actionIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   actionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textAlign: 'center',
   },
   
   activityCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   activityEmoji: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   
   activityContent: {
@@ -478,68 +618,68 @@ const styles = StyleSheet.create({
   },
   
   activityTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
   },
   
   activitySubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   activityTime: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
   
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: ResponsiveTheme.spacing.xl,
   },
 
   // Guest prompt styles
   guestPromptCard: {
-    backgroundColor: THEME.colors.primary + '08',
-    borderColor: THEME.colors.primary + '20',
+    backgroundColor: ResponsiveTheme.colors.primary + '08',
+    borderColor: ResponsiveTheme.colors.primary + '20',
   },
 
   guestPromptHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   guestPromptIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   guestPromptText: {
     flex: 1,
-    marginRight: THEME.spacing.sm,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   guestPromptTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   guestPromptSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
 
   guestPromptButton: {
-    minWidth: 80,
+    minWidth: rw(80),
   },
 
   // Empty activity state styles
   emptyActivityCard: {
-    padding: THEME.spacing.xl,
+    padding: ResponsiveTheme.spacing.xl,
   },
 
   emptyActivityContent: {
@@ -548,27 +688,27 @@ const styles = StyleSheet.create({
   },
 
   emptyActivityIcon: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   emptyActivityTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
 
   emptyActivityText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: THEME.spacing.lg,
+    lineHeight: rf(20),
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   emptyActivityButton: {
-    minWidth: 120,
+    minWidth: rw(120),
   },
 });

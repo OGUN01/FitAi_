@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
@@ -12,17 +11,28 @@ import {
   ActivityIndicator,
   TextInput,
   Animated,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { aiService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
+import { useNutritionStore } from '../../stores/nutritionStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { Meal, DailyMealPlan } from '../../types/ai';
 import { Food } from '../../services/nutritionData';
+import { weeklyMealContentGenerator, WeeklyMealPlan, DayMeal } from '../../ai/weeklyMealGenerator';
+import { MealCard } from '../../components/diet/MealCard';
+import { completionTrackingService } from '../../services/completionTracking';
 
-export const DietScreen: React.FC = () => {
+interface DietScreenProps {
+  navigation?: any; // Navigation prop for routing
+}
+
+export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,6 +51,117 @@ export const DietScreen: React.FC = () => {
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // Use nutrition store for meal plan state
+  const {
+    weeklyMealPlan,
+    isGeneratingPlan,
+    mealProgress,
+    saveWeeklyMealPlan,
+    setWeeklyMealPlan,
+    setGeneratingPlan,
+    getMealProgress,
+    updateMealProgress,
+    completeMeal,
+    loadWeeklyMealPlan,
+    loadData,
+  } = useNutritionStore();
+  
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayName = dayNames[today.getDay()] || 'monday'; // fallback to monday if undefined
+    console.log(`🔍 Today is: ${todayName} (day ${today.getDay()})`);
+    return todayName;
+  });
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Debug: Monitor weeklyMealPlan changes
+  useEffect(() => {
+    console.log(`🔍 weeklyMealPlan changed:`, weeklyMealPlan ? `Plan: ${weeklyMealPlan.planTitle}, meals: ${weeklyMealPlan.meals?.length}` : 'null');
+  }, [weeklyMealPlan]);
+
+  // Load existing meal plan on component mount
+  useEffect(() => {
+    const loadExistingMealPlan = async () => {
+      try {
+        console.log('🔍 Loading existing meal plan from store...');
+        await loadData(); // Load all nutrition data
+        
+        const existingPlan = await loadWeeklyMealPlan();
+        if (existingPlan) {
+          console.log('✅ Found existing meal plan:', existingPlan.planTitle);
+          setWeeklyMealPlan(existingPlan);
+          
+          // Comprehensive retrieval test
+          console.log('🧪 COMPREHENSIVE RETRIEVAL TEST:');
+          const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+          const mealAvailability = allDays.map(day => {
+            const mealsForDay = existingPlan.meals.filter(meal => meal.dayOfWeek === day);
+            return {
+              day,
+              mealCount: mealsForDay.length,
+              mealTypes: mealsForDay.map(m => m.type)
+            };
+          });
+          console.log('📊 Meal availability by day:', mealAvailability);
+          
+          const totalMeals = existingPlan.meals.length;
+          const expectedMeals = 21; // 7 days × 3 meals
+          console.log(`📈 Total meals: ${totalMeals}/${expectedMeals} (${Math.round(totalMeals/expectedMeals*100)}% complete)`);
+          
+        } else {
+          console.log('📭 No existing meal plan found');
+        }
+      } catch (error) {
+        console.error('❌ Error loading meal plan:', error);
+      }
+    };
+
+    loadExistingMealPlan();
+  }, []); // Run once on mount
+
+  // Navigation helper for profile completion
+  const navigateToProfileCompletion = async (missingSection: string) => {
+    if (navigation) {
+      // Try to navigate to profile screen
+      try {
+        // Store the intent to edit diet preferences
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        await AsyncStorage.setItem('profileEditIntent', JSON.stringify({
+          section: 'dietPreferences',
+          fromScreen: 'Diet',
+          timestamp: Date.now()
+        }));
+
+        console.log('🎯 DietScreen: Stored edit intent and navigating to Profile');
+        navigation.navigate('Profile');
+      } catch (error) {
+        console.log('Navigation not available, showing alternative');
+        showProfileCompletionModal(missingSection);
+      }
+    } else {
+      showProfileCompletionModal(missingSection);
+    }
+  };
+
+  // Show modal when navigation is not available
+  const showProfileCompletionModal = (missingSection: string) => {
+    Alert.alert(
+      'Complete Your Profile',
+      `To generate personalized meal plans, please complete your ${missingSection}.\n\nYou can update your profile from the Profile tab.`,
+      [
+        { text: 'OK' },
+        {
+          text: 'Go to Profile',
+          onPress: () => {
+            // This will be enhanced when we implement profile editing
+            Alert.alert('Profile', 'Profile editing functionality will be available soon!');
+          }
+        }
+      ]
+    );
+  };
 
   // Authentication and user data
   const { user, isAuthenticated } = useAuth();
@@ -91,7 +212,13 @@ export const DietScreen: React.FC = () => {
       Alert.alert(
         'Profile Incomplete',
         'Please complete your profile to generate personalized meals.',
-        [{ text: 'OK' }]
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigateToProfileCompletion('Personal Information')
+          }
+        ]
       );
       return;
     }
@@ -161,7 +288,13 @@ export const DietScreen: React.FC = () => {
       Alert.alert(
         'Profile Incomplete',
         'Please complete your profile to generate meal plans.',
-        [{ text: 'OK' }]
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigateToProfileCompletion('Personal Information')
+          }
+        ]
       );
       return;
     }
@@ -202,6 +335,199 @@ export const DietScreen: React.FC = () => {
     }
   };
 
+  // Generate Weekly Meal Plan (similar to workout generation)
+  const generateWeeklyMealPlan = async () => {
+    // Check what's missing and provide specific guidance
+    const missingItems = [];
+    if (!profile?.personalInfo) missingItems.push('Personal Information');
+    if (!profile?.fitnessGoals) missingItems.push('Fitness Goals');
+    if (!profile?.dietPreferences && !dietPreferences) missingItems.push('Diet Preferences');
+
+    if (missingItems.length > 0) {
+      const primaryMissing = missingItems[0];
+      Alert.alert(
+        'Profile Incomplete',
+        `Please complete the following to generate your meal plan:\n\n• ${missingItems.join('\n• ')}\n\nWould you like to complete your profile now?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigateToProfileCompletion(primaryMissing)
+          }
+        ]
+      );
+      return;
+    }
+
+    setGeneratingPlan(true);
+    setAiError(null);
+
+    try {
+      console.log('🍽️ Generating weekly meal plan...');
+      console.log('🔍 Profile data:', JSON.stringify(profile, null, 2));
+
+      // Use diet preferences from profile or from nutrition data service
+      const userDietPreferences = profile.dietPreferences || {
+        dietType: dietPreferences?.diet_type?.[0] as any || 'non-veg',
+        allergies: dietPreferences?.allergies || [],
+        cuisinePreferences: [],
+        restrictions: [],
+        cookingSkill: 'intermediate',
+        mealPrepTime: 'moderate',
+        dislikes: dietPreferences?.dislikes || [],
+      };
+
+      console.log('🔍 Calling weeklyMealContentGenerator.generateWeeklyMealPlan...');
+      console.log('🔍 Parameters:', {
+        personalInfo: profile.personalInfo,
+        fitnessGoals: profile.fitnessGoals,
+        userDietPreferences
+      });
+      
+      const response = await weeklyMealContentGenerator.generateWeeklyMealPlan(
+        profile.personalInfo,
+        profile.fitnessGoals,
+        userDietPreferences
+      );
+      
+      console.log('🔍 Response from generator:', response);
+
+      if (response.success && response.data) {
+        console.log('✅ Weekly meal plan generated successfully');
+        // Save to store and database
+        await saveWeeklyMealPlan(response.data);
+        
+        // Ensure state is updated (backup approach)
+        setWeeklyMealPlan(response.data);
+        
+        setForceUpdate(prev => prev + 1); // Force re-render
+        console.log(`🔍 Meal plan saved to store and database`);
+        
+        // COMPREHENSIVE GENERATION TEST
+        console.log('🧪 COMPREHENSIVE GENERATION TEST:');
+        const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const generatedMealsByDay = allDays.map(day => {
+          const mealsForDay = response.data.meals.filter(meal => meal.dayOfWeek === day);
+          return {
+            day,
+            mealCount: mealsForDay.length,
+            mealTypes: mealsForDay.map(m => m.type)
+          };
+        });
+        console.log('📊 Generated meals by day:', generatedMealsByDay);
+        
+        const totalGenerated = response.data.meals.length;
+        const expectedTotal = 21; // 7 days × 3 meals
+        console.log(`📈 Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round(totalGenerated/expectedTotal*100)}%)`);
+        
+        if (totalGenerated === expectedTotal) {
+          console.log('✅ FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!');
+        } else {
+          console.warn(`⚠️ Incomplete meal plan: Missing ${expectedTotal - totalGenerated} meals`);
+        }
+
+        Alert.alert(
+          '🎉 Meal Plan Generated!',
+          `Your personalized 7-day meal plan "${response.data.planTitle}" is ready!`,
+          [{ text: 'View Plan', onPress: () => {} }]
+        );
+      } else {
+        throw new Error(response.error || 'Failed to generate meal plan');
+      }
+    } catch (error) {
+      console.error('Error generating weekly meal plan:', error);
+      setAiError(error instanceof Error ? error.message : 'Failed to generate meal plan');
+      Alert.alert('Error', 'Failed to generate meal plan. Please try again.');
+    } finally {
+      setGeneratingPlan(false);
+    }
+  };
+
+  // Get meals for selected day
+  const getTodaysMeals = (): DayMeal[] => {
+    if (!weeklyMealPlan) {
+      console.log('🔍 getTodaysMeals: No weekly meal plan available');
+      return [];
+    }
+    const mealsForDay = weeklyMealPlan.meals.filter(meal => meal.dayOfWeek === selectedDay);
+    console.log(`🔍 getTodaysMeals for ${selectedDay}:`, {
+      mealsFound: mealsForDay.length,
+      mealTypes: mealsForDay.map(m => m.type),
+      mealNames: mealsForDay.map(m => m.name)
+    });
+    return mealsForDay;
+  };
+
+  // Handle meal start (similar to workout start)
+  const handleStartMeal = (meal: DayMeal) => {
+    if (!navigation) {
+      Alert.alert('Error', 'Navigation not available');
+      return;
+    }
+
+    Alert.alert(
+      '🍽️ Start Meal Preparation',
+      `Ready to prepare "${meal.name}"?\n\nEstimated time: ${meal.preparationTime} minutes\nDifficulty: ${meal.difficulty}\nIngredients: ${meal.items.length}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Start Cooking',
+          onPress: () => {
+            console.log('🍽️ Starting meal preparation:', meal.name);
+
+            // Initialize progress using completion tracking service
+            completionTrackingService.updateMealProgress(meal.id, 0, {
+              source: 'diet_screen_start',
+              startedAt: new Date().toISOString(),
+            });
+
+            // For demo: Add a "Mark Complete" option for testing
+            setTimeout(() => {
+              Alert.alert(
+                'Meal Progress',
+                `Preparing "${meal.name}"...\n\nTap "Mark Complete" when finished.`,
+                [
+                  { text: 'Still Cooking', style: 'cancel' },
+                  {
+                    text: 'Mark Complete',
+                    onPress: async () => {
+                      console.log('🍽️ Marking meal as complete:', meal.name);
+
+                      try {
+                        // Use completion tracking service for proper event emission
+                        const success = await completionTrackingService.completeMeal(meal.id, {
+                          completedAt: new Date().toISOString(),
+                          source: 'diet_screen_manual',
+                        }, user?.id || 'dev-user-001');
+
+                        if (success) {
+                          // Refresh nutrition data to update calorie display
+                          try {
+                            await loadDailyNutrition();
+                            console.log('✅ Daily nutrition data refreshed after meal completion');
+                          } catch (refreshError) {
+                            console.warn('⚠️ Failed to refresh nutrition data:', refreshError);
+                          }
+
+                          Alert.alert('🎉 Meal Complete!', `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`);
+                        } else {
+                          Alert.alert('Error', 'Failed to mark meal as complete. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('Error completing meal:', error);
+                        Alert.alert('Error', 'Failed to mark meal as complete. Please try again.');
+                      }
+                    },
+                  },
+                ]
+              );
+            }, 1000);
+          }
+        }
+      ]
+    );
+  };
+
   const handleSearchFood = () => {
     setShowFoodSearch(!showFoodSearch);
   };
@@ -222,21 +548,20 @@ export const DietScreen: React.FC = () => {
   };
 
   const handleContextMenuAction = (action: string) => {
-    const meal = todaysMeals.find(m => m.id === contextMenu.mealId);
     setContextMenu({ visible: false, mealId: null, position: { x: 0, y: 0 } });
 
     switch (action) {
       case 'edit':
-        Alert.alert('Edit Meal', `Editing ${meal?.type}...`);
+        Alert.alert('Edit Meal', 'Meal editing feature coming soon...');
         break;
       case 'delete':
-        Alert.alert('Delete Meal', `Deleting ${meal?.type}...`);
+        Alert.alert('Delete Meal', 'Meal deletion feature coming soon...');
         break;
       case 'duplicate':
-        Alert.alert('Duplicate', `Duplicating ${meal?.type}...`);
+        Alert.alert('Duplicate', 'Meal duplication feature coming soon...');
         break;
       case 'details':
-        Alert.alert('Details', `Showing nutrition details for ${meal?.type}`);
+        Alert.alert('Details', 'Meal details feature coming soon...');
         break;
     }
   };
@@ -257,109 +582,11 @@ export const DietScreen: React.FC = () => {
     }
   };
 
-  // Convert AI meals to display format
-  const convertAIMealToDisplay = (aiMeal: Meal, index: number) => ({
-    id: `ai-${index}`,
-    type: aiMeal.type.charAt(0).toUpperCase() + aiMeal.type.slice(1),
-    time: getMealTime(aiMeal.type),
-    icon: getMealIcon(aiMeal.type),
-    items: aiMeal.foods?.map(food => food.name) || [],
-    calories: aiMeal.totalCalories || 0,
-    isAIGenerated: true,
-  });
 
-  const getMealTime = (type: string) => {
-    switch (type) {
-      case 'breakfast': return '8:00 AM';
-      case 'lunch': return '12:30 PM';
-      case 'dinner': return '7:00 PM';
-      case 'snack': return '3:00 PM';
-      default: return '12:00 PM';
-    }
-  };
 
-  const getMealIcon = (type: string) => {
-    switch (type) {
-      case 'breakfast': return '🥣';
-      case 'lunch': return '🥗';
-      case 'dinner': return '🍽️';
-      case 'snack': return '🍎';
-      default: return '🍽️';
-    }
-  };
 
-  // Empty meal placeholders for meal planning
-  const emptyMealSlots = [
-    {
-      id: 'breakfast-slot',
-      type: 'Breakfast',
-      time: '8:00 AM',
-      calories: 0,
-      items: [],
-      icon: '🥣',
-      planned: true,
-      isAIGenerated: false,
-    },
-    {
-      id: 'lunch-slot',
-      type: 'Lunch', 
-      time: '12:30 PM',
-      calories: 0,
-      items: [],
-      icon: '🥗',
-      planned: true,
-      isAIGenerated: false,
-    },
-    {
-      id: 'snack-slot',
-      type: 'Snack',
-      time: '3:00 PM',
-      calories: 0,
-      items: [],
-      icon: '🍎',
-      planned: true,
-      isAIGenerated: false,
-    },
-    {
-      id: 'dinner-slot',
-      type: 'Dinner',
-      time: '7:00 PM',
-      calories: 0,
-      items: [],
-      icon: '🍽️',
-      planned: true,
-      isAIGenerated: false,
-    },
-  ];
 
-  // Convert real user meals to display format
-  const convertUserMealToDisplay = (meal: any) => ({
-    id: meal.id,
-    type: meal.type.charAt(0).toUpperCase() + meal.type.slice(1),
-    time: getMealTime(meal.type),
-    icon: getMealIcon(meal.type),
-    items: meal.foods?.map((f: any) => f.name || 'Unknown food') || [],
-    calories: meal.total_calories || 0,
-    isAIGenerated: false,
-    nutrition: {
-      protein: meal.total_protein || 0,
-      carbs: meal.total_carbs || 0,
-      fat: meal.total_fat || 0,
-    },
-  });
 
-  // Combine AI meals with real logged meals and empty slots
-  const aiMealsDisplay = aiMeals.map(convertAIMealToDisplay);
-  const userMealsDisplay = userMeals?.map(convertUserMealToDisplay) || [];
-  
-  // Show empty slots only if no real meals exist for that meal type
-  const mealTypes = ['breakfast', 'lunch', 'snack', 'dinner'];
-  const filledSlots = [...aiMealsDisplay, ...userMealsDisplay];
-  const emptySlots = emptyMealSlots.filter(slot => 
-    !filledSlots.some(meal => meal.type.toLowerCase() === slot.type.toLowerCase())
-  );
-  
-  const todaysMeals = [...aiMealsDisplay, ...userMealsDisplay, ...emptySlots];
 
   // Use real daily nutrition data from Track B
   const currentNutrition = dailyNutrition || {
@@ -388,12 +615,13 @@ export const DietScreen: React.FC = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={THEME.colors.primary}
-            colors={[THEME.colors.primary]}
+            tintColor={ResponsiveTheme.colors.primary}
+            colors={[ResponsiveTheme.colors.primary]}
           />
         }
       >
-        {/* Header */}
+        <View>
+          {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Nutrition</Text>
           <View style={styles.headerButtons}>
@@ -404,14 +632,25 @@ export const DietScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
+              onPress={generateWeeklyMealPlan}
+              disabled={isGeneratingPlan}
+            >
+              {isGeneratingPlan ? (
+                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+              ) : (
+                <Text style={styles.aiButtonText}>🍽️ Week</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
               onPress={generateDailyMealPlan}
               disabled={isGeneratingMeal}
             >
               {isGeneratingMeal ? (
-                <ActivityIndicator size="small" color={THEME.colors.white} />
+                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
               ) : (
-                <Text style={styles.aiButtonText}>🤖 Plan</Text>
+                <Text style={styles.aiButtonText}>🤖 Day</Text>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -426,7 +665,7 @@ export const DietScreen: React.FC = () => {
         {/* Loading State */}
         {(foodsLoading || userMealsLoading) && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={THEME.colors.primary} />
+            <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
             <Text style={styles.loadingText}>Loading nutrition data...</Text>
           </View>
         )}
@@ -451,6 +690,83 @@ export const DietScreen: React.FC = () => {
         {!isAuthenticated && (
           <Card style={styles.errorCard} variant="outlined">
             <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
+          </Card>
+        )}
+
+        {/* Weekly Meal Plan Section */}
+        {weeklyMealPlan && (
+          <>
+            {/* Day Selector */}
+            <View style={styles.daySelector}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[
+                      styles.dayButton,
+                      selectedDay === day && styles.selectedDayButton
+                    ]}
+                    onPress={() => setSelectedDay(day)}
+                  >
+                    <Text style={[
+                      styles.dayButtonText,
+                      selectedDay === day && styles.selectedDayButtonText
+                    ]}>
+                      {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Today's Meals from Weekly Plan */}
+            <View style={styles.mealsSection}>
+              <Text style={styles.sectionTitle}>
+                {selectedDay ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals` : "Today's Meals"}
+              </Text>
+              {getTodaysMeals().map((meal) => {
+                const progress = getMealProgress(meal.id);
+                return (
+                  <MealCard
+                    key={meal.id}
+                    meal={meal}
+                    onStartMeal={handleStartMeal}
+                    progress={progress?.progress || 0}
+                  />
+                );
+              })}
+              {getTodaysMeals().length === 0 && (
+                <Card style={styles.emptyCard}>
+                  <Text style={styles.emptyText}>
+                    No meals planned for {selectedDay}
+                  </Text>
+                  <Button
+                    title="Generate Meals"
+                    onPress={generateWeeklyMealPlan}
+                    variant="outline"
+                    size="sm"
+                  />
+                </Card>
+              )}
+            </View>
+          </>
+        )}
+
+
+
+        {/* Generate Weekly Plan Prompt */}
+        {!weeklyMealPlan && isAuthenticated && (
+          <Card style={styles.promptCard}>
+            <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
+            <Text style={styles.promptText}>
+              Get a personalized 7-day meal plan with recipes tailored to your goals and preferences.
+            </Text>
+            <Button
+              title={isGeneratingPlan ? "Generating..." : "Generate Weekly Plan"}
+              onPress={generateWeeklyMealPlan}
+              disabled={isGeneratingPlan}
+              style={styles.promptButton}
+            />
           </Card>
         )}
 
@@ -553,97 +869,7 @@ export const DietScreen: React.FC = () => {
           </Card>
         </View>
 
-        {/* Today's Meals */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Meals</Text>
-          
-          {todaysMeals.map((meal, index) => (
-            <Animated.View
-              key={meal.id}
-              style={{
-                opacity: fadeAnim,
-                transform: [{
-                  translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [20, 0],
-                  }),
-                }],
-              }}
-            >
-              <Card style={styles.mealCard} variant="outlined">
-                <TouchableOpacity
-                  style={styles.mealContent}
-                  onLongPress={(event) => handleMealLongPress(meal.id, event)}
-                >
-                <View style={styles.mealHeader}>
-                  <View style={styles.mealInfo}>
-                    <View style={styles.mealTitleRow}>
-                      <Text style={styles.mealIcon}>{meal.icon}</Text>
-                      <Text style={styles.mealType}>{meal.type}</Text>
-                      <Text style={styles.mealTime}>{meal.time}</Text>
-                      {meal.isAIGenerated && (
-                        <View style={styles.aiGeneratedBadge}>
-                          <Text style={styles.aiGeneratedText}>🤖 AI</Text>
-                        </View>
-                      )}
-                      {meal.items.length === 0 && !meal.planned && (
-                        <TouchableOpacity
-                          style={styles.mealAIButton}
-                          onPress={() => generateAIMeal(meal.type.toLowerCase() as any)}
-                          disabled={isGeneratingMeal}
-                        >
-                          <Text style={styles.mealAIText}>🤖</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    
-                    {meal.items.length > 0 ? (
-                      <View>
-                        <View style={styles.mealItems}>
-                          {meal.items.map((item, index) => (
-                            <Text key={index} style={styles.mealItem}>• {item}</Text>
-                          ))}
-                        </View>
-                        {meal.nutrition && (
-                          <View style={styles.mealNutrition}>
-                            <Text style={styles.nutritionText}>P: {meal.nutrition.protein}g</Text>
-                            <Text style={styles.nutritionDot}>•</Text>
-                            <Text style={styles.nutritionText}>C: {meal.nutrition.carbs}g</Text>
-                            <Text style={styles.nutritionDot}>•</Text>
-                            <Text style={styles.nutritionText}>F: {meal.nutrition.fat}g</Text>
-                            {meal.prepTime && (
-                              <>
-                                <Text style={styles.nutritionDot}>•</Text>
-                                <Text style={styles.nutritionText}>{meal.prepTime}</Text>
-                              </>
-                            )}
-                          </View>
-                        )}
-                        {meal.rating && meal.rating > 0 && (
-                          <View style={styles.mealRating}>
-                            <Text style={styles.ratingStars}>⭐</Text>
-                            <Text style={styles.ratingText}>{meal.rating}</Text>
-                            <Text style={styles.difficultyText}>• {meal.difficulty}</Text>
-                          </View>
-                        )}
-                      </View>
-                    ) : (
-                      <Text style={styles.plannedText}>Tap to plan your meal</Text>
-                    )}
-                  </View>
-                  
-                  <View style={styles.mealCalories}>
-                    <Text style={styles.caloriesValue}>
-                      {meal.calories > 0 ? `${meal.calories}` : '0'}
-                    </Text>
-                    <Text style={styles.caloriesLabel}>cal</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </Card>
-            </Animated.View>
-          ))}
-        </View>
+
 
         {/* Quick Actions */}
         <View style={styles.section}>
@@ -714,6 +940,7 @@ export const DietScreen: React.FC = () => {
         </View>
 
         <View style={styles.bottomSpacing} />
+        </View>
       </ScrollView>
 
       {/* Camera Modal */}
@@ -784,7 +1011,7 @@ export const DietScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -795,115 +1022,115 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: rp(12),
   },
 
   aiButton: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 70,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(8),
+    borderRadius: rs(20),
+    minWidth: rw(70),
     alignItems: 'center',
   },
 
   aiButtonDisabled: {
-    backgroundColor: THEME.colors.textMuted,
+    backgroundColor: ResponsiveTheme.colors.textMuted,
   },
 
   aiButtonText: {
-    color: THEME.colors.white,
-    fontSize: 12,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(12),
     fontWeight: '600',
   },
 
   addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.primary,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   
   addIcon: {
-    fontSize: 24,
-    color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
   
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   overviewCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   caloriesSection: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   
   caloriesHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   caloriesConsumed: {
-    fontSize: THEME.fontSize.xxxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
   
   caloriesTarget: {
-    fontSize: THEME.fontSize.lg,
-    color: THEME.colors.textSecondary,
-    marginLeft: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
   
   caloriesProgress: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   progressBar: {
-    height: 8,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.sm,
-    marginBottom: THEME.spacing.sm,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   progressFill: {
     height: '100%',
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
   },
   
   remainingText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   
   macrosGrid: {
@@ -917,28 +1144,28 @@ const styles = StyleSheet.create({
   },
   
   macroValue: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   
   macroLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   macroTarget: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
   
   mealCard: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   mealContent: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   mealHeader: {
@@ -954,93 +1181,93 @@ const styles = StyleSheet.create({
   mealTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
     position: 'relative',
   },
 
   aiGeneratedBadge: {
-    backgroundColor: THEME.colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rs(8),
+    marginLeft: rp(8),
   },
 
   aiGeneratedText: {
-    color: THEME.colors.white,
-    fontSize: 9,
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(9),
     fontWeight: '600',
   },
 
   mealAIButton: {
     position: 'absolute',
     right: 0,
-    backgroundColor: THEME.colors.primary,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    width: rw(20),
+    height: rh(20),
+    borderRadius: rs(10),
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   mealAIText: {
-    fontSize: 8,
+    fontSize: rf(8),
   },
   
   mealIcon: {
-    fontSize: 20,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   
   mealType: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
     flex: 1,
   },
   
   mealTime: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
   },
   
   mealItems: {
-    marginLeft: THEME.spacing.lg,
+    marginLeft: ResponsiveTheme.spacing.lg,
   },
   
   mealItem: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   plannedText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
     fontStyle: 'italic',
-    marginLeft: THEME.spacing.lg,
+    marginLeft: ResponsiveTheme.spacing.lg,
   },
   
   mealCalories: {
     alignItems: 'center',
-    marginLeft: THEME.spacing.md,
+    marginLeft: ResponsiveTheme.spacing.md,
   },
   
   caloriesValue: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
   
   caloriesLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
   },
   
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   actionItem: {
@@ -1048,35 +1275,35 @@ const styles = StyleSheet.create({
   },
   
   actionCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
   
   actionIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   actionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textAlign: 'center',
   },
   
   waterCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   waterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   waterIcon: {
-    fontSize: 32,
-    marginRight: THEME.spacing.md,
+    fontSize: rf(32),
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   waterInfo: {
@@ -1084,19 +1311,19 @@ const styles = StyleSheet.create({
   },
   
   waterAmount: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   
   waterSubtext: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   waterProgress: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   
   waterButton: {
@@ -1104,7 +1331,7 @@ const styles = StyleSheet.create({
   },
   
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: ResponsiveTheme.spacing.xl,
   },
 
   cameraModal: {
@@ -1123,89 +1350,89 @@ const styles = StyleSheet.create({
 
   contextMenu: {
     position: 'absolute',
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
-    paddingVertical: THEME.spacing.sm,
-    minWidth: 180,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    minWidth: rw(180),
     ...THEME.shadows.md,
   },
 
   contextMenuItem: {
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
 
   contextMenuText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Search styles
   searchSection: {
-    marginHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
-    paddingHorizontal: THEME.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
     ...THEME.shadows.sm,
   },
 
   searchInput: {
     flex: 1,
-    height: 44,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    paddingVertical: THEME.spacing.sm,
+    height: rh(44),
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    paddingVertical: ResponsiveTheme.spacing.sm,
   },
 
   clearSearchButton: {
-    padding: THEME.spacing.sm,
-    marginLeft: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.sm,
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 
   clearSearchText: {
-    fontSize: 16,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   foodResults: {
-    marginTop: THEME.spacing.md,
-    maxHeight: 120,
+    marginTop: ResponsiveTheme.spacing.md,
+    maxHeight: rh(120),
   },
 
   foodItem: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.md,
-    padding: THEME.spacing.md,
-    marginRight: THEME.spacing.sm,
-    minWidth: 140,
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.md,
+    marginRight: ResponsiveTheme.spacing.sm,
+    minWidth: rw(140),
     ...THEME.shadows.sm,
   },
 
   foodName: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: 2,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
   },
 
   foodCategory: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: rp(4),
   },
 
   foodCalories: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
-    marginBottom: 4,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    marginBottom: rp(4),
   },
 
   foodMacros: {
@@ -1214,97 +1441,177 @@ const styles = StyleSheet.create({
   },
 
   foodMacro: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   // Enhanced meal card styles
   mealNutrition: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: THEME.spacing.lg,
-    marginTop: THEME.spacing.xs,
+    marginLeft: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   nutritionText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   nutritionDot: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginHorizontal: 4,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginHorizontal: rp(4),
   },
 
   mealRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: THEME.spacing.lg,
-    marginTop: THEME.spacing.xs,
+    marginLeft: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   ratingStars: {
-    fontSize: 12,
-    marginRight: 4,
+    fontSize: rf(12),
+    marginRight: rp(4),
   },
 
   ratingText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   difficultyText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginLeft: 4,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginLeft: rp(4),
   },
 
   statusButton: {
-    width: 32,
-    height: 32,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(32),
+    height: rh(32),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   statusIcon: {
-    fontSize: 16,
+    fontSize: rf(16),
   },
 
   loadingContainer: {
     alignItems: 'center',
-    paddingVertical: THEME.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   loadingText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   errorCard: {
-    padding: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
     alignItems: 'center',
   },
 
   errorText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.error,
     textAlign: 'center',
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   retryButton: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  // Weekly Meal Plan Styles
+  daySelector: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+  },
+
+  dayButton: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    marginRight: ResponsiveTheme.spacing.sm,
+    borderRadius: rs(20),
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+  },
+
+  selectedDayButton: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+
+  dayButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  selectedDayButtonText: {
+    color: ResponsiveTheme.colors.surface,
+  },
+
+  mealsSection: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  sectionTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  emptyCard: {
+    padding: ResponsiveTheme.spacing.xl,
+    alignItems: 'center',
+  },
+
+  emptyText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  promptCard: {
+    margin: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.xl,
+    alignItems: 'center',
+  },
+
+  promptTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  promptText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: rf(22),
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  promptButton: {
+    minWidth: rw(200),
   },
 
   // AI Meal Generation styles
   aiMealCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   aiMealContent: {
@@ -1312,63 +1619,63 @@ const styles = StyleSheet.create({
   },
 
   aiMealIcon: {
-    fontSize: 36,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(36),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   aiMealTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
 
   aiMealText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 20,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(20),
   },
 
   mealTypeButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: THEME.spacing.md,
-    marginBottom: THEME.spacing.lg,
+    gap: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   mealTypeButton: {
     alignItems: 'center',
-    padding: THEME.spacing.md,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.md,
-    minWidth: 70,
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    minWidth: rw(70),
   },
 
   mealTypeEmoji: {
-    fontSize: 24,
-    marginBottom: THEME.spacing.xs,
+    fontSize: rf(24),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   mealTypeText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   closeSearchButton: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   closeSearchText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

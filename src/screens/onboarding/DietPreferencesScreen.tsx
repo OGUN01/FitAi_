@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { MultiSelect } from '../../components/advanced/MultiSelect';
+import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
 
 export interface DietPreferences {
   dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
@@ -18,33 +21,106 @@ export interface DietPreferences {
 }
 
 interface DietPreferencesScreenProps {
-  onNext: (data: DietPreferences) => void;
-  onBack: () => void;
+  onNext?: (data: DietPreferences) => void;
+  onBack?: () => void;
   initialData?: Partial<DietPreferences>;
+  // Edit mode props
+  isEditMode?: boolean;
+  onEditComplete?: () => void;
+  onEditCancel?: () => void;
 }
 
 export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
   onNext,
   onBack,
   initialData = {},
+  isEditMode: propIsEditMode = false,
+  onEditComplete,
+  onEditCancel,
 }) => {
+  // Detect edit mode from context or props
+  const isInEditContext = (() => {
+    try {
+      const { isEditMode } = useEditMode();
+      return isEditMode;
+    } catch {
+      return false;
+    }
+  })();
+
+  const isEditMode = isInEditContext || propIsEditMode;
+
+  // Get edit data if in edit context
+  const editContextData = (() => {
+    try {
+      const { currentData, updateData } = useEditData();
+      const { saveChanges, cancelEdit } = useEditActions();
+      return { currentData, updateData, saveChanges, cancelEdit };
+    } catch {
+      return null;
+    }
+  })();
+
+  // Determine initial data source
+  const getInitialData = () => {
+    if (isEditMode && editContextData?.currentData) {
+      return editContextData.currentData;
+    }
+    return initialData;
+  };
+
+  const data = getInitialData();
   const [dietType, setDietType] = useState<DietPreferences['dietType']>(
-    initialData.dietType || 'non-veg'
+    data.dietType || 'non-veg'
   );
   const [allergies, setAllergies] = useState<string[]>(
-    initialData.allergies || []
+    data.allergies || []
   );
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>(
-    initialData.cuisinePreferences || []
+    data.cuisinePreferences || []
   );
   const [restrictions, setRestrictions] = useState<string[]>(
-    initialData.restrictions || []
+    data.restrictions || []
   );
 
   const [errors, setErrors] = useState<{
     dietType?: string;
     cuisinePreferences?: string;
   }>({});
+
+  // Track if data has been populated to prevent loops
+  const [isDataPopulated, setIsDataPopulated] = useState(false);
+
+  // Create form data object for syncing
+  const formData = {
+    dietType,
+    allergies,
+    cuisinePreferences,
+    restrictions,
+  };
+
+  // Update form data when edit context data changes (only once)
+  useEffect(() => {
+    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+      const data = editContextData.currentData;
+      setDietType(data.dietType || 'non-veg');
+      setAllergies(data.allergies || []);
+      setCuisinePreferences(data.cuisinePreferences || []);
+      setRestrictions(data.restrictions || []);
+      setIsDataPopulated(true);
+    }
+  }, [isEditMode, editContextData?.currentData, isDataPopulated]);
+
+  // Sync form data with edit context (but not on initial load)
+  useEffect(() => {
+    if (isEditMode && editContextData?.updateData && isDataPopulated) {
+      const timeoutId = setTimeout(() => {
+        editContextData.updateData(formData);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [dietType, allergies, cuisinePreferences, restrictions, isEditMode, isDataPopulated]);
 
   const dietTypeOptions = [
     { 
@@ -119,14 +195,47 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateForm()) {
-      onNext({
-        dietType,
-        allergies,
-        cuisinePreferences,
-        restrictions,
-      });
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const dietData = {
+      dietType,
+      allergies,
+      cuisinePreferences,
+      restrictions,
+    };
+
+    if (isEditMode) {
+      // In edit mode, save the changes
+      if (editContextData?.saveChanges) {
+        const success = await editContextData.saveChanges();
+        if (success && onEditComplete) {
+          onEditComplete();
+        }
+      }
+    } else {
+      // In onboarding mode, proceed to next step
+      if (onNext) {
+        onNext(dietData);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (isEditMode) {
+      // In edit mode, cancel the edit
+      if (editContextData?.cancelEdit) {
+        editContextData.cancelEdit();
+      } else if (onEditCancel) {
+        onEditCancel();
+      }
+    } else {
+      // In onboarding mode, go back
+      if (onBack) {
+        onBack();
+      }
     }
   };
 
@@ -232,13 +341,13 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title="Back"
-            onPress={onBack}
+            title={isEditMode ? "Cancel" : "Back"}
+            onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title="Next"
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -252,7 +361,7 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -260,43 +369,43 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
   
   content: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   
   section: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   dietTypeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   
   dietTypeItem: {
@@ -304,59 +413,59 @@ const styles = StyleSheet.create({
   },
   
   dietTypeCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   dietTypeCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
   
   dietTypeContent: {
     alignItems: 'center',
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   dietTypeIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   dietTypeTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   dietTypeTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   dietTypeDescription: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
   
   errorText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.error,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
   
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
   
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   backButton: {

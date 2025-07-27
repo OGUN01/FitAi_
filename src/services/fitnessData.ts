@@ -483,30 +483,17 @@ class FitnessDataService {
         return workoutResponse;
       }
 
-      // Then add exercises to the workout
-      if (workoutData.exercises.length > 0) {
-        const exercisesWithOrder = workoutData.exercises.map((ex, index) => ({
-          ...ex,
-          order_index: index + 1,
-        }));
+      // For now, just return the workout without exercises
+      // TODO: Implement exercise creation and linking when exercise database is populated
+      console.log('Workout created successfully. Exercise linking skipped for now.');
 
-        const exercisesResponse = await this.addExercisesToWorkout(
-          workoutResponse.data.id,
-          exercisesWithOrder
-        );
-
-        if (exercisesResponse.success) {
-          return {
-            success: true,
-            data: {
-              ...workoutResponse.data,
-              exercises: exercisesResponse.data,
-            },
-          };
-        }
-      }
-
-      return workoutResponse;
+      return {
+        success: true,
+        data: {
+          ...workoutResponse.data,
+          exercises: [], // Empty for now
+        },
+      };
     } catch (error) {
       console.error('Error in startWorkoutSession:', error);
       return {

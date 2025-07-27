@@ -3,10 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
@@ -240,7 +242,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   scrollView: {
@@ -248,74 +250,74 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
 
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: rf(22),
   },
 
   form: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
   },
 
   loginButton: {
-    marginTop: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: THEME.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: THEME.colors.border,
+    height: rh(1),
+    backgroundColor: ResponsiveTheme.colors.border,
   },
 
   dividerText: {
-    marginHorizontal: THEME.spacing.md,
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    marginHorizontal: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   googleButton: {
-    marginBottom: THEME.spacing.md,
-    borderColor: THEME.colors.border,
+    marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: ResponsiveTheme.colors.border,
   },
 
   signUpButton: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: ResponsiveTheme.spacing.xl,
   },
 
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.lg,
-    paddingTop: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
 
   backButton: {

@@ -32,6 +32,7 @@ interface UserState {
   clearProfile: () => void;
   setProfile: (profile: UserProfile | null) => void;
   updatePersonalInfo: (personalInfo: PersonalInfo) => void;
+  checkProfileComplete: (profile: UserProfile) => boolean;
   updateFitnessGoalsLocal: (fitnessGoals: FitnessGoals) => void;
 }
 

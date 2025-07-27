@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { TabBar } from './TabBar';
 import {
   HomeIcon,
@@ -13,7 +14,12 @@ import { FitnessScreen } from '../../screens/main/FitnessScreen';
 import { DietScreen } from '../../screens/main/DietScreen';
 import { ProgressScreen } from '../../screens/main/ProgressScreen';
 import { ProfileScreen } from '../../screens/main/ProfileScreen';
+import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
+import { MealSession } from '../../screens/session/MealSession';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { DayWorkout } from '../../ai/weeklyContentGenerator';
+import { DayMeal } from '../../ai/weeklyMealGenerator';
 
 interface MainNavigationProps {
   initialTab?: string;
@@ -23,6 +29,30 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   initialTab = 'home'
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [workoutSession, setWorkoutSession] = useState<{
+    isActive: boolean;
+    workout?: DayWorkout;
+  }>({ isActive: false });
+
+  const [mealSession, setMealSession] = useState<{
+    isActive: boolean;
+    meal?: DayMeal;
+  }>({ isActive: false });
+
+  // Navigation object to pass to screens
+  const navigation = {
+    navigate: (screen: string, params?: any) => {
+      if (screen === 'WorkoutSession') {
+        setWorkoutSession({ isActive: true, workout: params.workout });
+      } else if (screen === 'MealSession') {
+        setMealSession({ isActive: true, meal: params.meal });
+      }
+    },
+    goBack: () => {
+      setWorkoutSession({ isActive: false });
+      setMealSession({ isActive: false });
+    }
+  };
 
   const tabs = [
     {
@@ -58,13 +88,34 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   ];
 
   const renderScreen = () => {
+    // If workout session is active, show workout session screen
+    if (workoutSession.isActive && workoutSession.workout) {
+      return (
+        <WorkoutSessionScreen
+          route={{ params: { workout: workoutSession.workout } }}
+          navigation={navigation}
+        />
+      );
+    }
+
+    // If meal session is active, show meal session screen
+    if (mealSession.isActive && mealSession.meal) {
+      return (
+        <MealSession
+          route={{ params: { meal: mealSession.meal } }}
+          navigation={navigation}
+        />
+      );
+    }
+
+    // Otherwise show normal tab screens
     switch (activeTab) {
       case 'home':
         return <HomeScreen onNavigateToTab={setActiveTab} />;
       case 'fitness':
-        return <FitnessScreen />;
+        return <FitnessScreen navigation={navigation} />;
       case 'diet':
-        return <DietScreen />;
+        return <DietScreen navigation={navigation} />;
       case 'progress':
         return <ProgressScreen />;
       case 'profile':
@@ -79,12 +130,15 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       <View style={styles.screenContainer}>
         {renderScreen()}
       </View>
-      
-      <TabBar
-        tabs={tabs}
-        activeTab={activeTab}
-        onTabPress={setActiveTab}
-      />
+
+      {/* Hide tab bar when any session is active */}
+      {!workoutSession.isActive && !mealSession.isActive && (
+        <TabBar
+          tabs={tabs}
+          activeTab={activeTab}
+          onTabPress={setActiveTab}
+        />
+      )}
     </View>
   );
 };
@@ -92,7 +146,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   screenContainer: {

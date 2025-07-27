@@ -3,10 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { PersonalInfo, FitnessGoals } from '../../types/user';
 import { DietPreferences } from './DietPreferencesScreen';
@@ -285,7 +287,7 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   scrollView: {
@@ -293,155 +295,155 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: THEME.spacing.lg,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   progressContainer: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   progressBar: {
-    height: 8,
-    backgroundColor: THEME.colors.backgroundTertiary,
-    borderRadius: THEME.borderRadius.full,
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: 'hidden',
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   progressFill: {
     height: '100%',
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.full,
   },
 
   progressText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   content: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   sectionCard: {
-    marginBottom: THEME.spacing.md,
-    padding: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   sectionStatus: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   editIcon: {
-    fontSize: 18,
-    color: THEME.colors.primary,
+    fontSize: rf(18),
+    color: ResponsiveTheme.colors.primary,
   },
 
   sectionContent: {
-    gap: THEME.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   dataItem: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
   },
 
   completionCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
-    backgroundColor: `${THEME.colors.success}10`,
-    borderColor: THEME.colors.success,
+    backgroundColor: `${ResponsiveTheme.colors.success}10`,
+    borderColor: ResponsiveTheme.colors.success,
     borderWidth: 1,
   },
 
   completionIcon: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   completionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.success,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.success,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   completionText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   incompleteCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
-    backgroundColor: `${THEME.colors.warning}10`,
-    borderColor: THEME.colors.warning,
+    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
+    borderColor: ResponsiveTheme.colors.warning,
     borderWidth: 1,
   },
 
   incompleteIcon: {
-    fontSize: 48,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(48),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   incompleteTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.warning,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.warning,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   incompleteText: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   backButton: {

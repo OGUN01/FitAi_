@@ -1,29 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
   Modal,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Button, THEME } from '../../components/ui';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { useAuth } from '../../hooks/useAuth';
 import { useUser, useUserStats } from '../../hooks/useUser';
 import { useDashboardIntegration } from '../../utils/integration';
+import { EditProvider, useEditActions, useEditStatus } from '../../contexts/EditContext';
+import { EditOverlay } from '../../components/profile/EditOverlay';
+import { dataManager } from '../../services/dataManager';
+import { profileValidator } from '../../services/profileValidator';
+import { 
+  NotificationsScreen, 
+  PrivacySecurityScreen, 
+  HelpSupportScreen, 
+  AboutFitAIScreen 
+} from '../settings';
 
-export const ProfileScreen: React.FC = () => {
+// Internal ProfileScreen component
+const ProfileScreenInternal: React.FC = () => {
   const { user, isAuthenticated, isGuestMode, logout } = useAuth();
   const { profile } = useUser();
   const userStats = useUserStats();
   const { getHealthMetrics } = useDashboardIntegration();
+  const { startEdit } = useEditActions();
+  const { showOverlay, setShowOverlay } = useEditStatus();
   const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
+  const [currentSettingsScreen, setCurrentSettingsScreen] = useState<string | null>(null);
 
   const healthMetrics = getHealthMetrics();
-  
+
+  // Check for profile edit intent on component mount
+  useEffect(() => {
+    const checkEditIntent = async () => {
+      try {
+        const intentData = await AsyncStorage.getItem('profileEditIntent');
+        if (intentData) {
+          const intent = JSON.parse(intentData);
+          // Check if intent is recent (within last 5 minutes)
+          const isRecent = (Date.now() - intent.timestamp) < 5 * 60 * 1000;
+
+          if (isRecent && intent.section) {
+            console.log('🎯 ProfileScreen: Found edit intent:', intent);
+            // Clear the intent
+            await AsyncStorage.removeItem('profileEditIntent');
+
+            // Small delay to ensure component is fully mounted
+            setTimeout(async () => {
+              try {
+                await startEdit(intent.section);
+              } catch (error) {
+                console.error('Failed to auto-start edit:', error);
+                Alert.alert('Error', 'Failed to open editor. Please try again.');
+              }
+            }, 500);
+          } else {
+            // Clear old intent
+            await AsyncStorage.removeItem('profileEditIntent');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking edit intent:', error);
+      }
+    };
+
+    checkEditIntent();
+  }, [startEdit]);
+
   // Edit Profile items (under pen icon)
   const editProfileItems = [
     {
@@ -147,18 +201,82 @@ export const ProfileScreen: React.FC = () => {
     setShowEditProfile(true);
   };
 
-  const handleEditProfileItemPress = (item: any) => {
-    Alert.alert(item.title, `${item.title} editing feature coming soon!`);
+  const handleEditProfileItemPress = async (item: any) => {
+    setShowEditProfile(false); // Close the modal first
+
+    try {
+      switch (item.id) {
+        case 1: // Personal Information
+          await startEdit('personalInfo');
+          break;
+        case 2: // Fitness Goals
+          await startEdit('fitnessGoals');
+          break;
+        case 3: // Workout Preferences
+          await startEdit('workoutPreferences');
+          break;
+        case 4: // Nutrition Settings
+          await startEdit('dietPreferences');
+          break;
+        default:
+          Alert.alert(item.title, `${item.title} editing feature coming soon!`);
+      }
+    } catch (error) {
+      console.error('Failed to start edit:', error);
+      Alert.alert('Error', 'Failed to open editor. Please try again.');
+    }
   };
 
+  // Edit functions are now handled by EditContext
+
   const handleSettingsItemPress = (item: any) => {
-    Alert.alert(item.title, `${item.title} feature coming soon!`);
+    switch (item.id) {
+      case 5: // Notifications
+        setCurrentSettingsScreen('notifications');
+        break;
+      case 6: // Privacy & Security
+        setCurrentSettingsScreen('privacy');
+        break;
+      case 7: // Help & Support
+        setCurrentSettingsScreen('help');
+        break;
+      case 8: // About FitAI
+        setCurrentSettingsScreen('about');
+        break;
+      default:
+        Alert.alert(item.title, `${item.title} feature coming soon!`);
+    }
   };
+
+  const handleCloseSettingsScreen = () => {
+    setCurrentSettingsScreen(null);
+  };
+
+  const renderSettingsScreen = () => {
+    switch (currentSettingsScreen) {
+      case 'notifications':
+        return <NotificationsScreen onBack={handleCloseSettingsScreen} />;
+      case 'privacy':
+        return <PrivacySecurityScreen onBack={handleCloseSettingsScreen} />;
+      case 'help':
+        return <HelpSupportScreen onBack={handleCloseSettingsScreen} />;
+      case 'about':
+        return <AboutFitAIScreen onBack={handleCloseSettingsScreen} />;
+      default:
+        return null;
+    }
+  };
+
+  // If a settings screen is active, render it instead of the main profile
+  if (currentSettingsScreen) {
+    return renderSettingsScreen();
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
+        <View>
+          {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Profile</Text>
           <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
@@ -312,6 +430,7 @@ export const ProfileScreen: React.FC = () => {
         )}
 
         <View style={styles.bottomSpacing} />
+        </View>
       </ScrollView>
 
       {/* Edit Profile Modal */}
@@ -334,7 +453,8 @@ export const ProfileScreen: React.FC = () => {
           </View>
 
           <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
-            {/* Profile Picture Section */}
+            <View>
+              {/* Profile Picture Section */}
             <View style={styles.modalSection}>
               <Text style={styles.modalSectionTitle}>Profile Picture</Text>
               <View style={styles.profilePictureEdit}>
@@ -376,17 +496,64 @@ export const ProfileScreen: React.FC = () => {
             </View>
 
             <View style={styles.modalBottomSpacing} />
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Edit Overlay */}
+      <EditOverlay
+        visible={showOverlay}
+        onClose={() => setShowOverlay(false)}
+      />
     </SafeAreaView>
+  );
+};
+
+// Main ProfileScreen component with EditProvider
+export const ProfileScreen: React.FC = () => {
+  const handleEditComplete = async () => {
+    console.log('✅ Profile edit completed');
+
+    // Check if we should navigate back to a specific tab
+    try {
+      const intentData = await AsyncStorage.getItem('profileEditIntent');
+      if (intentData) {
+        const intent = JSON.parse(intentData);
+        if (intent.fromScreen === 'Diet') {
+          console.log('🔄 ProfileScreen: Navigating back to Diet tab after edit completion');
+          // We need to access the main navigation to switch tabs
+          // For now, we'll show a success message and let the user manually go back
+          Alert.alert(
+            'Profile Updated!',
+            'Your diet preferences have been saved. You can now generate meal plans.',
+            [{ text: 'OK' }]
+          );
+        }
+        // Clear the intent
+        await AsyncStorage.removeItem('profileEditIntent');
+      }
+    } catch (error) {
+      console.error('Error handling edit completion:', error);
+    }
+  };
+
+  return (
+    <EditProvider
+      onEditComplete={handleEditComplete}
+      onEditCancel={() => {
+        console.log('❌ Profile edit cancelled');
+      }}
+    >
+      <ProfileScreenInternal />
+    </EditProvider>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -397,82 +564,82 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   
   editButton: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   
   editIcon: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   profileCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   
   avatarContainer: {
     position: 'relative',
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: THEME.colors.primary,
+    width: rw(64),
+    height: rh(64),
+    borderRadius: rs(32),
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   
   avatarText: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
   },
   
   statusDot: {
     position: 'absolute',
     bottom: 2,
     right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: THEME.colors.success,
+    width: rw(16),
+    height: rh(16),
+    borderRadius: rs(8),
+    backgroundColor: ResponsiveTheme.colors.success,
     borderWidth: 2,
-    borderColor: THEME.colors.backgroundTertiary,
+    borderColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   
   profileInfo: {
@@ -480,30 +647,30 @@ const styles = StyleSheet.create({
   },
   
   userName: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   
   userEmail: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   memberSince: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   profileStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingTop: THEME.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   
   statItem: {
@@ -511,74 +678,74 @@ const styles = StyleSheet.create({
   },
   
   statValue: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
   
   statLabel: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: THEME.colors.border,
+    width: rw(1),
+    height: rh(24),
+    backgroundColor: ResponsiveTheme.colors.border,
   },
   
   quickStatsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   quickStatCard: {
     width: '47%',
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
   
   quickStatIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   quickStatValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
   },
   
   quickStatLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   menuCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   menuContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   menuIconText: {
-    fontSize: 20,
+    fontSize: rf(20),
   },
   
   menuInfo: {
@@ -586,25 +753,25 @@ const styles = StyleSheet.create({
   },
   
   menuTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
   },
   
   menuSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   menuArrow: {
-    fontSize: 20,
-    color: THEME.colors.textMuted,
-    fontWeight: THEME.fontWeight.bold,
+    fontSize: rf(20),
+    color: ResponsiveTheme.colors.textMuted,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
   
   appInfoCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   appInfoContent: {
@@ -613,19 +780,19 @@ const styles = StyleSheet.create({
   },
   
   appLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.primary,
+    width: rw(48),
+    height: rh(48),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   appLogoText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
   },
   
   appInfo: {
@@ -633,124 +800,124 @@ const styles = StyleSheet.create({
   },
   
   appName: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
   
   appVersion: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   appDescription: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   logoutCard: {
-    borderColor: THEME.colors.error,
+    borderColor: ResponsiveTheme.colors.error,
   },
   
   logoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   logoutIcon: {
-    fontSize: 20,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
   
   logoutText: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.error,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.error,
   },
   
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: ResponsiveTheme.spacing.xl,
   },
 
   // Guest prompt styles
   guestPromptCard: {
-    backgroundColor: THEME.colors.primary + '10',
-    borderColor: THEME.colors.primary + '30',
+    backgroundColor: ResponsiveTheme.colors.primary + '10',
+    borderColor: ResponsiveTheme.colors.primary + '30',
   },
 
   guestPromptContent: {
     alignItems: 'center',
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   guestPromptIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   guestPromptTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: 'center',
   },
 
   guestPromptSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: THEME.spacing.md,
-    lineHeight: 20,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(20),
   },
 
   guestPromptButton: {
-    minWidth: 120,
+    minWidth: rw(120),
   },
 
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: ResponsiveTheme.colors.border,
   },
 
   modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(32),
+    height: rh(32),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   modalCloseText: {
-    fontSize: 16,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   modalTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
   },
 
   modalHeaderSpacer: {
-    width: 32,
+    width: rw(32),
   },
 
   modalScrollView: {
@@ -758,37 +925,37 @@ const styles = StyleSheet.create({
   },
 
   modalSection: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   modalSectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   profilePictureEdit: {
     alignItems: 'center',
-    paddingVertical: THEME.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
   },
 
   changePictureButton: {
-    marginTop: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   changePictureText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   modalBottomSpacing: {
-    height: THEME.spacing.xxl,
+    height: ResponsiveTheme.spacing.xxl,
   },
 });

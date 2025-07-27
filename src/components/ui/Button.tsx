@@ -7,7 +7,9 @@ import {
   TextStyle,
   ActivityIndicator,
 } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 
 interface ButtonProps {
   title: string;
@@ -100,7 +102,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: THEME.borderRadius.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -108,66 +110,66 @@ const styles = StyleSheet.create({
   
   // Sizes
   sm: {
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    minHeight: 36,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: rh(36),
   },
   md: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
-    minHeight: 48,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    minHeight: rh(48),
   },
   lg: {
-    paddingHorizontal: THEME.spacing.xl,
-    paddingVertical: THEME.spacing.lg,
-    minHeight: 56,
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.lg,
+    minHeight: rh(56),
   },
   
   // Variants
   primary: {
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
     ...THEME.shadows.md,
   },
   secondary: {
-    backgroundColor: THEME.colors.secondary,
+    backgroundColor: ResponsiveTheme.colors.secondary,
     ...THEME.shadows.md,
   },
   outline: {
-    backgroundColor: THEME.colors.transparent,
+    backgroundColor: ResponsiveTheme.colors.transparent,
     borderWidth: 2,
-    borderColor: THEME.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
   },
   ghost: {
-    backgroundColor: THEME.colors.transparent,
+    backgroundColor: ResponsiveTheme.colors.transparent,
   },
   
   // Text styles
   baseText: {
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
     textAlign: 'center',
   },
   smText: {
-    fontSize: THEME.fontSize.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
   },
   mdText: {
-    fontSize: THEME.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.md,
   },
   lgText: {
-    fontSize: THEME.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.lg,
   },
   
   // Text variants
   primaryText: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
   secondaryText: {
-    color: THEME.colors.white,
+    color: ResponsiveTheme.colors.white,
   },
   outlineText: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   ghostText: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   // States

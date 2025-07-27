@@ -3,10 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterCredentials } from '../../types/user';
@@ -215,77 +217,77 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
     flex: 1,
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   
   header: {
     alignItems: 'center',
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
   
   title: {
-    fontSize: 28,
+    fontSize: rf(28),
     fontWeight: 'bold',
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
   
   subtitle: {
-    fontSize: 16,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: rf(24),
   },
   
   form: {
-    paddingVertical: THEME.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
   },
   
   signUpButton: {
-    marginTop: THEME.spacing.lg,
-    marginBottom: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: THEME.spacing.lg,
+    marginVertical: ResponsiveTheme.spacing.lg,
   },
   
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    height: rh(1),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   
   dividerText: {
-    color: THEME.colors.textMuted,
-    paddingHorizontal: THEME.spacing.md,
-    fontSize: 14,
+    color: ResponsiveTheme.colors.textMuted,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    fontSize: rf(14),
   },
   
   googleButton: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   
   loginButton: {
-    marginTop: THEME.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
   
   footer: {
-    padding: THEME.spacing.lg,
-    paddingTop: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
   },
   
   backButton: {
     alignSelf: 'flex-start',
-    paddingHorizontal: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
   },
 });

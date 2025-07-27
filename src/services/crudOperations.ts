@@ -111,10 +111,27 @@ export class CrudOperationsService {
 
   async createWorkoutSession(session: WorkoutSession): Promise<void> {
     try {
+      console.log('📝 Creating workout session:', {
+        id: session.id,
+        workoutId: session.workoutId,
+        duration: session.duration,
+        calories: session.caloriesBurned,
+        exerciseCount: session.exercises?.length || 0
+      });
+      
       await dataManager.storeWorkoutSession(session);
-      console.log(`Workout session ${session.id} created successfully`);
+      console.log(`✅ Workout session ${session.id} created successfully`);
+      
+      // Verify it was stored
+      const stored = await this.readWorkoutSession(session.id);
+      if (!stored) {
+        console.warn('⚠️ Workout session was not found after creation');
+      } else {
+        console.log('✅ Workout session verified in storage');
+      }
     } catch (error) {
-      console.error('Failed to create workout session:', error);
+      console.error('❌ Failed to create workout session:', error);
+      console.error('Session data:', JSON.stringify(session, null, 2));
       throw error;
     }
   }
@@ -167,10 +184,27 @@ export class CrudOperationsService {
 
   async createMealLog(mealLog: MealLog): Promise<void> {
     try {
+      console.log('🍽️ Creating meal log:', {
+        id: mealLog.id,
+        userId: mealLog.userId,
+        mealType: mealLog.mealType,
+        foodCount: mealLog.foods?.length || 0,
+        calories: mealLog.totalCalories
+      });
+      
       await dataManager.storeMealLog(mealLog);
-      console.log(`Meal log ${mealLog.id} created successfully`);
+      console.log(`✅ Meal log ${mealLog.id} created successfully`);
+      
+      // Verify it was stored
+      const stored = await this.readMealLog(mealLog.id);
+      if (!stored) {
+        console.warn('⚠️ Meal log was not found after creation');
+      } else {
+        console.log('✅ Meal log verified in storage');
+      }
     } catch (error) {
-      console.error('Failed to create meal log:', error);
+      console.error('❌ Failed to create meal log:', error);
+      console.error('Meal data:', JSON.stringify(mealLog, null, 2));
       throw error;
     }
   }
@@ -407,6 +441,7 @@ export class CrudOperationsService {
       throw error;
     }
   }
+
 
   // ============================================================================
   // UTILITY METHODS

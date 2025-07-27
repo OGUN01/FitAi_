@@ -1,34 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { FitnessGoals } from '../../types/user';
+import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
 
 interface GoalsScreenProps {
-  onNext: (data: FitnessGoals) => void;
-  onBack: () => void;
+  onNext?: (data: FitnessGoals) => void;
+  onBack?: () => void;
   initialData?: Partial<FitnessGoals>;
+  // Edit mode props
+  isEditMode?: boolean;
+  onEditComplete?: () => void;
+  onEditCancel?: () => void;
 }
 
 export const GoalsScreen: React.FC<GoalsScreenProps> = ({
   onNext,
   onBack,
   initialData = {},
+  isEditMode: propIsEditMode = false,
+  onEditComplete,
+  onEditCancel,
 }) => {
+  // Detect edit mode from context or props
+  const isInEditContext = (() => {
+    try {
+      const { isEditMode } = useEditMode();
+      return isEditMode;
+    } catch {
+      return false;
+    }
+  })();
+
+  const isEditMode = isInEditContext || propIsEditMode;
+
+  // Get edit data if in edit context
+  const editContextData = (() => {
+    try {
+      const { currentData, updateData } = useEditData();
+      const { saveChanges, cancelEdit } = useEditActions();
+      return { currentData, updateData, saveChanges, cancelEdit };
+    } catch {
+      return null;
+    }
+  })();
+
+  // Determine initial data source
+  const getInitialData = () => {
+    if (isEditMode && editContextData?.currentData) {
+      return editContextData.currentData;
+    }
+    return initialData;
+  };
+
+  const data = getInitialData();
   const [selectedGoals, setSelectedGoals] = useState<string[]>(
-    initialData.primaryGoals || []
+    data.primaryGoals || []
   );
   const [timeCommitment, setTimeCommitment] = useState<string>(
-    initialData.timeCommitment || ''
+    data.timeCommitment || ''
   );
   const [experience, setExperience] = useState<string>(
-    initialData.experience || ''
+    data.experience || ''
   );
 
   const [errors, setErrors] = useState<{
@@ -36,6 +78,38 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
     time?: string;
     experience?: string;
   }>({});
+
+  // Track if data has been populated to prevent loops
+  const [isDataPopulated, setIsDataPopulated] = useState(false);
+
+  // Create form data object for syncing
+  const formData = {
+    primaryGoals: selectedGoals,
+    timeCommitment,
+    experience,
+  };
+
+  // Update form data when edit context data changes (only once)
+  useEffect(() => {
+    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+      const data = editContextData.currentData;
+      setSelectedGoals(data.primaryGoals || []);
+      setTimeCommitment(data.timeCommitment || '');
+      setExperience(data.experience || '');
+      setIsDataPopulated(true);
+    }
+  }, [isEditMode, editContextData?.currentData, isDataPopulated]);
+
+  // Sync form data with edit context (but not on initial load)
+  useEffect(() => {
+    if (isEditMode && editContextData?.updateData && isDataPopulated) {
+      const timeoutId = setTimeout(() => {
+        editContextData.updateData(formData);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedGoals, timeCommitment, experience, isEditMode, isDataPopulated]);
 
   const fitnessGoals = [
     { id: 'weight_loss', title: 'Weight Loss', icon: '🔥', description: 'Burn fat and lose weight' },
@@ -92,13 +166,46 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateForm()) {
-      onNext({
-        primaryGoals: selectedGoals,
-        timeCommitment,
-        experience,
-      });
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const goalsData = {
+      primaryGoals: selectedGoals,
+      timeCommitment,
+      experience,
+    };
+
+    if (isEditMode) {
+      // In edit mode, save the changes
+      if (editContextData?.saveChanges) {
+        const success = await editContextData.saveChanges();
+        if (success && onEditComplete) {
+          onEditComplete();
+        }
+      }
+    } else {
+      // In onboarding mode, proceed to next step
+      if (onNext) {
+        onNext(goalsData);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (isEditMode) {
+      // In edit mode, cancel the edit
+      if (editContextData?.cancelEdit) {
+        editContextData.cancelEdit();
+      } else if (onEditCancel) {
+        onEditCancel();
+      }
+    } else {
+      // In onboarding mode, go back
+      if (onBack) {
+        onBack();
+      }
     }
   };
 
@@ -231,13 +338,13 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title="Back"
-            onPress={onBack}
+            title={isEditMode ? "Cancel" : "Back"}
+            onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title="Complete Setup"
+            title={isEditMode ? "Save Changes" : "Complete Setup"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -251,7 +358,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -259,49 +366,49 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
   
   content: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   
   section: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   sectionSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   goalsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
   
   goalItem: {
@@ -309,88 +416,88 @@ const styles = StyleSheet.create({
   },
   
   goalCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   goalCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
   
   goalContent: {
     alignItems: 'center',
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   goalIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   goalTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   goalTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   goalDescription: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
   
   optionCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   optionCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
   
   optionContent: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   optionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   optionTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   optionDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   
   errorText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.error,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
   
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
   
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   backButton: {

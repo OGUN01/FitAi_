@@ -1,0 +1,21 @@
+import React from 'react';
+import { View, Text, ScrollView, RefreshControl, SafeAreaView } from 'react-native';
+
+export const TestScreen = () => {
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => {}}
+          />
+        }
+      >
+        <View>
+          <Text>Test Screen</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};

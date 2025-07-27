@@ -315,13 +315,17 @@ Return ONLY a valid JSON object with this structure:
         id: this.generateFoodId(response.data.name),
         name: response.data.name,
         category: response.data.category,
-        calories: response.data.calories,
-        macros: response.data.macros,
-        servingSize: response.data.servingSize,
-        servingUnit: response.data.servingUnit,
+        nutrition: {
+          calories: response.data.calories,
+          macros: response.data.macros,
+          servingSize: response.data.servingSize,
+          servingUnit: response.data.servingUnit
+        },
         allergens: response.data.allergens || [],
         dietaryLabels: response.data.dietaryLabels || [],
-        verified: false
+        verified: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       return {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { WelcomeScreen } from './WelcomeScreen';
 import { LoginScreen } from './LoginScreen';
 import { SignUpScreen } from './SignUpScreen';
@@ -11,6 +12,7 @@ import { BodyAnalysisScreen, BodyAnalysis } from './BodyAnalysisScreen';
 import { ReviewScreen, OnboardingReviewData } from './ReviewScreen';
 import { PersonalInfo, FitnessGoals, RegisterCredentials } from '../../types/user';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { useOnboardingIntegration } from '../../utils/integration';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserStore } from '../../stores/userStore';
@@ -407,6 +409,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 });

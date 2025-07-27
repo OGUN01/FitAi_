@@ -1,37 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Input, Card, THEME } from '../../components/ui';
 import { PersonalInfo } from '../../types/user';
+import { useEditContext, useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
 
 interface PersonalInfoScreenProps {
-  onNext: (data: PersonalInfo) => void;
-  onBack: () => void;
+  onNext?: (data: PersonalInfo) => void;
+  onBack?: () => void;
   initialData?: Partial<PersonalInfo>;
+  // Edit mode props
+  isEditMode?: boolean;
+  onEditComplete?: () => void;
+  onEditCancel?: () => void;
 }
 
 export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   onNext,
   onBack,
   initialData = {},
+  isEditMode: propIsEditMode = false,
+  onEditComplete,
+  onEditCancel,
 }) => {
-  const [formData, setFormData] = useState<PersonalInfo>({
-    name: initialData.name || '',
-    email: '', // Email not collected in onboarding - users can add later
-    age: initialData.age || '',
-    gender: initialData.gender || '',
-    height: initialData.height || '',
-    weight: initialData.weight || '',
-    activityLevel: initialData.activityLevel || '',
+  // Detect edit mode from context or props
+  const isInEditContext = (() => {
+    try {
+      const { isEditMode } = useEditMode();
+      return isEditMode;
+    } catch {
+      return false;
+    }
+  })();
+
+  const isEditMode = isInEditContext || propIsEditMode;
+
+  // Get edit data if in edit context
+  const editContextData = (() => {
+    try {
+      const { currentData, updateData } = useEditData();
+      const { saveChanges, cancelEdit } = useEditActions();
+      return { currentData, updateData, saveChanges, cancelEdit };
+    } catch {
+      return null;
+    }
+  })();
+
+  // Determine initial data source
+  const getInitialData = () => {
+    if (isEditMode && editContextData?.currentData) {
+      return editContextData.currentData;
+    }
+    return initialData;
+  };
+
+  const [formData, setFormData] = useState<PersonalInfo>(() => {
+    const data = getInitialData();
+    return {
+      name: data.name || '',
+      email: data.email || '',
+      age: data.age || '',
+      gender: data.gender || '',
+      height: data.height || '',
+      weight: data.weight || '',
+      activityLevel: data.activityLevel || '',
+    };
   });
 
   const [errors, setErrors] = useState<Partial<PersonalInfo>>({});
+
+  // Track if data has been populated to prevent loops
+  const [isDataPopulated, setIsDataPopulated] = useState(false);
+
+  // Update form data when edit context data is loaded (only once)
+  useEffect(() => {
+    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+      const data = editContextData.currentData;
+      const newFormData = {
+        name: data.name || '',
+        email: data.email || '',
+        age: data.age?.toString() || '',
+        gender: data.gender || '',
+        height: data.height?.toString() || '',
+        weight: data.weight?.toString() || '',
+        activityLevel: data.activityLevel || '',
+      };
+      setFormData(newFormData);
+      setIsDataPopulated(true);
+    }
+  }, [isEditMode, editContextData?.currentData, isDataPopulated]);
+
+  // Sync form data with edit context (but not on initial load)
+  useEffect(() => {
+    if (isEditMode && editContextData?.updateData && isDataPopulated) {
+      // Throttle updates to avoid excessive calls
+      const timeoutId = setTimeout(() => {
+        editContextData.updateData(formData);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [formData, isEditMode, isDataPopulated]); // Removed editContextData?.updateData from deps
 
   const validateForm = (): boolean => {
     const newErrors: Partial<PersonalInfo> = {};
@@ -72,9 +149,40 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateForm()) {
-      onNext(formData);
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    if (isEditMode) {
+      // In edit mode, save the changes
+      if (editContextData?.saveChanges) {
+        const success = await editContextData.saveChanges();
+        if (success && onEditComplete) {
+          onEditComplete();
+        }
+      }
+    } else {
+      // In onboarding mode, proceed to next step
+      if (onNext) {
+        onNext(formData);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (isEditMode) {
+      // In edit mode, cancel the edit
+      if (editContextData?.cancelEdit) {
+        editContextData.cancelEdit();
+      } else if (onEditCancel) {
+        onEditCancel();
+      }
+    } else {
+      // In onboarding mode, go back
+      if (onBack) {
+        onBack();
+      }
     }
   };
 
@@ -217,13 +325,13 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title="Back"
-            onPress={onBack}
+            title={isEditMode ? "Cancel" : "Back"}
+            onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title="Next"
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -237,7 +345,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   scrollView: {
@@ -245,32 +353,32 @@ const styles = StyleSheet.create({
   },
   
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
   
   form: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   halfWidth: {
@@ -278,94 +386,94 @@ const styles = StyleSheet.create({
   },
   
   inputLabel: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   genderContainer: {
     flexDirection: 'row',
-    gap: THEME.spacing.sm,
-    marginBottom: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   
   genderOption: {
     flex: 1,
-    paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     alignItems: 'center',
   },
   
   genderOptionSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}20`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
   },
   
   genderOptionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
   
   genderOptionTextSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   activitySection: {
-    marginTop: THEME.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
   
   activityCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
   
   activityCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
   
   activityCardContent: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   activityTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   activityTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
   
   activityDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   
   errorText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.error,
-    marginTop: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
   
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
   
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
   
   backButton: {

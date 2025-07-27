@@ -6,7 +6,9 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -69,25 +71,25 @@ export const TabBar: React.FC<TabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    paddingBottom: 20, // Safe area padding
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    paddingBottom: rp(20), // Safe area padding
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   
   tabBar: {
     flexDirection: 'row',
-    height: 60,
+    height: rh(60),
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: THEME.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
   
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: THEME.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.sm,
     position: 'relative',
   },
   
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
   },
   
   iconContainer: {
-    marginBottom: 2,
+    marginBottom: rp(2),
   },
   
   activeIconContainer: {
@@ -104,23 +106,23 @@ const styles = StyleSheet.create({
   },
   
   tabText: {
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
   },
   
   activeTabText: {
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   
   activeIndicator: {
     position: 'absolute',
     top: 0,
-    width: 24,
-    height: 3,
-    backgroundColor: THEME.colors.primary,
-    borderRadius: THEME.borderRadius.full,
+    width: rw(24),
+    height: rh(3),
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.full,
   },
 });

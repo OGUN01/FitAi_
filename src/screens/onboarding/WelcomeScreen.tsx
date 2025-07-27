@@ -3,10 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
   ImageBackground,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, THEME } from '../../components/ui';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -115,83 +117,83 @@ const FeatureItem: React.FC<FeatureItemProps> = ({ icon, title, description }) =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   backgroundGradient: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   
   heroSection: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xxl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xxl,
   },
   
   logoContainer: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
   
   logo: {
-    width: 80,
-    height: 80,
-    borderRadius: THEME.borderRadius.xxl,
-    backgroundColor: THEME.colors.primary,
+    width: rw(80),
+    height: rh(80),
+    borderRadius: ResponsiveTheme.borderRadius.xxl,
+    backgroundColor: ResponsiveTheme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     ...THEME.shadows.lg,
   },
   
   logoText: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
   },
   
   title: {
-    fontSize: THEME.fontSize.xxxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: THEME.spacing.md,
-    lineHeight: 40,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(40),
   },
   
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: THEME.spacing.md,
+    lineHeight: rf(24),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   
   featuresSection: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.xl,
   },
   
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: THEME.spacing.lg,
-    paddingHorizontal: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   
   featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(48),
+    height: rh(48),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: THEME.spacing.md,
+    marginRight: ResponsiveTheme.spacing.md,
   },
   
   featureIconText: {
-    fontSize: 24,
+    fontSize: rf(24),
   },
   
   featureContent: {
@@ -199,35 +201,35 @@ const styles = StyleSheet.create({
   },
   
   featureTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
   
   featureDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
   
   ctaSection: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.xl,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.xl,
   },
   
   getStartedButton: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   loginButton: {
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   termsText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: rf(16),
   },
 });

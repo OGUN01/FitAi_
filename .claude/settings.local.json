@@ -33,7 +33,16 @@
       "WebFetch(domain:ai.google.dev)",
       "Bash(npx ts-node:*)",
       "Bash(npm start)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(npm run android:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm show:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx tsc:*)",
+      "Bash(EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0:8082 npx expo start --port 8082)",
+      "Bash(del:*)",
+      "Bash(grep:*)",
+      "Bash(npm run build:preview:*)"
     ],
     "deny": []
   },

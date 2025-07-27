@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { crudOperationsService } from './crudOperations';
+import { crudOperations } from './crudOperations';
 import { dataManager } from './dataManager';
 import { AuthUser } from '../types/user';
 import { MealLog } from '../types/localData';
@@ -30,7 +30,7 @@ export interface Meal {
   total_protein: number;
   total_carbs: number;
   total_fat: number;
-  logged_at: string;
+  consumed_at: string;
   created_at: string;
   foods?: MealFood[];
 }
@@ -65,12 +65,9 @@ export interface NutritionGoals {
   id: string;
   user_id: string;
   daily_calories: number;
-  daily_protein: number;
-  daily_carbs: number;
-  daily_fat: number;
-  daily_fiber?: number;
-  daily_water?: number;
-  weight_goal: 'lose' | 'maintain' | 'gain';
+  protein_grams: number;
+  carb_grams: number;
+  fat_grams: number;
   created_at: string;
   updated_at: string;
 }
@@ -162,7 +159,7 @@ class NutritionDataService {
   async getUserMeals(userId: string, date?: string, limit?: number): Promise<NutritionDataResponse<Meal[]>> {
     try {
       // First try to get from Track B's local storage
-      const localMeals = await crudOperationsService.readMealLogs(date, limit);
+      const localMeals = await crudOperations.readMealLogs(date, limit);
       
       if (localMeals.length > 0) {
         // Convert Track B's MealLog format to our Meal format
@@ -184,16 +181,16 @@ class NutritionDataService {
           )
         `)
         .eq('user_id', userId)
-        .order('logged_at', { ascending: false });
+        .order('consumed_at', { ascending: false });
 
       if (date) {
         const startDate = new Date(date);
         const endDate = new Date(date);
         endDate.setDate(endDate.getDate() + 1);
-        
+
         query = query
-          .gte('logged_at', startDate.toISOString())
-          .lt('logged_at', endDate.toISOString());
+          .gte('consumed_at', startDate.toISOString())
+          .lt('consumed_at', endDate.toISOString());
       }
 
       if (limit) {
@@ -273,13 +270,22 @@ class NutritionDataService {
         .from('nutrition_goals')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching nutrition goals:', error);
         return {
           success: false,
           error: error.message,
+        };
+      }
+
+      // If no goals exist, create default goals
+      if (!data) {
+        const defaultGoals = await this.createDefaultNutritionGoals(userId);
+        return {
+          success: true,
+          data: defaultGoals,
         };
       }
 
@@ -292,6 +298,47 @@ class NutritionDataService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch nutrition goals',
+      };
+    }
+  }
+
+  /**
+   * Create default nutrition goals for a user
+   */
+  private async createDefaultNutritionGoals(userId: string): Promise<NutritionGoals> {
+    const defaultGoals: Omit<NutritionGoals, 'id'> = {
+      user_id: userId,
+      daily_calories: 2000,
+      protein_grams: 150,
+      carb_grams: 250,
+      fat_grams: 65,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('nutrition_goals')
+        .insert(defaultGoals)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating default nutrition goals:', error);
+        // Return a complete NutritionGoals object with generated ID
+        return {
+          id: `local_${Date.now()}`,
+          ...defaultGoals,
+        };
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating default nutrition goals:', error);
+      // Return a complete NutritionGoals object with generated ID
+      return {
+        id: `local_${Date.now()}`,
+        ...defaultGoals,
       };
     }
   }

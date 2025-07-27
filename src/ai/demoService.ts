@@ -201,13 +201,17 @@ class DemoAIService {
               id: 'oats',
               name: 'Rolled Oats',
               category: 'grains',
-              calories: 389,
-              macros: { protein: 16.9, carbohydrates: 66, fat: 6.9, fiber: 10.6 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 389,
+                macros: { protein: 16.9, carbohydrates: 66, fat: 6.9, fiber: 10.6 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: ['gluten'],
               dietaryLabels: ['whole-grain', 'high-fiber'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 50,
             calories: 195,
@@ -219,13 +223,17 @@ class DemoAIService {
               id: 'blueberries',
               name: 'Fresh Blueberries',
               category: 'fruits',
-              calories: 57,
-              macros: { protein: 0.7, carbohydrates: 14, fat: 0.3, fiber: 2.4 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 57,
+                macros: { protein: 0.7, carbohydrates: 14, fat: 0.3, fiber: 2.4 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: [],
               dietaryLabels: ['antioxidants', 'superfood'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 80,
             calories: 46,
@@ -247,13 +255,17 @@ class DemoAIService {
               id: 'chicken_breast',
               name: 'Grilled Chicken Breast',
               category: 'protein',
-              calories: 165,
-              macros: { protein: 31, carbohydrates: 0, fat: 3.6, fiber: 0 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 165,
+                macros: { protein: 31, carbohydrates: 0, fat: 3.6, fiber: 0 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: [],
               dietaryLabels: ['high-protein', 'low-carb'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 120,
             calories: 198,
@@ -265,13 +277,17 @@ class DemoAIService {
               id: 'quinoa',
               name: 'Cooked Quinoa',
               category: 'grains',
-              calories: 120,
-              macros: { protein: 4.4, carbohydrates: 22, fat: 1.9, fiber: 2.8 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 120,
+                macros: { protein: 4.4, carbohydrates: 22, fat: 1.9, fiber: 2.8 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: [],
               dietaryLabels: ['complete-protein', 'gluten-free'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 100,
             calories: 120,
@@ -293,13 +309,17 @@ class DemoAIService {
               id: 'salmon',
               name: 'Baked Salmon',
               category: 'protein',
-              calories: 208,
-              macros: { protein: 25, carbohydrates: 0, fat: 12, fiber: 0 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 208,
+                macros: { protein: 25, carbohydrates: 0, fat: 12, fiber: 0 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: ['fish'],
               dietaryLabels: ['omega-3', 'high-protein'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 150,
             calories: 312,
@@ -321,13 +341,17 @@ class DemoAIService {
               id: 'apple',
               name: 'Medium Apple',
               category: 'fruits',
-              calories: 52,
-              macros: { protein: 0.3, carbohydrates: 14, fat: 0.2, fiber: 2.4 },
-              servingSize: 100,
-              servingUnit: 'g',
+              nutrition: {
+                calories: 52,
+                macros: { protein: 0.3, carbohydrates: 14, fat: 0.2, fiber: 2.4 },
+                servingSize: 100,
+                servingUnit: 'g'
+              },
               allergens: [],
               dietaryLabels: ['low-calorie', 'high-fiber'],
-              verified: true
+              verified: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             },
             quantity: 150,
             calories: 78,

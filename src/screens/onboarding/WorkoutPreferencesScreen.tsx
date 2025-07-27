@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { MultiSelect } from '../../components/advanced/MultiSelect';
 import { Slider } from '../../components/advanced/Slider';
+import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
 
 export interface WorkoutPreferences {
   location: 'home' | 'gym' | 'both';
@@ -20,36 +23,111 @@ export interface WorkoutPreferences {
 }
 
 interface WorkoutPreferencesScreenProps {
-  onNext: (data: WorkoutPreferences) => void;
-  onBack: () => void;
+  onNext?: (data: WorkoutPreferences) => void;
+  onBack?: () => void;
   initialData?: Partial<WorkoutPreferences>;
+  // Edit mode props
+  isEditMode?: boolean;
+  onEditComplete?: () => void;
+  onEditCancel?: () => void;
 }
 
 export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> = ({
   onNext,
   onBack,
   initialData = {},
+  isEditMode: propIsEditMode = false,
+  onEditComplete,
+  onEditCancel,
 }) => {
+  // Detect edit mode from context or props
+  const isInEditContext = (() => {
+    try {
+      const { isEditMode } = useEditMode();
+      return isEditMode;
+    } catch {
+      return false;
+    }
+  })();
+
+  const isEditMode = isInEditContext || propIsEditMode;
+
+  // Get edit data if in edit context
+  const editContextData = (() => {
+    try {
+      const { currentData, updateData } = useEditData();
+      const { saveChanges, cancelEdit } = useEditActions();
+      return { currentData, updateData, saveChanges, cancelEdit };
+    } catch {
+      return null;
+    }
+  })();
+
+  // Determine initial data source
+  const getInitialData = () => {
+    if (isEditMode && editContextData?.currentData) {
+      return editContextData.currentData;
+    }
+    return initialData;
+  };
+
+  const data = getInitialData();
   const [location, setLocation] = useState<WorkoutPreferences['location']>(
-    initialData.location || 'both'
+    data.location || 'both'
   );
   const [equipment, setEquipment] = useState<string[]>(
-    initialData.equipment || []
+    data.equipment || []
   );
   const [timePreference, setTimePreference] = useState<number>(
-    initialData.timePreference || 30
+    data.timePreference || 30
   );
   const [intensity, setIntensity] = useState<WorkoutPreferences['intensity']>(
-    initialData.intensity || 'beginner'
+    data.intensity || 'beginner'
   );
   const [workoutTypes, setWorkoutTypes] = useState<string[]>(
-    initialData.workoutTypes || []
+    data.workoutTypes || []
   );
 
   const [errors, setErrors] = useState<{
     location?: string;
     workoutTypes?: string;
   }>({});
+
+  // Track if data has been populated to prevent loops
+  const [isDataPopulated, setIsDataPopulated] = useState(false);
+
+  // Create form data object for syncing
+  const formData = {
+    location,
+    equipment,
+    timePreference,
+    intensity,
+    workoutTypes,
+  };
+
+  // Update form data when edit context data changes (only once)
+  useEffect(() => {
+    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+      const data = editContextData.currentData;
+      setLocation(data.location || 'both');
+      setEquipment(data.equipment || []);
+      setTimePreference(data.timePreference || 30);
+      setIntensity(data.intensity || 'beginner');
+      setWorkoutTypes(data.workoutTypes || []);
+      setIsDataPopulated(true);
+    }
+  }, [isEditMode, editContextData?.currentData, isDataPopulated]);
+
+  // Sync form data with edit context (but not on initial load)
+  useEffect(() => {
+    if (isEditMode && editContextData?.updateData && isDataPopulated) {
+      const timeoutId = setTimeout(() => {
+        editContextData.updateData(formData);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [location, equipment, timePreference, intensity, workoutTypes, isEditMode, isDataPopulated]);
 
   const locationOptions = [
     { 
@@ -132,15 +210,48 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if (validateForm()) {
-      onNext({
-        location,
-        equipment,
-        timePreference,
-        intensity,
-        workoutTypes,
-      });
+  const handleNext = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const workoutData = {
+      location,
+      equipment,
+      timePreference,
+      intensity,
+      workoutTypes,
+    };
+
+    if (isEditMode) {
+      // In edit mode, save the changes
+      if (editContextData?.saveChanges) {
+        const success = await editContextData.saveChanges();
+        if (success && onEditComplete) {
+          onEditComplete();
+        }
+      }
+    } else {
+      // In onboarding mode, proceed to next step
+      if (onNext) {
+        onNext(workoutData);
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (isEditMode) {
+      // In edit mode, cancel the edit
+      if (editContextData?.cancelEdit) {
+        editContextData.cancelEdit();
+      } else if (onEditCancel) {
+        onEditCancel();
+      }
+    } else {
+      // In onboarding mode, go back
+      if (onBack) {
+        onBack();
+      }
     }
   };
 
@@ -301,13 +412,13 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title="Back"
-            onPress={onBack}
+            title={isEditMode ? "Cancel" : "Back"}
+            onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title="Next"
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -321,7 +432,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   scrollView: {
@@ -329,49 +440,49 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
 
   content: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   section: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   sectionSubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   locationGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   locationItem: {
@@ -379,102 +490,102 @@ const styles = StyleSheet.create({
   },
 
   locationCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   locationCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
 
   locationContent: {
     alignItems: 'center',
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   locationIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   locationTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   locationTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
 
   locationDescription: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   sliderContainer: {
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   intensityCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   intensityCardSelected: {
-    borderColor: THEME.colors.primary,
-    backgroundColor: `${THEME.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
 
   intensityContent: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   intensityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: THEME.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   intensityIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.sm,
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   intensityTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
   },
 
   intensityTitleSelected: {
-    color: THEME.colors.primary,
+    color: ResponsiveTheme.colors.primary,
   },
 
   intensityDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   errorText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.error,
-    marginTop: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   backButton: {

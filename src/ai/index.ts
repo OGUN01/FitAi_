@@ -100,7 +100,27 @@ class UnifiedAIService {
     if (this.isRealAIAvailable()) {
       return nutritionEngine.generateDailyMealPlan(personalInfo, fitnessGoals, preferences);
     } else {
-      return demoAIService.generateDemoDailyMealPlan(personalInfo, fitnessGoals, preferences);
+      // For demo, generate individual meals and combine them
+      const breakfast = await demoAIService.generateDemoMeal('breakfast');
+      const lunch = await demoAIService.generateDemoMeal('lunch'); 
+      const dinner = await demoAIService.generateDemoMeal('dinner');
+      const snack = await demoAIService.generateDemoMeal('snack');
+      
+      return {
+        success: true,
+        data: {
+          date: new Date().toISOString().split('T')[0],
+          meals: [breakfast.data, lunch.data, dinner.data, snack.data],
+          totalCalories: breakfast.data.totalCalories + lunch.data.totalCalories + dinner.data.totalCalories + snack.data.totalCalories,
+          totalMacros: {
+            protein: breakfast.data.totalMacros.protein + lunch.data.totalMacros.protein + dinner.data.totalMacros.protein + snack.data.totalMacros.protein,
+            carbohydrates: breakfast.data.totalMacros.carbohydrates + lunch.data.totalMacros.carbohydrates + dinner.data.totalMacros.carbohydrates + snack.data.totalMacros.carbohydrates,
+            fat: breakfast.data.totalMacros.fat + lunch.data.totalMacros.fat + dinner.data.totalMacros.fat + snack.data.totalMacros.fat,
+            fiber: breakfast.data.totalMacros.fiber + lunch.data.totalMacros.fiber + dinner.data.totalMacros.fiber + snack.data.totalMacros.fiber
+          }
+        },
+        reasoning: 'Generated demo daily meal plan with balanced nutrition'
+      };
     }
   }
 

@@ -6,7 +6,9 @@ import {
   StyleSheet,
   ViewStyle,
 } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';
@@ -46,13 +48,13 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
   
   text: {
-    marginTop: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
   
@@ -69,18 +71,18 @@ const styles = StyleSheet.create({
   },
   
   overlayContent: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.xl,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.xl,
     alignItems: 'center',
-    minWidth: 120,
+    minWidth: rw(120),
     ...THEME.shadows.lg,
   },
   
   overlayText: {
-    marginTop: THEME.spacing.md,
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
+    marginTop: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
     textAlign: 'center',
   },
 });

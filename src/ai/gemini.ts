@@ -57,7 +57,7 @@ const initializeGemini = () => {
       ],
     });
 
-    console.log('✅ Gemini 2.5 Flash initialized successfully');
+    console.log('✅ Gemini 2.5 Flash initialized with official structured output support');
     return true;
   } catch (error) {
     console.error('Failed to initialize Gemini AI:', error);
@@ -233,7 +233,8 @@ class GeminiService {
   }
 
   /**
-   * Generate AI response using a prompt template with Gemini 2.5 Flash structured output
+   * Generate AI response using official Gemini structured output
+   * Uses responseMimeType: "application/json" and responseSchema for guaranteed valid JSON
    */
   async generateResponse<T>(
     promptTemplate: string,
@@ -281,10 +282,10 @@ class GeminiService {
           temperature: options?.temperature ?? 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: options?.maxOutputTokens ?? 8192,
+          maxOutputTokens: options?.maxOutputTokens ?? 4096,
         };
 
-        // Use structured output if schema is provided
+        // Use OFFICIAL structured output if schema is provided
         if (schema) {
           generationConfig.responseMimeType = "application/json";
           generationConfig.responseSchema = schema;
@@ -333,17 +334,73 @@ class GeminiService {
 
         console.log(`✅ Gemini 2.5 Flash response received - ${totalTokensUsed} tokens`);
 
-        // Handle structured output vs plain text
+        // Handle OFFICIAL structured output vs plain text
         if (schema) {
-          // Structured output - response is guaranteed to be valid JSON
+          // With OFFICIAL Gemini structured output (responseMimeType: "application/json" + responseSchema):
+          // - Gemini should return valid JSON that conforms to the schema
+          // - response.text() returns this JSON string
+          // - However, sometimes the response might be incomplete or malformed
+
+          // First, check if the response is empty or too short
+          if (!text || text.trim().length === 0) {
+            lastError = `Empty response from Gemini structured output`;
+            console.warn(`⚠️ Empty response on attempt ${attempt}, retrying...`);
+            continue;
+          }
+
+          // Clean the response text (remove any markdown formatting that might be present)
+          let cleanedText = text.trim();
+
+          // Remove markdown code blocks if present (sometimes Gemini adds these even with structured output)
+          if (cleanedText.startsWith('```json')) {
+            cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+          } else if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
+          }
+
+          // Try to parse the JSON
           try {
-            const data = JSON.parse(text) as T;
-            return this.createSuccessResponse(data, startTime, totalTokensUsed, text);
+            const structuredData = JSON.parse(cleanedText) as T;
+            console.log('✅ Structured output parsed successfully');
+            return this.createSuccessResponse(structuredData, startTime, totalTokensUsed, text);
           } catch (parseError) {
-            // This should never happen with structured output, but handle gracefully
-            lastError = `Unexpected structured output parsing error: ${parseError}`;
-            console.warn(`Attempt ${attempt} - Structured output parse error:`, parseError);
-            console.warn('Raw response preview:', text.substring(0, 500) + '...');
+            // Log detailed error information for debugging
+            lastError = `JSON parse error in structured output: ${parseError}`;
+            console.error(`❌ JSON parse error on attempt ${attempt}:`, parseError);
+            console.error('Raw response length:', text.length);
+            console.error('Raw response preview:', text.substring(0, 200) + '...');
+            console.error('Cleaned response preview:', cleanedText.substring(0, 200) + '...');
+
+            // Check if response was truncated (common cause of malformed JSON)
+            if (!cleanedText.endsWith('}') && !cleanedText.endsWith(']')) {
+              console.error('⚠️ Response appears to be truncated - JSON doesn\'t end properly');
+              console.error('Last 100 characters:', cleanedText.slice(-100));
+            }
+
+            // Try to find where the JSON becomes invalid
+            try {
+              // Find the last valid JSON position
+              let validJson = '';
+              for (let i = cleanedText.length; i > 0; i--) {
+                try {
+                  validJson = cleanedText.substring(0, i);
+                  JSON.parse(validJson);
+                  console.error(`✅ JSON is valid up to character ${i} of ${cleanedText.length}`);
+                  break;
+                } catch (e) {
+                  // Continue searching
+                }
+              }
+            } catch (e) {
+              console.error('Could not find valid JSON portion');
+            }
+
+            // If this is the last attempt, provide more detailed error info
+            if (attempt === maxRetries) {
+              console.error('Full response text:', text);
+            }
+
+            continue;
           }
         } else {
           // Plain text response - return as is

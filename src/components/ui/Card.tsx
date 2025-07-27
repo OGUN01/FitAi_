@@ -5,7 +5,9 @@ import {
   ViewStyle,
   TouchableOpacity,
 } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -59,40 +61,40 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   
   // Variants
   default: {
-    backgroundColor: THEME.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
   
   elevated: {
-    backgroundColor: THEME.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     ...THEME.shadows.md,
   },
   
   outlined: {
-    backgroundColor: THEME.colors.backgroundTertiary,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
+    borderColor: ResponsiveTheme.colors.border,
   },
   
   // Padding variants
   none: {
-    padding: 0,
+    padding: rp(0),
   },
   
   sm: {
-    padding: THEME.spacing.sm,
+    padding: ResponsiveTheme.spacing.sm,
   },
   
   md: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
   
   lg: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 });

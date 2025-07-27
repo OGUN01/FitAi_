@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+// import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { OnboardingFlow } from './src/screens/onboarding/OnboardingFlow';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
 import { PersonalInfo, FitnessGoals } from './src/types/user';
 import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
-import { THEME } from './src/utils/constants';
+import { ResponsiveTheme } from './src/utils/responsiveTheme';
+import { rf, rp } from './src/utils/responsive';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
 import { useUser } from './src/hooks/useUser';
@@ -159,8 +161,8 @@ export default function App() {
     console.log('🔄 App: Showing loading screen', { isInitialized, isLoading });
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" backgroundColor={THEME.colors.background} />
-        <ActivityIndicator size="large" color={THEME.colors.primary} />
+        <StatusBar style="light" backgroundColor={ResponsiveTheme.colors.background} />
+        <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
         <Text style={styles.loadingText}>Initializing FitAI...</Text>
       </View>
     );
@@ -169,38 +171,40 @@ export default function App() {
   console.log('🎯 App: Rendering main app', { isOnboardingComplete });
 
   return (
-    <ErrorBoundary>
-      <View style={styles.container}>
-        <StatusBar style="light" backgroundColor={THEME.colors.background} />
+    // <SafeAreaProvider>
+      <ErrorBoundary>
+        <View style={styles.container}>
+          <StatusBar style="light" backgroundColor={ResponsiveTheme.colors.background} />
 
-        {isOnboardingComplete ? (
-          <MainNavigation />
-        ) : (
-          <OnboardingFlow 
-            onComplete={handleOnboardingComplete} 
-            startStep={onboardingStartStep}
-          />
-        )}
-      </View>
-    </ErrorBoundary>
+          {isOnboardingComplete ? (
+            <MainNavigation />
+          ) : (
+            <OnboardingFlow 
+              onComplete={handleOnboardingComplete} 
+              startStep={onboardingStartStep}
+            />
+          )}
+        </View>
+      </ErrorBoundary>
+    // </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
   loadingText: {
-    color: THEME.colors.text,
-    fontSize: THEME.fontSize.md,
-    marginTop: THEME.spacing.md,
-    fontWeight: THEME.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    fontSize: rf(16),
+    marginTop: rp(16),
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

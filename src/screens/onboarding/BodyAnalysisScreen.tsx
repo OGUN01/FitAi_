@@ -3,12 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Alert,
   Image,
-} from 'react-native';
+} from 'react-native'
+import { SafeAreaView } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 import { Button, Card, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { ImagePicker } from '../../components/advanced/ImagePicker';
@@ -342,7 +344,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   scrollView: {
@@ -350,142 +352,142 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.xl,
-    paddingBottom: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    lineHeight: 22,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(22),
   },
 
   content: {
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   section: {
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   instructionCard: {
-    padding: THEME.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   instructionText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
 
   photoGrid: {
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   photoItem: {
-    marginBottom: THEME.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   photoCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   photoCardInner: {
-    minHeight: 120,
+    minHeight: rh(120),
   },
 
   photoPreview: {
     position: 'relative',
-    height: 120,
+    height: rh(120),
   },
 
   photoImage: {
     width: '100%',
     height: '100%',
-    borderRadius: THEME.borderRadius.lg,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   removePhotoButton: {
     position: 'absolute',
-    top: THEME.spacing.sm,
-    right: THEME.spacing.sm,
-    backgroundColor: THEME.colors.error,
-    borderRadius: THEME.borderRadius.full,
-    width: 24,
-    height: 24,
+    top: ResponsiveTheme.spacing.sm,
+    right: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.error,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    width: rw(24),
+    height: rh(24),
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   removePhotoText: {
-    color: THEME.colors.white,
-    fontSize: THEME.fontSize.xs,
-    fontWeight: THEME.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   photoPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: THEME.spacing.md,
-    minHeight: 120,
+    padding: ResponsiveTheme.spacing.md,
+    minHeight: rh(120),
   },
 
   photoIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   photoTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   photoDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   addPhotoText: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   photoInstruction: {
-    fontSize: THEME.fontSize.xs,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
     fontStyle: 'italic',
   },
 
   analysisCard: {
-    padding: THEME.spacing.lg,
+    padding: ResponsiveTheme.spacing.lg,
   },
 
   analysisGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.md,
-    marginBottom: THEME.spacing.lg,
+    gap: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   analysisItem: {
@@ -494,55 +496,55 @@ const styles = StyleSheet.create({
   },
 
   analysisLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   analysisValue: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.primary,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
   },
 
   recommendationsSection: {
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    paddingTop: THEME.spacing.md,
+    borderTopColor: ResponsiveTheme.colors.border,
+    paddingTop: ResponsiveTheme.spacing.md,
   },
 
   recommendationsTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   recommendationItem: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: THEME.spacing.xs,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   skipText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textMuted,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
     textDecorationLine: 'underline',
   },
 
   footer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderTopColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   backButton: {

@@ -2,6 +2,8 @@ import { supabase } from './supabase';
 import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { googleAuthService, GoogleSignInResult } from './googleAuth';
+import { migrationManager } from './migrationManager';
+import { dataManager } from './dataManager';
 
 export interface AuthResponse {
   success: boolean;
@@ -195,6 +197,14 @@ class AuthService {
 
         // Store session in AsyncStorage for persistence
         await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
+
+        // Set user ID in data manager for potential migration
+        dataManager.setUserId(authUser.id);
+
+        // Check if profile data migration is needed (don't await to avoid blocking login)
+        this.checkAndTriggerMigration(authUser.id).catch(error => {
+          console.error('❌ Migration check failed:', error);
+        });
 
         return {
           success: true,
@@ -522,6 +532,27 @@ class AuthService {
    */
   async getGoogleUserInfo(): Promise<any> {
     return await googleAuthService.getGoogleUserInfo();
+  }
+
+  /**
+   * Check and trigger profile data migration if needed
+   */
+  private async checkAndTriggerMigration(userId: string): Promise<void> {
+    try {
+      console.log('🔄 Checking if profile migration is needed for user:', userId);
+
+      const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(userId);
+
+      if (migrationNeeded) {
+        console.log('📊 Profile migration needed, will be triggered by UI');
+        // Migration will be triggered by the UI when appropriate
+        // We don't auto-start it here to give user control
+      } else {
+        console.log('✅ No profile migration needed');
+      }
+    } catch (error) {
+      console.error('❌ Error checking migration status:', error);
+    }
   }
 }
 

@@ -5,9 +5,7 @@ import { WORKOUT_SCHEMA } from './schemas';
 import {
   Workout,
   WorkoutPlan,
-  AIWorkoutRequest,
   AIResponse,
-  AIGenerationContext,
   Exercise,
   WorkoutSet
 } from '../types/ai';

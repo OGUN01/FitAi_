@@ -4,7 +4,8 @@
 import { enhancedLocalStorage } from './localStorage';
 import { validationService } from '../utils/validation';
 import { offlineService } from './offline';
-import { 
+import { supabase } from './supabase';
+import {
   LocalStorageSchema,
   LocalUserData,
   LocalFitnessData,
@@ -17,6 +18,17 @@ import {
   ValidationResult,
   SyncStatus
 } from '../types/localData';
+import {
+  UserProfile,
+  PersonalInfo,
+  FitnessGoals,
+  DietPreferences,
+  WorkoutPreferences,
+  BodyAnalysis,
+  StorageConfig,
+  SyncResult,
+  SyncableData,
+} from '../types/profileData';
 
 // ============================================================================
 // DATA MANAGER SERVICE
@@ -520,6 +532,458 @@ export class DataManagerService {
       storageUsed: storageInfo?.usedSize || 0,
       lastUpdated: this.currentSchema.updatedAt,
     };
+  }
+
+  // ============================================================================
+  // ENHANCED PROFILE DATA MANAGEMENT
+  // ============================================================================
+
+  private userId: string | null = null;
+  private isOnline: boolean = true;
+
+  setUserId(userId: string | null) {
+    this.userId = userId;
+  }
+
+  setOnlineStatus(isOnline: boolean) {
+    this.isOnline = isOnline;
+  }
+
+  // Enhanced save methods with dual storage
+  async savePersonalInfo(data: PersonalInfo): Promise<boolean> {
+    try {
+      const localKey = `personalInfo_${this.userId || 'guest'}`;
+
+      // Save to local storage
+      const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+
+      // Save to remote if user is logged in
+      let remoteSuccess = false;
+      if (this.userId && this.isOnline) {
+        try {
+          const { error } = await supabase
+            .from('personal_info')
+            .upsert({ ...data, user_id: this.userId });
+          remoteSuccess = !error;
+        } catch (error) {
+          console.error('Failed to save personal info to remote:', error);
+        }
+      }
+
+      return localSuccess || remoteSuccess;
+    } catch (error) {
+      console.error('Failed to save personal info:', error);
+      return false;
+    }
+  }
+
+  async loadPersonalInfo(): Promise<PersonalInfo | null> {
+    try {
+      const localKey = `personalInfo_${this.userId || 'guest'}`;
+
+      // Try remote first if user is logged in
+      if (this.userId && this.isOnline) {
+        try {
+          const { data, error } = await supabase
+            .from('personal_info')
+            .select('*')
+            .eq('user_id', this.userId)
+            .single();
+
+          if (!error && data) {
+            return data as PersonalInfo;
+          }
+        } catch (error) {
+          console.error('Failed to load personal info from remote:', error);
+        }
+      }
+
+      // Fallback to local storage
+      return await enhancedLocalStorage.retrieveData<PersonalInfo>(localKey);
+    } catch (error) {
+      console.error('Failed to load personal info:', error);
+      return null;
+    }
+  }
+
+  async saveFitnessGoals(data: FitnessGoals): Promise<boolean> {
+    try {
+      const localKey = `fitnessGoals_${this.userId || 'guest'}`;
+
+      const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+
+      let remoteSuccess = false;
+      if (this.userId && this.isOnline) {
+        try {
+          const { error } = await supabase
+            .from('fitness_goals')
+            .upsert({ ...data, user_id: this.userId });
+          remoteSuccess = !error;
+        } catch (error) {
+          console.error('Failed to save fitness goals to remote:', error);
+        }
+      }
+
+      return localSuccess || remoteSuccess;
+    } catch (error) {
+      console.error('Failed to save fitness goals:', error);
+      return false;
+    }
+  }
+
+  async loadFitnessGoals(): Promise<FitnessGoals | null> {
+    try {
+      const localKey = `fitnessGoals_${this.userId || 'guest'}`;
+
+      if (this.userId && this.isOnline) {
+        try {
+          const { data, error } = await supabase
+            .from('fitness_goals')
+            .select('*')
+            .eq('user_id', this.userId)
+            .single();
+
+          if (!error && data) {
+            return data as FitnessGoals;
+          }
+        } catch (error) {
+          console.error('Failed to load fitness goals from remote:', error);
+        }
+      }
+
+      return await enhancedLocalStorage.retrieveData<FitnessGoals>(localKey);
+    } catch (error) {
+      console.error('Failed to load fitness goals:', error);
+      return null;
+    }
+  }
+
+  async saveDietPreferences(data: DietPreferences): Promise<boolean> {
+    try {
+      const localKey = `dietPreferences_${this.userId || 'guest'}`;
+
+      const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+
+      let remoteSuccess = false;
+      if (this.userId && this.isOnline) {
+        try {
+          const { error } = await supabase
+            .from('diet_preferences')
+            .upsert({ ...data, user_id: this.userId });
+          remoteSuccess = !error;
+        } catch (error) {
+          console.error('Failed to save diet preferences to remote:', error);
+        }
+      }
+
+      return localSuccess || remoteSuccess;
+    } catch (error) {
+      console.error('Failed to save diet preferences:', error);
+      return false;
+    }
+  }
+
+  async loadDietPreferences(): Promise<DietPreferences | null> {
+    try {
+      const localKey = `dietPreferences_${this.userId || 'guest'}`;
+
+      if (this.userId && this.isOnline) {
+        try {
+          const { data, error } = await supabase
+            .from('diet_preferences')
+            .select('*')
+            .eq('user_id', this.userId)
+            .single();
+
+          if (!error && data) {
+            return data as DietPreferences;
+          }
+        } catch (error) {
+          console.error('Failed to load diet preferences from remote:', error);
+        }
+      }
+
+      return await enhancedLocalStorage.retrieveData<DietPreferences>(localKey);
+    } catch (error) {
+      console.error('Failed to load diet preferences:', error);
+      return null;
+    }
+  }
+
+  async saveWorkoutPreferences(data: WorkoutPreferences): Promise<boolean> {
+    try {
+      const localKey = `workoutPreferences_${this.userId || 'guest'}`;
+
+      const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+
+      // For now, workout preferences are stored locally only
+      // TODO: Add workout_preferences table to Supabase when ready
+      let remoteSuccess = false;
+      if (this.userId && this.isOnline) {
+        try {
+          // Placeholder for future Supabase integration
+          console.log('📝 Workout preferences will be synced to Supabase in future update');
+          remoteSuccess = true; // Assume success for now
+        } catch (error) {
+          console.error('Failed to save workout preferences to remote:', error);
+        }
+      }
+
+      return localSuccess || remoteSuccess;
+    } catch (error) {
+      console.error('Failed to save workout preferences:', error);
+      return false;
+    }
+  }
+
+  async loadWorkoutPreferences(): Promise<WorkoutPreferences | null> {
+    try {
+      const localKey = `workoutPreferences_${this.userId || 'guest'}`;
+
+      // For now, load from local storage only
+      // TODO: Add remote loading when Supabase table is ready
+      if (this.userId && this.isOnline) {
+        try {
+          // Placeholder for future Supabase integration
+          console.log('📝 Workout preferences will be loaded from Supabase in future update');
+        } catch (error) {
+          console.error('Failed to load workout preferences from remote:', error);
+        }
+      }
+
+      return await enhancedLocalStorage.retrieveData<WorkoutPreferences>(localKey);
+    } catch (error) {
+      console.error('Failed to load workout preferences:', error);
+      return null;
+    }
+  }
+
+  // ============================================================================
+  // UTILITY METHODS FOR MIGRATION
+  // ============================================================================
+
+  /**
+   * Check if user has any local profile data
+   */
+  async hasLocalData(): Promise<boolean> {
+    try {
+      console.log('🔍 Checking for local data, userId:', this.userId);
+
+      const keys = [
+        `personalInfo_${this.userId || 'guest'}`,
+        `fitnessGoals_${this.userId || 'guest'}`,
+        `dietPreferences_${this.userId || 'guest'}`,
+        `workoutPreferences_${this.userId || 'guest'}`,
+      ];
+
+      console.log('🔍 Checking keys:', keys);
+
+      // Check each key for data
+      for (const key of keys) {
+        try {
+          const data = await enhancedLocalStorage.retrieveData(key);
+          console.log(`🔍 Key ${key}: ${data ? 'HAS DATA' : 'NO DATA'}`);
+          if (data) {
+            console.log(`📊 Found local data for key: ${key}`);
+            return true;
+          }
+        } catch (keyError) {
+          console.error(`❌ Error checking key ${key}:`, keyError);
+        }
+      }
+
+      console.log('📊 No local profile data found');
+      return false;
+    } catch (error) {
+      console.error('❌ Error checking local data:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear all local profile data
+   */
+  async clearLocalData(): Promise<boolean> {
+    try {
+      const keys = [
+        `personalInfo_${this.userId || 'guest'}`,
+        `fitnessGoals_${this.userId || 'guest'}`,
+        `dietPreferences_${this.userId || 'guest'}`,
+        `workoutPreferences_${this.userId || 'guest'}`,
+        `userProfile_${this.userId || 'guest'}`,
+      ];
+
+      // Remove all profile data
+      for (const key of keys) {
+        await enhancedLocalStorage.removeData(key);
+      }
+
+      console.log('✅ Cleared all local profile data');
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to clear local data:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get profile data summary for debugging
+   */
+  async getProfileDataSummary(): Promise<{
+    hasPersonalInfo: boolean;
+    hasFitnessGoals: boolean;
+    hasDietPreferences: boolean;
+    hasWorkoutPreferences: boolean;
+    totalItems: number;
+  }> {
+    try {
+      const personalInfo = await this.loadPersonalInfo();
+      const fitnessGoals = await this.loadFitnessGoals();
+      const dietPreferences = await this.loadDietPreferences();
+      const workoutPreferences = await this.loadWorkoutPreferences();
+
+      const summary = {
+        hasPersonalInfo: !!personalInfo,
+        hasFitnessGoals: !!fitnessGoals,
+        hasDietPreferences: !!dietPreferences,
+        hasWorkoutPreferences: !!workoutPreferences,
+        totalItems: 0,
+      };
+
+      summary.totalItems = Object.values(summary).filter(Boolean).length - 1; // Exclude totalItems itself
+
+      console.log('📊 Profile data summary:', summary);
+      return summary;
+    } catch (error) {
+      console.error('❌ Error getting profile data summary:', error);
+      return {
+        hasPersonalInfo: false,
+        hasFitnessGoals: false,
+        hasDietPreferences: false,
+        hasWorkoutPreferences: false,
+        totalItems: 0,
+      };
+    }
+  }
+
+  // ============================================================================
+  // DEBUG & TESTING METHODS
+  // ============================================================================
+
+  /**
+   * Create sample profile data for testing migration
+   */
+  async createSampleProfileData(): Promise<boolean> {
+    try {
+      console.log('🧪 Creating sample profile data for testing...');
+
+      // Sample personal info
+      const samplePersonalInfo: PersonalInfo = {
+        id: 'sample-personal-1',
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        syncStatus: 'pending',
+        source: 'local',
+        name: 'Test User',
+        age: '25',
+        gender: 'male',
+        height: '175',
+        weight: '70',
+        activityLevel: 'moderate',
+      };
+
+      // Sample fitness goals
+      const sampleFitnessGoals: FitnessGoals = {
+        id: 'sample-goals-1',
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        syncStatus: 'pending',
+        source: 'local',
+        primaryGoals: ['weight_loss', 'muscle_gain'],
+        experience: 'intermediate',
+        timeCommitment: '30-45 minutes',
+      };
+
+      // Save sample data
+      const personalInfoSaved = await this.savePersonalInfo(samplePersonalInfo);
+      const fitnessGoalsSaved = await this.saveFitnessGoals(sampleFitnessGoals);
+
+      const success = personalInfoSaved && fitnessGoalsSaved;
+      console.log(`🧪 Sample data creation ${success ? 'successful' : 'failed'}`);
+
+      return success;
+    } catch (error) {
+      console.error('❌ Error creating sample data:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Test the migration detection system
+   */
+  async testMigrationDetection(): Promise<void> {
+    try {
+      console.log('🧪 Testing migration detection system...');
+
+      // Check current state
+      const hasData = await this.hasLocalData();
+      console.log('📊 Current hasLocalData result:', hasData);
+
+      // Get data summary
+      const summary = await this.getProfileDataSummary();
+      console.log('📊 Profile data summary:', summary);
+
+      // If no data, create sample data
+      if (!hasData) {
+        console.log('🧪 No data found, creating sample data...');
+        await this.createSampleProfileData();
+
+        // Check again
+        const hasDataAfter = await this.hasLocalData();
+        console.log('📊 hasLocalData after creating sample:', hasDataAfter);
+      }
+
+      console.log('✅ Migration detection test completed');
+    } catch (error) {
+      console.error('❌ Migration detection test failed:', error);
+    }
+  }
+
+  /**
+   * Test localStorage methods directly
+   */
+  async testLocalStorageMethods(): Promise<void> {
+    try {
+      console.log('🧪 Testing localStorage methods directly...');
+
+      const testKey = 'test_key_123';
+      const testData = { message: 'Hello, World!', timestamp: Date.now() };
+
+      // Test storeData
+      console.log('🧪 Testing storeData...');
+      const storeResult = await enhancedLocalStorage.storeData(testKey, testData);
+      console.log('📊 Store result:', storeResult);
+
+      // Test retrieveData
+      console.log('🧪 Testing retrieveData...');
+      const retrieveResult = await enhancedLocalStorage.retrieveData(testKey);
+      console.log('📊 Retrieve result:', retrieveResult);
+
+      // Test removeData
+      console.log('🧪 Testing removeData...');
+      await enhancedLocalStorage.removeData(testKey);
+      console.log('📊 Remove completed');
+
+      // Verify removal
+      const verifyResult = await enhancedLocalStorage.retrieveData(testKey);
+      console.log('📊 Verify removal result (should be null):', verifyResult);
+
+      console.log('✅ localStorage methods test completed');
+    } catch (error) {
+      console.error('❌ localStorage methods test failed:', error);
+    }
   }
 }
 

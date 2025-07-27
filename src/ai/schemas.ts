@@ -200,6 +200,143 @@ export const NUTRITION_SCHEMA = {
 };
 
 // ============================================================================
+// WEEKLY MEAL PLAN SCHEMA
+// ============================================================================
+
+// ULTRA-SIMPLIFIED schema for testing JSON parsing - minimal data to avoid truncation
+export const WEEKLY_MEAL_PLAN_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    planTitle: {
+      type: "STRING",
+      description: "Personalized weekly meal plan title"
+    },
+    planDescription: {
+      type: "STRING",
+      description: "Brief description of the meal plan approach"
+    },
+    totalEstimatedCalories: {
+      type: "NUMBER",
+      description: "Total estimated calories for the week"
+    },
+    dietaryRestrictions: {
+      type: "ARRAY",
+      description: "List of dietary restrictions considered",
+      items: { type: "STRING" }
+    },
+    weeklyGoals: {
+      type: "ARRAY",
+      description: "Weekly nutrition and fitness goals",
+      items: { type: "STRING" }
+    },
+    meals: {
+      type: "ARRAY",
+      description: "Complete 7-day meal plan with breakfast, lunch, and dinner for each day",
+      items: {
+        type: "OBJECT",
+        properties: {
+          dayOfWeek: {
+            type: "STRING",
+            enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+            description: "Day of the week"
+          },
+          type: {
+            type: "STRING",
+            enum: ["breakfast", "lunch", "dinner", "snack"],
+            description: "Meal type"
+          },
+          name: {
+            type: "STRING",
+            description: "Meal name"
+          },
+          description: {
+            type: "STRING",
+            description: "Meal description and benefits"
+          },
+          items: {
+            type: "ARRAY",
+            description: "Food items in the meal with complete nutritional information",
+            items: {
+              type: "OBJECT",
+              properties: {
+                name: {
+                  type: "STRING",
+                  description: "Food item name"
+                },
+                quantity: {
+                  type: "NUMBER",
+                  description: "Quantity amount"
+                },
+                unit: {
+                  type: "STRING",
+                  description: "Unit of measurement"
+                },
+                calories: {
+                  type: "NUMBER",
+                  description: "Calories for this item"
+                },
+                macros: {
+                  type: "OBJECT",
+                  properties: {
+                    protein: { type: "NUMBER" },
+                    carbohydrates: { type: "NUMBER" },
+                    fat: { type: "NUMBER" },
+                    fiber: { type: "NUMBER" }
+                  },
+                  required: ["protein", "carbohydrates", "fat", "fiber"]
+                },
+                category: {
+                  type: "STRING",
+                  description: "Food category"
+                },
+                preparationTime: {
+                  type: "NUMBER",
+                  description: "Preparation time in minutes"
+                }
+              },
+              required: ["name", "quantity", "unit", "calories", "macros", "category", "preparationTime"],
+              propertyOrdering: ["name", "quantity", "unit", "calories", "macros", "category", "preparationTime"]
+            }
+          },
+          totalCalories: {
+            type: "NUMBER",
+            description: "Total calories for the meal"
+          },
+          totalMacros: {
+            type: "OBJECT",
+            properties: {
+              protein: { type: "NUMBER" },
+              carbohydrates: { type: "NUMBER" },
+              fat: { type: "NUMBER" },
+              fiber: { type: "NUMBER" }
+            },
+            required: ["protein", "carbohydrates", "fat", "fiber"]
+          },
+          preparationTime: {
+            type: "NUMBER",
+            description: "Total preparation time in minutes"
+          },
+          difficulty: {
+            type: "STRING",
+            enum: ["easy", "medium", "hard"],
+            description: "Cooking difficulty level"
+          },
+          tags: {
+            type: "ARRAY",
+            description: "Meal tags",
+            items: { type: "STRING" }
+          }
+        },
+        required: ["dayOfWeek", "type", "name", "description", "items", "totalCalories", "totalMacros", "preparationTime", "difficulty", "tags"],
+        propertyOrdering: ["dayOfWeek", "type", "name", "description", "items", "totalCalories", "totalMacros", "preparationTime", "difficulty", "tags"]
+      }
+    }
+  },
+  required: ["planTitle", "planDescription", "totalEstimatedCalories", "dietaryRestrictions", "weeklyGoals", "meals"],
+  propertyOrdering: ["planTitle", "planDescription", "totalEstimatedCalories", "dietaryRestrictions", "weeklyGoals", "meals"]
+};
+
+// ============================================================================
 // MOTIVATIONAL CONTENT SCHEMA
 // ============================================================================
 

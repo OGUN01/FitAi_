@@ -4,6 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { migrationManager, MigrationState, MigrationAttempt } from '../services/migrationManager';
 import { MigrationProgress, MigrationResult } from '../services/migration';
+import { SyncConflict, ConflictResolution } from '../types/profileData';
+import { useAuth } from './useAuth';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -23,12 +25,17 @@ export interface UseMigrationReturn {
   clearResult: () => void;
   checkStatus: () => Promise<void>;
 
+  // Profile migration actions
+  checkProfileMigrationNeeded: () => Promise<boolean>;
+  startProfileMigration: () => Promise<void>;
+
   // Computed values
   canStart: boolean;
   isActive: boolean;
   isCompleted: boolean;
   isFailed: boolean;
   hasLocalData: boolean;
+  profileMigrationNeeded: boolean;
 }
 
 // ============================================================================
@@ -36,6 +43,8 @@ export interface UseMigrationReturn {
 // ============================================================================
 
 export const useMigration = (): UseMigrationReturn => {
+  const { user } = useAuth();
+
   const [state, setState] = useState<MigrationState>({
     isActive: false,
     canStart: false,
@@ -43,11 +52,12 @@ export const useMigration = (): UseMigrationReturn => {
     lastMigrationAttempt: null,
     migrationHistory: [],
   });
-  
+
   const [progress, setProgress] = useState<MigrationProgress | null>(null);
   const [result, setResult] = useState<MigrationResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [profileMigrationNeeded, setProfileMigrationNeeded] = useState(false);
 
   // ============================================================================
   // EFFECTS
@@ -139,6 +149,67 @@ export const useMigration = (): UseMigrationReturn => {
   }, []);
 
   // ============================================================================
+  // PROFILE MIGRATION METHODS
+  // ============================================================================
+
+  const checkProfileMigrationNeeded = useCallback(async (): Promise<boolean> => {
+    if (!user?.id) {
+      return false;
+    }
+
+    try {
+      const needed = await migrationManager.checkProfileMigrationNeeded(user.id);
+      setProfileMigrationNeeded(needed);
+      return needed;
+    } catch (error) {
+      console.error('❌ Error checking profile migration:', error);
+      setError(error instanceof Error ? error.message : 'Failed to check migration');
+      return false;
+    }
+  }, [user?.id]);
+
+  const startProfileMigration = useCallback(async (): Promise<void> => {
+    if (!user?.id) {
+      setError('User not authenticated');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Set up progress callback
+      migrationManager.setProgressCallback(setProgress);
+
+      // Start migration
+      const migrationResult = await migrationManager.startProfileMigration(user.id);
+      setResult(migrationResult);
+
+      if (migrationResult.success) {
+        setProfileMigrationNeeded(false);
+        console.log('✅ Profile migration completed successfully');
+      } else {
+        console.error('❌ Profile migration failed:', migrationResult.errors);
+        setError(migrationResult.errors.join(', '));
+      }
+    } catch (error) {
+      console.error('❌ Profile migration error:', error);
+      setError(error instanceof Error ? error.message : 'Migration failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  // Auto-check profile migration when user changes
+  useEffect(() => {
+    if (user?.id) {
+      checkProfileMigrationNeeded();
+    } else {
+      setProfileMigrationNeeded(false);
+    }
+  }, [user?.id, checkProfileMigrationNeeded]);
+
+  // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
@@ -166,12 +237,17 @@ export const useMigration = (): UseMigrationReturn => {
     clearResult,
     checkStatus,
 
+    // Profile migration actions
+    checkProfileMigrationNeeded,
+    startProfileMigration,
+
     // Computed values
     canStart,
     isActive,
     isCompleted,
     isFailed,
     hasLocalData,
+    profileMigrationNeeded,
   };
 };
 

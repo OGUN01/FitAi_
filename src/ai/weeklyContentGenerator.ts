@@ -3,8 +3,9 @@
 
 import { geminiService, PROMPT_TEMPLATES } from './gemini';
 import { WORKOUT_SCHEMA, NUTRITION_SCHEMA } from './schemas';
+import { WEEKLY_PLAN_SCHEMA, DAILY_WORKOUT_SCHEMA } from './schemas/workoutSchema';
 import { PersonalInfo, FitnessGoals } from '../types/user';
-import { Workout, Meal, AIResponse } from '../types/ai';
+import { Workout, Meal, AIResponse, MealType } from '../types/ai';
 
 // ============================================================================
 // TYPES
@@ -16,11 +17,32 @@ export interface WeeklyWorkoutPlan {
   weekNumber: number;
   startDate: string;
   endDate: string;
-  workouts: Workout[];
-  restDays: number[]; // Days of week (0=Sunday, 6=Saturday)
+  workouts: DayWorkout[]; // Enhanced with day assignments
+  restDays: string[]; // Days of week as strings ('monday', 'tuesday', etc.)
   progressionNotes: string[];
   totalEstimatedCalories: number;
+  planTitle: string;
+  planDescription: string;
+  experienceLevel: string;
+  weeklyGoals: string[];
   createdAt: string;
+}
+
+export interface DayWorkout extends Workout {
+  dayOfWeek: string; // 'monday', 'tuesday', etc.
+  subCategory: string;
+  intensityLevel: string;
+  warmUp: ExerciseInstruction[];
+  coolDown: ExerciseInstruction[];
+  progressionNotes: string[];
+  safetyConsiderations: string[];
+  expectedBenefits: string[];
+}
+
+export interface ExerciseInstruction {
+  name: string;
+  duration?: number;
+  instructions: string;
 }
 
 export interface WeeklyMealPlan {
@@ -54,7 +76,7 @@ export interface WeeklyMealPlan {
 class WeeklyContentGeneratorService {
 
   /**
-   * Generate weekly workout plan based on user experience level
+   * Generate weekly workout plan with structured day assignments
    */
   async generateWeeklyWorkoutPlan(
     personalInfo: PersonalInfo,
@@ -62,85 +84,103 @@ class WeeklyContentGeneratorService {
     weekNumber: number = 1
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
     try {
-      // Determine plan duration based on experience level
+      // Determine plan configuration based on experience level
       const planConfig = this.getWeeklyPlanConfig(fitnessGoals.experience_level, weekNumber);
       
-      console.log(`🏋️  Generating ${planConfig.name} for ${personalInfo.name}...`);
+      console.log(`🏋️ Generating ${planConfig.name} for ${personalInfo.name}...`);
       
-      const workouts: Workout[] = [];
-      
-      // Generate workouts for each training day
-      for (let day = 0; day < planConfig.workoutDays; day++) {
-        const workoutType = planConfig.workoutTypes[day % planConfig.workoutTypes.length];
-        
-        const workoutPrompt = this.buildWeeklyWorkoutPrompt(
-          personalInfo,
-          fitnessGoals,
-          workoutType,
-          day + 1,
-          planConfig.workoutDays,
-          weekNumber
-        );
+      // Build comprehensive weekly plan prompt
+      const weeklyPlanPrompt = this.buildWeeklyPlanPrompt(
+        personalInfo,
+        fitnessGoals,
+        planConfig,
+        weekNumber
+      );
 
-        const response = await geminiService.generateResponse<any>(
-          workoutPrompt,
-          {
-            dayNumber: day + 1,
-            totalDays: planConfig.workoutDays,
-            weekNumber: weekNumber,
-            workoutType: workoutType
-          },
-          WORKOUT_SCHEMA
-        );
-
-        if (response.success && response.data) {
-          const workout: Workout = {
-            id: this.generateWorkoutId(weekNumber, day + 1),
-            title: response.data.title,
-            description: response.data.description,
-            category: response.data.category,
-            difficulty: response.data.difficulty,
-            duration: response.data.duration,
-            estimatedCalories: response.data.estimatedCalories,
-            exercises: response.data.exercises,
-            equipment: response.data.equipment,
-            targetMuscleGroups: response.data.targetMuscleGroups,
-            icon: this.getWorkoutIcon(response.data.category),
-            tags: [`week-${weekNumber}`, `day-${day + 1}`, workoutType],
-            isPersonalized: true,
-            aiGenerated: true,
-            createdAt: new Date().toISOString()
-          };
-          
-          workouts.push(workout);
+      // Generate complete weekly plan using new structured schema
+      const response = await geminiService.generateResponse<any>(
+        weeklyPlanPrompt,
+        {
+          weekNumber: weekNumber,
+          experienceLevel: fitnessGoals.experience_level,
+          planConfig: planConfig
+        },
+        WEEKLY_PLAN_SCHEMA,
+        3, // maxRetries
+        {
+          maxOutputTokens: 8192, // Increased for comprehensive weekly plans
+          temperature: 0.7
         }
-      }
+      );
 
-      if (workouts.length === 0) {
+      if (!response.success || !response.data) {
         return {
           success: false,
-          error: 'Failed to generate any workouts for the weekly plan'
+          error: response.error || 'Failed to generate weekly workout plan'
         };
       }
 
-      // Create weekly plan
+      // Transform AI response to our WeeklyWorkoutPlan format
+      const aiPlan = response.data;
+
+      const dayWorkouts: DayWorkout[] = aiPlan.workouts.map((workout: any) => ({
+        id: this.generateWorkoutId(weekNumber, workout.dayOfWeek),
+        title: workout.title,
+        description: workout.description,
+        category: workout.category,
+        subCategory: workout.subCategory || workout.category,
+        difficulty: workout.difficulty || 'intermediate',
+        duration: workout.duration,
+        estimatedCalories: workout.estimatedCalories,
+        intensityLevel: workout.intensityLevel || 'moderate',
+        exercises: workout.exercises.map((exercise: any) => ({
+          exerciseId: exercise.name.toLowerCase().replace(/\s+/g, '_'),
+          sets: exercise.sets,
+          reps: exercise.reps,
+          weight: exercise.weight || 0,
+          restTime: exercise.restTime,
+          notes: exercise.instructions ? exercise.instructions.join(' ') : '',
+          intensity: exercise.weight || 0
+        })),
+        warmUp: workout.warmUp || [],
+        coolDown: workout.coolDown || [],
+        equipment: workout.equipment,
+        targetMuscleGroups: workout.targetMuscleGroups,
+        dayOfWeek: workout.dayOfWeek,
+        progressionNotes: workout.progressionNotes || [],
+        safetyConsiderations: workout.safetyConsiderations || [],
+        expectedBenefits: workout.expectedBenefits || [],
+        icon: this.getWorkoutIcon(workout.category),
+        tags: [`week-${weekNumber}`, workout.dayOfWeek, workout.category],
+        isPersonalized: true,
+        aiGenerated: true,
+        createdAt: new Date().toISOString()
+      }));
+
+      // Create enhanced weekly plan
       const weeklyPlan: WeeklyWorkoutPlan = {
         id: this.generateWeeklyPlanId(weekNumber),
         userId: 'current-user', // Will be set by calling code
         weekNumber: weekNumber,
         startDate: this.getWeekStartDate(weekNumber),
         endDate: this.getWeekEndDate(weekNumber),
-        workouts: workouts,
-        restDays: planConfig.restDays,
-        progressionNotes: this.generateProgressionNotes(fitnessGoals.experience_level, weekNumber),
-        totalEstimatedCalories: workouts.reduce((sum, w) => sum + (w.estimatedCalories || 0), 0),
+        workouts: dayWorkouts,
+        restDays: aiPlan.restDays || planConfig.restDays,
+        progressionNotes: aiPlan.weeklyProgression?.nextWeekAdjustments || [],
+        totalEstimatedCalories: aiPlan.estimatedWeeklyCalories || 0,
+        planTitle: aiPlan.planTitle,
+        planDescription: aiPlan.planDescription,
+        experienceLevel: aiPlan.experienceLevel,
+        weeklyGoals: aiPlan.weeklyGoals || [],
         createdAt: new Date().toISOString()
       };
+
+
 
       return {
         success: true,
         data: weeklyPlan,
-        confidence: 90,
+        confidence: 95,
         generationTime: Date.now()
       };
 
@@ -241,26 +281,77 @@ class WeeklyContentGeneratorService {
         name: "1 Week Starter Plan",
         workoutDays: 3,
         workoutTypes: ['strength', 'cardio', 'flexibility'],
-        restDays: [2, 4, 6, 7], // Tuesday, Thursday, Saturday, Sunday
+        restDays: ['tuesday', 'thursday', 'saturday', 'sunday'],
+        assignedDays: ['monday', 'wednesday', 'friday'],
         totalWeeks: 1
       },
       intermediate: {
         name: "1.5 Week Progressive Plan", 
         workoutDays: 5,
         workoutTypes: ['strength', 'cardio', 'strength', 'hiit', 'flexibility'],
-        restDays: [3, 7], // Wednesday, Sunday
+        restDays: ['wednesday', 'sunday'],
+        assignedDays: ['monday', 'tuesday', 'thursday', 'friday', 'saturday'],
         totalWeeks: 1.5
       },
       advanced: {
         name: "2 Week Intensive Plan",
         workoutDays: 6,
         workoutTypes: ['strength', 'cardio', 'strength', 'hiit', 'strength', 'flexibility'],
-        restDays: [7], // Sunday only
+        restDays: ['sunday'],
+        assignedDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
         totalWeeks: 2
       }
     };
 
     return configs[experienceLevel as keyof typeof configs] || configs.intermediate;
+  }
+
+  private buildWeeklyPlanPrompt(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    planConfig: any,
+    weekNumber: number
+  ): string {
+    return `${PROMPT_TEMPLATES.WORKOUT_GENERATION}
+
+WEEKLY PLAN GENERATION REQUEST:
+Create a comprehensive ${planConfig.totalWeeks}-week workout plan for a ${fitnessGoals.experience_level} user.
+
+USER PROFILE:
+- Name: ${personalInfo.name}
+- Age: ${personalInfo.age} years
+- Gender: ${personalInfo.gender}
+- Height: ${personalInfo.height}cm, Weight: ${personalInfo.weight}kg
+- Activity Level: ${personalInfo.activityLevel}
+- Experience Level: ${fitnessGoals.experience_level}
+
+FITNESS GOALS:
+- Primary Goals: ${fitnessGoals.primaryGoals.join(', ')}
+- Time Available: ${fitnessGoals.timeCommitment} minutes per session
+- Workout Frequency: ${planConfig.workoutDays} workouts per week
+
+PLAN STRUCTURE REQUIREMENTS:
+- Workout Days: ${planConfig.assignedDays.join(', ')}
+- Rest Days: ${planConfig.restDays.join(', ')}
+- Workout Types: ${planConfig.workoutTypes.join(', ')}
+- Progressive difficulty appropriate for Week ${weekNumber}
+
+SPECIFIC REQUIREMENTS FOR EACH WORKOUT:
+1. Assign each workout to a specific day of the week
+2. Include detailed exercise instructions and form cues
+3. Provide proper warm-up and cool-down routines
+4. Add safety considerations and modifications
+5. Include progression notes for future weeks
+6. Ensure workouts complement each other throughout the week
+
+WORKOUT SCHEDULING STRATEGY:
+- Monday: Start strong with primary focus workout
+- Tuesday-Saturday: Distribute workouts based on recovery needs
+- Sunday: Rest day for all experience levels
+- Avoid back-to-back high-intensity days
+- Balance muscle groups throughout the week
+
+Create a complete weekly plan with structured day assignments that progressively builds throughout the week.`;
   }
 
   private buildWeeklyWorkoutPrompt(
@@ -322,7 +413,12 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     const response = await geminiService.generateResponse<any>(
       mealPrompt,
       {},
-      NUTRITION_SCHEMA
+      NUTRITION_SCHEMA,
+      3, // maxRetries
+      {
+        maxOutputTokens: 6144, // Increased for detailed meal plans
+        temperature: 0.7
+      }
     );
 
     if (response.success && response.data && response.data.meals?.[0]) {
@@ -330,7 +426,7 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
       return {
         id: this.generateMealId(mealType, day, weekNumber),
         name: mealData.name,
-        type: mealType,
+        type: mealType as MealType,
         description: mealData.description,
         items: mealData.items,
         totalCalories: mealData.totalCalories,
@@ -366,7 +462,12 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
           
           Create 2 alternative ${mealType} options with ${calories} calories each for meal swapping.`,
           {},
-          NUTRITION_SCHEMA
+          NUTRITION_SCHEMA,
+          3, // maxRetries
+          {
+            maxOutputTokens: 4096, // Adequate for alternative meals
+            temperature: 0.8 // Slightly higher for variety
+          }
         );
 
         if (response.success && response.data?.meals) {
@@ -374,7 +475,7 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
             alternatives.push({
               id: `alt-${mealType}-${index}`,
               name: meal.name,
-              type: mealType,
+              type: mealType as MealType,
               description: meal.description,
               items: meal.items,
               totalCalories: meal.totalCalories,
@@ -401,9 +502,9 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     // Basic calorie calculation (Mifflin-St Jeor)
     let bmr: number;
     if (personalInfo.gender.toLowerCase() === 'male') {
-      bmr = 10 * personalInfo.weight + 6.25 * personalInfo.height - 5 * personalInfo.age + 5;
+      bmr = 10 * Number(personalInfo.weight) + 6.25 * Number(personalInfo.height) - 5 * Number(personalInfo.age) + 5;
     } else {
-      bmr = 10 * personalInfo.weight + 6.25 * personalInfo.height - 5 * personalInfo.age - 161;
+      bmr = 10 * Number(personalInfo.weight) + 6.25 * Number(personalInfo.height) - 5 * Number(personalInfo.age) - 161;
     }
 
     // Activity multiplier
@@ -456,13 +557,36 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
       type: mealType,
       description: `A nutritious ${mealType} option`,
       items: [{
-        name: 'Balanced meal components',
+        foodId: `fallback-food-${mealType}`,
+        food: {
+          id: `fallback-food-${mealType}`,
+          name: 'Balanced meal components',
+          category: 'mixed',
+          nutrition: {
+            calories: calories,
+            macros: {
+              protein: Math.round(calories * 0.25 / 4),
+              carbohydrates: Math.round(calories * 0.45 / 4),
+              fat: Math.round(calories * 0.30 / 9),
+              fiber: 5
+            },
+            servingSize: 100,
+            servingUnit: 'g'
+          },
+          allergens: [],
+          dietaryLabels: [],
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
         quantity: 1,
-        unit: 'serving',
         calories: calories,
-        protein: Math.round(calories * 0.25 / 4),
-        carbohydrates: Math.round(calories * 0.45 / 4),
-        fat: Math.round(calories * 0.30 / 9)
+        macros: {
+          protein: Math.round(calories * 0.25 / 4),
+          carbohydrates: Math.round(calories * 0.45 / 4),
+          fat: Math.round(calories * 0.30 / 9),
+          fiber: 5
+        }
       }],
       totalCalories: calories,
       totalProtein: Math.round(calories * 0.25 / 4),
@@ -504,8 +628,9 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     }
   }
 
-  private generateWorkoutId(weekNumber: number, dayNumber: number): string {
-    return `workout_w${weekNumber}_d${dayNumber}_${Date.now()}`;
+  private generateWorkoutId(weekNumber: number, dayIdentifier: string | number): string {
+    const dayId = typeof dayIdentifier === 'string' ? dayIdentifier : `d${dayIdentifier}`;
+    return `workout_w${weekNumber}_${dayId}_${Date.now()}`;
   }
 
   private generateMealId(mealType: string, day: string, weekNumber: number): string {

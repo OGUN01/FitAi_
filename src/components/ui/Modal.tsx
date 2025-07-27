@@ -7,7 +7,9 @@ import {
   Dimensions,
   ViewStyle,
 } from 'react-native';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
+import { ResponsiveTheme } from '../../utils/responsiveTheme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -135,14 +137,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   
   content: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.xl,
-    padding: THEME.spacing.lg,
-    maxWidth: screenWidth - (THEME.spacing.lg * 2),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    padding: ResponsiveTheme.spacing.lg,
+    maxWidth: screenWidth - (ResponsiveTheme.spacing.lg * 2),
     maxHeight: screenHeight * 0.8,
     ...THEME.shadows.lg,
   },
@@ -154,21 +156,21 @@ const styles = StyleSheet.create({
   },
   
   bottomSheetContent: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderTopLeftRadius: THEME.borderRadius.xxl,
     borderTopRightRadius: THEME.borderRadius.xxl,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.lg,
-    paddingTop: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
     ...THEME.shadows.lg,
   },
   
   bottomSheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: THEME.colors.textMuted,
-    borderRadius: THEME.borderRadius.full,
+    width: rw(40),
+    height: rh(4),
+    backgroundColor: ResponsiveTheme.colors.textMuted,
+    borderRadius: ResponsiveTheme.borderRadius.full,
     alignSelf: 'center',
-    marginBottom: THEME.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 });

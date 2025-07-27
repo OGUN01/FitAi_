@@ -3,7 +3,6 @@
 
 import { 
   OnboardingData,
-  WorkoutSession,
   MealLog
 } from '../types/localData';
 
@@ -12,10 +11,18 @@ import {
   FitnessGoals
 } from '../types/user';
 
+import { WorkoutSession } from '../types/workout';
+
 // Define missing types locally
 interface LocalStorageSchema {
   version: string;
   entities: string[];
+  createdAt: string;
+  updatedAt: string;
+  user: any;
+  fitness: any;
+  nutrition: any;
+  progress: any;
 }
 
 interface ValidationResult {

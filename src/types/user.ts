@@ -14,6 +14,27 @@ export interface FitnessGoals {
   primaryGoals: string[];
   timeCommitment: string;
   experience: string;
+  experience_level: string; // Added for backward compatibility
+}
+
+// Diet and Workout Preferences (from onboarding)
+export interface DietPreferences {
+  dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
+  allergies: string[];
+  cuisinePreferences: string[];
+  restrictions: string[];
+  cookingSkill?: 'beginner' | 'intermediate' | 'advanced';
+  mealPrepTime?: 'quick' | 'moderate' | 'extended';
+  dislikes?: string[];
+}
+
+export interface WorkoutPreferences {
+  workoutType: string[];
+  equipment: string[];
+  location: 'home' | 'gym' | 'outdoor';
+  timeSlots: string[];
+  intensity: 'low' | 'moderate' | 'high';
+  duration: string;
 }
 
 export interface User {
@@ -21,6 +42,8 @@ export interface User {
   email: string;
   personalInfo: PersonalInfo;
   fitnessGoals: FitnessGoals;
+  dietPreferences?: DietPreferences;
+  workoutPreferences?: WorkoutPreferences;
   createdAt: string;
   updatedAt: string;
 }
