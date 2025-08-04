@@ -507,7 +507,7 @@ export class BackupRecoveryService {
     }
 
     // Calculate size and checksum
-    backupData.metadata.size = new TextEncoder().encode(processedData).length;
+    // Estimate byte size for React Native compatibility (UTF-16)\n    backupData.metadata.size = processedData.length * 2;
     backupData.metadata.checksum = await this.calculateChecksum(processedData);
 
     return backupData;

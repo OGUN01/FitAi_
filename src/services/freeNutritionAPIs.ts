@@ -115,12 +115,8 @@ export class FreeNutritionAPIs {
   private async searchUSDAFoodData(foodName: string): Promise<NutritionData | null> {
     try {
       const searchUrl = `https://api.nal.usda.gov/fdc/v1/foods/search`;
-      const params = new URLSearchParams({
-        query: foodName,
-        dataType: 'Foundation,SR Legacy',
-        pageSize: '5',
-        api_key: this.usdaApiKey || 'DEMO_KEY'
-      });
+      // Manual query string building for React Native compatibility
+      const params = `query=${encodeURIComponent(foodName)}&dataType=Foundation,SR Legacy&pageSize=5&api_key=${encodeURIComponent(this.usdaApiKey || 'DEMO_KEY')}`;
 
       const response = await fetch(`${searchUrl}?${params}`, {
         method: 'GET',
@@ -195,13 +191,8 @@ export class FreeNutritionAPIs {
   private async searchOpenFoodFacts(foodName: string): Promise<NutritionData | null> {
     try {
       const searchUrl = `https://world.openfoodfacts.org/cgi/search.pl`;
-      const params = new URLSearchParams({
-        search_terms: foodName,
-        search_simple: '1',
-        action: 'process',
-        json: '1',
-        page_size: '5'
-      });
+      // Manual query string building for React Native compatibility
+      const params = `search_terms=${encodeURIComponent(foodName)}&search_simple=1&action=process&json=1&page_size=5`;
 
       const response = await fetch(`${searchUrl}?${params}`, {
         method: 'GET',
@@ -262,12 +253,8 @@ export class FreeNutritionAPIs {
       // FatSecret uses OAuth 1.0, but for simplicity using their basic API
       // Note: This is a simplified implementation - production would need proper OAuth
       const searchUrl = `https://platform.fatsecret.com/rest/server.api`;
-      const params = new URLSearchParams({
-        method: 'foods.search',
-        search_expression: foodName,
-        format: 'json',
-        max_results: '5'
-      });
+      // Manual query string building for React Native compatibility
+      const params = `method=foods.search&search_expression=${encodeURIComponent(foodName)}&format=json&max_results=5`;
 
       // For now, return null as FatSecret requires complex OAuth implementation
       // This can be implemented later with proper OAuth 1.0 signing

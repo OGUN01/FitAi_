@@ -599,7 +599,8 @@ export class EnhancedLocalStorageService {
       for (const key of fitaiKeys) {
         const value = await AsyncStorage.getItem(key);
         if (value) {
-          totalSize += new TextEncoder().encode(value).length;
+          // Estimate byte size for React Native compatibility (UTF-16)
+          totalSize += value.length * 2;
         }
       }
       

@@ -203,7 +203,7 @@ class GoogleAuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: typeof window !== 'undefined' 
+          redirectTo: Platform.OS === 'web' && typeof window !== 'undefined' && window.location
             ? `${window.location.origin}/auth/callback`
             : 'exp://localhost:8081/--/auth/callback',
           queryParams: {
