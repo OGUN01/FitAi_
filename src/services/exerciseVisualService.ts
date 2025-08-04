@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { advancedExerciseMatching, AdvancedMatchResult } from './advancedExerciseMatching';
 // Temporarily disabled to prevent import issues
 // import { normalizedNameMapping, NameMappingResult } from './normalizedNameMapping';
@@ -446,7 +447,8 @@ class ExerciseVisualService {
       }
 
       // Use verified working Vercel API endpoints
-      if (navigator.onLine !== false) {
+      const netInfo = await NetInfo.fetch();
+      if (netInfo.isConnected) {
         console.log(`🌐 Searching Vercel API for "${query}"`);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -499,7 +501,8 @@ class ExerciseVisualService {
       }
       
       // If API fails, try general endpoint as fallback
-      if (navigator.onLine !== false) {
+      const netInfoFallback = await NetInfo.fetch();
+      if (netInfoFallback.isConnected) {
         try {
           console.log(`🔄 Trying general exercises endpoint as fallback...`);
           const fallbackUrl = `${this.baseURL}/exercises?limit=10`;

@@ -5,7 +5,7 @@
  * to provide personalized exercise recommendations with 100% GIF coverage.
  */
 
-import exerciseDatabase from '../data/exerciseDatabase.min.json';
+// import exerciseDatabase from '../data/exerciseDatabase.min.json'; // Disabled to reduce bundle size
 import { PersonalInfo, FitnessGoals } from '../types/user';
 
 export interface FilteredExercise {

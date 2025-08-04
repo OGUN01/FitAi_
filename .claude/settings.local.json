@@ -67,7 +67,9 @@
       "Bash(__NEW_LINE__ echo \"\")",
       "Bash(ls:*)",
       "Bash(cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   },

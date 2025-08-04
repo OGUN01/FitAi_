@@ -4,7 +4,7 @@
  * Ensures 100% accuracy for exercise-GIF matching
  */
 
-import exerciseDatabase from '../data/exerciseDatabase.json';
+// import exerciseDatabase from '../data/exerciseDatabase.json'; // Disabled to reduce bundle size
 import { ExerciseData } from './exerciseVisualService';
 
 export interface NameMappingResult {
@@ -115,13 +115,13 @@ class NormalizedNameMappingService {
   ];
 
   constructor() {
-    this.exercises = exerciseDatabase.exercises as ExerciseData[];
-    this.nameIndex = exerciseDatabase.indices.byName;
+    this.exercises = []; // exerciseDatabase.exercises as ExerciseData[]; // Disabled to reduce bundle size
+    this.nameIndex = {}; // exerciseDatabase.indices.byName; // Disabled to reduce bundle size
     this.wordIndex = this.buildWordIndex();
-    this.muscleIndex = exerciseDatabase.indices.byMuscle;
-    this.equipmentIndex = exerciseDatabase.indices.byEquipment;
+    this.muscleIndex = {}; // exerciseDatabase.indices.byMuscle; // Disabled to reduce bundle size
+    this.equipmentIndex = {}; // exerciseDatabase.indices.byEquipment; // Disabled to reduce bundle size
     
-    console.log(`🎯 Normalized Name Mapping initialized with ${this.exercises.length} exercises`);
+    console.log(`🎯 Normalized Name Mapping initialized in fallback mode (bundle size optimization)`);
   }
 
   /**

@@ -507,7 +507,7 @@ export class BackupRecoveryService {
     }
 
     // Calculate size and checksum
-    backupData.metadata.size = new Blob([processedData]).size;
+    backupData.metadata.size = new TextEncoder().encode(processedData).length;
     backupData.metadata.checksum = await this.calculateChecksum(processedData);
 
     return backupData;
