@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Card, Button, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { useProgressData } from '../../hooks/useProgressData';

@@ -17,7 +17,7 @@ import { ProfileScreen } from '../../screens/main/ProfileScreen';
 import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
 import { MealSession } from '../../screens/session/MealSession';
 import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { DayWorkout } from '../../ai/weeklyContentGenerator';
 import { DayMeal } from '../../ai/weeklyMealGenerator';
 
@@ -32,6 +32,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
     workout?: DayWorkout;
+    sessionId?: string;
   }>({ isActive: false });
 
   const [mealSession, setMealSession] = useState<{
@@ -42,13 +43,23 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
+      console.log(`🧭 NAVIGATION: Navigating to ${screen}`, { params });
       if (screen === 'WorkoutSession') {
-        setWorkoutSession({ isActive: true, workout: params.workout });
+        console.log(`🧭 Setting workout session:`, { 
+          workout: params?.workout?.title, 
+          sessionId: params?.sessionId 
+        });
+        setWorkoutSession({ 
+          isActive: true, 
+          workout: params.workout,
+          sessionId: params.sessionId 
+        });
       } else if (screen === 'MealSession') {
         setMealSession({ isActive: true, meal: params.meal });
       }
     },
     goBack: () => {
+      console.log(`🧭 NAVIGATION: Going back from workout/meal session`);
       setWorkoutSession({ isActive: false });
       setMealSession({ isActive: false });
     }
@@ -90,9 +101,17 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
   const renderScreen = () => {
     // If workout session is active, show workout session screen
     if (workoutSession.isActive && workoutSession.workout) {
+      console.log(`🧭 RENDERING: WorkoutSessionScreen with:`, {
+        workoutTitle: workoutSession.workout.title,
+        sessionId: workoutSession.sessionId,
+        exerciseCount: workoutSession.workout.exercises?.length
+      });
       return (
         <WorkoutSessionScreen
-          route={{ params: { workout: workoutSession.workout } }}
+          route={{ params: { 
+            workout: workoutSession.workout,
+            sessionId: workoutSession.sessionId 
+          }}}
           navigation={navigation}
         />
       );

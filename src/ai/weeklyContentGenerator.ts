@@ -4,8 +4,11 @@
 import { geminiService, PROMPT_TEMPLATES } from './gemini';
 import { WORKOUT_SCHEMA, NUTRITION_SCHEMA } from './schemas';
 import { WEEKLY_PLAN_SCHEMA, DAILY_WORKOUT_SCHEMA } from './schemas/workoutSchema';
+import { SIMPLIFIED_WEEKLY_PLAN_SCHEMA, TEST_SIMPLE_SCHEMA } from './schemas/simplifiedWorkoutSchema';
+import { generateConstrainedWorkout, OPTIMIZED_SYSTEM_PROMPT } from './constrainedWorkoutGeneration';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout, Meal, AIResponse, MealType } from '../types/ai';
+import { exerciseFilterService } from '../services/exerciseFilterService';
 
 // ============================================================================
 // TYPES
@@ -97,65 +100,163 @@ class WeeklyContentGeneratorService {
         weekNumber
       );
 
-      // Generate complete weekly plan using new structured schema
-      const response = await geminiService.generateResponse<any>(
-        weeklyPlanPrompt,
-        {
-          weekNumber: weekNumber,
-          experienceLevel: fitnessGoals.experience_level,
-          planConfig: planConfig
-        },
-        WEEKLY_PLAN_SCHEMA,
-        3, // maxRetries
-        {
-          maxOutputTokens: 8192, // Increased for comprehensive weekly plans
-          temperature: 0.7
-        }
-      );
+      // 🚨 CONSTRAINT-ENFORCED GENERATION WITH VALIDATION RETRY
+      let response: any;
+      let validationAttempt = 0;
+      const maxValidationAttempts = 3;
+      
+      while (validationAttempt < maxValidationAttempts) {
+        validationAttempt++;
+        console.log(`🎯 Generation attempt ${validationAttempt}/${maxValidationAttempts} with constraint enforcement`);
+        
+        // Use increasingly strict prompts on retries
+        const currentPrompt = validationAttempt > 1 
+          ? this.buildStrictConstraintPrompt(weeklyPlanPrompt, validationAttempt)
+          : weeklyPlanPrompt;
+        
+        // First, let's test with a super simple schema to verify API connectivity
+        console.log('🧪 Testing with simplified schema to diagnose issue...');
+        
+        response = await geminiService.generateResponse<any>(
+          currentPrompt,
+          {
+            weekNumber: weekNumber,
+            experienceLevel: fitnessGoals.experience_level,
+            planConfig: planConfig,
+            validationAttempt: validationAttempt
+          },
+          SIMPLIFIED_WEEKLY_PLAN_SCHEMA, // Using simplified schema temporarily
+          2, // Fewer retries per attempt since we have validation retry
+          {
+            maxOutputTokens: 8192,
+            temperature: validationAttempt > 1 ? 0.5 : 0.7, // Lower temperature for stricter generation
+            systemPrompt: OPTIMIZED_SYSTEM_PROMPT
+          }
+        );
 
-      if (!response.success || !response.data) {
-        return {
-          success: false,
-          error: response.error || 'Failed to generate weekly workout plan'
-        };
+        if (!response.success || !response.data) {
+          if (validationAttempt === maxValidationAttempts) {
+            return {
+              success: false,
+              error: response.error || 'Failed to generate weekly workout plan after all attempts'
+            };
+          }
+          continue; // Try again with stricter prompt
+        }
+        
+        // Quick validation check before full processing
+        const quickValidation = this.quickValidateExerciseIds(response.data);
+        if (quickValidation.isValid) {
+          console.log(`✅ Generation attempt ${validationAttempt} passed initial validation`);
+          break; // Success!
+        } else {
+          console.log(`❌ Generation attempt ${validationAttempt} failed validation:`, quickValidation.errors.slice(0, 3));
+          if (validationAttempt === maxValidationAttempts) {
+            return {
+              success: false,
+              error: `All generation attempts failed validation. Last errors: ${quickValidation.errors.slice(0, 2).join(', ')}`
+            };
+          }
+        }
       }
 
       // Transform AI response to our WeeklyWorkoutPlan format
       const aiPlan = response.data;
 
-      const dayWorkouts: DayWorkout[] = aiPlan.workouts.map((workout: any) => ({
-        id: this.generateWorkoutId(weekNumber, workout.dayOfWeek),
-        title: workout.title,
-        description: workout.description,
-        category: workout.category,
-        subCategory: workout.subCategory || workout.category,
-        difficulty: workout.difficulty || 'intermediate',
-        duration: workout.duration,
-        estimatedCalories: workout.estimatedCalories,
-        intensityLevel: workout.intensityLevel || 'moderate',
-        exercises: workout.exercises.map((exercise: any) => ({
-          exerciseId: exercise.name.toLowerCase().replace(/\s+/g, '_'),
-          sets: exercise.sets,
-          reps: exercise.reps,
-          weight: exercise.weight || 0,
-          restTime: exercise.restTime,
-          notes: exercise.instructions ? exercise.instructions.join(' ') : '',
-          intensity: exercise.weight || 0
-        })),
-        warmUp: workout.warmUp || [],
-        coolDown: workout.coolDown || [],
-        equipment: workout.equipment,
-        targetMuscleGroups: workout.targetMuscleGroups,
-        dayOfWeek: workout.dayOfWeek,
-        progressionNotes: workout.progressionNotes || [],
-        safetyConsiderations: workout.safetyConsiderations || [],
-        expectedBenefits: workout.expectedBenefits || [],
-        icon: this.getWorkoutIcon(workout.category),
-        tags: [`week-${weekNumber}`, workout.dayOfWeek, workout.category],
-        isPersonalized: true,
-        aiGenerated: true,
-        createdAt: new Date().toISOString()
-      }));
+      // 🔍 Debug: Validate AI response structure
+      console.log('🔍 Weekly Generator Debug - AI Plan structure:');
+      console.log('  - aiPlan exists:', aiPlan ? '✅' : '❌');
+      console.log('  - aiPlan type:', typeof aiPlan);
+      console.log('  - aiPlan constructor:', aiPlan?.constructor?.name);
+      console.log('  - aiPlan keys:', Object.keys(aiPlan || {}));
+      console.log('  - aiPlan.workouts exists:', aiPlan?.workouts ? '✅' : '❌');
+      console.log('  - aiPlan.workouts type:', Array.isArray(aiPlan?.workouts) ? 'Array' : typeof aiPlan?.workouts);
+      console.log('  - aiPlan.workouts length:', aiPlan?.workouts?.length || 0);
+      console.log('  - aiPlan preview (first 500 chars):', JSON.stringify(aiPlan, null, 1)?.substring(0, 500));
+      
+      // Additional validation for the expected properties
+      console.log('🔍 Expected properties check:');
+      console.log('  - planTitle:', aiPlan?.planTitle ? '✅' : '❌');
+      console.log('  - planDescription:', aiPlan?.planDescription ? '✅' : '❌');
+      console.log('  - experienceLevel:', aiPlan?.experienceLevel ? '✅' : '❌');
+      console.log('  - estimatedWeeklyCalories:', aiPlan?.estimatedWeeklyCalories ? '✅' : '❌');
+      
+      if (!aiPlan?.workouts || !Array.isArray(aiPlan.workouts) || aiPlan.workouts.length === 0) {
+        console.error('❌ Weekly Generator - Invalid workouts data:', aiPlan?.workouts);
+        return {
+          success: false,
+          error: 'Generated plan has no valid workouts data'
+        };
+      }
+
+      const dayWorkouts: DayWorkout[] = aiPlan.workouts.map((workout: any, index: number) => {
+        console.log(`🔍 Processing workout ${index + 1}:`, workout?.title || 'Untitled');
+        console.log(`  - Day: ${workout?.dayOfWeek}`);
+        console.log(`  - Exercises: ${workout?.exercises?.length || 0}`);
+        
+        // Validate workout has required properties
+        if (!workout.title || !workout.dayOfWeek) {
+          console.error(`❌ Invalid workout ${index + 1}:`, { title: workout?.title, dayOfWeek: workout?.dayOfWeek });
+        }
+        
+        // Validate exercises have database IDs
+        if (workout.exercises?.length > 0) {
+          workout.exercises.forEach((exercise: any, exIndex: number) => {
+            if (!exercise.exerciseId) {
+              console.error(`❌ Exercise ${exIndex + 1} missing exerciseId:`, exercise);
+            } else {
+              console.log(`  - Exercise ${exIndex + 1}: ${exercise.exerciseId} (${exercise.name})`);
+            }
+          });
+        }
+        
+        return {
+          id: this.generateWorkoutId(weekNumber, workout.dayOfWeek),
+          title: workout.title,
+          description: workout.description,
+          category: workout.category,
+          subCategory: workout.subCategory || workout.category,
+          difficulty: workout.difficulty || 'intermediate',
+          duration: workout.duration,
+          estimatedCalories: workout.estimatedCalories,
+          intensityLevel: workout.intensityLevel || 'moderate',
+          exercises: workout.exercises?.map((exercise: any) => ({
+            exerciseId: exercise.exerciseId || 'unknown', // Use database ID from constraint system
+            name: exercise.name || 'Unknown Exercise', // Keep creative name for display
+            sets: exercise.sets || 3,
+            reps: exercise.reps || 10,
+            weight: exercise.weight || 0,
+            restTime: exercise.restTime || 60,
+            notes: exercise.instructions ? exercise.instructions.join(' ') : '',
+            intensity: exercise.weight || 0
+          })) || [],
+          warmUp: workout.warmUp || [],
+          coolDown: workout.coolDown || [],
+          equipment: workout.equipment || [],
+          targetMuscleGroups: workout.targetMuscleGroups || [],
+          dayOfWeek: workout.dayOfWeek,
+          progressionNotes: workout.progressionNotes || [],
+          safetyConsiderations: workout.safetyConsiderations || [],
+          expectedBenefits: workout.expectedBenefits || [],
+          icon: this.getWorkoutIcon(workout.category),
+          tags: [`week-${weekNumber}`, workout.dayOfWeek, workout.category],
+          isPersonalized: true,
+          aiGenerated: true,
+          createdAt: new Date().toISOString()
+        };
+      });
+
+      console.log(`🔍 Weekly Generator Debug - Processed ${dayWorkouts.length} workouts`);
+
+      // ✅ CRITICAL VALIDATION: Ensure all exercises use database IDs
+      const validationErrors = this.validateExerciseIds(dayWorkouts);
+      if (validationErrors.length > 0) {
+        console.error('❌ EXERCISE ID VALIDATION FAILED:', validationErrors);
+        return {
+          success: false,
+          error: `Invalid exercise IDs detected: ${validationErrors.join(', ')}. Regeneration required with proper database IDs.`
+        };
+      }
 
       // Create enhanced weekly plan
       const weeklyPlan: WeeklyWorkoutPlan = {
@@ -272,6 +373,70 @@ class WeeklyContentGeneratorService {
   }
 
   // ============================================================================
+  // VALIDATION METHODS
+  // ============================================================================
+
+  private validateExerciseIds(dayWorkouts: DayWorkout[]): string[] {
+    const errors: string[] = [];
+    const validExerciseIds = exerciseFilterService.getAllExerciseIds();
+    
+    dayWorkouts.forEach((workout, workoutIndex) => {
+      workout.exercises?.forEach((exercise, exerciseIndex) => {
+        if (!exercise.exerciseId || exercise.exerciseId === 'unknown') {
+          errors.push(`Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Missing exerciseId`);
+        } else if (!validExerciseIds.includes(exercise.exerciseId)) {
+          errors.push(`Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Invalid exerciseId "${exercise.exerciseId}" (not in database)`);
+        }
+      });
+    });
+    
+    return errors;
+  }
+
+  private quickValidateExerciseIds(aiPlan: any): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    const validExerciseIds = exerciseFilterService.getAllExerciseIds();
+    
+    if (!aiPlan?.workouts || !Array.isArray(aiPlan.workouts)) {
+      return { isValid: false, errors: ['No workouts in AI response'] };
+    }
+    
+    aiPlan.workouts.forEach((workout: any, workoutIndex: number) => {
+      if (workout.exercises && Array.isArray(workout.exercises)) {
+        workout.exercises.forEach((exercise: any, exerciseIndex: number) => {
+          if (!exercise.exerciseId) {
+            errors.push(`W${workoutIndex + 1}E${exerciseIndex + 1}: Missing exerciseId`);
+          } else if (!validExerciseIds.includes(exercise.exerciseId)) {
+            errors.push(`W${workoutIndex + 1}E${exerciseIndex + 1}: Invalid ID "${exercise.exerciseId}"`);
+          }
+        });
+      }
+    });
+    
+    return { isValid: errors.length === 0, errors };
+  }
+
+  private buildStrictConstraintPrompt(originalPrompt: string, attempt: number): string {
+    const stricterWarnings = {
+      2: `
+⚠️ SECOND ATTEMPT: The previous response contained invalid exercise IDs.
+You MUST use ONLY the exercise IDs provided in the lists below.
+Example of CORRECT exercise IDs: VPPtusI, 8d8qJQI, JGKowMS
+Example of INCORRECT exercise IDs: dynamic_elevators, mountain_climbers, push_ups
+`,
+      3: `
+🚨 FINAL ATTEMPT: Multiple responses have failed validation.
+CRITICAL REQUIREMENT: Use ONLY the exact exerciseId values from the provided exercise lists.
+- Use IDs like "VPPtusI" NOT descriptive names like "dynamic_elevators"
+- Copy the exact ID from the exercise list - do not modify or create new ones
+- This is your last chance - the response WILL BE REJECTED if it contains invalid exercise IDs
+`
+    };
+
+    return originalPrompt + (stricterWarnings[attempt as keyof typeof stricterWarnings] || '');
+  }
+
+  // ============================================================================
   // HELPER METHODS
   // ============================================================================
 
@@ -312,6 +477,18 @@ class WeeklyContentGeneratorService {
     planConfig: any,
     weekNumber: number
   ): string {
+    // Get filtered exercises based on user profile
+    const filteredExercises = exerciseFilterService.filterExercises(personalInfo, fitnessGoals);
+    
+    // Separate exercises by type
+    const warmupExercises = exerciseFilterService.getExercisesByType(filteredExercises, 'warmup', 20);
+    const mainExercises = filteredExercises.filter(ex => 
+      !ex.name.toLowerCase().includes('warm') && 
+      !ex.name.toLowerCase().includes('cool') &&
+      !ex.name.toLowerCase().includes('stretch')
+    );
+    const cooldownExercises = exerciseFilterService.getExercisesByType(filteredExercises, 'cooldown', 15);
+    
     return `${PROMPT_TEMPLATES.WORKOUT_GENERATION}
 
 WEEKLY PLAN GENERATION REQUEST:
@@ -336,13 +513,33 @@ PLAN STRUCTURE REQUIREMENTS:
 - Workout Types: ${planConfig.workoutTypes.join(', ')}
 - Progressive difficulty appropriate for Week ${weekNumber}
 
+🚨 CRITICAL: EXERCISE SELECTION REQUIREMENTS - MANDATORY COMPLIANCE 🚨
+YOU MUST ONLY USE EXERCISES FROM THE PROVIDED LISTS BELOW. NO EXCEPTIONS.
+- Each exercise has a unique ID (like "VPPtusI", "8d8qJQI") that MUST be used exactly as provided
+- DO NOT create new exercises, modify names, or invent exercise IDs
+- DO NOT use descriptive names like "dynamic_elevators" or "mountain_climbers"
+- ONLY use the exact exerciseId values provided in the lists below
+- If you use ANY exercise not in these lists, the response will be REJECTED
+
+MANDATORY: Use these EXACT exercise IDs in your response:
+
+WARM-UP EXERCISES (use for warm-up sections):
+${warmupExercises.slice(0, 15).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+
+MAIN EXERCISES (use for main workout):
+${mainExercises.slice(0, 50).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Target: ${ex.targetMuscles.join(', ')} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+
+COOL-DOWN EXERCISES (use for cool-down sections):
+${cooldownExercises.slice(0, 10).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+
 SPECIFIC REQUIREMENTS FOR EACH WORKOUT:
-1. Assign each workout to a specific day of the week
-2. Include detailed exercise instructions and form cues
-3. Provide proper warm-up and cool-down routines
-4. Add safety considerations and modifications
-5. Include progression notes for future weeks
-6. Ensure workouts complement each other throughout the week
+1. MANDATORY: Use the exact exerciseId (like "VPPtusI") in the exerciseId field
+2. MANDATORY: Use the provided Name (like "inverted row bent knees") or a creative variation for the name field
+3. NEVER use the exerciseId as the display name - always use proper exercise names
+4. Assign each workout to a specific day of the week  
+5. Include proper warm-up and cool-down routines using provided exercises
+6. Add safety considerations and modifications
+7. Include progression notes for future weeks
 
 WORKOUT SCHEDULING STRATEGY:
 - Monday: Start strong with primary focus workout

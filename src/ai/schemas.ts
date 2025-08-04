@@ -7,62 +7,62 @@
 // ============================================================================
 
 export const WORKOUT_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     title: {
-      type: "STRING",
+      type: "string",
       description: "Personalized workout name reflecting user goals"
     },
     description: {
-      type: "STRING",
+      type: "string",
       description: "Detailed description explaining the workout's purpose and benefits"
     },
     category: {
-      type: "STRING",
+      type: "string",
       enum: ["strength", "cardio", "flexibility", "hiit", "hybrid"],
       description: "Workout category"
     },
     difficulty: {
-      type: "STRING",
+      type: "string",
       enum: ["beginner", "intermediate", "advanced"],
       description: "Difficulty level appropriate for user"
     },
     duration: {
-      type: "NUMBER",
+      type: "number",
       description: "Workout duration in minutes"
     },
     estimatedCalories: {
-      type: "NUMBER",
+      type: "number",
       description: "Estimated calories burned based on user profile"
     },
     exercises: {
-      type: "ARRAY",
+      type: "array",
       description: "List of exercises in the workout",
       items: {
-        type: "OBJECT",
+        type: "object",
         properties: {
           exerciseId: {
-            type: "STRING",
+            type: "string",
             description: "Specific exercise identifier"
           },
           sets: {
-            type: "NUMBER",
+            type: "number",
             description: "Number of sets appropriate for experience level"
           },
           reps: {
-            type: "STRING",
+            type: "string",
             description: "Range or number based on goals (e.g., '8-12' or '10')"
           },
           restTime: {
-            type: "NUMBER",
+            type: "number",
             description: "Rest time in seconds optimized for goals"
           },
           notes: {
-            type: "STRING",
+            type: "string",
             description: "Specific coaching cues and modifications"
           },
           intensity: {
-            type: "STRING",
+            type: "string",
             description: "Intensity level or percentage"
           }
         },
@@ -71,14 +71,14 @@ export const WORKOUT_SCHEMA = {
       }
     },
     equipment: {
-      type: "ARRAY",
+      type: "array",
       description: "Required equipment for the workout",
-      items: { type: "STRING" }
+      items: { type: "string" }
     },
     targetMuscleGroups: {
-      type: "ARRAY",
+      type: "array",
       description: "Primary muscle groups targeted",
-      items: { type: "STRING" }
+      items: { type: "string" }
     }
   },
   required: [
@@ -96,60 +96,60 @@ export const WORKOUT_SCHEMA = {
 // ============================================================================
 
 export const NUTRITION_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     meals: {
-      type: "ARRAY",
+      type: "array",
       description: "Daily meal plan",
       items: {
-        type: "OBJECT",
+        type: "object",
         properties: {
           type: {
-            type: "STRING",
+            type: "string",
             enum: ["breakfast", "lunch", "dinner", "snack", "pre_workout", "post_workout"],
             description: "Meal type"
           },
           name: {
-            type: "STRING",
+            type: "string",
             description: "Scientifically-crafted meal name"
           },
           description: {
-            type: "STRING",
+            type: "string",
             description: "Nutritional rationale and benefits"
           },
           items: {
-            type: "ARRAY",
+            type: "array",
             description: "Food items in the meal",
             items: {
-              type: "OBJECT",
+              type: "object",
               properties: {
                 name: {
-                  type: "STRING",
+                  type: "string",
                   description: "Specific food item"
                 },
                 quantity: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Precise amount"
                 },
                 unit: {
-                  type: "STRING",
+                  type: "string",
                   enum: ["g", "ml", "piece", "cup", "tbsp", "tsp", "oz"],
                   description: "Unit of measurement"
                 },
                 calories: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Accurate calories"
                 },
                 protein: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Grams of protein"
                 },
                 carbohydrates: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Grams of carbohydrates"
                 },
                 fat: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Grams of fat"
                 }
               },
@@ -158,19 +158,19 @@ export const NUTRITION_SCHEMA = {
             }
           },
           totalCalories: {
-            type: "NUMBER",
+            type: "number",
             description: "Total calories for the meal"
           },
           totalProtein: {
-            type: "NUMBER",
+            type: "number",
             description: "Total protein for the meal"
           },
           totalCarbohydrates: {
-            type: "NUMBER",
+            type: "number",
             description: "Total carbohydrates for the meal"
           },
           totalFat: {
-            type: "NUMBER",
+            type: "number",
             description: "Total fat for the meal"
           }
         },
@@ -179,20 +179,20 @@ export const NUTRITION_SCHEMA = {
       }
     },
     dailyTotals: {
-      type: "OBJECT",
+      type: "object",
       properties: {
-        calories: { type: "NUMBER" },
-        protein: { type: "NUMBER" },
-        carbohydrates: { type: "NUMBER" },
-        fat: { type: "NUMBER" }
+        calories: { type: "number" },
+        protein: { type: "number" },
+        carbohydrates: { type: "number" },
+        fat: { type: "number" }
       },
       required: ["calories", "protein", "carbohydrates", "fat"],
       propertyOrdering: ["calories", "protein", "carbohydrates", "fat"]
     },
     nutritionalInsights: {
-      type: "ARRAY",
+      type: "array",
       description: "Key nutritional insights and recommendations",
-      items: { type: "STRING" }
+      items: { type: "string" }
     }
   },
   required: ["meals", "dailyTotals", "nutritionalInsights"],
@@ -205,92 +205,92 @@ export const NUTRITION_SCHEMA = {
 
 // ULTRA-SIMPLIFIED schema for testing JSON parsing - minimal data to avoid truncation
 export const WEEKLY_MEAL_PLAN_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     planTitle: {
-      type: "STRING",
+      type: "string",
       description: "Personalized weekly meal plan title"
     },
     planDescription: {
-      type: "STRING",
+      type: "string",
       description: "Brief description of the meal plan approach"
     },
     totalEstimatedCalories: {
-      type: "NUMBER",
+      type: "number",
       description: "Total estimated calories for the week"
     },
     dietaryRestrictions: {
-      type: "ARRAY",
+      type: "array",
       description: "List of dietary restrictions considered",
-      items: { type: "STRING" }
+      items: { type: "string" }
     },
     weeklyGoals: {
-      type: "ARRAY",
+      type: "array",
       description: "Weekly nutrition and fitness goals",
-      items: { type: "STRING" }
+      items: { type: "string" }
     },
     meals: {
-      type: "ARRAY",
+      type: "array",
       description: "Complete 7-day meal plan with breakfast, lunch, and dinner for each day",
       items: {
-        type: "OBJECT",
+        type: "object",
         properties: {
           dayOfWeek: {
-            type: "STRING",
+            type: "string",
             enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
             description: "Day of the week"
           },
           type: {
-            type: "STRING",
+            type: "string",
             enum: ["breakfast", "lunch", "dinner", "snack"],
             description: "Meal type"
           },
           name: {
-            type: "STRING",
+            type: "string",
             description: "Meal name"
           },
           description: {
-            type: "STRING",
+            type: "string",
             description: "Meal description and benefits"
           },
           items: {
-            type: "ARRAY",
+            type: "array",
             description: "Food items in the meal with complete nutritional information",
             items: {
-              type: "OBJECT",
+              type: "object",
               properties: {
                 name: {
-                  type: "STRING",
+                  type: "string",
                   description: "Food item name"
                 },
                 quantity: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Quantity amount"
                 },
                 unit: {
-                  type: "STRING",
+                  type: "string",
                   description: "Unit of measurement"
                 },
                 calories: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Calories for this item"
                 },
                 macros: {
-                  type: "OBJECT",
+                  type: "object",
                   properties: {
-                    protein: { type: "NUMBER" },
-                    carbohydrates: { type: "NUMBER" },
-                    fat: { type: "NUMBER" },
-                    fiber: { type: "NUMBER" }
+                    protein: { type: "number" },
+                    carbohydrates: { type: "number" },
+                    fat: { type: "number" },
+                    fiber: { type: "number" }
                   },
                   required: ["protein", "carbohydrates", "fat", "fiber"]
                 },
                 category: {
-                  type: "STRING",
+                  type: "string",
                   description: "Food category"
                 },
                 preparationTime: {
-                  type: "NUMBER",
+                  type: "number",
                   description: "Preparation time in minutes"
                 }
               },
@@ -299,32 +299,32 @@ export const WEEKLY_MEAL_PLAN_SCHEMA = {
             }
           },
           totalCalories: {
-            type: "NUMBER",
+            type: "number",
             description: "Total calories for the meal"
           },
           totalMacros: {
-            type: "OBJECT",
+            type: "object",
             properties: {
-              protein: { type: "NUMBER" },
-              carbohydrates: { type: "NUMBER" },
-              fat: { type: "NUMBER" },
-              fiber: { type: "NUMBER" }
+              protein: { type: "number" },
+              carbohydrates: { type: "number" },
+              fat: { type: "number" },
+              fiber: { type: "number" }
             },
             required: ["protein", "carbohydrates", "fat", "fiber"]
           },
           preparationTime: {
-            type: "NUMBER",
+            type: "number",
             description: "Total preparation time in minutes"
           },
           difficulty: {
-            type: "STRING",
+            type: "string",
             enum: ["easy", "medium", "hard"],
             description: "Cooking difficulty level"
           },
           tags: {
-            type: "ARRAY",
+            type: "array",
             description: "Meal tags",
-            items: { type: "STRING" }
+            items: { type: "string" }
           }
         },
         required: ["dayOfWeek", "type", "name", "description", "items", "totalCalories", "totalMacros", "preparationTime", "difficulty", "tags"],
@@ -341,34 +341,34 @@ export const WEEKLY_MEAL_PLAN_SCHEMA = {
 // ============================================================================
 
 export const MOTIVATIONAL_CONTENT_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     dailyTip: {
-      type: "STRING",
+      type: "string",
       description: "Practical fitness tip for the day"
     },
     encouragement: {
-      type: "STRING",
+      type: "string",
       description: "Personalized motivational message"
     },
     challenge: {
-      type: "OBJECT",
+      type: "object",
       description: "Daily or weekly challenge",
       properties: {
         title: {
-          type: "STRING",
+          type: "string",
           description: "Challenge name"
         },
         description: {
-          type: "STRING",
+          type: "string",
           description: "What the user needs to do"
         },
         reward: {
-          type: "STRING",
+          type: "string",
           description: "What they'll gain from completing it"
         },
         duration: {
-          type: "NUMBER",
+          type: "number",
           description: "Duration in days"
         }
       },
@@ -376,11 +376,11 @@ export const MOTIVATIONAL_CONTENT_SCHEMA = {
       propertyOrdering: ["title", "description", "reward", "duration"]
     },
     quote: {
-      type: "STRING",
+      type: "string",
       description: "Inspirational quote"
     },
     factOfTheDay: {
-      type: "STRING",
+      type: "string",
       description: "Interesting fitness or health fact"
     }
   },
@@ -393,38 +393,38 @@ export const MOTIVATIONAL_CONTENT_SCHEMA = {
 // ============================================================================
 
 export const FOOD_ANALYSIS_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     name: {
-      type: "STRING",
+      type: "string",
       description: "Identified food name"
     },
     category: {
-      type: "STRING",
+      type: "string",
       enum: ["protein", "carbohydrate", "vegetable", "fruit", "dairy", "fat", "beverage", "snack", "grain"],
       description: "Food category"
     },
     calories: {
-      type: "NUMBER",
+      type: "number",
       description: "Calories per serving"
     },
     macros: {
-      type: "OBJECT",
+      type: "object",
       properties: {
-        protein: { type: "NUMBER" },
-        carbohydrates: { type: "NUMBER" },
-        fat: { type: "NUMBER" },
-        fiber: { type: "NUMBER" }
+        protein: { type: "number" },
+        carbohydrates: { type: "number" },
+        fat: { type: "number" },
+        fiber: { type: "number" }
       },
       required: ["protein", "carbohydrates", "fat", "fiber"],
       propertyOrdering: ["protein", "carbohydrates", "fat", "fiber"]
     },
     servingSize: {
-      type: "NUMBER",
+      type: "number",
       description: "Standard serving size"
     },
     servingUnit: {
-      type: "STRING",
+      type: "string",
       enum: ["g", "ml", "piece", "cup", "tbsp", "tsp", "oz"],
       description: "Unit for serving size"
     }
@@ -438,20 +438,20 @@ export const FOOD_ANALYSIS_SCHEMA = {
 // ============================================================================
 
 export const PROGRESS_ANALYSIS_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
     insights: {
-      type: "ARRAY",
+      type: "array",
       description: "Key insights from progress analysis",
-      items: { type: "STRING" }
+      items: { type: "string" }
     },
     recommendations: {
-      type: "ARRAY",
+      type: "array",
       description: "Actionable recommendations for improvement",
-      items: { type: "STRING" }
+      items: { type: "string" }
     },
     motivationalMessage: {
-      type: "STRING",
+      type: "string",
       description: "Encouraging message based on progress"
     }
   },

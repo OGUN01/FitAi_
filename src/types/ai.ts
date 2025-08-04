@@ -1,6 +1,8 @@
 // AI-related TypeScript type definitions for FitAI
 
 import { PersonalInfo, FitnessGoals } from './user';
+import { Workout } from './workout';
+import { NutritionPlan } from './diet';
 
 // Re-export types from other modules that AI uses
 export type { 

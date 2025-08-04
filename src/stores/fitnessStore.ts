@@ -58,6 +58,8 @@ interface FitnessState {
   persistData: () => Promise<void>;
   loadData: () => Promise<void>;
   clearData: () => void;
+  clearOldWorkoutData: () => Promise<void>;
+  forceWorkoutRegeneration: () => void;
 }
 
 export const useFitnessStore = create<FitnessState>()(
@@ -79,8 +81,24 @@ export const useFitnessStore = create<FitnessState>()(
         try {
           console.log('💾 Saving weekly workout plan:', plan.planTitle);
           
+          // 🔍 Debug: Validate incoming plan data
+          console.log('🔍 Store Debug - Plan validation:');
+          console.log('  - Plan object:', plan ? '✅' : '❌');
+          console.log('  - Plan title:', plan?.planTitle || 'undefined');
+          console.log('  - Workouts array:', Array.isArray(plan?.workouts) ? '✅' : '❌');
+          console.log('  - Workouts count:', plan?.workouts?.length || 0);
+          
           // Save to local storage via Zustand persist first
+          console.log('🔍 Store Debug - Setting state...');
           set({ weeklyWorkoutPlan: plan });
+          
+          // 🔍 Debug: Verify state was set
+          const currentState = get();
+          console.log('🔍 Store Debug - State after set:');
+          console.log('  - State has plan:', currentState.weeklyWorkoutPlan ? '✅' : '❌');
+          console.log('  - State plan title:', currentState.weeklyWorkoutPlan?.planTitle || 'undefined');
+          console.log('  - State workouts count:', currentState.weeklyWorkoutPlan?.workouts?.length || 0);
+          
           console.log('✅ Plan saved to local storage');
           
           // Validate plan data
@@ -385,6 +403,41 @@ export const useFitnessStore = create<FitnessState>()(
           currentWorkoutSession: null,
           planError: null,
         });
+      },
+
+      clearOldWorkoutData: async () => {
+        try {
+          console.log('🧹 Clearing old workout data with descriptive exercise names...');
+          
+          // Clear local store data
+          get().clearData();
+          
+          // Clear database data
+          await crudOperations.clearAllData();
+          
+          // Clear AsyncStorage
+          const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+          await AsyncStorage.removeItem('fitness-storage');
+          
+          console.log('✅ Old workout data cleared successfully');
+          
+          // Set flag to force regeneration
+          get().forceWorkoutRegeneration();
+          
+        } catch (error) {
+          console.error('❌ Failed to clear old workout data:', error);
+          throw error;
+        }
+      },
+
+      forceWorkoutRegeneration: () => {
+        console.log('🔄 Forcing workout regeneration with new constraint system...');
+        set({
+          weeklyWorkoutPlan: null,
+          planError: null,
+          isGeneratingPlan: false,
+        });
+        console.log('✅ Ready for fresh workout generation with database IDs');
       },
     }),
     {

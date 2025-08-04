@@ -12,7 +12,7 @@ import { BodyAnalysisScreen, BodyAnalysis } from './BodyAnalysisScreen';
 import { ReviewScreen, OnboardingReviewData } from './ReviewScreen';
 import { PersonalInfo, FitnessGoals, RegisterCredentials } from '../../types/user';
 import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { useOnboardingIntegration } from '../../utils/integration';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserStore } from '../../stores/userStore';

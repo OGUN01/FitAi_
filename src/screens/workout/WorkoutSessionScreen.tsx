@@ -8,10 +8,13 @@ import {
   Alert,
   ScrollView,
   Animated,
+  Platform,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { DayWorkout } from '../../ai/weeklyContentGenerator';
 import { WorkoutTimer } from '../../components/fitness/WorkoutTimer';
+import { ExerciseGifPlayer } from '../../components/fitness/ExerciseGifPlayer';
+import { ExerciseInstructionModal } from '../../components/fitness/ExerciseInstructionModal';
 import completionTrackingService from '../../services/completionTracking';
 
 interface WorkoutSessionScreenProps {
@@ -30,11 +33,44 @@ interface ExerciseProgress {
   isCompleted: boolean;
 }
 
+
 export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   route,
   navigation,
 }) => {
+  console.log(`🏋️ WORKOUT SESSION SCREEN: Initializing with:`, {
+    hasRoute: !!route,
+    hasParams: !!route?.params,
+    hasWorkout: !!route?.params?.workout,
+    hasSessionId: !!route?.params?.sessionId,
+    workoutTitle: route?.params?.workout?.title,
+    sessionId: route?.params?.sessionId
+  });
+
   const { workout, sessionId } = route.params;
+
+  // Safety check for required params
+  if (!workout) {
+    console.error(`🚨 WORKOUT SESSION ERROR: No workout provided`);
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error: No workout data provided</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!workout.exercises || workout.exercises.length === 0) {
+    console.error(`🚨 WORKOUT SESSION ERROR: No exercises in workout`);
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Error: No exercises found in workout</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   
   // State management
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -49,6 +85,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
   const [workoutStartTime] = useState(new Date());
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [showInstructionModal, setShowInstructionModal] = useState(false);
 
   const currentExercise = workout.exercises[currentExerciseIndex];
   const currentProgress = exerciseProgress[currentExerciseIndex];
@@ -143,9 +180,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   // Complete workout
   const completeWorkout = async () => {
+    console.log('🔥 CompleteWorkout called - starting completion process');
     const workoutDuration = Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000);
     
+    console.log(`⏱️  Workout duration: ${workoutDuration} minutes`);
+    console.log(`📊 Exercises completed: ${exerciseProgress.filter(ep => ep.isCompleted).length}/${totalExercises}`);
+    
     try {
+      console.log('📞 Calling completionTrackingService.completeWorkout...');
       // Mark workout as completed in the tracking service
       const success = await completionTrackingService.completeWorkout(workout.id, {
         sessionId,
@@ -155,7 +197,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         completedAt: new Date().toISOString(),
       });
       
+      console.log(`🎯 CompletionTrackingService returned: ${success}`);
+      
       if (success) {
+        console.log('✅ Success=true, showing completion alert...');
         Alert.alert(
           '🎉 Workout Complete!',
           `Great job! You completed "${workout.title}" in ${workoutDuration} minutes.\n\nCalories burned: ~${workout.estimatedCalories}\nExercises completed: ${exerciseProgress.filter(ep => ep.isCompleted).length}/${totalExercises}`,
@@ -163,50 +208,99 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             {
               text: 'View Progress',
               onPress: () => {
+                console.log('👀 User chose "View Progress"');
                 navigation.navigate('Progress');
               }
             },
             {
               text: 'Done',
-              onPress: () => navigation.goBack(),
+              onPress: () => {
+                console.log('✅ User chose "Done" - navigating back');
+                navigation.goBack();
+              },
               style: 'default'
             }
           ]
         );
+        console.log('🚨 Alert.alert called - waiting for user response');
       } else {
+        console.log('❌ Success=false, completion service failed');
         throw new Error('Failed to save workout completion');
       }
     } catch (error) {
-      console.error('Error completing workout:', error);
+      console.error('🚨 Error completing workout:', error);
+      console.log('📢 Showing fallback completion alert...');
       Alert.alert(
         'Workout Complete!',
         `Great job! You completed "${workout.title}" in ${workoutDuration} minutes.\n\nNote: Progress may not have been saved.`,
         [
           {
             text: 'Done',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              console.log('✅ User chose "Done" from fallback alert');
+              navigation.goBack();
+            },
           }
         ]
       );
+      console.log('🚨 Fallback Alert.alert called');
     }
   };
 
   // Exit workout
   const exitWorkout = async () => {
+    console.log('🚪 ExitWorkout called - user tapped X button');
     const completedExercises = exerciseProgress.filter(ep => ep.isCompleted).length;
     const hasProgress = completedExercises > 0;
     
+    console.log(`📊 Progress check: ${completedExercises}/${totalExercises} exercises completed`);
+    console.log(`🔄 Has progress: ${hasProgress}`);
+    
+    // For web platform, directly navigate back since Alert.alert doesn't work well
+    if (Platform.OS === 'web') {
+      console.log('🌐 Web platform detected - direct navigation');
+      if (hasProgress) {
+        try {
+          const progressPercentage = Math.round((completedExercises / totalExercises) * 100);
+          console.log(`📊 Saving progress: ${progressPercentage}%`);
+          await completionTrackingService.updateWorkoutProgress(
+            workout.id,
+            progressPercentage,
+            {
+              sessionId,
+              partialCompletion: true,
+              exitedAt: new Date().toISOString(),
+            }
+          );
+          console.log('✅ Progress saved successfully');
+        } catch (error) {
+          console.error('❌ Failed to save progress:', error);
+        }
+      }
+      console.log('🔙 Navigating back (web platform)');
+      navigation.goBack();
+      return;
+    }
+    
+    // For mobile platforms, use Alert.alert
     if (hasProgress) {
+      console.log('⚠️ Showing exit confirmation (with progress)...');
       Alert.alert(
         'Exit Workout?',
         `You've completed ${completedExercises}/${totalExercises} exercises. Your progress will be saved.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Cancel', 
+            style: 'cancel',
+            onPress: () => console.log('❌ User cancelled exit')
+          },
           { 
             text: 'Save & Exit', 
             onPress: async () => {
+              console.log('💾 User chose "Save & Exit"');
               try {
                 const progressPercentage = Math.round((completedExercises / totalExercises) * 100);
+                console.log(`📊 Saving progress: ${progressPercentage}%`);
                 await completionTrackingService.updateWorkoutProgress(
                   workout.id,
                   progressPercentage,
@@ -216,24 +310,46 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     exitedAt: new Date().toISOString(),
                   }
                 );
+                console.log('✅ Progress saved successfully');
               } catch (error) {
-                console.error('Failed to save progress:', error);
+                console.error('❌ Failed to save progress:', error);
               }
+              console.log('🔙 Navigating back');
               navigation.goBack();
             }
           }
         ]
       );
     } else {
+      console.log('⚠️ Showing exit confirmation (no progress)...');
       Alert.alert(
         'Exit Workout?',
         'Are you sure you want to exit? No progress has been made.',
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', style: 'destructive', onPress: () => navigation.goBack() }
+          { 
+            text: 'Cancel', 
+            style: 'cancel',
+            onPress: () => console.log('❌ User cancelled exit (no progress)')
+          },
+          { 
+            text: 'Exit', 
+            style: 'destructive', 
+            onPress: () => {
+              console.log('🚪 User chose "Exit" - navigating back');
+              navigation.goBack();
+            }
+          }
         ]
       );
     }
+    
+    // Add a fallback timeout for mobile platforms in case Alert doesn't work
+    setTimeout(() => {
+      console.log('⏰ Fallback: Navigating back after 2 seconds');
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    }, 2000);
   };
 
   const getExerciseName = (exerciseId: string) => {
@@ -246,7 +362,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={exitWorkout} style={styles.exitButton}>
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('🔴 Exit button pressed!');
+            exitWorkout();
+          }} 
+          style={styles.exitButton}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={styles.exitButtonText}>✕</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -279,11 +403,23 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       {/* Main Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.exerciseContainer, { opacity: fadeAnim }]}>
+          {/* Exercise Visual Demonstration */}
+          <ExerciseGifPlayer
+            exerciseId={currentExercise.exerciseId}
+            exerciseName={currentExercise.name}
+            height={250}
+            width={300}
+            showTitle={false}
+            showInstructions={true}
+            onInstructionsPress={() => setShowInstructionModal(true)}
+            style={styles.exerciseGifPlayer}
+          />
+
           {/* Current Exercise */}
           <Card style={styles.exerciseCard} variant="elevated">
             <View style={styles.exerciseHeader}>
               <Text style={styles.exerciseName}>
-                {getExerciseName(currentExercise.exerciseId)}
+                {currentExercise.name || getExerciseName(currentExercise.exerciseId)}
               </Text>
               <View style={styles.exerciseDetails}>
                 <Text style={styles.exerciseDetailText}>
@@ -332,6 +468,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         </Animated.View>
       </ScrollView>
 
+      {/* Exercise Instruction Modal */}
+      <ExerciseInstructionModal
+        isVisible={showInstructionModal}
+        onClose={() => setShowInstructionModal(false)}
+        exerciseId={currentExercise.exerciseId}
+        exerciseName={currentExercise.name}
+      />
+
       {/* Navigation Buttons */}
       <View style={styles.navigationContainer}>
         <Button
@@ -371,12 +515,14 @@ const styles = StyleSheet.create({
   },
 
   exitButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: THEME.colors.error + '20',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: THEME.colors.error + '40',
   },
 
   exitButtonText: {
@@ -433,6 +579,12 @@ const styles = StyleSheet.create({
 
   exerciseContainer: {
     marginTop: THEME.spacing.lg,
+    alignItems: 'center',
+  },
+
+  exerciseGifPlayer: {
+    marginBottom: THEME.spacing.lg,
+    alignSelf: 'center',
   },
 
   exerciseCard: {

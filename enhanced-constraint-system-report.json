@@ -1,0 +1,89 @@
+{
+  "tests": [
+    {
+      "name": "Strict Exercise ID Descriptions Added",
+      "passed": true,
+      "error": "Missing strict descriptions"
+    },
+    {
+      "name": "Pattern Validation Added",
+      "passed": true,
+      "error": "Missing pattern validation"
+    },
+    {
+      "name": "Correct ID Examples Provided",
+      "passed": true,
+      "error": "Missing correct ID examples"
+    },
+    {
+      "name": "Prohibits Descriptive Names",
+      "passed": true,
+      "error": "Missing descriptive name prohibition"
+    },
+    {
+      "name": "Validation Methods Added",
+      "passed": true,
+      "error": "Missing validation methods"
+    },
+    {
+      "name": "Validation Error Handling Added",
+      "passed": true,
+      "error": "Missing validation error handling"
+    },
+    {
+      "name": "Database ID Checking Added",
+      "passed": true,
+      "error": "Missing database ID checking"
+    },
+    {
+      "name": "Retry Loop Added",
+      "passed": true,
+      "error": "Missing retry loop"
+    },
+    {
+      "name": "Stricter Prompts on Retry",
+      "passed": true,
+      "error": "Missing stricter prompts"
+    },
+    {
+      "name": "Temperature Adjustment Added",
+      "passed": true,
+      "error": "Missing temperature adjustment"
+    },
+    {
+      "name": "Final Attempt Warnings Added",
+      "passed": true,
+      "error": "Missing final attempt warnings"
+    },
+    {
+      "name": "Pattern Accepts Valid IDs",
+      "passed": true,
+      "error": "Only 5/5 valid IDs accepted"
+    },
+    {
+      "name": "Pattern Rejects Invalid IDs",
+      "passed": false,
+      "error": "Only 5/6 invalid IDs rejected"
+    },
+    {
+      "name": "Enhanced Constraint Prompts Added",
+      "passed": true,
+      "error": "Missing enhanced prompts"
+    },
+    {
+      "name": "Prompt Examples Added",
+      "passed": true,
+      "error": "Missing prompt examples"
+    },
+    {
+      "name": "Rejection Warnings Added",
+      "passed": true,
+      "error": "Missing rejection warnings"
+    }
+  ],
+  "summary": {
+    "total": 16,
+    "passed": 15,
+    "failed": 1
+  }
+}

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 
 interface LoadingSpinnerProps {
   size?: 'small' | 'large';

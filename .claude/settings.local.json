@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(rmdir:*)",
@@ -42,7 +43,31 @@
       "Bash(EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0:8082 npx expo start --port 8082)",
       "Bash(del:*)",
       "Bash(grep:*)",
-      "Bash(npm run build:preview:*)"
+      "Bash(npm run build:preview:*)",
+      "WebFetch(domain:v1.exercisedb.dev)",
+      "WebFetch(domain:exercisedata.vercel.app)",
+      "Bash(curl:*)",
+      "Bash(timeout 30s npx expo start --clear --no-dev --minify)",
+      "Bash(timeout 5 npx expo start --web --port 8085)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npm ci:*)",
+      "Bash(timeout 30 npm start)",
+      "Bash(npx eas build:*)",
+      "Bash(timeout 20 npm start -- --port 8085)",
+      "Bash(timeout 15 npm start -- --port 8086)",
+      "Bash(timeout 10 npm start:*)",
+      "Bash(npx kill-port:*)",
+      "WebFetch(domain:exercisedb-api.vercel.app)",
+      "mcp__supabase__get_project_url",
+      "WebFetch(domain:www.exercisedb.dev)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(echo:*)",
+      "Bash(__NEW_LINE__ echo \"\")",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   },

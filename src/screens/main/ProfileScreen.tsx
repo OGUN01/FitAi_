@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Button, THEME } from '../../components/ui';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
 import { useUser, useUserStats } from '../../hooks/useUser';
 import { useDashboardIntegration } from '../../utils/integration';

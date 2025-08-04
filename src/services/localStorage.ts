@@ -113,7 +113,7 @@ const CryptoUtils = {
 // CONSTANTS
 // ============================================================================
 
-const STORAGE_VERSION = '1.0.0';
+const STORAGE_VERSION = '0.1.5';
 const STORAGE_KEY_PREFIX = '@fitai_local_';
 const ENCRYPTION_CONFIG: EncryptionConfig = {
   algorithm: 'AES-256-GCM',

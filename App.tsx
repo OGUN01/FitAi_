@@ -6,12 +6,15 @@ import { OnboardingFlow } from './src/screens/onboarding/OnboardingFlow';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
 import { PersonalInfo, FitnessGoals } from './src/types/user';
 import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
-import { ResponsiveTheme } from './src/utils/responsiveTheme';
+import { THEME } from './src/utils/constants';
+import { useResponsiveTheme } from './src/hooks/useResponsiveTheme';
 import { rf, rp } from './src/utils/responsive';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
 import { useUser } from './src/hooks/useUser';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { googleAuthService } from './src/services/googleAuth';
+import { migrationService } from './src/services/migrationService';
 
 export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
@@ -20,6 +23,7 @@ export default function App() {
 
   const { user, isLoading, isInitialized, isGuestMode } = useAuth();
   const { getCompleteProfile, isProfileComplete } = useUser();
+  const responsiveTheme = useResponsiveTheme();
 
   // Determine which onboarding step to start from based on existing data
   const determineStartingStep = (profile: any) => {
@@ -65,9 +69,13 @@ export default function App() {
       try {
         console.log('🚀 FitAI: Starting app initialization...');
         await initializeBackend();
-        console.log('✅ FitAI: Backend initialization completed');
+        // Initialize Google Auth
+        await googleAuthService.configure();
+        // Run data migrations
+        await migrationService.runMigrations();
+        console.log('✅ FitAI: Backend, Google Auth, and migrations completed');
       } catch (error) {
-        console.error('❌ FitAI: Backend initialization failed:', error);
+        console.error('❌ FitAI: App initialization failed:', error);
         // Don't throw here, let the app continue with limited functionality
       }
     };
@@ -160,10 +168,15 @@ export default function App() {
   if (!isInitialized || isLoading) {
     console.log('🔄 App: Showing loading screen', { isInitialized, isLoading });
     return (
-      <View style={styles.loadingContainer}>
-        <StatusBar style="light" backgroundColor={ResponsiveTheme.colors.background} />
-        <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-        <Text style={styles.loadingText}>Initializing FitAI...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: THEME.colors.background }]}>
+        <StatusBar style="light" backgroundColor={THEME.colors.background} />
+        <ActivityIndicator size="large" color={THEME.colors.primary} />
+        <Text style={[styles.loadingText, { 
+          color: THEME.colors.text,
+          fontSize: rf(16),
+          marginTop: rp(16),
+          fontWeight: THEME.fontWeight.medium as any
+        }]}>Initializing FitAI...</Text>
       </View>
     );
   }
@@ -173,8 +186,8 @@ export default function App() {
   return (
     // <SafeAreaProvider>
       <ErrorBoundary>
-        <View style={styles.container}>
-          <StatusBar style="light" backgroundColor={ResponsiveTheme.colors.background} />
+        <View style={[styles.container, { backgroundColor: responsiveTheme.colors.background }]}>
+          <StatusBar style="light" backgroundColor={responsiveTheme.colors.background} />
 
           {isOnboardingComplete ? (
             <MainNavigation />
@@ -193,18 +206,15 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    // backgroundColor set dynamically to prevent module-level crash
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
+    // backgroundColor and other responsive styles set dynamically
   },
   loadingText: {
-    color: ResponsiveTheme.colors.text,
-    fontSize: rf(16),
-    marginTop: rp(16),
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    // All responsive styles set dynamically to prevent module-level crash
   },
 });

@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, Card, THEME } from '../../components/ui';
 import { PersonalInfo } from '../../types/user';
 import { useEditContext, useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';

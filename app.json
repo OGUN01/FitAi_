@@ -2,10 +2,9 @@
   "expo": {
     "name": "FitAI - AI Fitness Coach",
     "slug": "FitAI",
-    "version": "0.1.0",
+    "version": "0.1.7",
     "owner": "harsh9887",
     "description": "Your personal AI-powered fitness coach with workout plans, nutrition guidance, and progress tracking.",
-    "privacy": "public",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,7 +16,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "bundleIdentifier": "com.fitai.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,10 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.fitai.app",
-      "versionCode": 3,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "minSdkVersion": 21,
+      "versionCode": 6,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
@@ -37,9 +35,8 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ],
-      "usesCleartextTraffic": false,
       "allowBackup": false,
-      "networkSecurityConfig": "./android-network-security-config.xml"
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",

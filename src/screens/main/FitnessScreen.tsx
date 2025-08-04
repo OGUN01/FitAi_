@@ -9,8 +9,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Button, THEME } from '../../components/ui';
+import { CustomDialog, WorkoutStartDialog } from '../../components/ui/CustomDialog';
 import { WeeklyCalendar } from '../../components/fitness/WeeklyCalendar';
 import { DayWorkoutView } from '../../components/fitness/DayWorkoutView';
 import { aiService } from '../../ai';
@@ -36,6 +37,10 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const [weekOffset, setWeekOffset] = useState(0);
   const [forceUpdate, setForceUpdate] = useState<number>(0); // Force re-render
   const [fadeAnim] = useState(new Animated.Value(1));
+  const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<DayWorkout | null>(null);
+  const [showGenerationSuccessDialog, setShowGenerationSuccessDialog] = useState(false);
+  const [generationSuccessData, setGenerationSuccessData] = useState<{ planTitle: string; workoutCount: number; duration: string } | null>(null);
 
   // Hooks
   const { user, isAuthenticated } = useAuth();
@@ -155,9 +160,50 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         console.log(`🔍 Workouts count: ${response.data.workouts?.length || 0}`);
         console.log(`🔍 Rest days: ${response.data.restDays?.join(', ') || 'none'}`);
 
-        // Save to store and database
-        await saveWeeklyWorkoutPlan(response.data);
-        setForceUpdate(prev => prev + 1); // Force re-render
+        // 🔍 Debug: Check data structure before saving
+        console.log('🔍 Debug - Data structure validation:');
+        console.log('  - planTitle:', response.data.planTitle ? '✅' : '❌');
+        console.log('  - workouts array:', Array.isArray(response.data.workouts) ? '✅' : '❌');
+        console.log('  - workouts length:', response.data.workouts?.length || 0);
+        console.log('  - first workout:', response.data.workouts?.[0] ? '✅' : '❌');
+        if (response.data.workouts?.[0]) {
+          console.log('  - first workout dayOfWeek:', response.data.workouts[0].dayOfWeek);
+          console.log('  - first workout exercises:', response.data.workouts[0].exercises?.length || 0);
+        }
+
+        // ✅ CRITICAL FIX: Set state immediately and verify it takes effect
+        console.log('🔍 Debug - Setting workout plan state immediately...');
+        setWeeklyWorkoutPlan(response.data);
+        
+        // Force immediate re-render to ensure UI updates
+        setForceUpdate(prev => prev + 1);
+        
+        // Verify state was set correctly
+        console.log('🔍 Debug - State set, verifying...', {
+          planTitle: response.data.planTitle,
+          workoutsCount: response.data.workouts?.length,
+          firstWorkout: response.data.workouts?.[0]?.title
+        });
+        
+        // Save to store and database (async, don't block UI)
+        console.log('🔍 Debug - Saving to store/database...');
+        try {
+          await saveWeeklyWorkoutPlan(response.data);
+          console.log('✅ Debug - Save completed successfully');
+        } catch (saveError) {
+          console.error('❌ Debug - Save failed (but UI state is set):', saveError);
+        }
+        
+        // Final verification with timeout to check React state update
+        setTimeout(() => {
+          const currentState = useFitnessStore.getState().weeklyWorkoutPlan;
+          console.log('🔍 Final State Check:', {
+            reactState: weeklyPlan ? 'Present' : 'Null',
+            zustandState: currentState ? 'Present' : 'Null',
+            workoutsInState: weeklyPlan?.workouts?.length || 0
+          });
+        }, 200);
+        
         console.log(`🔍 Workout plan saved to store and database`);
 
         // Also save individual workouts to legacy system for compatibility
@@ -219,24 +265,30 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       };
       await startWorkoutSession(workoutData);
 
-      Alert.alert(
-        '🎯 Workout Started!',
-        `Starting "${workout.title}". Ready to begin your workout session?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Begin Workout',
-            onPress: () => {
-              // Navigate to workout session screen
-              navigation.navigate('WorkoutSession', { workout, sessionId });
-            }
-          }
-        ]
-      );
+      // Show custom dialog instead of Alert
+      setSelectedWorkout({ ...workout, sessionId });
+      setShowWorkoutStartDialog(true);
     } catch (error) {
       console.error('Error starting workout:', error);
       Alert.alert('Error', 'Failed to start workout. Please try again.');
     }
+  };
+
+  // Handle workout start confirmation
+  const handleWorkoutStartConfirm = () => {
+    if (selectedWorkout) {
+      setShowWorkoutStartDialog(false);
+      navigation.navigate('WorkoutSession', { 
+        workout: selectedWorkout, 
+        sessionId: (selectedWorkout as any).sessionId 
+      });
+    }
+  };
+
+  // Handle workout start cancel
+  const handleWorkoutStartCancel = () => {
+    setShowWorkoutStartDialog(false);
+    setSelectedWorkout(null);
   };
 
   // Handle viewing workout details
@@ -280,6 +332,25 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           </Text>
         </View>
       )}
+
+      {/* Debug: Track UI rendering state with detailed info */}
+      {(() => {
+        const hasValidPlan = weeklyPlan && weeklyPlan.workouts && weeklyPlan.workouts.length > 0;
+        if (!hasValidPlan) {
+          console.log('🔍 UI Render: No valid workout plan detected', {
+            weeklyPlan: weeklyPlan ? 'exists' : 'null',
+            workouts: weeklyPlan?.workouts ? `array with ${weeklyPlan.workouts.length} items` : 'missing',
+            forceUpdateCount: forceUpdate
+          });
+        } else {
+          console.log('✅ UI Render: Valid workout plan detected', {
+            planTitle: weeklyPlan.planTitle,
+            workoutCount: weeklyPlan.workouts.length,
+            forceUpdateCount: forceUpdate
+          });
+        }
+        return null;
+      })()}
 
       {/* Weekly Calendar */}
       {weeklyPlan && weeklyPlan.workouts && weeklyPlan.workouts.length > 0 && (
@@ -334,29 +405,48 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         )}
       </Animated.View>
 
-      {/* Plan Summary */}
+      {/* Compact Plan Summary */}
       {weeklyPlan && (
-        <View style={styles.planSummary}>
-          <Text style={styles.planTitle}>{weeklyPlan.planTitle}</Text>
-          <Text style={styles.planDescription}>{weeklyPlan.planDescription}</Text>
-          <View style={styles.planStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{weeklyPlan.workouts.length}</Text>
-              <Text style={styles.statLabel}>Workouts</Text>
+        <View style={styles.compactPlanSummary}>
+          <View style={styles.planHeader}>
+            <View style={styles.planTitleContainer}>
+              <Text style={styles.planTitle} numberOfLines={1}>
+                {weeklyPlan.planTitle}
+              </Text>
+              <Text style={styles.planDescription} numberOfLines={1}>
+                {weeklyPlan.planDescription}
+              </Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+          </View>
+          
+          <View style={styles.horizontalStats}>
+            <View style={styles.compactStatItem}>
+              <Text style={styles.compactStatValue}>{weeklyPlan.workouts.length}</Text>
+              <Text style={styles.compactStatLabel}>Workouts</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.compactStatItem}>
+              <Text style={styles.compactStatValue}>
                 {Math.round(weeklyPlan.totalEstimatedCalories)}
               </Text>
-              <Text style={styles.statLabel}>Total Calories</Text>
+              <Text style={styles.compactStatLabel}>Total Calories</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{weeklyPlan.restDays.length}</Text>
-              <Text style={styles.statLabel}>Rest Days</Text>
+            <View style={styles.statDivider} />
+            <View style={styles.compactStatItem}>
+              <Text style={styles.compactStatValue}>{weeklyPlan.restDays.length}</Text>
+              <Text style={styles.compactStatLabel}>Rest Days</Text>
             </View>
           </View>
         </View>
       )}
+
+      {/* Custom Dialogs */}
+      <WorkoutStartDialog
+        visible={showWorkoutStartDialog}
+        workoutTitle={selectedWorkout?.title || ''}
+        onCancel={handleWorkoutStartCancel}
+        onConfirm={handleWorkoutStartConfirm}
+      />
     </SafeAreaView>
   );
 };
@@ -446,15 +536,25 @@ const styles = StyleSheet.create({
     minWidth: rw(200),
   },
   
-  planSummary: {
+  // Compact Plan Summary Styles
+  compactPlanSummary: {
     backgroundColor: ResponsiveTheme.colors.surface,
-    padding: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  planHeader: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  planTitleContainer: {
+    flex: 1,
   },
   
   planTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
@@ -463,8 +563,47 @@ const styles = StyleSheet.create({
   planDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
+  },
+
+  horizontalStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingTop: ResponsiveTheme.spacing.sm,
+  },
+
+  compactStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  compactStatValue: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs / 2,
+  },
+
+  compactStatLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: ResponsiveTheme.colors.border,
+    marginHorizontal: ResponsiveTheme.spacing.sm,
+  },
+
+  // Legacy styles (keeping for compatibility)
+  planSummary: {
+    backgroundColor: ResponsiveTheme.colors.surface,
+    padding: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
   },
   
   planStats: {

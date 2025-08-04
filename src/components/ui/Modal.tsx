@@ -9,9 +9,10 @@ import {
 } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
+// const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface ModalProps {
   visible: boolean;
@@ -144,8 +145,8 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     padding: ResponsiveTheme.spacing.lg,
-    maxWidth: screenWidth - (ResponsiveTheme.spacing.lg * 2),
-    maxHeight: screenHeight * 0.8,
+    width: '90%',  // Use percentage instead of screenWidth calculation
+    maxHeight: '80%',  // Use percentage instead of screenHeight calculation
     ...THEME.shadows.lg,
   },
   

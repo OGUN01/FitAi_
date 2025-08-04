@@ -1,7 +1,10 @@
 // AI-Powered Workout Generation Service for FitAI
+// Enhanced with constrained exercise generation for 100% visual coverage
 
 import { geminiService, PROMPT_TEMPLATES, formatUserProfileForAI } from './gemini';
 import { WORKOUT_SCHEMA } from './schemas';
+import { OPTIMIZED_SYSTEM_PROMPT, validateAndFixExerciseNames } from './constrainedWorkoutGeneration';
+import { exerciseValidator } from './exerciseValidationService';
 import {
   Workout,
   WorkoutPlan,
@@ -50,7 +53,13 @@ class WorkoutGeneratorService {
       const response = await geminiService.generateResponse<any>(
         PROMPT_TEMPLATES.WORKOUT_GENERATION,
         variables,
-        WORKOUT_SCHEMA
+        WORKOUT_SCHEMA,
+        3, // maxRetries
+        {
+          maxOutputTokens: 8192,
+          temperature: 0.7,
+          systemPrompt: OPTIMIZED_SYSTEM_PROMPT // 🎯 Apply constrained exercise generation
+        }
       );
 
       if (!response.success || !response.data) {
@@ -82,9 +91,18 @@ class WorkoutGeneratorService {
         createdAt: new Date().toISOString()
       };
 
+      // 🔍 Enhanced validation with comprehensive safety layers
+      const validationResult = exerciseValidator.validateWorkout(workout);
+      const validatedWorkout = validationResult.fixedWorkout;
+      
+      // Log validation for debugging
+      if (!validationResult.isValid) {
+        console.log('🔧 Workout auto-corrections applied:', validationResult.issues);
+      }
+
       return {
         success: true,
-        data: workout,
+        data: validatedWorkout, // ✅ Return validated workout with 100% visual coverage
         confidence: response.confidence,
         generationTime: response.generationTime,
         tokensUsed: response.tokensUsed
@@ -207,7 +225,17 @@ Adaptation Instructions: {adaptationInstructions}
 Please modify the original workout based on the user feedback while maintaining the same general structure and goals.
 `;
 
-      const response = await geminiService.generateResponse<any>(customPrompt, variables, WORKOUT_SCHEMA);
+      const response = await geminiService.generateResponse<any>(
+        customPrompt, 
+        variables, 
+        WORKOUT_SCHEMA,
+        3, // maxRetries
+        {
+          maxOutputTokens: 8192,
+          temperature: 0.7,
+          systemPrompt: OPTIMIZED_SYSTEM_PROMPT // 🎯 Apply constrained exercise generation
+        }
+      );
 
       if (!response.success || !response.data) {
         return response as AIResponse<Workout>;
@@ -226,9 +254,18 @@ Please modify the original workout based on the user feedback while maintaining 
         createdAt: new Date().toISOString()
       };
 
+      // 🔍 Enhanced validation for adapted workout
+      const adaptedValidationResult = exerciseValidator.validateWorkout(adaptedWorkout);
+      const validatedAdaptedWorkout = adaptedValidationResult.fixedWorkout;
+      
+      // Log validation for debugging
+      if (!adaptedValidationResult.isValid) {
+        console.log('🔧 Adapted workout auto-corrections applied:', adaptedValidationResult.issues);
+      }
+
       return {
         success: true,
-        data: adaptedWorkout,
+        data: validatedAdaptedWorkout, // ✅ Return validated adapted workout
         confidence: response.confidence,
         generationTime: response.generationTime
       };

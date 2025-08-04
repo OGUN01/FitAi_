@@ -188,6 +188,36 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     }
   }, [user?.id]);
 
+  // Validation function - moved before debouncedValidation to fix hoisting issue
+  const validateData = useCallback((data?: any): ValidationResult => {
+    if (!editSection) {
+      return { isValid: true, errors: [], warnings: [] };
+    }
+
+    const dataToValidate = data || currentData;
+    if (!dataToValidate || Object.keys(dataToValidate).length === 0) {
+      return { isValid: true, errors: [], warnings: [] }; // Allow empty data during editing
+    }
+
+    try {
+      switch (editSection) {
+        case 'personalInfo':
+          return profileValidator.validatePersonalInfo(dataToValidate);
+        case 'fitnessGoals':
+          return profileValidator.validateFitnessGoals(dataToValidate);
+        case 'dietPreferences':
+          return profileValidator.validateDietPreferences(dataToValidate);
+        case 'workoutPreferences':
+          return profileValidator.validateWorkoutPreferences(dataToValidate);
+        default:
+          return { isValid: true, errors: [], warnings: [] };
+      }
+    } catch (error) {
+      console.warn('Validation error:', error);
+      return { isValid: true, errors: [], warnings: [] }; // Don't block on validation errors
+    }
+  }, [editSection, currentData]);
+
   // Debounced validation to improve performance (increased delay)
   const debouncedValidation = useMemo(
     () => debounce((data: any) => {
@@ -330,34 +360,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     }
   }, [hasChanges, onEditCancel]);
 
-  const validateData = useCallback((data?: any): ValidationResult => {
-    if (!editSection) {
-      return { isValid: true, errors: [], warnings: [] };
-    }
-
-    const dataToValidate = data || currentData;
-    if (!dataToValidate || Object.keys(dataToValidate).length === 0) {
-      return { isValid: true, errors: [], warnings: [] }; // Allow empty data during editing
-    }
-
-    try {
-      switch (editSection) {
-        case 'personalInfo':
-          return profileValidator.validatePersonalInfo(dataToValidate);
-        case 'fitnessGoals':
-          return profileValidator.validateFitnessGoals(dataToValidate);
-        case 'dietPreferences':
-          return profileValidator.validateDietPreferences(dataToValidate);
-        case 'workoutPreferences':
-          return profileValidator.validateWorkoutPreferences(dataToValidate);
-        default:
-          return { isValid: true, errors: [], warnings: [] };
-      }
-    } catch (error) {
-      console.warn('Validation error:', error);
-      return { isValid: true, errors: [], warnings: [] }; // Don't block on validation errors
-    }
-  }, [editSection, currentData]);
 
   // ============================================================================
   // CONTEXT VALUE

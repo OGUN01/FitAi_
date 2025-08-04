@@ -1,10 +1,14 @@
 import { supabase } from './supabase';
 import { AuthResponse } from './auth';
 import { AuthUser } from '../types/user';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { Platform } from 'react-native';
+import * as AuthSession from 'expo-auth-session';
+import * as Crypto from 'expo-crypto';
 
 /**
  * Google Authentication Service
- * Handles Google Sign-In integration with Supabase
+ * Handles Google Sign-In integration with Supabase for React Native and Web
  */
 
 export interface GoogleSignInResult {
@@ -16,6 +20,7 @@ export interface GoogleSignInResult {
 
 class GoogleAuthService {
   private static instance: GoogleAuthService;
+  private isConfigured = false;
 
   private constructor() {}
 
@@ -27,42 +32,45 @@ class GoogleAuthService {
   }
 
   /**
-   * Sign in with Google using Supabase Auth
-   * This method will work with Expo's AuthSession for web/mobile
+   * Configure Google Sign-In
+   * Call this once during app initialization
+   */
+  async configure(): Promise<void> {
+    if (this.isConfigured) return;
+
+    try {
+      if (Platform.OS !== 'web') {
+        // Configure for mobile platforms (iOS/Android)
+        await GoogleSignin.configure({
+          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '', // You'll need to set this
+          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '', // You'll need to set this
+          offlineAccess: true,
+          hostedDomain: '',
+          forceCodeForRefreshToken: true,
+        });
+      }
+      this.isConfigured = true;
+      console.log('✅ Google Sign-In configured successfully');
+    } catch (error) {
+      console.error('❌ Google Sign-In configuration failed:', error);
+    }
+  }
+
+  /**
+   * Sign in with Google using native implementation
    */
   async signInWithGoogle(): Promise<GoogleSignInResult> {
     try {
       console.log('🔐 Starting Google Sign-In process...');
-
-      // For Expo/React Native, we'll use Supabase's OAuth flow
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: typeof window !== 'undefined'
-            ? `${window.location.origin}/auth/callback` // Web redirect
-            : 'fitai://auth/callback', // Deep link for mobile
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) {
-        console.error('❌ Google Sign-In error:', error);
-        return {
-          success: false,
-          error: error.message,
-        };
-      }
-
-      // The OAuth flow will redirect to the callback URL
-      // The actual user session will be handled by Supabase's auth state change
-      console.log('✅ Google OAuth flow initiated');
       
-      return {
-        success: true,
-      };
+      // Ensure configuration is done
+      await this.configure();
+
+      if (Platform.OS === 'web') {
+        return await this.signInWithGoogleWeb();
+      } else {
+        return await this.signInWithGoogleNative();
+      }
     } catch (error) {
       console.error('❌ Google Sign-In failed:', error);
       return {
@@ -73,7 +81,163 @@ class GoogleAuthService {
   }
 
   /**
-   * Handle Google OAuth callback
+   * Native Google Sign-In for iOS/Android
+   */
+  private async signInWithGoogleNative(): Promise<GoogleSignInResult> {
+    try {
+      // Check if device supports Google Play services
+      await GoogleSignin.hasPlayServices();
+
+      // Get user info from Google
+      const userInfo = await GoogleSignin.signIn();
+      console.log('✅ Google Sign-In successful:', userInfo.user.email);
+
+      // Get ID token for Supabase
+      const tokens = await GoogleSignin.getTokens();
+      
+      if (!tokens.idToken) {
+        throw new Error('No ID token received from Google');
+      }
+
+      // Sign in to Supabase with Google ID token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: tokens.idToken,
+      });
+
+      if (error) {
+        console.error('❌ Supabase Google Sign-In error:', error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      if (!data.user) {
+        return {
+          success: false,
+          error: 'No user data received from authentication',
+        };
+      }
+
+      const authUser: AuthUser = {
+        id: data.user.id,
+        email: data.user.email!,
+        isEmailVerified: true, // Google accounts are always verified
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      // Check if this is a new user
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+
+      const isNewUser = !profile;
+
+      if (isNewUser) {
+        // Create basic profile for new Google user
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email!,
+            name: userInfo.user.name || userInfo.user.givenName || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        if (profileError) {
+          console.warn('⚠️ Failed to create profile for Google user:', profileError);
+        }
+      }
+
+      console.log('✅ Google Sign-In completed successfully');
+      return {
+        success: true,
+        user: authUser,
+        isNewUser,
+      };
+
+    } catch (error: any) {
+      console.error('❌ Native Google Sign-In error:', error);
+      
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        return {
+          success: false,
+          error: 'Sign-in was cancelled',
+        };
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        return {
+          success: false,
+          error: 'Sign-in is already in progress',
+        };
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        return {
+          success: false,
+          error: 'Google Play services not available',
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Google Sign-In failed',
+      };
+    }
+  }
+
+  /**
+   * Web Google Sign-In using Expo AuthSession
+   */
+  private async signInWithGoogleWeb(): Promise<GoogleSignInResult> {
+    try {
+      // Generate random state for security
+      const state = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        Math.random().toString(),
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+
+      // Use Supabase OAuth for web
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: typeof window !== 'undefined' 
+            ? `${window.location.origin}/auth/callback`
+            : 'exp://localhost:8081/--/auth/callback',
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+            state: state,
+          },
+        },
+      });
+
+      if (error) {
+        console.error('❌ Web Google Sign-In error:', error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      // For web, the OAuth flow will handle the redirect
+      console.log('✅ Google OAuth flow initiated for web');
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error('❌ Web Google Sign-In failed:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Google Sign-In failed',
+      };
+    }
+  }
+
+  /**
+   * Handle Google OAuth callback (mainly for web)
    * This will be called when the OAuth flow completes
    */
   async handleGoogleCallback(url: string): Promise<GoogleSignInResult> {
@@ -102,13 +266,13 @@ class GoogleAuthService {
       const authUser: AuthUser = {
         id: user.id,
         email: user.email!,
-        isEmailVerified: user.email_confirmed_at !== null,
+        isEmailVerified: true, // Google accounts are always verified
         lastLoginAt: new Date().toISOString(),
       };
 
       // Check if this is a new user by looking for existing profile
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('id')
         .eq('id', user.id)
         .single();
@@ -118,15 +282,13 @@ class GoogleAuthService {
       if (isNewUser) {
         // Create profile for new Google user
         const { error: profileError } = await supabase
-          .from('profiles')
+          .from('user_profiles')
           .insert({
             id: user.id,
             email: user.email!,
             name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-            profile_picture: user.user_metadata?.avatar_url || null,
-            units: 'metric',
-            notifications_enabled: true,
-            dark_mode: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           });
 
         if (profileError) {
@@ -146,6 +308,21 @@ class GoogleAuthService {
         success: false,
         error: error instanceof Error ? error.message : 'OAuth callback failed',
       };
+    }
+  }
+
+  /**
+   * Sign out from Google
+   */
+  async signOut(): Promise<void> {
+    try {
+      if (Platform.OS !== 'web') {
+        // Sign out from Google on mobile
+        await GoogleSignin.signOut();
+      }
+      console.log('✅ Google Sign-Out successful');
+    } catch (error) {
+      console.error('❌ Google Sign-Out failed:', error);
     }
   }
 

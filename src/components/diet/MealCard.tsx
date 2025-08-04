@@ -65,11 +65,7 @@ export const MealCard: React.FC<MealCardProps> = ({
         </View>
       )}
       
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={onViewDetails}
-        activeOpacity={0.8}
-      >
+      <View style={styles.cardContent}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
@@ -164,8 +160,17 @@ export const MealCard: React.FC<MealCardProps> = ({
                 styles.primaryButton,
                 isCompleted && styles.completedButton
               ]}
-              onPress={() => onStartMeal(meal)}
+              onPress={() => {
+                console.log('🔴 MealCard: Start Meal button pressed for:', meal.name);
+                console.log('🔴 MealCard: onStartMeal function available:', !!onStartMeal);
+                if (onStartMeal) {
+                  onStartMeal(meal);
+                } else {
+                  console.error('❌ MealCard: onStartMeal function not provided');
+                }
+              }}
               activeOpacity={0.8}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={[
                 styles.actionButtonText,
@@ -177,7 +182,7 @@ export const MealCard: React.FC<MealCardProps> = ({
             </TouchableOpacity>
           )}
         </View>
-      </TouchableOpacity>
+      </View>
     </Card>
   );
 };

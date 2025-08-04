@@ -95,7 +95,7 @@ class NutritionDataService {
    */
   async initialize(): Promise<void> {
     try {
-      await crudOperationsService.initialize();
+      await crudOperations.initialize();
       console.log('Nutrition Data Service initialized with Track B integration');
     } catch (error) {
       console.error('Failed to initialize Nutrition Data Service:', error);
@@ -378,7 +378,7 @@ class NutritionDataService {
       };
 
       // Store using Track B's CRUD operations
-      await crudOperationsService.createMealLog(mealLog);
+      await crudOperations.createMealLog(mealLog);
 
       // Also create in Supabase for immediate access
       const { data, error } = await supabase
@@ -391,7 +391,7 @@ class NutritionDataService {
           total_protein: nutritionTotals.protein,
           total_carbs: nutritionTotals.carbs,
           total_fat: nutritionTotals.fat,
-          logged_at: new Date().toISOString(),
+          consumed_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -402,6 +402,40 @@ class NutritionDataService {
           success: false,
           error: error.message,
         };
+      }
+
+      // Create meal_foods entries
+      if (data && mealData.foods.length > 0) {
+        const mealFoodsData = await Promise.all(
+          mealData.foods.map(async (food) => {
+            // Get nutrition for this specific food and quantity
+            const { data: foodData } = await supabase
+              .from('foods')
+              .select('calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
+              .eq('id', food.food_id)
+              .single();
+
+            const multiplier = food.quantity_grams / 100;
+            return {
+              meal_id: data.id,
+              food_id: food.food_id,
+              quantity_grams: food.quantity_grams,
+              calories: foodData ? Math.round(foodData.calories_per_100g * multiplier) : 0,
+              protein: foodData ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10 : 0,
+              carbs: foodData ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10 : 0,
+              fat: foodData ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10 : 0,
+            };
+          })
+        );
+
+        const { error: mealFoodsError } = await supabase
+          .from('meal_foods')
+          .insert(mealFoodsData);
+
+        if (mealFoodsError) {
+          console.warn('Warning: Failed to create meal_foods entries:', mealFoodsError);
+          // Don't fail the entire operation for this
+        }
       }
 
       return {

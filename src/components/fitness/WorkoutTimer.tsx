@@ -140,26 +140,32 @@ export const WorkoutTimer: React.FC<WorkoutTimerProps> = ({
 
             {/* Controls */}
             <View style={styles.controls}>
-              <Button
-                title={isPaused ? "Resume" : "Pause"}
+              <TouchableOpacity
+                style={[styles.modernControlButton, styles.outlineButton]}
                 onPress={handlePauseResume}
-                variant="outline"
-                style={styles.controlButton}
-              />
+              >
+                <Text style={[styles.modernControlText, styles.outlineButtonText]}>
+                  {isPaused ? "Resume" : "Pause"}
+                </Text>
+              </TouchableOpacity>
               
-              <Button
-                title="Skip Rest"
+              <TouchableOpacity
+                style={[styles.modernControlButton, styles.primaryButton]}
                 onPress={onComplete}
-                variant="secondary"
-                style={styles.controlButton}
-              />
+              >
+                <Text style={[styles.modernControlText, styles.primaryButtonText]}>
+                  Skip Rest
+                </Text>
+              </TouchableOpacity>
               
-              <Button
-                title="Cancel"
+              <TouchableOpacity
+                style={[styles.modernControlButton, styles.outlineButton]}
                 onPress={onCancel}
-                variant="outline"
-                style={styles.controlButton}
-              />
+              >
+                <Text style={[styles.modernControlText, styles.outlineButtonText]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Quick Time Adjustments */}
@@ -286,10 +292,43 @@ const styles = StyleSheet.create({
   
   controls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     width: '100%',
     marginBottom: THEME.spacing.md,
     gap: THEME.spacing.sm,
+  },
+
+  modernControlButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: THEME.borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+  },
+
+  primaryButton: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+
+  outlineButton: {
+    backgroundColor: 'transparent',
+    borderColor: THEME.colors.border,
+  },
+
+  modernControlText: {
+    fontSize: THEME.fontSize.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
+  primaryButtonText: {
+    color: THEME.colors.surface,
+  },
+
+  outlineButtonText: {
+    color: THEME.colors.text,
   },
   
   controlButton: {

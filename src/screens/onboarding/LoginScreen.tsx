@@ -8,7 +8,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
@@ -204,13 +204,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </View>
 
           <Button
-            title="🔍 Continue with Google (Coming Soon)"
-            onPress={() => Alert.alert('Coming Soon', 'Google Sign-In will be available after OAuth configuration.')}
+            title="🔍 Continue with Google"
+            onPress={handleGoogleSignIn}
             variant="outline"
             size="lg"
             fullWidth
-            disabled={true}
-            style={[styles.googleButton, { opacity: 0.5 }]}
+            loading={isLoading}
+            style={styles.googleButton}
           />
 
           <Button

@@ -7,6 +7,13 @@ export {
   EXERCISE_GENERATION_SCHEMA
 } from './workoutSchema';
 
+// Food recognition and meal schemas
+export {
+  FOOD_RECOGNITION_SCHEMA,
+  MEAL_GENERATION_SCHEMA,
+  RECIPE_CREATION_SCHEMA
+} from './foodRecognitionSchema';
+
 // Legacy schemas (re-exported for backward compatibility)
 export {
   WORKOUT_SCHEMA,
@@ -19,3 +26,4 @@ export {
 
 // Re-export for convenience
 export * from './workoutSchema';
+export * from './foodRecognitionSchema';

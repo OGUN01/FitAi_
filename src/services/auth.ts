@@ -22,7 +22,21 @@ class AuthService {
   private static instance: AuthService;
   private currentSession: AuthSession | null = null;
 
-  private constructor() {}
+  private constructor() {
+    // Initialize Google Sign-In configuration
+    this.initializeGoogleAuth();
+  }
+
+  /**
+   * Initialize Google Authentication
+   */
+  private async initializeGoogleAuth(): Promise<void> {
+    try {
+      await googleAuthService.configure();
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Auth:', error);
+    }
+  }
 
   static getInstance(): AuthService {
     if (!AuthService.instance) {

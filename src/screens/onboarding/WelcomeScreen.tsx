@@ -8,10 +8,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Button, THEME } from '../../components/ui';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+// REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
+// const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface WelcomeScreenProps {
   onGetStarted: () => void;

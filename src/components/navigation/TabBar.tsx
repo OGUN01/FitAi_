@@ -8,9 +8,10 @@ import {
 } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { useResponsiveTheme } from '../../hooks/useResponsiveTheme';
 
-const { width: screenWidth } = Dimensions.get('window');
+// REMOVED: Module-level Dimensions.get() causes crash
+// const { width: screenWidth } = Dimensions.get('window');
 
 interface TabItem {
   key: string;
@@ -30,9 +31,25 @@ export const TabBar: React.FC<TabBarProps> = ({
   activeTab,
   onTabPress,
 }) => {
+  const responsiveTheme = useResponsiveTheme();
+  
   return (
-    <View style={styles.container}>
-      <View style={styles.tabBar}>
+    <View style={[
+      styles.container,
+      {
+        backgroundColor: responsiveTheme.colors.backgroundSecondary,
+        paddingBottom: rp(20),
+        borderTopWidth: 1,
+        borderTopColor: responsiveTheme.colors.border,
+      }
+    ]}>
+      <View style={[
+        styles.tabBar,
+        {
+          height: rh(60),
+          paddingHorizontal: responsiveTheme.spacing.sm,
+        }
+      ]}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           
@@ -41,26 +58,44 @@ export const TabBar: React.FC<TabBarProps> = ({
               key={tab.key}
               style={[
                 styles.tab,
-                isActive && styles.activeTab,
+                {
+                  paddingVertical: responsiveTheme.spacing.sm,
+                }
               ]}
               onPress={() => onTabPress(tab.key)}
               activeOpacity={0.7}
             >
               <View style={[
                 styles.iconContainer,
-                isActive && styles.activeIconContainer,
+                {
+                  marginBottom: rp(2),
+                }
               ]}>
                 {isActive && tab.activeIcon ? tab.activeIcon : tab.icon}
               </View>
               
               <Text style={[
                 styles.tabText,
-                isActive && styles.activeTabText,
+                {
+                  fontSize: responsiveTheme.fontSize.xs,
+                  fontWeight: responsiveTheme.fontWeight.medium as any,
+                  color: isActive ? responsiveTheme.colors.primary : responsiveTheme.colors.textMuted,
+                }
               ]}>
                 {tab.title}
               </Text>
               
-              {isActive && <View style={styles.activeIndicator} />}
+              {isActive && (
+                <View style={[
+                  styles.activeIndicator,
+                  {
+                    width: rw(24),
+                    height: rh(3),
+                    backgroundColor: responsiveTheme.colors.primary,
+                    borderRadius: responsiveTheme.borderRadius.full,
+                  }
+                ]} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -71,58 +106,36 @@ export const TabBar: React.FC<TabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingBottom: rp(20), // Safe area padding
-    borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
+    // All responsive styles moved to inline to prevent module-level crash
   },
   
   tabBar: {
     flexDirection: 'row',
-    height: rh(60),
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    // All responsive styles moved to inline
   },
   
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: ResponsiveTheme.spacing.sm,
     position: 'relative',
-  },
-  
-  activeTab: {
-    // Active tab styling handled by individual elements
+    // All responsive styles moved to inline
   },
   
   iconContainer: {
-    marginBottom: rp(2),
-  },
-  
-  activeIconContainer: {
-    // Active icon styling
+    // All responsive styles moved to inline
   },
   
   tabText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
-  },
-  
-  activeTabText: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    // All responsive styles moved to inline
   },
   
   activeIndicator: {
     position: 'absolute',
     top: 0,
-    width: rw(24),
-    height: rh(3),
-    backgroundColor: ResponsiveTheme.colors.primary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    // All responsive styles moved to inline
   },
 });

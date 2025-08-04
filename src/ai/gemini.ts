@@ -1,14 +1,40 @@
 // Google Gemini AI Integration Service for FitAI
+// Enhanced with API key rotation and food recognition support
 
 import { GoogleGenerativeAI, GenerativeModel, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { AIResponse } from '../types/ai';
+import * as FileSystem from 'expo-file-system';
+import { APIKeyRotator } from '../utils/apiKeyRotator';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+// API Key rotation support
+const GEMINI_KEYS = [
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_1,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_2,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_3,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_4,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_5,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_6,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_7,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_8,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_9,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_10,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_11,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_12,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_13,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_14,
+  process.env.EXPO_PUBLIC_GEMINI_KEY_15,
+].filter(Boolean);
+
+// Use the first available key or empty string
+const GEMINI_API_KEY = GEMINI_KEYS[0] || '';
 const MODEL_NAME = 'gemini-2.5-flash'; // Latest Gemini 2.5 Flash model
+
+console.log(`🔑 Available API keys: ${GEMINI_KEYS.length}`);
 
 // Log API key status for debugging (only first few characters for security)
 console.log('🔑 Gemini API Key Status:', GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET');
@@ -18,9 +44,19 @@ console.log('🤖 Using Latest Model:', MODEL_NAME);
 let genAI: GoogleGenerativeAI | null = null;
 let model: GenerativeModel | null = null;
 
+// Check API key on module load
+if (!GEMINI_API_KEY) {
+  console.error('🚨 CRITICAL: EXPO_PUBLIC_GEMINI_API_KEY is not set!');
+  console.error('  - Check your environment variables');
+  console.error('  - Make sure .env.local file exists with EXPO_PUBLIC_GEMINI_API_KEY');
+  console.error('  - Restart Metro bundler after adding environment variables');
+}
+
 const initializeGemini = () => {
   if (!GEMINI_API_KEY) {
-    console.warn('Gemini API key not found. AI features will be disabled.');
+    console.warn('❌ Gemini API key not found. AI features will be disabled.');
+    console.warn('  - Expected: EXPO_PUBLIC_GEMINI_API_KEY environment variable');
+    console.warn('  - Current value:', GEMINI_API_KEY || 'undefined');
     return false;
   }
 
@@ -214,15 +250,106 @@ Create motivational content including:
 `
 };
 
+/**
+ * Generate response with image support for food recognition
+ */
+export const generateResponseWithImage = async (
+  prompt: string,
+  imageUri: string,
+  options: {
+    schema?: any;
+    apiKey?: string;
+    temperature?: number;
+  } = {}
+): Promise<any> => {
+  try {
+    console.log('🖼️ Generating response with image...');
+    
+    const apiKey = options.apiKey || GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('No API key available');
+    }
+
+    // Initialize model with specific API key
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const modelInstance = genAI.getGenerativeModel({
+      model: MODEL_NAME,
+      generationConfig: {
+        temperature: options.temperature || 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+        responseMimeType: options.schema ? "application/json" : "text/plain",
+        responseSchema: options.schema
+      }
+    });
+
+    // Read image file
+    const imageData = await FileSystem.readAsStringAsync(imageUri, {
+      encoding: FileSystem.EncodingType.Base64
+    });
+
+    const imagePart = {
+      inlineData: {
+        data: imageData,
+        mimeType: 'image/jpeg'
+      }
+    };
+
+    // Generate response
+    const result = await modelInstance.generateContent([prompt, imagePart]);
+    const response = result.response;
+    const text = response.text();
+
+    console.log('✅ Image analysis completed');
+    
+    if (options.schema) {
+      // Google's OFFICIAL structured output approach - parse the JSON string
+      // This provides 100% accuracy with responseMimeType: "application/json" + responseSchema
+      try {
+        const structuredData = JSON.parse(text);
+        console.log('✅ Google OFFICIAL structured output parsed successfully');
+        return structuredData;
+      } catch (parseError) {
+        console.error('❌ Failed to parse Google structured output:', parseError);
+        throw new Error(`Invalid JSON from Google structured output: ${parseError}`);
+      }
+    }
+    
+    return text;
+
+  } catch (error) {
+    console.error('❌ Image generation failed:', error);
+    throw error;
+  }
+};
+
 // ============================================================================
 // CORE AI SERVICE
 // ============================================================================
 
 class GeminiService {
   private initialized: boolean = false;
+  private apiKeyRotator: APIKeyRotator;
 
   constructor() {
     this.initialized = initializeGemini();
+    this.apiKeyRotator = new APIKeyRotator();
+    
+    // Log rotation status on startup
+    setTimeout(() => {
+      try {
+        const status = this.getRotationStatus();
+        console.log(`🔄 API Key Rotation Status: ${status.totalKeys} total keys, ${status.availableKeys} available`);
+        if (status.totalKeys > 1) {
+          console.log('✅ Multi-key rotation enabled for workout generation');
+        } else {
+          console.log('⚠️ Only 1 API key configured - add EXPO_PUBLIC_GEMINI_KEY_1, KEY_2, etc. for rotation');
+        }
+      } catch (error) {
+        console.warn('Failed to check rotation status:', error);
+      }
+    }, 1000);
   }
 
   /**
@@ -259,6 +386,21 @@ class GeminiService {
     let totalTokensUsed = 0;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      // Try to get an available API key through rotation
+      let currentApiKey = GEMINI_API_KEY; // Default fallback
+      
+      try {
+        const rotatedKey = await this.apiKeyRotator.getAvailableKey();
+        if (rotatedKey) {
+          currentApiKey = rotatedKey;
+          console.log(`🔄 Using rotated API key (attempt ${attempt})`);
+        } else {
+          console.log(`⚠️ No rotated keys available, using main key (attempt ${attempt})`);
+        }
+      } catch (rotationError) {
+        console.warn('API key rotation failed, using main key:', rotationError);
+      }
+
       try {
         // Replace variables in prompt template with enhanced processing
         let prompt = promptTemplate;
@@ -293,8 +435,9 @@ class GeminiService {
           generationConfig.responseMimeType = "text/plain";
         }
 
-        // Always create fresh model instance with proper config for structured output
-        const modelInstance = genAI!.getGenerativeModel({
+        // Create fresh model instance with current API key
+        const currentGenAI = new GoogleGenerativeAI(currentApiKey);
+        const modelInstance = currentGenAI.getGenerativeModel({
           model: MODEL_NAME,
           generationConfig,
           safetySettings: [
@@ -317,7 +460,7 @@ class GeminiService {
           ],
         });
 
-        console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries}`);
+        console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries} (Key: ${currentApiKey.substring(0, 10)}...)`);
 
         // Generate content with enhanced error tracking
         const result = await modelInstance.generateContent(prompt);
@@ -337,9 +480,9 @@ class GeminiService {
         // Handle OFFICIAL structured output vs plain text
         if (schema) {
           // With OFFICIAL Gemini structured output (responseMimeType: "application/json" + responseSchema):
-          // - Gemini should return valid JSON that conforms to the schema
-          // - response.text() returns this JSON string
-          // - However, sometimes the response might be incomplete or malformed
+          // - Gemini returns structured JSON as a string via response.text()
+          // - We need to parse this JSON string to get the actual object
+          // - This provides 100% accuracy as per Google's official implementation
 
           // First, check if the response is empty or too short
           if (!text || text.trim().length === 0) {
@@ -348,58 +491,26 @@ class GeminiService {
             continue;
           }
 
-          // Clean the response text (remove any markdown formatting that might be present)
-          let cleanedText = text.trim();
-
-          // Remove markdown code blocks if present (sometimes Gemini adds these even with structured output)
-          if (cleanedText.startsWith('```json')) {
-            cleanedText = cleanedText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-          } else if (cleanedText.startsWith('```')) {
-            cleanedText = cleanedText.replace(/^```\s*/, '').replace(/\s*```$/, '');
-          }
-
-          // Try to parse the JSON
           try {
-            const structuredData = JSON.parse(cleanedText) as T;
-            console.log('✅ Structured output parsed successfully');
+            // Google's OFFICIAL structured output approach - parse the JSON string
+            // This is the correct way to use responseMimeType: "application/json" + responseSchema
+            const structuredData = JSON.parse(text) as T;
+            console.log('✅ Google OFFICIAL structured output parsed successfully');
+            console.log('🔍 Structured data type:', typeof structuredData);
+            
+            // Additional validation for workout plans
+            if (schema && (structuredData as any)?.workouts) {
+              console.log('🏋️ Workout plan validation:');
+              console.log('  - workouts property:', (structuredData as any).workouts ? '✅' : '❌');
+              console.log('  - workouts is array:', Array.isArray((structuredData as any).workouts) ? '✅' : '❌');
+              console.log('  - workouts count:', (structuredData as any).workouts?.length || 0);
+            }
+            
             return this.createSuccessResponse(structuredData, startTime, totalTokensUsed, text);
           } catch (parseError) {
-            // Log detailed error information for debugging
-            lastError = `JSON parse error in structured output: ${parseError}`;
-            console.error(`❌ JSON parse error on attempt ${attempt}:`, parseError);
-            console.error('Raw response length:', text.length);
-            console.error('Raw response preview:', text.substring(0, 200) + '...');
-            console.error('Cleaned response preview:', cleanedText.substring(0, 200) + '...');
-
-            // Check if response was truncated (common cause of malformed JSON)
-            if (!cleanedText.endsWith('}') && !cleanedText.endsWith(']')) {
-              console.error('⚠️ Response appears to be truncated - JSON doesn\'t end properly');
-              console.error('Last 100 characters:', cleanedText.slice(-100));
-            }
-
-            // Try to find where the JSON becomes invalid
-            try {
-              // Find the last valid JSON position
-              let validJson = '';
-              for (let i = cleanedText.length; i > 0; i--) {
-                try {
-                  validJson = cleanedText.substring(0, i);
-                  JSON.parse(validJson);
-                  console.error(`✅ JSON is valid up to character ${i} of ${cleanedText.length}`);
-                  break;
-                } catch (e) {
-                  // Continue searching
-                }
-              }
-            } catch (e) {
-              console.error('Could not find valid JSON portion');
-            }
-
-            // If this is the last attempt, provide more detailed error info
-            if (attempt === maxRetries) {
-              console.error('Full response text:', text);
-            }
-
+            lastError = `Failed to parse Google's structured JSON output: ${parseError}`;
+            console.warn(`⚠️ JSON parse error on attempt ${attempt}:`, parseError);
+            console.warn('Raw response:', text.substring(0, 200) + '...');
             continue;
           }
         } else {
@@ -408,16 +519,58 @@ class GeminiService {
         }
       } catch (error: any) {
         lastError = `Gemini 2.5 Flash generation failed: ${error.message || error}`;
-        console.warn(`Attempt ${attempt} - Generation error:`, error);
-
-        // Handle specific Gemini API errors
-        if (error.message?.includes('QUOTA_EXCEEDED')) {
+        
+        // Handle API key rotation errors
+        if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota') || error.message?.includes('429')) {
+          console.error(`🚫 Quota exceeded for key ${currentApiKey.substring(0, 10)}... - marking as blocked`);
+          
+          // Mark current key as blocked
+          try {
+            this.apiKeyRotator.handleAPIError(currentApiKey, error);
+          } catch (rotationError) {
+            console.warn('Failed to mark key as blocked:', rotationError);
+          }
+          
+          // Try to get another key immediately
+          try {
+            const nextKey = await this.apiKeyRotator.getNextAvailableKey();
+            if (nextKey && nextKey !== currentApiKey) {
+              console.log(`🔄 Switching to next available key for retry`);
+              continue; // Retry with new key
+            }
+          } catch (nextKeyError) {
+            console.warn('Failed to get next key:', nextKeyError);
+          }
+          
+          // If no other keys available, return quota error
+          console.error('🚨 ALL API KEYS QUOTA EXCEEDED! Solutions:');
+          console.error('  1. Wait for quota reset (usually midnight PST)');
+          console.error('  2. Add more EXPO_PUBLIC_GEMINI_KEY_X environment variables');
+          console.error('  3. Upgrade to a paid Google Cloud plan');
+          console.error('  4. Check usage at: https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com');
+          
           return {
             success: false,
-            error: 'API quota exceeded. Please check your usage limits.',
+            error: '🚨 Daily API quota exceeded on all available keys (250 requests/day per key on free tier). Please wait for reset or add more API keys.',
             generationTime: Date.now() - startTime
           };
         }
+        
+        // Enhanced error logging for debugging
+        console.error(`❌ Gemini API Error on attempt ${attempt}/${maxRetries}:`);
+        console.error('  - Error message:', error.message);
+        console.error('  - Error type:', error.constructor.name);
+        console.error('  - Error stack:', error.stack?.split('\n').slice(0, 3).join('\n'));
+        
+        // Log request details for debugging
+        console.error('📊 Request details:');
+        console.error('  - Prompt length:', prompt?.length || 0, 'characters');
+        console.error('  - Schema provided:', !!schema);
+        console.error('  - Schema size:', schema ? JSON.stringify(schema).length : 0, 'characters');
+        console.error('  - Temperature:', generationConfig.temperature);
+        console.error('  - Max tokens:', generationConfig.maxOutputTokens);
+        console.error('  - Current API key:', currentApiKey.substring(0, 10) + '...');
+        console.error('  - Rotation available:', this.apiKeyRotator ? 'Yes' : 'No');
 
         if (error.message?.includes('INVALID_API_KEY')) {
           return {
@@ -425,6 +578,13 @@ class GeminiService {
             error: 'Invalid API key. Please check your Gemini API key configuration.',
             generationTime: Date.now() - startTime
           };
+        }
+        
+        // Log specific schema validation errors
+        if (error.message?.includes('schema') || error.message?.includes('Schema')) {
+          console.error('🚨 Schema-related error detected!');
+          console.error('  - This suggests the schema is too complex or invalid');
+          console.error('  - Consider simplifying nested structures');
         }
       }
 
@@ -509,6 +669,33 @@ class GeminiService {
    */
   async testConnection(): Promise<AIResponse<string>> {
     return this.generateCustomContent('Respond with "AI connection successful" if you can read this message.');
+  }
+
+  /**
+   * Get API key rotation status
+   */
+  getRotationStatus(): {
+    totalKeys: number;
+    availableKeys: number;
+    rotationEnabled: boolean;
+    statistics: any;
+  } {
+    try {
+      const stats = this.apiKeyRotator.getUsageStatistics();
+      return {
+        totalKeys: stats.totalKeys,
+        availableKeys: stats.availableKeys,
+        rotationEnabled: true,
+        statistics: stats
+      };
+    } catch (error) {
+      return {
+        totalKeys: 0,
+        availableKeys: 0,
+        rotationEnabled: false,
+        statistics: null
+      };
+    }
   }
 }
 

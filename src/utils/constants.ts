@@ -3,13 +3,14 @@
 
 export const APP_CONFIG = {
   NAME: 'FitAI',
-  VERSION: '1.0.0',
+  VERSION: '0.1.6',
   API_TIMEOUT: 10000,
   MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
   SUPPORTED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
 };
 
 // Dark Cosmic Theme - Inspired by CultFit Design
+// Export with explicit type for better Metro bundler compatibility
 export const THEME = {
   colors: {
     // Primary Colors
@@ -85,12 +86,12 @@ export const THEME = {
   },
 
   fontWeight: {
-    light: '300' as const,
-    normal: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
-    extrabold: '800' as const,
+    light: '300',
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+    extrabold: '800',
   },
 
   shadows: {
@@ -108,6 +109,53 @@ export const THEME = {
     },
   },
 };
+
+// ============================================================================
+// RESPONSIVE THEME FUNCTIONS
+// ============================================================================
+
+// Create responsive theme function - SAFE: no module-level execution
+export const createResponsiveTheme = () => {
+  // Import responsive functions lazily to avoid circular dependency
+  const { rf, rp, rbr } = require('./responsive');
+  
+  return {
+    ...THEME,
+    
+    spacing: {
+      xs: rp(THEME.spacing.xs),
+      sm: rp(THEME.spacing.sm),
+      md: rp(THEME.spacing.md),
+      lg: rp(THEME.spacing.lg),
+      xl: rp(THEME.spacing.xl),
+      xxl: rp(THEME.spacing.xxl),
+    },
+    
+    borderRadius: {
+      sm: rbr(THEME.borderRadius.sm),
+      md: rbr(THEME.borderRadius.md),
+      lg: rbr(THEME.borderRadius.lg),
+      xl: rbr(THEME.borderRadius.xl),
+      xxl: rbr(THEME.borderRadius.xxl),
+      full: THEME.borderRadius.full,
+    },
+    
+    fontSize: {
+      xs: rf(THEME.fontSize.xs),
+      sm: rf(THEME.fontSize.sm),
+      md: rf(THEME.fontSize.md),
+      lg: rf(THEME.fontSize.lg),
+      xl: rf(THEME.fontSize.xl),
+      xxl: rf(THEME.fontSize.xxl),
+      xxxl: rf(THEME.fontSize.xxxl),
+    },
+  };
+};
+
+// CRITICAL FIX: Export ResponsiveTheme as base THEME to prevent import crashes
+// This prevents the "Cannot read property 'THEME' of undefined" error
+// Components should migrate to useResponsiveTheme hook for true responsive values
+export const ResponsiveTheme = THEME;
 
 export const STORAGE_KEYS = {
   USER_DATA: '@fitai_user_data',

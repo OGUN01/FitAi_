@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { nutritionDataService, Food, Meal, UserDietPreferences, NutritionGoals } from '../services/nutritionData';
 import { useAuth } from './useAuth';
 import useTrackBIntegration from './useTrackBIntegration';
+import { nutritionRefreshService } from '../services/nutritionRefreshService';
 
 interface UseNutritionDataReturn {
   // Foods
@@ -296,6 +297,19 @@ export const useNutritionData = (): UseNutritionDataReturn => {
       refreshAll();
     }
   }, [isAuthenticated, user?.id, trackB.integration.isInitialized, refreshAll]);
+
+  // Register with nutrition refresh service for automatic updates
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      const unsubscribe = nutritionRefreshService.onRefreshNeeded(refreshAll);
+      console.log('📡 Registered nutrition data hook with refresh service');
+      
+      return () => {
+        unsubscribe();
+        console.log('📡 Unregistered nutrition data hook from refresh service');
+      };
+    }
+  }, [isAuthenticated, user?.id, refreshAll]);
 
   // Track B status
   const trackBStatus = {

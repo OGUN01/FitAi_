@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { Button, Card } from '../../components/ui';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { useDashboardIntegration } from '../../utils/integration';
 import { aiService } from '../../ai';

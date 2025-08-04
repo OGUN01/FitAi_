@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/responsiveTheme';
+import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Card, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { ImagePicker } from '../../components/advanced/ImagePicker';

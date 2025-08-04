@@ -7,6 +7,7 @@ export { PasswordInput } from './PasswordInput';
 export { Card } from './Card';
 export { Modal, BottomSheetModal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
+export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './CustomDialog';
 
 // Re-export theme for easy access
 export { THEME } from '../../utils/constants';

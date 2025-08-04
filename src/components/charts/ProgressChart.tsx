@@ -10,7 +10,8 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 import { THEME } from '../../utils/constants';
 
-const { width: screenWidth } = Dimensions.get('window');
+// REMOVED: Module-level Dimensions.get() causes crash
+// const { width: screenWidth } = Dimensions.get('window');
 
 interface ProgressDataPoint {
   date: string;
@@ -172,7 +173,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <LineChart
             data={chartData}
-            width={Math.max(screenWidth - 32, filteredData.length * 50)}
+            width={Math.max(350, filteredData.length * 50)} // Fixed min width
             height={220}
             chartConfig={chartConfig}
             bezier

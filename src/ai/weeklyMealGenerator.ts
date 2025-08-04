@@ -75,15 +75,40 @@ class WeeklyMealContentGenerator {
     dietPreferences: DietPreferences
   ): Promise<MealGenerationResponse> {
     try {
-      console.log('🍽️ Generating weekly meal plan with structured output...');
+      console.log('🍽️ Generating complete 7-day meal plan with structured output...');
+      
+      // Add timeout wrapper
+      const timeoutPromise = new Promise<MealGenerationResponse>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Meal generation timeout after 60 seconds'));
+        }, 60000); // 60 second timeout
+      });
 
-      const calorieTarget = this.calculateDailyCalories(personalInfo, fitnessGoals);
-      const macroTargets = this.calculateMacroTargets(calorieTarget, fitnessGoals);
+      const generationPromise = this.performMealGeneration(personalInfo, fitnessGoals, dietPreferences);
+      
+      // Race between generation and timeout
+      return await Promise.race([generationPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('❌ Error generating weekly meal plan:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate meal plan',
+      };
+    }
+  }
 
-      const prompt = this.buildMealGenerationPrompt(personalInfo, fitnessGoals, dietPreferences);
+  private async performMealGeneration(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    dietPreferences: DietPreferences
+  ): Promise<MealGenerationResponse> {
+    const calorieTarget = this.calculateDailyCalories(personalInfo, fitnessGoals);
+    const macroTargets = this.calculateMacroTargets(calorieTarget, fitnessGoals);
 
-      // Use structured response instead of JSON parsing
-      const aiResponse: AIResponse<any> = await geminiService.generateResponse(
+    const prompt = this.buildMealGenerationPrompt(personalInfo, fitnessGoals, dietPreferences);
+
+    // Use structured response with reduced complexity
+    const aiResponse: AIResponse<any> = await geminiService.generateResponse(
         prompt,
         {
           name: personalInfo.name,
@@ -106,9 +131,9 @@ class WeeklyMealContentGenerator {
           fatTarget: macroTargets.fat
         },
         WEEKLY_MEAL_PLAN_SCHEMA,
-        3, // maxRetries
+        2, // Reduced retries
         {
-          maxOutputTokens: 32768, // Increased token limit for complete 7-day meal plans
+          maxOutputTokens: 16384, // Reduced token limit for faster generation
           temperature: 0.7
         }
       );
@@ -178,13 +203,6 @@ class WeeklyMealContentGenerator {
         success: true,
         data: weeklyPlan,
       };
-    } catch (error) {
-      console.error('❌ Error generating weekly meal plan:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to generate meal plan',
-      };
-    }
   }
 
   private buildMealGenerationPrompt(
@@ -223,23 +241,23 @@ You are a professional nutritionist and meal planning expert. Create a comprehen
 - Fiber: 25-35g
 
 **Requirements:**
-1. Create meals for ALL 7 days (Monday through Sunday)
+1. Create meals for 7 days (Monday through Sunday) - complete weekly meal plan
 2. Include breakfast, lunch, and dinner for each day (21 total meals)
 3. Ensure meals align with diet preferences and restrictions
 4. Balance macronutrients according to fitness goals
 5. Consider preparation time and cooking skill level
-6. Include specific quantities and nutritional information
-7. Each meal should have realistic portions and accurate nutritional data
-8. Provide variety across the week with different meal options
+6. Include essential nutritional information (simplified)
+7. Each meal should be practical and realistic
+8. Focus on variety across the full week
 
 **Important Notes:**
 - Use the structured response format defined in the schema
-- Ensure all required fields are populated
+- Keep meal descriptions concise but informative
 - Make meals practical and achievable based on cooking skill level
-- Include variety and balanced nutrition throughout the week
-- Provide complete meal planning for optimal user experience
+- Ensure balanced nutrition across the full 7 days
+- Prioritize quick generation over excessive detail
 
-Generate a COMPLETE 7-day meal plan with breakfast, lunch, and dinner for each day (21 total meals).
+Generate a complete 7-day meal plan with breakfast, lunch, and dinner for each day (21 total meals).
 `;
   }
 

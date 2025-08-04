@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { crudOperationsService } from './crudOperations';
+import { crudOperations } from './crudOperations';
 import { dataManager } from './dataManager';
 import { AuthUser } from '../types/user';
 import { BodyMeasurement } from '../types/localData';
@@ -109,7 +109,7 @@ class ProgressDataService {
    */
   async initialize(): Promise<void> {
     try {
-      await crudOperationsService.initialize();
+      await crudOperations.initialize();
       console.log('Progress Data Service initialized with Track B integration');
     } catch (error) {
       console.error('Failed to initialize Progress Data Service:', error);
@@ -123,7 +123,7 @@ class ProgressDataService {
   async getUserProgressEntries(userId: string, limit?: number): Promise<ProgressDataResponse<ProgressEntry[]>> {
     try {
       // First try to get from Track B's local storage
-      const localMeasurements = await crudOperationsService.readBodyMeasurements(limit);
+      const localMeasurements = await crudOperations.readBodyMeasurements(limit);
       
       if (localMeasurements.length > 0) {
         // Convert Track B's BodyMeasurement format to our ProgressEntry format
@@ -204,7 +204,7 @@ class ProgressDataService {
       };
 
       // Store using Track B's CRUD operations
-      await crudOperationsService.createBodyMeasurement(bodyMeasurement);
+      await crudOperations.createBodyMeasurement(bodyMeasurement);
 
       // Also create in Supabase for immediate access
       const { data, error } = await supabase

@@ -2,9 +2,13 @@ module.exports = function (api) {
   api.cache(true);
 
   return {
-    presets: ['babel-preset-expo'],
+    presets: [
+      ['babel-preset-expo', { 
+        unstable_transformImportMeta: true  // Correct flag for SDK 53 to transform import.meta
+      }]
+    ],
     plugins: [
-      // Reanimated plugin must be last
+      // Only keep reanimated plugin - must be last
       'react-native-reanimated/plugin',
     ],
   };

@@ -1,24 +1,45 @@
 import { Dimensions, PixelRatio, Platform } from 'react-native';
 
-// Get device screen dimensions
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
 // Base dimensions (iPhone 14 Pro as reference)
 const baseWidth = 393;
 const baseHeight = 852;
 
-// Calculate scale factors
-const widthScale = screenWidth / baseWidth;
-const heightScale = screenHeight / baseHeight;
-const scale = Math.min(widthScale, heightScale);
-
-// Font scale for accessibility
-const fontScale = PixelRatio.getFontScale();
+// SAFE: Lazy dimension calculation - only called when functions are used
+const getDimensions = () => {
+  try {
+    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const widthScale = screenWidth / baseWidth;
+    const heightScale = screenHeight / baseHeight;
+    const scale = Math.min(widthScale, heightScale);
+    const fontScale = PixelRatio.getFontScale();
+    
+    return {
+      screenWidth,
+      screenHeight,
+      widthScale,
+      heightScale,
+      scale,
+      fontScale
+    };
+  } catch (error) {
+    // Fallback for when Dimensions is not available (during module loading)
+    console.warn('Dimensions not available, using fallback values:', error);
+    return {
+      screenWidth: 393,
+      screenHeight: 852,
+      widthScale: 1,
+      heightScale: 1,
+      scale: 1,
+      fontScale: 1
+    };
+  }
+};
 
 /**
  * Responsive width - scales based on device width
  */
 export const rw = (width: number): number => {
+  const { widthScale } = getDimensions();
   return Math.round(width * widthScale);
 };
 
@@ -26,6 +47,7 @@ export const rw = (width: number): number => {
  * Responsive height - scales based on device height
  */
 export const rh = (height: number): number => {
+  const { heightScale } = getDimensions();
   return Math.round(height * heightScale);
 };
 
@@ -34,6 +56,7 @@ export const rh = (height: number): number => {
  * Use for elements that should maintain aspect ratio
  */
 export const rs = (size: number): number => {
+  const { scale } = getDimensions();
   return Math.round(size * scale);
 };
 
@@ -41,6 +64,7 @@ export const rs = (size: number): number => {
  * Responsive font size - scales with device and respects accessibility settings
  */
 export const rf = (fontSize: number): number => {
+  const { scale, fontScale } = getDimensions();
   const newSize = fontSize * scale;
   return Math.round(newSize / fontScale);
 };
@@ -49,28 +73,36 @@ export const rf = (fontSize: number): number => {
  * Responsive padding/margin - scales based on width
  */
 export const rp = (padding: number): number => {
+  const { widthScale } = getDimensions();
   return Math.round(padding * widthScale);
 };
 
 /**
- * Get device info
+ * Get device info - SAFE: calculated on demand
  */
-export const deviceInfo = {
-  screenWidth,
-  screenHeight,
-  isSmallDevice: screenWidth < 375,
-  isMediumDevice: screenWidth >= 375 && screenWidth < 414,
-  isLargeDevice: screenWidth >= 414,
-  isTablet: screenWidth >= 768,
-  hasNotch: Platform.OS === 'ios' && screenHeight >= 812,
-  isAndroid: Platform.OS === 'android',
-  isIOS: Platform.OS === 'ios',
+export const getDeviceInfo = () => {
+  const { screenWidth, screenHeight } = getDimensions();
+  return {
+    screenWidth,
+    screenHeight,
+    isSmallDevice: screenWidth < 375,
+    isMediumDevice: screenWidth >= 375 && screenWidth < 414,
+    isLargeDevice: screenWidth >= 414,
+    isTablet: screenWidth >= 768,
+    hasNotch: Platform.OS === 'ios' && screenHeight >= 812,
+    isAndroid: Platform.OS === 'android',
+    isIOS: Platform.OS === 'ios',
+  };
 };
+
+// For backwards compatibility - use lazy loading
+export const deviceInfo = getDeviceInfo();
 
 /**
  * Responsive border radius
  */
 export const rbr = (radius: number): number => {
+  const { scale } = getDimensions();
   return Math.round(radius * scale);
 };
 
@@ -88,6 +120,7 @@ export const getStatusBarHeight = (): number => {
  * Get bottom tab bar height
  */
 export const getTabBarHeight = (): number => {
+  const deviceInfo = getDeviceInfo();
   if (deviceInfo.hasNotch) {
     return rh(80); // Higher for devices with notch
   }
@@ -172,10 +205,16 @@ export const createResponsiveStyles = <T extends Record<string, any>>(
   return responsiveStyles as T;
 };
 
-// Export dimensions for direct use
-export const dimensions = {
-  screenWidth,
-  screenHeight,
-  baseWidth,
-  baseHeight,
+// Export dimensions for direct use - SAFE: calculated on demand
+export const getDimensions_Export = () => {
+  const { screenWidth, screenHeight } = getDimensions();
+  return {
+    screenWidth,
+    screenHeight,
+    baseWidth,
+    baseHeight,
+  };
 };
+
+// For backwards compatibility
+export const dimensions = getDimensions_Export();

@@ -8,7 +8,8 @@ import {
 import { PieChart } from 'react-native-chart-kit';
 import { THEME } from '../../utils/constants';
 
-const { width: screenWidth } = Dimensions.get('window');
+// REMOVED: Module-level Dimensions.get() causes crash
+// const { width: screenWidth } = Dimensions.get('window');
 
 interface NutritionData {
   carbs: number;
@@ -127,7 +128,7 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
         <View style={styles.chartContainer}>
           <PieChart
             data={chartData}
-            width={screenWidth - 64}
+            width={300} // Fixed width for charts
             height={180}
             chartConfig={chartConfig}
             accessor="population"
