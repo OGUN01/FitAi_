@@ -2,7 +2,7 @@
   "expo": {
     "name": "FitAI - AI Fitness Coach",
     "slug": "FitAI",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "owner": "harsh9887",
     "description": "Your personal AI-powered fitness coach with workout plans, nutrition guidance, and progress tracking.",
     "orientation": "portrait",
@@ -27,7 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.fitai.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
@@ -36,7 +36,8 @@
         "WRITE_EXTERNAL_STORAGE"
       ],
       "allowBackup": false,
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "jsEngine": "jsc"
     },
     "web": {
       "favicon": "./assets/favicon.png",

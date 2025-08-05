@@ -1,9 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Supabase configuration with fallbacks for development
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://mqfrwtmkokivoxgukgsz.supabase.co';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08';
+// Supabase configuration with safe environment variable access
+// Use fallbacks to prevent bundle evaluation errors when process.env is undefined
+const getEnvVar = (key: string, fallback: string) => {
+  try {
+    return (typeof process !== 'undefined' && process.env && process.env[key]) || fallback;
+  } catch (error) {
+    console.warn(`Environment variable ${key} not available, using fallback`);
+    return fallback;
+  }
+};
+
+const supabaseUrl = getEnvVar('EXPO_PUBLIC_SUPABASE_URL', 'https://mqfrwtmkokivoxgukgsz.supabase.co');
+const supabaseAnonKey = getEnvVar('EXPO_PUBLIC_SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08');
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ Missing Supabase environment variables - using development fallbacks');
@@ -78,17 +88,25 @@ export interface Database {
           id: string;
           user_id: string;
           primary_goals: string[];
-          time_commitment: '15-30' | '30-45' | '45-60' | '60+' | null;
-          experience_level: 'beginner' | 'intermediate' | 'advanced' | null;
+          target_weight_kg: number | null;
+          weekly_workout_days: number;
+          preferred_workout_duration: number;
+          fitness_level: 'beginner' | 'intermediate' | 'advanced';
+          equipment_access: string[];
+          workout_preferences: string[];
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
-          primary_goals: string[];
-          time_commitment?: '15-30' | '30-45' | '45-60' | '60+' | null;
-          experience_level?: 'beginner' | 'intermediate' | 'advanced' | null;
+          primary_goals?: string[];
+          target_weight_kg?: number | null;
+          weekly_workout_days?: number;
+          preferred_workout_duration?: number;
+          fitness_level?: 'beginner' | 'intermediate' | 'advanced';
+          equipment_access?: string[];
+          workout_preferences?: string[];
           created_at?: string;
           updated_at?: string;
         };
@@ -96,25 +114,16 @@ export interface Database {
           id?: string;
           user_id?: string;
           primary_goals?: string[];
-          time_commitment?: '15-30' | '30-45' | '45-60' | '60+' | null;
-          experience_level?: 'beginner' | 'intermediate' | 'advanced' | null;
+          target_weight_kg?: number | null;
+          weekly_workout_days?: number;
+          preferred_workout_duration?: number;
+          fitness_level?: 'beginner' | 'intermediate' | 'advanced';
+          equipment_access?: string[];
+          workout_preferences?: string[];
           created_at?: string;
           updated_at?: string;
         };
       };
     };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      [_ in never]: never;
-    };
-    Enums: {
-      [_ in never]: never;
-    };
   };
 }
-
-// Export typed client
-export type SupabaseClient = typeof supabase;
-export default supabase;

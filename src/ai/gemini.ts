@@ -10,24 +10,34 @@ import { APIKeyRotator } from '../utils/apiKeyRotator';
 // CONFIGURATION
 // ============================================================================
 
-// API Key rotation support
+// Safe environment variable access to prevent bundle evaluation errors
+const getEnvVar = (key: string) => {
+  try {
+    return (typeof process !== 'undefined' && process.env && process.env[key]) || null;
+  } catch (error) {
+    console.warn(`Environment variable ${key} not available`);
+    return null;
+  }
+};
+
+// API Key rotation support with safe environment variable access
 const GEMINI_KEYS = [
-  process.env.EXPO_PUBLIC_GEMINI_API_KEY,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_1,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_2,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_3,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_4,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_5,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_6,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_7,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_8,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_9,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_10,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_11,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_12,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_13,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_14,
-  process.env.EXPO_PUBLIC_GEMINI_KEY_15,
+  getEnvVar('EXPO_PUBLIC_GEMINI_API_KEY'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_1'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_2'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_3'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_4'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_5'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_6'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_7'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_8'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_9'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_10'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_11'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_12'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_13'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_14'),
+  getEnvVar('EXPO_PUBLIC_GEMINI_KEY_15'),
 ].filter(Boolean);
 
 // Use the first available key or empty string

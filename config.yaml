@@ -1,0 +1,31 @@
+litellm_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+
+model_list:
+  # Map Claude haiku → SamuraiAPI’s small model
+  - model_name: claude-3-haiku-*
+    litellm_params:
+      model: Paid/xai/grok-4
+      api_base: https://samuraiapi.in/v1      # e.g. "https://samuraiapi.in/v1"
+      api_key: os.environ/OPENAI_API_KEY        # your Samurai API key
+
+  # Map Claude sonnet → SamuraiAPI’s middle model
+  - model_name: claude-3-sonnet-*
+    litellm_params:
+      model: Paid/ver-miror-sr/anthropic/claude-4-opus
+      api_base: os.environ/OPENAI_BASE_URL
+      api_key: os.environ/OPENAI_API_KEY
+
+  # Map Claude opus → SamuraiAPI’s big model
+  - model_name: claude-3-opus-*
+    litellm_params:
+      model: Paid/ver-miror-sr/anthropic/claude-4-sonnet
+      api_base: os.environ/OPENAI_BASE_URL
+      api_key: os.environ/OPENAI_API_KEY
+
+  # (Optional) Direct Anthropic models
+  - model_name: claude-3-5-sonnet-*
+    litellm_params:
+      model: anthropic/claude-3-5-sonnet-20241022
+      api_base: https://api.anthropic.com/v1
+      api_key: os.environ/ANTHROPIC_API_KEY

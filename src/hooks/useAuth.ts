@@ -8,7 +8,6 @@ export interface UseAuthReturn {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  isGuestMode: boolean;
   error: string | null;
   isInitialized: boolean;
 
@@ -18,14 +17,11 @@ export interface UseAuthReturn {
   logout: () => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<AuthResponse>;
   resendEmailVerification: (email: string) => Promise<AuthResponse>;
-  checkEmailVerification: (email: string) => Promise<{ isVerified: boolean; error?: string }>;
   signInWithGoogle: () => Promise<any>;
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;
   isGoogleLinked: () => Promise<boolean>;
   clearError: () => void;
-  setGuestMode: (isGuest: boolean) => void;
-  convertGuestToUser: (credentials: RegisterCredentials) => Promise<AuthResponse>;
 }
 
 /**
@@ -37,7 +33,6 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isLoading,
     isAuthenticated,
-    isGuestMode,
     error,
     isInitialized,
     login,
@@ -45,15 +40,12 @@ export const useAuth = (): UseAuthReturn => {
     logout,
     resetPassword,
     resendEmailVerification,
-    checkEmailVerification,
     signInWithGoogle,
     linkGoogleAccount,
     unlinkGoogleAccount,
     isGoogleLinked,
     clearError,
     initialize,
-    setGuestMode,
-    convertGuestToUser,
   } = useAuthStore();
 
   // Initialize auth on first use
@@ -67,7 +59,6 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isLoading,
     isAuthenticated,
-    isGuestMode,
     error,
     isInitialized,
     login,
@@ -75,14 +66,11 @@ export const useAuth = (): UseAuthReturn => {
     logout,
     resetPassword,
     resendEmailVerification,
-    checkEmailVerification,
     signInWithGoogle,
     linkGoogleAccount,
     unlinkGoogleAccount,
     isGoogleLinked,
     clearError,
-    setGuestMode,
-    convertGuestToUser,
   };
 };
 

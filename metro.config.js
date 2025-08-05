@@ -2,21 +2,35 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Enhanced web compatibility configuration
+// Essential platform support
 config.resolver.platforms = ['web', 'native', 'ios', 'android'];
 
-// Optimize transformer for better web support
-config.transformer.getTransformOptions = async () => ({
-  transform: {
-    experimentalImportSupport: false,
-    inlineRequires: false,
-  },
-});
+// Proper polyfill handling for JSC engine
+config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
-// Ensure proper module resolution for web
-config.resolver.alias = {
-  ...config.resolver.alias,
-  // Add any necessary aliases here if needed
+// Clean serializer configuration
+config.serializer = {
+  ...config.serializer,
+};
+
+// Optimized transformer for JSC compatibility
+config.transformer = {
+  ...config.transformer,
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: false,
+    },
+  }),
+};
+
+// Clean resolver configuration
+config.resolver = {
+  ...config.resolver,
+  // Handle polyfill modules properly
+  alias: {
+    ...config.resolver.alias,
+  },
 };
 
 module.exports = config;

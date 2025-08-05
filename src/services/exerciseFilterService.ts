@@ -39,6 +39,11 @@ class ExerciseFilterService {
    * Categorize exercises by difficulty based on equipment and complexity
    */
   private categorizeExercises(): FilteredExercise[] {
+    // Return empty array since exerciseDatabase is disabled for bundle size optimization
+    // TODO: Implement lazy loading when needed
+    return []; 
+    /* DISABLED - exerciseDatabase import removed for bundle size
+    /* DISABLED - exerciseDatabase not available
     return exerciseDatabase.exercises.map(exercise => {
       // Determine difficulty based on equipment and movement patterns
       let difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
@@ -66,6 +71,7 @@ class ExerciseFilterService {
         difficulty
       };
     });
+    */
   }
 
   /**
