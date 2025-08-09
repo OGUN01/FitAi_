@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, PropsWithChildren } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ interface WorkoutTimerProps {
   onResume?: () => void;
 }
 
-export const WorkoutTimer: React.FC<WorkoutTimerProps> = ({
+export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
   isVisible,
   duration,
   title = "Rest Timer",
@@ -26,6 +26,7 @@ export const WorkoutTimer: React.FC<WorkoutTimerProps> = ({
   onCancel,
   onPause,
   onResume,
+  children,
 }) => {
   const [timeRemaining, setTimeRemaining] = useState(duration);
   const [isPaused, setIsPaused] = useState(false);
@@ -100,9 +101,12 @@ export const WorkoutTimer: React.FC<WorkoutTimerProps> = ({
       <View style={styles.overlay}>
         <Card style={styles.timerCard} variant="elevated">
           <View style={styles.timerContent}>
+            {/* Optional visual (e.g., GIF) */}
+            {children}
+
             {/* Title */}
             <Text style={styles.timerTitle}>{title}</Text>
-            
+
             {/* Circular Progress Indicator */}
             <View style={styles.circularTimer}>
               <View style={styles.progressBackground}>

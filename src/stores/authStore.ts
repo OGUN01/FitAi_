@@ -9,6 +9,8 @@ interface AuthState {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isGuestMode: boolean;
+  guestId: string | null;
   error: string | null;
   isInitialized: boolean;
 
@@ -22,6 +24,8 @@ interface AuthState {
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;
   isGoogleLinked: () => Promise<boolean>;
+  setGuestMode: (enabled: boolean) => void;
+  exitGuestMode: () => void;
   clearError: () => void;
   initialize: () => Promise<void>;
   setUser: (user: AuthUser | null) => void;
@@ -34,6 +38,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isLoading: false,
       isAuthenticated: false,
+      isGuestMode: false,
+      guestId: null,
       error: null,
       isInitialized: false,
 
@@ -48,6 +54,8 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: response.user,
               isAuthenticated: true,
+              isGuestMode: false, // Exit guest mode on login
+              guestId: null,
               isLoading: false,
               error: null,
             });
@@ -89,6 +97,8 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: response.user,
               isAuthenticated: response.user.isEmailVerified,
+              isGuestMode: false, // Exit guest mode on registration
+              guestId: null,
               isLoading: false,
               error: null,
             });
@@ -288,6 +298,8 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: response.user,
               isAuthenticated: true,
+              isGuestMode: false, // Exit guest mode on Google Sign-In
+              guestId: null,
               isLoading: false,
               error: null,
             });
@@ -363,6 +375,26 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
       },
+
+      setGuestMode: (enabled: boolean) => {
+        const guestId = enabled ? `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null;
+        
+        set({
+          isGuestMode: enabled,
+          guestId,
+          isAuthenticated: false, // Guest mode means not authenticated
+        });
+
+        console.log(enabled ? '👤 Guest mode enabled with ID:' : '👤 Guest mode disabled', guestId);
+      },
+
+      exitGuestMode: () => {
+        set({
+          isGuestMode: false,
+          guestId: null,
+        });
+        console.log('👤 Exited guest mode');
+      },
     }),
     {
       name: 'auth-storage',
@@ -370,6 +402,8 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        isGuestMode: state.isGuestMode,
+        guestId: state.guestId,
       }),
     }
   )

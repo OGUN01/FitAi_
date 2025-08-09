@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
+    "@expo/vector-icons": "^14.1.0",
     "@google/generative-ai": "^0.24.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "^11.4.1",
@@ -51,6 +52,7 @@
     "expo-crypto": "^14.1.5",
     "expo-file-system": "^18.1.11",
     "expo-image-picker": "^16.1.4",
+    "expo-notifications": "~0.31.4",
     "expo-sqlite": "^15.2.14",
     "expo-status-bar": "~2.2.3",
     "formdata-polyfill": "^4.0.10",
@@ -65,7 +67,15 @@
     "react-native-svg": "^15.12.0",
     "react-native-web": "^0.20.0",
     "tailwindcss": "^3.4.17",
+<<<<<<< HEAD
     "zustand": "^5.0.6"
+=======
+    "victory-native": "^41.18.0",
+    "zustand": "^5.0.6",
+    "expo-device": "~7.1.4",
+    "expo-application": "~6.1.5",
+    "expo-constants": "~17.1.7"
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

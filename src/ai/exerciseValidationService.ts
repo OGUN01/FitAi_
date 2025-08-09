@@ -3,7 +3,7 @@
  * Provides comprehensive validation and fallback mechanisms
  */
 
-import { VERIFIED_EXERCISE_NAMES } from './constrainedWorkoutGeneration';
+import { VERIFIED_EXERCISE_NAMES } from './constants/exerciseDatabase';
 import { Workout } from '../types/ai';
 import { WorkoutSet } from '../types/workout';
 

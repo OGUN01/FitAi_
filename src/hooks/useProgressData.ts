@@ -163,23 +163,10 @@ export const useProgressData = (): UseProgressDataReturn => {
     setGoalsError(null);
 
     try {
-      // For now, we'll create mock goals based on user data
-      // In a real implementation, this would come from a goals table
-      const mockGoals: ProgressGoals = {
-        id: 'mock-goals',
-        user_id: user.id,
-        target_weight_kg: 70, // Default target
-        target_body_fat_percentage: 15,
-        target_muscle_mass_kg: 55,
-        target_measurements: {
-          waist: 80,
-          chest: 100,
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      setProgressGoals(mockGoals);
+      // TODO: Implement real progress goals from database
+      // For now, set to null - no mock data
+      setProgressGoals(null);
+      setGoalsError('Progress goals not yet implemented');
     } catch (error) {
       setGoalsError(error instanceof Error ? error.message : 'Failed to load progress goals');
     } finally {

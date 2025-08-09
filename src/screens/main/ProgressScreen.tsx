@@ -76,6 +76,7 @@ export const ProgressScreen: React.FC = () => {
     try {
       await DataRetrievalService.loadAllData();
 
+<<<<<<< HEAD
       const weeklyInfo = DataRetrievalService.getWeeklyProgress();
       const activities = DataRetrievalService.getRecentActivities(10);
       const todaysInfo = DataRetrievalService.getTodaysData();
@@ -87,6 +88,50 @@ export const ProgressScreen: React.FC = () => {
       setWeeklyProgress(weeklyInfo);
       setRecentActivities(activities);
       setTodaysData(todaysInfo);
+=======
+      // TODO: Replace with real data from stores/API
+      // For now, load empty/default data until real implementation is added
+      
+      // Load real weekly data from fitness and nutrition stores
+      const realWeeklyData: WeeklyData = {
+        workoutsCompleted: 0,
+        targetWorkouts: fitnessStore.weeklyGoal || 5,
+        caloriesConsumed: 0,
+        targetCalories: nutritionStore.dailyCalorieTarget || 2000,
+        streakDays: 0,
+        weekProgress: 0
+      };
+
+      // Initialize empty chart data
+      const emptyChartData = {
+        workoutData: [
+          { day: 'Mon', value: 0 },
+          { day: 'Tue', value: 0 },
+          { day: 'Wed', value: 0 },
+          { day: 'Thu', value: 0 },
+          { day: 'Fri', value: 0 },
+          { day: 'Sat', value: 0 },
+          { day: 'Sun', value: 0 }
+        ],
+        calorieData: [
+          { day: 'Mon', value: 0 },
+          { day: 'Tue', value: 0 },
+          { day: 'Wed', value: 0 },
+          { day: 'Thu', value: 0 },
+          { day: 'Fri', value: 0 },
+          { day: 'Sat', value: 0 },
+          { day: 'Sun', value: 0 }
+        ]
+      };
+
+      // Initialize empty activities array
+      const emptyActivities: ActivityItem[] = [];
+
+      // Set real data
+      setWeeklyData(realWeeklyData);
+      setChartData(emptyChartData);
+      setRecentActivities(emptyActivities);
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
 
       // Generate weekly chart data from activities
       const weekData = generateWeeklyChartData(activities);

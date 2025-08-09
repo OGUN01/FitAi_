@@ -288,6 +288,20 @@ export class MigrationManager {
     };
   }
 
+  /**
+   * Set progress callback (for React hooks integration)
+   */
+  setProgressCallback(callback: (progress: MigrationProgress) => void): void {
+    this.progressCallbacks.push(callback);
+  }
+
+  /**
+   * Get current migration state
+   */
+  async getState(): Promise<MigrationState> {
+    return await this.checkMigrationStatus();
+  }
+
   // ============================================================================
   // PRIVATE METHODS
   // ============================================================================

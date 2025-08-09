@@ -57,23 +57,13 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
     }
   }
   
-  // 🐛 DEBUG: Log exercise lookup details
-  console.log(`🔍 ExerciseGifPlayer Debug for ID: "${exerciseId}"`);
-  console.log(`   📋 Exercise found:`, !!exercise);
-  console.log(`   📝 Exercise name:`, exercise?.name);
-  console.log(`   🎯 Passed exerciseName:`, exerciseName);
-  console.log(`   💾 Database object:`, exercise ? {
-    id: exercise.exerciseId,
-    name: exercise.name,
-    muscles: exercise.targetMuscles,
-    equipment: exercise.equipments
-  } : 'null');
+  // 🐛 DEBUG: Log exercise lookup details (DISABLED TO STOP SPAM)
+  if (exerciseId && !exercise) {
+    console.log(`🔍 ExerciseGifPlayer - Exercise NOT FOUND for ID: "${exerciseId}"`);
+  }
   
   // Always prioritize database name over passed name to avoid showing IDs
   const displayName = exercise?.name || exerciseName || 'Exercise';
-  
-  console.log(`   🏷️  Final displayName: "${displayName}"`);
-  console.log(`   ⚙️  Logic: exercise?.name (${exercise?.name}) || exerciseName (${exerciseName}) || 'Exercise'`);
 
   useEffect(() => {
     if (exercise?.gifUrl) {
@@ -171,17 +161,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
         
         {/* Equipment and muscle info */}
         <View style={styles.infoRow}>
-          {exercise.equipments.length > 0 && (
+          {exercise.equipments?.length > 0 && (
             <View style={styles.infoChip}>
               <Text style={styles.infoChipText}>
-                🏋️ {exercise.equipments[0]}
+                🏋️ {exercise.equipments?.[0] || 'Equipment'}
               </Text>
             </View>
           )}
-          {exercise.targetMuscles.length > 0 && (
+          {exercise.targetMuscles?.length > 0 && (
             <View style={styles.infoChip}>
               <Text style={styles.infoChipText}>
-                💪 {exercise.targetMuscles[0]}
+                💪 {exercise.targetMuscles?.[0] || 'Muscle'}
               </Text>
             </View>
           )}
@@ -191,7 +181,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
         {showInstructions && onInstructionsPress && (
           <TouchableOpacity style={styles.instructionsButton} onPress={onInstructionsPress}>
             <Text style={styles.instructionsButtonText}>
-              📋 View Instructions ({exercise.instructions.length} steps)
+              📋 View Instructions ({exercise.instructions?.length || 0} steps)
             </Text>
           </TouchableOpacity>
         )}

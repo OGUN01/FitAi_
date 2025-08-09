@@ -12,6 +12,8 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterCredentials } from '../../types/user';
+import { migrationManager } from '../../services/migrationManager';
+import { dataManager } from '../../services/dataManager';
 
 interface SignUpScreenProps {
   onSignUpSuccess: () => void;
@@ -76,6 +78,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
     setIsLoading(true);
     try {
+      // Check if there's local guest data before registering
+      const hasLocalData = await dataManager.hasLocalData();
+      console.log('🔍 SignUpScreen: Local data check result:', hasLocalData);
+
       // Ensure we trim and normalize the credentials before sending
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
@@ -86,9 +92,18 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       const result = await register(trimmedCredentials);
 
       if (result.success) {
+        let alertTitle = 'Registration Successful!';
+        let alertMessage = 'Please check your email and click the verification link to activate your account. After verification, you can log in to continue.';
+
+        // If there's local data, mention it will be preserved
+        if (hasLocalData) {
+          alertMessage += '\n\nYour profile data will be automatically synced when you log in.';
+          console.log('✅ SignUpScreen: User has local data - will trigger migration on login');
+        }
+
         Alert.alert(
-          'Registration Successful!',
-          'Please check your email and click the verification link to activate your account. After verification, you can log in to continue.',
+          alertTitle,
+          alertMessage,
           [{ text: 'OK', onPress: () => {
             // After user acknowledges the message, redirect to login screen
             onSignUpSuccess();
@@ -109,12 +124,24 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
     setIsLoading(true);
 
     try {
+      // Check if there's local guest data before Google sign-up
+      const hasLocalData = await dataManager.hasLocalData();
+      console.log('🔍 SignUpScreen: Google sign-up - Local data check result:', hasLocalData);
+
       const response = await signInWithGoogle();
 
       if (response.success) {
+        // Google sign-up is immediate (no email verification)
+        let alertMessage = 'Welcome to FitAI! Let\'s set up your profile.';
+        
+        if (hasLocalData) {
+          alertMessage = 'Welcome to FitAI! Your profile data will be automatically synced. Let\'s set up your profile.';
+          console.log('✅ SignUpScreen: Google user has local data - will trigger migration');
+        }
+
         Alert.alert(
           'Google Sign-Up Successful!', 
-          'Welcome to FitAI! Let\'s set up your profile.',
+          alertMessage,
           [{ text: 'Continue', onPress: onSignUpSuccess }]
         );
       } else {

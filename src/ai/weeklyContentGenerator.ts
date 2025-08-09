@@ -3,8 +3,9 @@
 
 import { geminiService, PROMPT_TEMPLATES } from './gemini';
 import { WORKOUT_SCHEMA, NUTRITION_SCHEMA } from './schemas';
+import { SIMPLIFIED_DAILY_NUTRITION_SCHEMA } from './schemas/simplifiedNutritionSchema';
 import { WEEKLY_PLAN_SCHEMA, DAILY_WORKOUT_SCHEMA } from './schemas/workoutSchema';
-import { SIMPLIFIED_WEEKLY_PLAN_SCHEMA, TEST_SIMPLE_SCHEMA } from './schemas/simplifiedWorkoutSchema';
+import { SIMPLIFIED_WEEKLY_PLAN_SCHEMA, TEST_SIMPLE_SCHEMA, DIAGNOSTIC_WORKOUT_SCHEMA } from './schemas/simplifiedWorkoutSchema';
 import { generateConstrainedWorkout, OPTIMIZED_SYSTEM_PROMPT } from './constrainedWorkoutGeneration';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout, Meal, AIResponse, MealType } from '../types/ai';
@@ -125,11 +126,11 @@ class WeeklyContentGeneratorService {
             planConfig: planConfig,
             validationAttempt: validationAttempt
           },
-          SIMPLIFIED_WEEKLY_PLAN_SCHEMA, // Using simplified schema temporarily
+          DIAGNOSTIC_WORKOUT_SCHEMA, // Using minimal schema for debugging JSON issues
           2, // Fewer retries per attempt since we have validation retry
           {
-            maxOutputTokens: 8192,
-            temperature: validationAttempt > 1 ? 0.5 : 0.7, // Lower temperature for stricter generation
+            maxOutputTokens: 4096, // Reduced token limit to avoid truncation
+            temperature: 0.3, // Lower temperature for more consistent JSON
             systemPrompt: OPTIMIZED_SYSTEM_PROMPT
           }
         );
@@ -607,14 +608,17 @@ MEAL CONTEXT:
 
 Create a single ${mealType} meal that fits the calorie target and supports the user's goals.`;
 
+    // 🔧 Using simplified nutrition schema for reliable meal generation
+    console.log('🧪 Using simplified daily nutrition schema in weekly content generator...');
+    
     const response = await geminiService.generateResponse<any>(
       mealPrompt,
       {},
-      NUTRITION_SCHEMA,
-      3, // maxRetries
+      SIMPLIFIED_DAILY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex NUTRITION_SCHEMA
+      2, // Reduced retries for faster debugging 
       {
-        maxOutputTokens: 6144, // Increased for detailed meal plans
-        temperature: 0.7
+        maxOutputTokens: 2048, // 🔧 Significantly reduced from 6144 to avoid token overflow
+        temperature: 0.4 // 🔧 Lower temperature for consistent JSON structure
       }
     );
 
@@ -654,16 +658,17 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
       const calories = this.getMealCalorieTarget(mealType, macroTargets.dailyCalories);
       
       try {
+        // 🔧 Using simplified nutrition schema for alternative meals
         const response = await geminiService.generateResponse<any>(
           `${PROMPT_TEMPLATES.NUTRITION_PLANNING}
           
           Create 2 alternative ${mealType} options with ${calories} calories each for meal swapping.`,
           {},
-          NUTRITION_SCHEMA,
-          3, // maxRetries
+          SIMPLIFIED_DAILY_NUTRITION_SCHEMA, // ✅ Using simplified schema
+          2, // Reduced retries
           {
-            maxOutputTokens: 4096, // Adequate for alternative meals
-            temperature: 0.8 // Slightly higher for variety
+            maxOutputTokens: 2048, // 🔧 Reduced from 4096 to avoid token overflow
+            temperature: 0.4 // 🔧 Lower temperature for consistency (was 0.8)
           }
         );
 

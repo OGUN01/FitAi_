@@ -105,6 +105,53 @@ export const TEST_SIMPLE_SCHEMA = {
 };
 
 // ============================================================================
+// DIAGNOSTIC WORKOUT SCHEMA (Minimal for debugging)
+// ============================================================================
+
+export const DIAGNOSTIC_WORKOUT_SCHEMA = {
+  type: "object", 
+  properties: {
+    planTitle: {
+      type: "string",
+      description: "Simple plan title"
+    },
+    experienceLevel: {
+      type: "string",
+      enum: ["beginner", "intermediate", "advanced"]
+    },
+    workouts: {
+      type: "array",
+      description: "Simple workout list",
+      items: {
+        type: "object",
+        properties: {
+          dayOfWeek: {
+            type: "string"
+          },
+          title: {
+            type: "string"
+          },
+          exercises: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                sets: { type: "number" },
+                reps: { type: "string" }
+              },
+              required: ["name", "sets", "reps"]
+            }
+          }
+        },
+        required: ["dayOfWeek", "title", "exercises"]
+      }
+    }
+  },
+  required: ["planTitle", "experienceLevel", "workouts"]
+};
+
+// ============================================================================
 // MINIMAL WORKOUT SCHEMA (For testing)
 // ============================================================================
 

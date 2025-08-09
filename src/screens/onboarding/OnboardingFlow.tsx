@@ -37,7 +37,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
   startStep = 'welcome',
 }) => {
-  const { user, isInitialized, isAuthenticated } = useAuth();
+  const { user, isInitialized, isAuthenticated, isGuestMode, setGuestMode } = useAuth();
   const { getCompleteProfile } = useUserStore();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(startStep as OnboardingStep);
   const [hasAutoRedirected, setHasAutoRedirected] = useState(false);
@@ -109,7 +109,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const { saveOnboardingData } = useOnboardingIntegration();
-  const { setGuestMode, register, logout } = useAuth();
+  const { register, logout } = useAuth();
 
   const handleWelcomeNext = () => {
     // Enable guest mode and skip signup - go directly to onboarding
@@ -243,21 +243,25 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       bodyAnalysis: bodyAnalysis || { photos: {} },
     };
 
-    // Save to backend if user is authenticated
-    if (user) {
-      try {
-        console.log('💾 Saving complete onboarding data to backend');
-        const result = await saveOnboardingData({
-          ...completeData,
-          isComplete: true,
-        });
+    // Save onboarding data (works for both guest and authenticated users)
+    try {
+      console.log('💾 Saving complete onboarding data (guest or authenticated)');
+      const result = await saveOnboardingData({
+        ...completeData,
+        isComplete: true,
+      });
 
-        if (!result.success) {
-          console.warn('Failed to save onboarding data:', result.error);
+      if (!result.success) {
+        console.warn('Failed to save onboarding data:', result.error);
+      } else {
+        if (isGuestMode) {
+          console.log('✅ Guest onboarding data saved locally');
+        } else {
+          console.log('✅ Authenticated user onboarding data saved to backend');
         }
-      } catch (error) {
-        console.warn('Error saving onboarding data:', error);
       }
+    } catch (error) {
+      console.warn('Error saving onboarding data:', error);
     }
 
     console.log('🚀 Calling onComplete with complete data');

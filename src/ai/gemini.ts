@@ -470,6 +470,24 @@ class GeminiService {
           ],
         });
 
+        // CRITICAL: Verify structured output configuration before making the call
+        if (schema) {
+          console.log('🎯 STRUCTURED OUTPUT CONFIG VERIFICATION:');
+          console.log('  - Model:', MODEL_NAME);
+          console.log('  - responseMimeType:', generationConfig.responseMimeType);
+          console.log('  - responseSchema keys:', Object.keys(generationConfig.responseSchema || {}));
+          console.log('  - maxOutputTokens:', generationConfig.maxOutputTokens);
+          console.log('  - temperature:', generationConfig.temperature);
+          
+          // Ensure configuration is exactly what we expect for structured output
+          if (generationConfig.responseMimeType !== "application/json") {
+            throw new Error(`❌ CRITICAL: responseMimeType should be "application/json" but is "${generationConfig.responseMimeType}"`);
+          }
+          if (!generationConfig.responseSchema) {
+            throw new Error(`❌ CRITICAL: responseSchema is missing for structured output`);
+          }
+        }
+
         console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries} (Key: ${currentApiKey.substring(0, 10)}...)`);
 
         // Generate content with enhanced error tracking
@@ -489,10 +507,9 @@ class GeminiService {
 
         // Handle OFFICIAL structured output vs plain text
         if (schema) {
-          // With OFFICIAL Gemini structured output (responseMimeType: "application/json" + responseSchema):
-          // - Gemini returns structured JSON as a string via response.text()
-          // - We need to parse this JSON string to get the actual object
-          // - This provides 100% accuracy as per Google's official implementation
+          // CRITICAL: Google's structured output with responseMimeType: "application/json" + responseSchema
+          // When configured correctly, Gemini returns a properly structured object directly
+          // No manual JSON parsing should be needed - the response should already be structured
 
           // First, check if the response is empty or too short
           if (!text || text.trim().length === 0) {
@@ -501,9 +518,16 @@ class GeminiService {
             continue;
           }
 
+          // Verify the model configuration was correct
+          console.log('🔧 Model config verification:');
+          console.log('  - responseMimeType:', generationConfig.responseMimeType);
+          console.log('  - responseSchema provided:', !!generationConfig.responseSchema);
+          console.log('  - Response text type:', typeof text);
+          console.log('  - Response length:', text.length);
+
           try {
-            // Google's OFFICIAL structured output approach - parse the JSON string
-            // This is the correct way to use responseMimeType: "application/json" + responseSchema
+            // Google's structured output should return properly formatted JSON
+            // The responseMimeType: "application/json" + responseSchema ensures this
             const structuredData = JSON.parse(text) as T;
             console.log('✅ Google OFFICIAL structured output parsed successfully');
             console.log('🔍 Structured data type:', typeof structuredData);
@@ -518,9 +542,46 @@ class GeminiService {
             
             return this.createSuccessResponse(structuredData, startTime, totalTokensUsed, text);
           } catch (parseError) {
-            lastError = `Failed to parse Google's structured JSON output: ${parseError}`;
-            console.warn(`⚠️ JSON parse error on attempt ${attempt}:`, parseError);
-            console.warn('Raw response:', text.substring(0, 200) + '...');
+            // This should NOT happen with Google's structured output API
+            // If we reach this, it means the API returned malformed JSON despite structured output config
+            console.error(`❌ CRITICAL: Google's structured output API returned malformed JSON!`);
+            console.error(`   This should never happen with responseMimeType: "application/json" + responseSchema`);
+            
+            lastError = `Google structured output failed - API returned malformed JSON: ${parseError}`;
+            console.warn(`⚠️ UNEXPECTED JSON parse error on attempt ${attempt}: [${parseError.constructor.name}: ${parseError.message}]`);
+            
+            // Enhanced debugging for this critical issue
+            console.warn('🚨 CRITICAL DEBUG INFO:');
+            console.warn('  - Response length:', text.length, 'characters');
+            console.warn('  - Response starts with:', text.substring(0, 100));
+            console.warn('  - Response ends with:', text.slice(-100));
+            console.warn('  - Contains "null":', text.includes('null'));
+            console.warn('  - Contains trailing comma:', /,\s*[}\]]/.test(text));
+            console.warn('  - Model config was verified:', !!schema);
+            
+            // Detect common JSON malformation issues
+            const issues = [];
+            if (/,\s*[}\]]/.test(text)) issues.push('trailing comma detected');
+            if (text.match(/[^\\]"/g)?.length % 2 !== 0) issues.push('unmatched quotes');
+            if ((text.match(/\{/g)?.length || 0) !== (text.match(/\}/g)?.length || 0)) issues.push('unmatched braces');
+            if ((text.match(/\[/g)?.length || 0) !== (text.match(/\]/g)?.length || 0)) issues.push('unmatched brackets');
+            if (text.includes('...')) issues.push('response appears truncated');
+            
+            if (issues.length > 0) {
+              console.warn('  - Detected issues:', issues.join(', '));
+              
+              // If response appears truncated, reduce maxOutputTokens for retry
+              if (text.includes('...') || text.length >= (generationConfig.maxOutputTokens * 4)) {
+                console.warn('  - Response may be truncated - will reduce maxOutputTokens on retry');
+                generationConfig.maxOutputTokens = Math.max(2048, generationConfig.maxOutputTokens * 0.7);
+              }
+            } else {
+              console.warn('  - No obvious structural issues found - may be API bug');
+            }
+            
+            console.warn('📝 Full raw response:', text);
+            
+            // Continue to retry - the next attempt might work (as shown in your logs)
             continue;
           }
         } else {

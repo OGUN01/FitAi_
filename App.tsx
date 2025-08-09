@@ -9,12 +9,57 @@ import { THEME } from './src/utils/constants';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import Constants from 'expo-constants';
+
+// Enhanced Expo Go detection with bulletproof methods and debugging
+const isExpoGo = (() => {
+  const detectionMethods = {
+    appOwnership: Constants.appOwnership === 'expo',
+    executionEnvironment: Constants.executionEnvironment === 'storeClient',
+    devAndSimulator: (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true),
+    noEAS: (!Constants.manifest?.extra?.eas && __DEV__ && Constants.platform?.web !== true)
+  };
+
+  const isExpoGoDetected = Object.values(detectionMethods).some(Boolean);
+  
+  console.log('🔍 Environment Detection:', {
+    ...detectionMethods,
+    result: isExpoGoDetected,
+    appOwnership: Constants.appOwnership,
+    executionEnvironment: Constants.executionEnvironment,
+    isDevice: Constants.isDevice,
+    __DEV__
+  });
+
+  return isExpoGoDetected;
+})();
+
+// Load notification store with multiple safety nets
+let useNotificationStore: any = null;
+if (!isExpoGo) {
+  try {
+    console.log('📱 Attempting to load notification modules...');
+    const notificationStore = require('./src/stores/notificationStore');
+    useNotificationStore = notificationStore.useNotificationStore;
+    console.log('✅ Notification modules loaded successfully');
+  } catch (error: any) {
+    console.error('⚠️ Failed to load notification modules:', error?.message || error);
+    console.log('🛡️ Continuing without notifications - app will still work');
+  }
+} else {
+  console.log('🚫 Expo Go detected - notifications disabled to prevent ExpoPushTokenManager error');
+}
 
 export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
 
-  const { user, isLoading, isInitialized } = useAuth();
+  const { user, isLoading, isInitialized, isGuestMode } = useAuth();
+  
+  // Only use notification store if not in Expo Go
+  const notificationStore = useNotificationStore ? useNotificationStore() : null;
+  const initializeNotifications = notificationStore?.initialize;
+  const areNotificationsInitialized = notificationStore?.isInitialized;
 
   // Initialize backend on app start
   useEffect(() => {
@@ -23,6 +68,16 @@ export default function App() {
         console.log('🚀 FitAI: Starting app initialization...');
         await initializeBackend();
         console.log('✅ FitAI: Backend initialization completed');
+        
+        // Initialize notifications only if not in Expo Go
+        if (!isExpoGo && initializeNotifications && !areNotificationsInitialized) {
+          console.log('📱 FitAI: Initializing notifications...');
+          await initializeNotifications();
+          console.log('✅ FitAI: Notifications initialization completed');
+        } else if (isExpoGo) {
+          console.log('⚠️ FitAI: Running in Expo Go - notifications disabled');
+          console.log('ℹ️ FitAI: Build a development build to enable notifications');
+        }
       } catch (error) {
         console.error('❌ FitAI: Backend initialization failed:', error);
         // Don't throw here, let the app continue with limited functionality
@@ -32,17 +87,22 @@ export default function App() {
     initializeApp();
   }, []);
 
-  // Check if user is authenticated and has completed onboarding
+  // Check if user is authenticated OR guest has completed onboarding
   useEffect(() => {
     if (isInitialized && user && !isLoading) {
-      // User is authenticated, check if they've completed onboarding
-      // For now, we'll assume if they're authenticated, they've completed onboarding
+      // User is authenticated, they've completed onboarding
       setIsOnboardingComplete(true);
-    } else if (isInitialized && !user) {
-      // User is not authenticated, show onboarding
-      setIsOnboardingComplete(false);
+    } else if (isInitialized && !user && !isLoading) {
+      // Check if guest user and if they have completed onboarding
+      if (isGuestMode && userData) {
+        console.log('🎭 App: Guest user has completed onboarding, proceeding to main app');
+        setIsOnboardingComplete(true);
+      } else {
+        // No user and either not guest mode or no onboarding data
+        setIsOnboardingComplete(false);
+      }
     }
-  }, [user, isLoading, isInitialized]);
+  }, [user, isLoading, isInitialized, isGuestMode, userData]);
 
   const handleOnboardingComplete = (data: OnboardingReviewData) => {
     console.log('🎉 App: Onboarding completed with data:', data);
@@ -91,6 +151,6 @@ const styles = StyleSheet.create({
     color: THEME.colors.text,
     fontSize: THEME.fontSize.md,
     marginTop: THEME.spacing.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: '500' as const,
   },
 });

@@ -2,6 +2,7 @@
 
 import { geminiService, PROMPT_TEMPLATES, formatUserProfileForAI, calculateDailyCalories } from './gemini';
 import { NUTRITION_SCHEMA, FOOD_ANALYSIS_SCHEMA } from './schemas';
+import { SIMPLIFIED_DAILY_NUTRITION_SCHEMA, SIMPLE_FOOD_ANALYSIS_SCHEMA } from './schemas/simplifiedNutritionSchema';
 import {
   Meal,
   NutritionPlan,
@@ -57,10 +58,18 @@ class NutritionAnalyzerService {
         prepTimeLimit: preferences?.prepTimeLimit || 30
       };
 
+      // 🔧 Using simplified schema to fix nutrition generation issues
+      console.log('🧪 Using simplified daily nutrition schema for reliable meal generation...');
+      
       const response = await geminiService.generateResponse<any>(
         PROMPT_TEMPLATES.NUTRITION_PLANNING,
         variables,
-        NUTRITION_SCHEMA
+        SIMPLIFIED_DAILY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex NUTRITION_SCHEMA
+        2, // Reduced retries for faster debugging
+        {
+          maxOutputTokens: 2048, // 🔧 Reduced from default to avoid token overflow
+          temperature: 0.4 // 🔧 Lower temperature for consistent JSON structure
+        }
       );
 
       if (!response.success || !response.data) {
@@ -305,7 +314,19 @@ Return ONLY a valid JSON object with this structure:
 }
 `;
 
-      const response = await geminiService.generateResponse<any>(prompt, {}, FOOD_ANALYSIS_SCHEMA);
+      // 🔧 Using simplified food analysis schema
+      console.log('🧪 Using simplified food analysis schema for reliable food recognition...');
+      
+      const response = await geminiService.generateResponse<any>(
+        prompt, 
+        {}, 
+        SIMPLE_FOOD_ANALYSIS_SCHEMA, // ✅ Using simplified schema instead of complex FOOD_ANALYSIS_SCHEMA
+        2, // Reduced retries
+        {
+          maxOutputTokens: 1024, // 🔧 Small response for food analysis
+          temperature: 0.3 // 🔧 Very low temperature for consistent food recognition
+        }
+      );
 
       if (!response.success || !response.data) {
         return response as AIResponse<Food>;

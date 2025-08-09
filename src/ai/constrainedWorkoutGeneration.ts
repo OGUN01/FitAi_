@@ -7,6 +7,53 @@ import { geminiService } from './gemini';
 import { WORKOUT_SCHEMA } from './schemas';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout } from '../types/ai';
+// Restore VERIFIED_EXERCISE_NAMES for GIF mapping - this is essential for exercise visuals
+const VERIFIED_EXERCISE_NAMES = [
+  // BODYWEIGHT EXERCISES (Body Weight)
+  'quads', 'sphinx', 'body-up', 'push-up', 'pull-up', 'chin-up', 'elevator', 'handstand', 
+  'ring dips', 'chest dip', 'muscle up', 'l-pull-up', 'back lever', 'elbow dips', 
+  'jump squat', 'one arm dip', 'reverse dip', 'triceps dip', 'sissy squat', 'korean dips',
+
+  // STRENGTH TRAINING
+  'otis up', 'tire flip', 'jump rope', 'rope climb', 'hands bike', 'lever shrug', 
+  'smith shrug', 'smith squat', 'london bridge', 'ski ergometer', 'sledge hammer', 
+  'lever high row', 'lever pullover', 'lever deadlift', 'weighted squat', 'smith deadlift', 
+  'wrist rollerer', 'battling ropes', 'lever t bar row', 'sled hack squat',
+
+  // CORE EXERCISES
+  'flag', 'cocoons', 'curl-up', 'butt-ups', 'inchworm', 'air bike', 'dead bug', 'bottoms-up', 
+  '3/4 sit-up', 'tuck crunch', 'pelvic tilt', 'potty squat', 'sit-up v. 2', 'spine twist', 
+  'front lever', 'frog crunch', 'full maltese', 'wind sprints', 'lean planche', 'full planche',
+
+  // CARDIO EXERCISES
+  'run', 'burpee', 'ski step', 'swing 360', 'wheel run', 'bear crawl', 'push to run', 
+  'skater hops', 'jack burpee', 'run (equipment)', 'mountain climber',
+
+  // DUMBBELL EXERCISES
+  'farmers walk', 'deep push up', 'dumbbell fly', 'spell caster', 'dumbbell shrug', 
+  'dumbbell squat', 'dumbbell lunge', 'dumbbell clean', 'dumbbell raise', 'dumbbell burpee', 
+  'dumbbell w-press', 'dumbbell high curl', 'dumbbell tate press', 'dumbbell push press', 
+  'dumbbell incline row',
+
+  // BARBELL EXERCISES
+  'squat jerk', 'snatch pull', 'power clean', 'finger curls', 'barbell curl', 'landmine 180', 
+  'barbell shrug', 'barbell lunge', 'barbell skier', 'barbell step-up', 'barbell wide squat', 
+  'barbell jump squat', 'barbell full squat', 'barbell hack squat', 'barbell incline row',
+
+  // CABLE EXERCISES
+  'cable curl', 'cable shrug', 'cable twist', 'cable low fly', 'cable kickback', 'cable pushdown', 
+  'cable pulldown', 'cable deadlift', 'cable upper row', 'cable lying fly', 'cable drag curl', 
+  'cable side bend', 'cable judo flip', 'cable seated row', 'cable bench press',
+
+  // RESISTANCE BAND
+  'band v-up', 'band shrug', 'band squat', 'band step-up', 'band y-raise', 'band hip lift', 
+  'band squat row', 'band wrist curl', 'band seated twist', 'band bicycle crunch', 
+  'band standing crunch', 'band seated twist pure',
+
+  // KETTLEBELL EXERCISES
+  'kettlebell swing'
+] as const;
+
 import { exerciseValidator } from './exerciseValidationService';
 
 // DATABASE-VERIFIED SYSTEM PROMPT (100% GIF coverage guaranteed)
@@ -68,37 +115,7 @@ Use only standard gym exercise names that exist in fitness databases.
 APPROVED EXERCISES: Push-ups, Squats, Lunges, Plank, Burpees, Mountain Climbers, Jumping Jacks, High Knees, Butt Kicks, Bench Press, Deadlifts, Pull-ups, Rows, Shoulder Press, Bicep Curls, Tricep Dips, Dumbbell Rows, Barbell Squats, Dumbbell Press, Running, Cycling, Rowing, Jump Rope, Stretching, Yoga
 `;
 
-// DATABASE-VERIFIED EXERCISE NAMES (100% GIF coverage guaranteed)
-const VERIFIED_EXERCISE_NAMES = [
-  '3/4 sit-up', 'air bike', 'back lever', 'band bicycle crunch', 'band hip lift',
-  'band seated twist', 'band seated twist pure', 'band shrug', 'band squat',
-  'band squat row', 'band standing crunch', 'band step-up', 'band v-up',
-  'band wrist curl', 'band y-raise', 'barbell curl', 'barbell full squat',
-  'barbell hack squat', 'barbell incline row', 'barbell jump squat', 'barbell lunge',
-  'barbell shrug', 'barbell skier', 'barbell step-up', 'barbell wide squat',
-  'battling ropes', 'bear crawl', 'body-up', 'bottoms-up', 'burpee', 'butt-ups',
-  'cable bench press', 'cable curl', 'cable deadlift', 'cable drag curl',
-  'cable judo flip', 'cable kickback', 'cable low fly', 'cable lying fly',
-  'cable pulldown', 'cable pushdown', 'cable seated row', 'cable shrug',
-  'cable side bend', 'cable twist', 'cable upper row', 'chest dip', 'chin-up',
-  'cocoons', 'curl-up', 'dead bug', 'deep push up', 'dumbbell burpee',
-  'dumbbell clean', 'dumbbell fly', 'dumbbell high curl', 'dumbbell incline row',
-  'dumbbell lunge', 'dumbbell push press', 'dumbbell raise', 'dumbbell shrug',
-  'dumbbell squat', 'dumbbell tate press', 'dumbbell w-press', 'elbow dips',
-  'elevator', 'farmers walk', 'finger curls', 'flag', 'frog crunch', 'front lever',
-  'full maltese', 'full planche', 'hands bike', 'handstand', 'inchworm',
-  'jack burpee', 'jump rope', 'jump squat', 'kettlebell swing', 'korean dips',
-  'l-pull-up', 'landmine 180', 'lean planche', 'lever deadlift', 'lever high row',
-  'lever pullover', 'lever shrug', 'lever t bar row', 'london bridge',
-  'mountain climber', 'muscle up', 'one arm dip', 'otis up', 'pelvic tilt',
-  'potty squat', 'power clean', 'pull-up', 'push to run', 'push-up', 'quads',
-  'reverse dip', 'ring dips', 'rope climb', 'run', 'run (equipment)',
-  'sissy squat', 'sit-up v. 2', 'skater hops', 'ski ergometer', 'ski step',
-  'sled hack squat', 'sledge hammer', 'smith deadlift', 'smith shrug',
-  'smith squat', 'snatch pull', 'spell caster', 'sphinx', 'spine twist',
-  'squat jerk', 'swing 360', 'tire flip', 'triceps dip', 'tuck crunch',
-  'weighted squat', 'wheel run', 'wind sprints', 'wrist rollerer'
-];
+// Exercise names are now imported from shared constants to prevent circular dependencies
 
 /**
  * Generate workout with constrained exercise names (100% accuracy tested)

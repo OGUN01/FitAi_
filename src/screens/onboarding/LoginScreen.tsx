@@ -12,6 +12,12 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
+<<<<<<< HEAD
+=======
+import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
+import { migrationManager } from '../../services/migrationManager';
+import { dataManager } from '../../services/dataManager';
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -91,12 +97,67 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
         console.log('🔐 LoginScreen: Login successful, user:', result.user?.email);
 
-        Alert.alert('Success', 'Welcome back! You will now be taken to complete your profile.', [
-          { text: 'Continue', onPress: () => {
-            console.log('🔐 LoginScreen: Calling onLoginSuccess');
-            onLoginSuccess();
-          }}
-        ]);
+        // Check for local data and trigger migration if needed
+        if (result.user) {
+          const hasLocalData = await dataManager.hasLocalData();
+          console.log('🔍 LoginScreen: Local data check result:', hasLocalData);
+
+          if (hasLocalData) {
+            console.log('🚀 LoginScreen: Starting automatic migration of local data');
+            
+            // Show migration starting alert
+            Alert.alert(
+              'Syncing Your Data', 
+              'We found your profile data and are syncing it to your account. This will only take a moment.',
+              [{ text: 'OK', onPress: async () => {
+                try {
+                  // Start migration
+                  const migrationResult = await migrationManager.startProfileMigration(result.user.id);
+                  
+                  if (migrationResult.success) {
+                    console.log('✅ LoginScreen: Migration completed successfully');
+                    Alert.alert(
+                      'Data Synced Successfully!', 
+                      'Your profile data has been synced to your account. Welcome back!',
+                      [{ text: 'Continue', onPress: () => {
+                        console.log('🔐 LoginScreen: Calling onLoginSuccess after migration');
+                        onLoginSuccess();
+                      }}]
+                    );
+                  } else {
+                    console.warn('⚠️ LoginScreen: Migration failed, continuing anyway');
+                    Alert.alert(
+                      'Sync Issue', 
+                      'There was an issue syncing some data, but you can continue. Your local data is preserved.',
+                      [{ text: 'Continue', onPress: () => {
+                        console.log('🔐 LoginScreen: Calling onLoginSuccess despite migration issues');
+                        onLoginSuccess();
+                      }}]
+                    );
+                  }
+                } catch (migrationError) {
+                  console.error('❌ LoginScreen: Migration error:', migrationError);
+                  Alert.alert(
+                    'Sync Issue', 
+                    'There was an issue syncing your data, but you can continue. Your local data is preserved.',
+                    [{ text: 'Continue', onPress: () => {
+                      console.log('🔐 LoginScreen: Calling onLoginSuccess after migration error');
+                      onLoginSuccess();
+                    }}]
+                  );
+                }
+              }}]
+            );
+          } else {
+            // No local data, proceed normally
+            Alert.alert('Success', 'Welcome back! You will now be taken to complete your profile.', [
+              { text: 'Continue', onPress: () => {
+                console.log('🔐 LoginScreen: Calling onLoginSuccess (no migration needed)');
+                onLoginSuccess();
+              }}
+            ]);
+          }
+        }
       } else {
         // Check if error is related to email verification
         if (result.error?.includes('email') || result.error?.includes('confirm')) {
@@ -144,9 +205,86 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       const response = await signInWithGoogle();
 
       if (response.success) {
+<<<<<<< HEAD
         Alert.alert('Success', 'Google Sign-In successful!', [
           { text: 'Continue', onPress: onLoginSuccess }
         ]);
+=======
+        // Check for local data migration first
+        const hasLocalData = await dataManager.hasLocalData();
+        console.log('🔍 LoginScreen: Google sign-in - Local data check result:', hasLocalData);
+
+        if (hasLocalData && response.user) {
+          console.log('🚀 LoginScreen: Starting automatic migration for Google user');
+          
+          // Show migration starting alert
+          Alert.alert(
+            'Syncing Your Data', 
+            'We found your profile data and are syncing it to your account. This will only take a moment.',
+            [{ text: 'OK', onPress: async () => {
+              try {
+                // Start migration
+                const migrationResult = await migrationManager.startProfileMigration(response.user.id);
+                
+                if (migrationResult.success) {
+                  console.log('✅ LoginScreen: Google migration completed successfully');
+                  Alert.alert(
+                    'Data Synced Successfully!', 
+                    'Your profile data has been synced. Welcome to FitAI!',
+                    [{ text: 'Continue', onPress: () => {
+                      console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration');
+                      onLoginSuccess();
+                    }}]
+                  );
+                } else {
+                  console.warn('⚠️ LoginScreen: Google migration failed, continuing anyway');
+                  Alert.alert(
+                    'Welcome to FitAI!', 
+                    'There was an issue syncing some data, but you can continue. Let\'s complete your profile setup.',
+                    [{ text: 'Continue Setup', onPress: () => {
+                      console.log('🚀 LoginScreen: Calling onLoginSuccess despite Google migration issues');
+                      onLoginSuccess();
+                    }}]
+                  );
+                }
+              } catch (migrationError) {
+                console.error('❌ LoginScreen: Google migration error:', migrationError);
+                Alert.alert(
+                  'Welcome to FitAI!', 
+                  'There was an issue syncing your data, but you can continue. Let\'s complete your profile setup.',
+                  [{ text: 'Continue Setup', onPress: () => {
+                    console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration error');
+                    onLoginSuccess();
+                  }}]
+                );
+              }
+            }}]
+          );
+        } else {
+          // No local data, handle normal Google sign-in flow
+          if (response.onboardingRequired) {
+            // New user or user who hasn't completed onboarding
+            const message = response.isNewUser 
+              ? 'Welcome to FitAI! Let\'s set up your personalized fitness profile to get started.'
+              : 'Welcome back! Let\'s complete your profile setup to unlock all features.';
+            
+            Alert.alert('Welcome!', message, [
+              { text: 'Continue Setup', onPress: () => {
+                console.log('🚀 LoginScreen: Redirecting to onboarding for Google user');
+                onLoginSuccess();
+              }}
+            ]);
+          } else {
+            // Returning user with complete onboarding
+            Alert.alert('Welcome Back!', 'Great to see you again! Taking you back to your dashboard.', [
+              { text: 'Continue', onPress: () => {
+                console.log('🏠 LoginScreen: Redirecting to main app for returning Google user');
+                onLoginSuccess();
+              }}
+            ]);
+          }
+        }
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
       } else {
         Alert.alert('Google Sign-In Failed', response.error || 'Please try again.');
       }

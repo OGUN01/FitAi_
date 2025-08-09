@@ -8,129 +8,124 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { Card, Button, THEME } from '../../components/ui';
+import Constants from 'expo-constants';
 
-interface NotificationSetting {
-  id: string;
-  title: string;
-  description: string;
-  enabled: boolean;
-  icon: string;
-  time?: string;
+// Simple Expo Go detection
+const isExpoGo = Constants.appOwnership === 'expo' || 
+                 Constants.executionEnvironment === 'storeClient' ||
+                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+
+// Load components and stores with safety nets
+let WaterReminderEditModal: any = null;
+let NotificationEditModal: any = null;
+let useNotificationStore: any = null;
+let useWaterReminders: any = null;
+let useMealReminders: any = null;
+let useSleepReminders: any = null;
+let useWorkoutReminders: any = null;
+
+if (!isExpoGo) {
+  try {
+    WaterReminderEditModal = require('../../components/notifications/WaterReminderEditModal').default;
+    NotificationEditModal = require('../../components/notifications/NotificationEditModal').default;
+    
+    const notificationStore = require('../../stores/notificationStore');
+    useNotificationStore = notificationStore.useNotificationStore;
+    useWaterReminders = notificationStore.useWaterReminders;
+    useMealReminders = notificationStore.useMealReminders;
+    useSleepReminders = notificationStore.useSleepReminders;
+    useWorkoutReminders = notificationStore.useWorkoutReminders;
+  } catch (error) {
+    console.warn('Failed to load notification modules:', error);
+  }
 }
 
 interface NotificationsScreenProps {
   onBack?: () => void;
 }
 
+interface EditModalState {
+  visible: boolean;
+  type: 'water' | 'workout' | 'meals' | 'sleep' | null;
+  title: string;
+}
+
 export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack }) => {
-  const [settings, setSettings] = useState<NotificationSetting[]>([
-    {
-      id: 'water',
-      title: 'Water Reminders',
-      description: 'Get reminded to stay hydrated throughout the day',
-      enabled: true,
-      icon: '💧',
-      time: '2 hours',
-    },
-    {
-      id: 'workout',
-      title: 'Workout Reminders',
-      description: 'Never miss your scheduled workout sessions',
-      enabled: true,
-      icon: '🏋️',
-      time: '30 min before',
-    },
-    {
-      id: 'breakfast',
-      title: 'Breakfast Reminder',
-      description: 'Start your day with a healthy breakfast',
-      enabled: true,
-      icon: '🍳',
-      time: '8:00 AM',
-    },
-    {
-      id: 'lunch',
-      title: 'Lunch Reminder',
-      description: 'Time for a nutritious lunch break',
-      enabled: true,
-      icon: '🥙',
-      time: '1:00 PM',
-    },
-    {
-      id: 'dinner',
-      title: 'Dinner Reminder',
-      description: 'End your day with a balanced dinner',
-      enabled: true,
-      icon: '🍽️',
-      time: '7:00 PM',
-    },
-    {
-      id: 'sleep',
-      title: 'Sleep Reminder',
-      description: 'Get reminded when it\'s time to wind down',
-      enabled: false,
-      icon: '😴',
-      time: '10:00 PM',
-    },
-    {
-      id: 'progress',
-      title: 'Progress Updates',
-      description: 'Weekly summary of your fitness journey',
-      enabled: true,
-      icon: '📊',
-      time: 'Weekly',
-    },
-  ]);
-
-  const [hasChanges, setHasChanges] = useState(false);
-
-  const toggleSetting = (settingId: string) => {
-    setSettings(prev => 
-      prev.map(setting => 
-        setting.id === settingId 
-          ? { ...setting, enabled: !setting.enabled }
-          : setting
-      )
+  // Show message if running in Expo Go
+  if (isExpoGo) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Card style={styles.expoGoCard}>
+          <Text style={styles.expoGoTitle}>Notifications Unavailable</Text>
+          <Text style={styles.expoGoMessage}>
+            Notifications require a development build and are not available in Expo Go.
+          </Text>
+          <Text style={styles.expoGoInstruction}>
+            To enable notifications, run:{'\n'}
+            <Text style={styles.expoGoCode}>eas build --platform android --profile development</Text>
+          </Text>
+          {onBack && (
+            <Button onPress={onBack} style={styles.backButton}>
+              <Text style={styles.backButtonText}>Go Back</Text>
+            </Button>
+          )}
+        </Card>
+      </SafeAreaView>
     );
-    setHasChanges(true);
-  };
+  }
 
-  const handleTimePress = (settingId: string) => {
-    const setting = settings.find(s => s.id === settingId);
-    if (setting) {
-      Alert.alert(
-        'Set Time',
-        `Configure ${setting.title} time`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Set Time', onPress: () => {
-            // TODO: Implement time picker
-            Alert.alert('Time Picker', 'Time picker will be implemented here');
-          }},
-        ]
-      );
-    }
-  };
+  const { preferences, toggleNotificationType, initialize, isInitialized } = useNotificationStore();
+  const waterReminders = useWaterReminders();
+  const workoutReminders = useWorkoutReminders();
+  const mealReminders = useMealReminders();
+  const sleepReminders = useSleepReminders();
+  
+  const [editModal, setEditModal] = useState<EditModalState>({
+    visible: false,
+    type: null,
+    title: ''
+  });
+  
+  const [scheduledCount, setScheduledCount] = useState(0);
 
-  const saveSettings = async () => {
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      if (!isInitialized) {
+        await initialize();
+      }
+      // Update scheduled count
+      const count = await useNotificationStore.getState().getScheduledCount();
+      setScheduledCount(count);
+    };
+    
+    initializeNotifications();
+  }, [isInitialized, initialize]);
+
+  const handleToggle = async (type: keyof typeof preferences) => {
     try {
-      // TODO: Save to storage/database
-      console.log('Saving notification settings:', settings);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setHasChanges(false);
-      Alert.alert('Success', 'Notification settings saved successfully!');
+      await toggleNotificationType(type);
+      // Update scheduled count
+      const count = await useNotificationStore.getState().getScheduledCount();
+      setScheduledCount(count);
     } catch (error) {
-      console.error('Failed to save notification settings:', error);
-      Alert.alert('Error', 'Failed to save settings. Please try again.');
+      console.error('Failed to toggle notification:', error);
+      Alert.alert('Error', 'Failed to update notification setting');
     }
   };
 
-  const resetToDefaults = () => {
+  const handleEditPress = (type: 'water' | 'workout' | 'meals' | 'sleep', title: string) => {
+    setEditModal({ visible: true, type, title });
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ visible: false, type: null, title: '' });
+  };
+
+  const handleResetDefaults = async () => {
     Alert.alert(
       'Reset to Defaults',
       'Are you sure you want to reset all notification settings to default?',
@@ -139,18 +134,53 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: () => {
-            setSettings(prev => 
-              prev.map(setting => ({ 
-                ...setting, 
-                enabled: setting.id !== 'sleep' // Sleep is disabled by default
-              }))
-            );
-            setHasChanges(true);
+          onPress: async () => {
+            try {
+              await useNotificationStore.getState().resetToDefaults();
+              const count = await useNotificationStore.getState().getScheduledCount();
+              setScheduledCount(count);
+              Alert.alert('Success', 'Settings reset to defaults!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset settings');
+            }
           },
         },
       ]
     );
+  };
+
+  const getTimeDisplay = (type: string) => {
+    switch (type) {
+      case 'water':
+        const awakeHours = calculateAwakeHours(preferences.water.wakeUpTime, preferences.water.sleepTime);
+        return `${awakeHours}h awake, ${preferences.water.dailyGoalLiters}L daily`;
+      case 'workout':
+        return `${preferences.workout.reminderMinutes} min before`;
+      case 'meals':
+        const enabledMeals = [
+          preferences.meals.breakfast.enabled && 'Breakfast',
+          preferences.meals.lunch.enabled && 'Lunch', 
+          preferences.meals.dinner.enabled && 'Dinner'
+        ].filter(Boolean);
+        return `${enabledMeals.length} meals enabled`;
+      case 'sleep':
+        return `${preferences.sleep.reminderMinutes} min before ${preferences.sleep.bedtime}`;
+      case 'progress':
+        return preferences.progress.frequency;
+      default:
+        return '';
+    }
+  };
+
+  const calculateAwakeHours = (wakeTime: string, sleepTime: string) => {
+    const [wakeHour, wakeMin] = wakeTime.split(':').map(Number);
+    const [sleepHour, sleepMin] = sleepTime.split(':').map(Number);
+    const wakeMinutes = wakeHour * 60 + wakeMin;
+    const sleepMinutes = sleepHour * 60 + sleepMin;
+    const awakeMinutes = sleepMinutes > wakeMinutes 
+      ? sleepMinutes - wakeMinutes 
+      : (24 * 60) - wakeMinutes + sleepMinutes;
+    return Math.floor(awakeMinutes / 60);
   };
 
   return (
@@ -168,47 +198,202 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
         {/* Description */}
         <View style={styles.section}>
           <Text style={styles.description}>
-            Customize your notification preferences to stay on track with your fitness goals.
+            Customize your smart notification preferences. {scheduledCount} notifications currently scheduled.
           </Text>
         </View>
 
         {/* Notification Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Types</Text>
+          <Text style={styles.sectionTitle}>Smart Reminders</Text>
           
-          {settings.map((setting) => (
-            <Card key={setting.id} style={styles.settingCard} variant="outlined">
-              <View style={styles.settingContent}>
-                <View style={styles.settingInfo}>
-                  <View style={styles.settingHeader}>
-                    <Text style={styles.settingIcon}>{setting.icon}</Text>
-                    <View style={styles.settingTexts}>
-                      <Text style={styles.settingTitle}>{setting.title}</Text>
-                      <Text style={styles.settingDescription}>{setting.description}</Text>
-                      {setting.time && setting.enabled && (
-                        <TouchableOpacity 
-                          style={styles.timeButton}
-                          onPress={() => handleTimePress(setting.id)}
-                        >
-                          <Text style={styles.timeText}>⏰ {setting.time}</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+          {/* Water Reminders */}
+          <Card style={styles.settingCard} variant="outlined">
+            <View style={styles.settingContent}>
+              <View style={styles.settingInfo}>
+                <View style={styles.settingHeader}>
+                  <Text style={styles.settingIcon}>💧</Text>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingTitle}>Water Reminders</Text>
+                    <Text style={styles.settingDescription}>Smart hydration reminders based on your daily schedule</Text>
+                    {preferences.water.enabled && (
+                      <TouchableOpacity 
+                        style={styles.timeButton}
+                        onPress={() => handleEditPress('water', 'Water Reminders')}
+                      >
+                        <Text style={styles.timeText}>⚙️ {getTimeDisplay('water')}</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-                
+              </View>
+              <View style={styles.rightControls}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditPress('water', 'Water Reminders')}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
                 <Switch
-                  value={setting.enabled}
-                  onValueChange={() => toggleSetting(setting.id)}
+                  value={preferences.water.enabled}
+                  onValueChange={() => handleToggle('water')}
                   trackColor={{ 
                     false: THEME.colors.border, 
                     true: THEME.colors.primary + '50' 
                   }}
-                  thumbColor={setting.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                  thumbColor={preferences.water.enabled ? THEME.colors.primary : THEME.colors.textMuted}
                 />
               </View>
-            </Card>
-          ))}
+            </View>
+          </Card>
+
+          {/* Workout Reminders */}
+          <Card style={styles.settingCard} variant="outlined">
+            <View style={styles.settingContent}>
+              <View style={styles.settingInfo}>
+                <View style={styles.settingHeader}>
+                  <Text style={styles.settingIcon}>🏋️</Text>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingTitle}>Workout Reminders</Text>
+                    <Text style={styles.settingDescription}>Get notified before your scheduled workouts</Text>
+                    {preferences.workout.enabled && (
+                      <TouchableOpacity 
+                        style={styles.timeButton}
+                        onPress={() => handleEditPress('workout', 'Workout Reminders')}
+                      >
+                        <Text style={styles.timeText}>⚙️ {getTimeDisplay('workout')}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <View style={styles.rightControls}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditPress('workout', 'Workout Reminders')}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <Switch
+                  value={preferences.workout.enabled}
+                  onValueChange={() => handleToggle('workout')}
+                  trackColor={{ 
+                    false: THEME.colors.border, 
+                    true: THEME.colors.primary + '50' 
+                  }}
+                  thumbColor={preferences.workout.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                />
+              </View>
+            </View>
+          </Card>
+
+          {/* Meal Reminders */}
+          <Card style={styles.settingCard} variant="outlined">
+            <View style={styles.settingContent}>
+              <View style={styles.settingInfo}>
+                <View style={styles.settingHeader}>
+                  <Text style={styles.settingIcon}>🍽️</Text>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingTitle}>Meal Reminders</Text>
+                    <Text style={styles.settingDescription}>Never miss breakfast, lunch, or dinner</Text>
+                    {preferences.meals.enabled && (
+                      <TouchableOpacity 
+                        style={styles.timeButton}
+                        onPress={() => handleEditPress('meals', 'Meal Reminders')}
+                      >
+                        <Text style={styles.timeText}>⚙️ {getTimeDisplay('meals')}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <View style={styles.rightControls}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditPress('meals', 'Meal Reminders')}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <Switch
+                  value={preferences.meals.enabled}
+                  onValueChange={() => handleToggle('meals')}
+                  trackColor={{ 
+                    false: THEME.colors.border, 
+                    true: THEME.colors.primary + '50' 
+                  }}
+                  thumbColor={preferences.meals.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                />
+              </View>
+            </View>
+          </Card>
+
+          {/* Sleep Reminders */}
+          <Card style={styles.settingCard} variant="outlined">
+            <View style={styles.settingContent}>
+              <View style={styles.settingInfo}>
+                <View style={styles.settingHeader}>
+                  <Text style={styles.settingIcon}>😴</Text>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingTitle}>Sleep Reminders</Text>
+                    <Text style={styles.settingDescription}>Smart bedtime notifications for better recovery</Text>
+                    {preferences.sleep.enabled && (
+                      <TouchableOpacity 
+                        style={styles.timeButton}
+                        onPress={() => handleEditPress('sleep', 'Sleep Reminders')}
+                      >
+                        <Text style={styles.timeText}>⚙️ {getTimeDisplay('sleep')}</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <View style={styles.rightControls}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => handleEditPress('sleep', 'Sleep Reminders')}
+                >
+                  <Text style={styles.editButtonText}>Edit</Text>
+                </TouchableOpacity>
+                <Switch
+                  value={preferences.sleep.enabled}
+                  onValueChange={() => handleToggle('sleep')}
+                  trackColor={{ 
+                    false: THEME.colors.border, 
+                    true: THEME.colors.primary + '50' 
+                  }}
+                  thumbColor={preferences.sleep.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                />
+              </View>
+            </View>
+          </Card>
+
+          {/* Progress Updates */}
+          <Card style={styles.settingCard} variant="outlined">
+            <View style={styles.settingContent}>
+              <View style={styles.settingInfo}>
+                <View style={styles.settingHeader}>
+                  <Text style={styles.settingIcon}>📊</Text>
+                  <View style={styles.settingTexts}>
+                    <Text style={styles.settingTitle}>Progress Updates</Text>
+                    <Text style={styles.settingDescription}>Weekly summary of your fitness journey</Text>
+                    {preferences.progress.enabled && (
+                      <View style={styles.timeButton}>
+                        <Text style={styles.timeText}>⚙️ {getTimeDisplay('progress')}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <Switch
+                value={preferences.progress.enabled}
+                onValueChange={() => handleToggle('progress')}
+                trackColor={{ 
+                  false: THEME.colors.border, 
+                  true: THEME.colors.primary + '50' 
+                }}
+                thumbColor={preferences.progress.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+              />
+            </View>
+          </Card>
         </View>
 
         {/* General Settings */}
@@ -216,7 +401,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
           <Text style={styles.sectionTitle}>General</Text>
           
           <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity onPress={resetToDefaults}>
+            <TouchableOpacity onPress={handleResetDefaults}>
               <View style={styles.actionContent}>
                 <Text style={styles.actionIcon}>🔄</Text>
                 <View style={styles.actionInfo}>
@@ -231,21 +416,26 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
           </Card>
         </View>
 
-        {/* Save Button */}
-        {hasChanges && (
-          <View style={styles.saveSection}>
-            <Button
-              title="Save Changes"
-              onPress={saveSettings}
-              variant="primary"
-              size="lg"
-              style={styles.saveButton}
-            />
-          </View>
-        )}
-
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      
+      {/* Water Reminder Edit Modal - Only render if component is available */}
+      {WaterReminderEditModal && (
+        <WaterReminderEditModal
+          visible={editModal.visible && editModal.type === 'water'}
+          onClose={closeEditModal}
+        />
+      )}
+
+      {/* Other Notification Edit Modal - Only render if component is available */}
+      {NotificationEditModal && (
+        <NotificationEditModal
+          visible={editModal.visible && editModal.type !== 'water'}
+          type={editModal.type}
+          title={editModal.title}
+          onClose={closeEditModal}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -322,6 +512,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: THEME.spacing.lg,
+  },
+  
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: THEME.spacing.sm,
+  },
+  
+  editButton: {
+    paddingHorizontal: THEME.spacing.sm,
+    paddingVertical: THEME.spacing.xs,
+    backgroundColor: THEME.colors.backgroundTertiary,
+    borderRadius: THEME.borderRadius.sm,
+  },
+  
+  editButtonText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.textSecondary,
+    fontWeight: THEME.fontWeight.medium,
   },
   
   settingInfo: {
@@ -419,5 +628,49 @@ const styles = StyleSheet.create({
   
   bottomSpacing: {
     height: THEME.spacing.xl,
+  },
+  
+  // Expo Go message styles
+  expoGoCard: {
+    margin: THEME.spacing.lg,
+    padding: THEME.spacing.xl,
+    alignItems: 'center',
+  },
+  
+  expoGoTitle: {
+    fontSize: THEME.fontSize.lg,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.md,
+  },
+  
+  expoGoMessage: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.lg,
+  },
+  
+  expoGoInstruction: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textMuted,
+    textAlign: 'center',
+    marginBottom: THEME.spacing.lg,
+  },
+  
+  expoGoCode: {
+    fontFamily: 'monospace',
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.primary,
+  },
+  
+  backButton: {
+    marginTop: THEME.spacing.md,
+  },
+  
+  backButtonText: {
+    color: THEME.colors.white,
+    fontSize: THEME.fontSize.md,
+    fontWeight: THEME.fontWeight.medium,
   },
 });

@@ -33,7 +33,10 @@
         "ACCESS_NETWORK_STATE",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED"
       ],
       "allowBackup": false,
       "googleServicesFile": "./google-services.json",
@@ -43,6 +46,23 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#000000",
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "#{unread_notifications} new fitness reminders"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "defaultChannel": "default"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "21887baa-d6be-42f0-9a08-ab3ff42e2c94"

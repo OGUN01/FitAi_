@@ -323,4 +323,66 @@ export const useMigrationProgress = () => {
   };
 };
 
+// ============================================================================
+// SIMPLE MIGRATION HOOK (for Login Screen)
+// ============================================================================
+
+export const useSimpleMigration = () => {
+  const [isActive, setIsActive] = useState(false);
+  const [progress, setProgress] = useState({
+    message: 'Preparing migration...',
+    percentage: 0,
+  });
+
+  const startMigration = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setIsActive(true);
+      setProgress({ message: 'Checking local data...', percentage: 10 });
+
+      // Check if migration is needed
+      const hasLocalData = await migrationManager.checkProfileMigrationNeeded(userId);
+      
+      if (!hasLocalData) {
+        setIsActive(false);
+        return { success: true };
+      }
+
+      setProgress({ message: 'Migrating profile data...', percentage: 30 });
+
+      // Start migration
+      const result = await migrationManager.startProfileMigration(userId);
+
+      if (result.success) {
+        setProgress({ message: 'Migration completed!', percentage: 100 });
+
+        // Show completion for a moment
+        setTimeout(() => {
+          setIsActive(false);
+        }, 1500);
+
+        return { success: true };
+      } else {
+        setIsActive(false);
+        return { 
+          success: false, 
+          error: result.errors?.join(', ') || 'Migration failed' 
+        };
+      }
+    } catch (error) {
+      console.error('Migration error:', error);
+      setIsActive(false);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Migration failed' 
+      };
+    }
+  };
+
+  return {
+    isActive,
+    progress,
+    startMigration,
+  };
+};
+
 export default useMigration;

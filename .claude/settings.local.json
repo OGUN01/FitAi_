@@ -87,12 +87,37 @@
       "Bash(timeout 15 npx expo start --clear --port 8085)",
       "Bash(timeout 10 npx expo start --clear --port 8085)",
       "Bash(git ls-tree:*)",
-      "Bash(git force-push:*)"
+      "Bash(git fetch:*)",
+      "Bash(timeout 20 npx expo start --port 8085)",
+      "Bash(timeout 25 npm start)",
+      "Bash(timeout 20 npm start)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:stackoverflow.com)",
+      "Bash(git checkout:*)",
+      "Bash(./gradlew:*)",
+      "Bash(git rm:*)",
+      "Bash(dir:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"
-  ]
+  ],
+  "local_overrides": {
+    "development_mode": true,
+    "verbose_logging": true,
+    "skip_performance_checks": false
+  },
+  "developer_preferences": {
+    "auto_save_on_format": true,
+    "show_performance_metrics": true,
+    "enable_debug_hooks": true
+  },
+  "environment": {
+    "node_env": "development",
+    "platform_target": "android",
+    "emulator_preferred": true
+  }
 }

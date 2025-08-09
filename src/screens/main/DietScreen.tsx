@@ -21,6 +21,22 @@ import { Camera } from '../../components/advanced/Camera';
 import { aiService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
+import Constants from 'expo-constants';
+
+// Simple Expo Go detection and safe loading
+const isExpoGo = Constants.appOwnership === 'expo' || 
+                 Constants.executionEnvironment === 'storeClient' ||
+                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+
+let useWaterReminders: any = null;
+if (!isExpoGo) {
+  try {
+    const notificationStore = require('../../stores/notificationStore');
+    useWaterReminders = notificationStore.useWaterReminders;
+  } catch (error) {
+    console.warn('Failed to load water reminders:', error);
+  }
+}
 import { foodRecognitionService, MealType } from '../../services/foodRecognitionService';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';
@@ -64,8 +80,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   } | null>(null);
   const [showMealPreparationModal, setShowMealPreparationModal] = useState(false);
   const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(null);
-  const [waterGlasses, setWaterGlasses] = useState(0);
-  const [waterGoal] = useState(8); // 8 glasses per day
+  const [waterConsumed, setWaterConsumed] = useState(0); // in liters
+  const waterReminders = useWaterReminders ? useWaterReminders() : null;
+  const waterGoal = waterReminders?.config?.dailyGoalLiters || 4; // Default to 4L if no reminders
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -848,33 +865,38 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     console.log('New recipe created:', recipe);
   };
 
-  // Water tracking handlers
+  // Water tracking handlers with liters
   const handleAddWater = () => {
-    if (waterGlasses >= waterGoal) {
+    const incrementAmount = 0.25; // 250ml increment
+    
+    if (waterConsumed >= waterGoal) {
       Alert.alert(
         '🎉 Daily Goal Achieved!',
-        `You've already reached your daily water goal of ${waterGoal} glasses! Great job staying hydrated!`,
+        `You've already reached your daily water goal of ${waterGoal}L! Great job staying hydrated!`,
         [{ text: 'Awesome!' }]
       );
       return;
     }
 
-    const newCount = waterGlasses + 1;
-    setWaterGlasses(newCount);
+    const newAmount = Math.min(waterConsumed + incrementAmount, waterGoal + 1);
+    setWaterConsumed(Math.round(newAmount * 100) / 100); // Round to 2 decimal places
 
     // Show celebration when goal is reached
-    if (newCount === waterGoal) {
+    if (newAmount >= waterGoal && waterConsumed < waterGoal) {
       setTimeout(() => {
         Alert.alert(
           '🏆 Hydration Goal Achieved!',
-          `Congratulations! You've reached your daily water goal of ${waterGoal} glasses!`,
+          `Congratulations! You've reached your daily water goal of ${waterGoal}L!`,
           [
             { text: 'Keep it up!', style: 'default' },
             {
-              text: 'Share Achievement',
+              text: 'Adjust Goal',
               onPress: () => {
-                // Could integrate with social sharing here
-                Alert.alert('Coming Soon', 'Social sharing will be available soon!');
+                if (navigation) {
+                  navigation.navigate('Settings', { screen: 'Notifications' });
+                } else {
+                  Alert.alert('Water Settings', 'Navigate to Settings > Notifications to adjust your water goal and reminder schedule.');
+                }
               }
             }
           ]
@@ -882,18 +904,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       }, 500);
     } else {
       // Show encouraging message
-      const remaining = waterGoal - newCount;
+      const remaining = Math.max(waterGoal - newAmount, 0);
       Alert.alert(
         '💧 Water Added!',
-        `Great job! ${remaining} more glass${remaining !== 1 ? 'es' : ''} to reach your daily goal.`,
-        [{ text: 'Keep going!' }]
+        `Great job! ${remaining.toFixed(1)}L more to reach your goal.`
       );
     }
   };
 
   const handleRemoveWater = () => {
-    if (waterGlasses > 0) {
-      setWaterGlasses(prev => prev - 1);
+    if (waterConsumed > 0) {
+      const decrementAmount = 0.25;
+      setWaterConsumed(Math.max(0, Math.round((waterConsumed - decrementAmount) * 100) / 100));
     }
   };
 
@@ -904,33 +926,45 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Add 1 Glass',
-          onPress: handleAddWater
+          text: 'Add 250ml',
+          onPress: () => handleAddWater()
+        },
+        {
+          text: 'Add 500ml',
+          onPress: () => {
+            const newAmount = Math.min(waterConsumed + 0.5, waterGoal + 1);
+            setWaterConsumed(Math.round(newAmount * 100) / 100);
+            Alert.alert('Water Added!', 'Added 500ml to your daily intake.');
+          }
         },
         {
           text: 'Custom Amount',
           onPress: () => {
             Alert.prompt(
-              'Custom Water Amount',
-              'How many glasses would you like to add?',
+              'Water Amount (Liters)',
+              'How many liters did you drink?',
               [
-                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Cancel',
+                  style: 'cancel'
+                },
                 {
                   text: 'Add',
                   onPress: (value) => {
-                    const amount = parseInt(value || '0');
-                    if (amount > 0 && amount <= 10) {
-                      const newTotal = Math.min(waterGlasses + amount, waterGoal + 5);
-                      setWaterGlasses(newTotal);
-                      Alert.alert('Water Added!', `Added ${amount} glass${amount !== 1 ? 'es' : ''} to your daily intake.`);
+                    const amount = parseFloat(value || '0');
+                    if (amount > 0 && amount <= 3) {
+                      const newTotal = Math.min(waterConsumed + amount, waterGoal + 2);
+                      setWaterConsumed(Math.round(newTotal * 100) / 100);
+                      Alert.alert('Water Added!', `Added ${amount}L to your daily intake.`);
                     } else {
-                      Alert.alert('Invalid Amount', 'Please enter a number between 1 and 10.');
+                      Alert.alert('Invalid Amount', 'Please enter a number between 0.1 and 3.0 liters.');
                     }
                   }
                 }
               ],
               'plain-text',
-              '1'
+              '',
+              'decimal-pad'
             );
           }
         }
@@ -1444,11 +1478,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
             <View style={styles.waterHeader}>
               <Text style={styles.waterIcon}>💧</Text>
               <View style={styles.waterInfo}>
-                <Text style={styles.waterAmount}>{waterGlasses} / {waterGoal} glasses</Text>
+                <Text style={styles.waterAmount}>{waterConsumed}L / {waterGoal}L</Text>
                 <Text style={styles.waterSubtext}>
-                  {waterGlasses === 0 ? 'Start tracking your hydration!' :
-                   waterGlasses >= waterGoal ? '🎉 Daily goal achieved!' :
-                   `${waterGoal - waterGlasses} more to reach your goal!`}
+                  {waterConsumed === 0 ? 'Start tracking your hydration!' :
+                   waterConsumed >= waterGoal ? '🎉 Daily goal achieved!' :
+                   `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
                 </Text>
               </View>
             </View>
@@ -1458,8 +1492,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                 <View style={[
                   styles.progressFill, 
                   { 
+<<<<<<< HEAD
                     width: `${Math.min((waterGlasses / waterGoal) * 100, 100)}%`,
                     backgroundColor: waterGlasses >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary
+=======
+                    width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
+                    backgroundColor: waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
                   }
                 ]} />
               </View>
@@ -1467,19 +1506,26 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
             
             <View style={styles.waterButtons}>
               <Button
-                title="Add Glass"
+                title="+ 250ml"
                 onPress={handleAddWater}
-                variant={waterGlasses >= waterGoal ? "solid" : "outline"}
+                variant={waterConsumed >= waterGoal ? "solid" : "outline"}
                 size="sm"
                 style={[styles.waterButton, { flex: 1, marginRight: ResponsiveTheme.spacing.sm }]}
               />
-              {waterGlasses > 0 && (
+              <Button
+                title="Custom"
+                onPress={handleLogWater}
+                variant="outline"
+                size="sm"
+                style={[styles.waterButton, { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm }]}
+              />
+              {waterConsumed > 0 && (
                 <Button
-                  title="Remove"
+                  title="- 250ml"
                   onPress={handleRemoveWater}
                   variant="outline"
                   size="sm"
-                  style={[styles.waterButton, { flex: 0.7 }]}
+                  style={[styles.waterButton, { flex: 0.8 }]}
                 />
               )}
             </View>

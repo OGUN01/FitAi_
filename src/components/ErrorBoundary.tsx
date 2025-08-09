@@ -22,6 +22,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+<<<<<<< HEAD
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     
     // Log to console for debugging
@@ -30,6 +31,26 @@ export class ErrorBoundary extends React.Component<Props, State> {
       stack: error.stack,
       componentStack: errorInfo.componentStack,
     });
+=======
+    // Suppress Metro symbolication errors from console
+    if (error.message?.includes('unknown') ||
+        error.stack?.includes('getCodeFrame') ||
+        error.stack?.includes('symbolicate') ||
+        error.message?.includes('ENOENT')) {
+      // Silently ignore Metro symbolication errors
+      return;
+    }
+
+    // TODO: Replace with proper error reporting service
+    if (__DEV__) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      console.log('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        componentStack: errorInfo.componentStack,
+      });
+    }
+>>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
   }
 
   handleRestart = () => {
@@ -82,7 +103,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: THEME.fontSize.xl,
-    fontWeight: 'bold',
+    fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.error,
     marginBottom: THEME.spacing.md,
     textAlign: 'center',
@@ -103,7 +124,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: THEME.fontWeight.semibold,
   },
   debugContainer: {
     marginTop: THEME.spacing.lg,
@@ -114,7 +135,7 @@ const styles = StyleSheet.create({
   },
   debugTitle: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: 'bold',
+    fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.textSecondary,
     marginBottom: THEME.spacing.xs,
   },

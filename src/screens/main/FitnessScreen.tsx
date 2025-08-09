@@ -19,6 +19,22 @@ import { useUserStore } from '../../stores/userStore';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useFitnessData } from '../../hooks/useFitnessData';
+import Constants from 'expo-constants';
+
+// Simple Expo Go detection and safe loading
+const isExpoGo = Constants.appOwnership === 'expo' || 
+                 Constants.executionEnvironment === 'storeClient' ||
+                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+
+let useWorkoutReminders: any = null;
+if (!isExpoGo) {
+  try {
+    const notificationStore = require('../../stores/notificationStore');
+    useWorkoutReminders = notificationStore.useWorkoutReminders;
+  } catch (error) {
+    console.warn('Failed to load workout reminders:', error);
+  }
+}
 import { DayWorkout, WeeklyWorkoutPlan } from '../../ai/weeklyContentGenerator';
 
 interface FitnessScreenProps {
@@ -46,6 +62,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
   const { profile } = useUserStore();
   const { createWorkout, startWorkoutSession } = useFitnessData();
+  const workoutReminders = useWorkoutReminders ? useWorkoutReminders() : null;
   
   // Fitness store
   const {
@@ -132,6 +149,70 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     return weeklyPlan.restDays.includes(day);
   };
 
+  // Schedule workout reminders based on generated plan
+  const scheduleWorkoutRemindersFromPlan = async (plan: WeeklyWorkoutPlan) => {
+    try {
+      if (!workoutReminders?.config?.enabled) {
+        console.log('⏰ Workout reminders are disabled, skipping scheduling');
+        return;
+      }
+
+      // Extract workout times from the plan
+      const workoutTimes: string[] = [];
+      
+      // Generate default workout times based on plan structure
+      const defaultTimes = generateDefaultWorkoutTimes(plan);
+      workoutTimes.push(...defaultTimes);
+      
+      // Schedule the reminders using the notification service
+      if (workoutReminders) {
+        await workoutReminders.scheduleFromWorkoutPlan(workoutTimes);
+      }
+      
+      console.log(`✅ Scheduled workout reminders for ${workoutTimes.length} workouts:`, workoutTimes);
+    } catch (error) {
+      console.error('❌ Failed to schedule workout reminders:', error);
+      // Don't block the main workflow if reminder scheduling fails
+    }
+  };
+
+  // Generate smart default workout times based on user preferences and workout intensity
+  const generateDefaultWorkoutTimes = (plan: WeeklyWorkoutPlan): string[] => {
+    if (!plan.workouts) return [];
+    
+    const times: string[] = [];
+    const dayMapping = {
+      'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+      'friday': 4, 'saturday': 5, 'sunday': 6
+    };
+
+    plan.workouts.forEach(workout => {
+      const dayIndex = dayMapping[workout.dayOfWeek as keyof typeof dayMapping];
+      let defaultTime = '18:00'; // Default evening workout
+      
+      // Smart time assignment based on workout type and day
+      if (dayIndex <= 4) { // Weekdays
+        if (workout.category === 'cardio' || workout.category === 'hiit') {
+          defaultTime = '07:00'; // Morning cardio
+        } else if (workout.category === 'strength') {
+          defaultTime = '18:30'; // Evening strength
+        } else if (workout.category === 'yoga' || workout.category === 'flexibility') {
+          defaultTime = '19:30'; // Evening relaxation
+        }
+      } else { // Weekends
+        if (workout.category === 'cardio' || workout.category === 'hiit') {
+          defaultTime = '09:00'; // Weekend morning
+        } else {
+          defaultTime = '10:00'; // Weekend mid-morning
+        }
+      }
+      
+      times.push(defaultTime);
+    });
+    
+    return times;
+  };
+
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = async () => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
@@ -190,6 +271,9 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         try {
           await saveWeeklyWorkoutPlan(response.data);
           console.log('✅ Debug - Save completed successfully');
+          
+          // Schedule workout reminders automatically
+          await scheduleWorkoutRemindersFromPlan(response.data);
         } catch (saveError) {
           console.error('❌ Debug - Save failed (but UI state is set):', saveError);
         }
@@ -247,6 +331,13 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     }
 
     try {
+      // Debug: Log the incoming workout data
+      console.log('🧭 Setting workout session:', {
+        workoutTitle: workout.title,
+        exerciseCount: workout.exercises?.length || 0,
+        sessionId: 'pending...'
+      });
+
       // Start workout session using store
       const sessionId = await startStoreWorkoutSession(workout);
       console.log('Starting workout session:', sessionId);
@@ -266,7 +357,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       await startWorkoutSession(workoutData);
 
       // Show custom dialog instead of Alert
-      setSelectedWorkout({ ...workout, sessionId });
+      const workoutWithSession = { ...workout, sessionId };
+      console.log('🧭 Setting workout session:', {
+        sessionId,
+        workout: workout.title,
+        exercises: workout.exercises?.length || 0,
+        firstExercise: workout.exercises?.[0] || 'No exercises'
+      });
+      
+      // Debug: Log full workout object
+      console.log('📋 Full workout object:', JSON.stringify(workoutWithSession, null, 2));
+      
+      setSelectedWorkout(workoutWithSession);
       setShowWorkoutStartDialog(true);
     } catch (error) {
       console.error('Error starting workout:', error);
@@ -278,8 +380,32 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const handleWorkoutStartConfirm = () => {
     if (selectedWorkout) {
       setShowWorkoutStartDialog(false);
+      
+      // Debug: Log the workout data being passed
+      console.log('🧭 NAVIGATION: Navigating to WorkoutSession', {
+        params: {
+          workout: selectedWorkout,
+          sessionId: (selectedWorkout as any).sessionId,
+          exerciseCount: selectedWorkout.exercises?.length || 0,
+          hasExercises: !!selectedWorkout.exercises
+        }
+      });
+      
+      // Log the exercises array for debugging
+      if (selectedWorkout.exercises) {
+        console.log('📋 Exercises being passed:', selectedWorkout.exercises);
+      } else {
+        console.error('❌ No exercises in selectedWorkout!');
+      }
+      
+      // Ensure exercises are included in the workout object
+      const workoutWithExercises = {
+        ...selectedWorkout,
+        exercises: selectedWorkout.exercises || []
+      };
+      
       navigation.navigate('WorkoutSession', { 
-        workout: selectedWorkout, 
+        workout: workoutWithExercises, 
         sessionId: (selectedWorkout as any).sessionId 
       });
     }

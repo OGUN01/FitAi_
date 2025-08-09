@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "user_prompt_submit": {
+      "enabled": true,
+      "permissions": {
+        "codebaseAccess": true,
+        "fileSystemAccess": true,
+        "networkAccess": false
+      }
+    },
+    "pre_tool_use": {
+      "enabled": true,
+      "permissions": {
+        "codebaseAccess": true,
+        "fileSystemAccess": true,
+        "networkAccess": false
+      }
+    },
+    "post_tool_use": {
+      "enabled": true,
+      "permissions": {
+        "codebaseAccess": true,
+        "fileSystemAccess": true,
+        "networkAccess": false
+      }
+    },
+    "session_start": {
+      "enabled": true,
+      "permissions": {
+        "codebaseAccess": true,
+        "fileSystemAccess": true
+      }
+    }
+  },
+  "react_native": {
+    "strict_mode": true,
+    "auto_format": true,
+    "performance_monitoring": true,
+    "security_validation": true,
+    "target_sdk": 53,
+    "new_architecture": true
+  },
+  "ai_integration": {
+    "structured_output_required": true,
+    "timeout_ms": 5000,
+    "fallback_demo_mode": true,
+    "log_all_interactions": true
+  },
+  "quality_standards": {
+    "typescript_coverage": 100,
+    "test_coverage_minimum": 90,
+    "performance_budget": {
+      "startup_time_ms": 3000,
+      "bundle_size_mb": 50,
+      "memory_usage_mb": 200
+    }
+  },
+  "security": {
+    "block_dangerous_operations": true,
+    "validate_all_inputs": true,
+    "scan_for_secrets": true,
+    "require_https": true
+  }
+}

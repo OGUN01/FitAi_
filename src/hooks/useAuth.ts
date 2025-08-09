@@ -8,6 +8,8 @@ export interface UseAuthReturn {
   user: AuthUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isGuestMode: boolean;
+  guestId: string | null;
   error: string | null;
   isInitialized: boolean;
 
@@ -21,6 +23,8 @@ export interface UseAuthReturn {
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;
   isGoogleLinked: () => Promise<boolean>;
+  setGuestMode: (enabled: boolean) => void;
+  exitGuestMode: () => void;
   clearError: () => void;
 }
 
@@ -33,6 +37,8 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isLoading,
     isAuthenticated,
+    isGuestMode,
+    guestId,
     error,
     isInitialized,
     login,
@@ -44,6 +50,8 @@ export const useAuth = (): UseAuthReturn => {
     linkGoogleAccount,
     unlinkGoogleAccount,
     isGoogleLinked,
+    setGuestMode,
+    exitGuestMode,
     clearError,
     initialize,
   } = useAuthStore();
@@ -59,6 +67,8 @@ export const useAuth = (): UseAuthReturn => {
     user,
     isLoading,
     isAuthenticated,
+    isGuestMode,
+    guestId,
     error,
     isInitialized,
     login,
@@ -70,6 +80,8 @@ export const useAuth = (): UseAuthReturn => {
     linkGoogleAccount,
     unlinkGoogleAccount,
     isGoogleLinked,
+    setGuestMode,
+    exitGuestMode,
     clearError,
   };
 };

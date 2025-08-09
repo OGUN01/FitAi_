@@ -2,21 +2,67 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Plan & Review
-Before starting work
-Write a plan to .claude/tasks/TASK_NAME.md.
+## 🚨 **CRITICAL DEVELOPMENT RULES - NEVER VIOLATE**
 
-The plan should be a detailed implementation plan and the reasoning behind them, as well as tasks broken down.
+### **ZERO Tolerance Policies:**
+1. **No Empty Catch Blocks**: Every catch block MUST implement proper error handling with logging and user feedback
+2. **No Hardcoded Values**: Use THEME constants, environment variables, or configuration files
+3. **No Console.log in Production**: Use proper logging service with context and error reporting
+4. **No Module-Level React Native APIs**: Wrap in functions or hooks to prevent HostFunction errors
+5. **Security First**: Never commit secrets, always validate inputs, use HTTPS only
 
-Don't over plan it, always think MVP.
+### **Performance Requirements - Non-Negotiable:**
+- **App Startup**: <3 seconds cold start time
+- **Screen Transitions**: 60fps animations, <500ms transition time
+- **Memory Usage**: <200MB typical usage, no memory leaks
+- **Bundle Size**: <50MB total application size
+- **AI Responses**: <5 seconds for workout generation
+- **Type Safety**: 100% TypeScript coverage, zero `any` types
 
-Once you write the plan, firstly ask me to review it. Do not continue until I approve the plan.
+### **Error Handling Standards - Mandatory Pattern:**
+```typescript
+// ✅ REQUIRED: Comprehensive error handling
+try {
+  const result = await service.operation();
+  return { success: true, data: result };
+} catch (error) {
+  logger.error('Operation failed', { error, context });
+  ErrorReporting.captureException(error);
+  return { 
+    success: false, 
+    error: 'User-friendly message',
+    context: 'Technical context for debugging'
+  };
+}
 
-## While implementing
+// ❌ FORBIDDEN: Empty or inadequate error handling
+try {
+  await service.operation();
+} catch (error) {
+  console.log(error); // NOT ALLOWED
+}
+```
 
-You should update the plan as you work.
+### **AI Integration Standards - Strict Compliance:**
+- **ALWAYS** use Google's structured output API with `responseMimeType: "application/json"`
+- **ALWAYS** provide `responseSchema` parameter for validation
+- **ALWAYS** implement timeout handling (5s max) and fallback demo mode
+- **ALWAYS** log AI interactions for debugging and optimization
 
-After you complete tasks in the plan, you should update and append detailed descriptions of the changes you made, so following tasks can be easily hand over to other engineers.
+## Plan & Review Protocol
+
+### Before Starting Work:
+1. Write detailed plan to `.claude/tasks/TASK_NAME.md`
+2. Include implementation strategy, risks, and success criteria
+3. Break down into measurable tasks with time estimates
+4. **MVP Focus**: Implement core functionality first, optimize later
+5. **Get approval before proceeding** - No exceptions
+
+### During Implementation:
+1. Update plan with progress and any discovered complexities
+2. Document decisions and technical trade-offs
+3. Add detailed change descriptions for handover to other engineers
+4. Run quality checks: TypeScript, linting, testing
 
 ## Project Overview
 

@@ -1,5 +1,6 @@
 import { geminiService } from './gemini';
 import { WEEKLY_MEAL_PLAN_SCHEMA } from './schemas';
+import { SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, DIAGNOSTIC_NUTRITION_SCHEMA } from './schemas/simplifiedNutritionSchema';
 import { PersonalInfo, FitnessGoals, DietPreferences } from '../types/user';
 import { AIResponse } from '../types/ai';
 
@@ -107,7 +108,9 @@ class WeeklyMealContentGenerator {
 
     const prompt = this.buildMealGenerationPrompt(personalInfo, fitnessGoals, dietPreferences);
 
-    // Use structured response with reduced complexity
+    // 🔧 Using SIMPLIFIED schema to fix diet generation issues
+    console.log('🧪 Using simplified nutrition schema for reliable generation...');
+    
     const aiResponse: AIResponse<any> = await geminiService.generateResponse(
         prompt,
         {
@@ -130,11 +133,11 @@ class WeeklyMealContentGenerator {
           carbTarget: macroTargets.carbs,
           fatTarget: macroTargets.fat
         },
-        WEEKLY_MEAL_PLAN_SCHEMA,
-        2, // Reduced retries
+        SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex WEEKLY_MEAL_PLAN_SCHEMA
+        2, // Reduced retries for faster debugging
         {
-          maxOutputTokens: 16384, // Reduced token limit for faster generation
-          temperature: 0.7
+          maxOutputTokens: 4096, // 🔧 Significantly reduced from 16384 to avoid token overflow  
+          temperature: 0.4 // 🔧 Lower temperature for more consistent JSON structure
         }
       );
 
