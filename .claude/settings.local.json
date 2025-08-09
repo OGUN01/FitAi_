@@ -86,7 +86,8 @@
       "Bash(timeout 20 npx expo start --clear --port 8085)",
       "Bash(timeout 15 npx expo start --clear --port 8085)",
       "Bash(timeout 10 npx expo start --clear --port 8085)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(git force-push:*)"
     ],
     "deny": []
   },
