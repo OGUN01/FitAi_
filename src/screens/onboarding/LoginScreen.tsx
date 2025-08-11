@@ -12,12 +12,9 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
-<<<<<<< HEAD
-=======
 import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
 import { migrationManager } from '../../services/migrationManager';
 import { dataManager } from '../../services/dataManager';
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -205,31 +202,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       const response = await signInWithGoogle();
 
       if (response.success) {
-<<<<<<< HEAD
-        Alert.alert('Success', 'Google Sign-In successful!', [
-          { text: 'Continue', onPress: onLoginSuccess }
-        ]);
-=======
         // Check for local data migration first
         const hasLocalData = await dataManager.hasLocalData();
         console.log('🔍 LoginScreen: Google sign-in - Local data check result:', hasLocalData);
 
         if (hasLocalData && response.user) {
           console.log('🚀 LoginScreen: Starting automatic migration for Google user');
-          
+
           // Show migration starting alert
           Alert.alert(
-            'Syncing Your Data', 
+            'Syncing Your Data',
             'We found your profile data and are syncing it to your account. This will only take a moment.',
             [{ text: 'OK', onPress: async () => {
               try {
                 // Start migration
                 const migrationResult = await migrationManager.startProfileMigration(response.user.id);
-                
+
                 if (migrationResult.success) {
                   console.log('✅ LoginScreen: Google migration completed successfully');
                   Alert.alert(
-                    'Data Synced Successfully!', 
+                    'Data Synced Successfully!',
                     'Your profile data has been synced. Welcome to FitAI!',
                     [{ text: 'Continue', onPress: () => {
                       console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration');
@@ -239,7 +231,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 } else {
                   console.warn('⚠️ LoginScreen: Google migration failed, continuing anyway');
                   Alert.alert(
-                    'Welcome to FitAI!', 
+                    'Welcome to FitAI!',
                     'There was an issue syncing some data, but you can continue. Let\'s complete your profile setup.',
                     [{ text: 'Continue Setup', onPress: () => {
                       console.log('🚀 LoginScreen: Calling onLoginSuccess despite Google migration issues');
@@ -250,7 +242,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               } catch (migrationError) {
                 console.error('❌ LoginScreen: Google migration error:', migrationError);
                 Alert.alert(
-                  'Welcome to FitAI!', 
+                  'Welcome to FitAI!',
                   'There was an issue syncing your data, but you can continue. Let\'s complete your profile setup.',
                   [{ text: 'Continue Setup', onPress: () => {
                     console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration error');
@@ -264,10 +256,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           // No local data, handle normal Google sign-in flow
           if (response.onboardingRequired) {
             // New user or user who hasn't completed onboarding
-            const message = response.isNewUser 
+            const message = response.isNewUser
               ? 'Welcome to FitAI! Let\'s set up your personalized fitness profile to get started.'
               : 'Welcome back! Let\'s complete your profile setup to unlock all features.';
-            
+
             Alert.alert('Welcome!', message, [
               { text: 'Continue Setup', onPress: () => {
                 console.log('🚀 LoginScreen: Redirecting to onboarding for Google user');
@@ -284,7 +276,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             ]);
           }
         }
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
       } else {
         Alert.alert('Google Sign-In Failed', response.error || 'Please try again.');
       }

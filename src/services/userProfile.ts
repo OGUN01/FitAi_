@@ -3,13 +3,16 @@ import {
   UserProfile,
   PersonalInfo,
   FitnessGoals,
-  DatabaseProfile,
-  DatabaseFitnessGoals,
   CreateProfileRequest,
   UpdateProfileRequest,
   CreateFitnessGoalsRequest,
   UpdateFitnessGoalsRequest,
 } from '../types/user';
+import type { Database } from './supabase';
+
+type DatabaseProfile = Database['public']['Tables']['profiles']['Row'];
+
+type DatabaseFitnessGoals = Database['public']['Tables']['fitness_goals']['Row'];
 
 export interface UserProfileResponse {
   success: boolean;
@@ -316,6 +319,7 @@ class UserProfileService {
         primaryGoals: [],
         timeCommitment: '',
         experience: '',
+        experience_level: '',
       },
       createdAt: dbProfile.created_at,
       updatedAt: dbProfile.updated_at,
@@ -340,8 +344,9 @@ class UserProfileService {
   private mapDatabaseGoalsToFitnessGoals(dbGoals: DatabaseFitnessGoals): FitnessGoals {
     return {
       primaryGoals: dbGoals.primary_goals,
-      timeCommitment: dbGoals.time_commitment || '',
-      experience: dbGoals.experience_level || '',
+      timeCommitment: dbGoals.preferred_workout_duration?.toString?.() || '',
+      experience: dbGoals.fitness_level || '',
+      experience_level: dbGoals.fitness_level || '',
     };
   }
 }

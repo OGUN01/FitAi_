@@ -109,7 +109,10 @@ export class DataManagerService {
     const sanitizedData: OnboardingData = {
       personalInfo: validationService.sanitizePersonalInfo(data.personalInfo),
       fitnessGoals: data.fitnessGoals,
+      currentStep: data.currentStep ?? 0,
       isComplete: data.isComplete,
+      startedAt: data.startedAt ?? new Date().toISOString(),
+      completedAt: data.completedAt,
     };
 
     // Update schema
@@ -215,7 +218,7 @@ export class DataManagerService {
         this.currentSchema.fitness.sessions[sessionIndex] = {
           ...this.currentSchema.fitness.sessions[sessionIndex],
           ...updates,
-          syncStatus: 'pending' as SyncStatus,
+          syncStatus: SyncStatus.PENDING,
         };
         
         this.currentSchema.updatedAt = new Date().toISOString();
@@ -267,11 +270,11 @@ export class DataManagerService {
     
     // Filter by date if provided
     if (date) {
-      logs = logs.filter(log => log.date === date);
+      logs = logs.filter(log => (log.date || log.loggedAt?.slice(0,10)) === date);
     }
-    
+
     // Sort by timestamp (most recent first)
-    logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    logs.sort((a, b) => new Date(b.loggedAt || b.date || '').getTime() - new Date(a.loggedAt || a.date || '').getTime());
     
     if (limit) {
       return logs.slice(0, limit);
@@ -354,21 +357,21 @@ export class DataManagerService {
       case 'workout_sessions':
         const sessionIndex = this.currentSchema.fitness.sessions.findIndex(s => s.id === id);
         if (sessionIndex !== -1) {
-          this.currentSchema.fitness.sessions[sessionIndex].syncStatus = 'synced';
+          this.currentSchema.fitness.sessions[sessionIndex].syncStatus = SyncStatus.SYNCED;
         }
         break;
       
       case 'meal_logs':
         const logIndex = this.currentSchema.nutrition.logs.findIndex(log => log.id === id);
         if (logIndex !== -1) {
-          this.currentSchema.nutrition.logs[logIndex].syncStatus = 'synced';
+          this.currentSchema.nutrition.logs[logIndex].syncStatus = SyncStatus.SYNCED;
         }
         break;
       
       case 'progress_entries':
         const measurementIndex = this.currentSchema.progress.measurements.findIndex(m => m.id === id);
         if (measurementIndex !== -1) {
-          this.currentSchema.progress.measurements[measurementIndex].syncStatus = 'synced';
+          this.currentSchema.progress.measurements[measurementIndex].syncStatus = SyncStatus.SYNCED;
         }
         break;
     }
@@ -386,19 +389,19 @@ export class DataManagerService {
     const pendingData: { table: string; data: any[] }[] = [];
 
     // Check workout sessions
-    const pendingSessions = this.currentSchema.fitness.sessions.filter(s => s.syncStatus === 'pending' || s.syncStatus === 'local');
+    const pendingSessions = this.currentSchema.fitness.sessions.filter(s => (s.syncStatus as any) === SyncStatus.PENDING || (s.syncStatus as any) === 'local');
     if (pendingSessions.length > 0) {
       pendingData.push({ table: 'workout_sessions', data: pendingSessions });
     }
 
     // Check meal logs
-    const pendingLogs = this.currentSchema.nutrition.logs.filter(log => log.syncStatus === 'pending' || log.syncStatus === 'local');
+    const pendingLogs = this.currentSchema.nutrition.logs.filter(log => (log.syncStatus as any) === SyncStatus.PENDING || (log.syncStatus as any) === 'local');
     if (pendingLogs.length > 0) {
       pendingData.push({ table: 'meal_logs', data: pendingLogs });
     }
 
     // Check measurements
-    const pendingMeasurements = this.currentSchema.progress.measurements.filter(m => m.syncStatus === 'pending' || m.syncStatus === 'local');
+    const pendingMeasurements = this.currentSchema.progress.measurements.filter(m => (m.syncStatus as any) === SyncStatus.PENDING || (m.syncStatus as any) === 'local');
     if (pendingMeasurements.length > 0) {
       pendingData.push({ table: 'progress_entries', data: pendingMeasurements });
     }

@@ -111,11 +111,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.text,
     fontSize: rf(16),
     marginTop: rp(16),
-<<<<<<< HEAD
-    fontWeight: THEME.fontWeight.medium as any,
-=======
     fontWeight: THEME.fontWeight.medium,
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
   },
   errorText: {
     color: THEME.colors.error || '#ff6b6b',

@@ -14,16 +14,7 @@ import {
 import { WorkoutSession } from '../types/workout';
 
 // Define missing types locally
-interface LocalStorageSchema {
-  version: string;
-  entities: string[];
-  createdAt: string;
-  updatedAt: string;
-  user: any;
-  fitness: any;
-  nutrition: any;
-  progress: any;
-}
+import type { LocalStorageSchema } from '../types/localData';
 
 interface ValidationResult {
   isValid: boolean;

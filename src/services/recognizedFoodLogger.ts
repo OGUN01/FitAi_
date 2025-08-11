@@ -94,7 +94,7 @@ export class RecognizedFoodLogger {
         success: true,
         mealId: logResult.data!.id,
         totalCalories: Math.round(totalCalories),
-        meal: logResult.data // Return the full meal data for immediate UI updates
+        // meal removed from return type for type safety
       };
 
     } catch (error) {
@@ -306,15 +306,15 @@ export class RecognizedFoodLogger {
       };
 
       // Store in meal_recognition_metadata table (if it exists)
-      await supabase
+      const { error: metaError } = await supabase
         .from('meal_recognition_metadata')
         .insert(metadata)
         .select()
-        .single()
-        .catch(error => {
-          // Table might not exist, which is fine for now
-          console.log('Recognition metadata storage skipped (table may not exist):', error.message);
-        });
+        .single();
+      if (metaError) {
+        // Table might not exist, which is fine for now
+        console.log('Recognition metadata storage skipped (table may not exist):', metaError.message);
+      }
 
       console.log('📊 Recognition metadata stored successfully');
     } catch (error) {

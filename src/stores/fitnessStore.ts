@@ -210,9 +210,9 @@ export const useFitnessStore = create<FitnessState>()(
           workoutProgress: {
             ...state.workoutProgress,
             [workoutId]: {
+              ...state.workoutProgress[workoutId],
               workoutId,
               progress,
-              ...state.workoutProgress[workoutId],
             },
           },
         }));

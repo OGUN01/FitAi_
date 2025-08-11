@@ -124,8 +124,12 @@ class ExerciseFilterService {
       }
     }
     
+    const level = (fitnessGoals.experience_level || fitnessGoals.experience || '').toLowerCase();
+    const experienceLevel: 'beginner'|'intermediate'|'advanced' =
+      level === 'beginner' || level === 'intermediate' || level === 'advanced' ? (level as any) : 'beginner';
+
     return {
-      experienceLevel: fitnessGoals.experience_level,
+      experienceLevel,
       targetAreas,
       availableEquipment,
       fitnessGoals: fitnessGoals.primaryGoals
@@ -139,14 +143,14 @@ class ExerciseFilterService {
     exerciseDifficulty: string, 
     userLevel: string
   ): boolean {
-    const levelHierarchy = {
-      'beginner': 1,
-      'intermediate': 2,
-      'advanced': 3
+    const levelHierarchy: Record<'beginner'|'intermediate'|'advanced', number> = {
+      beginner: 1,
+      intermediate: 2,
+      advanced: 3,
     };
-    
-    const exerciseLevel = levelHierarchy[exerciseDifficulty] || 2;
-    const userLevelNum = levelHierarchy[userLevel] || 1;
+
+    const exerciseLevel = levelHierarchy[(exerciseDifficulty as 'beginner'|'intermediate'|'advanced')] ?? 2;
+    const userLevelNum = levelHierarchy[(userLevel as 'beginner'|'intermediate'|'advanced')] ?? 1;
     
     // Allow exercises at or below user's level
     return exerciseLevel <= userLevelNum;

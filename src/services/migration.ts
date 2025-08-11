@@ -99,7 +99,7 @@ export interface MigrationError {
 
 export class MigrationEngine {
   private config: MigrationConfig;
-  private steps: MigrationStep[];
+  private steps: MigrationStep[] = [];
   private progressCallbacks: ((progress: MigrationProgress) => void)[] = [];
   private currentMigration: MigrationContext | null = null;
 
@@ -336,7 +336,7 @@ export class MigrationEngine {
           throw error;
         } else {
           // Log non-critical error and continue
-          context.warnings.push(`Non-critical step failed: ${step.name} - ${error.message}`);
+          context.warnings.push(`Non-critical step failed: ${step.name} - ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
     }
@@ -360,8 +360,8 @@ export class MigrationEngine {
 
         const migrationError: MigrationError = {
           step: step.name,
-          code: error.code || 'UNKNOWN_ERROR',
-          message: error.message,
+          code: (error as any)?.code || 'UNKNOWN_ERROR',
+          message: error instanceof Error ? error.message : String(error),
           details: error,
           timestamp: new Date(),
           retryCount,
@@ -438,7 +438,7 @@ export class MigrationEngine {
         };
       }
     } catch (error) {
-      throw new Error(`Data transformation failed: ${error.message}`);
+      throw new Error(`Data transformation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -478,7 +478,7 @@ export class MigrationEngine {
 
       context.uploadedData.user = userData;
     } catch (error) {
-      throw new Error(`Failed to upload user profile: ${error.message}`);
+      throw new Error(`Failed to upload user profile: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -507,7 +507,7 @@ export class MigrationEngine {
 
       context.uploadedData.fitness = fitnessData;
     } catch (error) {
-      throw new Error(`Failed to upload fitness data: ${error.message}`);
+      throw new Error(`Failed to upload fitness data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -536,7 +536,7 @@ export class MigrationEngine {
 
       context.uploadedData.nutrition = nutritionData;
     } catch (error) {
-      throw new Error(`Failed to upload nutrition data: ${error.message}`);
+      throw new Error(`Failed to upload nutrition data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -565,7 +565,7 @@ export class MigrationEngine {
 
       context.uploadedData.progress = progressData;
     } catch (error) {
-      throw new Error(`Failed to upload progress data: ${error.message}`);
+      throw new Error(`Failed to upload progress data: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -574,7 +574,7 @@ export class MigrationEngine {
       // Verify uploaded data exists in Supabase
       await this.verifyDataInSupabase(context);
     } catch (error) {
-      throw new Error(`Migration verification failed: ${error.message}`);
+      throw new Error(`Migration verification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -585,7 +585,7 @@ export class MigrationEngine {
       context.warnings.push('Local storage cleared after successful migration');
     } catch (error) {
       // Non-critical error - log but don't fail migration
-      context.warnings.push(`Failed to cleanup local storage: ${error.message}`);
+      context.warnings.push(`Failed to cleanup local storage: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -605,7 +605,7 @@ export class MigrationEngine {
         await this.deleteFromSupabase('body_analysis', context.userId, context);
         delete context.uploadedData.user;
       } catch (error) {
-        context.warnings.push(`Failed to rollback user profile: ${error.message}`);
+        context.warnings.push(`Failed to rollback user profile: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -620,7 +620,7 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.fitness;
       } catch (error) {
-        context.warnings.push(`Failed to rollback fitness data: ${error.message}`);
+        context.warnings.push(`Failed to rollback fitness data: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -635,7 +635,7 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.nutrition;
       } catch (error) {
-        context.warnings.push(`Failed to rollback nutrition data: ${error.message}`);
+        context.warnings.push(`Failed to rollback nutrition data: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -650,7 +650,7 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.progress;
       } catch (error) {
-        context.warnings.push(`Failed to rollback progress data: ${error.message}`);
+        context.warnings.push(`Failed to rollback progress data: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   }
@@ -685,7 +685,7 @@ export class MigrationEngine {
       await this.sleep(50 + Math.random() * 100);
 
     } catch (error) {
-      throw new Error(`Failed to upload to ${table}: ${error.message}`);
+      throw new Error(`Failed to upload to ${table}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -699,7 +699,7 @@ export class MigrationEngine {
       await this.sleep(50 + Math.random() * 100);
 
     } catch (error) {
-      throw new Error(`Failed to delete from ${table}: ${error.message}`);
+      throw new Error(`Failed to delete from ${table}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -739,7 +739,7 @@ export class MigrationEngine {
       console.log('Data verification completed successfully');
 
     } catch (error) {
-      throw new Error(`Data verification failed: ${error.message}`);
+      throw new Error(`Data verification failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -748,7 +748,7 @@ export class MigrationEngine {
       const backupKey = `migration_backup_${migrationId}`;
       await enhancedLocalStorage.storeData(backupKey, data);
     } catch (error) {
-      throw new Error(`Failed to create backup: ${error.message}`);
+      throw new Error(`Failed to create backup: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -758,7 +758,7 @@ export class MigrationEngine {
       const backupKey = `migration_backup_${context.migrationId}`;
       await enhancedLocalStorage.removeData(backupKey);
     } catch (error) {
-      context.warnings.push(`Failed to cleanup backup: ${error.message}`);
+      context.warnings.push(`Failed to cleanup backup: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

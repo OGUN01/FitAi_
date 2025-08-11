@@ -1,9 +1,9 @@
 // Local Data Types for Track B Infrastructure
 // Comprehensive TypeScript interfaces for local storage schema
 
-import { 
-  UserProfile, 
-  PersonalInfo, 
+import {
+  UserProfile,
+  PersonalInfo,
   FitnessGoals
 } from './user';
 
@@ -147,7 +147,7 @@ export interface LocalWorkoutPlan extends WorkoutPlan {
 
 export interface LocalWorkoutSession extends WorkoutSession {
   localId: string;
-  syncStatus: SyncStatus;
+  syncStatus: SyncStatus | 'local';
   syncMetadata: SyncMetadata;
   mediaFiles?: {
     photos: string[]; // Local file paths
@@ -172,15 +172,146 @@ export interface LocalFood extends Food {
 export interface LoggedFood {
   id: string;
   foodId: string;
-  food: LocalFood;
+  food?: LocalFood; // optional to allow lightweight logs
   quantity: number;
   unit: string;
-  calories: number;
-  macros: Macronutrients;
+  calories?: number;
+  macros?: Macronutrients;
 }
+// ============================================================================
+// PROGRESS MEASUREMENTS (Lightweight type used across services)
+// ============================================================================
+
+export interface BodyMeasurement {
+  id: string;
+  date: string; // ISO date
+  weight?: number; // kg
+  bodyFat?: number; // %
+  muscleMass?: number; // kg
+  chest?: number; // cm
+  waist?: number;
+  hips?: number;
+  biceps?: number;
+  thighs?: number;
+  calves?: number;
+  neck?: number;
+  photos?: string[];
+  notes?: string;
+  syncStatus?: SyncStatus | 'local' | 'synced' | 'pending';
+}
+
+// ============================================================================
+// LOCAL STORAGE SCHEMA (minimal shape needed by DataManager/Stores)
+// ============================================================================
+
+export interface LocalUserData {
+  authState: {
+    isAuthenticated: boolean;
+    userId: string | null;
+    email: string | null;
+    lastLoginAt: string | null;
+    sessionToken: string | null;
+    migrationStatus: {
+      isRequired: boolean;
+      isInProgress: boolean;
+      isCompleted: boolean;
+      currentStep: string | null;
+      totalSteps: number;
+      completedSteps: number;
+      startedAt: string | null;
+      completedAt: string | null;
+      errors: string[];
+    };
+  };
+  onboardingData?: OnboardingData | null;
+  profile?: any;
+  preferences?: UserPreferences | any;
+}
+
+export interface LocalFitnessData {
+  workouts?: any[];
+  exercises?: any[];
+  sessions: WorkoutSession[];
+  plans?: any[];
+  customExercises?: any[];
+}
+
+export interface LocalNutritionData {
+  meals?: any[];
+  foods?: any[];
+  logs: MealLog[];
+  plans?: any[];
+  customFoods?: any[];
+  waterLogs?: WaterLog[];
+}
+
+export interface LocalProgressData {
+  measurements: BodyMeasurement[];
+  photos?: any[];
+  achievements?: any[];
+  analytics?: any[];
+  goals?: any[];
+}
+
+export interface LocalStorageSchema {
+  version: string;
+  encrypted?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: LocalUserData;
+  fitness: LocalFitnessData;
+  nutrition: LocalNutritionData;
+  progress: LocalProgressData;
+  metadata?: any;
+}
+
+// Validation result used by validation service and stores
+export interface ValidationError { field: string; message: string; code: string; severity?: 'error' | 'warning'; }
+export interface ValidationWarning { field: string; message: string; code: string; }
+export interface ValidationResult { isValid: boolean; errors: ValidationError[]; warnings: ValidationWarning[]; }
+
+// Re-export commonly used types for convenience
+export type { WorkoutSession } from './workout';
+
 
 // Re-export types to avoid duplication
 export type { Macronutrients } from './diet';
+
+// User Preferences for local app settings
+export interface UserPreferences {
+  units: 'metric' | 'imperial';
+  notifications: boolean;
+  darkMode: boolean;
+  language: string;
+  timezone: string;
+  autoSync: boolean;
+  dataRetention: number; // days
+}
+
+// Encryption and Storage utility types used by localStorage service
+export interface EncryptionConfig {
+  algorithm: string;
+  keyDerivation: string;
+  iterations: number;
+  saltLength: number;
+  ivLength: number;
+}
+
+export interface EncryptedData {
+  iv: string;
+  salt: string;
+  payload: string;
+  tag?: string;
+}
+
+export interface StorageInfo {
+  totalSize: number;
+  usedSize: number;
+  availableSize: number;
+  quotaExceeded: boolean;
+  lastCleanup: string | null;
+  compressionRatio: number;
+}
 
 export interface LocalNutritionPlan extends NutritionPlan {
   localId: string;
@@ -213,7 +344,12 @@ export interface MealLog {
   foods: LoggedFood[];
   totalCalories: number;
   totalMacros: Macronutrients;
-  loggedAt: string;
+  loggedAt: string; // ISO timestamp
+  // Optional fields for compatibility with services
+  userId?: string;
+  date?: string; // ISO date (YYYY-MM-DD)
+  notes?: string;
+  timestamp?: string; // legacy alias
   photos?: string[]; // Local file paths
   location?: {
     name: string;
@@ -284,7 +420,11 @@ export interface StreakData {
 export interface LocalAchievement extends Achievement {
   localId: string;
   earnedAt?: string;
-  progress: number;
+  progress?: {
+    current: number;
+    target: number;
+    unit: string;
+  };
   isNew: boolean;
   syncStatus: SyncStatus;
   syncMetadata: SyncMetadata;

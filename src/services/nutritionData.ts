@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import { crudOperations } from './crudOperations';
 import { dataManager } from './dataManager';
 import { AuthUser } from '../types/user';
-import { MealLog } from '../types/localData';
+import { MealLog, SyncStatus } from '../types/localData';
 
 // Types for nutrition data
 export interface Food {
@@ -362,19 +362,30 @@ class NutritionDataService {
       const mealLog: MealLog = {
         id: `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId,
-        type: mealData.type,
+        mealType: mealData.type,
         foods: mealData.foods.map(f => ({
+          id: `${f.food_id}_${Date.now()}`,
           foodId: f.food_id,
           quantity: f.quantity_grams,
           unit: 'grams',
+          macros: undefined,
         })),
         totalCalories: nutritionTotals.calories,
-        totalProtein: nutritionTotals.protein,
-        totalCarbs: nutritionTotals.carbs,
-        totalFat: nutritionTotals.fat,
+        totalMacros: {
+          protein: nutritionTotals.protein,
+          carbohydrates: nutritionTotals.carbs,
+          fat: nutritionTotals.fat,
+          fiber: 0,
+        },
         loggedAt: new Date().toISOString(),
         notes: mealData.name,
-        syncStatus: 'pending',
+        syncStatus: SyncStatus.PENDING,
+        syncMetadata: {
+          lastSyncedAt: undefined,
+          lastModifiedAt: new Date().toISOString(),
+          syncVersion: 1,
+          deviceId: 'dev-device',
+        },
       };
 
       // Store using Track B's CRUD operations
@@ -495,24 +506,24 @@ class NutritionDataService {
   private convertMealLogToMeal(mealLog: MealLog): Meal {
     return {
       id: mealLog.id,
-      user_id: mealLog.userId,
-      name: mealLog.notes || `${mealLog.type} meal`,
-      type: mealLog.type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+      user_id: mealLog.userId || 'local-user',
+      name: mealLog.notes || `${mealLog.mealType} meal`,
+      type: mealLog.mealType,
       total_calories: mealLog.totalCalories,
-      total_protein: mealLog.totalProtein,
-      total_carbs: mealLog.totalCarbs,
-      total_fat: mealLog.totalFat,
-      logged_at: mealLog.loggedAt,
+      total_protein: mealLog.totalMacros?.protein ?? 0,
+      total_carbs: mealLog.totalMacros?.carbohydrates ?? 0,
+      total_fat: mealLog.totalMacros?.fat ?? 0,
+      consumed_at: mealLog.loggedAt,
       created_at: mealLog.loggedAt,
       foods: mealLog.foods?.map(f => ({
         id: `${mealLog.id}_${f.foodId}`,
         meal_id: mealLog.id,
         food_id: f.foodId,
         quantity_grams: f.quantity,
-        calories: 0, // Would need to calculate
-        protein: 0,
-        carbs: 0,
-        fat: 0,
+        calories: f.calories ?? 0,
+        protein: f.macros?.protein ?? 0,
+        carbs: f.macros?.carbohydrates ?? 0,
+        fat: f.macros?.fat ?? 0,
       })) || [],
     };
   }

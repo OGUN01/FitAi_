@@ -21,6 +21,40 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*", "App.tsx", "index.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "dist", "build", ".expo", "ios", "android"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "App.tsx",
+    "index.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".expo",
+    "ios",
+    "android",
+    // test and debug harnesses
+    "src/test",
+    "src/test/**/*",
+    "src/tests",
+    "src/tests/**/*",
+    "src/__tests__",
+    "src/__tests__/**/*",
+    "src/components/debug",
+    "src/components/debug/**/*",
+    "src/components/test",
+    "src/components/test/**/*",
+    "src/ai/test*.ts",
+    "src/ai/test-*.ts",
+    "src/ai/realAI*.ts",
+    "src/utils/test*.ts",
+    "src/utils/test*.tsx",
+    "src/utils/**/test*.ts",
+    "src/utils/**/test*.tsx",
+    "src/utils/integration.ts",
+    "src/utils/backendTest.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

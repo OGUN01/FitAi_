@@ -3,14 +3,15 @@
 
 import { dataManager } from './dataManager';
 import { offlineService } from './offline';
-import { 
+import {
   OnboardingData,
   WorkoutSession,
   MealLog,
   BodyMeasurement,
-  UserPreferences,
   LocalStorageSchema,
-  ValidationResult
+  ValidationResult,
+  SyncStatus,
+  UserPreferences
 } from '../types/localData';
 
 // ============================================================================
@@ -118,10 +119,12 @@ export class CrudOperationsService {
         calories: session.caloriesBurned,
         exerciseCount: session.exercises?.length || 0
       });
-      
+
+      // Ensure data layer is initialized before writing
+      await this.initialize();
       await dataManager.storeWorkoutSession(session);
       console.log(`✅ Workout session ${session.id} created successfully`);
-      
+
       // Verify it was stored
       const stored = await this.readWorkoutSession(session.id);
       if (!stored) {
@@ -138,6 +141,8 @@ export class CrudOperationsService {
 
   async readWorkoutSessions(limit?: number): Promise<WorkoutSession[]> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       return await dataManager.getWorkoutSessions(limit);
     } catch (error) {
       console.error('Failed to read workout sessions:', error);
@@ -147,6 +152,8 @@ export class CrudOperationsService {
 
   async readWorkoutSession(sessionId: string): Promise<WorkoutSession | null> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       const sessions = await dataManager.getWorkoutSessions();
       return sessions.find(session => session.id === sessionId) || null;
     } catch (error) {
@@ -157,6 +164,8 @@ export class CrudOperationsService {
 
   async updateWorkoutSession(sessionId: string, updates: Partial<WorkoutSession>): Promise<void> {
     try {
+      // Ensure data layer is initialized before writing
+      await this.initialize();
       await dataManager.updateWorkoutSession(sessionId, updates);
       console.log(`Workout session ${sessionId} updated successfully`);
     } catch (error) {
@@ -186,15 +195,17 @@ export class CrudOperationsService {
     try {
       console.log('🍽️ Creating meal log:', {
         id: mealLog.id,
-        userId: mealLog.userId,
+        userId: mealLog.userId || 'local-user',
         mealType: mealLog.mealType,
         foodCount: mealLog.foods?.length || 0,
         calories: mealLog.totalCalories
       });
-      
+
+      // Ensure data layer is initialized before writing
+      await this.initialize();
       await dataManager.storeMealLog(mealLog);
       console.log(`✅ Meal log ${mealLog.id} created successfully`);
-      
+
       // Verify it was stored
       const stored = await this.readMealLog(mealLog.id);
       if (!stored) {
@@ -211,6 +222,8 @@ export class CrudOperationsService {
 
   async readMealLogs(date?: string, limit?: number): Promise<MealLog[]> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       return await dataManager.getMealLogs(date, limit);
     } catch (error) {
       console.error('Failed to read meal logs:', error);
@@ -220,6 +233,8 @@ export class CrudOperationsService {
 
   async readMealLog(logId: string): Promise<MealLog | null> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       const logs = await dataManager.getMealLogs();
       return logs.find(log => log.id === logId) || null;
     } catch (error) {
@@ -230,6 +245,8 @@ export class CrudOperationsService {
 
   async updateMealLog(logId: string, updates: Partial<MealLog>): Promise<void> {
     try {
+      // Ensure data layer is initialized before writing
+      await this.initialize();
       const existing = await this.readMealLog(logId);
       if (!existing) {
         throw new Error(`Meal log ${logId} not found`);
@@ -238,7 +255,7 @@ export class CrudOperationsService {
       const updated: MealLog = {
         ...existing,
         ...updates,
-        syncStatus: 'pending',
+        syncStatus: SyncStatus.PENDING,
       };
 
       await dataManager.storeMealLog(updated);
@@ -268,6 +285,8 @@ export class CrudOperationsService {
 
   async createBodyMeasurement(measurement: BodyMeasurement): Promise<void> {
     try {
+      // Ensure data layer is initialized before writing
+      await this.initialize();
       await dataManager.storeBodyMeasurement(measurement);
       console.log(`Body measurement ${measurement.id} created successfully`);
     } catch (error) {
@@ -278,6 +297,8 @@ export class CrudOperationsService {
 
   async readBodyMeasurements(limit?: number): Promise<BodyMeasurement[]> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       return await dataManager.getBodyMeasurements(limit);
     } catch (error) {
       console.error('Failed to read body measurements:', error);
@@ -287,6 +308,8 @@ export class CrudOperationsService {
 
   async readBodyMeasurement(measurementId: string): Promise<BodyMeasurement | null> {
     try {
+      // Ensure data layer is initialized before reading
+      await this.initialize();
       const measurements = await dataManager.getBodyMeasurements();
       return measurements.find(measurement => measurement.id === measurementId) || null;
     } catch (error) {

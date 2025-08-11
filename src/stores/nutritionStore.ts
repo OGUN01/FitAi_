@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WeeklyMealPlan, DayMeal } from '../ai/weeklyMealGenerator';
+import { SyncStatus } from '../types/localData';
 import { Meal } from '../types/ai';
 import { crudOperations } from '../services/crudOperations';
 import userSessionManager from '../utils/userSession';
@@ -120,34 +121,47 @@ export const useNutritionStore = create<NutritionState>()(
               }
               
               // Create a proper MealLog object matching the expected schema
-              const mealLog = {
+              const mealLog: import('../types/localData').MealLog = {
                 id: `meal_${meal.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                userId: userSessionManager.getDevUserId(),
-                date: new Date().toISOString().split('T')[0], // ISO date format
-                mealType: (meal.type || 'meal').toLowerCase() as any,
+                mealType: (meal.type || 'meal').toLowerCase() as any, // uses DayMeal.type
                 foods: (meal.items || []).map((item, index) => ({
+                  id: `food_${meal.id}_${index}`,
                   foodId: `food_${meal.id}_${index}`,
-                  name: item.name || 'Unknown food',
+                  food: {
+                    id: `food_${meal.id}_${index}`,
+                    name: item.name || 'Unknown food',
+                    isCustom: true,
+                    isFavorite: false,
+                    localId: `local_${Date.now()}_${index}`,
+                    usageCount: 1,
+                    verificationStatus: 'user_created',
+                  } as any,
                   quantity: item.quantity || 100,
                   unit: 'grams',
                   calories: item.calories || 0,
                   macros: {
-                    protein: item.protein || 0,
-                    carbs: item.carbs || 0,
-                    fat: item.fat || 0,
-                    fiber: item.fiber || 0,
+                    protein: item.macros?.protein ?? 0,
+                    carbohydrates: item.macros?.carbohydrates ?? 0,
+                    fat: item.macros?.fat ?? 0,
+                    fiber: item.macros?.fiber ?? 0,
                   },
                 })),
                 totalCalories: meal.totalCalories || 0,
                 totalMacros: {
-                  protein: meal.totalProtein || 0,
-                  carbs: meal.totalCarbs || 0,
-                  fat: meal.totalFat || 0,
-                  fiber: meal.totalFiber || 0,
+                  protein: meal.totalMacros?.protein ?? 0,
+                  carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                  fat: meal.totalMacros?.fat ?? 0,
+                  fiber: meal.totalMacros?.fiber ?? 0,
                 },
-                notes: `${meal.dayOfWeek || 'unknown'} - ${meal.description || meal.name}`,
+                loggedAt: new Date().toISOString(),
                 photos: [],
-                timestamp: new Date().toISOString(),
+                syncStatus: SyncStatus.PENDING,
+                syncMetadata: {
+                  lastSyncedAt: undefined,
+                  lastModifiedAt: new Date().toISOString(),
+                  syncVersion: 1,
+                  deviceId: 'dev-device',
+                },
               };
 
               await crudOperations.createMealLog(mealLog);
@@ -246,9 +260,9 @@ export const useNutritionStore = create<NutritionState>()(
           mealProgress: {
             ...state.mealProgress,
             [mealId]: {
+              ...state.mealProgress[mealId],
               mealId,
               progress,
-              ...state.mealProgress[mealId],
             },
           },
         }));
@@ -259,6 +273,7 @@ export const useNutritionStore = create<NutritionState>()(
           mealProgress: {
             ...state.mealProgress,
             [mealId]: {
+              ...state.mealProgress[mealId],
               mealId,
               progress: 100,
               completedAt: new Date().toISOString(),
@@ -278,35 +293,59 @@ export const useNutritionStore = create<NutritionState>()(
         
         try {
           // Create a proper MealLog object for active session
-          const mealLog = {
+          const mealLog: import('../types/localData').MealLog = {
             id: logId,
-            userId: userSessionManager.getDevUserId(),
-            date: new Date().toISOString().split('T')[0], // ISO date format
             mealType: meal.type.toLowerCase() as any,
             foods: meal.items.map((item, index) => ({
+              id: `food_${meal.id}_${index}`,
               foodId: `food_${meal.id}_${index}`,
-              name: item.name,
+              food: {
+                id: `food_${meal.id}_${index}`,
+                name: item.name || 'Unknown food',
+                isCustom: true,
+                isFavorite: false,
+                localId: `local_${Date.now()}_${index}`,
+                usageCount: 1,
+                verificationStatus: 'user_created',
+              } as any,
               quantity: item.quantity || 100,
               unit: 'grams',
               calories: item.calories || 0,
               macros: {
-                protein: item.protein || 0,
-                carbs: item.carbs || 0,
-                fat: item.fat || 0,
-                fiber: item.fiber || 0,
+                protein: item.macros?.protein ?? 0,
+                carbohydrates: item.macros?.carbohydrates ?? 0,
+                fat: item.macros?.fat ?? 0,
+                fiber: item.macros?.fiber ?? 0,
               },
             })),
             totalCalories: meal.totalCalories || 0,
             totalMacros: {
-              protein: meal.totalProtein || 0,
-              carbs: meal.totalCarbs || 0,
-              fat: meal.totalFat || 0,
-              fiber: meal.totalFiber || 0,
+              protein: meal.totalMacros?.protein ?? 0,
+              carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+              fat: meal.totalMacros?.fat ?? 0,
+              fiber: meal.totalMacros?.fiber ?? 0,
             },
-            notes: `Active session: ${meal.dayOfWeek} - ${meal.description || meal.name}`,
+            loggedAt: new Date().toISOString(),
             photos: [],
-            timestamp: new Date().toISOString(),
+            syncStatus: SyncStatus.PENDING,
+            syncMetadata: {
+              lastSyncedAt: undefined,
+              lastModifiedAt: new Date().toISOString(),
+              syncVersion: 1,
+              deviceId: 'dev-device',
+            },
+            // Note: totalMacros will be computed elsewhere for active sessions
           };
+          // Preserve extra UI fields separately if needed
+          // Note: macros are saved on the mealLog.totalMacros above; these are UI-only vars if needed
+          const totalMacros = {
+            protein: meal.totalMacros?.protein ?? 0,
+            carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+            fat: meal.totalMacros?.fat ?? 0,
+            fiber: meal.totalMacros?.fiber ?? 0,
+          } as const;
+          const notes = `Active session: ${meal.dayOfWeek} - ${meal.description || meal.name}`;
+          const timestamp = new Date().toISOString();
 
           await crudOperations.createMealLog(mealLog);
           
@@ -343,8 +382,7 @@ export const useNutritionStore = create<NutritionState>()(
 
           // Update log as completed
           await crudOperations.updateMealLog(logId, {
-            notes: (await crudOperations.readMealLog(logId))?.notes + ' [COMPLETED]' || '[COMPLETED]',
-            updatedAt: new Date().toISOString(),
+            notes: ((await crudOperations.readMealLog(logId))?.notes || '') + ' [COMPLETED]',
           });
 
           // Complete the meal
@@ -403,34 +441,47 @@ export const useNutritionStore = create<NutritionState>()(
           
           // Save daily meals as individual logs
           for (const meal of state.dailyMeals) {
-            const mealLog = {
+            const mealLog: import('../types/localData').MealLog = {
               id: `daily_meal_${meal.id || Date.now()}`,
-              userId: userSessionManager.getDevUserId(),
-              date: new Date().toISOString().split('T')[0],
               mealType: meal.type as any,
-              foods: meal.foods?.map((food, index) => ({
+              foods: (meal.items as any[] | undefined)?.map((item: any, index) => ({
+                id: `food_${meal.id || Date.now()}_${index}`,
                 foodId: `food_${meal.id || Date.now()}_${index}`,
-                name: food.name,
+                food: {
+                  id: `food_${meal.id || Date.now()}_${index}`,
+                  name: item.name || 'Unknown food',
+                  isCustom: true,
+                  isFavorite: false,
+                  localId: `local_${Date.now()}_${index}`,
+                  usageCount: 1,
+                  verificationStatus: 'user_created',
+                } as any,
                 quantity: 100,
                 unit: 'grams',
-                calories: food.calories || 0,
+                calories: item.calories || 0,
                 macros: {
-                  protein: food.protein || 0,
-                  carbs: food.carbs || 0,
-                  fat: food.fat || 0,
-                  fiber: food.fiber || 0,
+                  protein: item.macros?.protein ?? 0,
+                  carbohydrates: item.macros?.carbohydrates ?? 0,
+                  fat: item.macros?.fat ?? 0,
+                  fiber: item.macros?.fiber ?? 0,
                 },
               })) || [],
               totalCalories: meal.totalCalories || 0,
               totalMacros: {
-                protein: meal.totalProtein || 0,
-                carbs: meal.totalCarbs || 0,
-                fat: meal.totalFat || 0,
-                fiber: meal.totalFiber || 0,
+                protein: meal.totalMacros?.protein ?? 0,
+                carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                fat: meal.totalMacros?.fat ?? 0,
+                fiber: meal.totalMacros?.fiber ?? 0,
               },
-              notes: meal.instructions || '',
+              loggedAt: new Date().toISOString(),
               photos: [],
-              timestamp: new Date().toISOString(),
+              syncStatus: SyncStatus.PENDING,
+              syncMetadata: {
+                lastSyncedAt: undefined,
+                lastModifiedAt: new Date().toISOString(),
+                syncVersion: 1,
+                deviceId: 'dev-device',
+              },
             };
 
             await crudOperations.createMealLog(mealLog);

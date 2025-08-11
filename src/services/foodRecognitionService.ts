@@ -155,9 +155,9 @@ class FoodRecognitionService {
 
     } catch (error) {
       console.error('Gemini analysis error:', error);
-      
+
       // Try with next API key if rate limited
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
+      if (error instanceof Error && (error.message?.includes('429') || error.message?.includes('quota'))) {
         console.log('🔄 Rate limited, trying next API key...');
         const nextKey = await this.apiKeyRotator.getNextAvailableKey();
         if (nextKey) {

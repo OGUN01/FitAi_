@@ -71,24 +71,24 @@ export class FoodRecognitionFeedbackService {
       };
 
       // Store in feedback table
-      const { data, error } = await supabase
+      const insertRes = await supabase
         .from('food_recognition_feedback')
         .insert(feedbackData)
         .select()
-        .single()
-        .catch(async (insertError) => {
-          // Table might not exist, create it dynamically
-          console.log('📝 Feedback table may not exist, attempting to store in alternative location...');
-          
-          // Store in a general feedback table or local storage as fallback
-          return this.storeFeedbackAlternative(feedbackData);
-        });
+        .single();
+      let { data, error } = insertRes;
+      if (error) {
+        console.log('📝 Feedback table may not exist, attempting to store in alternative location...');
+        const alt = await this.storeFeedbackAlternative(feedbackData);
+        data = alt.data;
+        error = alt.error;
+      }
 
       if (error) {
         console.error('❌ Error storing feedback:', error);
         return {
           success: false,
-          error: error.message
+          error: (error as any).message || 'Failed to submit feedback'
         };
       }
 
@@ -96,7 +96,7 @@ export class FoodRecognitionFeedbackService {
       await this.updateAccuracyMetrics(stats);
 
       console.log('✅ Feedback submitted successfully:', data?.id || 'alternative-storage');
-      
+
       return {
         success: true,
         feedbackId: data?.id || 'stored-locally'
@@ -126,20 +126,22 @@ export class FoodRecognitionFeedbackService {
           created_at: new Date().toISOString()
         })
         .select()
-        .single()
-        .catch(() => {
-          // If that fails too, just log it locally and return success
-          console.log('📝 Stored feedback locally for future sync:', {
-            feedbackId: `local_${Date.now()}`,
-            userId: feedbackData.user_id,
-            submittedAt: feedbackData.submitted_at
-          });
-          
-          return {
-            data: { id: `local_${Date.now()}` },
-            error: null
-          };
+        .single();
+      if (error) {
+        // If that fails too, just log it locally and return success
+        console.log('📝 Stored feedback locally for future sync:', {
+          feedbackId: `local_${Date.now()}`,
+          userId: feedbackData.user_id,
+          submittedAt: feedbackData.submitted_at
         });
+
+        return {
+          data: { id: `local_${Date.now()}` },
+          error: null
+        };
+      }
+
+
 
       return { data, error };
     } catch (error) {
@@ -201,11 +203,11 @@ export class FoodRecognitionFeedbackService {
 
     // Generate improvement suggestions
     const improvementSuggestions: string[] = [];
-    
+
     if (averageRating < 3) {
       improvementSuggestions.push('Overall recognition quality needs significant improvement');
     }
-    
+
     if (accuracyPercentage < 80) {
       improvementSuggestions.push('Food identification accuracy below acceptable threshold');
     }
@@ -244,7 +246,7 @@ export class FoodRecognitionFeedbackService {
   private async updateAccuracyMetrics(stats: any): Promise<void> {
     try {
       // Try to update accuracy tracking table
-      await supabase
+      const { error: accError } = await supabase
         .from('recognition_accuracy_metrics')
         .insert({
           date: new Date().toISOString().split('T')[0],
@@ -257,10 +259,10 @@ export class FoodRecognitionFeedbackService {
           created_at: new Date().toISOString()
         })
         .select()
-        .single()
-        .catch(error => {
-          console.log('📊 Accuracy metrics table not available, skipping update:', error.message);
-        });
+        .single();
+      if (accError) {
+        console.log('📊 Accuracy metrics table not available, skipping update:', accError.message);
+      }
 
       console.log('📊 Updated accuracy metrics with new feedback');
     } catch (error) {
@@ -292,7 +294,7 @@ export class FoodRecognitionFeedbackService {
         query = query.eq('user_id', userId);
       }
 
-      const { data, error } = await query.catch(() => ({ data: null, error: null }));
+      const { data, error } = await query;
 
       if (error || !data) {
         console.log('📊 No feedback data available for statistics');
@@ -307,11 +309,11 @@ export class FoodRecognitionFeedbackService {
 
       // Calculate statistics
       const totalFeedbacks = data.length;
-      const averageRating = data.reduce((sum, feedback) => sum + feedback.overall_accuracy_rating, 0) / totalFeedbacks;
+      const averageRating = (data as any[]).reduce((sum, feedback) => sum + feedback.overall_accuracy_rating, 0) / totalFeedbacks;
 
       // Build accuracy trend
       const dailyAccuracy: Record<string, { correct: number; total: number }> = {};
-      data.forEach(feedback => {
+      (data as any[]).forEach((feedback: any) => {
         const date = feedback.submitted_at.split('T')[0];
         if (!dailyAccuracy[date]) {
           dailyAccuracy[date] = { correct: 0, total: 0 };
@@ -331,7 +333,7 @@ export class FoodRecognitionFeedbackService {
       const cuisinePerformance: Record<string, number> = {};
       const allIssues: string[] = [];
 
-      data.forEach(feedback => {
+      (data as any[]).forEach((feedback: any) => {
         // Extract cuisine performance from feedback_data if available
         if (feedback.feedback_data?.statistics?.cuisineAccuracy) {
           Object.entries(feedback.feedback_data.statistics.cuisineAccuracy).forEach(([cuisine, stats]: [string, any]) => {

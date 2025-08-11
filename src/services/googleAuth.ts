@@ -89,8 +89,8 @@ class GoogleAuthService {
       await GoogleSignin.hasPlayServices();
 
       // Get user info from Google
-      const userInfo = await GoogleSignin.signIn();
-      console.log('✅ Google Sign-In successful:', userInfo.user.email);
+      const userInfo: any = await GoogleSignin.signIn();
+      console.log('✅ Google Sign-In successful');
 
       // Get ID token for Supabase
       const tokens = await GoogleSignin.getTokens();
@@ -143,7 +143,7 @@ class GoogleAuthService {
           .insert({
             id: data.user.id,
             email: data.user.email!,
-            name: userInfo.user.name || userInfo.user.givenName || '',
+            name: (userInfo as any)?.user?.name || (userInfo as any)?.user?.givenName || '',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           });
@@ -245,7 +245,8 @@ class GoogleAuthService {
       console.log('🔄 Handling Google OAuth callback...');
 
       // Extract the session from the callback URL
-      const { data, error } = await supabase.auth.getSessionFromUrl(url);
+      const code = new URL(url).searchParams.get('code') || '';
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         console.error('❌ OAuth callback error:', error);
@@ -365,9 +366,15 @@ class GoogleAuthService {
     try {
       console.log('🔓 Unlinking Google account...');
 
-      const { data, error } = await supabase.auth.unlinkIdentity({
-        provider: 'google',
-      });
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) {
+        return { success: false, error: userErr?.message || 'No authenticated user' };
+      }
+      const googleIdentity = user.identities?.find(i => i.provider === 'google');
+      if (!googleIdentity) {
+        return { success: false, error: 'No Google identity linked' };
+      }
+      const { data, error } = await supabase.auth.unlinkIdentity(googleIdentity);
 
       if (error) {
         console.error('❌ Google account unlinking error:', error);

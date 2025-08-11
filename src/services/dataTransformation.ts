@@ -1,13 +1,14 @@
 // Data Transformation Service for Track B Infrastructure
 // Handles conversion between local storage format and Supabase format
 
-import { 
+import {
   LocalStorageSchema,
   OnboardingData,
   WorkoutSession,
   MealLog,
   BodyMeasurement,
-  UserPreferences
+  UserPreferences,
+  SyncStatus
 } from '../types/localData';
 import { Database } from './supabase';
 
@@ -118,7 +119,6 @@ export class DataTransformationService {
       notes: supabaseSession.notes || '',
       rating: supabaseSession.rating || 0,
       isCompleted: supabaseSession.is_completed,
-      syncStatus: 'synced',
     };
   }
 
@@ -151,15 +151,15 @@ export class DataTransformationService {
   ): MealLog {
     return {
       id: supabaseMealLog.id,
-      userId: supabaseMealLog.user_id,
-      date: supabaseMealLog.date,
       mealType: supabaseMealLog.meal_type,
       foods: JSON.parse(supabaseMealLog.foods_data || '[]'),
       totalCalories: supabaseMealLog.total_calories,
       totalMacros: JSON.parse(supabaseMealLog.total_macros || '{}'),
+      loggedAt: supabaseMealLog.logged_at || new Date().toISOString(),
       notes: supabaseMealLog.notes || '',
       photos: supabaseMealLog.photos || [],
-      syncStatus: 'synced',
+      syncStatus: SyncStatus.SYNCED,
+      syncMetadata: { lastSyncedAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' },
     };
   }
 
@@ -178,7 +178,15 @@ export class DataTransformationService {
       weight_kg: measurement.weight,
       body_fat_percentage: measurement.bodyFat,
       muscle_mass_kg: measurement.muscleMass,
-      measurements_data: JSON.stringify(measurement.measurements),
+      measurements_data: JSON.stringify({
+        chest: measurement.chest,
+        waist: measurement.waist,
+        hips: measurement.hips,
+        biceps: measurement.biceps,
+        thighs: measurement.thighs,
+        calves: measurement.calves,
+        neck: measurement.neck,
+      }),
       notes: measurement.notes || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -190,14 +198,14 @@ export class DataTransformationService {
   ): BodyMeasurement {
     return {
       id: supabaseEntry.id,
-      userId: supabaseEntry.user_id,
+      // userId omitted in BodyMeasurement type
       date: supabaseEntry.date,
       weight: supabaseEntry.weight_kg,
       bodyFat: supabaseEntry.body_fat_percentage,
       muscleMass: supabaseEntry.muscle_mass_kg,
-      measurements: JSON.parse(supabaseEntry.measurements_data || '{}'),
       notes: supabaseEntry.notes || '',
-      syncStatus: 'synced',
+      syncStatus: SyncStatus.SYNCED,
+      syncMetadata: { lastSyncedAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' },
     };
   }
 

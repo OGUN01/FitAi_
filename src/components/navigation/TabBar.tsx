@@ -78,11 +78,7 @@ export const TabBar: React.FC<TabBarProps> = ({
                 styles.tabText,
                 {
                   fontSize: responsiveTheme.fontSize.xs,
-<<<<<<< HEAD
-                  fontWeight: responsiveTheme.fontWeight.medium as any,
-=======
-                  fontWeight: THEME.fontWeight.medium,
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
+                  fontWeight: responsiveTheme.fontWeight.medium,
                   color: isActive ? responsiveTheme.colors.primary : responsiveTheme.colors.textMuted,
                 }
               ]}>

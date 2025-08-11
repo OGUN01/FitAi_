@@ -124,6 +124,60 @@ export interface Database {
           updated_at?: string;
         };
       };
+      workout_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          workout_id: string;
+          started_at: string;
+          completed_at: string | null;
+          duration_minutes: number;
+          calories_burned: number;
+          exercises_data: string;
+          notes: string | null;
+          rating: number | null;
+          is_completed: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['workout_sessions']['Row']> & { id: string; user_id: string };
+        Update: Partial<Database['public']['Tables']['workout_sessions']['Row']>;
+      };
+      meal_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string | null;
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+          foods_data: string;
+          total_calories: number;
+          total_macros: string;
+          notes: string | null;
+          photos: string[] | null;
+          logged_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['meal_logs']['Row']> & { id: string; user_id: string };
+        Update: Partial<Database['public']['Tables']['meal_logs']['Row']>;
+      };
+      progress_entries: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          weight_kg: number | null;
+          body_fat_percentage: number | null;
+          muscle_mass_kg: number | null;
+          measurements_data: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['progress_entries']['Row']> & { id: string; user_id: string };
+        Update: Partial<Database['public']['Tables']['progress_entries']['Row']>;
+      };
+
     };
   };
 }

@@ -12,7 +12,9 @@ const ensureNotificationHandlerSet = () => {
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
-      }),
+        // Expo SDK may expect additional behavior fields in newer versions
+        // We set banner/list implicitly via platform defaults
+      }) as Notifications.NotificationBehavior,
     });
     isHandlerSet = true;
   }
@@ -103,7 +105,7 @@ class NotificationService {
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: '#FF231F7C',
-          sound: true,
+          sound: 'default',
         });
 
         await Notifications.setNotificationChannelAsync('water-reminders', {
@@ -111,7 +113,7 @@ class NotificationService {
           importance: Notifications.AndroidImportance.DEFAULT,
           vibrationPattern: [0, 250],
           lightColor: '#0080FF',
-          sound: true,
+          sound: 'default',
         });
       }
 
@@ -128,7 +130,7 @@ class NotificationService {
     identifier: string,
     title: string,
     body: string,
-    trigger: Date | Notifications.NotificationTriggerInput,
+    trigger: Notifications.NotificationTriggerInput,
     data?: any
   ): Promise<string | null> {
     try {
@@ -139,9 +141,9 @@ class NotificationService {
           body,
           data: data || {},
           categoryIdentifier: 'fitness',
-          sound: true,
+          sound: 'default',
         },
-        trigger,
+        trigger: trigger as Notifications.NotificationTriggerInput,
       });
 
       console.log(`Scheduled notification: ${identifier} -> ${notificationId}`);
@@ -220,7 +222,7 @@ class NotificationService {
             identifier,
             '💧 Hydration Time!',
             `Time to drink ${litersPerReminder}L of water. Stay hydrated for better performance!`,
-            reminderTime,
+            { date: reminderTime } as Notifications.NotificationTriggerInput,
             { type: 'water', liters: litersPerReminder }
           );
         }
@@ -335,7 +337,7 @@ class NotificationService {
             identifier,
             '🏋️ Workout Time Coming Up!',
             `Your workout starts in ${config.reminderMinutes} minutes. Get ready to crush it! 💪`,
-            reminderTime,
+            { date: reminderTime } as Notifications.NotificationTriggerInput,
             { type: 'workout', originalTime: workoutTime }
           );
         }
@@ -373,7 +375,7 @@ class NotificationService {
             identifier,
             `${meal.emoji} ${meal.name} Time!`,
             `Time for a nutritious ${meal.name.toLowerCase()}. Fuel your body right! 🌟`,
-            mealTime,
+            { date: mealTime } as Notifications.NotificationTriggerInput,
             { type: 'meal', mealType: meal.key }
           );
         }
@@ -408,7 +410,7 @@ class NotificationService {
           identifier,
           '😴 Wind Down Time',
           `Bedtime in ${config.reminderMinutes} minutes. Start your relaxation routine! 🌙`,
-          preReminderTime,
+          { date: preReminderTime } as Notifications.NotificationTriggerInput,
           { type: 'sleep', phase: 'pre' }
         );
       }
@@ -425,7 +427,7 @@ class NotificationService {
           identifier,
           '🌙 Time for Bed',
           'Good night! Quality sleep is essential for recovery and performance. Sweet dreams! 😴',
-          bedTime,
+          { date: bedTime } as Notifications.NotificationTriggerInput,
           { type: 'sleep', phase: 'bedtime' }
         );
       }

@@ -530,7 +530,25 @@ export const useErrorHandling = () => {
  */
 export const initializeBackend = async () => {
   try {
+    // Initialize auth/API first
     await api.initialize();
+
+    // Ensure local data layer is ready before any reads
+    try {
+      // Initialize the Data Manager directly
+      await (await import('../services/dataManager')).dataManager.initialize();
+    } catch (dmErr) {
+      console.warn('Data Manager initialization warning:', dmErr);
+    }
+
+    try {
+      // Initialize CRUD layer (idempotent; will init Data Manager if needed)
+      const { crudOperations } = await import('../services/crudOperations');
+      await crudOperations.initialize();
+    } catch (crudErr) {
+      console.warn('CRUD Operations initialization warning:', crudErr);
+    }
+
     console.log('Backend initialized successfully');
   } catch (error) {
     console.warn('Failed to initialize backend:', error);

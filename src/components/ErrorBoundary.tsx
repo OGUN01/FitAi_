@@ -22,16 +22,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-<<<<<<< HEAD
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    // Log to console for debugging
-    console.log('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-    });
-=======
     // Suppress Metro symbolication errors from console
     if (error.message?.includes('unknown') ||
         error.stack?.includes('getCodeFrame') ||
@@ -50,7 +40,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
         componentStack: errorInfo.componentStack,
       });
     }
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
   }
 
   handleRestart = () => {

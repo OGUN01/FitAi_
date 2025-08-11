@@ -1491,14 +1491,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
               <View style={styles.progressBar}>
                 <View style={[
                   styles.progressFill, 
-                  { 
-<<<<<<< HEAD
-                    width: `${Math.min((waterGlasses / waterGoal) * 100, 100)}%`,
-                    backgroundColor: waterGlasses >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary
-=======
+                  {
                     width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
                     backgroundColor: waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
                   }
                 ]} />
               </View>

@@ -2,8 +2,8 @@ import { useFitnessStore } from '../stores/fitnessStore';
 import { useNutritionStore } from '../stores/nutritionStore';
 import { DayWorkout } from '../ai/weeklyContentGenerator';
 import { DayMeal } from '../ai/weeklyMealGenerator';
-import { crudOperationsService } from './crudOperations';
-import { MealLog } from './dataManager';
+import crudOperations from './crudOperations';
+import { MealLog, SyncStatus } from '../types/localData';
 
 export interface CompletionEvent {
   id: string;
@@ -104,20 +104,25 @@ class CompletionTrackingService {
             // Create meal log directly using CRUD operations
             const mealLog: MealLog = {
               id: `weekly_meal_log_${mealId}_${Date.now()}`,
-              userId: currentUserId,
-              type: meal.type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-              foods: [], // Empty foods array since this is a complete meal
+              mealType: meal.type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+              foods: [],
               totalCalories: meal.totalCalories || 0,
-              totalProtein: meal.totalProtein || 0,
-              totalCarbs: meal.totalCarbs || 0,
-              totalFat: meal.totalFat || 0,
+              totalMacros: {
+                protein: meal.totalMacros?.protein ?? 0,
+                carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                fat: meal.totalMacros?.fat ?? 0,
+                fiber: meal.totalMacros?.fiber ?? 0,
+                sugar: meal.totalMacros?.sugar ?? 0,
+                sodium: meal.totalMacros?.sodium ?? 0,
+              },
               loggedAt: new Date().toISOString(),
               notes: `Weekly meal plan: ${meal.name}`,
-              syncStatus: 'pending',
+              syncStatus: SyncStatus.PENDING,
+              syncMetadata: { lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' }
             };
 
             // Store the meal log
-            await crudOperationsService.createMealLog(mealLog);
+            await crudOperations.createMealLog(mealLog);
             console.log(`✅ Meal log created successfully for: ${meal.name} (${meal.totalCalories} calories)`);
           } else {
             console.warn(`⚠️ No user ID available, skipping meal log creation`);

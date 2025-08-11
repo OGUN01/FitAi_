@@ -183,7 +183,7 @@ export class EnhancedLocalStorageService {
   private async initializeEncryption(userPassword?: string): Promise<void> {
     try {
       let encryptionKey = await AsyncStorage.getItem(STORAGE_KEYS.ENCRYPTION_KEY);
-      
+
       if (!encryptionKey) {
         // Generate new encryption key
         const password = userPassword || this.generateRandomPassword();
@@ -193,10 +193,10 @@ export class EnhancedLocalStorageService {
           keySize: 256 / 32,
           iterations: ENCRYPTION_CONFIG.iterations,
         }).toString();
-        
+
         await AsyncStorage.setItem(STORAGE_KEYS.ENCRYPTION_KEY, encryptionKey);
       }
-      
+
       this.encryptionKey = encryptionKey;
     } catch (error) {
       console.error('Failed to initialize encryption:', error);
@@ -239,7 +239,9 @@ export class EnhancedLocalStorageService {
           notifications: true,
           darkMode: true,
           language: 'en',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timezone: (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function')
+            ? Intl.DateTimeFormat().resolvedOptions().timeZone
+            : 'UTC',
           autoSync: true,
           dataRetention: 365,
         },
@@ -386,7 +388,7 @@ export class EnhancedLocalStorageService {
     try {
       let storedData = await AsyncStorage.getItem(key);
 
-      if (!storedData) {
+      if (!storedData || storedData === 'undefined') {
         return null;
       }
 
@@ -413,7 +415,7 @@ export class EnhancedLocalStorageService {
     try {
       let storedData = await AsyncStorage.getItem(key);
 
-      if (!storedData) {
+      if (!storedData || storedData === 'undefined') {
         return null;
       }
 
@@ -545,9 +547,9 @@ export class EnhancedLocalStorageService {
     });
 
     return {
-      data: encrypted.ciphertext.toString(CryptoUtils.enc.Base64),
-      iv: iv.toString(CryptoUtils.enc.Base64),
-      salt: salt.toString(CryptoUtils.enc.Base64),
+      payload: encrypted.ciphertext.toString(CryptoUtils.enc.Base64),
+      iv: iv.toString(),
+      salt: salt.toString(),
       tag: encrypted.tag?.toString(CryptoUtils.enc.Base64) || '',
     };
   }
@@ -559,8 +561,8 @@ export class EnhancedLocalStorageService {
 
     const decrypted = CryptoUtils.AES.decrypt(
       {
-        ciphertext: CryptoUtils.enc.Base64.parse(encryptedData.data),
-        tag: CryptoUtils.enc.Base64.parse(encryptedData.tag),
+        ciphertext: CryptoUtils.enc.Base64.parse(encryptedData.payload),
+        tag: CryptoUtils.enc.Base64.parse(encryptedData.tag || ''),
       } as any,
       this.encryptionKey,
       {
@@ -594,7 +596,7 @@ export class EnhancedLocalStorageService {
     try {
       const keys = await AsyncStorage.getAllKeys();
       const fitaiKeys = keys.filter(key => key.startsWith(STORAGE_KEY_PREFIX));
-      
+
       let totalSize = 0;
       for (const key of fitaiKeys) {
         const value = await AsyncStorage.getItem(key);
@@ -603,7 +605,7 @@ export class EnhancedLocalStorageService {
           totalSize += value.length * 2;
         }
       }
-      
+
       const storageInfo: StorageInfo = {
         totalSize: totalSize,
         usedSize: totalSize,
@@ -612,7 +614,7 @@ export class EnhancedLocalStorageService {
         lastCleanup: null,
         compressionRatio: this.compressionEnabled ? 0.7 : 1.0, // Estimated
       };
-      
+
       await AsyncStorage.setItem(STORAGE_KEYS.STORAGE_INFO, JSON.stringify(storageInfo));
     } catch (error) {
       console.error('Failed to update storage info:', error);
@@ -661,7 +663,63 @@ export class EnhancedLocalStorageService {
 
   async getAvailableSpace(): Promise<number> {
     const storageInfo = await this.getStorageInfo();
-    return storageInfo?.availableSpace || 0;
+    return storageInfo?.availableSize || 0;
+  }
+
+  // Basic key-value setter used by migration
+  async setItem(key: string, value: any): Promise<void> {
+    this.ensureInitialized();
+    await AsyncStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+  }
+
+  // Clear all FitAI local storage keys and reinitialize minimal schema
+  async clearAll(): Promise<void> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const fitaiKeys = keys.filter(key => key.startsWith(STORAGE_KEY_PREFIX));
+      if (fitaiKeys.length) {
+        await AsyncStorage.multiRemove(fitaiKeys);
+      }
+      // Recreate minimal schema header
+      const newSchema: LocalStorageSchema = {
+        version: STORAGE_VERSION,
+        encrypted: this.encryptionEnabled,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        user: {
+          authState: {
+            isAuthenticated: false,
+            userId: null,
+            email: null,
+            lastLoginAt: null,
+            sessionToken: null,
+            migrationStatus: {
+              isRequired: false,
+              isInProgress: false,
+              isCompleted: false,
+              currentStep: null,
+              totalSteps: 0,
+              completedSteps: 0,
+              startedAt: null,
+              completedAt: null,
+              errors: []
+            }
+          },
+          onboardingData: null,
+          profile: null,
+          preferences: null
+        },
+        fitness: { sessions: [] },
+        nutrition: { logs: [] },
+        progress: { measurements: [] },
+        metadata: {}
+      };
+      await AsyncStorage.setItem(STORAGE_KEYS.SCHEMA, JSON.stringify(newSchema));
+      await this.updateStorageInfo();
+    } catch (error) {
+      console.error('Failed to clear local storage:', error);
+      throw error;
+    }
   }
 
   // ============================================================================

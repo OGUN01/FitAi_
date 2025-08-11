@@ -1,4 +1,4 @@
-import React, { useState, useEffect, PropsWithChildren } from 'react';
+import React, { useState, useEffect, useRef, PropsWithChildren } from 'react';
 import {
   View,
   Text,
@@ -43,16 +43,24 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
     }
   }, [isVisible, duration]);
 
-  // Timer countdown logic
+  // Keep latest onComplete in a ref to avoid effect restarts
+  const onCompleteRef = useRef(onComplete);
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
-    if (isRunning && !isPaused && timeRemaining > 0) {
+  // Timer countdown logic - stable interval not affected by parent re-renders
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    if (isRunning && !isPaused) {
       interval = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
+            // stop and invoke complete
             setIsRunning(false);
-            onComplete();
+            // use ref to avoid stale closures
+            onCompleteRef.current?.();
             return 0;
           }
           return prev - 1;
@@ -65,7 +73,7 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
         clearInterval(interval);
       }
     };
-  }, [isRunning, isPaused, timeRemaining, onComplete]);
+  }, [isRunning, isPaused]);
 
   // Format time display
   const formatTime = (seconds: number) => {
@@ -86,8 +94,9 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
     }
   };
 
-  // Calculate progress percentage
-  const progressPercentage = ((duration - timeRemaining) / duration) * 100;
+  // Calculate progress percentage (guard against zero duration)
+  const safeDuration = Math.max(1, Number.isFinite(duration) ? duration : 0);
+  const progressPercentage = ((safeDuration - Math.min(timeRemaining, safeDuration)) / safeDuration) * 100;
 
   if (!isVisible) return null;
 

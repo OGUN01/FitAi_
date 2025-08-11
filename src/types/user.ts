@@ -15,6 +15,9 @@ export interface FitnessGoals {
   timeCommitment: string;
   experience: string;
   experience_level: string; // Added for backward compatibility
+  // Optional extended fields used by exercise filtering
+  preferred_equipment?: string[];
+  target_areas?: ('full_body' | 'upper_body' | 'lower_body' | 'core')[];
 }
 
 // Diet and Workout Preferences (from onboarding)
@@ -115,11 +118,11 @@ export interface OnboardingData {
 }
 
 // Activity levels
-export type ActivityLevel = 
-  | 'sedentary' 
-  | 'light' 
-  | 'moderate' 
-  | 'active' 
+export type ActivityLevel =
+  | 'sedentary'
+  | 'light'
+  | 'moderate'
+  | 'active'
   | 'extreme';
 
 // Gender options
@@ -129,7 +132,7 @@ export type Gender = 'male' | 'female' | 'other';
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
 
 // Fitness goals
-export type FitnessGoal = 
+export type FitnessGoal =
   | 'weight_loss'
   | 'muscle_gain'
   | 'strength'
@@ -139,3 +142,10 @@ export type FitnessGoal =
 
 // Time commitment options
 export type TimeCommitment = '15-30' | '30-45' | '45-60' | '60+';
+
+
+// API request types used by userProfile service/store
+export interface CreateProfileRequest extends PersonalInfo {}
+export interface UpdateProfileRequest extends Partial<PersonalInfo> {}
+export interface CreateFitnessGoalsRequest extends FitnessGoals {}
+export interface UpdateFitnessGoalsRequest extends Partial<FitnessGoals> {}

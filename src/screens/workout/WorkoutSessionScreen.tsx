@@ -308,6 +308,28 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     setRestTimeRemaining(restTime);
   }, [currentExercise.restTime]);
 
+  // Complete next incomplete set when the exercise timer finishes
+  const completeSetAfterTimer = useCallback(() => {
+    try {
+      // Hide the timer modal
+      setShowExerciseTimer(false);
+
+      // Find next incomplete set for the current exercise
+      const sets = exerciseProgress[currentExerciseIndex]?.completedSets || [];
+      const nextIncompleteIndex = sets.findIndex(s => !s);
+
+      if (nextIncompleteIndex !== -1) {
+        // Mark that set as completed
+        handleSetComplete(nextIncompleteIndex);
+      }
+      // If all sets are already completed, do nothing here; user can navigate Next/Finish
+    } catch (err) {
+      console.error('completeSetAfterTimer error:', err);
+      setShowExerciseTimer(false);
+    }
+  }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
+
+
   // Enhanced navigation with animations
   const goToNextExercise = useCallback(() => {
     if (currentExerciseIndex < totalExercises - 1) {
@@ -554,7 +576,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         isVisible={isRestTime}
         duration={restTimeRemaining}
         title="Rest Time"
-        onComplete={() => setIsRestTime(false)}
+        onComplete={() => {
+          setIsRestTime(false);
+          setShowExerciseTimer(true);
+        }}
         onCancel={() => setIsRestTime(false)}
       />
       {/* Exercise Timer */}
@@ -1025,9 +1050,6 @@ const styles = StyleSheet.create({
   instructionsText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-<<<<<<< HEAD
-    lineHeight: 20,
-=======
     lineHeight: THEME.fontSize.sm * 1.5,
   },
 
@@ -1055,7 +1077,6 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
     fontWeight: THEME.fontWeight.medium,
     textTransform: 'uppercase',
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
   },
 
   navigationContainer: {

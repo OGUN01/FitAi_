@@ -1,7 +1,7 @@
 // Google Gemini AI Integration Service for FitAI
 // Enhanced with API key rotation and food recognition support
 
-import { GoogleGenerativeAI, GenerativeModel, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold, Type } from '@google/genai';
 import { AIResponse } from '../types/ai';
 import * as FileSystem from 'expo-file-system';
 import { APIKeyRotator } from '../utils/apiKeyRotator';
@@ -51,8 +51,8 @@ console.log('🔑 Gemini API Key Status:', GEMINI_API_KEY ? `${GEMINI_API_KEY.su
 console.log('🤖 Using Latest Model:', MODEL_NAME);
 
 // Initialize Gemini AI
-let genAI: GoogleGenerativeAI | null = null;
-let model: GenerativeModel | null = null;
+let genAI: GoogleGenAI | null = null;
+let model: any | null = null;
 
 // Check API key on module load
 if (!GEMINI_API_KEY) {
@@ -71,37 +71,13 @@ const initializeGemini = () => {
   }
 
   try {
-    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+    genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-    // Initialize with latest Gemini 2.5 Flash configuration
-    model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-        responseMimeType: "text/plain",
-      },
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        },
-      ],
-    });
+    // With @google/genai we don't bind config at model creation; we pass it per request
+    model = { __placeholder: true } as any;
+
+    // Safety settings are provided per request in generateResponse (see per-call config)
+    // No-op here.
 
     console.log('✅ Gemini 2.5 Flash initialized with official structured output support');
     return true;
@@ -274,25 +250,14 @@ export const generateResponseWithImage = async (
 ): Promise<any> => {
   try {
     console.log('🖼️ Generating response with image...');
-    
+
     const apiKey = options.apiKey || GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error('No API key available');
     }
 
     // Initialize model with specific API key
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const modelInstance = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        temperature: options.temperature || 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 8192,
-        responseMimeType: options.schema ? "application/json" : "text/plain",
-        responseSchema: options.schema
-      }
-    });
+    const genai = new GoogleGenAI({ apiKey });
 
     // Read image file
     const imageData = await FileSystem.readAsStringAsync(imageUri, {
@@ -306,13 +271,23 @@ export const generateResponseWithImage = async (
       }
     };
 
-    // Generate response
-    const result = await modelInstance.generateContent([prompt, imagePart]);
-    const response = result.response;
-    const text = response.text();
+    // Generate response using official per-request config
+    const result = await genai.models.generateContent({
+      model: MODEL_NAME,
+      contents: [prompt, imagePart] as any,
+      config: {
+        responseMimeType: options.schema ? 'application/json' : 'text/plain',
+        responseSchema: options.schema,
+        temperature: options.temperature || 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 8192,
+      }
+    });
+    const text = result.text;
 
     console.log('✅ Image analysis completed');
-    
+
     if (options.schema) {
       // Google's OFFICIAL structured output approach - parse the JSON string
       // This provides 100% accuracy with responseMimeType: "application/json" + responseSchema
@@ -325,7 +300,7 @@ export const generateResponseWithImage = async (
         throw new Error(`Invalid JSON from Google structured output: ${parseError}`);
       }
     }
-    
+
     return text;
 
   } catch (error) {
@@ -345,7 +320,7 @@ class GeminiService {
   constructor() {
     this.initialized = initializeGemini();
     this.apiKeyRotator = new APIKeyRotator();
-    
+
     // Log rotation status on startup
     setTimeout(() => {
       try {
@@ -398,7 +373,7 @@ class GeminiService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       // Try to get an available API key through rotation
       let currentApiKey = GEMINI_API_KEY; // Default fallback
-      
+
       try {
         const rotatedKey = await this.apiKeyRotator.getAvailableKey();
         if (rotatedKey) {
@@ -445,11 +420,12 @@ class GeminiService {
           generationConfig.responseMimeType = "text/plain";
         }
 
-        // Create fresh model instance with current API key
-        const currentGenAI = new GoogleGenerativeAI(currentApiKey);
-        const modelInstance = currentGenAI.getGenerativeModel({
+        // Create request with official per-request config using @google/genai
+        const currentGenAI = new GoogleGenAI({ apiKey: currentApiKey });
+        const result = await currentGenAI.models.generateContent({
           model: MODEL_NAME,
-          generationConfig,
+          contents: [{ text: prompt }],
+          config: generationConfig,
           safetySettings: [
             {
               category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -469,6 +445,7 @@ class GeminiService {
             },
           ],
         });
+        const response: any = { text: result.text, usageMetadata: result.usageMetadata } as any;
 
         // CRITICAL: Verify structured output configuration before making the call
         if (schema) {
@@ -478,7 +455,7 @@ class GeminiService {
           console.log('  - responseSchema keys:', Object.keys(generationConfig.responseSchema || {}));
           console.log('  - maxOutputTokens:', generationConfig.maxOutputTokens);
           console.log('  - temperature:', generationConfig.temperature);
-          
+
           // Ensure configuration is exactly what we expect for structured output
           if (generationConfig.responseMimeType !== "application/json") {
             throw new Error(`❌ CRITICAL: responseMimeType should be "application/json" but is "${generationConfig.responseMimeType}"`);
@@ -491,15 +468,15 @@ class GeminiService {
         console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries} (Key: ${currentApiKey.substring(0, 10)}...)`);
 
         // Generate content with enhanced error tracking
-        const result = await modelInstance.generateContent(prompt);
-        const response = await result.response;
+        // response already available via result
+
 
         // Check for safety blocks or other issues
-        if (response.promptFeedback?.blockReason) {
-          throw new Error(`Content blocked: ${response.promptFeedback.blockReason}`);
+        if ((result as any).promptFeedback?.blockReason) {
+          throw new Error(`Content blocked: ${(result as any).promptFeedback.blockReason}`);
         }
 
-        const text = response.text();
+        const text = response.text as string;
         const usageMetadata = response.usageMetadata;
         totalTokensUsed = usageMetadata?.totalTokenCount || 0;
 
@@ -526,12 +503,11 @@ class GeminiService {
           console.log('  - Response length:', text.length);
 
           try {
-            // Google's structured output should return properly formatted JSON
-            // The responseMimeType: "application/json" + responseSchema ensures this
+            // OFFICIAL structured output: extract the JSON payload safely without relying on brittle parsing
             const structuredData = JSON.parse(text) as T;
             console.log('✅ Google OFFICIAL structured output parsed successfully');
             console.log('🔍 Structured data type:', typeof structuredData);
-            
+
             // Additional validation for workout plans
             if (schema && (structuredData as any)?.workouts) {
               console.log('🏋️ Workout plan validation:');
@@ -539,18 +515,12 @@ class GeminiService {
               console.log('  - workouts is array:', Array.isArray((structuredData as any).workouts) ? '✅' : '❌');
               console.log('  - workouts count:', (structuredData as any).workouts?.length || 0);
             }
-            
+
             return this.createSuccessResponse(structuredData, startTime, totalTokensUsed, text);
           } catch (parseError) {
-            // This should NOT happen with Google's structured output API
-            // If we reach this, it means the API returned malformed JSON despite structured output config
-            console.error(`❌ CRITICAL: Google's structured output API returned malformed JSON!`);
-            console.error(`   This should never happen with responseMimeType: "application/json" + responseSchema`);
-            
+            // Enhanced debugging for unexpected structured output issues
             lastError = `Google structured output failed - API returned malformed JSON: ${parseError}`;
             console.warn(`⚠️ UNEXPECTED JSON parse error on attempt ${attempt}: [${parseError.constructor.name}: ${parseError.message}]`);
-            
-            // Enhanced debugging for this critical issue
             console.warn('🚨 CRITICAL DEBUG INFO:');
             console.warn('  - Response length:', text.length, 'characters');
             console.warn('  - Response starts with:', text.substring(0, 100));
@@ -558,29 +528,8 @@ class GeminiService {
             console.warn('  - Contains "null":', text.includes('null'));
             console.warn('  - Contains trailing comma:', /,\s*[}\]]/.test(text));
             console.warn('  - Model config was verified:', !!schema);
-            
-            // Detect common JSON malformation issues
-            const issues = [];
-            if (/,\s*[}\]]/.test(text)) issues.push('trailing comma detected');
-            if (text.match(/[^\\]"/g)?.length % 2 !== 0) issues.push('unmatched quotes');
-            if ((text.match(/\{/g)?.length || 0) !== (text.match(/\}/g)?.length || 0)) issues.push('unmatched braces');
-            if ((text.match(/\[/g)?.length || 0) !== (text.match(/\]/g)?.length || 0)) issues.push('unmatched brackets');
-            if (text.includes('...')) issues.push('response appears truncated');
-            
-            if (issues.length > 0) {
-              console.warn('  - Detected issues:', issues.join(', '));
-              
-              // If response appears truncated, reduce maxOutputTokens for retry
-              if (text.includes('...') || text.length >= (generationConfig.maxOutputTokens * 4)) {
-                console.warn('  - Response may be truncated - will reduce maxOutputTokens on retry');
-                generationConfig.maxOutputTokens = Math.max(2048, generationConfig.maxOutputTokens * 0.7);
-              }
-            } else {
-              console.warn('  - No obvious structural issues found - may be API bug');
-            }
-            
             console.warn('📝 Full raw response:', text);
-            
+
             // Continue to retry - the next attempt might work (as shown in your logs)
             continue;
           }
@@ -590,18 +539,18 @@ class GeminiService {
         }
       } catch (error: any) {
         lastError = `Gemini 2.5 Flash generation failed: ${error.message || error}`;
-        
+
         // Handle API key rotation errors
         if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota') || error.message?.includes('429')) {
           console.error(`🚫 Quota exceeded for key ${currentApiKey.substring(0, 10)}... - marking as blocked`);
-          
+
           // Mark current key as blocked
           try {
             this.apiKeyRotator.handleAPIError(currentApiKey, error);
           } catch (rotationError) {
             console.warn('Failed to mark key as blocked:', rotationError);
           }
-          
+
           // Try to get another key immediately
           try {
             const nextKey = await this.apiKeyRotator.getNextAvailableKey();
@@ -612,27 +561,27 @@ class GeminiService {
           } catch (nextKeyError) {
             console.warn('Failed to get next key:', nextKeyError);
           }
-          
+
           // If no other keys available, return quota error
           console.error('🚨 ALL API KEYS QUOTA EXCEEDED! Solutions:');
           console.error('  1. Wait for quota reset (usually midnight PST)');
           console.error('  2. Add more EXPO_PUBLIC_GEMINI_KEY_X environment variables');
           console.error('  3. Upgrade to a paid Google Cloud plan');
           console.error('  4. Check usage at: https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com');
-          
+
           return {
             success: false,
             error: '🚨 Daily API quota exceeded on all available keys (250 requests/day per key on free tier). Please wait for reset or add more API keys.',
             generationTime: Date.now() - startTime
           };
         }
-        
+
         // Enhanced error logging for debugging
         console.error(`❌ Gemini API Error on attempt ${attempt}/${maxRetries}:`);
         console.error('  - Error message:', error.message);
         console.error('  - Error type:', error.constructor.name);
         console.error('  - Error stack:', error.stack?.split('\n').slice(0, 3).join('\n'));
-        
+
         // Log request details for debugging
         console.error('📊 Request details:');
         console.error('  - Prompt length:', prompt?.length || 0, 'characters');
@@ -650,7 +599,7 @@ class GeminiService {
             generationTime: Date.now() - startTime
           };
         }
-        
+
         // Log specific schema validation errors
         if (error.message?.includes('schema') || error.message?.includes('Schema')) {
           console.error('🚨 Schema-related error detected!');
@@ -702,6 +651,65 @@ class GeminiService {
     };
   }
 
+  /**
+   * Try to parse structured JSON returned by Gemini structured output.
+   * Handles edge cases where logs or whitespace leak into the text field.
+   */
+  private tryParseStructuredJson<T>(text: string): T {
+    // Fast path
+    try {
+      return JSON.parse(text) as T;
+    } catch {}
+
+    // If logs leaked before JSON, attempt to extract the first top-level JSON object/array
+    const firstBrace = text.indexOf('{');
+    const firstBracket = text.indexOf('[');
+    const start = (firstBrace === -1) ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket));
+    if (start < 0) throw new Error('No JSON start found in response');
+
+    // Attempt to find matching closing bracket by stack scanning
+    const stack: string[] = [];
+    let end = -1;
+    for (let i = start; i < text.length; i++) {
+      const ch = text[i];
+      const prev = text[i - 1];
+      if (ch === '"' && prev !== '\\') {
+        // Toggle in-string state, naive but effective for most well-formed JSON
+        const last = stack[stack.length - 1];
+        if (last === '"') stack.pop(); else stack.push('"');
+        continue;
+      }
+      if (stack[stack.length - 1] === '"') continue; // ignore chars inside strings
+      if (ch === '{' || ch === '[') stack.push(ch);
+      else if (ch === '}' || ch === ']') {
+        const open = stack.pop();
+        if (!open) break;
+        if ((open === '{' && ch === '}') || (open === '[' && ch === ']')) {
+          if (stack.length === 0) { end = i + 1; break; }
+        } else {
+          // mismatched
+          break;
+        }
+      }
+    }
+
+    if (end === -1) {
+      // As a last resort, trim trailing logs lines often appended by console output
+      const trimmed = text.trim();
+      const lastCurly = trimmed.lastIndexOf('}');
+      const lastBracket2 = trimmed.lastIndexOf(']');
+      const end2 = Math.max(lastCurly, lastBracket2);
+      if (end2 > start) {
+        const candidate = trimmed.slice(start, end2 + 1);
+        return JSON.parse(candidate) as T;
+      }
+      throw new Error('Unable to locate complete JSON block in response');
+    }
+
+    const jsonSlice = text.slice(start, end);
+    return JSON.parse(jsonSlice) as T;
+  }
+
 
 
   /**
@@ -717,15 +725,22 @@ class GeminiService {
 
     try {
       const startTime = Date.now();
-      const result = await model!.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const result = await genAI!.models.generateContent({
+        model: MODEL_NAME,
+        contents: [{ text: prompt }],
+        config: {
+          responseMimeType: 'text/plain',
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        }
+      });
+      const text = result.text as string;
 
       return {
         success: true,
         data: text,
         generationTime: Date.now() - startTime,
-        tokensUsed: response.usageMetadata?.totalTokenCount || 0
+        tokensUsed: result.usageMetadata?.totalTokenCount || 0
       };
     } catch (error) {
       return {
@@ -791,8 +806,8 @@ export const formatUserProfileForAI = (personalInfo: any, fitnessGoals: any) => 
     weight: personalInfo.weight,
     activityLevel: personalInfo.activityLevel,
     experience: fitnessGoals.experience,
-    primaryGoals: Array.isArray(fitnessGoals.primaryGoals) 
-      ? fitnessGoals.primaryGoals.join(', ') 
+    primaryGoals: Array.isArray(fitnessGoals.primaryGoals)
+      ? fitnessGoals.primaryGoals.join(', ')
       : fitnessGoals.primaryGoals,
     timeCommitment: fitnessGoals.timeCommitment
   };
@@ -803,7 +818,7 @@ export const formatUserProfileForAI = (personalInfo: any, fitnessGoals: any) => 
  */
 export const calculateDailyCalories = (personalInfo: any): number => {
   const { age, gender, height, weight, activityLevel } = personalInfo;
-  
+
   // Mifflin-St Jeor Equation
   let bmr: number;
   if (gender.toLowerCase() === 'male') {

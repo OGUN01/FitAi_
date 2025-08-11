@@ -47,9 +47,9 @@ export const ProgressScreen: React.FC = () => {
   // Authentication and user data
   const { user, isAuthenticated } = useAuth();
   
-  // Store data
-  const { loadData: loadFitnessData } = useFitnessStore();
-  const { loadData: loadNutritionData } = useNutritionStore();
+  // Store data (not used directly here; we use DataRetrievalService to access stores safely)
+  // const { loadData: loadFitnessData } = useFitnessStore();
+  // const { loadData: loadNutritionData } = useNutritionStore();
 
   // Real progress data with Track B integration
   const {
@@ -74,66 +74,20 @@ export const ProgressScreen: React.FC = () => {
   // Function to refresh progress data
   const refreshProgressData = async () => {
     try {
+      // Load persisted data into stores
       await DataRetrievalService.loadAllData();
 
-<<<<<<< HEAD
-      const weeklyInfo = DataRetrievalService.getWeeklyProgress();
-      const activities = DataRetrievalService.getRecentActivities(10);
-      const todaysInfo = DataRetrievalService.getTodaysData();
+      // Pull real data from centralized retrieval service
+      const today = DataRetrievalService.getTodaysData();
+      setTodaysData(today);
 
-      console.log('📊 Progress Tab - Weekly Info:', weeklyInfo);
-      console.log('📊 Progress Tab - Recent Activities:', activities);
-      console.log('📊 Progress Tab - Today\'s Data:', todaysInfo);
+      const weekly = DataRetrievalService.getWeeklyProgress();
+      setWeeklyProgress(weekly);
 
-      setWeeklyProgress(weeklyInfo);
+      const activities = DataRetrievalService.getRecentActivities(50);
       setRecentActivities(activities);
-      setTodaysData(todaysInfo);
-=======
-      // TODO: Replace with real data from stores/API
-      // For now, load empty/default data until real implementation is added
-      
-      // Load real weekly data from fitness and nutrition stores
-      const realWeeklyData: WeeklyData = {
-        workoutsCompleted: 0,
-        targetWorkouts: fitnessStore.weeklyGoal || 5,
-        caloriesConsumed: 0,
-        targetCalories: nutritionStore.dailyCalorieTarget || 2000,
-        streakDays: 0,
-        weekProgress: 0
-      };
 
-      // Initialize empty chart data
-      const emptyChartData = {
-        workoutData: [
-          { day: 'Mon', value: 0 },
-          { day: 'Tue', value: 0 },
-          { day: 'Wed', value: 0 },
-          { day: 'Thu', value: 0 },
-          { day: 'Fri', value: 0 },
-          { day: 'Sat', value: 0 },
-          { day: 'Sun', value: 0 }
-        ],
-        calorieData: [
-          { day: 'Mon', value: 0 },
-          { day: 'Tue', value: 0 },
-          { day: 'Wed', value: 0 },
-          { day: 'Thu', value: 0 },
-          { day: 'Fri', value: 0 },
-          { day: 'Sat', value: 0 },
-          { day: 'Sun', value: 0 }
-        ]
-      };
-
-      // Initialize empty activities array
-      const emptyActivities: ActivityItem[] = [];
-
-      // Set real data
-      setWeeklyData(realWeeklyData);
-      setChartData(emptyChartData);
-      setRecentActivities(emptyActivities);
->>>>>>> bd00862 (🚀 MAJOR UPDATE: Complete FitAI Enhancement Package)
-
-      // Generate weekly chart data from activities
+      // Build weekly chart data from activities
       const weekData = generateWeeklyChartData(activities);
       setRealWeeklyData(weekData);
     } catch (error) {
@@ -330,13 +284,13 @@ export const ProgressScreen: React.FC = () => {
 
   // Use real weekly data from stores
   const weeklyData = realWeeklyData.length > 0 ? realWeeklyData : [
-    { day: 'Mon', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Tue', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Wed', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Thu', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Fri', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Sat', workouts: 0, calories: 0, duration: 0 },
-    { day: 'Sun', workouts: 0, calories: 0, duration: 0 },
+    { day: 'Mon', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Tue', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Wed', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Thu', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Fri', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Sat', workouts: 0, meals: 0, calories: 0, duration: 0 },
+    { day: 'Sun', workouts: 0, meals: 0, calories: 0, duration: 0 },
   ];
 
   const loadAllActivities = () => {
@@ -439,9 +393,9 @@ export const ProgressScreen: React.FC = () => {
         >
           <View>
             {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Progress</Text>
-          <View style={styles.headerButtons}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Progress</Text>
+              <View style={styles.headerButtons}>
             {/* Track B Status Indicator */}
             <TouchableOpacity style={styles.statusButton}>
               <Text style={styles.statusIcon}>
@@ -617,7 +571,16 @@ export const ProgressScreen: React.FC = () => {
                 <View style={styles.progressBar}>
                   <View style={[
                     styles.progressFill,
-                    { width: `${Math.min(100, ((stats.weight.current - stats.weight.goal) / stats.weight.current) * 100 + 50)}%` }
+                    (() => {
+                      const current = Number(stats.weight.current) || 0;
+                      const goal = Number(stats.weight.goal) || 0;
+                      if (current <= 0 || !isFinite(current)) {
+                        return { width: '0%' };
+                      }
+                      const raw = ((current - goal) / current) * 100 + 50;
+                      const clamped = Math.max(0, Math.min(100, isFinite(raw) ? raw : 0));
+                      return { width: `${clamped}%` };
+                    })()
                   ]} />
                 </View>
               </View>
@@ -799,19 +762,19 @@ export const ProgressScreen: React.FC = () => {
                   </View>
                   <Text style={styles.achievementDescription}>{achievement.description}</Text>
 
-                  {!achievement.completed && achievement.progress && achievement.target && (
+                  {!achievement.completed && (achievement.progress ?? 0) > 0 && (achievement.target ?? 0) > 0 ? (
                     <View style={styles.achievementProgress}>
                       <View style={styles.progressBar}>
                         <View style={[
                           styles.progressFill,
-                          { width: `${(achievement.progress / achievement.target) * 100}%` }
+                          { width: `${Math.min(100, Math.max(0, ((achievement.progress || 0) / (achievement.target || 1)) * 100))}%` }
                         ]} />
                       </View>
                       <Text style={styles.progressText}>
                         {achievement.progress}/{achievement.target}
                       </Text>
                     </View>
-                  )}
+                  ) : null}
 
                   <View style={[styles.rarityBadge, styles[`rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`]]}>
                     <Text style={styles.rarityText}>{achievement.rarity.toUpperCase()}</Text>
