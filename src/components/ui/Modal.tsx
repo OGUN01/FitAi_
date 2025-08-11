@@ -129,33 +129,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
-  
+
   overlayTouchable: {
     flex: 1,
   },
-  
+
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
-  
+
   content: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     padding: ResponsiveTheme.spacing.lg,
-    width: '90%',  // Use percentage instead of screenWidth calculation
-    maxHeight: '80%',  // Use percentage instead of screenHeight calculation
+    width: '90%', // Use percentage instead of screenWidth calculation
+    maxHeight: '80%', // Use percentage instead of screenHeight calculation
     ...THEME.shadows.lg,
   },
-  
+
   // Bottom Sheet styles
   bottomSheetContainer: {
     flex: 1,
     justifyContent: 'flex-end',
   },
-  
+
   bottomSheetContent: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderTopLeftRadius: THEME.borderRadius.xxl,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.md,
     ...THEME.shadows.lg,
   },
-  
+
   bottomSheetHandle: {
     width: rw(40),
     height: rh(4),

@@ -16,7 +16,7 @@ import {
   MealLog,
   BodyMeasurement,
   ValidationResult,
-  SyncStatus
+  SyncStatus,
 } from '../types/localData';
 import {
   UserProfile,
@@ -87,7 +87,7 @@ export class DataManagerService {
     console.log('Attempting to repair schema...');
     // TODO: Implement schema repair logic based on validation errors
     // For now, we'll just log the errors
-    validation.errors.forEach(error => {
+    validation.errors.forEach((error) => {
       console.error(`Schema repair needed for ${error.field}: ${error.message}`);
     });
   }
@@ -98,11 +98,13 @@ export class DataManagerService {
 
   async storeOnboardingData(data: OnboardingData): Promise<void> {
     this.ensureInitialized();
-    
+
     // Validate data
     const validation = validationService.validateOnboardingData(data);
     if (!validation.isValid) {
-      throw new Error(`Invalid onboarding data: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(
+        `Invalid onboarding data: ${validation.errors.map((e) => e.message).join(', ')}`
+      );
     }
 
     // Sanitize data
@@ -119,14 +121,14 @@ export class DataManagerService {
     if (this.currentSchema) {
       this.currentSchema.user.onboardingData = sanitizedData;
       this.currentSchema.updatedAt = new Date().toISOString();
-      
+
       await enhancedLocalStorage.updateSchema(this.currentSchema);
     }
   }
 
   async getOnboardingData(): Promise<OnboardingData | null> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return null;
     }
@@ -136,21 +138,21 @@ export class DataManagerService {
 
   async updateUserPreferences(preferences: Partial<any>): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.currentSchema) {
       this.currentSchema.user.preferences = {
         ...this.currentSchema.user.preferences,
         ...preferences,
       };
       this.currentSchema.updatedAt = new Date().toISOString();
-      
+
       await enhancedLocalStorage.updateSchema(this.currentSchema);
     }
   }
 
   async getUserPreferences(): Promise<any> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return null;
     }
@@ -164,24 +166,28 @@ export class DataManagerService {
 
   async storeWorkoutSession(session: WorkoutSession): Promise<void> {
     this.ensureInitialized();
-    
+
     // Validate session
     const validation = validationService.validateWorkoutSession(session);
     if (!validation.isValid) {
-      throw new Error(`Invalid workout session: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(
+        `Invalid workout session: ${validation.errors.map((e) => e.message).join(', ')}`
+      );
     }
 
     // Add to schema
     if (this.currentSchema) {
       // Remove existing session with same ID
-      this.currentSchema.fitness.sessions = this.currentSchema.fitness.sessions.filter(s => s.id !== session.id);
-      
+      this.currentSchema.fitness.sessions = this.currentSchema.fitness.sessions.filter(
+        (s) => s.id !== session.id
+      );
+
       // Add new session
       this.currentSchema.fitness.sessions.push({
         ...session,
         syncStatus: 'local' as SyncStatus,
       });
-      
+
       this.currentSchema.updatedAt = new Date().toISOString();
       await enhancedLocalStorage.updateSchema(this.currentSchema);
 
@@ -194,39 +200,43 @@ export class DataManagerService {
 
   async getWorkoutSessions(limit?: number): Promise<WorkoutSession[]> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return [];
     }
 
     const sessions = this.currentSchema.fitness.sessions;
-    
+
     if (limit) {
       return sessions.slice(-limit).reverse(); // Get most recent sessions
     }
-    
+
     return sessions.reverse(); // Most recent first
   }
 
   async updateWorkoutSession(sessionId: string, updates: Partial<WorkoutSession>): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.currentSchema) {
-      const sessionIndex = this.currentSchema.fitness.sessions.findIndex(s => s.id === sessionId);
-      
+      const sessionIndex = this.currentSchema.fitness.sessions.findIndex((s) => s.id === sessionId);
+
       if (sessionIndex !== -1) {
         this.currentSchema.fitness.sessions[sessionIndex] = {
           ...this.currentSchema.fitness.sessions[sessionIndex],
           ...updates,
           syncStatus: SyncStatus.PENDING,
         };
-        
+
         this.currentSchema.updatedAt = new Date().toISOString();
         await enhancedLocalStorage.updateSchema(this.currentSchema);
 
         // Queue for sync if user is authenticated
         if (this.currentSchema.user.authState.isAuthenticated) {
-          await this.queueForSync('workout_sessions', 'update', this.currentSchema.fitness.sessions[sessionIndex]);
+          await this.queueForSync(
+            'workout_sessions',
+            'update',
+            this.currentSchema.fitness.sessions[sessionIndex]
+          );
         }
       }
     }
@@ -238,17 +248,19 @@ export class DataManagerService {
 
   async storeMealLog(mealLog: MealLog): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.currentSchema) {
       // Remove existing log with same ID
-      this.currentSchema.nutrition.logs = this.currentSchema.nutrition.logs.filter(log => log.id !== mealLog.id);
-      
+      this.currentSchema.nutrition.logs = this.currentSchema.nutrition.logs.filter(
+        (log) => log.id !== mealLog.id
+      );
+
       // Add new log
       this.currentSchema.nutrition.logs.push({
         ...mealLog,
         syncStatus: 'local' as SyncStatus,
       });
-      
+
       this.currentSchema.updatedAt = new Date().toISOString();
       await enhancedLocalStorage.updateSchema(this.currentSchema);
 
@@ -261,25 +273,29 @@ export class DataManagerService {
 
   async getMealLogs(date?: string, limit?: number): Promise<MealLog[]> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return [];
     }
 
     let logs = this.currentSchema.nutrition.logs;
-    
+
     // Filter by date if provided
     if (date) {
-      logs = logs.filter(log => (log.date || log.loggedAt?.slice(0,10)) === date);
+      logs = logs.filter((log) => (log.date || log.loggedAt?.slice(0, 10)) === date);
     }
 
     // Sort by timestamp (most recent first)
-    logs.sort((a, b) => new Date(b.loggedAt || b.date || '').getTime() - new Date(a.loggedAt || a.date || '').getTime());
-    
+    logs.sort(
+      (a, b) =>
+        new Date(b.loggedAt || b.date || '').getTime() -
+        new Date(a.loggedAt || a.date || '').getTime()
+    );
+
     if (limit) {
       return logs.slice(0, limit);
     }
-    
+
     return logs;
   }
 
@@ -289,17 +305,19 @@ export class DataManagerService {
 
   async storeBodyMeasurement(measurement: BodyMeasurement): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.currentSchema) {
       // Remove existing measurement with same ID
-      this.currentSchema.progress.measurements = this.currentSchema.progress.measurements.filter(m => m.id !== measurement.id);
-      
+      this.currentSchema.progress.measurements = this.currentSchema.progress.measurements.filter(
+        (m) => m.id !== measurement.id
+      );
+
       // Add new measurement
       this.currentSchema.progress.measurements.push({
         ...measurement,
         syncStatus: 'local' as SyncStatus,
       });
-      
+
       this.currentSchema.updatedAt = new Date().toISOString();
       await enhancedLocalStorage.updateSchema(this.currentSchema);
 
@@ -312,20 +330,20 @@ export class DataManagerService {
 
   async getBodyMeasurements(limit?: number): Promise<BodyMeasurement[]> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return [];
     }
 
     const measurements = this.currentSchema.progress.measurements;
-    
+
     // Sort by date (most recent first)
     measurements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
+
     if (limit) {
       return measurements.slice(0, limit);
     }
-    
+
     return measurements;
   }
 
@@ -333,7 +351,11 @@ export class DataManagerService {
   // SYNC MANAGEMENT
   // ============================================================================
 
-  private async queueForSync(table: string, operation: 'create' | 'update' | 'delete', data: any): Promise<void> {
+  private async queueForSync(
+    table: string,
+    operation: 'create' | 'update' | 'delete',
+    data: any
+  ): Promise<void> {
     try {
       await offlineService.queueAction({
         type: operation.toUpperCase() as 'CREATE' | 'UPDATE' | 'DELETE',
@@ -349,27 +371,29 @@ export class DataManagerService {
 
   async markDataAsSynced(table: string, id: string): Promise<void> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) return;
 
     // Update sync status based on table
     switch (table) {
       case 'workout_sessions':
-        const sessionIndex = this.currentSchema.fitness.sessions.findIndex(s => s.id === id);
+        const sessionIndex = this.currentSchema.fitness.sessions.findIndex((s) => s.id === id);
         if (sessionIndex !== -1) {
           this.currentSchema.fitness.sessions[sessionIndex].syncStatus = SyncStatus.SYNCED;
         }
         break;
-      
+
       case 'meal_logs':
-        const logIndex = this.currentSchema.nutrition.logs.findIndex(log => log.id === id);
+        const logIndex = this.currentSchema.nutrition.logs.findIndex((log) => log.id === id);
         if (logIndex !== -1) {
           this.currentSchema.nutrition.logs[logIndex].syncStatus = SyncStatus.SYNCED;
         }
         break;
-      
+
       case 'progress_entries':
-        const measurementIndex = this.currentSchema.progress.measurements.findIndex(m => m.id === id);
+        const measurementIndex = this.currentSchema.progress.measurements.findIndex(
+          (m) => m.id === id
+        );
         if (measurementIndex !== -1) {
           this.currentSchema.progress.measurements[measurementIndex].syncStatus = SyncStatus.SYNCED;
         }
@@ -381,7 +405,7 @@ export class DataManagerService {
 
   async getPendingSyncData(): Promise<{ table: string; data: any[] }[]> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return [];
     }
@@ -389,19 +413,25 @@ export class DataManagerService {
     const pendingData: { table: string; data: any[] }[] = [];
 
     // Check workout sessions
-    const pendingSessions = this.currentSchema.fitness.sessions.filter(s => (s.syncStatus as any) === SyncStatus.PENDING || (s.syncStatus as any) === 'local');
+    const pendingSessions = this.currentSchema.fitness.sessions.filter(
+      (s) => (s.syncStatus as any) === SyncStatus.PENDING || (s.syncStatus as any) === 'local'
+    );
     if (pendingSessions.length > 0) {
       pendingData.push({ table: 'workout_sessions', data: pendingSessions });
     }
 
     // Check meal logs
-    const pendingLogs = this.currentSchema.nutrition.logs.filter(log => (log.syncStatus as any) === SyncStatus.PENDING || (log.syncStatus as any) === 'local');
+    const pendingLogs = this.currentSchema.nutrition.logs.filter(
+      (log) => (log.syncStatus as any) === SyncStatus.PENDING || (log.syncStatus as any) === 'local'
+    );
     if (pendingLogs.length > 0) {
       pendingData.push({ table: 'meal_logs', data: pendingLogs });
     }
 
     // Check measurements
-    const pendingMeasurements = this.currentSchema.progress.measurements.filter(m => (m.syncStatus as any) === SyncStatus.PENDING || (m.syncStatus as any) === 'local');
+    const pendingMeasurements = this.currentSchema.progress.measurements.filter(
+      (m) => (m.syncStatus as any) === SyncStatus.PENDING || (m.syncStatus as any) === 'local'
+    );
     if (pendingMeasurements.length > 0) {
       pendingData.push({ table: 'progress_entries', data: pendingMeasurements });
     }
@@ -415,18 +445,21 @@ export class DataManagerService {
 
   async updateAuthState(authState: Partial<any>): Promise<void> {
     this.ensureInitialized();
-    
+
     if (this.currentSchema) {
       this.currentSchema.user.authState = {
         ...this.currentSchema.user.authState,
         ...authState,
       };
       this.currentSchema.updatedAt = new Date().toISOString();
-      
+
       await enhancedLocalStorage.updateSchema(this.currentSchema);
 
       // If user just authenticated, mark migration as required
-      if (authState.isAuthenticated && !this.currentSchema.user.authState.migrationStatus.isCompleted) {
+      if (
+        authState.isAuthenticated &&
+        !this.currentSchema.user.authState.migrationStatus.isCompleted
+      ) {
         await this.markMigrationRequired();
       }
     }
@@ -434,7 +467,7 @@ export class DataManagerService {
 
   async getAuthState(): Promise<any> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return null;
     }
@@ -461,11 +494,11 @@ export class DataManagerService {
 
   async importData(data: LocalStorageSchema): Promise<void> {
     this.ensureInitialized();
-    
+
     // Validate imported data
     const validation = validationService.validateLocalStorageSchema(data);
     if (!validation.isValid) {
-      throw new Error(`Invalid import data: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(`Invalid import data: ${validation.errors.map((e) => e.message).join(', ')}`);
     }
 
     // Update schema
@@ -511,7 +544,7 @@ export class DataManagerService {
     lastUpdated: string | null;
   }> {
     this.ensureInitialized();
-    
+
     if (!this.currentSchema) {
       return {
         totalWorkoutSessions: 0,

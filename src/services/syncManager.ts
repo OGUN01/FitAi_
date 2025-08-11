@@ -39,7 +39,7 @@ class SyncManager {
   setOnlineStatus(isOnline: boolean) {
     this.isOnline = isOnline;
     dataManager.setOnlineStatus(isOnline);
-    
+
     if (isOnline && !this.isSyncing) {
       // Auto-sync when coming back online
       this.performAutoSync();
@@ -52,7 +52,7 @@ class SyncManager {
 
   async migrateLocalDataToRemote(userId: string): Promise<MigrationResult> {
     console.log('🔄 Starting data migration to remote storage...');
-    
+
     this.migrationStatus = {
       isInProgress: true,
       progress: 0,
@@ -129,7 +129,6 @@ class SyncManager {
 
       console.log('✅ Data migration completed:', result);
       return result;
-
     } catch (error) {
       console.error('❌ Migration failed:', error);
       result.errors.push(error instanceof Error ? error.message : 'Unknown migration error');
@@ -173,14 +172,26 @@ class SyncManager {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        return { success: false, conflicts: [], syncedItems: 0, failedItems: 1, errors: [error.message] };
+        return {
+          success: false,
+          conflicts: [],
+          syncedItems: 0,
+          failedItems: 1,
+          errors: [error.message],
+        };
       }
 
       // Handle conflicts if both exist
       if (remoteData) {
         const conflicts = this.detectConflicts('personalInfo', localData, remoteData);
         if (conflicts.length > 0) {
-          return { success: false, conflicts, syncedItems: 0, failedItems: 1, errors: ['Conflicts detected'] };
+          return {
+            success: false,
+            conflicts,
+            syncedItems: 0,
+            failedItems: 1,
+            errors: ['Conflicts detected'],
+          };
         }
       }
 
@@ -193,7 +204,6 @@ class SyncManager {
         failedItems: success ? 0 : 1,
         errors: success ? [] : ['Failed to save personal info'],
       };
-
     } catch (error) {
       return {
         success: false,
@@ -220,7 +230,6 @@ class SyncManager {
         failedItems: success ? 0 : 1,
         errors: success ? [] : ['Failed to save fitness goals'],
       };
-
     } catch (error) {
       return {
         success: false,
@@ -247,7 +256,6 @@ class SyncManager {
         failedItems: success ? 0 : 1,
         errors: success ? [] : ['Failed to save diet preferences'],
       };
-
     } catch (error) {
       return {
         success: false,
@@ -269,7 +277,6 @@ class SyncManager {
       // For now, we'll store workout preferences in local storage
       // TODO: Add workout_preferences table to Supabase
       return { success: true, conflicts: [], syncedItems: 1, failedItems: 0, errors: [] };
-
     } catch (error) {
       return {
         success: false,
@@ -285,14 +292,19 @@ class SyncManager {
   // CONFLICT DETECTION & RESOLUTION
   // ============================================================================
 
-  private detectConflicts(dataType: string, localData: SyncableData, remoteData: SyncableData): SyncConflict[] {
+  private detectConflicts(
+    dataType: string,
+    localData: SyncableData,
+    remoteData: SyncableData
+  ): SyncConflict[] {
     const conflicts: SyncConflict[] = [];
 
     // Compare timestamps
     const localTime = new Date(localData.updatedAt).getTime();
     const remoteTime = new Date(remoteData.updatedAt).getTime();
 
-    if (Math.abs(localTime - remoteTime) > 1000) { // More than 1 second difference
+    if (Math.abs(localTime - remoteTime) > 1000) {
+      // More than 1 second difference
       conflicts.push({
         id: `${dataType}_timestamp_conflict`,
         field: 'updatedAt',

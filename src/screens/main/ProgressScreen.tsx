@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
-} from 'react-native'
+} from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -46,7 +46,7 @@ export const ProgressScreen: React.FC = () => {
 
   // Authentication and user data
   const { user, isAuthenticated } = useAuth();
-  
+
   // Store data (not used directly here; we use DataRetrievalService to access stores safely)
   // const { loadData: loadFitnessData } = useFitnessStore();
   // const { loadData: loadNutritionData } = useNutritionStore();
@@ -133,16 +133,16 @@ export const ProgressScreen: React.FC = () => {
       unsubscribe();
     };
   }, []);
-  
+
   // Generate weekly chart data from activities
   const generateWeeklyChartData = (activities: any[]) => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const weekData = days.map(day => ({ day, workouts: 0, meals: 0, calories: 0, duration: 0 }));
-    
-    activities.forEach(activity => {
+    const weekData = days.map((day) => ({ day, workouts: 0, meals: 0, calories: 0, duration: 0 }));
+
+    activities.forEach((activity) => {
       const activityDate = new Date(activity.completedAt);
       const dayIndex = (activityDate.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0
-      
+
       if (activity.type === 'workout') {
         weekData[dayIndex].workouts += 1;
         weekData[dayIndex].calories += activity.calories || 0;
@@ -152,7 +152,7 @@ export const ProgressScreen: React.FC = () => {
         weekData[dayIndex].calories += activity.calories || 0;
       }
     });
-    
+
     console.log('📊 Generated weekly chart data with meals:', weekData);
     return weekData;
   };
@@ -164,45 +164,68 @@ export const ProgressScreen: React.FC = () => {
   ];
 
   // Real stats from progress data
-  const stats = progressStats ? {
-    weight: {
-      current: progressStats.weightChange.current,
-      change: progressStats.weightChange.change,
-      unit: 'kg',
-      goal: progressGoals?.target_weight_kg || 70.0,
-      trend: progressStats.weightChange.change < 0 ? 'decreasing' : progressStats.weightChange.change > 0 ? 'increasing' : 'stable',
-      weeklyAvg: progressStats.weightChange.current,
-    },
-    bodyFat: {
-      current: progressStats.bodyFatChange.current,
-      change: progressStats.bodyFatChange.change,
-      unit: '%',
-      goal: progressGoals?.target_body_fat_percentage || 15.0,
-      trend: progressStats.bodyFatChange.change < 0 ? 'decreasing' : progressStats.bodyFatChange.change > 0 ? 'increasing' : 'stable',
-      weeklyAvg: progressStats.bodyFatChange.current,
-    },
-    muscle: {
-      current: progressStats.muscleChange.current,
-      change: progressStats.muscleChange.change,
-      unit: 'kg',
-      goal: progressGoals?.target_muscle_mass_kg || 45.0,
-      trend: progressStats.muscleChange.change < 0 ? 'decreasing' : progressStats.muscleChange.change > 0 ? 'increasing' : 'stable',
-      weeklyAvg: progressStats.muscleChange.current,
-    },
-    bmi: {
-      current: progressStats.weightChange.current > 0 ? (progressStats.weightChange.current / Math.pow(1.75, 2)) : 22.4, // Assuming 1.75m height
-      change: -0.7, // Calculated based on weight change
-      unit: '',
-      goal: 21.5,
-      trend: progressStats.weightChange.change < 0 ? 'decreasing' : 'increasing',
-      weeklyAvg: progressStats.weightChange.current > 0 ? (progressStats.weightChange.current / Math.pow(1.75, 2)) : 22.4,
-    },
-  } : {
-    weight: { current: 0, change: 0, unit: 'kg', goal: 70.0, trend: 'stable', weeklyAvg: 0 },
-    bodyFat: { current: 0, change: 0, unit: '%', goal: 15.0, trend: 'stable', weeklyAvg: 0 },
-    muscle: { current: 0, change: 0, unit: 'kg', goal: 45.0, trend: 'stable', weeklyAvg: 0 },
-    bmi: { current: 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
-  };
+  const stats = progressStats
+    ? {
+        weight: {
+          current: progressStats.weightChange.current,
+          change: progressStats.weightChange.change,
+          unit: 'kg',
+          goal: progressGoals?.target_weight_kg || 70.0,
+          trend:
+            progressStats.weightChange.change < 0
+              ? 'decreasing'
+              : progressStats.weightChange.change > 0
+                ? 'increasing'
+                : 'stable',
+          weeklyAvg: progressStats.weightChange.current,
+        },
+        bodyFat: {
+          current: progressStats.bodyFatChange.current,
+          change: progressStats.bodyFatChange.change,
+          unit: '%',
+          goal: progressGoals?.target_body_fat_percentage || 15.0,
+          trend:
+            progressStats.bodyFatChange.change < 0
+              ? 'decreasing'
+              : progressStats.bodyFatChange.change > 0
+                ? 'increasing'
+                : 'stable',
+          weeklyAvg: progressStats.bodyFatChange.current,
+        },
+        muscle: {
+          current: progressStats.muscleChange.current,
+          change: progressStats.muscleChange.change,
+          unit: 'kg',
+          goal: progressGoals?.target_muscle_mass_kg || 45.0,
+          trend:
+            progressStats.muscleChange.change < 0
+              ? 'decreasing'
+              : progressStats.muscleChange.change > 0
+                ? 'increasing'
+                : 'stable',
+          weeklyAvg: progressStats.muscleChange.current,
+        },
+        bmi: {
+          current:
+            progressStats.weightChange.current > 0
+              ? progressStats.weightChange.current / Math.pow(1.75, 2)
+              : 22.4, // Assuming 1.75m height
+          change: -0.7, // Calculated based on weight change
+          unit: '',
+          goal: 21.5,
+          trend: progressStats.weightChange.change < 0 ? 'decreasing' : 'increasing',
+          weeklyAvg:
+            progressStats.weightChange.current > 0
+              ? progressStats.weightChange.current / Math.pow(1.75, 2)
+              : 22.4,
+        },
+      }
+    : {
+        weight: { current: 0, change: 0, unit: 'kg', goal: 70.0, trend: 'stable', weeklyAvg: 0 },
+        bodyFat: { current: 0, change: 0, unit: '%', goal: 15.0, trend: 'stable', weeklyAvg: 0 },
+        muscle: { current: 0, change: 0, unit: 'kg', goal: 45.0, trend: 'stable', weeklyAvg: 0 },
+        bmi: { current: 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
+      };
 
   // Real achievements based on actual user progress
   const achievements = [
@@ -283,15 +306,18 @@ export const ProgressScreen: React.FC = () => {
   ];
 
   // Use real weekly data from stores
-  const weeklyData = realWeeklyData.length > 0 ? realWeeklyData : [
-    { day: 'Mon', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Tue', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Wed', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Thu', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Fri', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Sat', workouts: 0, meals: 0, calories: 0, duration: 0 },
-    { day: 'Sun', workouts: 0, meals: 0, calories: 0, duration: 0 },
-  ];
+  const weeklyData =
+    realWeeklyData.length > 0
+      ? realWeeklyData
+      : [
+          { day: 'Mon', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Tue', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Wed', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Thu', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Fri', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Sat', workouts: 0, meals: 0, calories: 0, duration: 0 },
+          { day: 'Sun', workouts: 0, meals: 0, calories: 0, duration: 0 },
+        ];
 
   const loadAllActivities = () => {
     // Load all activities for the modal
@@ -309,11 +335,14 @@ export const ProgressScreen: React.FC = () => {
     // Simulate loading more activities (in real app, this would be an API call)
     setTimeout(() => {
       const startIndex = activitiesPage * ACTIVITIES_PER_PAGE;
-      const moreActivities = DataRetrievalService.getRecentActivities(200).slice(startIndex, startIndex + ACTIVITIES_PER_PAGE);
+      const moreActivities = DataRetrievalService.getRecentActivities(200).slice(
+        startIndex,
+        startIndex + ACTIVITIES_PER_PAGE
+      );
 
       if (moreActivities.length > 0) {
-        setAllActivities(prev => [...prev, ...moreActivities]);
-        setActivitiesPage(prev => prev + 1);
+        setAllActivities((prev) => [...prev, ...moreActivities]);
+        setActivitiesPage((prev) => prev + 1);
         setHasMoreActivities(moreActivities.length === ACTIVITIES_PER_PAGE);
       } else {
         setHasMoreActivities(false);
@@ -372,11 +401,13 @@ export const ProgressScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Animated.View style={{
-        flex: 1,
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}>
+      <Animated.View
+        style={{
+          flex: 1,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        }}
+      >
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -396,447 +427,505 @@ export const ProgressScreen: React.FC = () => {
             <View style={styles.header}>
               <Text style={styles.title}>Progress</Text>
               <View style={styles.headerButtons}>
-            {/* Track B Status Indicator */}
-            <TouchableOpacity style={styles.statusButton}>
-              <Text style={styles.statusIcon}>
-                {trackBStatus.isConnected ? '🟢' : '🔴'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.analyticsButton, showAnalytics && styles.analyticsButtonActive]}
-              onPress={() => setShowAnalytics(!showAnalytics)}
-            >
-              <Text style={styles.analyticsIcon}>📊</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleAddProgressEntry}
-            >
-              <Text style={styles.addIcon}>➕</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.shareIcon}>📤</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Loading State */}
-        {(progressLoading || statsLoading) && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-            <Text style={styles.loadingText}>Loading progress data...</Text>
-          </View>
-        )}
-
-        {/* Error State */}
-        {progressError && (
-          <Card style={styles.errorCard} variant="outlined">
-            <Text style={styles.errorText}>⚠️ {progressError}</Text>
-            <Button
-              title="Retry"
-              onPress={refreshAll}
-              variant="outline"
-              size="sm"
-              style={styles.retryButton}
-            />
-          </Card>
-        )}
-
-        {/* No Authentication State */}
-        {!isAuthenticated && (
-          <Card style={styles.errorCard} variant="outlined">
-            <Text style={styles.errorText}>🔐 Please sign in to track your progress</Text>
-          </Card>
-        )}
-
-        {/* No Data State */}
-        {isAuthenticated && progressEntries.length === 0 && !progressLoading && (
-          <Card style={styles.errorCard} variant="outlined">
-            <Text style={styles.errorText}>📊 No progress data yet</Text>
-            <Text style={styles.errorSubtext}>Add your first measurement to start tracking!</Text>
-            <Button
-              title="Add Entry"
-              onPress={handleAddProgressEntry}
-              variant="primary"
-              size="sm"
-              style={styles.retryButton}
-            />
-          </Card>
-        )}
-
-        {/* Today's Progress */}
-        {isAuthenticated && todaysData && !showAnalytics && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Progress</Text>
-            <Card style={styles.todaysCard} variant="elevated">
-              <View style={styles.todaysHeader}>
-                <Text style={styles.todaysDate}>
-                  {new Date().toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </Text>
-              </View>
-
-              <View style={styles.todaysStats}>
-                {/* Workout Progress */}
-                <View style={styles.todaysStat}>
-                  <Text style={styles.todaysStatIcon}>🏋️</Text>
-                  <View style={styles.todaysStatContent}>
-                    <Text style={styles.todaysStatLabel}>Workout</Text>
-                    <Text style={styles.todaysStatValue}>
-                      {todaysData.workout ? `${todaysData.progress.workoutProgress}%` : 'Rest Day'}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Meals Progress */}
-                <View style={styles.todaysStat}>
-                  <Text style={styles.todaysStatIcon}>🍽️</Text>
-                  <View style={styles.todaysStatContent}>
-                    <Text style={styles.todaysStatLabel}>Meals</Text>
-                    <Text style={styles.todaysStatValue}>
-                      {todaysData.progress.mealsCompleted}/{todaysData.progress.totalMeals}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Calories Progress */}
-                <View style={styles.todaysStat}>
-                  <Text style={styles.todaysStatIcon}>🔥</Text>
-                  <View style={styles.todaysStatContent}>
-                    <Text style={styles.todaysStatLabel}>Calories</Text>
-                    <Text style={styles.todaysStatValue}>
-                      {todaysData.progress.caloriesConsumed}/{todaysData.progress.targetCalories}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </Card>
-          </View>
-        )}
-
-        {/* Progress Analytics Component */}
-        {showAnalytics && (
-          <ProgressAnalytics />
-        )}
-
-        {/* Period Selector */}
-        {!showAnalytics && (
-          <View style={styles.section}>
-          <View style={styles.periodSelector}>
-            {periods.map((period) => (
-              <TouchableOpacity
-                key={period.id}
-                onPress={() => setSelectedPeriod(period.id)}
-                style={[
-                  styles.periodButton,
-                  selectedPeriod === period.id && styles.periodButtonActive,
-                ]}
-              >
-                <Text style={[
-                  styles.periodText,
-                  selectedPeriod === period.id && styles.periodTextActive,
-                ]}>
-                  {period.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        )}
-
-        {/* Body Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Body Metrics</Text>
-          <View style={styles.statsGrid}>
-            <Card style={styles.statCard} variant="elevated">
-              <View style={styles.statHeader}>
-                <Text style={styles.statValue}>{stats.weight.current}</Text>
-                <Text style={styles.statUnit}>{stats.weight.unit}</Text>
-                <Text style={styles.trendIcon}>
-                  {stats.weight.trend === 'decreasing' ? '📉' : '📈'}
-                </Text>
-              </View>
-              <Text style={styles.statLabel}>Weight</Text>
-              <Text style={[
-                styles.statChange,
-                stats.weight.change < 0 ? styles.statChangePositive : styles.statChangeNegative
-              ]}>
-                {stats.weight.change > 0 ? '+' : ''}{stats.weight.change} {stats.weight.unit}
-              </Text>
-              <View style={styles.goalProgress}>
-                <Text style={styles.goalText}>Goal: {stats.weight.goal}{stats.weight.unit}</Text>
-                <View style={styles.progressBar}>
-                  <View style={[
-                    styles.progressFill,
-                    (() => {
-                      const current = Number(stats.weight.current) || 0;
-                      const goal = Number(stats.weight.goal) || 0;
-                      if (current <= 0 || !isFinite(current)) {
-                        return { width: '0%' };
-                      }
-                      const raw = ((current - goal) / current) * 100 + 50;
-                      const clamped = Math.max(0, Math.min(100, isFinite(raw) ? raw : 0));
-                      return { width: `${clamped}%` };
-                    })()
-                  ]} />
-                </View>
-              </View>
-            </Card>
-            
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>{stats.bodyFat.current}</Text>
-              <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
-              <Text style={styles.statLabel}>Body Fat</Text>
-              <Text style={[
-                styles.statChange,
-                stats.bodyFat.change < 0 ? styles.statChangePositive : styles.statChangeNegative
-              ]}>
-                {stats.bodyFat.change > 0 ? '+' : ''}{stats.bodyFat.change}{stats.bodyFat.unit}
-              </Text>
-            </Card>
-          </View>
-          
-          <View style={styles.statsGrid}>
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>{stats.muscle.current}</Text>
-              <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
-              <Text style={styles.statLabel}>Muscle Mass</Text>
-              <Text style={[
-                styles.statChange,
-                stats.muscle.change > 0 ? styles.statChangePositive : styles.statChangeNegative
-              ]}>
-                {stats.muscle.change > 0 ? '+' : ''}{stats.muscle.change} {stats.muscle.unit}
-              </Text>
-            </Card>
-            
-            <Card style={styles.statCard} variant="elevated">
-              <Text style={styles.statValue}>{stats.bmi.current}</Text>
-              <Text style={styles.statUnit}>BMI</Text>
-              <Text style={styles.statLabel}>Body Mass Index</Text>
-              <Text style={[
-                styles.statChange,
-                stats.bmi.change < 0 ? styles.statChangePositive : styles.statChangeNegative
-              ]}>
-                {stats.bmi.change > 0 ? '+' : ''}{stats.bmi.change}
-              </Text>
-            </Card>
-          </View>
-        </View>
-
-        {/* Weekly Activity */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>This Week's Activity</Text>
-          <Card style={styles.chartCard} variant="elevated">
-            <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>Activity & Nutrition</Text>
-              <Text style={styles.chartSubtitle}>Last 7 days</Text>
-            </View>
-            
-            <View style={styles.chart}>
-              {weeklyData.map((day, index) => (
-                <View key={index} style={styles.chartDay}>
-                  <View style={styles.chartBars}>
-                    <View style={[
-                      styles.chartBar,
-                      styles.workoutBar,
-                      { height: day.workouts * 40 + 10 }
-                    ]} />
-                    <View style={[
-                      styles.chartBar,
-                      styles.mealBar,
-                      { height: day.meals * 20 + 10 }
-                    ]} />
-                    <View style={[
-                      styles.chartBar,
-                      styles.calorieBar,
-                      { height: (day.calories / 10) + 5 }
-                    ]} />
-                  </View>
-                  <Text style={styles.chartDayLabel}>{day.day}</Text>
-                </View>
-              ))}
-            </View>
-            
-            <View style={styles.chartLegend}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.primary }]} />
-                <Text style={styles.legendText}>Workouts</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-                <Text style={styles.legendText}>Meals</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.secondary }]} />
-                <Text style={styles.legendText}>Calories</Text>
+                {/* Track B Status Indicator */}
+                <TouchableOpacity style={styles.statusButton}>
+                  <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.analyticsButton, showAnalytics && styles.analyticsButtonActive]}
+                  onPress={() => setShowAnalytics(!showAnalytics)}
+                >
+                  <Text style={styles.analyticsIcon}>📊</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.addButton} onPress={handleAddProgressEntry}>
+                  <Text style={styles.addIcon}>➕</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.shareButton}>
+                  <Text style={styles.shareIcon}>📤</Text>
+                </TouchableOpacity>
               </View>
             </View>
-          </Card>
-        </View>
 
-        {/* Recent Activities */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Activities</Text>
-            {recentActivities.length > 3 && (
-              <TouchableOpacity
-                onPress={() => {
-                  loadAllActivities();
-                  setShowAllActivities(true);
-                }}
-              >
-                <Text style={styles.viewAllText}>View All</Text>
-              </TouchableOpacity>
+            {/* Loading State */}
+            {(progressLoading || statsLoading) && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+                <Text style={styles.loadingText}>Loading progress data...</Text>
+              </View>
             )}
-          </View>
 
-          {recentActivities.length > 0 ? (
-            recentActivities.slice(0, 3).map((activity, index) => {
-              // Ensure activity name is a string
-              let activityName = activity.name;
-              if (Array.isArray(activityName)) {
-                activityName = activityName.join(', ');
-              } else if (typeof activityName !== 'string') {
-                activityName = String(activityName || 'Unknown Activity');
-              }
+            {/* Error State */}
+            {progressError && (
+              <Card style={styles.errorCard} variant="outlined">
+                <Text style={styles.errorText}>⚠️ {progressError}</Text>
+                <Button
+                  title="Retry"
+                  onPress={refreshAll}
+                  variant="outline"
+                  size="sm"
+                  style={styles.retryButton}
+                />
+              </Card>
+            )}
 
-              return (
-                <Card key={activity.id} style={styles.activityCard} variant="outlined">
-                  <View style={styles.activityContent}>
-                    <View style={styles.activityIcon}>
-                      <Text style={styles.activityEmoji}>
-                        {activity.type === 'workout' ? '🏋️‍♂️' : '🍽️'}
-                      </Text>
+            {/* No Authentication State */}
+            {!isAuthenticated && (
+              <Card style={styles.errorCard} variant="outlined">
+                <Text style={styles.errorText}>🔐 Please sign in to track your progress</Text>
+              </Card>
+            )}
+
+            {/* No Data State */}
+            {isAuthenticated && progressEntries.length === 0 && !progressLoading && (
+              <Card style={styles.errorCard} variant="outlined">
+                <Text style={styles.errorText}>📊 No progress data yet</Text>
+                <Text style={styles.errorSubtext}>
+                  Add your first measurement to start tracking!
+                </Text>
+                <Button
+                  title="Add Entry"
+                  onPress={handleAddProgressEntry}
+                  variant="primary"
+                  size="sm"
+                  style={styles.retryButton}
+                />
+              </Card>
+            )}
+
+            {/* Today's Progress */}
+            {isAuthenticated && todaysData && !showAnalytics && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Today's Progress</Text>
+                <Card style={styles.todaysCard} variant="elevated">
+                  <View style={styles.todaysHeader}>
+                    <Text style={styles.todaysDate}>
+                      {new Date().toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+
+                  <View style={styles.todaysStats}>
+                    {/* Workout Progress */}
+                    <View style={styles.todaysStat}>
+                      <Text style={styles.todaysStatIcon}>🏋️</Text>
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Workout</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {todaysData.workout
+                            ? `${todaysData.progress.workoutProgress}%`
+                            : 'Rest Day'}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.activityInfo}>
-                      <Text style={styles.activityName}>{activityName}</Text>
-                      <Text style={styles.activityDetails}>
-                        {activity.type === 'workout'
-                          ? `${activity.duration || 'Unknown'} min • ${activity.calories || 0} cal`
-                          : `${activity.calories || 0} calories consumed`
-                        }
-                      </Text>
-                      <Text style={styles.activityDate}>
-                        {new Date(activity.completedAt).toLocaleDateString()}
-                      </Text>
+
+                    {/* Meals Progress */}
+                    <View style={styles.todaysStat}>
+                      <Text style={styles.todaysStatIcon}>🍽️</Text>
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Meals</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {todaysData.progress.mealsCompleted}/{todaysData.progress.totalMeals}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.activityBadge}>
-                      <Text style={styles.activityBadgeText}>✓</Text>
+
+                    {/* Calories Progress */}
+                    <View style={styles.todaysStat}>
+                      <Text style={styles.todaysStatIcon}>🔥</Text>
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Calories</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {todaysData.progress.caloriesConsumed}/
+                          {todaysData.progress.targetCalories}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </Card>
-              );
-            })
-          ) : (
-            <Card style={styles.emptyCard} variant="outlined">
-              <Text style={styles.emptyText}>No recent activities yet</Text>
-              <Text style={styles.emptySubtext}>Complete workouts and meals to see them here</Text>
-            </Card>
-          )}
-        </View>
+              </View>
+            )}
 
-        {/* Achievements */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
-          
-          {achievements.map((achievement) => (
-            <Card key={achievement.id} style={styles.achievementCard} variant="outlined">
-              <View style={styles.achievementContent}>
-                <View style={[
-                  styles.achievementIcon,
-                  achievement.completed && styles.achievementIconCompleted
-                ]}>
-                  <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
-                </View>
-                
-                <View style={styles.achievementInfo}>
-                  <View style={styles.achievementHeader}>
-                    <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                    <View style={styles.achievementMeta}>
-                      <Text style={styles.achievementCategory}>{achievement.category}</Text>
-                      <Text style={styles.achievementPoints}>+{achievement.points} pts</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.achievementDescription}>{achievement.description}</Text>
+            {/* Progress Analytics Component */}
+            {showAnalytics && <ProgressAnalytics />}
 
-                  {!achievement.completed && (achievement.progress ?? 0) > 0 && (achievement.target ?? 0) > 0 ? (
-                    <View style={styles.achievementProgress}>
-                      <View style={styles.progressBar}>
-                        <View style={[
-                          styles.progressFill,
-                          { width: `${Math.min(100, Math.max(0, ((achievement.progress || 0) / (achievement.target || 1)) * 100))}%` }
-                        ]} />
-                      </View>
-                      <Text style={styles.progressText}>
-                        {achievement.progress}/{achievement.target}
+            {/* Period Selector */}
+            {!showAnalytics && (
+              <View style={styles.section}>
+                <View style={styles.periodSelector}>
+                  {periods.map((period) => (
+                    <TouchableOpacity
+                      key={period.id}
+                      onPress={() => setSelectedPeriod(period.id)}
+                      style={[
+                        styles.periodButton,
+                        selectedPeriod === period.id && styles.periodButtonActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.periodText,
+                          selectedPeriod === period.id && styles.periodTextActive,
+                        ]}
+                      >
+                        {period.label}
                       </Text>
-                    </View>
-                  ) : null}
-
-                  <View style={[styles.rarityBadge, styles[`rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`]]}>
-                    <Text style={styles.rarityText}>{achievement.rarity.toUpperCase()}</Text>
-                  </View>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                
-                <Text style={[
-                  styles.achievementDate,
-                  achievement.completed && styles.achievementDateCompleted
-                ]}>
-                  {achievement.date}
-                </Text>
               </View>
-            </Card>
-          ))}
-        </View>
+            )}
 
-        {/* Summary Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overall Summary</Text>
-          <Card style={styles.summaryCard} variant="elevated">
-            <View style={styles.summaryGrid}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{weeklyProgress?.workoutsCompleted || progressStats?.totalWorkouts || 0}</Text>
-                <Text style={styles.summaryLabel}>Total Workouts</Text>
+            {/* Body Stats */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Body Metrics</Text>
+              <View style={styles.statsGrid}>
+                <Card style={styles.statCard} variant="elevated">
+                  <View style={styles.statHeader}>
+                    <Text style={styles.statValue}>{stats.weight.current}</Text>
+                    <Text style={styles.statUnit}>{stats.weight.unit}</Text>
+                    <Text style={styles.trendIcon}>
+                      {stats.weight.trend === 'decreasing' ? '📉' : '📈'}
+                    </Text>
+                  </View>
+                  <Text style={styles.statLabel}>Weight</Text>
+                  <Text
+                    style={[
+                      styles.statChange,
+                      stats.weight.change < 0
+                        ? styles.statChangePositive
+                        : styles.statChangeNegative,
+                    ]}
+                  >
+                    {stats.weight.change > 0 ? '+' : ''}
+                    {stats.weight.change} {stats.weight.unit}
+                  </Text>
+                  <View style={styles.goalProgress}>
+                    <Text style={styles.goalText}>
+                      Goal: {stats.weight.goal}
+                      {stats.weight.unit}
+                    </Text>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          (() => {
+                            const current = Number(stats.weight.current) || 0;
+                            const goal = Number(stats.weight.goal) || 0;
+                            if (current <= 0 || !isFinite(current)) {
+                              return { width: '0%' };
+                            }
+                            const raw = ((current - goal) / current) * 100 + 50;
+                            const clamped = Math.max(0, Math.min(100, isFinite(raw) ? raw : 0));
+                            return { width: `${clamped}%` };
+                          })(),
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </Card>
+
+                <Card style={styles.statCard} variant="elevated">
+                  <Text style={styles.statValue}>{stats.bodyFat.current}</Text>
+                  <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
+                  <Text style={styles.statLabel}>Body Fat</Text>
+                  <Text
+                    style={[
+                      styles.statChange,
+                      stats.bodyFat.change < 0
+                        ? styles.statChangePositive
+                        : styles.statChangeNegative,
+                    ]}
+                  >
+                    {stats.bodyFat.change > 0 ? '+' : ''}
+                    {stats.bodyFat.change}
+                    {stats.bodyFat.unit}
+                  </Text>
+                </Card>
               </View>
-              
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  {realWeeklyData.reduce((total, day) => total + day.duration, 0) > 0 
-                    ? `${Math.round(realWeeklyData.reduce((total, day) => total + day.duration, 0) / 60)}h`
-                    : progressStats?.totalDuration ? `${Math.round(progressStats.totalDuration / 60)}h` : '0h'}
-                </Text>
-                <Text style={styles.summaryLabel}>Time Exercised</Text>
-              </View>
-              
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  {DataRetrievalService.getTotalCaloriesBurned()?.toLocaleString() || progressStats?.totalCalories?.toLocaleString() || '0'}
-                </Text>
-                <Text style={styles.summaryLabel}>Calories Burned</Text>
-              </View>
-              
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>{weeklyProgress?.streak || progressStats?.currentStreak || 0}</Text>
-                <Text style={styles.summaryLabel}>Day Streak</Text>
+
+              <View style={styles.statsGrid}>
+                <Card style={styles.statCard} variant="elevated">
+                  <Text style={styles.statValue}>{stats.muscle.current}</Text>
+                  <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                  <Text style={styles.statLabel}>Muscle Mass</Text>
+                  <Text
+                    style={[
+                      styles.statChange,
+                      stats.muscle.change > 0
+                        ? styles.statChangePositive
+                        : styles.statChangeNegative,
+                    ]}
+                  >
+                    {stats.muscle.change > 0 ? '+' : ''}
+                    {stats.muscle.change} {stats.muscle.unit}
+                  </Text>
+                </Card>
+
+                <Card style={styles.statCard} variant="elevated">
+                  <Text style={styles.statValue}>{stats.bmi.current}</Text>
+                  <Text style={styles.statUnit}>BMI</Text>
+                  <Text style={styles.statLabel}>Body Mass Index</Text>
+                  <Text
+                    style={[
+                      styles.statChange,
+                      stats.bmi.change < 0 ? styles.statChangePositive : styles.statChangeNegative,
+                    ]}
+                  >
+                    {stats.bmi.change > 0 ? '+' : ''}
+                    {stats.bmi.change}
+                  </Text>
+                </Card>
               </View>
             </View>
-          </Card>
-        </View>
 
-        <View style={styles.bottomSpacing} />
+            {/* Weekly Activity */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>This Week's Activity</Text>
+              <Card style={styles.chartCard} variant="elevated">
+                <View style={styles.chartHeader}>
+                  <Text style={styles.chartTitle}>Activity & Nutrition</Text>
+                  <Text style={styles.chartSubtitle}>Last 7 days</Text>
+                </View>
+
+                <View style={styles.chart}>
+                  {weeklyData.map((day, index) => (
+                    <View key={index} style={styles.chartDay}>
+                      <View style={styles.chartBars}>
+                        <View
+                          style={[
+                            styles.chartBar,
+                            styles.workoutBar,
+                            { height: day.workouts * 40 + 10 },
+                          ]}
+                        />
+                        <View
+                          style={[styles.chartBar, styles.mealBar, { height: day.meals * 20 + 10 }]}
+                        />
+                        <View
+                          style={[
+                            styles.chartBar,
+                            styles.calorieBar,
+                            { height: day.calories / 10 + 5 },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.chartDayLabel}>{day.day}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.chartLegend}>
+                  <View style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: ResponsiveTheme.colors.primary },
+                      ]}
+                    />
+                    <Text style={styles.legendText}>Workouts</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
+                    <Text style={styles.legendText}>Meals</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: ResponsiveTheme.colors.secondary },
+                      ]}
+                    />
+                    <Text style={styles.legendText}>Calories</Text>
+                  </View>
+                </View>
+              </Card>
+            </View>
+
+            {/* Recent Activities */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Recent Activities</Text>
+                {recentActivities.length > 3 && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      loadAllActivities();
+                      setShowAllActivities(true);
+                    }}
+                  >
+                    <Text style={styles.viewAllText}>View All</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {recentActivities.length > 0 ? (
+                recentActivities.slice(0, 3).map((activity, index) => {
+                  // Ensure activity name is a string
+                  let activityName = activity.name;
+                  if (Array.isArray(activityName)) {
+                    activityName = activityName.join(', ');
+                  } else if (typeof activityName !== 'string') {
+                    activityName = String(activityName || 'Unknown Activity');
+                  }
+
+                  return (
+                    <Card key={activity.id} style={styles.activityCard} variant="outlined">
+                      <View style={styles.activityContent}>
+                        <View style={styles.activityIcon}>
+                          <Text style={styles.activityEmoji}>
+                            {activity.type === 'workout' ? '🏋️‍♂️' : '🍽️'}
+                          </Text>
+                        </View>
+                        <View style={styles.activityInfo}>
+                          <Text style={styles.activityName}>{activityName}</Text>
+                          <Text style={styles.activityDetails}>
+                            {activity.type === 'workout'
+                              ? `${activity.duration || 'Unknown'} min • ${activity.calories || 0} cal`
+                              : `${activity.calories || 0} calories consumed`}
+                          </Text>
+                          <Text style={styles.activityDate}>
+                            {new Date(activity.completedAt).toLocaleDateString()}
+                          </Text>
+                        </View>
+                        <View style={styles.activityBadge}>
+                          <Text style={styles.activityBadgeText}>✓</Text>
+                        </View>
+                      </View>
+                    </Card>
+                  );
+                })
+              ) : (
+                <Card style={styles.emptyCard} variant="outlined">
+                  <Text style={styles.emptyText}>No recent activities yet</Text>
+                  <Text style={styles.emptySubtext}>
+                    Complete workouts and meals to see them here
+                  </Text>
+                </Card>
+              )}
+            </View>
+
+            {/* Achievements */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Achievements</Text>
+
+              {achievements.map((achievement) => (
+                <Card key={achievement.id} style={styles.achievementCard} variant="outlined">
+                  <View style={styles.achievementContent}>
+                    <View
+                      style={[
+                        styles.achievementIcon,
+                        achievement.completed && styles.achievementIconCompleted,
+                      ]}
+                    >
+                      <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+                    </View>
+
+                    <View style={styles.achievementInfo}>
+                      <View style={styles.achievementHeader}>
+                        <Text style={styles.achievementTitle}>{achievement.title}</Text>
+                        <View style={styles.achievementMeta}>
+                          <Text style={styles.achievementCategory}>{achievement.category}</Text>
+                          <Text style={styles.achievementPoints}>+{achievement.points} pts</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.achievementDescription}>{achievement.description}</Text>
+
+                      {!achievement.completed &&
+                      (achievement.progress ?? 0) > 0 &&
+                      (achievement.target ?? 0) > 0 ? (
+                        <View style={styles.achievementProgress}>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                {
+                                  width: `${Math.min(100, Math.max(0, ((achievement.progress || 0) / (achievement.target || 1)) * 100))}%`,
+                                },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.progressText}>
+                            {achievement.progress}/{achievement.target}
+                          </Text>
+                        </View>
+                      ) : null}
+
+                      <View
+                        style={[
+                          styles.rarityBadge,
+                          styles[
+                            `rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`
+                          ],
+                        ]}
+                      >
+                        <Text style={styles.rarityText}>{achievement.rarity.toUpperCase()}</Text>
+                      </View>
+                    </View>
+
+                    <Text
+                      style={[
+                        styles.achievementDate,
+                        achievement.completed && styles.achievementDateCompleted,
+                      ]}
+                    >
+                      {achievement.date}
+                    </Text>
+                  </View>
+                </Card>
+              ))}
+            </View>
+
+            {/* Summary Stats */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Overall Summary</Text>
+              <Card style={styles.summaryCard} variant="elevated">
+                <View style={styles.summaryGrid}>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>
+                      {weeklyProgress?.workoutsCompleted || progressStats?.totalWorkouts || 0}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Total Workouts</Text>
+                  </View>
+
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>
+                      {realWeeklyData.reduce((total, day) => total + day.duration, 0) > 0
+                        ? `${Math.round(realWeeklyData.reduce((total, day) => total + day.duration, 0) / 60)}h`
+                        : progressStats?.totalDuration
+                          ? `${Math.round(progressStats.totalDuration / 60)}h`
+                          : '0h'}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Time Exercised</Text>
+                  </View>
+
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>
+                      {DataRetrievalService.getTotalCaloriesBurned()?.toLocaleString() ||
+                        progressStats?.totalCalories?.toLocaleString() ||
+                        '0'}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Calories Burned</Text>
+                  </View>
+
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryValue}>
+                      {weeklyProgress?.streak || progressStats?.currentStreak || 0}
+                    </Text>
+                    <Text style={styles.summaryLabel}>Day Streak</Text>
+                  </View>
+                </View>
+              </Card>
+            </View>
+
+            <View style={styles.bottomSpacing} />
           </View>
         </ScrollView>
       </Animated.View>
 
       {/* All Activities Modal */}
-      <Modal
-        visible={showAllActivities}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
+      <Modal visible={showAllActivities} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>All Activities</Text>
@@ -875,8 +964,7 @@ export const ProgressScreen: React.FC = () => {
                       <Text style={styles.activityDetails}>
                         {activity.type === 'workout'
                           ? `${activity.duration || 'Unknown'} min • ${activity.calories || 0} cal`
-                          : `${activity.calories || 0} calories consumed`
-                        }
+                          : `${activity.calories || 0} calories consumed`}
                       </Text>
                       <Text style={styles.activityDate}>
                         {new Date(activity.completedAt).toLocaleDateString()}
@@ -891,7 +979,7 @@ export const ProgressScreen: React.FC = () => {
             }}
             onEndReached={loadMoreActivities}
             onEndReachedThreshold={0.1}
-            ListFooterComponent={() => (
+            ListFooterComponent={() =>
               loadingMoreActivities ? (
                 <View style={styles.loadingFooter}>
                   <ActivityIndicator size="small" color={ResponsiveTheme.colors.primary} />
@@ -902,11 +990,13 @@ export const ProgressScreen: React.FC = () => {
                   <Text style={styles.endText}>You've reached the end!</Text>
                 </View>
               ) : null
-            )}
+            }
             ListEmptyComponent={() => (
               <View style={styles.emptyModalContainer}>
                 <Text style={styles.emptyModalText}>No activities found</Text>
-                <Text style={styles.emptyModalSubtext}>Complete workouts and meals to see them here</Text>
+                <Text style={styles.emptyModalSubtext}>
+                  Complete workouts and meals to see them here
+                </Text>
               </View>
             )}
           />
@@ -921,11 +1011,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -934,13 +1024,13 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   shareButton: {
     width: rw(40),
     height: rh(40),
@@ -949,115 +1039,115 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   shareIcon: {
     fontSize: rf(20),
   },
-  
+
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   periodSelector: {
     flexDirection: 'row',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.xs,
   },
-  
+
   periodButton: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
     alignItems: 'center',
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
-  
+
   periodButtonActive: {
     backgroundColor: ResponsiveTheme.colors.primary,
   },
-  
+
   periodText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.textSecondary,
   },
-  
+
   periodTextActive: {
     color: ResponsiveTheme.colors.white,
   },
-  
+
   statsGrid: {
     flexDirection: 'row',
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   statCard: {
     flex: 1,
     padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
-  
+
   statValue: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   statUnit: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
     marginTop: -ResponsiveTheme.spacing.xs,
   },
-  
+
   statLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   statChange: {
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
-  
+
   statChangePositive: {
     color: ResponsiveTheme.colors.success,
   },
-  
+
   statChangeNegative: {
     color: ResponsiveTheme.colors.error,
   },
-  
+
   chartCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   chartHeader: {
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   chartTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   chartSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1065,71 +1155,71 @@ const styles = StyleSheet.create({
     height: rh(100),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   chartDay: {
     alignItems: 'center',
     flex: 1,
   },
-  
+
   chartBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     height: rh(80),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   chartBar: {
     width: rw(8),
     borderRadius: ResponsiveTheme.borderRadius.sm,
     marginHorizontal: rp(1),
   },
-  
+
   workoutBar: {
     backgroundColor: ResponsiveTheme.colors.primary,
   },
-  
+
   calorieBar: {
     backgroundColor: ResponsiveTheme.colors.secondary,
   },
-  
+
   chartDayLabel: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   chartLegend: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: ResponsiveTheme.spacing.lg,
   },
-  
+
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   legendDot: {
     width: rw(8),
     height: rh(8),
     borderRadius: rs(4),
     marginRight: ResponsiveTheme.spacing.xs,
   },
-  
+
   legendText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
   },
-  
+
   achievementCard: {
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   achievementContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   achievementIcon: {
     width: rw(48),
     height: rh(48),
@@ -1139,90 +1229,90 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   achievementIconCompleted: {
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
   },
-  
+
   achievementEmoji: {
     fontSize: rf(24),
   },
-  
+
   achievementInfo: {
     flex: 1,
   },
-  
+
   achievementTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   achievementDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   achievementProgress: {
     marginTop: ResponsiveTheme.spacing.sm,
   },
-  
+
   progressBar: {
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   progressFill: {
     height: '100%',
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.sm,
   },
-  
+
   progressText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   achievementDate: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   achievementDateCompleted: {
     color: ResponsiveTheme.colors.success,
   },
-  
+
   summaryCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: ResponsiveTheme.spacing.lg,
   },
-  
+
   summaryItem: {
     width: '45%',
     alignItems: 'center',
   },
-  
+
   summaryValue: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   summaryLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
     textAlign: 'center',
   },
-  
+
   bottomSpacing: {
     height: ResponsiveTheme.spacing.xl,
   },

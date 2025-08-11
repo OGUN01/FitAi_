@@ -16,9 +16,10 @@ import { Card, Button, THEME } from '../ui';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection
-const isExpoGo = Constants.appOwnership === 'expo' || 
-                 Constants.executionEnvironment === 'storeClient' ||
-                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
 
 // Load notification stores safely
 let useWorkoutReminders: any = null;
@@ -122,7 +123,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
 
   const saveWorkoutSettings = async () => {
     const minutes = parseInt(workoutReminderMinutes);
-    
+
     if (isNaN(minutes) || minutes < 5 || minutes > 120) {
       Alert.alert('Invalid Time', 'Please enter a reminder time between 5 and 120 minutes.');
       setIsLoading(false);
@@ -130,7 +131,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     }
 
     await workoutReminders.updateConfig({
-      reminderMinutes: minutes
+      reminderMinutes: minutes,
     });
 
     setIsLoading(false);
@@ -159,7 +160,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     });
 
     const enabledCount = [breakfastEnabled, lunchEnabled, dinnerEnabled].filter(Boolean).length;
-    
+
     setIsLoading(false);
     Alert.alert(
       'Meal Reminders Updated!',
@@ -170,7 +171,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
 
   const saveSleepSettings = async () => {
     const minutes = parseInt(sleepReminderMinutes);
-    
+
     if (isNaN(minutes) || minutes < 5 || minutes > 60) {
       Alert.alert('Invalid Time', 'Please enter a reminder time between 5 and 60 minutes.');
       setIsLoading(false);
@@ -201,11 +202,14 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
     return timeRegex.test(time);
   };
 
-  const getPresetTime = (mealType: 'breakfast' | 'lunch' | 'dinner', variant: 'early' | 'normal' | 'late') => {
+  const getPresetTime = (
+    mealType: 'breakfast' | 'lunch' | 'dinner',
+    variant: 'early' | 'normal' | 'late'
+  ) => {
     const presets = {
       breakfast: { early: '07:00', normal: '08:00', late: '09:30' },
       lunch: { early: '12:00', normal: '13:00', late: '14:00' },
-      dinner: { early: '18:00', normal: '19:00', late: '20:30' }
+      dinner: { early: '18:00', normal: '19:00', late: '20:30' },
     };
     return presets[mealType][variant];
   };
@@ -229,21 +233,23 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             selectTextOnFocus
           />
         </View>
-        
+
         <View style={styles.presetButtons}>
-          {[15, 30, 45, 60].map(minutes => (
+          {[15, 30, 45, 60].map((minutes) => (
             <TouchableOpacity
               key={minutes}
               style={[
                 styles.presetButton,
-                workoutReminderMinutes === minutes.toString() && styles.presetButtonActive
+                workoutReminderMinutes === minutes.toString() && styles.presetButtonActive,
               ]}
               onPress={() => setWorkoutReminderMinutes(minutes.toString())}
             >
-              <Text style={[
-                styles.presetButtonText,
-                workoutReminderMinutes === minutes.toString() && styles.presetButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.presetButtonText,
+                  workoutReminderMinutes === minutes.toString() && styles.presetButtonTextActive,
+                ]}
+              >
                 {minutes}min
               </Text>
             </TouchableOpacity>
@@ -253,7 +259,8 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
 
       <Card style={styles.infoCard}>
         <Text style={styles.infoText}>
-          💡 Workout times are automatically detected from your AI-generated fitness plans. You can also manually set custom workout times in the fitness section.
+          💡 Workout times are automatically detected from your AI-generated fitness plans. You can
+          also manually set custom workout times in the fitness section.
         </Text>
       </Card>
     </View>
@@ -277,7 +284,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             thumbColor={breakfastEnabled ? THEME.colors.primary : THEME.colors.textMuted}
           />
         </View>
-        
+
         {breakfastEnabled && (
           <>
             <View style={styles.cardContent}>
@@ -290,21 +297,23 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
               />
             </View>
             <View style={styles.presetButtons}>
-              {['early', 'normal', 'late'].map(preset => {
+              {['early', 'normal', 'late'].map((preset) => {
                 const time = getPresetTime('breakfast', preset as any);
                 return (
                   <TouchableOpacity
                     key={preset}
                     style={[
                       styles.presetButton,
-                      breakfastTime === time && styles.presetButtonActive
+                      breakfastTime === time && styles.presetButtonActive,
                     ]}
                     onPress={() => setBreakfastTime(time)}
                   >
-                    <Text style={[
-                      styles.presetButtonText,
-                      breakfastTime === time && styles.presetButtonTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.presetButtonText,
+                        breakfastTime === time && styles.presetButtonTextActive,
+                      ]}
+                    >
                       {time}
                     </Text>
                   </TouchableOpacity>
@@ -326,7 +335,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             thumbColor={lunchEnabled ? THEME.colors.primary : THEME.colors.textMuted}
           />
         </View>
-        
+
         {lunchEnabled && (
           <>
             <View style={styles.cardContent}>
@@ -339,21 +348,20 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
               />
             </View>
             <View style={styles.presetButtons}>
-              {['early', 'normal', 'late'].map(preset => {
+              {['early', 'normal', 'late'].map((preset) => {
                 const time = getPresetTime('lunch', preset as any);
                 return (
                   <TouchableOpacity
                     key={preset}
-                    style={[
-                      styles.presetButton,
-                      lunchTime === time && styles.presetButtonActive
-                    ]}
+                    style={[styles.presetButton, lunchTime === time && styles.presetButtonActive]}
                     onPress={() => setLunchTime(time)}
                   >
-                    <Text style={[
-                      styles.presetButtonText,
-                      lunchTime === time && styles.presetButtonTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.presetButtonText,
+                        lunchTime === time && styles.presetButtonTextActive,
+                      ]}
+                    >
                       {time}
                     </Text>
                   </TouchableOpacity>
@@ -375,7 +383,7 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
             thumbColor={dinnerEnabled ? THEME.colors.primary : THEME.colors.textMuted}
           />
         </View>
-        
+
         {dinnerEnabled && (
           <>
             <View style={styles.cardContent}>
@@ -388,21 +396,20 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
               />
             </View>
             <View style={styles.presetButtons}>
-              {['early', 'normal', 'late'].map(preset => {
+              {['early', 'normal', 'late'].map((preset) => {
                 const time = getPresetTime('dinner', preset as any);
                 return (
                   <TouchableOpacity
                     key={preset}
-                    style={[
-                      styles.presetButton,
-                      dinnerTime === time && styles.presetButtonActive
-                    ]}
+                    style={[styles.presetButton, dinnerTime === time && styles.presetButtonActive]}
                     onPress={() => setDinnerTime(time)}
                   >
-                    <Text style={[
-                      styles.presetButtonText,
-                      dinnerTime === time && styles.presetButtonTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.presetButtonText,
+                        dinnerTime === time && styles.presetButtonTextActive,
+                      ]}
+                    >
                       {time}
                     </Text>
                   </TouchableOpacity>
@@ -434,19 +441,15 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
           />
         </View>
         <View style={styles.presetButtons}>
-          {['21:30', '22:00', '22:30', '23:00'].map(time => (
+          {['21:30', '22:00', '22:30', '23:00'].map((time) => (
             <TouchableOpacity
               key={time}
-              style={[
-                styles.presetButton,
-                bedtime === time && styles.presetButtonActive
-              ]}
+              style={[styles.presetButton, bedtime === time && styles.presetButtonActive]}
               onPress={() => setBedtime(time)}
             >
-              <Text style={[
-                styles.presetButtonText,
-                bedtime === time && styles.presetButtonTextActive
-              ]}>
+              <Text
+                style={[styles.presetButtonText, bedtime === time && styles.presetButtonTextActive]}
+              >
                 {time}
               </Text>
             </TouchableOpacity>
@@ -467,19 +470,21 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
           />
         </View>
         <View style={styles.presetButtons}>
-          {[15, 30, 45, 60].map(minutes => (
+          {[15, 30, 45, 60].map((minutes) => (
             <TouchableOpacity
               key={minutes}
               style={[
                 styles.presetButton,
-                sleepReminderMinutes === minutes.toString() && styles.presetButtonActive
+                sleepReminderMinutes === minutes.toString() && styles.presetButtonActive,
               ]}
               onPress={() => setSleepReminderMinutes(minutes.toString())}
             >
-              <Text style={[
-                styles.presetButtonText,
-                sleepReminderMinutes === minutes.toString() && styles.presetButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.presetButtonText,
+                  sleepReminderMinutes === minutes.toString() && styles.presetButtonTextActive,
+                ]}
+              >
                 {minutes}min
               </Text>
             </TouchableOpacity>
@@ -489,7 +494,8 @@ export const NotificationEditModal: React.FC<NotificationEditModalProps> = ({
 
       <Card style={styles.infoCard}>
         <Text style={styles.infoText}>
-          🌙 You'll receive two notifications: one to start winding down, and another at bedtime. Quality sleep is essential for recovery and performance.
+          🌙 You'll receive two notifications: one to start winding down, and another at bedtime.
+          Quality sleep is essential for recovery and performance.
         </Text>
       </Card>
     </View>

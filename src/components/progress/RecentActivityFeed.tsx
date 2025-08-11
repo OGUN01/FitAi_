@@ -4,7 +4,7 @@ import { THEME } from '../../utils/constants';
 
 /**
  * RecentActivityFeed Component
- * 
+ *
  * Shows recent workouts, meals, and achievements
  * Clean, card-based layout with safe data handling
  */
@@ -36,19 +36,27 @@ const ActivityCard: React.FC<{
 }> = ({ activity, onPress }) => {
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'workout': return '💪';
-      case 'meal': return '🍽️';
-      case 'achievement': return '🏆';
-      default: return '📋';
+      case 'workout':
+        return '💪';
+      case 'meal':
+        return '🍽️';
+      case 'achievement':
+        return '🏆';
+      default:
+        return '📋';
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'workout': return THEME.colors.success;
-      case 'meal': return THEME.colors.primary;
-      case 'achievement': return THEME.colors.warning;
-      default: return THEME.colors.textMuted;
+      case 'workout':
+        return THEME.colors.success;
+      case 'meal':
+        return THEME.colors.primary;
+      case 'achievement':
+        return THEME.colors.warning;
+      default:
+        return THEME.colors.textMuted;
     }
   };
 
@@ -58,7 +66,7 @@ const ActivityCard: React.FC<{
       const diff = now.getTime() - timestamp.getTime();
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const days = Math.floor(hours / 24);
-      
+
       if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
       if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
       return 'Just now';
@@ -72,7 +80,7 @@ const ActivityCard: React.FC<{
     if (!details) return null;
 
     const parts: string[] = [];
-    
+
     if (details.duration) {
       parts.push(`${details.duration} min`);
     }
@@ -97,38 +105,25 @@ const ActivityCard: React.FC<{
     >
       <View style={styles.activityHeader}>
         <View style={styles.activityIconContainer}>
-          <Text style={styles.activityIcon}>
-            {getActivityIcon(activity.type)}
-          </Text>
+          <Text style={styles.activityIcon}>{getActivityIcon(activity.type)}</Text>
         </View>
-        
+
         <View style={styles.activityContent}>
-          <Text style={styles.activityTitle}>
-            {activity.title}
-          </Text>
-          
+          <Text style={styles.activityTitle}>{activity.title}</Text>
+
           {activity.description && (
-            <Text style={styles.activityDescription}>
-              {activity.description}
-            </Text>
+            <Text style={styles.activityDescription}>{activity.description}</Text>
           )}
-          
+
           {formatDetails(activity) && (
-            <Text style={styles.activityDetails}>
-              {formatDetails(activity)}
-            </Text>
+            <Text style={styles.activityDetails}>{formatDetails(activity)}</Text>
           )}
         </View>
-        
+
         <View style={styles.activityMeta}>
-          <Text style={styles.activityTime}>
-            {formatTimestamp(activity.timestamp)}
-          </Text>
+          <Text style={styles.activityTime}>{formatTimestamp(activity.timestamp)}</Text>
           <View
-            style={[
-              styles.activityIndicator,
-              { backgroundColor: getActivityColor(activity.type) }
-            ]}
+            style={[styles.activityIndicator, { backgroundColor: getActivityColor(activity.type) }]}
           />
         </View>
       </View>
@@ -149,7 +144,7 @@ const EmptyState: React.FC = () => (
 export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   activities = [],
   onActivityPress,
-  maxItems = 5
+  maxItems = 5,
 }) => {
   // Use only real activities - no mock data
   // TODO: Implement real activity tracking from workout sessions and meal logs
@@ -170,17 +165,10 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      
-      <ScrollView 
-        style={styles.activityList}
-        showsVerticalScrollIndicator={false}
-      >
+
+      <ScrollView style={styles.activityList} showsVerticalScrollIndicator={false}>
         {limitedActivities.map((activity) => (
-          <ActivityCard
-            key={activity.id}
-            activity={activity}
-            onPress={onActivityPress}
-          />
+          <ActivityCard key={activity.id} activity={activity} onPress={onActivityPress} />
         ))}
       </ScrollView>
     </View>

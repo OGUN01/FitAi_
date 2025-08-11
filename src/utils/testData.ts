@@ -66,7 +66,7 @@ export const mockWorkoutData = {
         'Lie flat on bench with feet firmly on ground',
         'Grip barbell slightly wider than shoulder width',
         'Lower bar to chest with control',
-        'Press bar up explosively to starting position'
+        'Press bar up explosively to starting position',
       ],
       targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
       difficulty: 'Intermediate',
@@ -83,7 +83,7 @@ export const mockWorkoutData = {
         'Stand with feet hip-width apart, holding barbell',
         'Hinge at hips, keeping back straight',
         'Pull barbell to lower chest/upper abdomen',
-        'Lower with control to starting position'
+        'Lower with control to starting position',
       ],
       targetMuscles: ['Back', 'Biceps'],
       difficulty: 'Intermediate',
@@ -95,7 +95,8 @@ export const mockWorkoutData = {
 export const mockExerciseData = {
   id: 'exercise-456',
   name: 'Bench Press',
-  description: 'A compound upper body exercise that primarily targets the chest, shoulders, and triceps',
+  description:
+    'A compound upper body exercise that primarily targets the chest, shoulders, and triceps',
   difficulty: 'Intermediate',
   targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
   equipment: ['Barbell', 'Bench'],
@@ -103,19 +104,22 @@ export const mockExerciseData = {
     {
       step: 1,
       title: 'Setup Position',
-      description: 'Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.',
+      description:
+        'Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.',
       tips: ['Keep your back flat against the bench', 'Maintain a slight arch in your lower back'],
     },
     {
       step: 2,
       title: 'Grip the Bar',
-      description: 'Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.',
+      description:
+        'Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.',
       tips: ['Wrap your thumbs around the bar', 'Keep wrists straight and strong'],
     },
     {
       step: 3,
       title: 'Unrack the Weight',
-      description: 'Lift the bar off the rack and position it directly over your chest with arms fully extended.',
+      description:
+        'Lift the bar off the rack and position it directly over your chest with arms fully extended.',
       tips: ['Move slowly and controlled', 'Engage your core for stability'],
     },
   ],
@@ -247,20 +251,20 @@ export const generateRandomProgressData = (days: number = 30) => {
   const data = [];
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   let weight = 75;
   let bodyFat = 18;
   let muscleMass = 35;
-  
+
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
-    
+
     // Add some realistic variation
     weight += (Math.random() - 0.5) * 0.3;
     bodyFat += (Math.random() - 0.5) * 0.2;
     muscleMass += (Math.random() - 0.5) * 0.1;
-    
+
     data.push({
       date: date.toISOString().split('T')[0],
       weight: Math.round(weight * 10) / 10,
@@ -268,23 +272,30 @@ export const generateRandomProgressData = (days: number = 30) => {
       muscleMass: Math.round(muscleMass * 10) / 10,
     });
   }
-  
+
   return data;
 };
 
 export const generateRandomWorkoutData = (days: number = 90) => {
-  const workoutTypes = ['Strength Training', 'Cardio', 'HIIT', 'Yoga', 'CrossFit', 'Circuit Training'];
+  const workoutTypes = [
+    'Strength Training',
+    'Cardio',
+    'HIIT',
+    'Yoga',
+    'CrossFit',
+    'Circuit Training',
+  ];
   const data = [];
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
-    
+
     // Skip some days randomly (rest days)
     if (Math.random() > 0.7) continue;
-    
+
     data.push({
       date: date.toISOString().split('T')[0],
       intensity: Math.floor(Math.random() * 5) + 1,
@@ -292,15 +303,15 @@ export const generateRandomWorkoutData = (days: number = 90) => {
       type: workoutTypes[Math.floor(Math.random() * workoutTypes.length)],
     });
   }
-  
+
   return data;
 };
 
 export const generateRandomNutritionData = () => {
   return {
     calories: Math.floor(Math.random() * 800) + 1200, // 1200-2000
-    protein: Math.floor(Math.random() * 80) + 60,     // 60-140g
-    carbs: Math.floor(Math.random() * 150) + 100,     // 100-250g
-    fat: Math.floor(Math.random() * 50) + 40,         // 40-90g
+    protein: Math.floor(Math.random() * 80) + 60, // 60-140g
+    carbs: Math.floor(Math.random() * 150) + 100, // 100-250g
+    fat: Math.floor(Math.random() * 50) + 40, // 40-90g
   };
 };

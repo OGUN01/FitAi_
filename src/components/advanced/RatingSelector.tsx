@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { THEME } from '../../utils/constants';
 
 interface RatingSelectorProps {
@@ -32,9 +26,7 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   style,
 }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [animatedValues] = useState(
-    Array.from({ length: maxRating }, () => new Animated.Value(1))
-  );
+  const [animatedValues] = useState(Array.from({ length: maxRating }, () => new Animated.Value(1)));
 
   const getIcon = (index: number, isActive: boolean) => {
     const rating = hoveredRating || value;
@@ -64,14 +56,23 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
       case 'stars':
         return THEME.colors.warning;
       case 'difficulty':
-        return rating <= 2 ? THEME.colors.success : 
-               rating <= 4 ? THEME.colors.warning : THEME.colors.error;
+        return rating <= 2
+          ? THEME.colors.success
+          : rating <= 4
+            ? THEME.colors.warning
+            : THEME.colors.error;
       case 'satisfaction':
-        return rating <= 2 ? THEME.colors.error :
-               rating <= 4 ? THEME.colors.warning : THEME.colors.success;
+        return rating <= 2
+          ? THEME.colors.error
+          : rating <= 4
+            ? THEME.colors.warning
+            : THEME.colors.success;
       case 'intensity':
-        return rating <= 2 ? THEME.colors.info :
-               rating <= 4 ? THEME.colors.warning : THEME.colors.error;
+        return rating <= 2
+          ? THEME.colors.info
+          : rating <= 4
+            ? THEME.colors.warning
+            : THEME.colors.error;
       default:
         return THEME.colors.primary;
     }
@@ -147,7 +148,7 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <View style={styles.ratingContainer}>
         <View style={styles.iconsContainer}>
           {Array.from({ length: maxRating }, (_, index) => {
@@ -187,7 +188,9 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
         {showValue && (
           <View style={styles.valueContainer}>
             <Text style={styles.valueText}>{getLabel()}</Text>
-            <Text style={styles.numericValue}>({value}/{maxRating})</Text>
+            <Text style={styles.numericValue}>
+              ({value}/{maxRating})
+            </Text>
           </View>
         )}
       </View>
@@ -229,7 +232,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
 
   valueText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
   },
 

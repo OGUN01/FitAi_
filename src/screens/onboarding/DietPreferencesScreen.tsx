@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -70,18 +64,12 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
   };
 
   const data = getInitialData();
-  const [dietType, setDietType] = useState<DietPreferences['dietType']>(
-    data.dietType || 'non-veg'
-  );
-  const [allergies, setAllergies] = useState<string[]>(
-    data.allergies || []
-  );
+  const [dietType, setDietType] = useState<DietPreferences['dietType']>(data.dietType || 'non-veg');
+  const [allergies, setAllergies] = useState<string[]>(data.allergies || []);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>(
     data.cuisinePreferences || []
   );
-  const [restrictions, setRestrictions] = useState<string[]>(
-    data.restrictions || []
-  );
+  const [restrictions, setRestrictions] = useState<string[]>(data.restrictions || []);
 
   const [errors, setErrors] = useState<{
     dietType?: string;
@@ -101,7 +89,12 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
   // Update form data when edit context data changes (only once)
   useEffect(() => {
-    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+    if (
+      isEditMode &&
+      editContextData?.currentData &&
+      Object.keys(editContextData.currentData).length > 0 &&
+      !isDataPopulated
+    ) {
       const data = editContextData.currentData;
       setDietType(data.dietType || 'non-veg');
       setAllergies(data.allergies || []);
@@ -117,35 +110,35 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
       const timeoutId = setTimeout(() => {
         editContextData.updateData(formData);
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [dietType, allergies, cuisinePreferences, restrictions, isEditMode, isDataPopulated]);
 
   const dietTypeOptions = [
-    { 
-      id: 'non-veg', 
-      title: 'Non-Vegetarian', 
-      icon: '🍖', 
-      description: 'Includes all types of meat and fish' 
+    {
+      id: 'non-veg',
+      title: 'Non-Vegetarian',
+      icon: '🍖',
+      description: 'Includes all types of meat and fish',
     },
-    { 
-      id: 'vegetarian', 
-      title: 'Vegetarian', 
-      icon: '🥬', 
-      description: 'No meat or fish, includes dairy and eggs' 
+    {
+      id: 'vegetarian',
+      title: 'Vegetarian',
+      icon: '🥬',
+      description: 'No meat or fish, includes dairy and eggs',
     },
-    { 
-      id: 'vegan', 
-      title: 'Vegan', 
-      icon: '🌱', 
-      description: 'No animal products whatsoever' 
+    {
+      id: 'vegan',
+      title: 'Vegan',
+      icon: '🌱',
+      description: 'No animal products whatsoever',
     },
-    { 
-      id: 'pescatarian', 
-      title: 'Pescatarian', 
-      icon: '🐟', 
-      description: 'Vegetarian diet that includes fish' 
+    {
+      id: 'pescatarian',
+      title: 'Pescatarian',
+      icon: '🐟',
+      description: 'Vegetarian diet that includes fish',
     },
   ];
 
@@ -181,7 +174,12 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
     { id: 'keto', label: 'Keto', value: 'keto', icon: '🥑' },
     { id: 'paleo', label: 'Paleo', value: 'paleo', icon: '🦴' },
     { id: 'whole30', label: 'Whole30', value: 'whole30', icon: '🌿' },
-    { id: 'intermittent-fasting', label: 'Intermittent Fasting', value: 'intermittent-fasting', icon: '⏰' },
+    {
+      id: 'intermittent-fasting',
+      label: 'Intermittent Fasting',
+      value: 'intermittent-fasting',
+      icon: '⏰',
+    },
   ];
 
   const validateForm = (): boolean => {
@@ -244,9 +242,7 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>What are your diet preferences?</Text>
-          <Text style={styles.subtitle}>
-            Help us personalize your meal recommendations
-          </Text>
+          <Text style={styles.subtitle}>Help us personalize your meal recommendations</Text>
         </View>
 
         <View style={styles.content}>
@@ -260,7 +256,7 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                   onPress={() => {
                     setDietType(option.id as DietPreferences['dietType']);
                     if (errors.dietType) {
-                      setErrors(prev => ({ ...prev, dietType: undefined }));
+                      setErrors((prev) => ({ ...prev, dietType: undefined }));
                     }
                   }}
                   style={styles.dietTypeItem}
@@ -274,15 +270,15 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                   >
                     <View style={styles.dietTypeContent}>
                       <Text style={styles.dietTypeIcon}>{option.icon}</Text>
-                      <Text style={[
-                        styles.dietTypeTitle,
-                        dietType === option.id && styles.dietTypeTitleSelected,
-                      ]}>
+                      <Text
+                        style={[
+                          styles.dietTypeTitle,
+                          dietType === option.id && styles.dietTypeTitleSelected,
+                        ]}
+                      >
                         {option.title}
                       </Text>
-                      <Text style={styles.dietTypeDescription}>
-                        {option.description}
-                      </Text>
+                      <Text style={styles.dietTypeDescription}>{option.description}</Text>
                     </View>
                   </Card>
                 </TouchableOpacity>
@@ -311,7 +307,7 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
               onSelectionChange={(values) => {
                 setCuisinePreferences(values);
                 if (errors.cuisinePreferences) {
-                  setErrors(prev => ({ ...prev, cuisinePreferences: undefined }));
+                  setErrors((prev) => ({ ...prev, cuisinePreferences: undefined }));
                 }
               }}
               label="Cuisine Preferences"
@@ -341,13 +337,13 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? "Cancel" : "Back"}
+            title={isEditMode ? 'Cancel' : 'Back'}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? "Save Changes" : "Next"}
+            title={isEditMode ? 'Save Changes' : 'Next'}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -363,74 +359,74 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(22),
   },
-  
+
   content: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
-  
+
   section: {
     marginBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   dietTypeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: ResponsiveTheme.spacing.sm,
   },
-  
+
   dietTypeItem: {
     width: '48%',
   },
-  
+
   dietTypeCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   dietTypeCardSelected: {
     borderColor: ResponsiveTheme.colors.primary,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
-  
+
   dietTypeContent: {
     alignItems: 'center',
     padding: ResponsiveTheme.spacing.md,
   },
-  
+
   dietTypeIcon: {
     fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   dietTypeTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
@@ -438,23 +434,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   dietTypeTitleSelected: {
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   dietTypeDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
-  
+
   errorText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.error,
     marginTop: ResponsiveTheme.spacing.sm,
   },
-  
+
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.lg,
@@ -462,16 +458,16 @@ const styles = StyleSheet.create({
     borderTopColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
-  
+
   buttonRow: {
     flexDirection: 'row',
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   backButton: {
     flex: 1,
   },
-  
+
   nextButton: {
     flex: 2,
   },

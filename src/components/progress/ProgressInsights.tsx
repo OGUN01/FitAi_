@@ -4,7 +4,7 @@ import { THEME } from '../../utils/constants';
 
 /**
  * ProgressInsights Component
- * 
+ *
  * Displays motivational insights, tips, and achievements
  * Provides actionable feedback based on user progress
  */
@@ -31,7 +31,7 @@ const InsightCard: React.FC<{
   const getCardStyle = (type: string, priority: string) => {
     let backgroundColor = THEME.colors.surface;
     let borderColor = THEME.colors.border;
-    
+
     switch (type) {
       case 'achievement':
         backgroundColor = THEME.colors.surface;
@@ -67,7 +67,7 @@ const InsightCard: React.FC<{
           <Text style={styles.insightMessage}>{insight.message}</Text>
         </View>
       </View>
-      
+
       {insight.actionText && (
         <TouchableOpacity
           style={styles.actionButton}
@@ -89,49 +89,41 @@ const generateDefaultInsights = (): InsightItem[] => {
 
 export const ProgressInsights: React.FC<ProgressInsightsProps> = ({
   insights,
-  onInsightAction
+  onInsightAction,
 }) => {
   const displayInsights = insights || generateDefaultInsights();
-  
+
   // Sort by priority (high first)
   const sortedInsights = displayInsights.sort((a, b) => {
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     return priorityOrder[b.priority] - priorityOrder[a.priority];
   });
 
-  const highPriorityInsights = sortedInsights.filter(i => i.priority === 'high');
-  const otherInsights = sortedInsights.filter(i => i.priority !== 'high');
+  const highPriorityInsights = sortedInsights.filter((i) => i.priority === 'high');
+  const otherInsights = sortedInsights.filter((i) => i.priority !== 'high');
 
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Insights & Tips</Text>
-      
+
       {/* High Priority Insights */}
       {highPriorityInsights.length > 0 && (
         <View style={styles.prioritySection}>
           {highPriorityInsights.map((insight) => (
-            <InsightCard
-              key={insight.id}
-              insight={insight}
-              onAction={onInsightAction}
-            />
+            <InsightCard key={insight.id} insight={insight} onAction={onInsightAction} />
           ))}
         </View>
       )}
-      
+
       {/* Other Insights */}
       {otherInsights.length > 0 && (
         <View style={styles.regularSection}>
           {otherInsights.slice(0, 3).map((insight) => (
-            <InsightCard
-              key={insight.id}
-              insight={insight}
-              onAction={onInsightAction}
-            />
+            <InsightCard key={insight.id} insight={insight} onAction={onInsightAction} />
           ))}
         </View>
       )}
-      
+
       {/* Motivational Footer */}
       <View style={styles.motivationalFooter}>
         <Text style={styles.footerText}>

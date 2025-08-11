@@ -80,7 +80,7 @@ class AuthService {
             // Add user metadata for better tracking
             signup_source: 'fitai_app',
             signup_timestamp: new Date().toISOString(),
-          }
+          },
         },
       });
 
@@ -113,7 +113,9 @@ class AuthService {
           await AsyncStorage.setItem('auth_session', JSON.stringify(session));
         } else {
           // Don't save session for unverified users - they need to verify email first
-          console.log('🔐 Auth Service: User registered but email not verified, not saving session');
+          console.log(
+            '🔐 Auth Service: User registered but email not verified, not saving session'
+          );
         }
 
         return {
@@ -151,26 +153,35 @@ class AuthService {
       console.log('🔐 Auth Service: Supabase response:', {
         user: data.user ? `${data.user.email} (${data.user.id})` : 'null',
         session: data.session ? 'exists' : 'null',
-        error: error?.message
+        error: error?.message,
       });
 
       if (error) {
         console.log('🔐 Auth Service: Login error details:', {
           message: error.message,
           code: error.status,
-          name: error.name
+          name: error.name,
         });
 
         // Check if error is related to email verification
-        if (error.message.includes('email') || error.message.includes('confirm') || error.message.includes('verify') || error.message.includes('not confirmed')) {
+        if (
+          error.message.includes('email') ||
+          error.message.includes('confirm') ||
+          error.message.includes('verify') ||
+          error.message.includes('not confirmed')
+        ) {
           return {
             success: false,
-            error: 'Please verify your email address before logging in. Check your email for the verification link.',
+            error:
+              'Please verify your email address before logging in. Check your email for the verification link.',
           };
         }
 
         // Check for invalid login credentials
-        if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+        if (
+          error.message.includes('Invalid login credentials') ||
+          error.message.includes('invalid_credentials')
+        ) {
           return {
             success: false,
             error: 'Invalid email or password. Please check your credentials and try again.',
@@ -188,7 +199,8 @@ class AuthService {
         console.log('🔐 Auth Service: Email not confirmed for user:', data.user.email);
         return {
           success: false,
-          error: 'Please verify your email address before logging in. Check your email for the verification link.',
+          error:
+            'Please verify your email address before logging in. Check your email for the verification link.',
         };
       }
 
@@ -216,7 +228,7 @@ class AuthService {
         dataManager.setUserId(authUser.id);
 
         // Check if profile data migration is needed (don't await to avoid blocking login)
-        this.checkAndTriggerMigration(authUser.id).catch(error => {
+        this.checkAndTriggerMigration(authUser.id).catch((error) => {
           console.error('❌ Migration check failed:', error);
         });
 
@@ -330,7 +342,10 @@ class AuthService {
    */
   async checkEmailVerification(email: string): Promise<{ isVerified: boolean; error?: string }> {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       if (error) {
         return { isVerified: false, error: error.message };
@@ -344,7 +359,7 @@ class AuthService {
     } catch (error) {
       return {
         isVerified: false,
-        error: error instanceof Error ? error.message : 'Verification check failed'
+        error: error instanceof Error ? error.message : 'Verification check failed',
       };
     }
   }
@@ -381,7 +396,8 @@ class AuthService {
 
         // Check if session is still valid (handle both seconds and milliseconds)
         const currentTime = Date.now() / 1000; // Current time in seconds
-        const expiresAt = session.expiresAt > 9999999999 ? session.expiresAt / 1000 : session.expiresAt; // Convert to seconds if in milliseconds
+        const expiresAt =
+          session.expiresAt > 9999999999 ? session.expiresAt / 1000 : session.expiresAt; // Convert to seconds if in milliseconds
 
         if (expiresAt > currentTime) {
           this.currentSession = session;
@@ -396,7 +412,10 @@ class AuthService {
       }
 
       // Try to get session from Supabase
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error) {
         // Try to refresh the session if we have a refresh token

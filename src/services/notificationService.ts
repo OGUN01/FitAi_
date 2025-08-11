@@ -8,13 +8,14 @@ let isHandlerSet = false;
 const ensureNotificationHandlerSet = () => {
   if (!isHandlerSet) {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        // Expo SDK may expect additional behavior fields in newer versions
-        // We set banner/list implicitly via platform defaults
-      }) as Notifications.NotificationBehavior,
+      handleNotification: async () =>
+        ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          // Expo SDK may expect additional behavior fields in newer versions
+          // We set banner/list implicitly via platform defaults
+        }) as Notifications.NotificationBehavior,
     });
     isHandlerSet = true;
   }
@@ -168,8 +169,8 @@ class NotificationService {
   async cancelNotificationsByType(type: string): Promise<void> {
     try {
       const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-      const typeNotifications = scheduledNotifications.filter(
-        notification => notification.identifier.startsWith(`${type}_`)
+      const typeNotifications = scheduledNotifications.filter((notification) =>
+        notification.identifier.startsWith(`${type}_`)
       );
 
       for (const notification of typeNotifications) {
@@ -217,7 +218,7 @@ class NotificationService {
         if (reminderTime > new Date()) {
           const identifier = `water_${day}_${index}`;
           const litersPerReminder = interval.liters;
-          
+
           this.scheduleNotification(
             identifier,
             '💧 Hydration Time!',
@@ -242,9 +243,10 @@ class NotificationService {
     // Calculate awake minutes
     const wakeMinutes = wakeHour * 60 + wakeMin;
     const sleepMinutes = sleepHour * 60 + sleepMin;
-    const awakeMinutes = sleepMinutes > wakeMinutes 
-      ? sleepMinutes - wakeMinutes 
-      : (24 * 60) - wakeMinutes + sleepMinutes;
+    const awakeMinutes =
+      sleepMinutes > wakeMinutes
+        ? sleepMinutes - wakeMinutes
+        : 24 * 60 - wakeMinutes + sleepMinutes;
 
     // Smart distribution: more water in morning/afternoon, less in evening
     const totalHours = Math.floor(awakeMinutes / 60);
@@ -259,38 +261,38 @@ class NotificationService {
         const hour = (wakeHour + i) % 24;
         intervals.push({
           time: `${hour.toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
-          liters: Math.round(litersPerInterval * 100) / 100
+          liters: Math.round(litersPerInterval * 100) / 100,
         });
       }
     } else {
       // Regular day - smart distribution
       const morningEnd = Math.min(wakeHour + 4, 12);
       const afternoonEnd = Math.min(morningEnd + 6, 18);
-      
+
       // Morning: 40% of water (more frequent)
       const morningIntervals = Math.max(2, Math.floor((morningEnd - wakeHour) / 1.5));
-      const morningLiters = dailyGoalLiters * 0.4 / morningIntervals;
-      
+      const morningLiters = (dailyGoalLiters * 0.4) / morningIntervals;
+
       for (let i = 0; i < morningIntervals; i++) {
-        const hour = wakeHour + (i * 1.5);
+        const hour = wakeHour + i * 1.5;
         if (hour < morningEnd) {
           intervals.push({
             time: `${Math.floor(hour).toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
-            liters: Math.round(morningLiters * 100) / 100
+            liters: Math.round(morningLiters * 100) / 100,
           });
         }
       }
 
-      // Afternoon: 50% of water  
+      // Afternoon: 50% of water
       const afternoonIntervals = Math.max(2, Math.floor((afternoonEnd - morningEnd) / 2));
-      const afternoonLiters = dailyGoalLiters * 0.5 / afternoonIntervals;
-      
+      const afternoonLiters = (dailyGoalLiters * 0.5) / afternoonIntervals;
+
       for (let i = 0; i < afternoonIntervals; i++) {
-        const hour = morningEnd + (i * 2);
+        const hour = morningEnd + i * 2;
         if (hour < afternoonEnd) {
           intervals.push({
             time: `${hour.toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
-            liters: Math.round(afternoonLiters * 100) / 100
+            liters: Math.round(afternoonLiters * 100) / 100,
           });
         }
       }
@@ -299,7 +301,7 @@ class NotificationService {
       if (sleepHour > afternoonEnd) {
         intervals.push({
           time: `${afternoonEnd.toString().padStart(2, '0')}:${wakeMin.toString().padStart(2, '0')}`,
-          liters: Math.round((dailyGoalLiters * 0.1) * 100) / 100
+          liters: Math.round(dailyGoalLiters * 0.1 * 100) / 100,
         });
       }
     }
@@ -308,7 +310,10 @@ class NotificationService {
   }
 
   // Schedule workout reminders
-  async scheduleWorkoutReminders(config: WorkoutReminderConfig, workoutTimes?: string[]): Promise<void> {
+  async scheduleWorkoutReminders(
+    config: WorkoutReminderConfig,
+    workoutTimes?: string[]
+  ): Promise<void> {
     if (!config.enabled) {
       await this.cancelNotificationsByType('workout');
       return;
@@ -326,13 +331,13 @@ class NotificationService {
         const reminderTime = new Date(today);
         reminderTime.setDate(today.getDate() + day);
         reminderTime.setHours(hours, minutes, 0, 0);
-        
+
         // Subtract reminder minutes
         reminderTime.setMinutes(reminderTime.getMinutes() - config.reminderMinutes);
 
         if (reminderTime > new Date()) {
           const identifier = `workout_${day}_${index}`;
-          
+
           this.scheduleNotification(
             identifier,
             '🏋️ Workout Time Coming Up!',
@@ -354,13 +359,13 @@ class NotificationService {
     const meals = [
       { key: 'breakfast', config: config.breakfast, emoji: '🍳', name: 'Breakfast' },
       { key: 'lunch', config: config.lunch, emoji: '🥙', name: 'Lunch' },
-      { key: 'dinner', config: config.dinner, emoji: '🍽️', name: 'Dinner' }
+      { key: 'dinner', config: config.dinner, emoji: '🍽️', name: 'Dinner' },
     ];
 
     const today = new Date();
 
     for (let day = 0; day < 7; day++) {
-      meals.forEach(meal => {
+      meals.forEach((meal) => {
         if (!meal.config.enabled) return;
 
         const [hours, minutes] = meal.config.time.split(':').map(Number);
@@ -370,7 +375,7 @@ class NotificationService {
 
         if (mealTime > new Date()) {
           const identifier = `meal_${meal.key}_${day}`;
-          
+
           this.scheduleNotification(
             identifier,
             `${meal.emoji} ${meal.name} Time!`,
@@ -405,7 +410,7 @@ class NotificationService {
 
       if (preReminderTime > new Date()) {
         const identifier = `sleep_pre_${day}`;
-        
+
         this.scheduleNotification(
           identifier,
           '😴 Wind Down Time',
@@ -422,7 +427,7 @@ class NotificationService {
 
       if (bedTime > new Date()) {
         const identifier = `sleep_bedtime_${day}`;
-        
+
         this.scheduleNotification(
           identifier,
           '🌙 Time for Bed',
@@ -459,10 +464,10 @@ class NotificationService {
     try {
       // Save to AsyncStorage
       await AsyncStorage.setItem('notification_preferences', JSON.stringify(preferences));
-      
+
       // Also attempt to save to Supabase if available
       await this.savePreferencesToSupabase(preferences);
-      
+
       console.log('Notification preferences saved');
     } catch (error) {
       console.error('Failed to save notification preferences:', error);
@@ -474,15 +479,18 @@ class NotificationService {
     try {
       const { supabase } = await import('./supabase');
       const { default: useAuth } = await import('../hooks/useAuth');
-      
+
       // Get current user (if available)
       // Note: This is a simplified approach - in production, we'd pass user context
       const preferencesJson = JSON.stringify(preferences);
-      
+
       // For now, just log that Supabase sync would happen here
       // In a full implementation, you'd store this in a notification_preferences table
-      console.log('📱 Would sync notification preferences to Supabase:', preferencesJson.length, 'bytes');
-      
+      console.log(
+        '📱 Would sync notification preferences to Supabase:',
+        preferencesJson.length,
+        'bytes'
+      );
     } catch (error) {
       // Don't throw error - AsyncStorage backup is sufficient
       console.warn('Could not sync notification preferences to Supabase:', error);

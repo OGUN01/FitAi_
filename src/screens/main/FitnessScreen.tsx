@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Animated,
-} from 'react-native'
+import { View, Text, StyleSheet, Alert, ActivityIndicator, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -22,9 +15,10 @@ import { useFitnessData } from '../../hooks/useFitnessData';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection and safe loading
-const isExpoGo = Constants.appOwnership === 'expo' || 
-                 Constants.executionEnvironment === 'storeClient' ||
-                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
 
 let useWorkoutReminders: any = null;
 if (!isExpoGo) {
@@ -56,14 +50,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<DayWorkout | null>(null);
   const [showGenerationSuccessDialog, setShowGenerationSuccessDialog] = useState(false);
-  const [generationSuccessData, setGenerationSuccessData] = useState<{ planTitle: string; workoutCount: number; duration: string } | null>(null);
+  const [generationSuccessData, setGenerationSuccessData] = useState<{
+    planTitle: string;
+    workoutCount: number;
+    duration: string;
+  } | null>(null);
 
   // Hooks
   const { user, isAuthenticated } = useAuth();
   const { profile } = useUserStore();
   const { createWorkout, startWorkoutSession } = useFitnessData();
   const workoutReminders = useWorkoutReminders ? useWorkoutReminders() : null;
-  
+
   // Fitness store
   const {
     weeklyWorkoutPlan: weeklyPlan,
@@ -80,8 +78,6 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     loadData: loadFitnessData,
   } = useFitnessStore();
 
-
-
   // Load existing workout data on mount
   useEffect(() => {
     loadFitnessData();
@@ -96,32 +92,33 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     }).start();
   }, [selectedDay]);
 
-
-
   // Generate workout data for calendar
   const getWorkoutData = () => {
     if (!weeklyPlan) return {};
-    
-    const workoutData: Record<string, { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }> = {};
-    
+
+    const workoutData: Record<
+      string,
+      { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }
+    > = {};
+
     // Initialize all days as rest days
     const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    allDays.forEach(day => {
+    allDays.forEach((day) => {
       workoutData[day] = { hasWorkout: false, isCompleted: false, isRestDay: true };
     });
 
     // Mark workout days
-    weeklyPlan.workouts.forEach(workout => {
+    weeklyPlan.workouts.forEach((workout) => {
       const progress = getWorkoutProgress(workout.id);
       workoutData[workout.dayOfWeek] = {
         hasWorkout: true,
         isCompleted: progress?.progress === 100,
-        isRestDay: false
+        isRestDay: false,
       };
     });
 
     // Mark actual rest days
-    weeklyPlan.restDays.forEach(day => {
+    weeklyPlan.restDays.forEach((day) => {
       workoutData[day] = { hasWorkout: false, isCompleted: false, isRestDay: true };
     });
 
@@ -131,7 +128,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // Get workouts for selected day
   const getWorkoutsForDay = (day: string): DayWorkout[] => {
     if (!weeklyPlan) return [];
-    return weeklyPlan.workouts.filter(workout => workout.dayOfWeek === day);
+    return weeklyPlan.workouts.filter((workout) => workout.dayOfWeek === day);
   };
 
   // Get workout progress for display
@@ -159,17 +156,20 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
       // Extract workout times from the plan
       const workoutTimes: string[] = [];
-      
+
       // Generate default workout times based on plan structure
       const defaultTimes = generateDefaultWorkoutTimes(plan);
       workoutTimes.push(...defaultTimes);
-      
+
       // Schedule the reminders using the notification service
       if (workoutReminders) {
         await workoutReminders.scheduleFromWorkoutPlan(workoutTimes);
       }
-      
-      console.log(`✅ Scheduled workout reminders for ${workoutTimes.length} workouts:`, workoutTimes);
+
+      console.log(
+        `✅ Scheduled workout reminders for ${workoutTimes.length} workouts:`,
+        workoutTimes
+      );
     } catch (error) {
       console.error('❌ Failed to schedule workout reminders:', error);
       // Don't block the main workflow if reminder scheduling fails
@@ -179,19 +179,25 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // Generate smart default workout times based on user preferences and workout intensity
   const generateDefaultWorkoutTimes = (plan: WeeklyWorkoutPlan): string[] => {
     if (!plan.workouts) return [];
-    
+
     const times: string[] = [];
     const dayMapping = {
-      'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
-      'friday': 4, 'saturday': 5, 'sunday': 6
+      monday: 0,
+      tuesday: 1,
+      wednesday: 2,
+      thursday: 3,
+      friday: 4,
+      saturday: 5,
+      sunday: 6,
     };
 
-    plan.workouts.forEach(workout => {
+    plan.workouts.forEach((workout) => {
       const dayIndex = dayMapping[workout.dayOfWeek as keyof typeof dayMapping];
       let defaultTime = '18:00'; // Default evening workout
-      
+
       // Smart time assignment based on workout type and day
-      if (dayIndex <= 4) { // Weekdays
+      if (dayIndex <= 4) {
+        // Weekdays
         if (workout.category === 'cardio' || workout.category === 'hiit') {
           defaultTime = '07:00'; // Morning cardio
         } else if (workout.category === 'strength') {
@@ -199,17 +205,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         } else if (workout.category === 'yoga' || workout.category === 'flexibility') {
           defaultTime = '19:30'; // Evening relaxation
         }
-      } else { // Weekends
+      } else {
+        // Weekends
         if (workout.category === 'cardio' || workout.category === 'hiit') {
           defaultTime = '09:00'; // Weekend morning
         } else {
           defaultTime = '10:00'; // Weekend mid-morning
         }
       }
-      
+
       times.push(defaultTime);
     });
-    
+
     return times;
   };
 
@@ -228,7 +235,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
     try {
       console.log('🏋️ Generating weekly workout plan...');
-      
+
       const response = await aiService.generateWeeklyWorkoutPlan(
         profile.personalInfo,
         profile.fitnessGoals,
@@ -249,45 +256,48 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         console.log('  - first workout:', response.data.workouts?.[0] ? '✅' : '❌');
         if (response.data.workouts?.[0]) {
           console.log('  - first workout dayOfWeek:', response.data.workouts[0].dayOfWeek);
-          console.log('  - first workout exercises:', response.data.workouts[0].exercises?.length || 0);
+          console.log(
+            '  - first workout exercises:',
+            response.data.workouts[0].exercises?.length || 0
+          );
         }
 
         // ✅ CRITICAL FIX: Set state immediately and verify it takes effect
         console.log('🔍 Debug - Setting workout plan state immediately...');
         setWeeklyWorkoutPlan(response.data);
-        
+
         // Force immediate re-render to ensure UI updates
-        setForceUpdate(prev => prev + 1);
-        
+        setForceUpdate((prev) => prev + 1);
+
         // Verify state was set correctly
         console.log('🔍 Debug - State set, verifying...', {
           planTitle: response.data.planTitle,
           workoutsCount: response.data.workouts?.length,
-          firstWorkout: response.data.workouts?.[0]?.title
+          firstWorkout: response.data.workouts?.[0]?.title,
         });
-        
+
         // Save to store and database (async, don't block UI)
         console.log('🔍 Debug - Saving to store/database...');
         try {
           await saveWeeklyWorkoutPlan(response.data);
           console.log('✅ Debug - Save completed successfully');
-          
+
           // Schedule workout reminders automatically
           await scheduleWorkoutRemindersFromPlan(response.data);
         } catch (saveError) {
           console.error('❌ Debug - Save failed (but UI state is set):', saveError);
         }
-        
+
         // Final verification with timeout to check React state update
         setTimeout(() => {
           const currentState = useFitnessStore.getState().weeklyWorkoutPlan;
           console.log('🔍 Final State Check:', {
             reactState: weeklyPlan ? 'Present' : 'Null',
             zustandState: currentState ? 'Present' : 'Null',
-            workoutsInState: weeklyPlan?.workouts?.length || 0
+            workoutsInState: weeklyPlan?.workouts?.length || 0,
           });
         }, 200);
-        
+
         console.log(`🔍 Workout plan saved to store and database`);
 
         // Also save individual workouts to legacy system for compatibility
@@ -304,16 +314,23 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         }
 
         const experienceLevel = profile.fitnessGoals.experience_level;
-        const planDuration = experienceLevel === 'beginner' ? '1 week' : 
-                           experienceLevel === 'intermediate' ? '1.5 weeks' : '2 weeks';
+        const planDuration =
+          experienceLevel === 'beginner'
+            ? '1 week'
+            : experienceLevel === 'intermediate'
+              ? '1.5 weeks'
+              : '2 weeks';
 
         Alert.alert(
           '🎉 Weekly Plan Generated!',
           `Your personalized ${planDuration} workout plan "${response.data.planTitle}" is ready! ${response.data.workouts.length} workouts scheduled across the week.`,
-          [{ text: 'Let\'s Start!' }]
+          [{ text: "Let's Start!" }]
         );
       } else {
-        Alert.alert('Generation Failed', response.error || 'Failed to generate weekly workout plan');
+        Alert.alert(
+          'Generation Failed',
+          response.error || 'Failed to generate weekly workout plan'
+        );
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
@@ -335,7 +352,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       console.log('🧭 Setting workout session:', {
         workoutTitle: workout.title,
         exerciseCount: workout.exercises?.length || 0,
-        sessionId: 'pending...'
+        sessionId: 'pending...',
       });
 
       // Start workout session using store
@@ -346,13 +363,13 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       const workoutData = {
         name: workout.title,
         type: workout.category,
-        exercises: workout.exercises.map(exercise => ({
+        exercises: workout.exercises.map((exercise) => ({
           exercise_id: exercise.exerciseId,
           sets: exercise.sets,
           reps: typeof exercise.reps === 'string' ? exercise.reps : exercise.reps.toString(),
           weight: exercise.weight || 0,
-          rest_seconds: exercise.restTime
-        }))
+          rest_seconds: exercise.restTime,
+        })),
       };
       await startWorkoutSession(workoutData);
 
@@ -362,12 +379,12 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         sessionId,
         workout: workout.title,
         exercises: workout.exercises?.length || 0,
-        firstExercise: workout.exercises?.[0] || 'No exercises'
+        firstExercise: workout.exercises?.[0] || 'No exercises',
       });
-      
+
       // Debug: Log full workout object
       console.log('📋 Full workout object:', JSON.stringify(workoutWithSession, null, 2));
-      
+
       setSelectedWorkout(workoutWithSession);
       setShowWorkoutStartDialog(true);
     } catch (error) {
@@ -380,33 +397,33 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const handleWorkoutStartConfirm = () => {
     if (selectedWorkout) {
       setShowWorkoutStartDialog(false);
-      
+
       // Debug: Log the workout data being passed
       console.log('🧭 NAVIGATION: Navigating to WorkoutSession', {
         params: {
           workout: selectedWorkout,
           sessionId: (selectedWorkout as any).sessionId,
           exerciseCount: selectedWorkout.exercises?.length || 0,
-          hasExercises: !!selectedWorkout.exercises
-        }
+          hasExercises: !!selectedWorkout.exercises,
+        },
       });
-      
+
       // Log the exercises array for debugging
       if (selectedWorkout.exercises) {
         console.log('📋 Exercises being passed:', selectedWorkout.exercises);
       } else {
         console.error('❌ No exercises in selectedWorkout!');
       }
-      
+
       // Ensure exercises are included in the workout object
       const workoutWithExercises = {
         ...selectedWorkout,
-        exercises: selectedWorkout.exercises || []
+        exercises: selectedWorkout.exercises || [],
       };
-      
-      navigation.navigate('WorkoutSession', { 
-        workout: workoutWithExercises, 
-        sessionId: (selectedWorkout as any).sessionId 
+
+      navigation.navigate('WorkoutSession', {
+        workout: workoutWithExercises,
+        sessionId: (selectedWorkout as any).sessionId,
       });
     }
   };
@@ -440,7 +457,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.title}>Weekly Fitness Plan</Text>
         <Button
-          title={isGeneratingPlan ? "Generating..." : "Generate Plan"}
+          title={isGeneratingPlan ? 'Generating...' : 'Generate Plan'}
           onPress={generateWeeklyWorkoutPlan}
           variant="primary"
           size="sm"
@@ -453,9 +470,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       {isGeneratingPlan && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.loadingText}>
-            Creating your personalized weekly plan...
-          </Text>
+          <Text style={styles.loadingText}>Creating your personalized weekly plan...</Text>
         </View>
       )}
 
@@ -465,14 +480,16 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         if (!hasValidPlan) {
           console.log('🔍 UI Render: No valid workout plan detected', {
             weeklyPlan: weeklyPlan ? 'exists' : 'null',
-            workouts: weeklyPlan?.workouts ? `array with ${weeklyPlan.workouts.length} items` : 'missing',
-            forceUpdateCount: forceUpdate
+            workouts: weeklyPlan?.workouts
+              ? `array with ${weeklyPlan.workouts.length} items`
+              : 'missing',
+            forceUpdateCount: forceUpdate,
           });
         } else {
           console.log('✅ UI Render: Valid workout plan detected', {
             planTitle: weeklyPlan.planTitle,
             workoutCount: weeklyPlan.workouts.length,
-            forceUpdateCount: forceUpdate
+            forceUpdateCount: forceUpdate,
           });
         }
         return null;
@@ -509,14 +526,18 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             <Text style={styles.emptyStateEmoji}>📅</Text>
             <Text style={styles.emptyStateTitle}>No Weekly Plan</Text>
             <Text style={styles.emptyStateSubtitle}>
-              Generate your personalized weekly workout plan to get started with day-by-day fitness guidance.
+              Generate your personalized weekly workout plan to get started with day-by-day fitness
+              guidance.
             </Text>
             {profile?.fitnessGoals && (
               <Text style={styles.emptyStateInfo}>
                 Based on your {profile.fitnessGoals.experience_level} level, you'll get:
-                {'\n'}• {profile.fitnessGoals.experience_level === 'beginner' ? '3 workouts over 1 week' :
-                    profile.fitnessGoals.experience_level === 'intermediate' ? '5 workouts over 1.5 weeks' :
-                    '6 workouts over 2 weeks'}
+                {'\n'}•{' '}
+                {profile.fitnessGoals.experience_level === 'beginner'
+                  ? '3 workouts over 1 week'
+                  : profile.fitnessGoals.experience_level === 'intermediate'
+                    ? '5 workouts over 1.5 weeks'
+                    : '6 workouts over 2 weeks'}
                 {'\n'}• Workouts tailored to: {profile.fitnessGoals.primaryGoals.join(', ')}
               </Text>
             )}
@@ -544,7 +565,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.horizontalStats}>
             <View style={styles.compactStatItem}>
               <Text style={styles.compactStatValue}>{weeklyPlan.workouts.length}</Text>
@@ -582,7 +603,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -591,46 +612,46 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     flex: 1,
   },
-  
+
   generateButton: {
     minWidth: rw(120),
   },
-  
+
   loadingContainer: {
     alignItems: 'center',
     paddingVertical: ResponsiveTheme.spacing.xl,
   },
-  
+
   loadingText: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.md,
     textAlign: 'center',
   },
-  
+
   dayViewContainer: {
     flex: 1,
   },
-  
+
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: ResponsiveTheme.spacing.xl,
   },
-  
+
   emptyStateEmoji: {
     fontSize: rf(64),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   emptyStateTitle: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
@@ -638,7 +659,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
-  
+
   emptyStateSubtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
@@ -646,7 +667,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
     lineHeight: rf(22),
   },
-  
+
   emptyStateInfo: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
@@ -657,11 +678,11 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
-  
+
   emptyStateButton: {
     minWidth: rw(200),
   },
-  
+
   // Compact Plan Summary Styles
   compactPlanSummary: {
     backgroundColor: ResponsiveTheme.colors.surface,
@@ -678,14 +699,14 @@ const styles = StyleSheet.create({
   planTitleContainer: {
     flex: 1,
   },
-  
+
   planTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   planDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
@@ -731,23 +752,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
   },
-  
+
   planStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  
+
   statItem: {
     alignItems: 'center',
   },
-  
+
   statValue: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   statLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,

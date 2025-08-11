@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Card, Button, THEME } from '../ui';
 import { Workout } from '../../types/workout';
 
@@ -30,10 +24,14 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
 }) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return THEME.colors.success;
-      case 'intermediate': return THEME.colors.warning;
-      case 'advanced': return THEME.colors.error;
-      default: return THEME.colors.textSecondary;
+      case 'beginner':
+        return THEME.colors.success;
+      case 'intermediate':
+        return THEME.colors.warning;
+      case 'advanced':
+        return THEME.colors.error;
+      default:
+        return THEME.colors.textSecondary;
     }
   };
 
@@ -77,32 +75,26 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={onViewDetails}
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={styles.cardContent} onPress={onViewDetails} activeOpacity={0.8}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
             <View style={styles.titleRow}>
               <View style={styles.iconContainer}>
-                <Text style={styles.categoryIcon}>
-                  {getCategoryIcon(workout.category)}
-                </Text>
+                <Text style={styles.categoryIcon}>{getCategoryIcon(workout.category)}</Text>
               </View>
               <View style={styles.titleContainer}>
                 <Text style={styles.title} numberOfLines={2}>
                   {workout.title}
                 </Text>
                 <View style={styles.badgeRow}>
-                  <View style={[
-                    styles.difficultyBadge,
-                    { backgroundColor: getDifficultyColor(workout.difficulty) }
-                  ]}>
-                    <Text style={styles.difficultyText}>
-                      {workout.difficulty.toUpperCase()}
-                    </Text>
+                  <View
+                    style={[
+                      styles.difficultyBadge,
+                      { backgroundColor: getDifficultyColor(workout.difficulty) },
+                    ]}
+                  >
+                    <Text style={styles.difficultyText}>{workout.difficulty.toUpperCase()}</Text>
                   </View>
                   {workout.aiGenerated && (
                     <View style={styles.aiPillBadge}>
@@ -135,13 +127,13 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
             <Text style={styles.detailLabel}>Duration</Text>
             <Text style={styles.detailValue}>{workout.duration} min</Text>
           </View>
-          
+
           <View style={styles.detailItem}>
             <Text style={styles.detailIcon}>🔥</Text>
             <Text style={styles.detailLabel}>Calories</Text>
             <Text style={styles.detailValue}>{workout.estimatedCalories}</Text>
           </View>
-          
+
           <View style={styles.detailItem}>
             <Text style={styles.detailIcon}>🎯</Text>
             <Text style={styles.detailLabel}>Exercises</Text>
@@ -164,9 +156,9 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
         {/* Action Button */}
         <View style={styles.actionSection}>
           <Button
-            title={isInProgress ? "Continue Workout" : "Start Workout"}
+            title={isInProgress ? 'Continue Workout' : 'Start Workout'}
             onPress={onStart}
-            variant={isInProgress ? "secondary" : "primary"}
+            variant={isInProgress ? 'secondary' : 'primary'}
             style={styles.startButton}
             size="lg"
           />
@@ -195,12 +187,14 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
       <Animated.View
         style={{
           opacity: animatedValue,
-          transform: [{
-            translateY: animatedValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: [30, 0],
-            }),
-          }],
+          transform: [
+            {
+              translateY: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [30, 0],
+              }),
+            },
+          ],
         }}
       >
         {cardContent}
@@ -239,29 +233,29 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.primary,
     borderRadius: 2,
   },
-  
+
   cardContent: {
     padding: THEME.spacing.lg,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: THEME.spacing.md,
   },
-  
+
   titleSection: {
     flex: 1,
     marginRight: THEME.spacing.md,
   },
-  
+
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: THEME.spacing.xs,
   },
-  
+
   iconContainer: {
     width: 48,
     height: 48,
@@ -286,14 +280,14 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
     marginTop: THEME.spacing.xs,
   },
-  
+
   title: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     flex: 1,
   },
-  
+
   aiPillBadge: {
     backgroundColor: THEME.colors.primary,
     paddingHorizontal: 8,
@@ -301,31 +295,31 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginLeft: THEME.spacing.sm,
   },
-  
+
   aiPillText: {
     color: THEME.colors.white,
     fontSize: 10,
     fontWeight: '600',
   },
-  
+
   description: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     lineHeight: 20,
   },
-  
+
   difficultyBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
-  
+
   difficultyText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.bold,
   },
-  
+
   progressSection: {
     marginBottom: THEME.spacing.md,
   },
@@ -336,19 +330,19 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginBottom: THEME.spacing.xs,
   },
-  
+
   progressFill: {
     height: '100%',
     backgroundColor: THEME.colors.primary,
     borderRadius: 3,
   },
-  
+
   progressText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
     textAlign: 'center',
   },
-  
+
   detailsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -357,66 +351,66 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.md,
     marginBottom: THEME.spacing.md,
   },
-  
+
   detailItem: {
     alignItems: 'center',
     flex: 1,
   },
-  
+
   detailIcon: {
     fontSize: 20,
     marginBottom: 4,
   },
-  
+
   detailLabel: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
     marginBottom: 2,
   },
-  
+
   detailValue: {
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
   },
-  
+
   infoSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: THEME.spacing.xs,
   },
-  
+
   infoIcon: {
     fontSize: 16,
     marginRight: THEME.spacing.sm,
     width: 20,
   },
-  
+
   infoText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     flex: 1,
   },
-  
+
   actionSection: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   startButton: {
     width: '100%',
   },
-  
+
   tagsSection: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
     marginTop: THEME.spacing.sm,
   },
-  
+
   tag: {
     backgroundColor: THEME.colors.backgroundTertiary,
     paddingHorizontal: 8,
@@ -425,13 +419,13 @@ const styles = StyleSheet.create({
     marginRight: THEME.spacing.xs,
     marginBottom: THEME.spacing.xs,
   },
-  
+
   tagText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
     fontWeight: THEME.fontWeight.medium,
   },
-  
+
   moreTagsText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textMuted,

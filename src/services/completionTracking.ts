@@ -30,20 +30,20 @@ class CompletionTrackingService {
 
   // Emit completion event
   private emit(event: CompletionEvent): void {
-    this.listeners.forEach(listener => listener(event));
+    this.listeners.forEach((listener) => listener(event));
   }
 
   // Complete a workout
   async completeWorkout(workoutId: string, sessionData?: any): Promise<boolean> {
     try {
       const fitnessStore = useFitnessStore.getState();
-      
+
       // Update workout progress to 100%
       fitnessStore.completeWorkout(workoutId, sessionData?.sessionId);
-      
+
       // Get workout details for the event
-      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(w => w.id === workoutId);
-      
+      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId);
+
       if (workout) {
         const event: CompletionEvent = {
           id: `workout_completion_${workoutId}_${Date.now()}`,
@@ -58,12 +58,12 @@ class CompletionTrackingService {
             duration: workout.duration,
           },
         };
-        
+
         this.emit(event);
         console.log(`✅ Workout completed: ${workout.title}`);
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error('❌ Failed to complete workout:', error);
@@ -82,14 +82,14 @@ class CompletionTrackingService {
       nutritionStore.completeMeal(mealId, logData?.logId);
 
       // Get meal details for the event
-      const meal = nutritionStore.weeklyMealPlan?.meals.find(m => m.id === mealId);
+      const meal = nutritionStore.weeklyMealPlan?.meals.find((m) => m.id === mealId);
 
       console.log(`🍽️ Found meal for completion:`, {
         found: !!meal,
         mealName: meal?.name,
         mealCalories: meal?.totalCalories,
         mealType: meal?.type,
-        dayOfWeek: meal?.dayOfWeek
+        dayOfWeek: meal?.dayOfWeek,
       });
 
       if (meal) {
@@ -118,12 +118,18 @@ class CompletionTrackingService {
               loggedAt: new Date().toISOString(),
               notes: `Weekly meal plan: ${meal.name}`,
               syncStatus: SyncStatus.PENDING,
-              syncMetadata: { lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' }
+              syncMetadata: {
+                lastModifiedAt: new Date().toISOString(),
+                syncVersion: 1,
+                deviceId: 'local',
+              },
             };
 
             // Store the meal log
             await crudOperations.createMealLog(mealLog);
-            console.log(`✅ Meal log created successfully for: ${meal.name} (${meal.totalCalories} calories)`);
+            console.log(
+              `✅ Meal log created successfully for: ${meal.name} (${meal.totalCalories} calories)`
+            );
           } else {
             console.warn(`⚠️ No user ID available, skipping meal log creation`);
             // Continue with completion even if no user
@@ -164,16 +170,18 @@ class CompletionTrackingService {
     }
   }
 
-
-
   // Update workout progress
-  async updateWorkoutProgress(workoutId: string, progress: number, exerciseData?: any): Promise<boolean> {
+  async updateWorkoutProgress(
+    workoutId: string,
+    progress: number,
+    exerciseData?: any
+  ): Promise<boolean> {
     try {
       const fitnessStore = useFitnessStore.getState();
       fitnessStore.updateWorkoutProgress(workoutId, progress);
-      
+
       // Emit progress event
-      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(w => w.id === workoutId);
+      const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId);
       if (workout) {
         const event: CompletionEvent = {
           id: `workout_progress_${workoutId}_${Date.now()}`,
@@ -187,15 +195,15 @@ class CompletionTrackingService {
             partialCalories: Math.round((workout.estimatedCalories || 0) * (progress / 100)),
           },
         };
-        
+
         this.emit(event);
-        
+
         // Auto-complete if progress reaches 100%
         if (progress >= 100) {
           return this.completeWorkout(workoutId, exerciseData);
         }
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Failed to update workout progress:', error);
@@ -204,13 +212,17 @@ class CompletionTrackingService {
   }
 
   // Update meal progress
-  async updateMealProgress(mealId: string, progress: number, ingredientData?: any): Promise<boolean> {
+  async updateMealProgress(
+    mealId: string,
+    progress: number,
+    ingredientData?: any
+  ): Promise<boolean> {
     try {
       const nutritionStore = useNutritionStore.getState();
       nutritionStore.updateMealProgress(mealId, progress);
-      
+
       // Emit progress event
-      const meal = nutritionStore.weeklyMealPlan?.meals.find(m => m.id === mealId);
+      const meal = nutritionStore.weeklyMealPlan?.meals.find((m) => m.id === mealId);
       if (meal) {
         const event: CompletionEvent = {
           id: `meal_progress_${mealId}_${Date.now()}`,
@@ -224,15 +236,15 @@ class CompletionTrackingService {
             partialCalories: Math.round((meal.totalCalories || 0) * (progress / 100)),
           },
         };
-        
+
         this.emit(event);
-        
+
         // Auto-complete if progress reaches 100%
         if (progress >= 100) {
           return this.completeMeal(mealId, ingredientData, 'dev-user-001');
         }
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Failed to update meal progress:', error);
@@ -261,27 +273,29 @@ class CompletionTrackingService {
     // Calculate workout stats
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
     const completedWorkouts = Object.values(fitnessStore.workoutProgress).filter(
-      p => p.progress === 100
+      (p) => p.progress === 100
     ).length;
 
     // Calculate meal stats
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
     const completedMeals = Object.values(nutritionStore.mealProgress).filter(
-      p => p.progress === 100
+      (p) => p.progress === 100
     ).length;
 
     // Calculate calories
     const caloriesBurned = Object.values(fitnessStore.workoutProgress)
-      .filter(p => p.progress === 100)
+      .filter((p) => p.progress === 100)
       .reduce((total, progress) => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(w => w.id === progress.workoutId);
+        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+          (w) => w.id === progress.workoutId
+        );
         return total + (workout?.estimatedCalories || 0);
       }, 0);
 
     const caloriesConsumed = Object.values(nutritionStore.mealProgress)
-      .filter(p => p.progress === 100)
+      .filter((p) => p.progress === 100)
       .reduce((total, progress) => {
-        const meal = nutritionStore.weeklyMealPlan?.meals.find(m => m.id === progress.mealId);
+        const meal = nutritionStore.weeklyMealPlan?.meals.find((m) => m.id === progress.mealId);
         return total + (meal?.totalCalories || 0);
       }, 0);
 
@@ -289,7 +303,8 @@ class CompletionTrackingService {
       workouts: {
         completed: completedWorkouts,
         total: totalWorkouts,
-        completionRate: totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0,
+        completionRate:
+          totalWorkouts > 0 ? Math.round((completedWorkouts / totalWorkouts) * 100) : 0,
       },
       meals: {
         completed: completedMeals,
@@ -315,30 +330,32 @@ class CompletionTrackingService {
 
     // Today's workout
     const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-      w => w.dayOfWeek === todayName
+      (w) => w.dayOfWeek === todayName
     );
-    const workoutProgress = todaysWorkout 
-      ? fitnessStore.getWorkoutProgress(todaysWorkout.id) 
+    const workoutProgress = todaysWorkout
+      ? fitnessStore.getWorkoutProgress(todaysWorkout.id)
       : null;
 
     // Today's meals
-    const todaysMeals = nutritionStore.weeklyMealPlan?.meals.filter(
-      m => m.dayOfWeek === todayName
-    ) || [];
-    const completedMeals = todaysMeals.filter(meal => {
+    const todaysMeals =
+      nutritionStore.weeklyMealPlan?.meals.filter((m) => m.dayOfWeek === todayName) || [];
+    const completedMeals = todaysMeals.filter((meal) => {
       const progress = nutritionStore.getMealProgress(meal.id);
       return progress?.progress === 100;
     }).length;
 
     return {
-      workout: todaysWorkout ? {
-        completed: workoutProgress?.progress === 100,
-        progress: workoutProgress?.progress || 0,
-      } : null,
+      workout: todaysWorkout
+        ? {
+            completed: workoutProgress?.progress === 100,
+            progress: workoutProgress?.progress || 0,
+          }
+        : null,
       meals: {
         completed: completedMeals,
         total: todaysMeals.length,
-        progress: todaysMeals.length > 0 ? Math.round((completedMeals / todaysMeals.length) * 100) : 0,
+        progress:
+          todaysMeals.length > 0 ? Math.round((completedMeals / todaysMeals.length) * 100) : 0,
       },
     };
   }
@@ -354,16 +371,15 @@ class CompletionTrackingService {
 
     // Complete today's workout
     const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-      w => w.dayOfWeek === todayName
+      (w) => w.dayOfWeek === todayName
     );
     if (todaysWorkout) {
       await this.completeWorkout(todaysWorkout.id);
     }
 
     // Complete today's meals
-    const todaysMeals = nutritionStore.weeklyMealPlan?.meals.filter(
-      m => m.dayOfWeek === todayName
-    ) || [];
+    const todaysMeals =
+      nutritionStore.weeklyMealPlan?.meals.filter((m) => m.dayOfWeek === todayName) || [];
     for (const meal of todaysMeals) {
       await this.completeMeal(meal.id, undefined, 'dev-user-001');
     }

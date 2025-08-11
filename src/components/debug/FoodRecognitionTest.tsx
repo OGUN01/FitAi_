@@ -38,7 +38,10 @@ export const FoodRecognitionTest: React.FC = () => {
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please grant camera roll permissions to test food recognition.');
+      Alert.alert(
+        'Permission required',
+        'Please grant camera roll permissions to test food recognition.'
+      );
       return false;
     }
     return true;
@@ -62,10 +65,10 @@ export const FoodRecognitionTest: React.FC = () => {
       setIsLoading(true);
 
       const startTime = Date.now();
-      
+
       try {
         console.log('🔍 Testing food recognition with:', { imageUri, mealType: selectedMealType });
-        
+
         const recognitionResult = await foodRecognitionService.recognizeFood(
           imageUri,
           selectedMealType,
@@ -75,13 +78,13 @@ export const FoodRecognitionTest: React.FC = () => {
               gender: 'male',
               height: '175',
               weight: '70',
-              activityLevel: 'moderate'
+              activityLevel: 'moderate',
             },
             fitnessGoals: {
               primaryGoals: ['weight_loss'],
               experience: 'intermediate',
-              timeCommitment: '30-45 minutes'
-            }
+              timeCommitment: '30-45 minutes',
+            },
           }
         );
 
@@ -95,19 +98,18 @@ export const FoodRecognitionTest: React.FC = () => {
           processingTime,
         };
 
-        setTestResults(prev => [testResult, ...prev]);
-        
+        setTestResults((prev) => [testResult, ...prev]);
+
         Alert.alert(
           '✅ Test Completed',
           `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\n\n` +
-          `Detected: ${recognitionResult.recognizedFoods?.length || 0} food items\n` +
-          `Accuracy: ${recognitionResult.confidence || 0}%`,
+            `Detected: ${recognitionResult.recognizedFoods?.length || 0} food items\n` +
+            `Accuracy: ${recognitionResult.confidence || 0}%`,
           [{ text: 'OK' }]
         );
-
       } catch (error: any) {
         const processingTime = Date.now() - startTime;
-        
+
         const testResult: TestResult = {
           timestamp: new Date().toISOString(),
           imageUri,
@@ -116,16 +118,15 @@ export const FoodRecognitionTest: React.FC = () => {
           processingTime,
         };
 
-        setTestResults(prev => [testResult, ...prev]);
-        
+        setTestResults((prev) => [testResult, ...prev]);
+
         Alert.alert(
           '❌ Test Failed',
           `Error: ${error.message || 'Unknown error'}\n\n` +
-          `Processing time: ${(processingTime / 1000).toFixed(2)}s`,
+            `Processing time: ${(processingTime / 1000).toFixed(2)}s`,
           [{ text: 'OK' }]
         );
       }
-
     } catch (error: any) {
       Alert.alert('Error', `Failed to select image: ${error.message}`);
     } finally {
@@ -139,19 +140,17 @@ export const FoodRecognitionTest: React.FC = () => {
 
   const formatResult = (result: any) => {
     if (!result) return 'No result';
-    
+
     const foods = result.recognizedFoods || [];
     const totalCalories = foods.reduce((sum: number, food: any) => sum + (food.calories || 0), 0);
-    
+
     return `${foods.length} items, ${totalCalories} cal, ${result.confidence || 0}% confidence`;
   };
 
   return (
     <ScrollView className="flex-1 bg-gray-50 p-4">
       <View className="bg-white rounded-xl p-6 mb-6 shadow-sm">
-        <Text className="text-2xl font-bold text-gray-900 mb-2">
-          🧪 Food Recognition Test
-        </Text>
+        <Text className="text-2xl font-bold text-gray-900 mb-2">🧪 Food Recognition Test</Text>
         <Text className="text-gray-600 mb-4">
           Test the revolutionary AI-powered food recognition system with 90%+ accuracy
         </Text>
@@ -184,9 +183,7 @@ export const FoodRecognitionTest: React.FC = () => {
         <TouchableOpacity
           onPress={testWithImage}
           disabled={isLoading}
-          className={`py-4 px-6 rounded-xl ${
-            isLoading ? 'bg-gray-400' : 'bg-blue-500'
-          }`}
+          className={`py-4 px-6 rounded-xl ${isLoading ? 'bg-gray-400' : 'bg-blue-500'}`}
         >
           {isLoading ? (
             <View className="flex-row items-center justify-center">
@@ -194,9 +191,7 @@ export const FoodRecognitionTest: React.FC = () => {
               <Text className="text-white font-semibold ml-2">Testing...</Text>
             </View>
           ) : (
-            <Text className="text-white font-semibold text-center text-lg">
-              📸 Test with Image
-            </Text>
+            <Text className="text-white font-semibold text-center text-lg">📸 Test with Image</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -217,12 +212,10 @@ export const FoodRecognitionTest: React.FC = () => {
             <View key={index} className="border-b border-gray-200 pb-4 mb-4 last:border-b-0">
               <View className="flex-row items-start gap-3">
                 <Image source={{ uri: test.imageUri }} className="w-16 h-16 rounded-lg" />
-                
+
                 <View className="flex-1">
                   <View className="flex-row items-center gap-2 mb-1">
-                    <Text className="font-semibold text-gray-900 capitalize">
-                      {test.mealType}
-                    </Text>
+                    <Text className="font-semibold text-gray-900 capitalize">{test.mealType}</Text>
                     <Text className="text-gray-500 text-sm">
                       {new Date(test.timestamp).toLocaleTimeString()}
                     </Text>
@@ -232,18 +225,19 @@ export const FoodRecognitionTest: React.FC = () => {
                       </Text>
                     )}
                   </View>
-                  
+
                   {test.error ? (
                     <Text className="text-red-600 text-sm">❌ {test.error}</Text>
                   ) : (
-                    <Text className="text-green-600 text-sm">
-                      ✅ {formatResult(test.result)}
-                    </Text>
+                    <Text className="text-green-600 text-sm">✅ {formatResult(test.result)}</Text>
                   )}
-                  
+
                   {test.result?.recognizedFoods && (
                     <Text className="text-gray-600 text-sm mt-1">
-                      {test.result.recognizedFoods.slice(0, 2).map((food: any) => food.name).join(', ')}
+                      {test.result.recognizedFoods
+                        .slice(0, 2)
+                        .map((food: any) => food.name)
+                        .join(', ')}
                       {test.result.recognizedFoods.length > 2 && '...'}
                     </Text>
                   )}
@@ -258,10 +252,9 @@ export const FoodRecognitionTest: React.FC = () => {
       <View className="bg-blue-50 rounded-xl p-4 mt-6">
         <Text className="text-blue-900 font-semibold mb-2">🚀 System Status</Text>
         <Text className="text-blue-800 text-sm">
-          • Multi-API food recognition with 90%+ accuracy{'\n'}
-          • Indian cuisine specialization (100% detection){'\n'}
-          • Zero-cost operation with API key rotation{'\n'}
-          • Real-time nutrition analysis
+          • Multi-API food recognition with 90%+ accuracy{'\n'}• Indian cuisine specialization (100%
+          detection){'\n'}• Zero-cost operation with API key rotation{'\n'}• Real-time nutrition
+          analysis
         </Text>
       </View>
     </ScrollView>

@@ -8,7 +8,7 @@ import {
   MealLog,
   BodyMeasurement,
   UserPreferences,
-  SyncStatus
+  SyncStatus,
 } from '../types/localData';
 import { Database } from './supabase';
 
@@ -50,7 +50,7 @@ export class DataTransformationService {
 
     return {
       id: userId,
-      email: email,
+      email,
       name: personalInfo.name,
       age: parseInt(personalInfo.age) || null,
       gender: this.normalizeGender(personalInfo.gender),
@@ -104,9 +104,7 @@ export class DataTransformationService {
     };
   }
 
-  transformSupabaseToWorkoutSession(
-    supabaseSession: any
-  ): WorkoutSession {
+  transformSupabaseToWorkoutSession(supabaseSession: any): WorkoutSession {
     return {
       id: supabaseSession.id,
       workoutId: supabaseSession.workout_id,
@@ -126,10 +124,7 @@ export class DataTransformationService {
   // MEAL LOG TRANSFORMATION
   // ============================================================================
 
-  transformMealLogToSupabase(
-    mealLog: MealLog,
-    userId: string
-  ): SupabaseMealLog {
+  transformMealLogToSupabase(mealLog: MealLog, userId: string): SupabaseMealLog {
     return {
       id: mealLog.id,
       user_id: userId,
@@ -146,9 +141,7 @@ export class DataTransformationService {
     };
   }
 
-  transformSupabaseToMealLog(
-    supabaseMealLog: any
-  ): MealLog {
+  transformSupabaseToMealLog(supabaseMealLog: any): MealLog {
     return {
       id: supabaseMealLog.id,
       mealType: supabaseMealLog.meal_type,
@@ -159,7 +152,12 @@ export class DataTransformationService {
       notes: supabaseMealLog.notes || '',
       photos: supabaseMealLog.photos || [],
       syncStatus: SyncStatus.SYNCED,
-      syncMetadata: { lastSyncedAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' },
+      syncMetadata: {
+        lastSyncedAt: new Date().toISOString(),
+        lastModifiedAt: new Date().toISOString(),
+        syncVersion: 1,
+        deviceId: 'local',
+      },
     };
   }
 
@@ -193,9 +191,7 @@ export class DataTransformationService {
     };
   }
 
-  transformSupabaseToBodyMeasurement(
-    supabaseEntry: any
-  ): BodyMeasurement {
+  transformSupabaseToBodyMeasurement(supabaseEntry: any): BodyMeasurement {
     return {
       id: supabaseEntry.id,
       // userId omitted in BodyMeasurement type
@@ -205,7 +201,12 @@ export class DataTransformationService {
       muscleMass: supabaseEntry.muscle_mass_kg,
       notes: supabaseEntry.notes || '',
       syncStatus: SyncStatus.SYNCED,
-      syncMetadata: { lastSyncedAt: new Date().toISOString(), lastModifiedAt: new Date().toISOString(), syncVersion: 1, deviceId: 'local' },
+      syncMetadata: {
+        lastSyncedAt: new Date().toISOString(),
+        lastModifiedAt: new Date().toISOString(),
+        syncVersion: 1,
+        deviceId: 'local',
+      },
     };
   }
 
@@ -240,17 +241,17 @@ export class DataTransformationService {
     }
 
     // Transform workout sessions
-    result.workoutSessions = localSchema.fitness.sessions.map(session =>
+    result.workoutSessions = localSchema.fitness.sessions.map((session) =>
       this.transformWorkoutSessionToSupabase(session, userId)
     );
 
     // Transform meal logs
-    result.mealLogs = localSchema.nutrition.logs.map(log =>
+    result.mealLogs = localSchema.nutrition.logs.map((log) =>
       this.transformMealLogToSupabase(log, userId)
     );
 
     // Transform progress entries
-    result.progressEntries = localSchema.progress.measurements.map(measurement =>
+    result.progressEntries = localSchema.progress.measurements.map((measurement) =>
       this.transformBodyMeasurementToSupabase(measurement, userId)
     );
 
@@ -261,7 +262,10 @@ export class DataTransformationService {
   // DATA VALIDATION FOR TRANSFORMATION
   // ============================================================================
 
-  validateTransformationData(data: any, type: 'profile' | 'workout' | 'meal' | 'progress'): {
+  validateTransformationData(
+    data: any,
+    type: 'profile' | 'workout' | 'meal' | 'progress'
+  ): {
     isValid: boolean;
     errors: string[];
   } {
@@ -287,7 +291,10 @@ export class DataTransformationService {
         if (!data.id || !data.user_id || !data.date) {
           errors.push('Meal log must have id, user_id, and date');
         }
-        if (!data.meal_type || !['breakfast', 'lunch', 'dinner', 'snack'].includes(data.meal_type)) {
+        if (
+          !data.meal_type ||
+          !['breakfast', 'lunch', 'dinner', 'snack'].includes(data.meal_type)
+        ) {
           errors.push('Meal log must have valid meal_type');
         }
         break;
@@ -334,7 +341,11 @@ export class DataTransformationService {
   // CONFLICT DETECTION
   // ============================================================================
 
-  detectConflicts(localData: any, remoteData: any, type: string): {
+  detectConflicts(
+    localData: any,
+    remoteData: any,
+    type: string
+  ): {
     hasConflicts: boolean;
     conflictFields: string[];
     recommendations: string[];
@@ -418,7 +429,10 @@ export class DataTransformationService {
     switch (type) {
       case 'profile':
         // Use local data for fields that are more likely to be current locally
-        if (localData.weight_kg && new Date(localData.updated_at) > new Date(remoteData.updated_at)) {
+        if (
+          localData.weight_kg &&
+          new Date(localData.updated_at) > new Date(remoteData.updated_at)
+        ) {
           merged.weight_kg = localData.weight_kg;
         }
         if (localData.units) {
@@ -444,7 +458,7 @@ export class DataTransformationService {
         // Merge food items if different
         const localFoods = JSON.parse(localData.foods_data || '[]');
         const remoteFoods = JSON.parse(remoteData.foods_data || '[]');
-        
+
         if (localFoods.length > remoteFoods.length) {
           merged.foods_data = localData.foods_data;
           merged.total_calories = localData.total_calories;
@@ -456,7 +470,7 @@ export class DataTransformationService {
         // Use the measurement with the more recent timestamp
         const localTime = new Date(localData.created_at).getTime();
         const remoteTime = new Date(remoteData.created_at).getTime();
-        
+
         if (localTime > remoteTime) {
           merged.weight_kg = localData.weight_kg;
           merged.body_fat_percentage = localData.body_fat_percentage;

@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Card, THEME } from '../ui';
 import { useFitnessData } from '../../hooks/useFitnessData';
 
@@ -41,11 +34,16 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
 
   const getWorkoutTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'strength': return '💪';
-      case 'cardio': return '🏃';
-      case 'flexibility': return '🧘';
-      case 'hiit': return '🔥';
-      default: return '🏋️';
+      case 'strength':
+        return '💪';
+      case 'cardio':
+        return '🏃';
+      case 'flexibility':
+        return '🧘';
+      case 'hiit':
+        return '🔥';
+      default:
+        return '🏋️';
     }
   };
 
@@ -69,7 +67,7 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
     <Card style={styles.container} variant="elevated">
       <View style={styles.header}>
         <Text style={styles.title}>Workout Analytics</Text>
-        
+
         {/* Time Range Selector */}
         <View style={styles.timeRangeSelector}>
           {timeRanges.map((range) => (
@@ -102,30 +100,28 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
             <Text style={styles.statValue}>{workoutStats?.totalWorkouts || 0}</Text>
             <Text style={styles.statLabel}>Workouts</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
-              {workoutStats?.totalDuration 
+              {workoutStats?.totalDuration
                 ? `${Math.round(workoutStats.totalDuration / 60)}h`
-                : '0h'
-              }
+                : '0h'}
             </Text>
             <Text style={styles.statLabel}>Total Time</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
               {workoutStats?.totalCalories?.toLocaleString() || '0'}
             </Text>
             <Text style={styles.statLabel}>Calories</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
-              {workoutStats?.averageDuration 
+              {workoutStats?.averageDuration
                 ? `${Math.round(workoutStats.averageDuration)}m`
-                : '0m'
-              }
+                : '0m'}
             </Text>
             <Text style={styles.statLabel}>Avg Duration</Text>
           </View>
@@ -161,25 +157,28 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
               <>
                 {workoutStats && workoutStats.totalWorkouts > 0 && (
                   <Text style={styles.insightText}>
-                    🔥 You've completed {workoutStats.totalWorkouts} workout{workoutStats.totalWorkouts > 1 ? 's' : ''} this {selectedRange}!
+                    🔥 You've completed {workoutStats.totalWorkouts} workout
+                    {workoutStats.totalWorkouts > 1 ? 's' : ''} this {selectedRange}!
                   </Text>
                 )}
-                
+
                 {workoutStats && workoutStats.totalCalories > 500 && (
                   <Text style={styles.insightText}>
                     💪 Great job burning {workoutStats.totalCalories.toLocaleString()} calories!
                   </Text>
                 )}
-                
+
                 {workoutStats && workoutStats.averageDuration > 30 && (
                   <Text style={styles.insightText}>
-                    ⏱️ Your average workout duration of {Math.round(workoutStats.averageDuration)} minutes shows great consistency!
+                    ⏱️ Your average workout duration of {Math.round(workoutStats.averageDuration)}{' '}
+                    minutes shows great consistency!
                   </Text>
                 )}
-                
+
                 {workoutStats && Object.keys(workoutStats.workoutsByType).length > 2 && (
                   <Text style={styles.insightText}>
-                    🎨 Excellent variety! You're training different muscle groups and fitness aspects.
+                    🎨 Excellent variety! You're training different muscle groups and fitness
+                    aspects.
                   </Text>
                 )}
               </>

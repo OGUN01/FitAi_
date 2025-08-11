@@ -8,7 +8,7 @@ import {
   EncryptionConfig,
   EncryptedData,
   StorageInfo,
-  ValidationResult
+  ValidationResult,
 } from '../types/localData';
 
 // Web-compatible crypto utilities
@@ -20,10 +20,11 @@ const CryptoUtils = {
         // Use expo-crypto for secure random bytes
         const randomBytes = Crypto.getRandomBytes(bytes);
         return {
-          toString: () => Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('')
+          toString: () =>
+            Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join(''),
         };
-      }
-    }
+      },
+    },
   },
 
   // PBKDF2 implementation
@@ -33,11 +34,11 @@ const CryptoUtils = {
     let hash = 0;
     for (let i = 0; i < combined.length; i++) {
       const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return {
-      toString: () => Math.abs(hash).toString(16).padStart(64, '0').substring(0, 64)
+      toString: () => Math.abs(hash).toString(16).padStart(64, '0').substring(0, 64),
     };
   },
 
@@ -50,11 +51,11 @@ const CryptoUtils = {
       const encoded = data;
       return {
         ciphertext: {
-          toString: (format: any) => encoded
+          toString: (format: any) => encoded,
         },
         tag: {
-          toString: (format: any) => 'mock-tag'
-        }
+          toString: (format: any) => 'mock-tag',
+        },
       };
     },
 
@@ -64,14 +65,14 @@ const CryptoUtils = {
         // Simple decryption - in production use proper crypto library
         const decoded = encryptedData.ciphertext.toString();
         return {
-          toString: (format: any) => decoded
+          toString: (format: any) => decoded,
         };
       } catch (error) {
         return {
-          toString: (format: any) => ''
+          toString: (format: any) => '',
         };
       }
-    }
+    },
   },
 
   // Encoding utilities
@@ -93,20 +94,20 @@ const CryptoUtils = {
           } catch (error) {
             return base64;
           }
-        }
-      })
+        },
+      }),
     },
     Utf8: {
       parse: (str: string) => ({
-        toString: () => str
-      })
-    }
+        toString: () => str,
+      }),
+    },
   },
 
   // Mode constants
   mode: {
-    GCM: 'GCM'
-  }
+    GCM: 'GCM',
+  },
 };
 
 // ============================================================================
@@ -211,7 +212,9 @@ export class EnhancedLocalStorageService {
   private async checkAndMigrateVersion(): Promise<void> {
     try {
       // Directly get schema without ensureInitialized check during initialization
-      const storedSchema = await this.retrieveDataDuringInit<LocalStorageSchema>(STORAGE_KEYS.SCHEMA);
+      const storedSchema = await this.retrieveDataDuringInit<LocalStorageSchema>(
+        STORAGE_KEYS.SCHEMA
+      );
 
       if (!storedSchema) {
         // First time initialization
@@ -239,9 +242,10 @@ export class EnhancedLocalStorageService {
           notifications: true,
           darkMode: true,
           language: 'en',
-          timezone: (typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function')
-            ? Intl.DateTimeFormat().resolvedOptions().timeZone
-            : 'UTC',
+          timezone:
+            typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function'
+              ? Intl.DateTimeFormat().resolvedOptions().timeZone
+              : 'UTC',
           autoSync: true,
           dataRetention: 365,
         },
@@ -542,7 +546,7 @@ export class EnhancedLocalStorageService {
     const iv = CryptoUtils.lib.WordArray.random(ENCRYPTION_CONFIG.ivLength);
 
     const encrypted = CryptoUtils.AES.encrypt(data, this.encryptionKey, {
-      iv: iv,
+      iv,
       mode: CryptoUtils.mode.GCM,
     });
 
@@ -595,7 +599,7 @@ export class EnhancedLocalStorageService {
   private async updateStorageInfo(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const fitaiKeys = keys.filter(key => key.startsWith(STORAGE_KEY_PREFIX));
+      const fitaiKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
 
       let totalSize = 0;
       for (const key of fitaiKeys) {
@@ -607,7 +611,7 @@ export class EnhancedLocalStorageService {
       }
 
       const storageInfo: StorageInfo = {
-        totalSize: totalSize,
+        totalSize,
         usedSize: totalSize,
         availableSize: Math.max(0, 50 * 1024 * 1024 - totalSize), // 50MB limit
         quotaExceeded: totalSize > 50 * 1024 * 1024,
@@ -676,7 +680,7 @@ export class EnhancedLocalStorageService {
   async clearAll(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const fitaiKeys = keys.filter(key => key.startsWith(STORAGE_KEY_PREFIX));
+      const fitaiKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
       if (fitaiKeys.length) {
         await AsyncStorage.multiRemove(fitaiKeys);
       }
@@ -702,17 +706,17 @@ export class EnhancedLocalStorageService {
               completedSteps: 0,
               startedAt: null,
               completedAt: null,
-              errors: []
-            }
+              errors: [],
+            },
           },
           onboardingData: null,
           profile: null,
-          preferences: null
+          preferences: null,
         },
         fitness: { sessions: [] },
         nutrition: { logs: [] },
         progress: { measurements: [] },
-        metadata: {}
+        metadata: {},
       };
       await AsyncStorage.setItem(STORAGE_KEYS.SCHEMA, JSON.stringify(newSchema));
       await this.updateStorageInfo();

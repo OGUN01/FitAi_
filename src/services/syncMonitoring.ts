@@ -190,21 +190,23 @@ export class SyncMonitoringService {
     const latency = this.metrics.networkStats.latency;
     const bandwidth = this.metrics.networkStats.bandwidth;
     const signalStrength = this.metrics.networkStats.signalStrength;
-    
+
     // Calculate stability based on recent connection history
     const recentHistory = this.connectionHistory.slice(-10);
-    const stability = recentHistory.length > 0 
-      ? recentHistory.reduce((sum, h) => sum + h.score, 0) / recentHistory.length
-      : 50;
+    const stability =
+      recentHistory.length > 0
+        ? recentHistory.reduce((sum, h) => sum + h.score, 0) / recentHistory.length
+        : 50;
 
     const factors = {
       latency: this.scoreLatency(latency),
       bandwidth: this.scoreBandwidth(bandwidth),
-      stability: stability,
-      signalStrength: signalStrength,
+      stability,
+      signalStrength,
     };
 
-    const score = (factors.latency + factors.bandwidth + factors.stability + factors.signalStrength) / 4;
+    const score =
+      (factors.latency + factors.bandwidth + factors.stability + factors.signalStrength) / 4;
     const status = this.getHealthStatus(score);
     const recommendations = this.generateRecommendations(factors);
 
@@ -227,7 +229,7 @@ export class SyncMonitoringService {
    */
   getSyncQueueInfo(): SyncQueueInfo {
     const syncStatus = realTimeSyncService.getSyncStatus();
-    
+
     // This would be implemented with actual queue data
     return {
       totalOperations: syncStatus.queuedOperations,
@@ -333,7 +335,7 @@ export class SyncMonitoringService {
   private handleSyncResult(result: SyncResult): void {
     // Update metrics based on sync result
     this.metrics.totalSyncs++;
-    
+
     if (result.success) {
       this.metrics.successfulSyncs++;
     } else {
@@ -342,19 +344,19 @@ export class SyncMonitoringService {
     }
 
     // Update average duration
-    this.metrics.averageSyncDuration = 
-      (this.metrics.averageSyncDuration * (this.metrics.totalSyncs - 1) + result.duration) / 
+    this.metrics.averageSyncDuration =
+      (this.metrics.averageSyncDuration * (this.metrics.totalSyncs - 1) + result.duration) /
       this.metrics.totalSyncs;
 
     // Update data synced
-    this.metrics.totalDataSynced += 
-      result.syncedItems.uploaded + result.syncedItems.downloaded;
+    this.metrics.totalDataSynced += result.syncedItems.uploaded + result.syncedItems.downloaded;
 
     // Create performance record
     const performance: SyncPerformance = {
       syncId: result.syncId,
       duration: result.duration,
-      throughput: (result.syncedItems.uploaded + result.syncedItems.downloaded) / (result.duration / 1000),
+      throughput:
+        (result.syncedItems.uploaded + result.syncedItems.downloaded) / (result.duration / 1000),
       networkLatency: this.metrics.networkStats.latency,
       batteryImpact: this.estimateBatteryImpact(result),
       memoryUsage: this.estimateMemoryUsage(result),
@@ -365,14 +367,13 @@ export class SyncMonitoringService {
     this.performanceHistory.push(performance);
 
     // Update error rate
-    this.metrics.errorStats.errorRate = 
-      (this.metrics.failedSyncs / this.metrics.totalSyncs) * 100;
+    this.metrics.errorStats.errorRate = (this.metrics.failedSyncs / this.metrics.totalSyncs) * 100;
 
     this.notifyMetricsCallbacks(this.metrics);
   }
 
   private updateErrorStats(errors: any[]): void {
-    errors.forEach(error => {
+    errors.forEach((error) => {
       switch (error.type) {
         case 'network':
           this.metrics.errorStats.networkErrors++;
@@ -480,17 +481,22 @@ export class SyncMonitoringService {
 
   private getSignalStrength(quality: string): number {
     switch (quality) {
-      case 'excellent': return 100;
-      case 'good': return 80;
-      case 'poor': return 40;
-      case 'offline': return 0;
-      default: return 60;
+      case 'excellent':
+        return 100;
+      case 'good':
+        return 80;
+      case 'poor':
+        return 40;
+      case 'offline':
+        return 0;
+      default:
+        return 60;
     }
   }
 
   private estimateBatteryImpact(result: SyncResult): number {
     // Estimate battery impact based on sync duration and data transferred
-    const baseImpact = result.duration / 1000 * 0.1; // 0.1% per second
+    const baseImpact = (result.duration / 1000) * 0.1; // 0.1% per second
     const dataImpact = (result.syncedItems.uploaded + result.syncedItems.downloaded) * 0.001; // 0.001% per item
     return Math.min(baseImpact + dataImpact, 5); // Cap at 5%
   }
@@ -510,7 +516,7 @@ export class SyncMonitoringService {
   }
 
   private notifyMetricsCallbacks(metrics: SyncMetrics): void {
-    this.metricsCallbacks.forEach(callback => {
+    this.metricsCallbacks.forEach((callback) => {
       try {
         callback(metrics);
       } catch (error) {
@@ -520,7 +526,7 @@ export class SyncMonitoringService {
   }
 
   private notifyHealthCallbacks(health: ConnectionHealth): void {
-    this.healthCallbacks.forEach(callback => {
+    this.healthCallbacks.forEach((callback) => {
       try {
         callback(health);
       } catch (error) {
@@ -536,12 +542,16 @@ export class SyncMonitoringService {
         this.metrics = { ...this.metrics, ...savedMetrics };
       }
 
-      const savedPerformance = await enhancedLocalStorage.getData<SyncPerformance[]>('sync_performance_history');
+      const savedPerformance = await enhancedLocalStorage.getData<SyncPerformance[]>(
+        'sync_performance_history'
+      );
       if (savedPerformance) {
         this.performanceHistory = savedPerformance;
       }
 
-      const savedHealth = await enhancedLocalStorage.getData<ConnectionHealth[]>('connection_health_history');
+      const savedHealth = await enhancedLocalStorage.getData<ConnectionHealth[]>(
+        'connection_health_history'
+      );
       if (savedHealth) {
         this.connectionHistory = savedHealth;
       }

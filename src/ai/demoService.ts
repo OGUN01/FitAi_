@@ -1,21 +1,21 @@
 // Demo AI Service - Provides mock AI responses for testing without API key
 
-import { 
-  Workout, 
-  Meal, 
-  DailyMealPlan, 
-  AIResponse, 
+import {
+  Workout,
+  Meal,
+  DailyMealPlan,
+  AIResponse,
   ProgressAnalysis,
-  MotivationalContent 
+  MotivationalContent,
 } from '../types/ai';
 import { PersonalInfo, FitnessGoals } from '../types/user';
+import { FoodCategory, Allergen, DietaryLabel } from '../types/diet';
 
 // ============================================================================
 // DEMO AI SERVICE
 // ============================================================================
 
 class DemoAIService {
-
   /**
    * Generate a demo workout based on user profile
    */
@@ -32,8 +32,9 @@ class DemoAIService {
     await this.delay(1500);
 
     const workoutType = preferences?.workoutType || 'strength';
-    const duration = preferences?.duration || this.parseDurationFromCommitment(fitnessGoals.timeCommitment);
-    
+    const duration =
+      preferences?.duration || this.parseDurationFromCommitment(fitnessGoals.timeCommitment);
+
     const demoWorkouts = {
       strength: {
         title: `${personalInfo.name}'s Strength Builder`,
@@ -48,27 +49,27 @@ class DemoAIService {
             sets: fitnessGoals.experience === 'beginner' ? 2 : 3,
             reps: fitnessGoals.experience === 'beginner' ? '8-10' : '10-15',
             restTime: 60,
-            notes: 'Focus on proper form'
+            notes: 'Focus on proper form',
           },
           {
             exerciseId: 'squat',
             sets: 3,
             reps: fitnessGoals.experience === 'beginner' ? '10-12' : '15-20',
             restTime: 60,
-            notes: 'Keep chest up and core engaged'
+            notes: 'Keep chest up and core engaged',
           },
           {
             exerciseId: 'plank',
             sets: 3,
             reps: fitnessGoals.experience === 'beginner' ? '30s' : '45s',
             restTime: 45,
-            notes: 'Maintain straight line from head to heels'
-          }
+            notes: 'Maintain straight line from head to heels',
+          },
         ],
         equipment: preferences?.equipment || ['bodyweight'],
         targetMuscleGroups: ['chest', 'legs', 'core'],
         icon: '💪',
-        tags: ['strength', 'full-body', 'beginner-friendly']
+        tags: ['strength', 'full-body', 'beginner-friendly'],
       },
       cardio: {
         title: `${personalInfo.name}'s Cardio Blast`,
@@ -83,27 +84,27 @@ class DemoAIService {
             sets: 3,
             reps: '60s',
             restTime: 30,
-            notes: 'Keep a steady rhythm'
+            notes: 'Keep a steady rhythm',
           },
           {
             exerciseId: 'high_knees',
             sets: 3,
             reps: '45s',
             restTime: 30,
-            notes: 'Drive knees up high'
+            notes: 'Drive knees up high',
           },
           {
             exerciseId: 'mountain_climbers',
             sets: 3,
             reps: '30s',
             restTime: 45,
-            notes: 'Maintain plank position'
-          }
+            notes: 'Maintain plank position',
+          },
         ],
         equipment: ['bodyweight'],
         targetMuscleGroups: ['cardiovascular', 'legs', 'core'],
         icon: '🏃',
-        tags: ['cardio', 'hiit', 'fat-burning']
+        tags: ['cardio', 'hiit', 'fat-burning'],
       },
       flexibility: {
         title: `${personalInfo.name}'s Flexibility Flow`,
@@ -118,20 +119,20 @@ class DemoAIService {
             sets: 1,
             reps: '60s',
             restTime: 15,
-            notes: 'Breathe deeply and relax'
+            notes: 'Breathe deeply and relax',
           },
           {
             exerciseId: 'child_pose',
             sets: 1,
             reps: '45s',
             restTime: 0,
-            notes: 'Focus on relaxation'
-          }
+            notes: 'Focus on relaxation',
+          },
         ],
         equipment: ['bodyweight'],
         targetMuscleGroups: ['back', 'shoulders', 'hips'],
         icon: '🧘',
-        tags: ['flexibility', 'relaxation', 'mobility']
+        tags: ['flexibility', 'relaxation', 'mobility'],
       },
       hiit: {
         title: `${personalInfo.name}'s HIIT Challenge`,
@@ -146,21 +147,21 @@ class DemoAIService {
             sets: 4,
             reps: '30s',
             restTime: 30,
-            notes: 'Go at your own pace'
+            notes: 'Go at your own pace',
           },
           {
             exerciseId: 'mountain_climbers',
             sets: 4,
             reps: '45s',
             restTime: 15,
-            notes: 'Keep core tight'
-          }
+            notes: 'Keep core tight',
+          },
         ],
         equipment: ['bodyweight'],
         targetMuscleGroups: ['full_body', 'cardiovascular'],
         icon: '🔥',
-        tags: ['hiit', 'intense', 'full-body']
-      }
+        tags: ['hiit', 'intense', 'full-body'],
+      },
     };
 
     const selectedWorkout = demoWorkouts[workoutType];
@@ -170,14 +171,14 @@ class DemoAIService {
       ...selectedWorkout,
       isPersonalized: true,
       aiGenerated: true,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     return {
       success: true,
       data: workout,
       confidence: 85,
-      generationTime: 1500
+      generationTime: 1500,
     };
   }
 
@@ -200,51 +201,51 @@ class DemoAIService {
             food: {
               id: 'oats',
               name: 'Rolled Oats',
-              category: 'grains',
+              category: 'grains' as FoodCategory,
               nutrition: {
                 calories: 389,
                 macros: { protein: 16.9, carbohydrates: 66, fat: 6.9, fiber: 10.6 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: ['gluten'],
-              dietaryLabels: ['whole-grain', 'high-fiber'],
+              allergens: ['wheat'] as Allergen[],
+              dietaryLabels: [] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 50,
             calories: 195,
-            macros: { protein: 8.5, carbohydrates: 33, fat: 3.5, fiber: 5.3 }
+            macros: { protein: 8.5, carbohydrates: 33, fat: 3.5, fiber: 5.3 },
           },
           {
             foodId: 'blueberries',
             food: {
               id: 'blueberries',
               name: 'Fresh Blueberries',
-              category: 'fruits',
+              category: 'fruits' as FoodCategory,
               nutrition: {
                 calories: 57,
                 macros: { protein: 0.7, carbohydrates: 14, fat: 0.3, fiber: 2.4 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: [],
-              dietaryLabels: ['antioxidants', 'superfood'],
+              allergens: [] as Allergen[],
+              dietaryLabels: [] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 80,
             calories: 46,
-            macros: { protein: 0.6, carbohydrates: 11.2, fat: 0.2, fiber: 1.9 }
-          }
+            macros: { protein: 0.6, carbohydrates: 11.2, fat: 0.2, fiber: 1.9 },
+          },
         ],
         totalCalories: 241,
         totalMacros: { protein: 9.1, carbohydrates: 44.2, fat: 3.7, fiber: 7.2 },
         prepTime: 5,
         difficulty: 'easy' as const,
-        tags: ['healthy', 'quick', 'high-fiber']
+        tags: ['healthy', 'quick', 'high-fiber'],
       },
       lunch: {
         name: 'Balanced Power Bowl',
@@ -254,51 +255,51 @@ class DemoAIService {
             food: {
               id: 'chicken_breast',
               name: 'Grilled Chicken Breast',
-              category: 'protein',
+              category: 'proteins' as FoodCategory,
               nutrition: {
                 calories: 165,
                 macros: { protein: 31, carbohydrates: 0, fat: 3.6, fiber: 0 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: [],
-              dietaryLabels: ['high-protein', 'low-carb'],
+              allergens: [] as Allergen[],
+              dietaryLabels: ['high_protein', 'low_carb'] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 120,
             calories: 198,
-            macros: { protein: 37.2, carbohydrates: 0, fat: 4.3, fiber: 0 }
+            macros: { protein: 37.2, carbohydrates: 0, fat: 4.3, fiber: 0 },
           },
           {
             foodId: 'quinoa',
             food: {
               id: 'quinoa',
               name: 'Cooked Quinoa',
-              category: 'grains',
+              category: 'grains' as FoodCategory,
               nutrition: {
                 calories: 120,
                 macros: { protein: 4.4, carbohydrates: 22, fat: 1.9, fiber: 2.8 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: [],
-              dietaryLabels: ['complete-protein', 'gluten-free'],
+              allergens: [] as Allergen[],
+              dietaryLabels: ['high_protein', 'gluten_free'] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 100,
             calories: 120,
-            macros: { protein: 4.4, carbohydrates: 22, fat: 1.9, fiber: 2.8 }
-          }
+            macros: { protein: 4.4, carbohydrates: 22, fat: 1.9, fiber: 2.8 },
+          },
         ],
         totalCalories: 318,
         totalMacros: { protein: 41.6, carbohydrates: 22, fat: 6.2, fiber: 2.8 },
         prepTime: 15,
         difficulty: 'medium' as const,
-        tags: ['balanced', 'high-protein', 'filling']
+        tags: ['balanced', 'high-protein', 'filling'],
       },
       dinner: {
         name: 'Nutritious Evening Meal',
@@ -308,29 +309,29 @@ class DemoAIService {
             food: {
               id: 'salmon',
               name: 'Baked Salmon',
-              category: 'protein',
+              category: 'proteins' as FoodCategory,
               nutrition: {
                 calories: 208,
                 macros: { protein: 25, carbohydrates: 0, fat: 12, fiber: 0 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: ['fish'],
-              dietaryLabels: ['omega-3', 'high-protein'],
+              allergens: ['fish'] as Allergen[],
+              dietaryLabels: ['high_protein'] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 150,
             calories: 312,
-            macros: { protein: 37.5, carbohydrates: 0, fat: 18, fiber: 0 }
-          }
+            macros: { protein: 37.5, carbohydrates: 0, fat: 18, fiber: 0 },
+          },
         ],
         totalCalories: 312,
         totalMacros: { protein: 37.5, carbohydrates: 0, fat: 18, fiber: 0 },
         prepTime: 20,
         difficulty: 'medium' as const,
-        tags: ['omega-3', 'heart-healthy', 'protein-rich']
+        tags: ['omega-3', 'heart-healthy', 'protein-rich'],
       },
       snack: {
         name: 'Healthy Snack',
@@ -340,30 +341,30 @@ class DemoAIService {
             food: {
               id: 'apple',
               name: 'Medium Apple',
-              category: 'fruits',
+              category: 'fruits' as FoodCategory,
               nutrition: {
                 calories: 52,
                 macros: { protein: 0.3, carbohydrates: 14, fat: 0.2, fiber: 2.4 },
                 servingSize: 100,
-                servingUnit: 'g'
+                servingUnit: 'g',
               },
-              allergens: [],
-              dietaryLabels: ['low-calorie', 'high-fiber'],
+              allergens: [] as Allergen[],
+              dietaryLabels: [] as DietaryLabel[],
               verified: true,
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
             },
             quantity: 150,
             calories: 78,
-            macros: { protein: 0.5, carbohydrates: 21, fat: 0.3, fiber: 3.6 }
-          }
+            macros: { protein: 0.5, carbohydrates: 21, fat: 0.3, fiber: 3.6 },
+          },
         ],
         totalCalories: 78,
         totalMacros: { protein: 0.5, carbohydrates: 21, fat: 0.3, fiber: 3.6 },
         prepTime: 1,
         difficulty: 'easy' as const,
-        tags: ['quick', 'natural', 'low-calorie']
-      }
+        tags: ['quick', 'natural', 'low-calorie'],
+      },
     };
 
     const selectedMeal = demoMeals[mealType];
@@ -376,14 +377,14 @@ class DemoAIService {
       aiGenerated: true,
       scheduledTime: this.getDefaultMealTime(mealType),
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     return {
       success: true,
       data: meal,
       confidence: 90,
-      generationTime: 1200
+      generationTime: 1200,
     };
   }
 
@@ -398,44 +399,45 @@ class DemoAIService {
 
     const motivationalContent: MotivationalContent = {
       dailyTip: {
-        icon: "💧",
-        title: "Hydration Reminder",
-        content: "Remember to stay hydrated! Aim for 8 glasses of water throughout the day to support your fitness goals.",
-        category: "nutrition"
+        icon: '💧',
+        title: 'Hydration Reminder',
+        content:
+          'Remember to stay hydrated! Aim for 8 glasses of water throughout the day to support your fitness goals.',
+        category: 'nutrition',
       },
       encouragement: {
         message: `Great job, ${personalInfo.name}! Every workout brings you closer to your goals. Keep up the amazing work!`,
-        emoji: "💪",
-        tone: "supportive"
+        emoji: '💪',
+        tone: 'supportive',
       },
       challenge: {
-        title: "7-Day Consistency Challenge",
-        description: "Complete a workout every day for the next 7 days",
+        title: '7-Day Consistency Challenge',
+        description: 'Complete a workout every day for the next 7 days',
         reward: "Unlock the 'Week Warrior' achievement and earn 250 points",
-        duration: "7 days",
-        difficulty: "medium"
+        duration: '7 days',
+        difficulty: 'medium',
       },
       quote: {
         text: "The only bad workout is the one that didn't happen.",
-        author: "Anonymous",
-        context: "Fitness motivation"
+        author: 'Anonymous',
+        context: 'Fitness motivation',
       },
       factOfTheDay: {
         fact: "Did you know? Regular exercise can boost your mood by releasing endorphins, often called 'feel-good' hormones!",
-        source: "Exercise Psychology Research"
+        source: 'Exercise Psychology Research',
       },
       personalizedMessage: {
         content: `Based on your current ${currentStreak}-day streak, you're building amazing consistency!`,
-        basedOn: "Current workout streak",
-        actionItem: "Keep the momentum going with today's workout"
-      }
+        basedOn: 'Current workout streak',
+        actionItem: "Keep the momentum going with today's workout",
+      },
     };
 
     return {
       success: true,
       data: motivationalContent,
       confidence: 95,
-      generationTime: 800
+      generationTime: 800,
     };
   }
 
@@ -451,7 +453,7 @@ class DemoAIService {
   // ============================================================================
 
   private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private generateId(prefix: string): string {
@@ -463,7 +465,7 @@ class DemoAIService {
       '15-30': 25,
       '30-45': 40,
       '45-60': 50,
-      '60+': 60
+      '60+': 60,
     };
     return durations[timeCommitment] || 40;
   }
@@ -473,9 +475,9 @@ class DemoAIService {
       breakfast: '08:00',
       lunch: '12:30',
       dinner: '19:00',
-      snack: '15:00'
+      snack: '15:00',
     };
-    
+
     const today = new Date();
     const timeString = times[mealType as keyof typeof times] || '12:00';
     return `${today.toISOString().split('T')[0]}T${timeString}:00.000Z`;

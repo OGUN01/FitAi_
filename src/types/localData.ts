@@ -1,11 +1,7 @@
 // Local Data Types for Track B Infrastructure
 // Comprehensive TypeScript interfaces for local storage schema
 
-import {
-  UserProfile,
-  PersonalInfo,
-  FitnessGoals
-} from './user';
+import { UserProfile, PersonalInfo, FitnessGoals } from './user';
 
 import {
   Workout,
@@ -13,16 +9,10 @@ import {
   WorkoutPlan,
   CompletedExercise,
   CompletedSet,
-  WorkoutSession
+  WorkoutSession,
 } from './workout';
 
-import {
-  Meal,
-  Food,
-  Macronutrients,
-  NutritionPlan,
-  DailyMealPlan
-} from './diet';
+import { Meal, Food, Macronutrients, NutritionPlan, DailyMealPlan } from './diet';
 
 import { Achievement } from './ai';
 
@@ -47,7 +37,7 @@ export enum SyncStatus {
   SYNCED = 'synced',
   PENDING = 'pending',
   FAILED = 'failed',
-  CONFLICT = 'conflict'
+  CONFLICT = 'conflict',
 }
 
 export interface SyncMetadata {
@@ -266,13 +256,25 @@ export interface LocalStorageSchema {
 }
 
 // Validation result used by validation service and stores
-export interface ValidationError { field: string; message: string; code: string; severity?: 'error' | 'warning'; }
-export interface ValidationWarning { field: string; message: string; code: string; }
-export interface ValidationResult { isValid: boolean; errors: ValidationError[]; warnings: ValidationWarning[]; }
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+  severity?: 'error' | 'warning';
+}
+export interface ValidationWarning {
+  field: string;
+  message: string;
+  code: string;
+}
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+}
 
 // Re-export commonly used types for convenience
 export type { WorkoutSession } from './workout';
-
 
 // Re-export types to avoid duplication
 export type { Macronutrients } from './diet';
@@ -551,6 +553,8 @@ export const isLocalFood = (food: any): food is LocalFood => {
   return food && 'localId' in food && 'isCustom' in food;
 };
 
-export const isSyncable = (entity: any): entity is { syncStatus: SyncStatus; syncMetadata: SyncMetadata } => {
+export const isSyncable = (
+  entity: any
+): entity is { syncStatus: SyncStatus; syncMetadata: SyncMetadata } => {
   return entity && 'syncStatus' in entity && 'syncMetadata' in entity;
 };

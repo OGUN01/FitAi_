@@ -55,7 +55,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
   React.useEffect(() => {
     if (recognizedFoods.length > 0) {
       setFeedback(
-        recognizedFoods.map(food => ({
+        recognizedFoods.map((food) => ({
           foodId: food.id,
           originalName: food.name,
           isCorrect: true, // Default to correct
@@ -67,22 +67,20 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
   }, [recognizedFoods]);
 
   const updateFeedback = (index: number, updates: Partial<FoodFeedback>) => {
-    setFeedback(prev => prev.map((item, i) => 
-      i === index ? { ...item, ...updates } : item
-    ));
+    setFeedback((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
   };
 
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       await onSubmitFeedback(feedback);
-      
+
       Alert.alert(
         '🙏 Thank You!',
         'Your feedback helps improve our food recognition accuracy for everyone!',
-        [{ text: 'You\'re Welcome!' }]
+        [{ text: "You're Welcome!" }]
       );
-      
+
       onClose();
     } catch (error) {
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
@@ -101,18 +99,13 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
   const renderAccuracyStars = (rating: number, onPress: (rating: number) => void) => {
     return (
       <View style={styles.starsContainer}>
-        {[1, 2, 3, 4, 5].map(star => (
+        {[1, 2, 3, 4, 5].map((star) => (
           <TouchableOpacity
             key={star}
             onPress={() => onPress(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
           >
-            <Text style={[
-              styles.star,
-              { color: star <= rating ? '#fbbf24' : '#d1d5db' }
-            ]}>
-              ⭐
-            </Text>
+            <Text style={[styles.star, { color: star <= rating ? '#fbbf24' : '#d1d5db' }]}>⭐</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -139,10 +132,12 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             Food {currentFoodIndex + 1} of {recognizedFoods.length}
           </Text>
           <View style={styles.progressBar}>
-            <View style={[
-              styles.progressFill,
-              { width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%` }
-            ]} />
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%` },
+              ]}
+            />
           </View>
         </View>
 
@@ -151,9 +146,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.confidenceBadge}>
-                <Text style={styles.confidenceText}>
-                  {currentFood.confidence}% confidence
-                </Text>
+                <Text style={styles.confidenceText}>{currentFood.confidence}% confidence</Text>
               </View>
             </View>
 
@@ -180,7 +173,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
           {/* Accuracy Rating */}
           <Card style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>How accurate is this recognition?</Text>
-            {renderAccuracyStars(currentFeedback.accuracyRating, (rating) => 
+            {renderAccuracyStars(currentFeedback.accuracyRating, (rating) =>
               updateFeedback(currentFoodIndex, { accuracyRating: rating })
             )}
             <Text style={styles.ratingLabel}>
@@ -199,32 +192,38 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
               <TouchableOpacity
                 style={[
                   styles.correctnessButton,
-                  currentFeedback.isCorrect && styles.correctnessButtonActive
+                  currentFeedback.isCorrect && styles.correctnessButtonActive,
                 ]}
-                onPress={() => updateFeedback(currentFoodIndex, { 
-                  isCorrect: true, 
-                  correctName: undefined 
-                })}
+                onPress={() =>
+                  updateFeedback(currentFoodIndex, {
+                    isCorrect: true,
+                    correctName: undefined,
+                  })
+                }
               >
-                <Text style={[
-                  styles.correctnessButtonText,
-                  currentFeedback.isCorrect && styles.correctnessButtonTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.correctnessButtonText,
+                    currentFeedback.isCorrect && styles.correctnessButtonTextActive,
+                  ]}
+                >
                   ✅ Correct
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[
                   styles.correctnessButton,
-                  !currentFeedback.isCorrect && styles.correctnessButtonActive
+                  !currentFeedback.isCorrect && styles.correctnessButtonActive,
                 ]}
                 onPress={() => updateFeedback(currentFoodIndex, { isCorrect: false })}
               >
-                <Text style={[
-                  styles.correctnessButtonText,
-                  !currentFeedback.isCorrect && styles.correctnessButtonTextActive
-                ]}>
+                <Text
+                  style={[
+                    styles.correctnessButtonText,
+                    !currentFeedback.isCorrect && styles.correctnessButtonTextActive,
+                  ]}
+                >
                   ❌ Incorrect
                 </Text>
               </TouchableOpacity>
@@ -264,28 +263,28 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             {currentFoodIndex > 0 && (
               <Button
                 title="Previous"
-                onPress={() => setCurrentFoodIndex(prev => prev - 1)}
+                onPress={() => setCurrentFoodIndex((prev) => prev - 1)}
                 variant="outline"
                 style={styles.navButton}
               />
             )}
-            
+
             {currentFoodIndex < recognizedFoods.length - 1 ? (
               <Button
                 title="Next"
-                onPress={() => setCurrentFoodIndex(prev => prev + 1)}
+                onPress={() => setCurrentFoodIndex((prev) => prev + 1)}
                 style={styles.navButton}
               />
             ) : (
               <Button
-                title={isSubmitting ? "Submitting..." : "Submit Feedback"}
+                title={isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
                 style={styles.navButton}
               />
             )}
           </View>
-          
+
           {isSubmitting && (
             <View style={styles.submittingIndicator}>
               <ActivityIndicator size="small" color={ResponsiveTheme.colors.primary} />

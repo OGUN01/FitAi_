@@ -62,7 +62,7 @@ class GoogleAuthService {
   async signInWithGoogle(): Promise<GoogleSignInResult> {
     try {
       console.log('🔐 Starting Google Sign-In process...');
-      
+
       // Ensure configuration is done
       await this.configure();
 
@@ -94,7 +94,7 @@ class GoogleAuthService {
 
       // Get ID token for Supabase
       const tokens = await GoogleSignin.getTokens();
-      
+
       if (!tokens.idToken) {
         throw new Error('No ID token received from Google');
       }
@@ -138,15 +138,13 @@ class GoogleAuthService {
 
       if (isNewUser) {
         // Create basic profile for new Google user
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            name: (userInfo as any)?.user?.name || (userInfo as any)?.user?.givenName || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        const { error: profileError } = await supabase.from('user_profiles').insert({
+          id: data.user.id,
+          email: data.user.email!,
+          name: (userInfo as any)?.user?.name || (userInfo as any)?.user?.givenName || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (profileError) {
           console.warn('⚠️ Failed to create profile for Google user:', profileError);
@@ -159,10 +157,9 @@ class GoogleAuthService {
         user: authUser,
         isNewUser,
       };
-
     } catch (error: any) {
       console.error('❌ Native Google Sign-In error:', error);
-      
+
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
         return {
           success: false,
@@ -203,13 +200,14 @@ class GoogleAuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: Platform.OS === 'web' && typeof window !== 'undefined' && window.location
-            ? `${window.location.origin}/auth/callback`
-            : 'exp://localhost:8081/--/auth/callback',
+          redirectTo:
+            Platform.OS === 'web' && typeof window !== 'undefined' && window.location
+              ? `${window.location.origin}/auth/callback`
+              : 'exp://localhost:8081/--/auth/callback',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-            state: state,
+            state,
           },
         },
       });
@@ -282,15 +280,13 @@ class GoogleAuthService {
 
       if (isNewUser) {
         // Create profile for new Google user
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            id: user.id,
-            email: user.email!,
-            name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        const { error: profileError } = await supabase.from('user_profiles').insert({
+          id: user.id,
+          email: user.email!,
+          name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
 
         if (profileError) {
           console.warn('⚠️ Failed to create profile for Google user:', profileError);
@@ -366,11 +362,14 @@ class GoogleAuthService {
     try {
       console.log('🔓 Unlinking Google account...');
 
-      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userErr,
+      } = await supabase.auth.getUser();
       if (userErr || !user) {
         return { success: false, error: userErr?.message || 'No authenticated user' };
       }
-      const googleIdentity = user.identities?.find(i => i.provider === 'google');
+      const googleIdentity = user.identities?.find((i) => i.provider === 'google');
       if (!googleIdentity) {
         return { success: false, error: 'No Google identity linked' };
       }
@@ -402,14 +401,14 @@ class GoogleAuthService {
    */
   async isGoogleLinked(): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return false;
 
       // Check if user has Google identity linked
-      const googleIdentity = user.identities?.find(
-        identity => identity.provider === 'google'
-      );
+      const googleIdentity = user.identities?.find((identity) => identity.provider === 'google');
 
       return !!googleIdentity;
     } catch (error) {
@@ -423,13 +422,13 @@ class GoogleAuthService {
    */
   async getGoogleUserInfo(): Promise<any> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) return null;
 
-      const googleIdentity = user.identities?.find(
-        identity => identity.provider === 'google'
-      );
+      const googleIdentity = user.identities?.find((identity) => identity.provider === 'google');
 
       return googleIdentity?.identity_data || null;
     } catch (error) {

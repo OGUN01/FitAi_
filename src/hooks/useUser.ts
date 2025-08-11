@@ -23,7 +23,10 @@ export interface UseUserReturn {
   updateProfile: (userId: string, updates: UpdateProfileRequest) => Promise<UserProfileResponse>;
   createFitnessGoals: (goalsData: CreateFitnessGoalsRequest) => Promise<FitnessGoalsResponse>;
   getFitnessGoals: (userId: string) => Promise<FitnessGoalsResponse>;
-  updateFitnessGoals: (userId: string, updates: UpdateFitnessGoalsRequest) => Promise<FitnessGoalsResponse>;
+  updateFitnessGoals: (
+    userId: string,
+    updates: UpdateFitnessGoalsRequest
+  ) => Promise<FitnessGoalsResponse>;
   getCompleteProfile: (userId: string) => Promise<UserProfileResponse>;
   deleteProfile: (userId: string) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
@@ -177,7 +180,7 @@ export const useUserActions = () => {
  */
 export const useUserPreferences = () => {
   const profile = useUserStore((state) => state.profile);
-  
+
   return {
     units: profile?.preferences?.units || 'metric',
     notifications: profile?.preferences?.notifications ?? true,
@@ -191,7 +194,7 @@ export const useUserPreferences = () => {
  */
 export const useUserStats = () => {
   const profile = useUserStore((state) => state.profile);
-  
+
   return {
     totalWorkouts: profile?.stats?.totalWorkouts || 0,
     totalCaloriesBurned: profile?.stats?.totalCaloriesBurned || 0,

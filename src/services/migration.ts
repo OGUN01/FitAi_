@@ -5,13 +5,13 @@ import { enhancedLocalStorage } from './localStorage';
 import { dataTransformation } from './dataTransformation';
 import { validationService } from '../utils/validation';
 import { dataManager } from './dataManager';
-import { 
+import {
   LocalStorageSchema,
   ValidationResult,
   OnboardingData,
   WorkoutSession,
   MealLog,
-  BodyMeasurement
+  BodyMeasurement,
 } from '../types/localData';
 
 // ============================================================================
@@ -161,9 +161,11 @@ export class MigrationEngine {
       if (this.config.validateBeforeMigration) {
         const validation = validationService.validateLocalStorageSchema(localData);
         if (!validation.isValid) {
-          throw new Error(`Data validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+          throw new Error(
+            `Data validation failed: ${validation.errors.map((e) => e.message).join(', ')}`
+          );
         }
-        context.warnings.push(...validation.warnings.map(w => w.message));
+        context.warnings.push(...validation.warnings.map((w) => w.message));
       }
 
       // Execute migration steps
@@ -173,7 +175,11 @@ export class MigrationEngine {
       const result: MigrationResult = {
         success: true,
         migrationId,
-        progress: this.createProgressUpdate(context, 'completed', 'Migration completed successfully'),
+        progress: this.createProgressUpdate(
+          context,
+          'completed',
+          'Migration completed successfully'
+        ),
         migratedDataCount: this.calculateMigratedDataCount(context),
         errors: context.errors,
         warnings: context.warnings,
@@ -186,7 +192,6 @@ export class MigrationEngine {
       }
 
       return result;
-
     } catch (error) {
       return this.handleMigrationFailure(migrationId, startTime, error);
     } finally {
@@ -319,7 +324,10 @@ export class MigrationEngine {
     return `migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private async executeMigrationSteps(context: MigrationContext, localData: LocalStorageSchema): Promise<void> {
+  private async executeMigrationSteps(
+    context: MigrationContext,
+    localData: LocalStorageSchema
+  ): Promise<void> {
     for (let i = 0; i < this.steps.length; i++) {
       const step = this.steps[i];
       context.currentStep = step.name;
@@ -331,12 +339,14 @@ export class MigrationEngine {
         context.completedSteps.push(step.name);
       } catch (error) {
         context.failedSteps.push(step.name);
-        
+
         if (step.critical) {
           throw error;
         } else {
           // Log non-critical error and continue
-          context.warnings.push(`Non-critical step failed: ${step.name} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+          context.warnings.push(
+            `Non-critical step failed: ${step.name} - ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
     }
@@ -387,24 +397,32 @@ export class MigrationEngine {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // ============================================================================
   // MIGRATION STEP IMPLEMENTATIONS
   // ============================================================================
 
-  private async validateDataStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async validateDataStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     const validation = validationService.validateLocalStorageSchema(data);
 
     if (!validation.isValid) {
-      throw new Error(`Data validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+      throw new Error(
+        `Data validation failed: ${validation.errors.map((e) => e.message).join(', ')}`
+      );
     }
 
-    context.warnings.push(...validation.warnings.map(w => w.message));
+    context.warnings.push(...validation.warnings.map((w) => w.message));
   }
 
-  private async transformDataStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async transformDataStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     try {
       // Transform user data
       if (data.user) {
@@ -438,11 +456,16 @@ export class MigrationEngine {
         };
       }
     } catch (error) {
-      throw new Error(`Data transformation failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Data transformation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async uploadUserProfileStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async uploadUserProfileStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     if (!context.transformedData?.user) {
       context.warnings.push('No user data to upload');
       return;
@@ -478,11 +501,16 @@ export class MigrationEngine {
 
       context.uploadedData.user = userData;
     } catch (error) {
-      throw new Error(`Failed to upload user profile: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to upload user profile: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async uploadFitnessDataStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async uploadFitnessDataStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     if (!context.transformedData?.fitness) {
       context.warnings.push('No fitness data to upload');
       return;
@@ -507,11 +535,16 @@ export class MigrationEngine {
 
       context.uploadedData.fitness = fitnessData;
     } catch (error) {
-      throw new Error(`Failed to upload fitness data: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to upload fitness data: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async uploadNutritionDataStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async uploadNutritionDataStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     if (!context.transformedData?.nutrition) {
       context.warnings.push('No nutrition data to upload');
       return;
@@ -536,11 +569,16 @@ export class MigrationEngine {
 
       context.uploadedData.nutrition = nutritionData;
     } catch (error) {
-      throw new Error(`Failed to upload nutrition data: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to upload nutrition data: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async uploadProgressDataStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async uploadProgressDataStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     if (!context.transformedData?.progress) {
       context.warnings.push('No progress data to upload');
       return;
@@ -565,27 +603,39 @@ export class MigrationEngine {
 
       context.uploadedData.progress = progressData;
     } catch (error) {
-      throw new Error(`Failed to upload progress data: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to upload progress data: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async verifyMigrationStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async verifyMigrationStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     try {
       // Verify uploaded data exists in Supabase
       await this.verifyDataInSupabase(context);
     } catch (error) {
-      throw new Error(`Migration verification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Migration verification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async cleanupLocalStep(data: LocalStorageSchema, context: MigrationContext): Promise<void> {
+  private async cleanupLocalStep(
+    data: LocalStorageSchema,
+    context: MigrationContext
+  ): Promise<void> {
     try {
       // Clear local storage after successful migration
       await enhancedLocalStorage.clearAll();
       context.warnings.push('Local storage cleared after successful migration');
     } catch (error) {
       // Non-critical error - log but don't fail migration
-      context.warnings.push(`Failed to cleanup local storage: ${error instanceof Error ? error.message : String(error)}`);
+      context.warnings.push(
+        `Failed to cleanup local storage: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -605,7 +655,9 @@ export class MigrationEngine {
         await this.deleteFromSupabase('body_analysis', context.userId, context);
         delete context.uploadedData.user;
       } catch (error) {
-        context.warnings.push(`Failed to rollback user profile: ${error instanceof Error ? error.message : String(error)}`);
+        context.warnings.push(
+          `Failed to rollback user profile: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
   }
@@ -620,7 +672,9 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.fitness;
       } catch (error) {
-        context.warnings.push(`Failed to rollback fitness data: ${error instanceof Error ? error.message : String(error)}`);
+        context.warnings.push(
+          `Failed to rollback fitness data: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
   }
@@ -635,7 +689,9 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.nutrition;
       } catch (error) {
-        context.warnings.push(`Failed to rollback nutrition data: ${error instanceof Error ? error.message : String(error)}`);
+        context.warnings.push(
+          `Failed to rollback nutrition data: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
   }
@@ -650,7 +706,9 @@ export class MigrationEngine {
         // Execute rollback queries
         delete context.uploadedData.progress;
       } catch (error) {
-        context.warnings.push(`Failed to rollback progress data: ${error instanceof Error ? error.message : String(error)}`);
+        context.warnings.push(
+          `Failed to rollback progress data: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
   }
@@ -659,21 +717,27 @@ export class MigrationEngine {
   // HELPER METHODS
   // ============================================================================
 
-  private async uploadToSupabase(table: string, data: any, context: MigrationContext): Promise<void> {
+  private async uploadToSupabase(
+    table: string,
+    data: any,
+    context: MigrationContext
+  ): Promise<void> {
     try {
       // Use Supabase MCP tools to insert data
       const projectId = 'mqfrwtmkokivoxgukgsz';
 
       // Prepare the SQL insert query
       const columns = Object.keys(data).join(', ');
-      const values = Object.values(data).map(value => {
-        if (value === null || value === undefined) return 'NULL';
-        if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
-        if (typeof value === 'boolean') return value.toString();
-        if (Array.isArray(value)) return `ARRAY[${value.map(v => `'${v}'`).join(', ')}]`;
-        if (typeof value === 'object') return `'${JSON.stringify(value)}'::jsonb`;
-        return value.toString();
-      }).join(', ');
+      const values = Object.values(data)
+        .map((value) => {
+          if (value === null || value === undefined) return 'NULL';
+          if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
+          if (typeof value === 'boolean') return value.toString();
+          if (Array.isArray(value)) return `ARRAY[${value.map((v) => `'${v}'`).join(', ')}]`;
+          if (typeof value === 'object') return `'${JSON.stringify(value)}'::jsonb`;
+          return value.toString();
+        })
+        .join(', ');
 
       const query = `INSERT INTO ${table} (${columns}) VALUES (${values})`;
 
@@ -683,13 +747,18 @@ export class MigrationEngine {
 
       // For now, simulate the upload with a small delay
       await this.sleep(50 + Math.random() * 100);
-
     } catch (error) {
-      throw new Error(`Failed to upload to ${table}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to upload to ${table}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async deleteFromSupabase(table: string, id: string, context: MigrationContext): Promise<void> {
+  private async deleteFromSupabase(
+    table: string,
+    id: string,
+    context: MigrationContext
+  ): Promise<void> {
     try {
       const projectId = 'mqfrwtmkokivoxgukgsz';
       const query = `DELETE FROM ${table} WHERE id = '${id}'`;
@@ -697,9 +766,10 @@ export class MigrationEngine {
       // Execute the query using Supabase MCP tools
       console.log(`Deleting from ${table}: ${id}`);
       await this.sleep(50 + Math.random() * 100);
-
     } catch (error) {
-      throw new Error(`Failed to delete from ${table}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to delete from ${table}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -737,9 +807,10 @@ export class MigrationEngine {
 
       await this.sleep(200 + Math.random() * 300);
       console.log('Data verification completed successfully');
-
     } catch (error) {
-      throw new Error(`Data verification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Data verification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -748,7 +819,9 @@ export class MigrationEngine {
       const backupKey = `migration_backup_${migrationId}`;
       await enhancedLocalStorage.storeData(backupKey, data);
     } catch (error) {
-      throw new Error(`Failed to create backup: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to create backup: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -758,7 +831,9 @@ export class MigrationEngine {
       const backupKey = `migration_backup_${context.migrationId}`;
       await enhancedLocalStorage.removeData(backupKey);
     } catch (error) {
-      context.warnings.push(`Failed to cleanup backup: ${error instanceof Error ? error.message : String(error)}`);
+      context.warnings.push(
+        `Failed to cleanup backup: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -806,7 +881,9 @@ export class MigrationEngine {
     };
   }
 
-  private calculateMigratedDataCount(context: MigrationContext): MigrationResult['migratedDataCount'] {
+  private calculateMigratedDataCount(
+    context: MigrationContext
+  ): MigrationResult['migratedDataCount'] {
     return {
       userProfiles: context.uploadedData.user ? 1 : 0,
       workoutSessions: context.uploadedData.fitness?.sessions?.length || 0,
@@ -845,7 +922,7 @@ export class MigrationEngine {
     message: string
   ): void {
     const progress = this.createProgressUpdate(context, status, message);
-    this.progressCallbacks.forEach(callback => {
+    this.progressCallbacks.forEach((callback) => {
       try {
         callback(progress);
       } catch (error) {

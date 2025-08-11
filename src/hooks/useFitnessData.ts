@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { fitnessDataService, Exercise, Workout, UserWorkoutPreferences, FitnessGoals } from '../services/fitnessData';
+import {
+  fitnessDataService,
+  Exercise,
+  Workout,
+  UserWorkoutPreferences,
+  FitnessGoals,
+} from '../services/fitnessData';
 import { useAuth } from './useAuth';
 
 interface UseFitnessDataReturn {
@@ -52,11 +58,14 @@ interface UseFitnessDataReturn {
     calories_burned?: number;
     notes?: string;
   }) => Promise<boolean>;
-  completeWorkout: (workoutId: string, completionData: {
-    duration_minutes?: number;
-    calories_burned?: number;
-    notes?: string;
-  }) => Promise<boolean>;
+  completeWorkout: (
+    workoutId: string,
+    completionData: {
+      duration_minutes?: number;
+      calories_burned?: number;
+      notes?: string;
+    }
+  ) => Promise<boolean>;
   startWorkoutSession: (workoutData: {
     name: string;
     type: string;
@@ -111,51 +120,57 @@ export const useFitnessData = (): UseFitnessDataReturn => {
   const [statsError, setStatsError] = useState<string | null>(null);
 
   // Load exercises
-  const loadExercises = useCallback(async (filters?: {
-    category?: string;
-    difficulty?: string;
-    equipment?: string[];
-    search?: string;
-  }) => {
-    setExercisesLoading(true);
-    setExercisesError(null);
+  const loadExercises = useCallback(
+    async (filters?: {
+      category?: string;
+      difficulty?: string;
+      equipment?: string[];
+      search?: string;
+    }) => {
+      setExercisesLoading(true);
+      setExercisesError(null);
 
-    try {
-      const response = await fitnessDataService.getExercises(filters);
-      
-      if (response.success && response.data) {
-        setExercises(response.data);
-      } else {
-        setExercisesError(response.error || 'Failed to load exercises');
+      try {
+        const response = await fitnessDataService.getExercises(filters);
+
+        if (response.success && response.data) {
+          setExercises(response.data);
+        } else {
+          setExercisesError(response.error || 'Failed to load exercises');
+        }
+      } catch (error) {
+        setExercisesError(error instanceof Error ? error.message : 'Failed to load exercises');
+      } finally {
+        setExercisesLoading(false);
       }
-    } catch (error) {
-      setExercisesError(error instanceof Error ? error.message : 'Failed to load exercises');
-    } finally {
-      setExercisesLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   // Load user workouts
-  const loadUserWorkouts = useCallback(async (limit?: number) => {
-    if (!user?.id) return;
+  const loadUserWorkouts = useCallback(
+    async (limit?: number) => {
+      if (!user?.id) return;
 
-    setUserWorkoutsLoading(true);
-    setUserWorkoutsError(null);
+      setUserWorkoutsLoading(true);
+      setUserWorkoutsError(null);
 
-    try {
-      const response = await fitnessDataService.getUserWorkouts(user.id, limit);
-      
-      if (response.success && response.data) {
-        setUserWorkouts(response.data);
-      } else {
-        setUserWorkoutsError(response.error || 'Failed to load workouts');
+      try {
+        const response = await fitnessDataService.getUserWorkouts(user.id, limit);
+
+        if (response.success && response.data) {
+          setUserWorkouts(response.data);
+        } else {
+          setUserWorkoutsError(response.error || 'Failed to load workouts');
+        }
+      } catch (error) {
+        setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to load workouts');
+      } finally {
+        setUserWorkoutsLoading(false);
       }
-    } catch (error) {
-      setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to load workouts');
-    } finally {
-      setUserWorkoutsLoading(false);
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Load workout preferences
   const loadWorkoutPreferences = useCallback(async () => {
@@ -166,7 +181,7 @@ export const useFitnessData = (): UseFitnessDataReturn => {
 
     try {
       const response = await fitnessDataService.getUserWorkoutPreferences(user.id);
-      
+
       if (response.success && response.data) {
         setWorkoutPreferences(response.data);
       } else {
@@ -188,7 +203,7 @@ export const useFitnessData = (): UseFitnessDataReturn => {
 
     try {
       const response = await fitnessDataService.getUserFitnessGoals(user.id);
-      
+
       if (response.success && response.data) {
         setFitnessGoals(response.data);
       } else {
@@ -202,82 +217,91 @@ export const useFitnessData = (): UseFitnessDataReturn => {
   }, [user?.id]);
 
   // Load workout stats
-  const loadWorkoutStats = useCallback(async (timeRange?: 'week' | 'month' | 'year') => {
-    if (!user?.id) return;
+  const loadWorkoutStats = useCallback(
+    async (timeRange?: 'week' | 'month' | 'year') => {
+      if (!user?.id) return;
 
-    setStatsLoading(true);
-    setStatsError(null);
+      setStatsLoading(true);
+      setStatsError(null);
 
-    try {
-      const response = await fitnessDataService.getWorkoutStats(user.id, timeRange);
-      
-      if (response.success && response.data) {
-        setWorkoutStats(response.data);
-      } else {
-        setStatsError(response.error || 'Failed to load stats');
+      try {
+        const response = await fitnessDataService.getWorkoutStats(user.id, timeRange);
+
+        if (response.success && response.data) {
+          setWorkoutStats(response.data);
+        } else {
+          setStatsError(response.error || 'Failed to load stats');
+        }
+      } catch (error) {
+        setStatsError(error instanceof Error ? error.message : 'Failed to load stats');
+      } finally {
+        setStatsLoading(false);
       }
-    } catch (error) {
-      setStatsError(error instanceof Error ? error.message : 'Failed to load stats');
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Create workout
-  const createWorkout = useCallback(async (workoutData: {
-    name: string;
-    type: string;
-    duration_minutes?: number;
-    calories_burned?: number;
-    notes?: string;
-  }): Promise<boolean> => {
-    if (!user?.id) return false;
+  const createWorkout = useCallback(
+    async (workoutData: {
+      name: string;
+      type: string;
+      duration_minutes?: number;
+      calories_burned?: number;
+      notes?: string;
+    }): Promise<boolean> => {
+      if (!user?.id) return false;
 
-    try {
-      const response = await fitnessDataService.createWorkout({
-        ...workoutData,
-        user_id: user.id,
-      });
+      try {
+        const response = await fitnessDataService.createWorkout({
+          ...workoutData,
+          user_id: user.id,
+        });
 
-      if (response.success) {
-        // Refresh user workouts
-        await loadUserWorkouts();
-        return true;
-      } else {
-        setUserWorkoutsError(response.error || 'Failed to create workout');
+        if (response.success) {
+          // Refresh user workouts
+          await loadUserWorkouts();
+          return true;
+        } else {
+          setUserWorkoutsError(response.error || 'Failed to create workout');
+          return false;
+        }
+      } catch (error) {
+        setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to create workout');
         return false;
       }
-    } catch (error) {
-      setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to create workout');
-      return false;
-    }
-  }, [user?.id, loadUserWorkouts]);
+    },
+    [user?.id, loadUserWorkouts]
+  );
 
   // Complete workout
-  const completeWorkout = useCallback(async (workoutId: string, completionData: {
-    duration_minutes?: number;
-    calories_burned?: number;
-    notes?: string;
-  }): Promise<boolean> => {
-    try {
-      const response = await fitnessDataService.completeWorkout(workoutId, completionData);
+  const completeWorkout = useCallback(
+    async (
+      workoutId: string,
+      completionData: {
+        duration_minutes?: number;
+        calories_burned?: number;
+        notes?: string;
+      }
+    ): Promise<boolean> => {
+      try {
+        const response = await fitnessDataService.completeWorkout(workoutId, completionData);
 
-      if (response.success) {
-        // Refresh user workouts and stats
-        await Promise.all([
-          loadUserWorkouts(),
-          loadWorkoutStats('week'),
-        ]);
-        return true;
-      } else {
-        setUserWorkoutsError(response.error || 'Failed to complete workout');
+        if (response.success) {
+          // Refresh user workouts and stats
+          await Promise.all([loadUserWorkouts(), loadWorkoutStats('week')]);
+          return true;
+        } else {
+          setUserWorkoutsError(response.error || 'Failed to complete workout');
+          return false;
+        }
+      } catch (error) {
+        setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to complete workout');
         return false;
       }
-    } catch (error) {
-      setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to complete workout');
-      return false;
-    }
-  }, [loadUserWorkouts, loadWorkoutStats]);
+    },
+    [loadUserWorkouts, loadWorkoutStats]
+  );
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
@@ -290,58 +314,78 @@ export const useFitnessData = (): UseFitnessDataReturn => {
       loadFitnessGoals(),
       loadWorkoutStats('week'),
     ]);
-  }, [isAuthenticated, user?.id, loadExercises, loadUserWorkouts, loadWorkoutPreferences, loadFitnessGoals, loadWorkoutStats]);
+  }, [
+    isAuthenticated,
+    user?.id,
+    loadExercises,
+    loadUserWorkouts,
+    loadWorkoutPreferences,
+    loadFitnessGoals,
+    loadWorkoutStats,
+  ]);
 
   // Start workout session
-  const startWorkoutSession = useCallback(async (workoutData: {
-    name: string;
-    type: string;
-    exercises: {
-      exercise_id: string;
-      sets?: number;
-      reps?: number;
-      weight_kg?: number;
-      duration_seconds?: number;
-      rest_seconds?: number;
-    }[];
-  }): Promise<boolean> => {
-    if (!user?.id) return false;
+  const startWorkoutSession = useCallback(
+    async (workoutData: {
+      name: string;
+      type: string;
+      exercises: {
+        exercise_id: string;
+        sets?: number;
+        reps?: number;
+        weight_kg?: number;
+        duration_seconds?: number;
+        rest_seconds?: number;
+      }[];
+    }): Promise<boolean> => {
+      if (!user?.id) return false;
 
-    try {
-      const response = await fitnessDataService.startWorkoutSession(user.id, workoutData);
+      try {
+        const response = await fitnessDataService.startWorkoutSession(user.id, workoutData);
 
-      if (response.success) {
-        // Refresh user workouts
-        await loadUserWorkouts();
-        return true;
-      } else {
-        setUserWorkoutsError(response.error || 'Failed to start workout session');
+        if (response.success) {
+          // Refresh user workouts
+          await loadUserWorkouts();
+          return true;
+        } else {
+          setUserWorkoutsError(response.error || 'Failed to start workout session');
+          return false;
+        }
+      } catch (error) {
+        setUserWorkoutsError(
+          error instanceof Error ? error.message : 'Failed to start workout session'
+        );
         return false;
       }
-    } catch (error) {
-      setUserWorkoutsError(error instanceof Error ? error.message : 'Failed to start workout session');
-      return false;
-    }
-  }, [user?.id, loadUserWorkouts]);
+    },
+    [user?.id, loadUserWorkouts]
+  );
 
   // Get recommended exercises
-  const getRecommendedExercises = useCallback(async (workoutType?: string, limit: number = 5): Promise<Exercise[]> => {
-    if (!user?.id) return [];
+  const getRecommendedExercises = useCallback(
+    async (workoutType?: string, limit: number = 5): Promise<Exercise[]> => {
+      if (!user?.id) return [];
 
-    try {
-      const response = await fitnessDataService.getRecommendedExercises(user.id, workoutType, limit);
+      try {
+        const response = await fitnessDataService.getRecommendedExercises(
+          user.id,
+          workoutType,
+          limit
+        );
 
-      if (response.success && response.data) {
-        return response.data;
-      } else {
-        console.warn('Failed to get recommended exercises:', response.error);
+        if (response.success && response.data) {
+          return response.data;
+        } else {
+          console.warn('Failed to get recommended exercises:', response.error);
+          return [];
+        }
+      } catch (error) {
+        console.warn('Error getting recommended exercises:', error);
         return [];
       }
-    } catch (error) {
-      console.warn('Error getting recommended exercises:', error);
-      return [];
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Clear all errors
   const clearErrors = useCallback(() => {

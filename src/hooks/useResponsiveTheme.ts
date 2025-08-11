@@ -25,7 +25,7 @@ export const useResponsiveStyles = <T extends Record<string, any>>(
   styleCreator: (theme: ReturnType<typeof createResponsiveTheme>) => T
 ) => {
   const theme = useResponsiveTheme();
-  
+
   return useMemo(() => {
     try {
       return styleCreator(theme);

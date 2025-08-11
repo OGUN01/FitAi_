@@ -43,25 +43,23 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   // Direct lookup by exercise ID with fallbacks
   let exercise = exerciseFilterService.getExerciseById(exerciseId);
-  
+
   // Fallback: Try case-insensitive and trimmed lookup if first attempt fails
   if (!exercise && exerciseId) {
     const cleanId = exerciseId.trim();
     const allIds = exerciseFilterService.getAllExerciseIds();
-    const matchingId = allIds.find(id => 
-      id.toLowerCase() === cleanId.toLowerCase()
-    );
+    const matchingId = allIds.find((id) => id.toLowerCase() === cleanId.toLowerCase());
     if (matchingId) {
       exercise = exerciseFilterService.getExerciseById(matchingId);
       console.log(`🔄 Used fallback lookup: "${exerciseId}" → "${matchingId}"`);
     }
   }
-  
+
   // 🐛 DEBUG: Log exercise lookup details (DISABLED TO STOP SPAM)
   if (exerciseId && !exercise) {
     console.log(`🔍 ExerciseGifPlayer - Exercise NOT FOUND for ID: "${exerciseId}"`);
   }
-  
+
   // Always prioritize database name over passed name to avoid showing IDs
   const displayName = exercise?.name || exerciseName || 'Exercise';
 
@@ -97,7 +95,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   const renderFullscreenModal = () => {
     if (!exercise || !exercise.gifUrl) return null;
-    
+
     const screenDimensions = Dimensions.get('window');
     const modalWidth = screenDimensions.width * 0.9;
     const modalHeight = screenDimensions.height * 0.7;
@@ -112,30 +110,22 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
         <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
         <View style={styles.fullscreenOverlay}>
           <View style={styles.fullscreenContainer}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={toggleFullscreen}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={toggleFullscreen}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
-            
+
             <Text style={styles.fullscreenTitle}>{displayName}</Text>
-            
+
             <Image
-              source={{ 
+              source={{
                 uri: exercise.gifUrl,
-                cache: 'force-cache'
+                cache: 'force-cache',
               }}
-              style={[
-                styles.fullscreenGif,
-                { width: modalWidth, height: modalHeight * 0.8 }
-              ]}
+              style={[styles.fullscreenGif, { width: modalWidth, height: modalHeight * 0.8 }]}
               resizeMode="contain"
             />
-            
-            <Text style={styles.fullscreenHint}>
-              🔍 Maximum quality view • Tap × to close
-            </Text>
+
+            <Text style={styles.fullscreenHint}>🔍 Maximum quality view • Tap × to close</Text>
           </View>
         </View>
       </Modal>
@@ -158,21 +148,17 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             </View>
           </View>
         )}
-        
+
         {/* Equipment and muscle info */}
         <View style={styles.infoRow}>
           {exercise.equipments?.length > 0 && (
             <View style={styles.infoChip}>
-              <Text style={styles.infoChipText}>
-                🏋️ {exercise.equipments?.[0] || 'Equipment'}
-              </Text>
+              <Text style={styles.infoChipText}>🏋️ {exercise.equipments?.[0] || 'Equipment'}</Text>
             </View>
           )}
           {exercise.targetMuscles?.length > 0 && (
             <View style={styles.infoChip}>
-              <Text style={styles.infoChipText}>
-                💪 {exercise.targetMuscles?.[0] || 'Muscle'}
-              </Text>
+              <Text style={styles.infoChipText}>💪 {exercise.targetMuscles?.[0] || 'Muscle'}</Text>
             </View>
           )}
         </View>
@@ -194,12 +180,8 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
       return (
         <View style={[styles.placeholder, { height, width }]}>
           <Text style={styles.placeholderEmoji}>🚨</Text>
-          <Text style={styles.placeholderText}>
-            Exercise Not Found
-          </Text>
-          <Text style={styles.placeholderSubtext}>
-            ID: {exerciseId}
-          </Text>
+          <Text style={styles.placeholderText}>Exercise Not Found</Text>
+          <Text style={styles.placeholderSubtext}>ID: {exerciseId}</Text>
         </View>
       );
     }
@@ -212,12 +194,12 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             <Text style={styles.loadingText}>Loading demonstration...</Text>
           </View>
         )}
-        
+
         {hasError ? (
           <View style={styles.errorContainer}>
             <Text style={styles.errorEmoji}>⚠️</Text>
             <Text style={styles.errorText}>Failed to load demonstration</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.retryButton}
               onPress={() => {
                 setHasError(false);
@@ -235,31 +217,31 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               style={styles.gifTouchArea}
             >
               <Image
-                source={{ 
+                source={{
                   uri: exercise.gifUrl,
-                  cache: 'force-cache' // Better caching for repeated views
+                  cache: 'force-cache', // Better caching for repeated views
                 }}
                 style={[
-                  styles.gif, 
-                  { 
-                    height: height,
-                    width: width,
+                  styles.gif,
+                  {
+                    height,
+                    width,
                     maxWidth: '100%',
-                    maxHeight: '100%'
-                  }
+                    maxHeight: '100%',
+                  },
                 ]}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
                 resizeMode="contain" // Maintain aspect ratio while fitting container
                 fadeDuration={300} // Smoother loading transition
               />
-              
+
               {/* Zoom hint overlay */}
               <View style={styles.zoomHint}>
                 <Text style={styles.zoomHintText}>🔍 Tap to zoom</Text>
               </View>
             </TouchableOpacity>
-            
+
             {/* Playback controls overlay */}
             <TouchableOpacity
               style={styles.playbackOverlay}
@@ -267,9 +249,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               activeOpacity={0.7}
             >
               <View style={styles.playbackButton}>
-                <Text style={styles.playbackIcon}>
-                  {isPlaying ? '⏸️' : '▶️'}
-                </Text>
+                <Text style={styles.playbackIcon}>{isPlaying ? '⏸️' : '▶️'}</Text>
               </View>
             </TouchableOpacity>
           </>

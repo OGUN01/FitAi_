@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 export const HomeScreenIntegrationExample: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const { user } = useAuth();
   const {
     getUserStats,
@@ -21,7 +21,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
     isOnline,
     profile,
   } = useDashboardIntegration();
-  
+
   const { formatWeight, formatHeight } = useUnitConversion();
   const { syncNow, queueLength, syncInProgress } = useOffline();
 
@@ -36,13 +36,13 @@ export const HomeScreenIntegrationExample: React.FC = () => {
    */
   const handleRefresh = async () => {
     setRefreshing(true);
-    
+
     try {
       // Sync offline data if needed
       if (queueLength > 0) {
         await syncNow();
       }
-      
+
       // Refresh user data
       if (user) {
         // You could reload profile data here if needed
@@ -59,11 +59,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor="#ff6b35"
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#ff6b35" />
       }
     >
       {/* Header with user greeting */}
@@ -80,7 +76,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
       {/* Quick Stats - Real Data */}
       <View style={styles.statsContainer}>
         <Text style={styles.sectionTitle}>Today's Overview</Text>
-        
+
         <View style={styles.statsGrid}>
           <StatCard
             title="Total Workouts"
@@ -88,21 +84,21 @@ export const HomeScreenIntegrationExample: React.FC = () => {
             icon="💪"
             subtitle="All time"
           />
-          
+
           <StatCard
             title="Current Streak"
             value={`${stats.currentStreak} days`}
             icon="🔥"
             subtitle="Keep it up!"
           />
-          
+
           <StatCard
             title="Calories Burned"
             value={stats.totalCaloriesBurned.toString()}
             icon="⚡"
             subtitle="Total"
           />
-          
+
           <StatCard
             title="Longest Streak"
             value={`${stats.longestStreak} days`}
@@ -116,7 +112,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
       {healthMetrics && (
         <View style={styles.healthContainer}>
           <Text style={styles.sectionTitle}>Health Metrics</Text>
-          
+
           <View style={styles.healthGrid}>
             <HealthMetricCard
               title="BMI"
@@ -124,14 +120,14 @@ export const HomeScreenIntegrationExample: React.FC = () => {
               subtitle={healthMetrics.bmiCategory}
               color={getBMIColor(healthMetrics.bmi)}
             />
-            
+
             <HealthMetricCard
               title="Weight"
               value={formatWeight(healthMetrics.weight)}
               subtitle="Current"
               color="#4CAF50"
             />
-            
+
             <HealthMetricCard
               title="Height"
               value={formatHeight(healthMetrics.height)}
@@ -146,7 +142,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
       {dailyCalories && (
         <View style={styles.caloriesContainer}>
           <Text style={styles.sectionTitle}>Daily Nutrition Goal</Text>
-          
+
           <View style={styles.caloriesCard}>
             <Text style={styles.caloriesValue}>{dailyCalories}</Text>
             <Text style={styles.caloriesLabel}>Calories per day</Text>
@@ -160,7 +156,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
       {/* User Preferences Display */}
       <View style={styles.preferencesContainer}>
         <Text style={styles.sectionTitle}>Your Preferences</Text>
-        
+
         <View style={styles.preferencesList}>
           <PreferenceItem
             label="Units"
@@ -170,10 +166,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
             label="Notifications"
             value={preferences.notifications ? 'Enabled' : 'Disabled'}
           />
-          <PreferenceItem
-            label="Theme"
-            value={preferences.darkMode ? 'Dark Mode' : 'Light Mode'}
-          />
+          <PreferenceItem label="Theme" value={preferences.darkMode ? 'Dark Mode' : 'Light Mode'} />
         </View>
       </View>
 
@@ -192,9 +185,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
         <Text style={styles.instructionsText}>
           • Use useOffline() for sync status and network indicators
         </Text>
-        <Text style={styles.instructionsText}>
-          • Add pull-to-refresh for data synchronization
-        </Text>
+        <Text style={styles.instructionsText}>• Add pull-to-refresh for data synchronization</Text>
       </View>
     </ScrollView>
   );

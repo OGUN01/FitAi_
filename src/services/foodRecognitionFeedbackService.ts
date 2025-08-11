@@ -37,7 +37,7 @@ export class FoodRecognitionFeedbackService {
         userId,
         mealId,
         feedbackCount: feedback.length,
-        averageRating: feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length
+        averageRating: feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length,
       });
 
       // Calculate overall feedback statistics
@@ -49,25 +49,25 @@ export class FoodRecognitionFeedbackService {
         meal_id: mealId,
         feedback_data: {
           originalImageUri,
-          recognizedFoods: recognizedFoods.map(food => ({
+          recognizedFoods: recognizedFoods.map((food) => ({
             id: food.id,
             name: food.name,
             confidence: food.confidence,
             cuisine: food.cuisine,
             enhancementSource: food.enhancementSource,
             portionSize: food.portionSize,
-            nutrition: food.nutrition
+            nutrition: food.nutrition,
           })),
           userFeedback: feedback,
           statistics: stats,
           submittedAt: new Date().toISOString(),
-          version: '1.0'
+          version: '1.0',
         },
         overall_accuracy_rating: stats.averageRating,
         foods_correct_count: stats.correctCount,
         foods_incorrect_count: stats.incorrectCount,
         improvement_suggestions: stats.improvementSuggestions,
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toISOString(),
       };
 
       // Store in feedback table
@@ -78,7 +78,9 @@ export class FoodRecognitionFeedbackService {
         .single();
       let { data, error } = insertRes;
       if (error) {
-        console.log('📝 Feedback table may not exist, attempting to store in alternative location...');
+        console.log(
+          '📝 Feedback table may not exist, attempting to store in alternative location...'
+        );
         const alt = await this.storeFeedbackAlternative(feedbackData);
         data = alt.data;
         error = alt.error;
@@ -88,7 +90,7 @@ export class FoodRecognitionFeedbackService {
         console.error('❌ Error storing feedback:', error);
         return {
           success: false,
-          error: (error as any).message || 'Failed to submit feedback'
+          error: (error as any).message || 'Failed to submit feedback',
         };
       }
 
@@ -99,14 +101,13 @@ export class FoodRecognitionFeedbackService {
 
       return {
         success: true,
-        feedbackId: data?.id || 'stored-locally'
+        feedbackId: data?.id || 'stored-locally',
       };
-
     } catch (error) {
       console.error('❌ Failed to submit feedback:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -123,7 +124,7 @@ export class FoodRecognitionFeedbackService {
           event_type: 'food_recognition_feedback',
           user_id: feedbackData.user_id,
           event_data: feedbackData,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -132,23 +133,21 @@ export class FoodRecognitionFeedbackService {
         console.log('📝 Stored feedback locally for future sync:', {
           feedbackId: `local_${Date.now()}`,
           userId: feedbackData.user_id,
-          submittedAt: feedbackData.submitted_at
+          submittedAt: feedbackData.submitted_at,
         });
 
         return {
           data: { id: `local_${Date.now()}` },
-          error: null
+          error: null,
         };
       }
-
-
 
       return { data, error };
     } catch (error) {
       console.warn('Warning: All feedback storage methods failed, storing locally');
       return {
         data: { id: `local_${Date.now()}` },
-        error: null
+        error: null,
       };
     }
   }
@@ -156,7 +155,10 @@ export class FoodRecognitionFeedbackService {
   /**
    * Calculate feedback statistics
    */
-  private calculateFeedbackStats(feedback: FoodFeedback[], recognizedFoods: RecognizedFood[]): {
+  private calculateFeedbackStats(
+    feedback: FoodFeedback[],
+    recognizedFoods: RecognizedFood[]
+  ): {
     averageRating: number;
     correctCount: number;
     incorrectCount: number;
@@ -166,7 +168,7 @@ export class FoodRecognitionFeedbackService {
     cuisineAccuracy: Record<string, { correct: number; total: number }>;
     enhancementSourceAccuracy: Record<string, { correct: number; total: number }>;
   } {
-    const correctCount = feedback.filter(f => f.isCorrect).length;
+    const correctCount = feedback.filter((f) => f.isCorrect).length;
     const incorrectCount = feedback.length - correctCount;
     const averageRating = feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length;
     const accuracyPercentage = (correctCount / feedback.length) * 100;
@@ -216,7 +218,9 @@ export class FoodRecognitionFeedbackService {
     Object.entries(cuisineAccuracy).forEach(([cuisine, stats]) => {
       const cuisineAccuracy = (stats.correct / stats.total) * 100;
       if (cuisineAccuracy < 70) {
-        improvementSuggestions.push(`${cuisine} cuisine recognition needs improvement (${Math.round(cuisineAccuracy)}% accuracy)`);
+        improvementSuggestions.push(
+          `${cuisine} cuisine recognition needs improvement (${Math.round(cuisineAccuracy)}% accuracy)`
+        );
       }
     });
 
@@ -224,7 +228,9 @@ export class FoodRecognitionFeedbackService {
     Object.entries(enhancementSourceAccuracy).forEach(([source, stats]) => {
       const sourceAccuracy = (stats.correct / stats.total) * 100;
       if (sourceAccuracy < 70) {
-        improvementSuggestions.push(`${source} enhancement method needs improvement (${Math.round(sourceAccuracy)}% accuracy)`);
+        improvementSuggestions.push(
+          `${source} enhancement method needs improvement (${Math.round(sourceAccuracy)}% accuracy)`
+        );
       }
     });
 
@@ -236,7 +242,7 @@ export class FoodRecognitionFeedbackService {
       accuracyPercentage: Math.round(accuracyPercentage * 10) / 10,
       improvementSuggestions,
       cuisineAccuracy,
-      enhancementSourceAccuracy
+      enhancementSourceAccuracy,
     };
   }
 
@@ -256,7 +262,7 @@ export class FoodRecognitionFeedbackService {
           accuracy_percentage: stats.accuracyPercentage,
           cuisine_breakdown: stats.cuisineAccuracy,
           enhancement_breakdown: stats.enhancementSourceAccuracy,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         })
         .select()
         .single();
@@ -273,7 +279,10 @@ export class FoodRecognitionFeedbackService {
   /**
    * Get aggregated feedback statistics for analytics
    */
-  async getFeedbackStatistics(userId?: string, days: number = 30): Promise<{
+  async getFeedbackStatistics(
+    userId?: string,
+    days: number = 30
+  ): Promise<{
     totalFeedbacks: number;
     averageRating: number;
     accuracyTrend: Array<{ date: string; accuracy: number }>;
@@ -303,13 +312,15 @@ export class FoodRecognitionFeedbackService {
           averageRating: 0,
           accuracyTrend: [],
           cuisinePerformance: {},
-          commonIssues: []
+          commonIssues: [],
         };
       }
 
       // Calculate statistics
       const totalFeedbacks = data.length;
-      const averageRating = (data as any[]).reduce((sum, feedback) => sum + feedback.overall_accuracy_rating, 0) / totalFeedbacks;
+      const averageRating =
+        (data as any[]).reduce((sum, feedback) => sum + feedback.overall_accuracy_rating, 0) /
+        totalFeedbacks;
 
       // Build accuracy trend
       const dailyAccuracy: Record<string, { correct: number; total: number }> = {};
@@ -319,13 +330,13 @@ export class FoodRecognitionFeedbackService {
           dailyAccuracy[date] = { correct: 0, total: 0 };
         }
         dailyAccuracy[date].correct += feedback.foods_correct_count;
-        dailyAccuracy[date].total += (feedback.foods_correct_count + feedback.foods_incorrect_count);
+        dailyAccuracy[date].total += feedback.foods_correct_count + feedback.foods_incorrect_count;
       });
 
       const accuracyTrend = Object.entries(dailyAccuracy)
         .map(([date, stats]) => ({
           date,
-          accuracy: (stats.correct / stats.total) * 100
+          accuracy: (stats.correct / stats.total) * 100,
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -336,12 +347,14 @@ export class FoodRecognitionFeedbackService {
       (data as any[]).forEach((feedback: any) => {
         // Extract cuisine performance from feedback_data if available
         if (feedback.feedback_data?.statistics?.cuisineAccuracy) {
-          Object.entries(feedback.feedback_data.statistics.cuisineAccuracy).forEach(([cuisine, stats]: [string, any]) => {
-            if (!cuisinePerformance[cuisine]) {
-              cuisinePerformance[cuisine] = 0;
+          Object.entries(feedback.feedback_data.statistics.cuisineAccuracy).forEach(
+            ([cuisine, stats]: [string, any]) => {
+              if (!cuisinePerformance[cuisine]) {
+                cuisinePerformance[cuisine] = 0;
+              }
+              cuisinePerformance[cuisine] += (stats.correct / stats.total) * 100;
             }
-            cuisinePerformance[cuisine] += (stats.correct / stats.total) * 100;
-          });
+          );
         }
 
         // Collect improvement suggestions
@@ -352,7 +365,7 @@ export class FoodRecognitionFeedbackService {
 
       // Get most common issues
       const issueFrequency: Record<string, number> = {};
-      allIssues.forEach(issue => {
+      allIssues.forEach((issue) => {
         issueFrequency[issue] = (issueFrequency[issue] || 0) + 1;
       });
 
@@ -366,9 +379,8 @@ export class FoodRecognitionFeedbackService {
         averageRating: Math.round(averageRating * 10) / 10,
         accuracyTrend,
         cuisinePerformance,
-        commonIssues
+        commonIssues,
       };
-
     } catch (error) {
       console.error('❌ Error getting feedback statistics:', error);
       return {
@@ -376,7 +388,7 @@ export class FoodRecognitionFeedbackService {
         averageRating: 0,
         accuracyTrend: [],
         cuisinePerformance: {},
-        commonIssues: []
+        commonIssues: [],
       };
     }
   }
@@ -399,18 +411,18 @@ export class FoodRecognitionFeedbackService {
       if (error) {
         return {
           success: false,
-          error: error.message
+          error: error.message,
         };
       }
 
       return {
         success: true,
-        feedback: data
+        feedback: data,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get meal feedback'
+        error: error instanceof Error ? error.message : 'Failed to get meal feedback',
       };
     }
   }

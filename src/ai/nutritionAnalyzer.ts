@@ -1,8 +1,16 @@
 // AI-Powered Nutrition Analysis and Meal Planning Service for FitAI
 
-import { geminiService, PROMPT_TEMPLATES, formatUserProfileForAI, calculateDailyCalories } from './gemini';
+import {
+  geminiService,
+  PROMPT_TEMPLATES,
+  formatUserProfileForAI,
+  calculateDailyCalories,
+} from './gemini';
 import { NUTRITION_SCHEMA, FOOD_ANALYSIS_SCHEMA } from './schemas';
-import { SIMPLIFIED_DAILY_NUTRITION_SCHEMA, SIMPLE_FOOD_ANALYSIS_SCHEMA } from './schemas/simplifiedNutritionSchema';
+import {
+  SIMPLIFIED_DAILY_NUTRITION_SCHEMA,
+  SIMPLE_FOOD_ANALYSIS_SCHEMA,
+} from './schemas/simplifiedNutritionSchema';
 import {
   Meal,
   NutritionPlan,
@@ -11,7 +19,7 @@ import {
   AINutritionRequest,
   Macronutrients,
   MealItem,
-  Food
+  Food,
 } from '../types/ai';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 
@@ -20,7 +28,6 @@ import { PersonalInfo, FitnessGoals } from '../types/user';
 // ============================================================================
 
 class NutritionAnalyzerService {
-
   /**
    * Generate a personalized meal based on user profile and preferences
    */
@@ -38,13 +45,13 @@ class NutritionAnalyzerService {
     try {
       const userProfile = formatUserProfileForAI(personalInfo, fitnessGoals);
       const dailyCalories = calculateDailyCalories(personalInfo);
-      
+
       // Calculate meal-specific calorie target
       const mealCalorieTargets = {
         breakfast: Math.round(dailyCalories * 0.25),
         lunch: Math.round(dailyCalories * 0.35),
-        dinner: Math.round(dailyCalories * 0.30),
-        snack: Math.round(dailyCalories * 0.10)
+        dinner: Math.round(dailyCalories * 0.3),
+        snack: Math.round(dailyCalories * 0.1),
       };
 
       const calorieTarget = preferences?.calorieTarget || mealCalorieTargets[mealType];
@@ -55,12 +62,12 @@ class NutritionAnalyzerService {
         calorieTarget,
         dietaryRestrictions: preferences?.dietaryRestrictions?.join(', ') || 'none',
         cuisinePreferences: preferences?.cuisinePreference || 'any',
-        prepTimeLimit: preferences?.prepTimeLimit || 30
+        prepTimeLimit: preferences?.prepTimeLimit || 30,
       };
 
       // 🔧 Using simplified schema to fix nutrition generation issues
       console.log('🧪 Using simplified daily nutrition schema for reliable meal generation...');
-      
+
       const response = await geminiService.generateResponse<any>(
         PROMPT_TEMPLATES.NUTRITION_PLANNING,
         variables,
@@ -68,7 +75,7 @@ class NutritionAnalyzerService {
         2, // Reduced retries for faster debugging
         {
           maxOutputTokens: 2048, // 🔧 Reduced from default to avoid token overflow
-          temperature: 0.4 // 🔧 Lower temperature for consistent JSON structure
+          temperature: 0.4, // 🔧 Lower temperature for consistent JSON structure
         }
       );
 
@@ -93,13 +100,13 @@ class NutritionAnalyzerService {
               protein: item.protein || 0,
               carbohydrates: item.carbs || 0,
               fat: item.fat || 0,
-              fiber: 0
+              fiber: 0,
             },
             servingSize: 100,
             servingUnit: 'g',
             allergens: [],
             dietaryLabels: [],
-            verified: false
+            verified: false,
           },
           quantity: item.quantity,
           calories: item.calories,
@@ -107,15 +114,15 @@ class NutritionAnalyzerService {
             protein: item.protein || 0,
             carbohydrates: item.carbs || 0,
             fat: item.fat || 0,
-            fiber: 0
-          }
+            fiber: 0,
+          },
         })),
         totalCalories: mealData.totalCalories,
         totalMacros: {
           protein: response.data.totalMacros.protein,
           carbohydrates: response.data.totalMacros.carbohydrates,
           fat: response.data.totalMacros.fat,
-          fiber: response.data.totalMacros.fiber
+          fiber: response.data.totalMacros.fiber,
         },
         prepTime: mealData.prepTime,
         difficulty: mealData.difficulty,
@@ -124,7 +131,7 @@ class NutritionAnalyzerService {
         aiGenerated: true,
         scheduledTime: this.getDefaultMealTime(mealType),
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       return {
@@ -132,12 +139,12 @@ class NutritionAnalyzerService {
         data: meal,
         confidence: response.confidence,
         generationTime: response.generationTime,
-        tokensUsed: response.tokensUsed
+        tokensUsed: response.tokensUsed,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Meal generation failed: ${error}`
+        error: `Meal generation failed: ${error}`,
       };
     }
   }
@@ -157,7 +164,12 @@ class NutritionAnalyzerService {
     try {
       const calorieTarget = preferences?.calorieTarget || calculateDailyCalories(personalInfo);
       const meals: Meal[] = [];
-      const mealTypes: ('breakfast' | 'lunch' | 'dinner' | 'snack')[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+      const mealTypes: ('breakfast' | 'lunch' | 'dinner' | 'snack')[] = [
+        'breakfast',
+        'lunch',
+        'dinner',
+        'snack',
+      ];
 
       // Generate each meal
       for (const mealType of mealTypes) {
@@ -167,7 +179,7 @@ class NutritionAnalyzerService {
           mealType,
           {
             dietaryRestrictions: preferences?.dietaryRestrictions,
-            cuisinePreference: preferences?.cuisinePreferences?.[0]
+            cuisinePreference: preferences?.cuisinePreferences?.[0],
           }
         );
 
@@ -179,18 +191,21 @@ class NutritionAnalyzerService {
       if (meals.length === 0) {
         return {
           success: false,
-          error: 'Failed to generate any meals for the day'
+          error: 'Failed to generate any meals for the day',
         };
       }
 
       // Calculate totals
       const totalCalories = meals.reduce((sum, meal) => sum + meal.totalCalories, 0);
-      const totalMacros = meals.reduce((totals, meal) => ({
-        protein: totals.protein + meal.totalMacros.protein,
-        carbohydrates: totals.carbohydrates + meal.totalMacros.carbohydrates,
-        fat: totals.fat + meal.totalMacros.fat,
-        fiber: totals.fiber + meal.totalMacros.fiber
-      }), { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 });
+      const totalMacros = meals.reduce(
+        (totals, meal) => ({
+          protein: totals.protein + meal.totalMacros.protein,
+          carbohydrates: totals.carbohydrates + meal.totalMacros.carbohydrates,
+          fat: totals.fat + meal.totalMacros.fat,
+          fiber: totals.fiber + meal.totalMacros.fiber,
+        }),
+        { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 }
+      );
 
       const dailyPlan: DailyMealPlan = {
         date: new Date().toISOString().split('T')[0],
@@ -198,17 +213,17 @@ class NutritionAnalyzerService {
         totalCalories,
         totalMacros,
         waterIntake: this.calculateWaterTarget(personalInfo),
-        adherence: 100 // Default to 100% for new plans
+        adherence: 100, // Default to 100% for new plans
       };
 
       return {
         success: true,
-        data: dailyPlan
+        data: dailyPlan,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Daily meal plan generation failed: ${error}`
+        error: `Daily meal plan generation failed: ${error}`,
       };
     }
   }
@@ -249,7 +264,7 @@ class NutritionAnalyzerService {
       if (dailyPlans.length === 0) {
         return {
           success: false,
-          error: 'Failed to generate any daily meal plans'
+          error: 'Failed to generate any daily meal plans',
         };
       }
 
@@ -268,17 +283,17 @@ class NutritionAnalyzerService {
         goals: (fitnessGoals.primaryGoals || []) as any[],
         isActive: true,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       return {
         success: true,
-        data: nutritionPlan
+        data: nutritionPlan,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Weekly nutrition plan generation failed: ${error}`
+        error: `Weekly nutrition plan generation failed: ${error}`,
       };
     }
   }
@@ -286,12 +301,9 @@ class NutritionAnalyzerService {
   /**
    * Analyze food from image or description
    */
-  async analyzeFoodItem(
-    description: string,
-    imageBase64?: string
-  ): Promise<AIResponse<Food>> {
+  async analyzeFoodItem(description: string, imageBase64?: string): Promise<AIResponse<Food>> {
     try {
-      let prompt = `
+      const prompt = `
 Analyze the following food item and provide detailed nutritional information:
 
 Food Description: ${description}
@@ -316,15 +328,15 @@ Return ONLY a valid JSON object with this structure:
 
       // 🔧 Using simplified food analysis schema
       console.log('🧪 Using simplified food analysis schema for reliable food recognition...');
-      
+
       const response = await geminiService.generateResponse<any>(
-        prompt, 
-        {}, 
+        prompt,
+        {},
         SIMPLE_FOOD_ANALYSIS_SCHEMA, // ✅ Using simplified schema instead of complex FOOD_ANALYSIS_SCHEMA
         2, // Reduced retries
         {
           maxOutputTokens: 1024, // 🔧 Small response for food analysis
-          temperature: 0.3 // 🔧 Very low temperature for consistent food recognition
+          temperature: 0.3, // 🔧 Very low temperature for consistent food recognition
         }
       );
 
@@ -340,25 +352,25 @@ Return ONLY a valid JSON object with this structure:
           calories: response.data.calories,
           macros: response.data.macros,
           servingSize: response.data.servingSize,
-          servingUnit: response.data.servingUnit
+          servingUnit: response.data.servingUnit,
         },
         allergens: response.data.allergens || [],
         dietaryLabels: response.data.dietaryLabels || [],
         verified: false,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       return {
         success: true,
         data: food,
         confidence: response.confidence,
-        generationTime: response.generationTime
+        generationTime: response.generationTime,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Food analysis failed: ${error}`
+        error: `Food analysis failed: ${error}`,
       };
     }
   }
@@ -382,18 +394,18 @@ Return ONLY a valid JSON object with this structure:
 
   private categorizeFood(name: string): string {
     const categories: Record<string, string[]> = {
-      'protein': ['chicken', 'beef', 'fish', 'eggs', 'tofu', 'beans', 'lentils'],
-      'grains': ['rice', 'bread', 'pasta', 'oats', 'quinoa', 'barley'],
-      'vegetables': ['broccoli', 'spinach', 'carrots', 'tomatoes', 'peppers'],
-      'fruits': ['apple', 'banana', 'berries', 'orange', 'grapes'],
-      'dairy': ['milk', 'cheese', 'yogurt', 'butter'],
-      'nuts_seeds': ['almonds', 'walnuts', 'seeds', 'peanuts'],
-      'oils_fats': ['olive oil', 'coconut oil', 'avocado']
+      protein: ['chicken', 'beef', 'fish', 'eggs', 'tofu', 'beans', 'lentils'],
+      grains: ['rice', 'bread', 'pasta', 'oats', 'quinoa', 'barley'],
+      vegetables: ['broccoli', 'spinach', 'carrots', 'tomatoes', 'peppers'],
+      fruits: ['apple', 'banana', 'berries', 'orange', 'grapes'],
+      dairy: ['milk', 'cheese', 'yogurt', 'butter'],
+      nuts_seeds: ['almonds', 'walnuts', 'seeds', 'peanuts'],
+      oils_fats: ['olive oil', 'coconut oil', 'avocado'],
     };
 
     const lowerName = name.toLowerCase();
     for (const [category, keywords] of Object.entries(categories)) {
-      if (keywords.some(keyword => lowerName.includes(keyword))) {
+      if (keywords.some((keyword) => lowerName.includes(keyword))) {
         return category;
       }
     }
@@ -405,9 +417,9 @@ Return ONLY a valid JSON object with this structure:
       breakfast: '08:00',
       lunch: '12:30',
       dinner: '19:00',
-      snack: '15:00'
+      snack: '15:00',
     };
-    
+
     const today = new Date();
     const timeString = times[mealType as keyof typeof times] || '12:00';
     return `${today.toISOString().split('T')[0]}T${timeString}:00.000Z`;
@@ -423,15 +435,15 @@ Return ONLY a valid JSON object with this structure:
     // Default macro distribution based on goals
     let proteinPercent = 0.25;
     let carbPercent = 0.45;
-    let fatPercent = 0.30;
+    let fatPercent = 0.3;
 
     // Adjust based on primary goals
     if (fitnessGoals.primaryGoals.includes('muscle_gain')) {
-      proteinPercent = 0.30;
-      carbPercent = 0.40;
-      fatPercent = 0.30;
+      proteinPercent = 0.3;
+      carbPercent = 0.4;
+      fatPercent = 0.3;
     } else if (fitnessGoals.primaryGoals.includes('weight_loss')) {
-      proteinPercent = 0.30;
+      proteinPercent = 0.3;
       carbPercent = 0.35;
       fatPercent = 0.35;
     }
@@ -440,7 +452,7 @@ Return ONLY a valid JSON object with this structure:
       protein: Math.round((calorieTarget * proteinPercent) / 4), // 4 cal per gram
       carbohydrates: Math.round((calorieTarget * carbPercent) / 4), // 4 cal per gram
       fat: Math.round((calorieTarget * fatPercent) / 9), // 9 cal per gram
-      fiber: 25 // Standard recommendation
+      fiber: 25, // Standard recommendation
     };
   }
 }

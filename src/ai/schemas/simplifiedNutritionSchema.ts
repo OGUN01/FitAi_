@@ -6,44 +6,44 @@
 // ============================================================================
 
 export const SIMPLIFIED_MEAL_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     name: {
-      type: "string",
-      description: "Meal name"
+      type: 'string',
+      description: 'Meal name',
     },
     description: {
-      type: "string", 
-      description: "Brief meal description"
+      type: 'string',
+      description: 'Brief meal description',
     },
     items: {
-      type: "array",
-      description: "Simple food items",
+      type: 'array',
+      description: 'Simple food items',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           name: {
-            type: "string",
-            description: "Food item name"
+            type: 'string',
+            description: 'Food item name',
           },
           quantity: {
-            type: "string",
-            description: "Amount (e.g., '1 cup', '200g', '2 pieces')"
+            type: 'string',
+            description: "Amount (e.g., '1 cup', '200g', '2 pieces')",
           },
           calories: {
-            type: "number",
-            description: "Estimated calories"
-          }
+            type: 'number',
+            description: 'Estimated calories',
+          },
         },
-        required: ["name", "quantity", "calories"]
-      }
+        required: ['name', 'quantity', 'calories'],
+      },
     },
     totalCalories: {
-      type: "number",
-      description: "Total meal calories"
-    }
+      type: 'number',
+      description: 'Total meal calories',
+    },
   },
-  required: ["name", "description", "items", "totalCalories"]
+  required: ['name', 'description', 'items', 'totalCalories'],
 };
 
 // ============================================================================
@@ -51,110 +51,110 @@ export const SIMPLIFIED_MEAL_SCHEMA = {
 // ============================================================================
 
 export const SIMPLIFIED_DAILY_NUTRITION_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     meals: {
-      type: "array",
-      description: "Daily meals",
+      type: 'array',
+      description: 'Daily meals',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           type: {
-            type: "string",
-            enum: ["breakfast", "lunch", "dinner", "snack"],
-            description: "Meal type"
+            type: 'string',
+            enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+            description: 'Meal type',
           },
           name: {
-            type: "string",
-            description: "Meal name"
+            type: 'string',
+            description: 'Meal name',
           },
           items: {
-            type: "array",
+            type: 'array',
             items: {
-              type: "object", 
+              type: 'object',
               properties: {
-                name: { type: "string" },
-                quantity: { type: "string" },
-                calories: { type: "number" }
+                name: { type: 'string' },
+                quantity: { type: 'string' },
+                calories: { type: 'number' },
               },
-              required: ["name", "quantity", "calories"]
-            }
+              required: ['name', 'quantity', 'calories'],
+            },
           },
           totalCalories: {
-            type: "number"
-          }
+            type: 'number',
+          },
         },
-        required: ["type", "name", "items", "totalCalories"]
-      }
+        required: ['type', 'name', 'items', 'totalCalories'],
+      },
     },
     dailyTotal: {
-      type: "number",
-      description: "Total daily calories"
-    }
+      type: 'number',
+      description: 'Total daily calories',
+    },
   },
-  required: ["meals", "dailyTotal"]
+  required: ['meals', 'dailyTotal'],
 };
 
 // ============================================================================
-// SIMPLIFIED WEEKLY MEAL PLAN SCHEMA 
+// SIMPLIFIED WEEKLY MEAL PLAN SCHEMA
 // ============================================================================
 
 export const SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     planTitle: {
-      type: "string",
-      description: "Weekly meal plan title"
+      type: 'string',
+      description: 'Weekly meal plan title',
     },
     planDescription: {
-      type: "string", 
-      description: "Brief plan overview"
+      type: 'string',
+      description: 'Brief plan overview',
     },
     targetCaloriesPerDay: {
-      type: "number",
-      description: "Daily calorie target"
+      type: 'number',
+      description: 'Daily calorie target',
     },
     meals: {
-      type: "array",
-      description: "Weekly meals (21 total: 7 days × 3 meals)",
+      type: 'array',
+      description: 'Weekly meals (21 total: 7 days × 3 meals)',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           dayOfWeek: {
-            type: "string",
-            enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+            type: 'string',
+            enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
           },
           mealType: {
-            type: "string", 
-            enum: ["breakfast", "lunch", "dinner"]
+            type: 'string',
+            enum: ['breakfast', 'lunch', 'dinner'],
           },
           name: {
-            type: "string",
-            description: "Meal name"
+            type: 'string',
+            description: 'Meal name',
           },
           description: {
-            type: "string",
-            description: "Brief description"
+            type: 'string',
+            description: 'Brief description',
           },
           mainIngredients: {
-            type: "array",
-            items: { type: "string" },
-            description: "Key ingredients (max 5)"
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Key ingredients (max 5)',
           },
           estimatedCalories: {
-            type: "number",
-            description: "Estimated calories"
+            type: 'number',
+            description: 'Estimated calories',
           },
           prepTime: {
-            type: "number", 
-            description: "Prep time in minutes"
-          }
+            type: 'number',
+            description: 'Prep time in minutes',
+          },
         },
-        required: ["dayOfWeek", "mealType", "name", "mainIngredients", "estimatedCalories"]
-      }
-    }
+        required: ['dayOfWeek', 'mealType', 'name', 'mainIngredients', 'estimatedCalories'],
+      },
+    },
   },
-  required: ["planTitle", "planDescription", "targetCaloriesPerDay", "meals"]
+  required: ['planTitle', 'planDescription', 'targetCaloriesPerDay', 'meals'],
 };
 
 // ============================================================================
@@ -162,28 +162,28 @@ export const SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA = {
 // ============================================================================
 
 export const DIAGNOSTIC_NUTRITION_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     planTitle: {
-      type: "string"
+      type: 'string',
     },
     dailyCalories: {
-      type: "number"
+      type: 'number',
     },
     meals: {
-      type: "array",
+      type: 'array',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
-          name: { type: "string" },
-          type: { type: "string" },
-          calories: { type: "number" }
+          name: { type: 'string' },
+          type: { type: 'string' },
+          calories: { type: 'number' },
         },
-        required: ["name", "type", "calories"]
-      }
-    }
+        required: ['name', 'type', 'calories'],
+      },
+    },
   },
-  required: ["planTitle", "dailyCalories", "meals"]
+  required: ['planTitle', 'dailyCalories', 'meals'],
 };
 
 // ============================================================================
@@ -191,24 +191,24 @@ export const DIAGNOSTIC_NUTRITION_SCHEMA = {
 // ============================================================================
 
 export const SIMPLE_FOOD_ANALYSIS_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     name: {
-      type: "string",
-      description: "Food name"
+      type: 'string',
+      description: 'Food name',
     },
     category: {
-      type: "string",
-      description: "Food category"
+      type: 'string',
+      description: 'Food category',
     },
     estimatedCalories: {
-      type: "number",
-      description: "Estimated calories per serving"
+      type: 'number',
+      description: 'Estimated calories per serving',
     },
     servingSize: {
-      type: "string", 
-      description: "Typical serving size"
-    }
+      type: 'string',
+      description: 'Typical serving size',
+    },
   },
-  required: ["name", "category", "estimatedCalories", "servingSize"]
+  required: ['name', 'category', 'estimatedCalories', 'servingSize'],
 };

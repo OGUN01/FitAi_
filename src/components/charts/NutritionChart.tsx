@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { THEME } from '../../utils/constants';
 
@@ -31,7 +26,7 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
 }) => {
   // Calculate percentages and prepare chart data
   const totalMacros = data.carbs + data.protein + data.fat;
-  
+
   const chartData = [
     {
       name: 'Carbs',
@@ -65,13 +60,13 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
   };
 
   // Calculate macro percentages
-  const carbsPercentage = totalMacros > 0 ? (data.carbs / totalMacros * 100) : 0;
-  const proteinPercentage = totalMacros > 0 ? (data.protein / totalMacros * 100) : 0;
-  const fatPercentage = totalMacros > 0 ? (data.fat / totalMacros * 100) : 0;
+  const carbsPercentage = totalMacros > 0 ? (data.carbs / totalMacros) * 100 : 0;
+  const proteinPercentage = totalMacros > 0 ? (data.protein / totalMacros) * 100 : 0;
+  const fatPercentage = totalMacros > 0 ? (data.fat / totalMacros) * 100 : 0;
 
   // Calculate calories from macros (4 cal/g for carbs and protein, 9 cal/g for fat)
-  const calculatedCalories = (data.carbs * 4) + (data.protein * 4) + (data.fat * 9);
-  const caloriesProgress = targetCalories > 0 ? (data.calories / targetCalories * 100) : 0;
+  const calculatedCalories = data.carbs * 4 + data.protein * 4 + data.fat * 9;
+  const caloriesProgress = targetCalories > 0 ? (data.calories / targetCalories) * 100 : 0;
 
   const macroStats = [
     {
@@ -108,19 +103,17 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
       {/* Calories Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
-          <View 
+          <View
             style={[
-              styles.progressFill, 
-              { 
+              styles.progressFill,
+              {
                 width: `${Math.min(caloriesProgress, 100)}%`,
                 backgroundColor: caloriesProgress > 100 ? THEME.colors.error : THEME.colors.primary,
-              }
-            ]} 
+              },
+            ]}
           />
         </View>
-        <Text style={styles.progressText}>
-          {caloriesProgress.toFixed(0)}% of daily goal
-        </Text>
+        <Text style={styles.progressText}>{caloriesProgress.toFixed(0)}% of daily goal</Text>
       </View>
 
       {/* Pie Chart */}

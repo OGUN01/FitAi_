@@ -158,7 +158,13 @@ export interface SyncResult {
 // Storage operation types
 export interface StorageOperation {
   type: 'create' | 'update' | 'delete' | 'sync';
-  dataType: 'personalInfo' | 'fitnessGoals' | 'dietPreferences' | 'workoutPreferences' | 'bodyAnalysis' | 'userProfile';
+  dataType:
+    | 'personalInfo'
+    | 'fitnessGoals'
+    | 'dietPreferences'
+    | 'workoutPreferences'
+    | 'bodyAnalysis'
+    | 'userProfile';
   data: any;
   timestamp: string;
   userId?: string;

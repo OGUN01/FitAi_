@@ -112,10 +112,7 @@ class NutritionDataService {
     barcode?: string;
   }): Promise<NutritionDataResponse<Food[]>> {
     try {
-      let query = supabase
-        .from('foods')
-        .select('*')
-        .order('name');
+      let query = supabase.from('foods').select('*').order('name');
 
       // Apply filters
       if (filters?.category && filters.category !== 'all') {
@@ -156,11 +153,15 @@ class NutritionDataService {
   /**
    * Get user's meal history using Track B's data layer
    */
-  async getUserMeals(userId: string, date?: string, limit?: number): Promise<NutritionDataResponse<Meal[]>> {
+  async getUserMeals(
+    userId: string,
+    date?: string,
+    limit?: number
+  ): Promise<NutritionDataResponse<Meal[]>> {
     try {
       // First try to get from Track B's local storage
       const localMeals = await crudOperations.readMealLogs(date, limit);
-      
+
       if (localMeals.length > 0) {
         // Convert Track B's MealLog format to our Meal format
         const meals = localMeals.map(this.convertMealLogToMeal);
@@ -173,13 +174,15 @@ class NutritionDataService {
       // Fallback to direct Supabase query
       let query = supabase
         .from('meals')
-        .select(`
+        .select(
+          `
           *,
           meal_foods (
             *,
             foods (*)
           )
-        `)
+        `
+        )
         .eq('user_id', userId)
         .order('consumed_at', { ascending: false });
 
@@ -208,13 +211,15 @@ class NutritionDataService {
       }
 
       // Transform the data to match our interface
-      const meals = data?.map(meal => ({
-        ...meal,
-        foods: meal.meal_foods?.map((mf: any) => ({
-          ...mf,
-          food: mf.foods,
-        })) || [],
-      })) || [];
+      const meals =
+        data?.map((meal) => ({
+          ...meal,
+          foods:
+            meal.meal_foods?.map((mf: any) => ({
+              ...mf,
+              food: mf.foods,
+            })) || [],
+        })) || [];
 
       return {
         success: true,
@@ -232,7 +237,9 @@ class NutritionDataService {
   /**
    * Get user's diet preferences
    */
-  async getUserDietPreferences(userId: string): Promise<NutritionDataResponse<UserDietPreferences>> {
+  async getUserDietPreferences(
+    userId: string
+  ): Promise<NutritionDataResponse<UserDietPreferences>> {
     try {
       const { data, error } = await supabase
         .from('diet_preferences')
@@ -250,7 +257,7 @@ class NutritionDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in getUserDietPreferences:', error);
@@ -291,7 +298,7 @@ class NutritionDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in getUserNutritionGoals:', error);
@@ -346,14 +353,17 @@ class NutritionDataService {
   /**
    * Log a meal using Track B's data layer
    */
-  async logMeal(userId: string, mealData: {
-    name: string;
-    type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-    foods: {
-      food_id: string;
-      quantity_grams: number;
-    }[];
-  }): Promise<NutritionDataResponse<Meal>> {
+  async logMeal(
+    userId: string,
+    mealData: {
+      name: string;
+      type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      foods: {
+        food_id: string;
+        quantity_grams: number;
+      }[];
+    }
+  ): Promise<NutritionDataResponse<Meal>> {
     try {
       // Calculate nutrition totals
       const nutritionTotals = await this.calculateMealNutrition(mealData.foods);
@@ -363,7 +373,7 @@ class NutritionDataService {
         id: `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId,
         mealType: mealData.type,
-        foods: mealData.foods.map(f => ({
+        foods: mealData.foods.map((f) => ({
           id: `${f.food_id}_${Date.now()}`,
           foodId: f.food_id,
           quantity: f.quantity_grams,
@@ -439,9 +449,7 @@ class NutritionDataService {
           })
         );
 
-        const { error: mealFoodsError } = await supabase
-          .from('meal_foods')
-          .insert(mealFoodsData);
+        const { error: mealFoodsError } = await supabase.from('meal_foods').insert(mealFoodsData);
 
         if (mealFoodsError) {
           console.warn('Warning: Failed to create meal_foods entries:', mealFoodsError);
@@ -451,7 +459,7 @@ class NutritionDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in logMeal:', error);
@@ -465,7 +473,9 @@ class NutritionDataService {
   /**
    * Calculate nutrition totals for a meal
    */
-  private async calculateMealNutrition(foods: { food_id: string; quantity_grams: number }[]): Promise<{
+  private async calculateMealNutrition(
+    foods: { food_id: string; quantity_grams: number }[]
+  ): Promise<{
     calories: number;
     protein: number;
     carbs: number;
@@ -515,16 +525,17 @@ class NutritionDataService {
       total_fat: mealLog.totalMacros?.fat ?? 0,
       consumed_at: mealLog.loggedAt,
       created_at: mealLog.loggedAt,
-      foods: mealLog.foods?.map(f => ({
-        id: `${mealLog.id}_${f.foodId}`,
-        meal_id: mealLog.id,
-        food_id: f.foodId,
-        quantity_grams: f.quantity,
-        calories: f.calories ?? 0,
-        protein: f.macros?.protein ?? 0,
-        carbs: f.macros?.carbohydrates ?? 0,
-        fat: f.macros?.fat ?? 0,
-      })) || [],
+      foods:
+        mealLog.foods?.map((f) => ({
+          id: `${mealLog.id}_${f.foodId}`,
+          meal_id: mealLog.id,
+          food_id: f.foodId,
+          quantity_grams: f.quantity,
+          calories: f.calories ?? 0,
+          protein: f.macros?.protein ?? 0,
+          carbs: f.macros?.carbohydrates ?? 0,
+          fat: f.macros?.fat ?? 0,
+        })) || [],
     };
   }
 }

@@ -118,10 +118,10 @@ export const THEME = {
 export const createResponsiveTheme = () => {
   // Import responsive functions lazily to avoid circular dependency
   const { rf, rp, rbr } = require('./responsive');
-  
+
   return {
     ...THEME,
-    
+
     spacing: {
       xs: rp(THEME.spacing.xs),
       sm: rp(THEME.spacing.sm),
@@ -130,7 +130,7 @@ export const createResponsiveTheme = () => {
       xl: rp(THEME.spacing.xl),
       xxl: rp(THEME.spacing.xxl),
     },
-    
+
     borderRadius: {
       sm: rbr(THEME.borderRadius.sm),
       md: rbr(THEME.borderRadius.md),
@@ -139,7 +139,7 @@ export const createResponsiveTheme = () => {
       xxl: rbr(THEME.borderRadius.xxl),
       full: THEME.borderRadius.full,
     },
-    
+
     fontSize: {
       xs: rf(THEME.fontSize.xs),
       sm: rf(THEME.fontSize.sm),

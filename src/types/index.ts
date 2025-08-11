@@ -2,7 +2,14 @@
 // Keep exports explicit to avoid name collisions across modules.
 
 // User domain
-export { PersonalInfo, FitnessGoals, DietPreferences, WorkoutPreferences, UserProfile, TimeCommitment } from './user';
+export {
+  PersonalInfo,
+  FitnessGoals,
+  DietPreferences,
+  WorkoutPreferences,
+  UserProfile,
+  TimeCommitment,
+} from './user';
 
 // Workout domain
 export { Workout, WorkoutPlan, WorkoutSession } from './workout';

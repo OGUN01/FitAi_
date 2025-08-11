@@ -45,11 +45,10 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [tempSelectedValues, setTempSelectedValues] = useState(selectedValues);
 
-  const filteredOptions = searchable && searchQuery
-    ? options.filter(option =>
-        option.label.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : options;
+  const filteredOptions =
+    searchable && searchQuery
+      ? options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase()))
+      : options;
 
   const isOptionSelected = (value: any) => {
     return tempSelectedValues.includes(value);
@@ -62,7 +61,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     let newSelection;
 
     if (isSelected) {
-      newSelection = tempSelectedValues.filter(val => val !== option.value);
+      newSelection = tempSelectedValues.filter((val) => val !== option.value);
     } else {
       if (maxSelections && tempSelectedValues.length >= maxSelections) {
         return; // Don't add if max selections reached
@@ -87,13 +86,13 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 
   const getSelectedLabels = () => {
     return options
-      .filter(option => selectedValues.includes(option.value))
-      .map(option => option.label);
+      .filter((option) => selectedValues.includes(option.value))
+      .map((option) => option.label);
   };
 
   const getDisplayText = () => {
     const selectedLabels = getSelectedLabels();
-    
+
     if (selectedLabels.length === 0) {
       return placeholder;
     } else if (selectedLabels.length === 1) {
@@ -110,15 +109,12 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <TouchableOpacity
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
       >
-        <Text style={[
-          styles.triggerText,
-          selectedValues.length === 0 && styles.placeholderText
-        ]}>
+        <Text style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}>
           {getDisplayText()}
         </Text>
         <Text style={styles.triggerIcon}>▼</Text>
@@ -126,8 +122,8 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
 
       {/* Selected Items Preview */}
       {selectedValues.length > 0 && (
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.selectedPreview}
         >
@@ -139,18 +135,11 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         </ScrollView>
       )}
 
-      <Modal
-        visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
-      >
+      <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {label || 'Select Options'}
-              </Text>
+              <Text style={styles.modalTitle}>{label || 'Select Options'}</Text>
               {maxSelections && (
                 <Text style={styles.selectionCount}>
                   {tempSelectedValues.length}/{maxSelections} selected
@@ -190,29 +179,31 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                     disabled={isDisabled}
                   >
                     <View style={styles.optionContent}>
-                      {option.icon && (
-                        <Text style={styles.optionIcon}>{option.icon}</Text>
-                      )}
-                      <Text style={[
-                        styles.optionText,
-                        isSelected && styles.optionTextSelected,
-                        isDisabled && styles.optionTextDisabled,
-                      ]}>
+                      {option.icon && <Text style={styles.optionIcon}>{option.icon}</Text>}
+                      <Text
+                        style={[
+                          styles.optionText,
+                          isSelected && styles.optionTextSelected,
+                          isDisabled && styles.optionTextDisabled,
+                        ]}
+                      >
                         {option.label}
                       </Text>
                     </View>
-                    
-                    <View style={[
-                      styles.checkbox,
-                      isSelected && styles.checkboxSelected,
-                      isDisabled && styles.checkboxDisabled,
-                    ]}>
+
+                    <View
+                      style={[
+                        styles.checkbox,
+                        isSelected && styles.checkboxSelected,
+                        isDisabled && styles.checkboxDisabled,
+                      ]}
+                    >
                       {isSelected && <Text style={styles.checkmark}>✓</Text>}
                     </View>
                   </TouchableOpacity>
                 );
               })}
-              
+
               {filteredOptions.length === 0 && (
                 <View style={styles.noResults}>
                   <Text style={styles.noResultsText}>No options found</Text>
@@ -249,7 +240,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
@@ -302,7 +293,7 @@ const styles = StyleSheet.create({
   selectedTagText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
   },
 
   modalOverlay: {
@@ -326,7 +317,7 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
     textAlign: 'center',
   },
@@ -405,7 +396,7 @@ const styles = StyleSheet.create({
 
   optionTextSelected: {
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
   },
 
   optionTextDisabled: {
@@ -435,7 +426,7 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: THEME.fontWeight.bold as '700',
   },
 
   noResults: {

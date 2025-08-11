@@ -6,82 +6,82 @@
 // ============================================================================
 
 export const SIMPLIFIED_WEEKLY_PLAN_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     planTitle: {
-      type: "string",
-      description: "Weekly plan title"
+      type: 'string',
+      description: 'Weekly plan title',
     },
     planDescription: {
-      type: "string",
-      description: "Brief plan overview"
+      type: 'string',
+      description: 'Brief plan overview',
     },
     experienceLevel: {
-      type: "string",
-      enum: ["beginner", "intermediate", "advanced"]
+      type: 'string',
+      enum: ['beginner', 'intermediate', 'advanced'],
     },
     workoutsPerWeek: {
-      type: "number",
-      description: "Number of workout days (3-6)"
+      type: 'number',
+      description: 'Number of workout days (3-6)',
     },
     workouts: {
-      type: "array",
-      description: "List of workouts",
+      type: 'array',
+      description: 'List of workouts',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           dayOfWeek: {
-            type: "string",
-            enum: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+            type: 'string',
+            enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
           },
           title: {
-            type: "string",
-            description: "Workout title"
+            type: 'string',
+            description: 'Workout title',
           },
           category: {
-            type: "string",
-            enum: ["strength", "cardio", "flexibility", "hiit", "hybrid"]
+            type: 'string',
+            enum: ['strength', 'cardio', 'flexibility', 'hiit', 'hybrid'],
           },
           duration: {
-            type: "number",
-            description: "Duration in minutes"
+            type: 'number',
+            description: 'Duration in minutes',
           },
           exercises: {
-            type: "array",
+            type: 'array',
             items: {
-              type: "object",
+              type: 'object',
               properties: {
                 exerciseId: {
-                  type: "string",
-                  description: "Exercise ID from database (7 chars)"
+                  type: 'string',
+                  description: 'Exercise ID from database (7 chars)',
                 },
                 name: {
-                  type: "string"
+                  type: 'string',
                 },
                 sets: {
-                  type: "number"
+                  type: 'number',
                 },
                 reps: {
-                  type: "string"
+                  type: 'string',
                 },
                 restTime: {
-                  type: "number"
-                }
+                  type: 'number',
+                },
               },
-              required: ["exerciseId", "name", "sets", "reps"]
-            }
-          }
+              required: ['exerciseId', 'name', 'sets', 'reps'],
+            },
+          },
         },
-        required: ["dayOfWeek", "title", "category", "duration", "exercises"]
-      }
+        required: ['dayOfWeek', 'title', 'category', 'duration', 'exercises'],
+      },
     },
     restDays: {
-      type: "array",
-      items: { type: "string" },
-      description: "Rest days (e.g., ['sunday', 'wednesday'])"
-    }
+      type: 'array',
+      items: { type: 'string' },
+      description: "Rest days (e.g., ['sunday', 'wednesday'])",
+    },
   },
-  required: ["planTitle", "workouts", "experienceLevel"]
+  required: ['planTitle', 'workouts', 'experienceLevel'],
 };
 
 // ============================================================================
@@ -89,19 +89,19 @@ export const SIMPLIFIED_WEEKLY_PLAN_SCHEMA = {
 // ============================================================================
 
 export const TEST_SIMPLE_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     success: {
-      type: "boolean"
+      type: 'boolean',
     },
     message: {
-      type: "string"
+      type: 'string',
     },
     workoutCount: {
-      type: "number"
-    }
+      type: 'number',
+    },
   },
-  required: ["success", "message", "workoutCount"]
+  required: ['success', 'message', 'workoutCount'],
 };
 
 // ============================================================================
@@ -109,46 +109,46 @@ export const TEST_SIMPLE_SCHEMA = {
 // ============================================================================
 
 export const DIAGNOSTIC_WORKOUT_SCHEMA = {
-  type: "object", 
+  type: 'object',
   properties: {
     planTitle: {
-      type: "string",
-      description: "Simple plan title"
+      type: 'string',
+      description: 'Simple plan title',
     },
     experienceLevel: {
-      type: "string",
-      enum: ["beginner", "intermediate", "advanced"]
+      type: 'string',
+      enum: ['beginner', 'intermediate', 'advanced'],
     },
     workouts: {
-      type: "array",
-      description: "Simple workout list",
+      type: 'array',
+      description: 'Simple workout list',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           dayOfWeek: {
-            type: "string"
+            type: 'string',
           },
           title: {
-            type: "string"
+            type: 'string',
           },
           exercises: {
-            type: "array",
+            type: 'array',
             items: {
-              type: "object",
+              type: 'object',
               properties: {
-                name: { type: "string" },
-                sets: { type: "number" },
-                reps: { type: "string" }
+                name: { type: 'string' },
+                sets: { type: 'number' },
+                reps: { type: 'string' },
               },
-              required: ["name", "sets", "reps"]
-            }
-          }
+              required: ['name', 'sets', 'reps'],
+            },
+          },
         },
-        required: ["dayOfWeek", "title", "exercises"]
-      }
-    }
+        required: ['dayOfWeek', 'title', 'exercises'],
+      },
+    },
   },
-  required: ["planTitle", "experienceLevel", "workouts"]
+  required: ['planTitle', 'experienceLevel', 'workouts'],
 };
 
 // ============================================================================
@@ -156,29 +156,29 @@ export const DIAGNOSTIC_WORKOUT_SCHEMA = {
 // ============================================================================
 
 export const MINIMAL_WORKOUT_SCHEMA = {
-  type: "object",
+  type: 'object',
   properties: {
     title: {
-      type: "string"
+      type: 'string',
     },
     exercises: {
-      type: "array",
+      type: 'array',
       items: {
-        type: "object",
+        type: 'object',
         properties: {
           name: {
-            type: "string"
+            type: 'string',
           },
           sets: {
-            type: "number"
+            type: 'number',
           },
           reps: {
-            type: "number"
-          }
+            type: 'number',
+          },
         },
-        required: ["name", "sets", "reps"]
-      }
-    }
+        required: ['name', 'sets', 'reps'],
+      },
+    },
   },
-  required: ["title", "exercises"]
+  required: ['title', 'exercises'],
 };

@@ -166,10 +166,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
               styles.refreshIcon,
               {
                 transform: [
-                  { rotate: rotationValue.interpolate({
-                    inputRange: [0, 360],
-                    outputRange: ['0deg', '360deg'],
-                  })},
+                  {
+                    rotate: rotationValue.interpolate({
+                      inputRange: [0, 360],
+                      outputRange: ['0deg', '360deg'],
+                    }),
+                  },
                   { scale: scaleValue },
                 ],
                 color: canRefresh ? THEME.colors.primary : THEME.colors.textSecondary,
@@ -178,10 +180,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           >
             {getRefreshIcon()}
           </Animated.Text>
-          <Text style={[
-            styles.refreshText,
-            { color: canRefresh ? THEME.colors.primary : THEME.colors.textSecondary }
-          ]}>
+          <Text
+            style={[
+              styles.refreshText,
+              { color: canRefresh ? THEME.colors.primary : THEME.colors.textSecondary },
+            ]}
+          >
             {getRefreshText()}
           </Text>
         </View>
@@ -244,7 +248,7 @@ const styles = StyleSheet.create({
 
   refreshText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
   },
 
   scrollView: {

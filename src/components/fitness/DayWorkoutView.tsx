@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Animated,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl } from 'react-native';
 import { WorkoutCard } from './WorkoutCard';
 import { ExerciseCard } from './ExerciseCard';
 import { Card, Button, THEME } from '../ui';
@@ -100,8 +93,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         <Text style={styles.emptyStateEmoji}>📋</Text>
         <Text style={styles.emptyStateTitle}>No Workouts Scheduled</Text>
         <Text style={styles.emptyStateSubtitle}>
-          No workouts are planned for {getDayDisplayName(selectedDay).toLowerCase()}. 
-          Generate a personalized workout to get started!
+          No workouts are planned for {getDayDisplayName(selectedDay).toLowerCase()}. Generate a
+          personalized workout to get started!
         </Text>
         {onGenerateWorkout && (
           <Button
@@ -122,12 +115,14 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           key={workout.id}
           style={{
             opacity: fadeAnim,
-            transform: [{
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [20, 0],
-              }),
-            }],
+            transform: [
+              {
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              },
+            ],
           }}
         >
           <WorkoutCard
@@ -138,7 +133,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
             progress={workoutProgress[workout.id] || 0}
             animatedValue={fadeAnim}
           />
-          
+
           {/* Expanded Exercise Details */}
           {expandedWorkout === workout.id && (
             <View style={styles.exercisesContainer}>
@@ -194,9 +189,11 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         <View style={styles.dayInfo}>
           <Text style={styles.dayName}>{getDayDisplayName(selectedDay)}</Text>
           <Text style={styles.daySubtitle}>
-            {isRestDay ? 'Rest & Recovery' :
-             workouts.length === 0 ? 'No workouts planned' :
-             `${workouts.length} workout${workouts.length > 1 ? 's' : ''} planned`}
+            {isRestDay
+              ? 'Rest & Recovery'
+              : workouts.length === 0
+                ? 'No workouts planned'
+                : `${workouts.length} workout${workouts.length > 1 ? 's' : ''} planned`}
           </Text>
         </View>
       </View>
@@ -215,9 +212,11 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           ) : undefined
         }
       >
-        {isRestDay ? renderRestDayContent() :
-         workouts.length === 0 ? renderEmptyState() :
-         renderWorkoutsList()}
+        {isRestDay
+          ? renderRestDayContent()
+          : workouts.length === 0
+            ? renderEmptyState()
+            : renderWorkoutsList()}
 
         {/* Summary Stats */}
         {workouts.length > 0 && !isRestDay && (
@@ -257,7 +256,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-  
+
   dayHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -266,54 +265,54 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: THEME.colors.border,
   },
-  
+
   dayEmoji: {
     fontSize: 32,
     marginRight: THEME.spacing.md,
   },
-  
+
   dayInfo: {
     flex: 1,
   },
-  
+
   dayName: {
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     marginBottom: 2,
   },
-  
+
   daySubtitle: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
   },
-  
+
   scrollView: {
     flex: 1,
     padding: THEME.spacing.lg,
   },
-  
+
   restDayCard: {
     padding: THEME.spacing.xl,
     alignItems: 'center',
   },
-  
+
   restDayContent: {
     alignItems: 'center',
   },
-  
+
   restDayEmoji: {
     fontSize: 64,
     marginBottom: THEME.spacing.md,
   },
-  
+
   restDayTitle: {
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
-  
+
   restDaySubtitle: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
@@ -321,37 +320,37 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.lg,
     lineHeight: 22,
   },
-  
+
   restDayTips: {
     alignSelf: 'stretch',
     marginBottom: THEME.spacing.lg,
   },
-  
+
   restDayTip: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
     textAlign: 'left',
   },
-  
+
   addWorkoutButton: {
     minWidth: 160,
   },
-  
+
   emptyStateCard: {
     padding: THEME.spacing.xl,
     alignItems: 'center',
   },
-  
+
   emptyStateContent: {
     alignItems: 'center',
   },
-  
+
   emptyStateEmoji: {
     fontSize: 64,
     marginBottom: THEME.spacing.md,
   },
-  
+
   emptyStateTitle: {
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
@@ -359,7 +358,7 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.sm,
     textAlign: 'center',
   },
-  
+
   emptyStateSubtitle: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
@@ -367,33 +366,33 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.lg,
     lineHeight: 22,
   },
-  
+
   generateButton: {
     minWidth: 160,
   },
-  
+
   exercisesContainer: {
     marginTop: THEME.spacing.md,
     marginBottom: THEME.spacing.lg,
     paddingHorizontal: THEME.spacing.sm,
   },
-  
+
   exercisesTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
-  
+
   exerciseCard: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   summaryCard: {
     padding: THEME.spacing.lg,
     marginTop: THEME.spacing.lg,
   },
-  
+
   summaryTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.semibold,
@@ -401,29 +400,29 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.md,
     textAlign: 'center',
   },
-  
+
   summaryGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
   },
-  
+
   summaryItem: {
     alignItems: 'center',
   },
-  
+
   summaryValue: {
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.primary,
     marginBottom: THEME.spacing.xs,
   },
-  
+
   summaryLabel: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     textAlign: 'center',
   },
-  
+
   bottomSpacing: {
     height: THEME.spacing.xl,
   },

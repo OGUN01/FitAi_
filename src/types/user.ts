@@ -118,12 +118,7 @@ export interface OnboardingData {
 }
 
 // Activity levels
-export type ActivityLevel =
-  | 'sedentary'
-  | 'light'
-  | 'moderate'
-  | 'active'
-  | 'extreme';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'extreme';
 
 // Gender options
 export type Gender = 'male' | 'female' | 'other';
@@ -142,7 +137,6 @@ export type FitnessGoal =
 
 // Time commitment options
 export type TimeCommitment = '15-30' | '30-45' | '45-60' | '60+';
-
 
 // API request types used by userProfile service/store
 export interface CreateProfileRequest extends PersonalInfo {}

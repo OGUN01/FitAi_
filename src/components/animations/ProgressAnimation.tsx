@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Easing,
-} from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { THEME } from '../../utils/constants';
 
 interface ProgressAnimationProps {
@@ -83,7 +77,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     return (
       <View style={[styles.linearContainer, style]}>
         {label && <Text style={styles.label}>{label}</Text>}
-        
+
         <View style={styles.progressRow}>
           <View style={[styles.linearTrack, { height, backgroundColor }]}>
             <Animated.View
@@ -97,14 +91,15 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
               ]}
             />
           </View>
-          
+
           {showPercentage && (
             <Animated.Text style={[styles.percentageText, { color }]}>
               {animatedValue.interpolate({
                 inputRange: [0, 100],
                 outputRange: [0, progress],
                 extrapolate: 'clamp',
-              })}%
+              })}
+              %
             </Animated.Text>
           )}
         </View>
@@ -115,7 +110,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   const renderCircularProgress = () => {
     const radius = (circularSize - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    
+
     const strokeDashoffset = animatedValue.interpolate({
       inputRange: [0, 100],
       outputRange: [circumference, 0],
@@ -128,7 +123,9 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     });
 
     return (
-      <View style={[styles.circularContainer, { width: circularSize, height: circularSize }, style]}>
+      <View
+        style={[styles.circularContainer, { width: circularSize, height: circularSize }, style]}
+      >
         <Animated.View
           style={[
             styles.circularProgress,
@@ -152,7 +149,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
               },
             ]}
           />
-          
+
           {/* Progress Circle */}
           <Animated.View
             style={[
@@ -187,7 +184,11 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
               {Math.round(progress)}%
             </Animated.Text>
           )}
-          {label && <Text style={[styles.circularLabel, { color: THEME.colors.textSecondary }]}>{label}</Text>}
+          {label && (
+            <Text style={[styles.circularLabel, { color: THEME.colors.textSecondary }]}>
+              {label}
+            </Text>
+          )}
         </View>
       </View>
     );
@@ -196,7 +197,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   const renderRingProgress = () => {
     const radius = (circularSize - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    
+
     return (
       <View style={[styles.ringContainer, { width: circularSize, height: circularSize }, style]}>
         {/* Multiple rings for visual effect */}
@@ -204,7 +205,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           const ringSize = circularSize * multiplier;
           const ringRadius = (ringSize - strokeWidth) / 2;
           const ringCircumference = 2 * Math.PI * ringRadius;
-          
+
           const strokeDashoffset = animatedValue.interpolate({
             inputRange: [0, 100],
             outputRange: [ringCircumference, ringCircumference * (1 - progress / 100)],
@@ -234,11 +235,11 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
         {/* Center Content */}
         <View style={styles.ringCenter}>
           {showPercentage && (
-            <Text style={[styles.ringPercentage, { color }]}>
-              {Math.round(progress)}%
-            </Text>
+            <Text style={[styles.ringPercentage, { color }]}>{Math.round(progress)}%</Text>
           )}
-          {label && <Text style={[styles.ringLabel, { color: THEME.colors.textSecondary }]}>{label}</Text>}
+          {label && (
+            <Text style={[styles.ringLabel, { color: THEME.colors.textSecondary }]}>{label}</Text>
+          )}
         </View>
       </View>
     );

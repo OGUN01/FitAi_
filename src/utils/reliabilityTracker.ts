@@ -36,7 +36,7 @@ class ReliabilityTracker {
     this.issues.push({
       ...issue,
       id,
-      status: 'pending'
+      status: 'pending',
     });
     return id;
   }
@@ -45,7 +45,7 @@ class ReliabilityTracker {
    * Mark an issue as completed
    */
   completeIssue(id: string): boolean {
-    const issue = this.issues.find(i => i.id === id);
+    const issue = this.issues.find((i) => i.id === id);
     if (issue) {
       issue.status = 'completed';
       issue.fixedAt = new Date();
@@ -58,7 +58,7 @@ class ReliabilityTracker {
    * Update issue status
    */
   updateIssueStatus(id: string, status: ReliabilityIssue['status']): boolean {
-    const issue = this.issues.find(i => i.id === id);
+    const issue = this.issues.find((i) => i.id === id);
     if (issue) {
       issue.status = status;
       if (status === 'completed' && !issue.fixedAt) {
@@ -74,22 +74,29 @@ class ReliabilityTracker {
    */
   generateReport(): ReliabilityReport {
     const totalIssues = this.issues.length;
-    const completedIssues = this.issues.filter(i => i.status === 'completed').length;
-    const pendingIssues = this.issues.filter(i => i.status === 'pending').length;
-    const progressPercentage = totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 100;
+    const completedIssues = this.issues.filter((i) => i.status === 'completed').length;
+    const pendingIssues = this.issues.filter((i) => i.status === 'pending').length;
+    const progressPercentage =
+      totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 100;
 
-    const issuesByType = this.issues.reduce((acc, issue) => {
-      acc[issue.type] = (acc[issue.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const issuesByType = this.issues.reduce(
+      (acc, issue) => {
+        acc[issue.type] = (acc[issue.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const issuesBySeverity = this.issues.reduce((acc, issue) => {
-      acc[issue.severity] = (acc[issue.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const issuesBySeverity = this.issues.reduce(
+      (acc, issue) => {
+        acc[issue.severity] = (acc[issue.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const estimatedTimeRemaining = this.issues
-      .filter(i => i.status !== 'completed')
+      .filter((i) => i.status !== 'completed')
       .reduce((acc, issue) => acc + issue.estimatedEffort, 0);
 
     return {
@@ -99,7 +106,7 @@ class ReliabilityTracker {
       progressPercentage,
       issuesByType,
       issuesBySeverity,
-      estimatedTimeRemaining
+      estimatedTimeRemaining,
     };
   }
 
@@ -107,21 +114,21 @@ class ReliabilityTracker {
    * Get issues by status
    */
   getIssuesByStatus(status: ReliabilityIssue['status']): ReliabilityIssue[] {
-    return this.issues.filter(i => i.status === status);
+    return this.issues.filter((i) => i.status === status);
   }
 
   /**
    * Get issues by severity
    */
   getIssuesBySeverity(severity: ReliabilityIssue['severity']): ReliabilityIssue[] {
-    return this.issues.filter(i => i.severity === severity);
+    return this.issues.filter((i) => i.severity === severity);
   }
 
   /**
    * Get issues by type
    */
   getIssuesByType(type: ReliabilityIssue['type']): ReliabilityIssue[] {
-    return this.issues.filter(i => i.type === type);
+    return this.issues.filter((i) => i.type === type);
   }
 
   /**
@@ -135,7 +142,7 @@ class ReliabilityTracker {
     return {
       report: this.generateReport(),
       issues: [...this.issues],
-      generatedAt: new Date()
+      generatedAt: new Date(),
     };
   }
 
@@ -144,7 +151,7 @@ class ReliabilityTracker {
    */
   getTopPriorityIssues(): ReliabilityIssue[] {
     return this.issues
-      .filter(i => i.status !== 'completed')
+      .filter((i) => i.status !== 'completed')
       .sort((a, b) => {
         // Sort by severity (critical first), then by estimated effort (lower first)
         const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
@@ -164,7 +171,7 @@ class ReliabilityTracker {
       severity: 'critical',
       file: 'Multiple files (127 instances)',
       description: 'String fontWeight values causing potential HostFunction errors',
-      estimatedEffort: 2
+      estimatedEffort: 2,
     });
 
     // Console.log issues (10+ files)
@@ -173,7 +180,7 @@ class ReliabilityTracker {
       severity: 'medium',
       file: '10+ files',
       description: 'console.log statements need to be replaced with proper logging',
-      estimatedEffort: 1
+      estimatedEffort: 1,
     });
 
     // Critical TODOs
@@ -183,7 +190,7 @@ class ReliabilityTracker {
       file: 'src/services/dataManager.ts:88',
       line: 88,
       description: 'Implement schema repair logic based on validation errors',
-      estimatedEffort: 4
+      estimatedEffort: 4,
     });
 
     this.addIssue({
@@ -192,7 +199,7 @@ class ReliabilityTracker {
       file: 'src/ai/index.ts:175',
       line: 175,
       description: 'Add demo weekly workout plan generation',
-      estimatedEffort: 2
+      estimatedEffort: 2,
     });
 
     this.addIssue({
@@ -201,7 +208,7 @@ class ReliabilityTracker {
       file: 'src/ai/index.ts:194',
       line: 194,
       description: 'Add demo weekly meal plan generation',
-      estimatedEffort: 2
+      estimatedEffort: 2,
     });
 
     this.addIssue({
@@ -210,7 +217,7 @@ class ReliabilityTracker {
       file: 'src/screens/settings/NotificationsScreen.tsx:109',
       line: 109,
       description: 'Implement time picker',
-      estimatedEffort: 1
+      estimatedEffort: 1,
     });
 
     this.addIssue({
@@ -219,7 +226,7 @@ class ReliabilityTracker {
       file: 'src/services/foodRecognitionService.ts:379',
       line: 379,
       description: 'Implement image compression and optimization',
-      estimatedEffort: 3
+      estimatedEffort: 3,
     });
   }
 }

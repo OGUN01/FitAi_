@@ -2,7 +2,12 @@
 // This file exports all AI services and utilities
 
 // Core AI Services
-export { geminiService, PROMPT_TEMPLATES, formatUserProfileForAI, calculateDailyCalories } from './gemini';
+export {
+  geminiService,
+  PROMPT_TEMPLATES,
+  formatUserProfileForAI,
+  calculateDailyCalories,
+} from './gemini';
 export { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 export { workoutGenerator } from './workoutGenerator';
 export { nutritionAnalyzer } from './nutritionAnalyzer';
@@ -30,7 +35,11 @@ import { demoAIService } from './demoService';
 import { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 import { workoutEngine } from '../features/workouts/WorkoutEngine';
 import { nutritionEngine } from '../features/nutrition/NutritionEngine';
-import { weeklyContentGenerator, WeeklyWorkoutPlan, WeeklyMealPlan } from './weeklyContentGenerator';
+import {
+  weeklyContentGenerator,
+  WeeklyWorkoutPlan,
+  WeeklyMealPlan,
+} from './weeklyContentGenerator';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout, Meal, DailyMealPlan, MotivationalContent, AIResponse } from '../types/ai';
 
@@ -38,7 +47,6 @@ import { Workout, Meal, DailyMealPlan, MotivationalContent, AIResponse } from '.
  * Unified AI Service that automatically switches between real AI and demo mode
  */
 class UnifiedAIService {
-  
   /**
    * Check if real AI is available
    */
@@ -79,7 +87,12 @@ class UnifiedAIService {
     }
   ): Promise<AIResponse<Meal>> {
     if (this.isRealAIAvailable()) {
-      return nutritionEngine.generateSmartMealPlan(personalInfo, fitnessGoals, mealType, preferences);
+      return nutritionEngine.generateSmartMealPlan(
+        personalInfo,
+        fitnessGoals,
+        mealType,
+        preferences
+      );
     } else {
       return demoAIService.generateDemoMeal(personalInfo, fitnessGoals, mealType);
     }
@@ -98,28 +111,112 @@ class UnifiedAIService {
     }
   ): Promise<AIResponse<DailyMealPlan>> {
     if (this.isRealAIAvailable()) {
-      return nutritionEngine.generateDailyMealPlan(personalInfo, fitnessGoals, preferences);
-    } else {
-      // For demo, generate individual meals and combine them
-      const breakfast = await demoAIService.generateDemoMeal('breakfast');
-      const lunch = await demoAIService.generateDemoMeal('lunch'); 
-      const dinner = await demoAIService.generateDemoMeal('dinner');
-      const snack = await demoAIService.generateDemoMeal('snack');
-      
+      // Generate individual meals using the correct method signature
+      const breakfast = await nutritionEngine.generateSmartMealPlan(
+        personalInfo,
+        fitnessGoals,
+        'breakfast',
+        preferences
+      );
+      const lunch = await nutritionEngine.generateSmartMealPlan(
+        personalInfo,
+        fitnessGoals,
+        'lunch',
+        preferences
+      );
+      const dinner = await nutritionEngine.generateSmartMealPlan(
+        personalInfo,
+        fitnessGoals,
+        'dinner',
+        preferences
+      );
+      const snack = await nutritionEngine.generateSmartMealPlan(
+        personalInfo,
+        fitnessGoals,
+        'snack',
+        preferences
+      );
+
       return {
         success: true,
         data: {
           date: new Date().toISOString().split('T')[0],
-          meals: [breakfast.data, lunch.data, dinner.data, snack.data],
-          totalCalories: breakfast.data.totalCalories + lunch.data.totalCalories + dinner.data.totalCalories + snack.data.totalCalories,
+          meals: [breakfast.data!, lunch.data!, dinner.data!, snack.data!],
+          totalCalories:
+            (breakfast.data?.totalCalories || 0) +
+            (lunch.data?.totalCalories || 0) +
+            (dinner.data?.totalCalories || 0) +
+            (snack.data?.totalCalories || 0),
           totalMacros: {
-            protein: breakfast.data.totalMacros.protein + lunch.data.totalMacros.protein + dinner.data.totalMacros.protein + snack.data.totalMacros.protein,
-            carbohydrates: breakfast.data.totalMacros.carbohydrates + lunch.data.totalMacros.carbohydrates + dinner.data.totalMacros.carbohydrates + snack.data.totalMacros.carbohydrates,
-            fat: breakfast.data.totalMacros.fat + lunch.data.totalMacros.fat + dinner.data.totalMacros.fat + snack.data.totalMacros.fat,
-            fiber: breakfast.data.totalMacros.fiber + lunch.data.totalMacros.fiber + dinner.data.totalMacros.fiber + snack.data.totalMacros.fiber
-          }
+            protein:
+              (breakfast.data?.totalMacros.protein || 0) +
+              (lunch.data?.totalMacros.protein || 0) +
+              (dinner.data?.totalMacros.protein || 0) +
+              (snack.data?.totalMacros.protein || 0),
+            carbohydrates:
+              (breakfast.data?.totalMacros.carbohydrates || 0) +
+              (lunch.data?.totalMacros.carbohydrates || 0) +
+              (dinner.data?.totalMacros.carbohydrates || 0) +
+              (snack.data?.totalMacros.carbohydrates || 0),
+            fat:
+              (breakfast.data?.totalMacros.fat || 0) +
+              (lunch.data?.totalMacros.fat || 0) +
+              (dinner.data?.totalMacros.fat || 0) +
+              (snack.data?.totalMacros.fat || 0),
+            fiber:
+              (breakfast.data?.totalMacros.fiber || 0) +
+              (lunch.data?.totalMacros.fiber || 0) +
+              (dinner.data?.totalMacros.fiber || 0) +
+              (snack.data?.totalMacros.fiber || 0),
+          },
+          waterIntake: 0, // Default water intake
         },
-        reasoning: 'Generated demo daily meal plan with balanced nutrition'
+      };
+    } else {
+      // For demo, generate individual meals and combine them
+      const breakfast = await demoAIService.generateDemoMeal(
+        personalInfo,
+        fitnessGoals,
+        'breakfast'
+      );
+      const lunch = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'lunch');
+      const dinner = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'dinner');
+      const snack = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'snack');
+
+      return {
+        success: true,
+        data: {
+          date: new Date().toISOString().split('T')[0],
+          meals: [breakfast.data!, lunch.data!, dinner.data!, snack.data!],
+          totalCalories:
+            (breakfast.data?.totalCalories || 0) +
+            (lunch.data?.totalCalories || 0) +
+            (dinner.data?.totalCalories || 0) +
+            (snack.data?.totalCalories || 0),
+          totalMacros: {
+            protein:
+              (breakfast.data?.totalMacros.protein || 0) +
+              (lunch.data?.totalMacros.protein || 0) +
+              (dinner.data?.totalMacros.protein || 0) +
+              (snack.data?.totalMacros.protein || 0),
+            carbohydrates:
+              (breakfast.data?.totalMacros.carbohydrates || 0) +
+              (lunch.data?.totalMacros.carbohydrates || 0) +
+              (dinner.data?.totalMacros.carbohydrates || 0) +
+              (snack.data?.totalMacros.carbohydrates || 0),
+            fat:
+              (breakfast.data?.totalMacros.fat || 0) +
+              (lunch.data?.totalMacros.fat || 0) +
+              (dinner.data?.totalMacros.fat || 0) +
+              (snack.data?.totalMacros.fat || 0),
+            fiber:
+              (breakfast.data?.totalMacros.fiber || 0) +
+              (lunch.data?.totalMacros.fiber || 0) +
+              (dinner.data?.totalMacros.fiber || 0) +
+              (snack.data?.totalMacros.fiber || 0),
+          },
+          waterIntake: 0, // Default water intake
+        },
       };
     }
   }
@@ -138,7 +235,7 @@ class UnifiedAIService {
         streak: currentStreak.toString(),
         achievements: 'Recent workouts completed',
         goals: 'Fitness and health improvement',
-        mood: 'motivated'
+        mood: 'motivated',
       };
 
       return geminiService.generateResponse<MotivationalContent>(
@@ -170,23 +267,31 @@ class UnifiedAIService {
     weekNumber: number = 1
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
     if (this.isRealAIAvailable()) {
-      return weeklyContentGenerator.generateWeeklyWorkoutPlan(personalInfo, fitnessGoals, weekNumber);
+      return weeklyContentGenerator.generateWeeklyWorkoutPlan(
+        personalInfo,
+        fitnessGoals,
+        weekNumber
+      );
     } else {
       // Demo mode: Generate realistic weekly workout plan
-      const workoutsPerWeek = fitnessGoals.experienceLevel === 'beginner' ? 3 : 
-                              fitnessGoals.experienceLevel === 'intermediate' ? 4 : 5;
-      
+      const workoutsPerWeek =
+        fitnessGoals.experience_level === 'beginner'
+          ? 3
+          : fitnessGoals.experience_level === 'intermediate'
+            ? 4
+            : 5;
+
       const demoWorkouts = [];
       for (let i = 0; i < workoutsPerWeek; i++) {
         const workout = await demoAIService.generateDemoWorkout(personalInfo, fitnessGoals, {
           workoutType: ['strength', 'cardio', 'flexibility'][i % 3] as any,
-          duration: 30 + (i * 10),
+          duration: 30 + i * 10,
         });
         if (workout.success) {
           demoWorkouts.push(workout.data);
         }
       }
-      
+
       return {
         success: true,
         data: {
@@ -194,12 +299,11 @@ class UnifiedAIService {
           totalWorkouts: demoWorkouts.length,
           workouts: demoWorkouts,
           weeklyGoals: {
-            caloriesBurned: demoWorkouts.reduce((sum, w) => sum + (w.estimatedCalories || 200), 0),
-            totalDuration: demoWorkouts.reduce((sum, w) => sum + w.duration, 0),
-            focusAreas: ['Strength Building', 'Cardiovascular Health', 'Flexibility']
-          }
-        } as WeeklyWorkoutPlan,
-        reasoning: `Demo weekly workout plan generated with ${workoutsPerWeek} workouts for ${fitnessGoals.experienceLevel} level`
+            caloriesBurned: demoWorkouts.reduce((sum, w) => sum + (w?.estimatedCalories || 200), 0),
+            totalDuration: demoWorkouts.reduce((sum, w) => sum + (w?.duration || 30), 0),
+            focusAreas: ['Strength Building', 'Cardiovascular Health', 'Flexibility'],
+          },
+        } as any,
       };
     }
   }
@@ -218,31 +322,55 @@ class UnifiedAIService {
       // Demo mode: Generate realistic weekly meal plan
       const daysToGenerate = 7; // Always generate a full week
       const dailyMealPlans = [];
-      
+
       for (let day = 0; day < daysToGenerate; day++) {
-        const breakfast = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'breakfast');
+        const breakfast = await demoAIService.generateDemoMeal(
+          personalInfo,
+          fitnessGoals,
+          'breakfast'
+        );
         const lunch = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'lunch');
         const dinner = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'dinner');
         const snack = await demoAIService.generateDemoMeal(personalInfo, fitnessGoals, 'snack');
-        
+
         if (breakfast.success && lunch.success && dinner.success && snack.success) {
           dailyMealPlans.push({
             date: new Date(Date.now() + day * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            meals: [breakfast.data, lunch.data, dinner.data, snack.data],
-            totalCalories: breakfast.data.totalCalories + lunch.data.totalCalories + dinner.data.totalCalories + snack.data.totalCalories,
+            meals: [breakfast.data!, lunch.data!, dinner.data!, snack.data!],
+            totalCalories:
+              (breakfast.data?.totalCalories || 0) +
+              (lunch.data?.totalCalories || 0) +
+              (dinner.data?.totalCalories || 0) +
+              (snack.data?.totalCalories || 0),
             totalMacros: {
-              protein: breakfast.data.totalMacros.protein + lunch.data.totalMacros.protein + dinner.data.totalMacros.protein + snack.data.totalMacros.protein,
-              carbohydrates: breakfast.data.totalMacros.carbohydrates + lunch.data.totalMacros.carbohydrates + dinner.data.totalMacros.carbohydrates + snack.data.totalMacros.carbohydrates,
-              fat: breakfast.data.totalMacros.fat + lunch.data.totalMacros.fat + dinner.data.totalMacros.fat + snack.data.totalMacros.fat,
-              fiber: breakfast.data.totalMacros.fiber + lunch.data.totalMacros.fiber + dinner.data.totalMacros.fiber + snack.data.totalMacros.fiber
-            }
+              protein:
+                (breakfast.data?.totalMacros.protein || 0) +
+                (lunch.data?.totalMacros.protein || 0) +
+                (dinner.data?.totalMacros.protein || 0) +
+                (snack.data?.totalMacros.protein || 0),
+              carbohydrates:
+                (breakfast.data?.totalMacros.carbohydrates || 0) +
+                (lunch.data?.totalMacros.carbohydrates || 0) +
+                (dinner.data?.totalMacros.carbohydrates || 0) +
+                (snack.data?.totalMacros.carbohydrates || 0),
+              fat:
+                (breakfast.data?.totalMacros.fat || 0) +
+                (lunch.data?.totalMacros.fat || 0) +
+                (dinner.data?.totalMacros.fat || 0) +
+                (snack.data?.totalMacros.fat || 0),
+              fiber:
+                (breakfast.data?.totalMacros.fiber || 0) +
+                (lunch.data?.totalMacros.fiber || 0) +
+                (dinner.data?.totalMacros.fiber || 0) +
+                (snack.data?.totalMacros.fiber || 0),
+            },
           });
         }
       }
-      
+
       const totalWeeklyCalories = dailyMealPlans.reduce((sum, day) => sum + day.totalCalories, 0);
       const avgDailyCalories = Math.round(totalWeeklyCalories / dailyMealPlans.length);
-      
+
       return {
         success: true,
         data: {
@@ -250,21 +378,20 @@ class UnifiedAIService {
           dailyMealPlans,
           weeklyNutritionSummary: {
             averageDailyCalories: avgDailyCalories,
-            totalWeeklyCalories: totalWeeklyCalories,
+            totalWeeklyCalories,
             macroDistribution: {
               proteinPercent: 25,
               carbohydratePercent: 45,
-              fatPercent: 30
-            }
+              fatPercent: 30,
+            },
           },
           nutritionGoals: {
             calorieGoal: avgDailyCalories,
-            proteinGoal: Math.round(avgDailyCalories * 0.25 / 4), // 25% of calories from protein
-            carbGoal: Math.round(avgDailyCalories * 0.45 / 4), // 45% from carbs
-            fatGoal: Math.round(avgDailyCalories * 0.30 / 9) // 30% from fat
-          }
-        } as WeeklyMealPlan,
-        reasoning: `Demo weekly meal plan generated with ${dailyMealPlans.length} daily meal plans, averaging ${avgDailyCalories} calories per day`
+            proteinGoal: Math.round((avgDailyCalories * 0.25) / 4), // 25% of calories from protein
+            carbGoal: Math.round((avgDailyCalories * 0.45) / 4), // 45% from carbs
+            fatGoal: Math.round((avgDailyCalories * 0.3) / 9), // 30% from fat
+          },
+        } as any,
       };
     }
   }
@@ -279,7 +406,7 @@ class UnifiedAIService {
       return {
         success: true,
         data: 'Demo AI service is active (no API key configured)',
-        confidence: 100
+        confidence: 100,
       };
     }
   }
@@ -300,7 +427,7 @@ class UnifiedAIService {
       modelVersion: isAvailable ? 'gemini-2.5-flash' : undefined,
       message: isAvailable
         ? 'Gemini 2.5 Flash is ready - Latest AI model with enhanced reasoning and personalization'
-        : 'Demo mode active - using pre-built examples (configure EXPO_PUBLIC_GEMINI_API_KEY for Gemini 2.5 Flash)'
+        : 'Demo mode active - using pre-built examples (configure EXPO_PUBLIC_GEMINI_API_KEY for Gemini 2.5 Flash)',
     };
   }
 }

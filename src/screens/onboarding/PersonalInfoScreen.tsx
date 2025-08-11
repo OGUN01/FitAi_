@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, Card, THEME } from '../../components/ui';
 import { PersonalInfo } from '../../types/user';
-import { useEditContext, useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
+import {
+  useEditContext,
+  useEditMode,
+  useEditData,
+  useEditActions,
+} from '../../contexts/EditContext';
 
 interface PersonalInfoScreenProps {
   onNext?: (data: PersonalInfo) => void;
@@ -82,7 +81,12 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 
   // Update form data when edit context data is loaded (only once)
   useEffect(() => {
-    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+    if (
+      isEditMode &&
+      editContextData?.currentData &&
+      Object.keys(editContextData.currentData).length > 0 &&
+      !isDataPopulated
+    ) {
       const data = editContextData.currentData;
       const newFormData = {
         name: data.name || '',
@@ -105,7 +109,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       const timeoutId = setTimeout(() => {
         editContextData.updateData(formData);
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [formData, isEditMode, isDataPopulated]); // Removed editContextData?.updateData from deps
@@ -187,9 +191,9 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   };
 
   const updateField = (field: keyof PersonalInfo, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -202,9 +206,17 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   const activityLevels = [
     { label: 'Sedentary', value: 'sedentary', description: 'Little to no exercise' },
     { label: 'Lightly Active', value: 'light', description: 'Light exercise 1-3 days/week' },
-    { label: 'Moderately Active', value: 'moderate', description: 'Moderate exercise 3-5 days/week' },
+    {
+      label: 'Moderately Active',
+      value: 'moderate',
+      description: 'Moderate exercise 3-5 days/week',
+    },
     { label: 'Very Active', value: 'active', description: 'Hard exercise 6-7 days/week' },
-    { label: 'Extremely Active', value: 'extreme', description: 'Very hard exercise, physical job' },
+    {
+      label: 'Extremely Active',
+      value: 'extreme',
+      description: 'Very hard exercise, physical job',
+    },
   ];
 
   return (
@@ -225,8 +237,6 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
             onChangeText={(value) => updateField('name', value)}
             error={errors.name}
           />
-
-
 
           <View style={styles.row}>
             <View style={styles.halfWidth}>
@@ -252,10 +262,12 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                     ]}
                     onPress={() => updateField('gender', option.value)}
                   >
-                    <Text style={[
-                      styles.genderOptionText,
-                      formData.gender === option.value && styles.genderOptionTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.genderOptionText,
+                        formData.gender === option.value && styles.genderOptionTextSelected,
+                      ]}
+                    >
                       {option.label}
                     </Text>
                   </TouchableOpacity>
@@ -304,15 +316,15 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   variant="outlined"
                 >
                   <View style={styles.activityCardContent}>
-                    <Text style={[
-                      styles.activityTitle,
-                      formData.activityLevel === level.value && styles.activityTitleSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.activityTitle,
+                        formData.activityLevel === level.value && styles.activityTitleSelected,
+                      ]}
+                    >
                       {level.label}
                     </Text>
-                    <Text style={styles.activityDescription}>
-                      {level.description}
-                    </Text>
+                    <Text style={styles.activityDescription}>{level.description}</Text>
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -325,13 +337,13 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? "Cancel" : "Back"}
+            title={isEditMode ? 'Cancel' : 'Back'}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? "Save Changes" : "Next"}
+            title={isEditMode ? 'Save Changes' : 'Next'}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -347,57 +359,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(22),
   },
-  
+
   form: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
-  
+
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   halfWidth: {
     flex: 1,
   },
-  
+
   inputLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   genderContainer: {
     flexDirection: 'row',
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   genderOption: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
@@ -408,61 +420,61 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     alignItems: 'center',
   },
-  
+
   genderOptionSelected: {
     borderColor: ResponsiveTheme.colors.primary,
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
   },
-  
+
   genderOptionText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
-  
+
   genderOptionTextSelected: {
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   activitySection: {
     marginTop: ResponsiveTheme.spacing.md,
   },
-  
+
   activityCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   activityCardSelected: {
     borderColor: ResponsiveTheme.colors.primary,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
   },
-  
+
   activityCardContent: {
     padding: ResponsiveTheme.spacing.md,
   },
-  
+
   activityTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   activityTitleSelected: {
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   activityDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
   },
-  
+
   errorText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.error,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.lg,
@@ -470,16 +482,16 @@ const styles = StyleSheet.create({
     borderTopColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
-  
+
   buttonRow: {
     flexDirection: 'row',
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   backButton: {
     flex: 1,
   },
-  
+
   nextButton: {
     flex: 2,
   },

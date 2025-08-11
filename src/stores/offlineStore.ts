@@ -9,7 +9,7 @@ import {
   MealLog,
   BodyMeasurement,
   LocalStorageSchema,
-  ValidationResult
+  ValidationResult,
 } from '../types/localData';
 
 interface OfflineState {
@@ -102,7 +102,7 @@ export const useOfflineStore = create<OfflineState>()(
 
         try {
           const result = await offlineService.forcSync();
-          
+
           set({
             syncInProgress: false,
             lastSyncResult: result,
@@ -134,7 +134,7 @@ export const useOfflineStore = create<OfflineState>()(
       clearOfflineData: async () => {
         try {
           await offlineService.clearOfflineData();
-          
+
           set({
             queueLength: 0,
             lastSyncResult: null,
@@ -258,7 +258,18 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           const schema = await dataManager.exportAllData();
           if (!schema) {
-            return { isValid: false, errors: [{ field: 'schema', message: 'No local data found', code: 'NO_DATA', severity: 'error' as const }], warnings: [] };
+            return {
+              isValid: false,
+              errors: [
+                {
+                  field: 'schema',
+                  message: 'No local data found',
+                  code: 'NO_DATA',
+                  severity: 'error' as const,
+                },
+              ],
+              warnings: [],
+            };
           }
 
           // Import validation service dynamically to avoid circular imports
@@ -266,7 +277,18 @@ export const useOfflineStore = create<OfflineState>()(
           return validationService.validateLocalStorageSchema(schema);
         } catch (error) {
           console.error('Failed to validate local data:', error);
-          return { isValid: false, errors: [{ field: 'validation', message: 'Validation failed', code: 'VALIDATION_ERROR', severity: 'error' as const }], warnings: [] };
+          return {
+            isValid: false,
+            errors: [
+              {
+                field: 'validation',
+                message: 'Validation failed',
+                code: 'VALIDATION_ERROR',
+                severity: 'error' as const,
+              },
+            ],
+            warnings: [],
+          };
         }
       },
 

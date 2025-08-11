@@ -170,7 +170,7 @@ export class IntelligentSyncScheduler {
 
     try {
       await this.loadStats();
-      
+
       // Start monitoring device conditions
       this.schedulingTimer = setInterval(() => {
         this.evaluateConditions();
@@ -203,13 +203,15 @@ export class IntelligentSyncScheduler {
   /**
    * Make sync decision based on current conditions
    */
-  async makeSyncDecision(priority: 'low' | 'normal' | 'high' | 'critical' = 'normal'): Promise<SyncDecision> {
+  async makeSyncDecision(
+    priority: 'low' | 'normal' | 'high' | 'critical' = 'normal'
+  ): Promise<SyncDecision> {
     const conditions = await this.getCurrentConditions();
     const decision = this.evaluateSyncDecision(conditions, priority);
-    
+
     this.updateStats(decision);
     this.notifyDecisionCallbacks(decision);
-    
+
     return decision;
   }
 
@@ -245,17 +247,19 @@ export class IntelligentSyncScheduler {
     const currentHour = now.getHours();
     const currentDay = now.getDay();
 
-    const activeWindows = this.config.scheduleWindows.filter(window => {
+    const activeWindows = this.config.scheduleWindows.filter((window) => {
       const isInTimeRange = currentHour >= window.startHour && currentHour < window.endHour;
       const isInDayRange = window.daysOfWeek.includes(currentDay);
       return isInTimeRange && isInDayRange;
     });
 
     // Return highest priority window
-    return activeWindows.sort((a, b) => {
-      const priorityOrder = { high: 3, normal: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
-    })[0] || null;
+    return (
+      activeWindows.sort((a, b) => {
+        const priorityOrder = { high: 3, normal: 2, low: 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      })[0] || null
+    );
   }
 
   /**
@@ -410,13 +414,19 @@ export class IntelligentSyncScheduler {
     }
 
     // Evaluate device performance
-    if (conditions.devicePerformance.cpuUsage > 80 || conditions.devicePerformance.memoryUsage > 90) {
+    if (
+      conditions.devicePerformance.cpuUsage > 80 ||
+      conditions.devicePerformance.memoryUsage > 90
+    ) {
       decision.conditions.performance = 'poor';
       confidence -= 20;
       decision.suggestedDelay = 120000; // 2 minutes
       decision.recommendations.push('Device under high load, consider delaying sync');
       this.stats.conditionBreakdown.performanceBlocks++;
-    } else if (conditions.devicePerformance.cpuUsage > 60 || conditions.devicePerformance.memoryUsage > 70) {
+    } else if (
+      conditions.devicePerformance.cpuUsage > 60 ||
+      conditions.devicePerformance.memoryUsage > 70
+    ) {
       decision.conditions.performance = 'acceptable';
       confidence -= 5;
     }
@@ -430,7 +440,7 @@ export class IntelligentSyncScheduler {
 
     // Finalize decision
     decision.confidence = Math.max(0, confidence);
-    decision.reason = decision.shouldSync 
+    decision.reason = decision.shouldSync
       ? `Sync approved with ${decision.confidence}% confidence`
       : reasons.join(', ');
 
@@ -443,13 +453,13 @@ export class IntelligentSyncScheduler {
 
   private updateStats(decision: SyncDecision): void {
     this.stats.totalDecisions++;
-    
+
     if (decision.shouldSync) {
       this.stats.syncApproved++;
     } else if (decision.suggestedDelay > 0) {
       this.stats.syncDelayed++;
-      this.stats.averageDelay = 
-        (this.stats.averageDelay * (this.stats.syncDelayed - 1) + decision.suggestedDelay) / 
+      this.stats.averageDelay =
+        (this.stats.averageDelay * (this.stats.syncDelayed - 1) + decision.suggestedDelay) /
         this.stats.syncDelayed;
     } else {
       this.stats.syncDenied++;
@@ -457,7 +467,7 @@ export class IntelligentSyncScheduler {
   }
 
   private notifyDecisionCallbacks(decision: SyncDecision): void {
-    this.decisionCallbacks.forEach(callback => {
+    this.decisionCallbacks.forEach((callback) => {
       try {
         callback(decision);
       } catch (error) {
@@ -467,7 +477,7 @@ export class IntelligentSyncScheduler {
   }
 
   private notifyConditionsCallbacks(conditions: DeviceConditions): void {
-    this.conditionsCallbacks.forEach(callback => {
+    this.conditionsCallbacks.forEach((callback) => {
       try {
         callback(conditions);
       } catch (error) {
@@ -519,7 +529,8 @@ export class IntelligentSyncScheduler {
 
   private async loadStats(): Promise<void> {
     try {
-      const savedStats = await enhancedLocalStorage.getData<SchedulingStats>('sync_scheduling_stats');
+      const savedStats =
+        await enhancedLocalStorage.getData<SchedulingStats>('sync_scheduling_stats');
       if (savedStats) {
         this.stats = savedStats;
       }

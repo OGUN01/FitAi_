@@ -51,7 +51,7 @@ export const AuthenticationExample: React.FC = () => {
 
     try {
       const result = await login({ email, password });
-      
+
       if (result.success) {
         // Navigation will be handled by AuthWrapper
         Alert.alert('Success', 'Welcome back to FitAI!');
@@ -94,7 +94,7 @@ export const AuthenticationExample: React.FC = () => {
 
     try {
       const result = await register({ email, password, confirmPassword });
-      
+
       if (result.success) {
         Alert.alert(
           'Registration Successful',
@@ -128,7 +128,7 @@ export const AuthenticationExample: React.FC = () => {
 
     try {
       const result = await resetPassword(email);
-      
+
       if (result.success) {
         Alert.alert(
           'Reset Email Sent',

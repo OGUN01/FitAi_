@@ -2,12 +2,21 @@
 // Provides comprehensive React integration for all Track B infrastructure services
 
 import { useState, useEffect, useCallback } from 'react';
-import { trackIntegrationService, IntegrationStatus, IntegrationEvent, TrackAAuthData } from '../services/trackIntegrationService';
+import {
+  trackIntegrationService,
+  IntegrationStatus,
+  IntegrationEvent,
+  TrackAAuthData,
+} from '../services/trackIntegrationService';
 import { useMigration } from './useMigration';
 import { realTimeSyncService, SyncStatus } from '../services/syncService';
 import { syncMonitoringService, SyncMetrics, ConnectionHealth } from '../services/syncMonitoring';
 import { backupRecoveryService, BackupStatus } from '../services/backupRecoveryService';
-import { intelligentSyncScheduler, SyncDecision, DeviceConditions } from '../services/intelligentSyncScheduler';
+import {
+  intelligentSyncScheduler,
+  SyncDecision,
+  DeviceConditions,
+} from '../services/intelligentSyncScheduler';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -155,7 +164,7 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     // Subscribe to integration events
     const unsubscribeEvents = trackIntegrationService.onEvent((event) => {
       setLastEvent(event);
-      
+
       if (event.type === 'error') {
         setError(event.data.error || 'Unknown error occurred');
       }
@@ -189,9 +198,11 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
       setSyncDecision(decision);
     });
 
-    const unsubscribeSchedulerConditions = intelligentSyncScheduler.onConditionsUpdate((conditions) => {
-      setDeviceConditions(conditions);
-    });
+    const unsubscribeSchedulerConditions = intelligentSyncScheduler.onConditionsUpdate(
+      (conditions) => {
+        setDeviceConditions(conditions);
+      }
+    );
 
     return () => {
       unsubscribeEvents();
@@ -215,11 +226,10 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
 
     try {
       await trackIntegrationService.initialize();
-      
+
       // Update service health
       const health = await trackIntegrationService.getServiceHealth();
       setServiceHealth(health);
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize Track B';
       setError(errorMessage);
@@ -235,11 +245,10 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
 
     try {
       await trackIntegrationService.handleTrackAAuthentication(authData);
-      
+
       // Update service health after authentication
       const health = await trackIntegrationService.getServiceHealth();
       setServiceHealth(health);
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to handle authentication';
       setError(errorMessage);
@@ -256,10 +265,9 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     try {
       await trackIntegrationService.startSyncServices();
       await trackIntegrationService.startBackupServices();
-      
+
       const health = await trackIntegrationService.getServiceHealth();
       setServiceHealth(health);
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start services';
       setError(errorMessage);
@@ -275,7 +283,6 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
 
     try {
       await trackIntegrationService.stop();
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to stop services';
       setError(errorMessage);
@@ -318,16 +325,19 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     }
   }, []);
 
-  const createBackup = useCallback(async (type: 'full' | 'incremental' = 'full', description = '') => {
-    setError(null);
-    try {
-      await backupRecoveryService.createBackup(type, description);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to create backup';
-      setError(errorMessage);
-      console.error('Backup creation failed:', err);
-    }
-  }, []);
+  const createBackup = useCallback(
+    async (type: 'full' | 'incremental' = 'full', description = '') => {
+      setError(null);
+      try {
+        await backupRecoveryService.createBackup(type, description);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to create backup';
+        setError(errorMessage);
+        console.error('Backup creation failed:', err);
+      }
+    },
+    []
+  );
 
   const restoreFromBackup = useCallback(async (backupId: string, options: any = {}) => {
     setError(null);

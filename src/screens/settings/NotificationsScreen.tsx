@@ -15,9 +15,10 @@ import { Card, Button, THEME } from '../../components/ui';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection
-const isExpoGo = Constants.appOwnership === 'expo' || 
-                 Constants.executionEnvironment === 'storeClient' ||
-                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
 
 // Load components and stores with safety nets
 let WaterReminderEditModal: any = null;
@@ -30,9 +31,10 @@ let useWorkoutReminders: any = null;
 
 if (!isExpoGo) {
   try {
-    WaterReminderEditModal = require('../../components/notifications/WaterReminderEditModal').default;
+    WaterReminderEditModal =
+      require('../../components/notifications/WaterReminderEditModal').default;
     NotificationEditModal = require('../../components/notifications/NotificationEditModal').default;
-    
+
     const notificationStore = require('../../stores/notificationStore');
     useNotificationStore = notificationStore.useNotificationStore;
     useWaterReminders = notificationStore.useWaterReminders;
@@ -66,7 +68,9 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
           </Text>
           <Text style={styles.expoGoInstruction}>
             To enable notifications, run:{'\n'}
-            <Text style={styles.expoGoCode}>eas build --platform android --profile development</Text>
+            <Text style={styles.expoGoCode}>
+              eas build --platform android --profile development
+            </Text>
           </Text>
           {onBack && (
             <Button onPress={onBack} style={styles.backButton}>
@@ -83,13 +87,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
   const workoutReminders = useWorkoutReminders();
   const mealReminders = useMealReminders();
   const sleepReminders = useSleepReminders();
-  
+
   const [editModal, setEditModal] = useState<EditModalState>({
     visible: false,
     type: null,
-    title: ''
+    title: '',
   });
-  
+
   const [scheduledCount, setScheduledCount] = useState(0);
 
   useEffect(() => {
@@ -101,7 +105,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
       const count = await useNotificationStore.getState().getScheduledCount();
       setScheduledCount(count);
     };
-    
+
     initializeNotifications();
   }, [isInitialized, initialize]);
 
@@ -152,15 +156,18 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
   const getTimeDisplay = (type: string) => {
     switch (type) {
       case 'water':
-        const awakeHours = calculateAwakeHours(preferences.water.wakeUpTime, preferences.water.sleepTime);
+        const awakeHours = calculateAwakeHours(
+          preferences.water.wakeUpTime,
+          preferences.water.sleepTime
+        );
         return `${awakeHours}h awake, ${preferences.water.dailyGoalLiters}L daily`;
       case 'workout':
         return `${preferences.workout.reminderMinutes} min before`;
       case 'meals':
         const enabledMeals = [
           preferences.meals.breakfast.enabled && 'Breakfast',
-          preferences.meals.lunch.enabled && 'Lunch', 
-          preferences.meals.dinner.enabled && 'Dinner'
+          preferences.meals.lunch.enabled && 'Lunch',
+          preferences.meals.dinner.enabled && 'Dinner',
         ].filter(Boolean);
         return `${enabledMeals.length} meals enabled`;
       case 'sleep':
@@ -177,9 +184,10 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
     const [sleepHour, sleepMin] = sleepTime.split(':').map(Number);
     const wakeMinutes = wakeHour * 60 + wakeMin;
     const sleepMinutes = sleepHour * 60 + sleepMin;
-    const awakeMinutes = sleepMinutes > wakeMinutes 
-      ? sleepMinutes - wakeMinutes 
-      : (24 * 60) - wakeMinutes + sleepMinutes;
+    const awakeMinutes =
+      sleepMinutes > wakeMinutes
+        ? sleepMinutes - wakeMinutes
+        : 24 * 60 - wakeMinutes + sleepMinutes;
     return Math.floor(awakeMinutes / 60);
   };
 
@@ -198,14 +206,15 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
         {/* Description */}
         <View style={styles.section}>
           <Text style={styles.description}>
-            Customize your smart notification preferences. {scheduledCount} notifications currently scheduled.
+            Customize your smart notification preferences. {scheduledCount} notifications currently
+            scheduled.
           </Text>
         </View>
 
         {/* Notification Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Smart Reminders</Text>
-          
+
           {/* Water Reminders */}
           <Card style={styles.settingCard} variant="outlined">
             <View style={styles.settingContent}>
@@ -214,9 +223,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                   <Text style={styles.settingIcon}>💧</Text>
                   <View style={styles.settingTexts}>
                     <Text style={styles.settingTitle}>Water Reminders</Text>
-                    <Text style={styles.settingDescription}>Smart hydration reminders based on your daily schedule</Text>
+                    <Text style={styles.settingDescription}>
+                      Smart hydration reminders based on your daily schedule
+                    </Text>
                     {preferences.water.enabled && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.timeButton}
                         onPress={() => handleEditPress('water', 'Water Reminders')}
                       >
@@ -236,11 +247,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                 <Switch
                   value={preferences.water.enabled}
                   onValueChange={() => handleToggle('water')}
-                  trackColor={{ 
-                    false: THEME.colors.border, 
-                    true: THEME.colors.primary + '50' 
+                  trackColor={{
+                    false: THEME.colors.border,
+                    true: THEME.colors.primary + '50',
                   }}
-                  thumbColor={preferences.water.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                  thumbColor={
+                    preferences.water.enabled ? THEME.colors.primary : THEME.colors.textMuted
+                  }
                 />
               </View>
             </View>
@@ -254,9 +267,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                   <Text style={styles.settingIcon}>🏋️</Text>
                   <View style={styles.settingTexts}>
                     <Text style={styles.settingTitle}>Workout Reminders</Text>
-                    <Text style={styles.settingDescription}>Get notified before your scheduled workouts</Text>
+                    <Text style={styles.settingDescription}>
+                      Get notified before your scheduled workouts
+                    </Text>
                     {preferences.workout.enabled && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.timeButton}
                         onPress={() => handleEditPress('workout', 'Workout Reminders')}
                       >
@@ -276,11 +291,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                 <Switch
                   value={preferences.workout.enabled}
                   onValueChange={() => handleToggle('workout')}
-                  trackColor={{ 
-                    false: THEME.colors.border, 
-                    true: THEME.colors.primary + '50' 
+                  trackColor={{
+                    false: THEME.colors.border,
+                    true: THEME.colors.primary + '50',
                   }}
-                  thumbColor={preferences.workout.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                  thumbColor={
+                    preferences.workout.enabled ? THEME.colors.primary : THEME.colors.textMuted
+                  }
                 />
               </View>
             </View>
@@ -294,9 +311,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                   <Text style={styles.settingIcon}>🍽️</Text>
                   <View style={styles.settingTexts}>
                     <Text style={styles.settingTitle}>Meal Reminders</Text>
-                    <Text style={styles.settingDescription}>Never miss breakfast, lunch, or dinner</Text>
+                    <Text style={styles.settingDescription}>
+                      Never miss breakfast, lunch, or dinner
+                    </Text>
                     {preferences.meals.enabled && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.timeButton}
                         onPress={() => handleEditPress('meals', 'Meal Reminders')}
                       >
@@ -316,11 +335,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                 <Switch
                   value={preferences.meals.enabled}
                   onValueChange={() => handleToggle('meals')}
-                  trackColor={{ 
-                    false: THEME.colors.border, 
-                    true: THEME.colors.primary + '50' 
+                  trackColor={{
+                    false: THEME.colors.border,
+                    true: THEME.colors.primary + '50',
                   }}
-                  thumbColor={preferences.meals.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                  thumbColor={
+                    preferences.meals.enabled ? THEME.colors.primary : THEME.colors.textMuted
+                  }
                 />
               </View>
             </View>
@@ -334,9 +355,11 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                   <Text style={styles.settingIcon}>😴</Text>
                   <View style={styles.settingTexts}>
                     <Text style={styles.settingTitle}>Sleep Reminders</Text>
-                    <Text style={styles.settingDescription}>Smart bedtime notifications for better recovery</Text>
+                    <Text style={styles.settingDescription}>
+                      Smart bedtime notifications for better recovery
+                    </Text>
                     {preferences.sleep.enabled && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.timeButton}
                         onPress={() => handleEditPress('sleep', 'Sleep Reminders')}
                       >
@@ -356,11 +379,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                 <Switch
                   value={preferences.sleep.enabled}
                   onValueChange={() => handleToggle('sleep')}
-                  trackColor={{ 
-                    false: THEME.colors.border, 
-                    true: THEME.colors.primary + '50' 
+                  trackColor={{
+                    false: THEME.colors.border,
+                    true: THEME.colors.primary + '50',
                   }}
-                  thumbColor={preferences.sleep.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                  thumbColor={
+                    preferences.sleep.enabled ? THEME.colors.primary : THEME.colors.textMuted
+                  }
                 />
               </View>
             </View>
@@ -374,7 +399,9 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
                   <Text style={styles.settingIcon}>📊</Text>
                   <View style={styles.settingTexts}>
                     <Text style={styles.settingTitle}>Progress Updates</Text>
-                    <Text style={styles.settingDescription}>Weekly summary of your fitness journey</Text>
+                    <Text style={styles.settingDescription}>
+                      Weekly summary of your fitness journey
+                    </Text>
                     {preferences.progress.enabled && (
                       <View style={styles.timeButton}>
                         <Text style={styles.timeText}>⚙️ {getTimeDisplay('progress')}</Text>
@@ -386,11 +413,13 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
               <Switch
                 value={preferences.progress.enabled}
                 onValueChange={() => handleToggle('progress')}
-                trackColor={{ 
-                  false: THEME.colors.border, 
-                  true: THEME.colors.primary + '50' 
+                trackColor={{
+                  false: THEME.colors.border,
+                  true: THEME.colors.primary + '50',
                 }}
-                thumbColor={preferences.progress.enabled ? THEME.colors.primary : THEME.colors.textMuted}
+                thumbColor={
+                  preferences.progress.enabled ? THEME.colors.primary : THEME.colors.textMuted
+                }
               />
             </View>
           </Card>
@@ -399,7 +428,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
         {/* General Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>General</Text>
-          
+
           <Card style={styles.actionCard} variant="outlined">
             <TouchableOpacity onPress={handleResetDefaults}>
               <View style={styles.actionContent}>
@@ -418,7 +447,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({ onBack
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-      
+
       {/* Water Reminder Edit Modal - Only render if component is available */}
       {WaterReminderEditModal && (
         <WaterReminderEditModal
@@ -445,11 +474,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,7 +487,7 @@ const styles = StyleSheet.create({
     paddingTop: THEME.spacing.lg,
     paddingBottom: THEME.spacing.md,
   },
-  
+
   backButton: {
     width: 40,
     height: 40,
@@ -467,104 +496,104 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   backIcon: {
     fontSize: 24,
     color: THEME.colors.text,
     fontWeight: 'bold',
   },
-  
+
   title: {
     fontSize: THEME.fontSize.xxl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
   },
-  
+
   headerSpacer: {
     width: 40,
   },
-  
+
   section: {
     paddingHorizontal: THEME.spacing.lg,
     marginBottom: THEME.spacing.xl,
   },
-  
+
   description: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
     lineHeight: 22,
     textAlign: 'center',
   },
-  
+
   sectionTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
-  
+
   settingCard: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   settingContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: THEME.spacing.lg,
   },
-  
+
   rightControls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: THEME.spacing.sm,
   },
-  
+
   editButton: {
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs,
     backgroundColor: THEME.colors.backgroundTertiary,
     borderRadius: THEME.borderRadius.sm,
   },
-  
+
   editButtonText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
     fontWeight: THEME.fontWeight.medium,
   },
-  
+
   settingInfo: {
     flex: 1,
   },
-  
+
   settingHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  
+
   settingIcon: {
     fontSize: 24,
     marginRight: THEME.spacing.md,
     marginTop: 2,
   },
-  
+
   settingTexts: {
     flex: 1,
   },
-  
+
   settingTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
-  
+
   settingDescription: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     lineHeight: 18,
   },
-  
+
   timeButton: {
     marginTop: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.sm,
@@ -573,101 +602,101 @@ const styles = StyleSheet.create({
     borderRadius: THEME.borderRadius.sm,
     alignSelf: 'flex-start',
   },
-  
+
   timeText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.primary,
     fontWeight: THEME.fontWeight.medium,
   },
-  
+
   actionCard: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   actionContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: THEME.spacing.lg,
   },
-  
+
   actionIcon: {
     fontSize: 20,
     marginRight: THEME.spacing.md,
   },
-  
+
   actionInfo: {
     flex: 1,
   },
-  
+
   actionTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.text,
   },
-  
+
   actionDescription: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     marginTop: THEME.spacing.xs,
   },
-  
+
   actionArrow: {
     fontSize: 20,
     color: THEME.colors.textMuted,
     fontWeight: THEME.fontWeight.bold,
   },
-  
+
   saveSection: {
     paddingHorizontal: THEME.spacing.lg,
     marginBottom: THEME.spacing.xl,
   },
-  
+
   saveButton: {
     marginTop: THEME.spacing.md,
   },
-  
+
   bottomSpacing: {
     height: THEME.spacing.xl,
   },
-  
+
   // Expo Go message styles
   expoGoCard: {
     margin: THEME.spacing.lg,
     padding: THEME.spacing.xl,
     alignItems: 'center',
   },
-  
+
   expoGoTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
-  
+
   expoGoMessage: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
     textAlign: 'center',
     marginBottom: THEME.spacing.lg,
   },
-  
+
   expoGoInstruction: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textMuted,
     textAlign: 'center',
     marginBottom: THEME.spacing.lg,
   },
-  
+
   expoGoCode: {
     fontFamily: 'monospace',
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.primary,
   },
-  
+
   backButton: {
     marginTop: THEME.spacing.md,
   },
-  
+
   backButtonText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.md,

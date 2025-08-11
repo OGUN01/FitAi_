@@ -50,7 +50,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
   })();
 
   const { editSection, isLoading, isSaving } = contextData;
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -159,12 +159,8 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
       statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <StatusBar
-        backgroundColor="rgba(0, 0, 0, 0.5)"
-        barStyle="light-content"
-        translucent={true}
-      />
-      
+      <StatusBar backgroundColor="rgba(0, 0, 0, 0.5)" barStyle="light-content" translucent={true} />
+
       {/* Backdrop */}
       <Animated.View
         style={[
@@ -196,7 +192,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
             </View>
 
             {/* Content */}
-            <ScrollView 
+            <ScrollView
               style={styles.contentContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
@@ -375,12 +371,7 @@ export const EnhancedEditOverlay: React.FC<EnhancedEditOverlayProps> = ({
     }
   };
 
-  return (
-    <EditOverlay
-      visible={visible}
-      onClose={handleClose}
-    />
-  );
+  return <EditOverlay visible={visible} onClose={handleClose} />;
 };
 
 export default EditOverlay;

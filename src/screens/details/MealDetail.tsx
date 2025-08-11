@@ -31,12 +31,7 @@ interface MealDetailProps {
   onDelete?: () => void;
 }
 
-export const MealDetail: React.FC<MealDetailProps> = ({
-  mealId,
-  onBack,
-  onEdit,
-  onDelete,
-}) => {
+export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, onDelete }) => {
   // Mock meal data - in real app this would come from props or API
   const meal = {
     id: mealId,
@@ -135,10 +130,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
     });
   };
 
@@ -164,9 +159,11 @@ export const MealDetail: React.FC<MealDetailProps> = ({
                 <Text style={styles.mealIcon}>{getMealIcon(meal.name)}</Text>
                 <Text style={styles.mealName}>{meal.name}</Text>
               </View>
-              <Text style={styles.mealTime}>{meal.time} • {formatDate(meal.date)}</Text>
+              <Text style={styles.mealTime}>
+                {meal.time} • {formatDate(meal.date)}
+              </Text>
             </View>
-            
+
             <View style={styles.caloriesContainer}>
               <Text style={styles.caloriesValue}>{meal.totalCalories}</Text>
               <Text style={styles.caloriesLabel}>calories</Text>
@@ -195,16 +192,12 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         </Card>
 
         {/* Nutrition Chart */}
-        <NutritionChart 
-          data={nutritionData}
-          targetCalories={2000}
-          style={styles.chartContainer}
-        />
+        <NutritionChart data={nutritionData} targetCalories={2000} style={styles.chartContainer} />
 
         {/* Food Items */}
         <View style={styles.foodSection}>
           <Text style={styles.sectionTitle}>Food Items</Text>
-          
+
           {meal.foods.map((food, index) => (
             <Card key={food.id} style={styles.foodCard}>
               <View style={styles.foodHeader}>
@@ -216,7 +209,7 @@ export const MealDetail: React.FC<MealDetailProps> = ({
                 </View>
                 <Text style={styles.foodCalories}>{food.calories} cal</Text>
               </View>
-              
+
               {/* Food Macros */}
               <View style={styles.foodMacros}>
                 <View style={styles.macroItem}>
@@ -246,8 +239,8 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         <Card style={styles.notesCard}>
           <Text style={styles.notesTitle}>📝 Meal Notes</Text>
           <Text style={styles.notesText}>
-            Healthy breakfast with good balance of protein and complex carbs. 
-            Greek yogurt provides probiotics, berries add antioxidants, and nuts give healthy fats.
+            Healthy breakfast with good balance of protein and complex carbs. Greek yogurt provides
+            probiotics, berries add antioxidants, and nuts give healthy fats.
           </Text>
         </Card>
 

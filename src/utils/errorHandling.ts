@@ -97,11 +97,11 @@ class ErrorLogger {
   }
 
   getErrorsByType(type: ErrorType): AppError[] {
-    return this.errors.filter(error => error.type === type);
+    return this.errors.filter((error) => error.type === type);
   }
 
   getErrorsBySeverity(severity: ErrorSeverity): AppError[] {
-    return this.errors.filter(error => error.severity === severity);
+    return this.errors.filter((error) => error.severity === severity);
   }
 
   clearErrors() {
@@ -119,7 +119,8 @@ class ErrorLogger {
       [ErrorType.STORAGE]: 'There was a problem saving your data. Please try again.',
       [ErrorType.AUTHENTICATION]: 'Please log in again to continue.',
       [ErrorType.MIGRATION]: 'There was a problem syncing your data. Please try again.',
-      [ErrorType.SYNC]: 'Your data could not be synced. Please try again when you have a stable connection.',
+      [ErrorType.SYNC]:
+        'Your data could not be synced. Please try again when you have a stable connection.',
       [ErrorType.UNKNOWN]: 'Something went wrong. Please try again.',
     };
 
@@ -181,14 +182,10 @@ export class ErrorHandler {
 
   static handleWithAlert(error: Error | AppError, context?: Record<string, any>): AppError {
     const appError = this.handle(error, context);
-    
+
     // Show user-friendly alert for high severity errors
     if (appError.severity === ErrorSeverity.HIGH || appError.severity === ErrorSeverity.CRITICAL) {
-      Alert.alert(
-        'Error',
-        appError.userFriendlyMessage,
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', appError.userFriendlyMessage, [{ text: 'OK' }]);
     }
 
     return appError;
@@ -200,22 +197,14 @@ export class ErrorHandler {
     context?: Record<string, any>
   ): AppError {
     const appError = this.handle(error, context);
-    
+
     if (appError.retryable) {
-      Alert.alert(
-        'Error',
-        appError.userFriendlyMessage,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: retryCallback },
-        ]
-      );
+      Alert.alert('Error', appError.userFriendlyMessage, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Retry', onPress: retryCallback },
+      ]);
     } else {
-      Alert.alert(
-        'Error',
-        appError.userFriendlyMessage,
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', appError.userFriendlyMessage, [{ text: 'OK' }]);
     }
 
     return appError;
@@ -242,23 +231,31 @@ export class ErrorHandler {
 
   private static inferErrorType(error: Error): ErrorType {
     const message = error.message.toLowerCase();
-    
+
     if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) {
       return ErrorType.NETWORK;
     }
     if (message.includes('storage') || message.includes('asyncstorage')) {
       return ErrorType.STORAGE;
     }
-    if (message.includes('auth') || message.includes('unauthorized') || message.includes('forbidden')) {
+    if (
+      message.includes('auth') ||
+      message.includes('unauthorized') ||
+      message.includes('forbidden')
+    ) {
       return ErrorType.AUTHENTICATION;
     }
-    if (message.includes('validation') || message.includes('invalid') || message.includes('required')) {
+    if (
+      message.includes('validation') ||
+      message.includes('invalid') ||
+      message.includes('required')
+    ) {
       return ErrorType.VALIDATION;
     }
     if (message.includes('migration') || message.includes('sync')) {
       return ErrorType.MIGRATION;
     }
-    
+
     return ErrorType.UNKNOWN;
   }
 
@@ -267,17 +264,17 @@ export class ErrorHandler {
     if (type === ErrorType.AUTHENTICATION || error.message.includes('critical')) {
       return ErrorSeverity.CRITICAL;
     }
-    
+
     // High severity for data loss scenarios
     if (type === ErrorType.STORAGE || type === ErrorType.MIGRATION) {
       return ErrorSeverity.HIGH;
     }
-    
+
     // Medium severity for user-facing issues
     if (type === ErrorType.VALIDATION || type === ErrorType.NETWORK) {
       return ErrorSeverity.MEDIUM;
     }
-    
+
     return ErrorSeverity.LOW;
   }
 
@@ -286,12 +283,12 @@ export class ErrorHandler {
     if (type === ErrorType.NETWORK || type === ErrorType.SYNC || type === ErrorType.MIGRATION) {
       return true;
     }
-    
+
     // Storage errors might be retryable
     if (type === ErrorType.STORAGE && !error.message.includes('quota')) {
       return true;
     }
-    
+
     return false;
   }
 }
@@ -300,7 +297,11 @@ export class ErrorHandler {
 // SPECIALIZED ERROR CREATORS
 // ============================================================================
 
-export const createValidationError = (message: string, details?: string, context?: Record<string, any>): AppError => {
+export const createValidationError = (
+  message: string,
+  details?: string,
+  context?: Record<string, any>
+): AppError => {
   return errorLogger.log({
     type: ErrorType.VALIDATION,
     severity: ErrorSeverity.MEDIUM,
@@ -311,7 +312,11 @@ export const createValidationError = (message: string, details?: string, context
   });
 };
 
-export const createNetworkError = (message: string, details?: string, context?: Record<string, any>): AppError => {
+export const createNetworkError = (
+  message: string,
+  details?: string,
+  context?: Record<string, any>
+): AppError => {
   return errorLogger.log({
     type: ErrorType.NETWORK,
     severity: ErrorSeverity.HIGH,
@@ -322,7 +327,11 @@ export const createNetworkError = (message: string, details?: string, context?: 
   });
 };
 
-export const createStorageError = (message: string, details?: string, context?: Record<string, any>): AppError => {
+export const createStorageError = (
+  message: string,
+  details?: string,
+  context?: Record<string, any>
+): AppError => {
   return errorLogger.log({
     type: ErrorType.STORAGE,
     severity: ErrorSeverity.HIGH,
@@ -333,7 +342,11 @@ export const createStorageError = (message: string, details?: string, context?: 
   });
 };
 
-export const createMigrationError = (message: string, details?: string, context?: Record<string, any>): AppError => {
+export const createMigrationError = (
+  message: string,
+  details?: string,
+  context?: Record<string, any>
+): AppError => {
   return errorLogger.log({
     type: ErrorType.MIGRATION,
     severity: ErrorSeverity.HIGH,

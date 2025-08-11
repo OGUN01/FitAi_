@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Card, THEME } from '../ui';
 import { useProgressData } from '../../hooks/useProgressData';
 
@@ -21,14 +14,9 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
   timeRange = 'month',
   onTimeRangeChange,
 }) => {
-  const { 
-    progressStats, 
-    progressEntries,
-    progressGoals,
-    loadProgressStats,
-    statsLoading 
-  } = useProgressData();
-  
+  const { progressStats, progressEntries, progressGoals, loadProgressStats, statsLoading } =
+    useProgressData();
+
   const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'year'>(timeRange);
 
   useEffect(() => {
@@ -90,7 +78,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
     <Card style={styles.container} variant="elevated">
       <View style={styles.header}>
         <Text style={styles.title}>Progress Analytics</Text>
-        
+
         {/* Time Range Selector */}
         <View style={styles.timeRangeSelector}>
           {timeRanges.map((range) => (
@@ -125,23 +113,33 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>⚖️</Text>
-                <Text style={styles.metricValue}>{progressStats.weightChange.current.toFixed(1)}kg</Text>
+                <Text style={styles.metricValue}>
+                  {progressStats.weightChange.current.toFixed(1)}kg
+                </Text>
               </View>
               <Text style={styles.metricLabel}>Weight</Text>
               <View style={styles.changeContainer}>
-                <Text style={[styles.changeText, { color: getProgressColor(progressStats.weightChange.change) }]}>
-                  {getProgressIcon(progressStats.weightChange.change)} {formatChange(progressStats.weightChange.change, 'kg')}
+                <Text
+                  style={[
+                    styles.changeText,
+                    { color: getProgressColor(progressStats.weightChange.change) },
+                  ]}
+                >
+                  {getProgressIcon(progressStats.weightChange.change)}{' '}
+                  {formatChange(progressStats.weightChange.change, 'kg')}
                 </Text>
               </View>
               {progressGoals?.target_weight_kg && (
                 <View style={styles.goalProgress}>
                   <Text style={styles.goalText}>Goal: {progressGoals.target_weight_kg}kg</Text>
                   <View style={styles.progressBar}>
-                    <View 
+                    <View
                       style={[
-                        styles.progressFill, 
-                        { width: `${calculateGoalProgress(progressStats.weightChange.current, progressGoals.target_weight_kg)}%` }
-                      ]} 
+                        styles.progressFill,
+                        {
+                          width: `${calculateGoalProgress(progressStats.weightChange.current, progressGoals.target_weight_kg)}%`,
+                        },
+                      ]}
                     />
                   </View>
                 </View>
@@ -152,23 +150,35 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>📊</Text>
-                <Text style={styles.metricValue}>{progressStats.bodyFatChange.current.toFixed(1)}%</Text>
+                <Text style={styles.metricValue}>
+                  {progressStats.bodyFatChange.current.toFixed(1)}%
+                </Text>
               </View>
               <Text style={styles.metricLabel}>Body Fat</Text>
               <View style={styles.changeContainer}>
-                <Text style={[styles.changeText, { color: getProgressColor(-progressStats.bodyFatChange.change) }]}>
-                  {getProgressIcon(-progressStats.bodyFatChange.change)} {formatChange(progressStats.bodyFatChange.change, '%')}
+                <Text
+                  style={[
+                    styles.changeText,
+                    { color: getProgressColor(-progressStats.bodyFatChange.change) },
+                  ]}
+                >
+                  {getProgressIcon(-progressStats.bodyFatChange.change)}{' '}
+                  {formatChange(progressStats.bodyFatChange.change, '%')}
                 </Text>
               </View>
               {progressGoals?.target_body_fat_percentage && (
                 <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>Goal: {progressGoals.target_body_fat_percentage}%</Text>
+                  <Text style={styles.goalText}>
+                    Goal: {progressGoals.target_body_fat_percentage}%
+                  </Text>
                   <View style={styles.progressBar}>
-                    <View 
+                    <View
                       style={[
-                        styles.progressFill, 
-                        { width: `${100 - calculateGoalProgress(progressStats.bodyFatChange.current, progressGoals.target_body_fat_percentage)}%` }
-                      ]} 
+                        styles.progressFill,
+                        {
+                          width: `${100 - calculateGoalProgress(progressStats.bodyFatChange.current, progressGoals.target_body_fat_percentage)}%`,
+                        },
+                      ]}
                     />
                   </View>
                 </View>
@@ -179,23 +189,33 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
             <View style={styles.metricCard}>
               <View style={styles.metricHeader}>
                 <Text style={styles.metricIcon}>💪</Text>
-                <Text style={styles.metricValue}>{progressStats.muscleChange.current.toFixed(1)}kg</Text>
+                <Text style={styles.metricValue}>
+                  {progressStats.muscleChange.current.toFixed(1)}kg
+                </Text>
               </View>
               <Text style={styles.metricLabel}>Muscle Mass</Text>
               <View style={styles.changeContainer}>
-                <Text style={[styles.changeText, { color: getProgressColor(progressStats.muscleChange.change) }]}>
-                  {getProgressIcon(progressStats.muscleChange.change)} {formatChange(progressStats.muscleChange.change, 'kg')}
+                <Text
+                  style={[
+                    styles.changeText,
+                    { color: getProgressColor(progressStats.muscleChange.change) },
+                  ]}
+                >
+                  {getProgressIcon(progressStats.muscleChange.change)}{' '}
+                  {formatChange(progressStats.muscleChange.change, 'kg')}
                 </Text>
               </View>
               {progressGoals?.target_muscle_mass_kg && (
                 <View style={styles.goalProgress}>
                   <Text style={styles.goalText}>Goal: {progressGoals.target_muscle_mass_kg}kg</Text>
                   <View style={styles.progressBar}>
-                    <View 
+                    <View
                       style={[
-                        styles.progressFill, 
-                        { width: `${calculateGoalProgress(progressStats.muscleChange.current, progressGoals.target_muscle_mass_kg)}%` }
-                      ]} 
+                        styles.progressFill,
+                        {
+                          width: `${calculateGoalProgress(progressStats.muscleChange.current, progressGoals.target_muscle_mass_kg)}%`,
+                        },
+                      ]}
                     />
                   </View>
                 </View>
@@ -212,10 +232,14 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               {Object.entries(progressStats.measurementChanges).map(([measurement, data]) => (
                 <View key={measurement} style={styles.measurementItem}>
                   <View style={styles.measurementHeader}>
-                    <Text style={styles.measurementName}>{measurement.charAt(0).toUpperCase() + measurement.slice(1)}</Text>
+                    <Text style={styles.measurementName}>
+                      {measurement.charAt(0).toUpperCase() + measurement.slice(1)}
+                    </Text>
                     <Text style={styles.measurementValue}>{data.current.toFixed(1)}cm</Text>
                   </View>
-                  <Text style={[styles.measurementChange, { color: getProgressColor(data.change) }]}>
+                  <Text
+                    style={[styles.measurementChange, { color: getProgressColor(data.change) }]}
+                  >
                     {formatChange(data.change, 'cm')}
                   </Text>
                 </View>
@@ -228,9 +252,7 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.summaryContainer}>
-            <Text style={styles.summaryText}>
-              📈 Total Entries: {progressStats.totalEntries}
-            </Text>
+            <Text style={styles.summaryText}>📈 Total Entries: {progressStats.totalEntries}</Text>
             <Text style={styles.summaryText}>
               📅 Tracking Period: {progressStats.timeRange} days
             </Text>
@@ -254,22 +276,23 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <>
                 {progressStats.totalEntries >= 2 && (
                   <Text style={styles.insightText}>
-                    🎯 Great consistency! You have {progressStats.totalEntries} measurements recorded.
+                    🎯 Great consistency! You have {progressStats.totalEntries} measurements
+                    recorded.
                   </Text>
                 )}
-                
+
                 {progressStats.weightChange.change < 0 && (
                   <Text style={styles.insightText}>
                     📉 You're making progress with weight loss! Keep up the great work.
                   </Text>
                 )}
-                
+
                 {progressStats.muscleChange.change > 0 && (
                   <Text style={styles.insightText}>
                     💪 Excellent muscle gain! Your strength training is paying off.
                   </Text>
                 )}
-                
+
                 {progressStats.bodyFatChange.change < 0 && (
                   <Text style={styles.insightText}>
                     🔥 Body fat reduction detected! Your fitness routine is working.

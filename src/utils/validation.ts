@@ -1,15 +1,9 @@
 // Data Validation Service for Track B Infrastructure
 // Comprehensive validation schemas and sanitization functions
 
-import { 
-  OnboardingData,
-  MealLog
-} from '../types/localData';
+import { OnboardingData, MealLog } from '../types/localData';
 
-import {
-  PersonalInfo,
-  FitnessGoals
-} from '../types/user';
+import { PersonalInfo, FitnessGoals } from '../types/user';
 
 import { WorkoutSession } from '../types/workout';
 
@@ -67,7 +61,7 @@ const VALIDATION_RULES = {
     min: 30, // kg
     max: 300, // kg
   },
-  
+
   // Fitness Data
   WORKOUT_DURATION: {
     min: 5, // minutes
@@ -89,7 +83,7 @@ const VALIDATION_RULES = {
     min: 0,
     max: 1000, // kg
   },
-  
+
   // Nutrition Data
   FOOD_QUANTITY: {
     min: 0,
@@ -101,7 +95,7 @@ const VALIDATION_RULES = {
     fat: { min: 0, max: 1000 },
     fiber: { min: 0, max: 200 },
   },
-  
+
   // Progress Data
   BODY_FAT: {
     min: 3, // percentage
@@ -266,7 +260,8 @@ export class ValidationService {
     if (!info.name || !this.isValidString(info.name, VALIDATION_RULES.NAME)) {
       errors.push({
         field: 'name',
-        message: 'Name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes',
+        message:
+          'Name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes',
         code: 'INVALID_NAME',
         severity: 'error',
       });
@@ -295,7 +290,11 @@ export class ValidationService {
 
     // Validate height
     const height = parseFloat(info.height);
-    if (isNaN(height) || height < VALIDATION_RULES.HEIGHT.min || height > VALIDATION_RULES.HEIGHT.max) {
+    if (
+      isNaN(height) ||
+      height < VALIDATION_RULES.HEIGHT.min ||
+      height > VALIDATION_RULES.HEIGHT.max
+    ) {
       errors.push({
         field: 'height',
         message: `Height must be between ${VALIDATION_RULES.HEIGHT.min} and ${VALIDATION_RULES.HEIGHT.max} cm`,
@@ -306,7 +305,11 @@ export class ValidationService {
 
     // Validate weight
     const weight = parseFloat(info.weight);
-    if (isNaN(weight) || weight < VALIDATION_RULES.WEIGHT.min || weight > VALIDATION_RULES.WEIGHT.max) {
+    if (
+      isNaN(weight) ||
+      weight < VALIDATION_RULES.WEIGHT.min ||
+      weight > VALIDATION_RULES.WEIGHT.max
+    ) {
       errors.push({
         field: 'weight',
         message: `Weight must be between ${VALIDATION_RULES.WEIGHT.min} and ${VALIDATION_RULES.WEIGHT.max} kg`,
@@ -344,7 +347,11 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate primary goals
-    if (!goals.primaryGoals || !Array.isArray(goals.primaryGoals) || goals.primaryGoals.length === 0) {
+    if (
+      !goals.primaryGoals ||
+      !Array.isArray(goals.primaryGoals) ||
+      goals.primaryGoals.length === 0
+    ) {
       errors.push({
         field: 'primaryGoals',
         message: 'At least one primary goal is required',
@@ -352,7 +359,14 @@ export class ValidationService {
         severity: 'error',
       });
     } else {
-      const validGoals = ['weight_loss', 'muscle_gain', 'strength', 'endurance', 'flexibility', 'general_fitness'];
+      const validGoals = [
+        'weight_loss',
+        'muscle_gain',
+        'strength',
+        'endurance',
+        'flexibility',
+        'general_fitness',
+      ];
       const invalidGoals = goals.primaryGoals.filter((goal: any) => !validGoals.includes(goal));
       if (invalidGoals.length > 0) {
         errors.push({
@@ -405,7 +419,7 @@ export class ValidationService {
 
     // Validate boolean fields
     const booleanFields = ['notifications', 'darkMode', 'autoSync'];
-    booleanFields.forEach(field => {
+    booleanFields.forEach((field) => {
       if (typeof preferences[field] !== 'boolean') {
         errors.push({
           field,
@@ -417,7 +431,11 @@ export class ValidationService {
     });
 
     // Validate data retention
-    if (typeof preferences.dataRetention !== 'number' || preferences.dataRetention < 30 || preferences.dataRetention > 3650) {
+    if (
+      typeof preferences.dataRetention !== 'number' ||
+      preferences.dataRetention < 30 ||
+      preferences.dataRetention > 3650
+    ) {
       warnings.push({
         field: 'dataRetention',
         message: 'Data retention should be between 30 and 3650 days',
@@ -438,7 +456,7 @@ export class ValidationService {
 
     // Validate arrays exist
     const requiredArrays = ['workouts', 'exercises', 'sessions', 'plans', 'customExercises'];
-    requiredArrays.forEach(arrayName => {
+    requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(fitnessData[arrayName])) {
         errors.push({
           field: arrayName,
@@ -453,7 +471,7 @@ export class ValidationService {
     if (Array.isArray(fitnessData.sessions)) {
       fitnessData.sessions.forEach((session: any, index: number) => {
         const sessionValidation = this.validateWorkoutSession(session);
-        sessionValidation.errors.forEach(error => {
+        sessionValidation.errors.forEach((error) => {
           errors.push({
             ...error,
             field: `sessions[${index}].${error.field}`,
@@ -508,9 +526,11 @@ export class ValidationService {
     }
 
     // Validate duration
-    if (typeof session.duration !== 'number' || 
-        session.duration < VALIDATION_RULES.WORKOUT_DURATION.min || 
-        session.duration > VALIDATION_RULES.WORKOUT_DURATION.max) {
+    if (
+      typeof session.duration !== 'number' ||
+      session.duration < VALIDATION_RULES.WORKOUT_DURATION.min ||
+      session.duration > VALIDATION_RULES.WORKOUT_DURATION.max
+    ) {
       errors.push({
         field: 'duration',
         message: `Duration must be between ${VALIDATION_RULES.WORKOUT_DURATION.min} and ${VALIDATION_RULES.WORKOUT_DURATION.max} minutes`,
@@ -520,9 +540,11 @@ export class ValidationService {
     }
 
     // Validate calories
-    if (typeof session.caloriesBurned !== 'number' || 
-        session.caloriesBurned < VALIDATION_RULES.CALORIES.min || 
-        session.caloriesBurned > VALIDATION_RULES.CALORIES.max) {
+    if (
+      typeof session.caloriesBurned !== 'number' ||
+      session.caloriesBurned < VALIDATION_RULES.CALORIES.min ||
+      session.caloriesBurned > VALIDATION_RULES.CALORIES.max
+    ) {
       errors.push({
         field: 'caloriesBurned',
         message: `Calories must be between ${VALIDATION_RULES.CALORIES.min} and ${VALIDATION_RULES.CALORIES.max}`,
@@ -544,7 +566,7 @@ export class ValidationService {
 
     // Validate arrays exist
     const requiredArrays = ['meals', 'foods', 'logs', 'plans', 'customFoods', 'waterLogs'];
-    requiredArrays.forEach(arrayName => {
+    requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(nutritionData[arrayName])) {
         errors.push({
           field: arrayName,
@@ -568,7 +590,7 @@ export class ValidationService {
 
     // Validate arrays exist
     const requiredArrays = ['measurements', 'photos', 'achievements', 'analytics', 'goals'];
-    requiredArrays.forEach(arrayName => {
+    requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(progressData[arrayName])) {
         errors.push({
           field: arrayName,
@@ -586,10 +608,15 @@ export class ValidationService {
   // UTILITY METHODS
   // ============================================================================
 
-  private isValidString(value: string, rules: { minLength: number; maxLength: number; pattern: RegExp }): boolean {
-    return value.length >= rules.minLength && 
-           value.length <= rules.maxLength && 
-           rules.pattern.test(value);
+  private isValidString(
+    value: string,
+    rules: { minLength: number; maxLength: number; pattern: RegExp }
+  ): boolean {
+    return (
+      value.length >= rules.minLength &&
+      value.length <= rules.maxLength &&
+      rules.pattern.test(value)
+    );
   }
 
   private isValidISODate(dateString: string): boolean {
@@ -605,10 +632,22 @@ export class ValidationService {
     return {
       name: this.sanitizeString(info.name || ''),
       email: info.email ? this.sanitizeEmail(info.email) : undefined,
-      age: this.sanitizeNumber(info.age, VALIDATION_RULES.AGE.min, VALIDATION_RULES.AGE.max).toString(),
+      age: this.sanitizeNumber(
+        info.age,
+        VALIDATION_RULES.AGE.min,
+        VALIDATION_RULES.AGE.max
+      ).toString(),
       gender: this.sanitizeGender(info.gender),
-      height: this.sanitizeNumber(info.height, VALIDATION_RULES.HEIGHT.min, VALIDATION_RULES.HEIGHT.max).toString(),
-      weight: this.sanitizeNumber(info.weight, VALIDATION_RULES.WEIGHT.min, VALIDATION_RULES.WEIGHT.max).toString(),
+      height: this.sanitizeNumber(
+        info.height,
+        VALIDATION_RULES.HEIGHT.min,
+        VALIDATION_RULES.HEIGHT.max
+      ).toString(),
+      weight: this.sanitizeNumber(
+        info.weight,
+        VALIDATION_RULES.WEIGHT.min,
+        VALIDATION_RULES.WEIGHT.max
+      ).toString(),
       activityLevel: this.sanitizeActivityLevel(info.activityLevel),
     };
   }

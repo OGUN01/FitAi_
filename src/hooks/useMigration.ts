@@ -131,14 +131,13 @@ export const useMigration = (): UseMigrationReturn => {
 
     try {
       await migrationManager.checkMigrationStatus();
-      
+
       // Get current progress and result
       const currentProgress = migrationManager.getCurrentProgress();
       const currentResult = migrationManager.getCurrentResult();
-      
+
       if (currentProgress) setProgress(currentProgress);
       if (currentResult) setResult(currentResult);
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to check migration status';
       setError(errorMessage);
@@ -299,7 +298,7 @@ export const useMigrationProgress = () => {
     // Get current state
     const currentProgress = migrationManager.getCurrentProgress();
     const currentResult = migrationManager.getCurrentResult();
-    
+
     if (currentProgress) setProgress(currentProgress);
     if (currentResult) setResult(currentResult);
 
@@ -341,7 +340,7 @@ export const useSimpleMigration = () => {
 
       // Check if migration is needed
       const hasLocalData = await migrationManager.checkProfileMigrationNeeded(userId);
-      
+
       if (!hasLocalData) {
         setIsActive(false);
         return { success: true };
@@ -363,17 +362,17 @@ export const useSimpleMigration = () => {
         return { success: true };
       } else {
         setIsActive(false);
-        return { 
-          success: false, 
-          error: result.errors?.join(', ') || 'Migration failed' 
+        return {
+          success: false,
+          error: result.errors?.join(', ') || 'Migration failed',
         };
       }
     } catch (error) {
       console.error('Migration error:', error);
       setIsActive(false);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Migration failed' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Migration failed',
       };
     }
   };

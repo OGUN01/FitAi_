@@ -1,23 +1,23 @@
 // Nutrition Engine - Integrates AI generation with food database
 
 import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer';
-import { 
-  FOODS, 
-  getFoodById, 
-  getFoodsByCategory, 
-  searchFoods, 
+import {
+  FOODS,
+  getFoodById,
+  getFoodsByCategory,
+  searchFoods,
   calculateNutrition,
   getHighProteinFoods,
-  getLowCalorieFoods
+  getLowCalorieFoods,
 } from '../../data/foods';
-import { 
-  Meal, 
-  NutritionPlan, 
-  DailyMealPlan, 
-  Food, 
+import {
+  Meal,
+  NutritionPlan,
+  DailyMealPlan,
+  Food,
   MealItem,
   Macronutrients,
-  AIResponse 
+  AIResponse,
 } from '../../types/ai';
 import { PersonalInfo, FitnessGoals } from '../../types/user';
 
@@ -26,7 +26,6 @@ import { PersonalInfo, FitnessGoals } from '../../types/user';
 // ============================================================================
 
 class NutritionEngineService {
-
   /**
    * Generate a smart meal plan with real food data
    */
@@ -65,12 +64,12 @@ class NutritionEngineService {
         data: enhancedMeal,
         confidence: aiResponse.confidence,
         generationTime: aiResponse.generationTime,
-        tokensUsed: aiResponse.tokensUsed
+        tokensUsed: aiResponse.tokensUsed,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Smart meal plan generation failed: ${error}`
+        error: `Smart meal plan generation failed: ${error}`,
       };
     }
   }
@@ -116,19 +115,19 @@ class NutritionEngineService {
         ...aiResponse.data,
         meals: enhancedMeals,
         totalCalories,
-        totalMacros
+        totalMacros,
       };
 
       return {
         success: true,
         data: enhancedPlan,
         confidence: aiResponse.confidence,
-        generationTime: aiResponse.generationTime
+        generationTime: aiResponse.generationTime,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Smart daily plan generation failed: ${error}`
+        error: `Smart daily plan generation failed: ${error}`,
       };
     }
   }
@@ -143,20 +142,20 @@ class NutritionEngineService {
   ): Meal {
     const mealItems: MealItem[] = [];
     let totalCalories = 0;
-    let totalMacros: Macronutrients = { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 };
+    const totalMacros: Macronutrients = { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 };
 
     for (const selection of foodSelections) {
       const food = getFoodById(selection.foodId);
       if (!food) continue;
 
       const nutrition = calculateNutrition(food, selection.quantity);
-      
+
       const mealItem: MealItem = {
         foodId: food.id,
         food,
         quantity: selection.quantity,
         calories: nutrition.calories,
-        macros: nutrition.macros
+        macros: nutrition.macros,
       };
 
       mealItems.push(mealItem);
@@ -177,12 +176,12 @@ class NutritionEngineService {
         protein: Math.round(totalMacros.protein * 10) / 10,
         carbohydrates: Math.round(totalMacros.carbohydrates * 10) / 10,
         fat: Math.round(totalMacros.fat * 10) / 10,
-        fiber: Math.round(totalMacros.fiber * 10) / 10
+        fiber: Math.round(totalMacros.fiber * 10) / 10,
       },
       tags: ['custom'],
       isPersonalized: true,
       aiGenerated: false,
-      scheduledTime: this.getDefaultMealTime(mealType)
+      scheduledTime: this.getDefaultMealTime(mealType),
     };
   }
 
@@ -208,21 +207,23 @@ class NutritionEngineService {
         ...getFoodsByCategory('protein').slice(0, 3),
         ...getFoodsByCategory('vegetables').slice(0, 3),
         ...getFoodsByCategory('fruits').slice(0, 2),
-        ...getFoodsByCategory('grains').slice(0, 2)
+        ...getFoodsByCategory('grains').slice(0, 2),
       ];
     }
 
     // Filter by dietary restrictions
     if (dietaryRestrictions.length > 0) {
-      recommendedFoods = recommendedFoods.filter(food => {
+      recommendedFoods = recommendedFoods.filter((food) => {
         // Check if food meets dietary restrictions
         if (dietaryRestrictions.includes('vegan') && !food.dietaryLabels.includes('vegan')) {
           return food.category !== 'dairy' && !food.allergens.includes('eggs');
         }
         if (dietaryRestrictions.includes('vegetarian') && food.category === 'protein') {
-          return !food.name.toLowerCase().includes('chicken') && 
-                 !food.name.toLowerCase().includes('beef') && 
-                 !food.name.toLowerCase().includes('fish');
+          return (
+            !food.name.toLowerCase().includes('chicken') &&
+            !food.name.toLowerCase().includes('beef') &&
+            !food.name.toLowerCase().includes('fish')
+          );
         }
         if (dietaryRestrictions.includes('gluten-free')) {
           return !food.allergens.includes('gluten');
@@ -233,18 +234,19 @@ class NutritionEngineService {
 
     // Meal-specific recommendations
     if (mealType === 'breakfast') {
-      const breakfastFoods = FOODS.filter(food => 
-        food.name.toLowerCase().includes('oats') ||
-        food.name.toLowerCase().includes('eggs') ||
-        food.name.toLowerCase().includes('yogurt') ||
-        food.category === 'fruits'
+      const breakfastFoods = FOODS.filter(
+        (food) =>
+          food.name.toLowerCase().includes('oats') ||
+          food.name.toLowerCase().includes('eggs') ||
+          food.name.toLowerCase().includes('yogurt') ||
+          food.category === 'fruits'
       );
       recommendedFoods = [...recommendedFoods, ...breakfastFoods];
     }
 
     // Remove duplicates and limit count
-    const uniqueFoods = recommendedFoods.filter((food, index, self) => 
-      index === self.findIndex(f => f.id === food.id)
+    const uniqueFoods = recommendedFoods.filter(
+      (food, index, self) => index === self.findIndex((f) => f.id === food.id)
     );
 
     return uniqueFoods.slice(0, count);
@@ -322,7 +324,7 @@ class NutritionEngineService {
     }
 
     // Variety analysis
-    const categories = new Set(meal.items.map(item => item.food.category));
+    const categories = new Set(meal.items.map((item) => item.food.category));
     if (categories.size < 2) {
       score -= 15;
       feedback.push('Limited food variety');
@@ -334,7 +336,7 @@ class NutritionEngineService {
     return {
       score: Math.max(0, score),
       feedback,
-      suggestions
+      suggestions,
     };
   }
 
@@ -354,18 +356,18 @@ class NutritionEngineService {
 
     if (filters) {
       if (filters.category) {
-        results = results.filter(food => food.category === filters.category);
+        results = results.filter((food) => food.category === filters.category);
       }
       if (filters.dietaryLabels) {
-        results = results.filter(food => 
-          filters.dietaryLabels!.some(label => food.dietaryLabels.includes(label))
+        results = results.filter((food) =>
+          filters.dietaryLabels!.some((label) => food.dietaryLabels.includes(label))
         );
       }
       if (filters.maxCalories) {
-        results = results.filter(food => food.calories <= filters.maxCalories!);
+        results = results.filter((food) => food.calories <= filters.maxCalories!);
       }
       if (filters.minProtein) {
-        results = results.filter(food => food.macros.protein >= filters.minProtein!);
+        results = results.filter((food) => food.macros.protein >= filters.minProtein!);
       }
     }
 
@@ -385,7 +387,7 @@ class NutritionEngineService {
     for (const item of aiMeal.items) {
       // Try to find matching food in our database
       let food = getFoodById(item.foodId);
-      
+
       if (!food) {
         // If not found, find a similar food
         food = this.findSimilarFood(item.food.name, dietaryRestrictions);
@@ -398,7 +400,7 @@ class NutritionEngineService {
           foodId: food.id,
           food,
           calories: nutrition.calories,
-          macros: nutrition.macros
+          macros: nutrition.macros,
         });
       } else {
         // Keep original if no match found
@@ -414,7 +416,7 @@ class NutritionEngineService {
       ...aiMeal,
       items: enhancedItems,
       totalCalories,
-      totalMacros
+      totalMacros,
     };
   }
 
@@ -424,10 +426,12 @@ class NutritionEngineService {
 
     // Filter by dietary restrictions
     if (dietaryRestrictions.length > 0) {
-      candidates = candidates.filter(food => {
+      candidates = candidates.filter((food) => {
         if (dietaryRestrictions.includes('vegan')) {
-          return food.dietaryLabels.includes('vegan') || 
-                 (food.category !== 'dairy' && !food.allergens.includes('eggs'));
+          return (
+            food.dietaryLabels.includes('vegan') ||
+            (food.category !== 'dairy' && !food.allergens.includes('eggs'))
+          );
         }
         if (dietaryRestrictions.includes('gluten-free')) {
           return !food.allergens.includes('gluten');
@@ -440,12 +444,15 @@ class NutritionEngineService {
   }
 
   private calculateTotalMacros(meals: Meal[]): Macronutrients {
-    return meals.reduce((totals, meal) => ({
-      protein: totals.protein + meal.totalMacros.protein,
-      carbohydrates: totals.carbohydrates + meal.totalMacros.carbohydrates,
-      fat: totals.fat + meal.totalMacros.fat,
-      fiber: totals.fiber + meal.totalMacros.fiber
-    }), { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 });
+    return meals.reduce(
+      (totals, meal) => ({
+        protein: totals.protein + meal.totalMacros.protein,
+        carbohydrates: totals.carbohydrates + meal.totalMacros.carbohydrates,
+        fat: totals.fat + meal.totalMacros.fat,
+        fiber: totals.fiber + meal.totalMacros.fiber,
+      }),
+      { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 }
+    );
   }
 
   private getDefaultMealTime(mealType: string): string {
@@ -453,9 +460,9 @@ class NutritionEngineService {
       breakfast: '08:00',
       lunch: '12:30',
       dinner: '19:00',
-      snack: '15:00'
+      snack: '15:00',
     };
-    
+
     const today = new Date();
     const timeString = times[mealType as keyof typeof times] || '12:00';
     return `${today.toISOString().split('T')[0]}T${timeString}:00.000Z`;

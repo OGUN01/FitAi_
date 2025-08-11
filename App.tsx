@@ -3,7 +3,6 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { OnboardingFlow } from './src/screens/onboarding/OnboardingFlow';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
-import { PersonalInfo, FitnessGoals } from './src/types/user';
 import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
 import { THEME } from './src/utils/constants';
 import { initializeBackend } from './src/utils/integration';
@@ -16,19 +15,19 @@ const isExpoGo = (() => {
   const detectionMethods = {
     appOwnership: Constants.appOwnership === 'expo',
     executionEnvironment: Constants.executionEnvironment === 'storeClient',
-    devAndSimulator: (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true),
-    noEAS: (!Constants.manifest?.extra?.eas && __DEV__ && Constants.platform?.web !== true)
+    devAndSimulator: __DEV__ && !Constants.isDevice && Constants.platform?.web === undefined,
+    noEAS: !Constants.expoConfig?.extra?.eas && __DEV__ && Constants.platform?.web === undefined,
   };
 
   const isExpoGoDetected = Object.values(detectionMethods).some(Boolean);
-  
+
   console.log('🔍 Environment Detection:', {
     ...detectionMethods,
     result: isExpoGoDetected,
     appOwnership: Constants.appOwnership,
     executionEnvironment: Constants.executionEnvironment,
     isDevice: Constants.isDevice,
-    __DEV__
+    __DEV__,
   });
 
   return isExpoGoDetected;
@@ -55,7 +54,7 @@ export default function App() {
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
 
   const { user, isLoading, isInitialized, isGuestMode } = useAuth();
-  
+
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore ? useNotificationStore() : null;
   const initializeNotifications = notificationStore?.initialize;
@@ -68,7 +67,7 @@ export default function App() {
         console.log('🚀 FitAI: Starting app initialization...');
         await initializeBackend();
         console.log('✅ FitAI: Backend initialization completed');
-        
+
         // Initialize notifications only if not in Expo Go
         if (!isExpoGo && initializeNotifications && !areNotificationsInitialized) {
           console.log('📱 FitAI: Initializing notifications...');

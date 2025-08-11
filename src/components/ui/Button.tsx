@@ -77,24 +77,20 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[
-        getButtonStyle(),
-        disabled && styles.disabled,
-        style,
-      ]}
+      style={[getButtonStyle(), disabled && styles.disabled, style]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'outline' || variant === 'ghost' ? THEME.colors.primary : THEME.colors.white}
+          color={
+            variant === 'outline' || variant === 'ghost' ? THEME.colors.primary : THEME.colors.white
+          }
           size="small"
         />
       ) : (
-        <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>
-          {title}
-        </Text>
+        <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -107,7 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
-  
+
   // Sizes
   sm: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -124,7 +120,7 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.lg,
     minHeight: rh(56),
   },
-  
+
   // Variants
   primary: {
     backgroundColor: ResponsiveTheme.colors.primary,
@@ -142,7 +138,7 @@ const styles = StyleSheet.create({
   ghost: {
     backgroundColor: ResponsiveTheme.colors.transparent,
   },
-  
+
   // Text styles
   baseText: {
     fontWeight: ResponsiveTheme.fontWeight.semibold,
@@ -157,7 +153,7 @@ const styles = StyleSheet.create({
   lgText: {
     fontSize: ResponsiveTheme.fontSize.lg,
   },
-  
+
   // Text variants
   primaryText: {
     color: ResponsiveTheme.colors.white,
@@ -171,7 +167,7 @@ const styles = StyleSheet.create({
   ghostText: {
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   // States
   disabled: {
     opacity: 0.5,
@@ -179,7 +175,7 @@ const styles = StyleSheet.create({
   disabledText: {
     opacity: 0.7,
   },
-  
+
   // Layout
   fullWidth: {
     width: '100%',

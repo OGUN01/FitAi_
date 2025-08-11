@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  ImageBackground,
-} from 'react-native'
+import { View, Text, StyleSheet, Dimensions, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -19,10 +13,7 @@ interface WelcomeScreenProps {
   onLogin?: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
-  onGetStarted,
-  onLogin,
-}) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGetStarted, onLogin }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundGradient}>
@@ -33,11 +24,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               <Text style={styles.logoText}>FitAI</Text>
             </View>
           </View>
-          
-          <Text style={styles.title}>
-            Your AI-Powered{'\n'}Fitness Journey
-          </Text>
-          
+
+          <Text style={styles.title}>Your AI-Powered{'\n'}Fitness Journey</Text>
+
           <Text style={styles.subtitle}>
             Transform your body with personalized workouts,{'\n'}
             smart nutrition plans, and AI-driven insights
@@ -51,13 +40,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             title="AI Personal Trainer"
             description="Get customized workouts based on your goals"
           />
-          
+
           <FeatureItem
             icon="🍎"
             title="Smart Nutrition"
             description="Personalized meal plans and calorie tracking"
           />
-          
+
           <FeatureItem
             icon="📊"
             title="Progress Tracking"
@@ -107,7 +96,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({ icon, title, description }) =
     <View style={styles.featureIcon}>
       <Text style={styles.featureIconText}>{icon}</Text>
     </View>
-    
+
     <View style={styles.featureContent}>
       <Text style={styles.featureTitle}>{title}</Text>
       <Text style={styles.featureDescription}>{description}</Text>
@@ -120,12 +109,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   backgroundGradient: {
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   heroSection: {
     flex: 1,
     justifyContent: 'center',
@@ -133,11 +122,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xxl,
   },
-  
+
   logoContainer: {
     marginBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   logo: {
     width: rw(80),
     height: rh(80),
@@ -147,13 +136,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...THEME.shadows.lg,
   },
-  
+
   logoText: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
@@ -162,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
     lineHeight: rf(40),
   },
-  
+
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
@@ -170,19 +159,19 @@ const styles = StyleSheet.create({
     lineHeight: rf(24),
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
-  
+
   featuresSection: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.xl,
   },
-  
+
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.lg,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
-  
+
   featureIcon: {
     width: rw(48),
     height: rh(48),
@@ -192,33 +181,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   featureIconText: {
     fontSize: rf(24),
   },
-  
+
   featureContent: {
     flex: 1,
   },
-  
+
   featureTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   featureDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(20),
   },
-  
+
   ctaSection: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   getStartedButton: {
     marginBottom: ResponsiveTheme.spacing.md,
   },

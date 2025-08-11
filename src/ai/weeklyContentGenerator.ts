@@ -5,8 +5,15 @@ import { geminiService, PROMPT_TEMPLATES } from './gemini';
 import { WORKOUT_SCHEMA, NUTRITION_SCHEMA } from './schemas';
 import { SIMPLIFIED_DAILY_NUTRITION_SCHEMA } from './schemas/simplifiedNutritionSchema';
 import { WEEKLY_PLAN_SCHEMA, DAILY_WORKOUT_SCHEMA } from './schemas/workoutSchema';
-import { SIMPLIFIED_WEEKLY_PLAN_SCHEMA, TEST_SIMPLE_SCHEMA, DIAGNOSTIC_WORKOUT_SCHEMA } from './schemas/simplifiedWorkoutSchema';
-import { generateConstrainedWorkout, OPTIMIZED_SYSTEM_PROMPT } from './constrainedWorkoutGeneration';
+import {
+  SIMPLIFIED_WEEKLY_PLAN_SCHEMA,
+  TEST_SIMPLE_SCHEMA,
+  DIAGNOSTIC_WORKOUT_SCHEMA,
+} from './schemas/simplifiedWorkoutSchema';
+import {
+  generateConstrainedWorkout,
+  OPTIMIZED_SYSTEM_PROMPT,
+} from './constrainedWorkoutGeneration';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout, Meal, AIResponse, MealType } from '../types/ai';
 import { exerciseFilterService } from '../services/exerciseFilterService';
@@ -56,7 +63,8 @@ export interface WeeklyMealPlan {
   startDate: string;
   endDate: string;
   dailyMeals: {
-    [day: string]: { // 'monday', 'tuesday', etc.
+    [day: string]: {
+      // 'monday', 'tuesday', etc.
       breakfast: Meal;
       lunch: Meal;
       dinner: Meal;
@@ -78,7 +86,6 @@ export interface WeeklyMealPlan {
 // ============================================================================
 
 class WeeklyContentGeneratorService {
-
   /**
    * Generate weekly workout plan with structured day assignments
    */
@@ -90,9 +97,9 @@ class WeeklyContentGeneratorService {
     try {
       // Determine plan configuration based on experience level
       const planConfig = this.getWeeklyPlanConfig(fitnessGoals.experience_level, weekNumber);
-      
+
       console.log(`🏋️ Generating ${planConfig.name} for ${personalInfo.name}...`);
-      
+
       // Build comprehensive weekly plan prompt
       const weeklyPlanPrompt = this.buildWeeklyPlanPrompt(
         personalInfo,
@@ -105,33 +112,35 @@ class WeeklyContentGeneratorService {
       let response: any;
       let validationAttempt = 0;
       const maxValidationAttempts = 3;
-      
+
       while (validationAttempt < maxValidationAttempts) {
         validationAttempt++;
-        console.log(`🎯 Generation attempt ${validationAttempt}/${maxValidationAttempts} with constraint enforcement`);
-        
+        console.log(
+          `🎯 Generation attempt ${validationAttempt}/${maxValidationAttempts} with constraint enforcement`
+        );
+
         // Use increasingly strict prompts on retries
-        const currentPrompt = validationAttempt > 1 
-          ? this.buildStrictConstraintPrompt(weeklyPlanPrompt, validationAttempt)
-          : weeklyPlanPrompt;
-        
+        const currentPrompt =
+          validationAttempt > 1
+            ? this.buildStrictConstraintPrompt(weeklyPlanPrompt, validationAttempt)
+            : weeklyPlanPrompt;
+
         // First, let's test with a super simple schema to verify API connectivity
         console.log('🧪 Testing with simplified schema to diagnose issue...');
-        
+
         response = await geminiService.generateResponse<any>(
           currentPrompt,
           {
-            weekNumber: weekNumber,
+            weekNumber,
             experienceLevel: fitnessGoals.experience_level,
-            planConfig: planConfig,
-            validationAttempt: validationAttempt
+            planConfig,
+            validationAttempt,
           },
           DIAGNOSTIC_WORKOUT_SCHEMA, // Using minimal schema for debugging JSON issues
           2, // Fewer retries per attempt since we have validation retry
           {
             maxOutputTokens: 4096, // Reduced token limit to avoid truncation
             temperature: 0.3, // Lower temperature for more consistent JSON
-            systemPrompt: OPTIMIZED_SYSTEM_PROMPT
           }
         );
 
@@ -139,23 +148,26 @@ class WeeklyContentGeneratorService {
           if (validationAttempt === maxValidationAttempts) {
             return {
               success: false,
-              error: response.error || 'Failed to generate weekly workout plan after all attempts'
+              error: response.error || 'Failed to generate weekly workout plan after all attempts',
             };
           }
           continue; // Try again with stricter prompt
         }
-        
+
         // Quick validation check before full processing
         const quickValidation = this.quickValidateExerciseIds(response.data);
         if (quickValidation.isValid) {
           console.log(`✅ Generation attempt ${validationAttempt} passed initial validation`);
           break; // Success!
         } else {
-          console.log(`❌ Generation attempt ${validationAttempt} failed validation:`, quickValidation.errors.slice(0, 3));
+          console.log(
+            `❌ Generation attempt ${validationAttempt} failed validation:`,
+            quickValidation.errors.slice(0, 3)
+          );
           if (validationAttempt === maxValidationAttempts) {
             return {
               success: false,
-              error: `All generation attempts failed validation. Last errors: ${quickValidation.errors.slice(0, 2).join(', ')}`
+              error: `All generation attempts failed validation. Last errors: ${quickValidation.errors.slice(0, 2).join(', ')}`,
             };
           }
         }
@@ -171,22 +183,28 @@ class WeeklyContentGeneratorService {
       console.log('  - aiPlan constructor:', aiPlan?.constructor?.name);
       console.log('  - aiPlan keys:', Object.keys(aiPlan || {}));
       console.log('  - aiPlan.workouts exists:', aiPlan?.workouts ? '✅' : '❌');
-      console.log('  - aiPlan.workouts type:', Array.isArray(aiPlan?.workouts) ? 'Array' : typeof aiPlan?.workouts);
+      console.log(
+        '  - aiPlan.workouts type:',
+        Array.isArray(aiPlan?.workouts) ? 'Array' : typeof aiPlan?.workouts
+      );
       console.log('  - aiPlan.workouts length:', aiPlan?.workouts?.length || 0);
-      console.log('  - aiPlan preview (first 500 chars):', JSON.stringify(aiPlan, null, 1)?.substring(0, 500));
-      
+      console.log(
+        '  - aiPlan preview (first 500 chars):',
+        JSON.stringify(aiPlan, null, 1)?.substring(0, 500)
+      );
+
       // Additional validation for the expected properties
       console.log('🔍 Expected properties check:');
       console.log('  - planTitle:', aiPlan?.planTitle ? '✅' : '❌');
       console.log('  - planDescription:', aiPlan?.planDescription ? '✅' : '❌');
       console.log('  - experienceLevel:', aiPlan?.experienceLevel ? '✅' : '❌');
       console.log('  - estimatedWeeklyCalories:', aiPlan?.estimatedWeeklyCalories ? '✅' : '❌');
-      
+
       if (!aiPlan?.workouts || !Array.isArray(aiPlan.workouts) || aiPlan.workouts.length === 0) {
         console.error('❌ Weekly Generator - Invalid workouts data:', aiPlan?.workouts);
         return {
           success: false,
-          error: 'Generated plan has no valid workouts data'
+          error: 'Generated plan has no valid workouts data',
         };
       }
 
@@ -194,12 +212,15 @@ class WeeklyContentGeneratorService {
         console.log(`🔍 Processing workout ${index + 1}:`, workout?.title || 'Untitled');
         console.log(`  - Day: ${workout?.dayOfWeek}`);
         console.log(`  - Exercises: ${workout?.exercises?.length || 0}`);
-        
+
         // Validate workout has required properties
         if (!workout.title || !workout.dayOfWeek) {
-          console.error(`❌ Invalid workout ${index + 1}:`, { title: workout?.title, dayOfWeek: workout?.dayOfWeek });
+          console.error(`❌ Invalid workout ${index + 1}:`, {
+            title: workout?.title,
+            dayOfWeek: workout?.dayOfWeek,
+          });
         }
-        
+
         // Validate exercises have database IDs
         if (workout.exercises?.length > 0) {
           workout.exercises.forEach((exercise: any, exIndex: number) => {
@@ -210,7 +231,7 @@ class WeeklyContentGeneratorService {
             }
           });
         }
-        
+
         return {
           id: this.generateWorkoutId(weekNumber, workout.dayOfWeek),
           title: workout.title,
@@ -221,16 +242,17 @@ class WeeklyContentGeneratorService {
           duration: workout.duration,
           estimatedCalories: workout.estimatedCalories,
           intensityLevel: workout.intensityLevel || 'moderate',
-          exercises: workout.exercises?.map((exercise: any) => ({
-            exerciseId: exercise.exerciseId || 'unknown', // Use database ID from constraint system
-            name: exercise.name || 'Unknown Exercise', // Keep creative name for display
-            sets: exercise.sets || 3,
-            reps: exercise.reps || 10,
-            weight: exercise.weight || 0,
-            restTime: exercise.restTime || 60,
-            notes: exercise.instructions ? exercise.instructions.join(' ') : '',
-            intensity: exercise.weight || 0
-          })) || [],
+          exercises:
+            workout.exercises?.map((exercise: any) => ({
+              exerciseId: exercise.exerciseId || 'unknown', // Use database ID from constraint system
+              name: exercise.name || 'Unknown Exercise', // Keep creative name for display
+              sets: exercise.sets || 3,
+              reps: exercise.reps || 10,
+              weight: exercise.weight || 0,
+              restTime: exercise.restTime || 60,
+              notes: exercise.instructions ? exercise.instructions.join(' ') : '',
+              intensity: exercise.weight || 0,
+            })) || [],
           warmUp: workout.warmUp || [],
           coolDown: workout.coolDown || [],
           equipment: workout.equipment || [],
@@ -243,7 +265,7 @@ class WeeklyContentGeneratorService {
           tags: [`week-${weekNumber}`, workout.dayOfWeek, workout.category],
           isPersonalized: true,
           aiGenerated: true,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         };
       });
 
@@ -255,7 +277,7 @@ class WeeklyContentGeneratorService {
         console.error('❌ EXERCISE ID VALIDATION FAILED:', validationErrors);
         return {
           success: false,
-          error: `Invalid exercise IDs detected: ${validationErrors.join(', ')}. Regeneration required with proper database IDs.`
+          error: `Invalid exercise IDs detected: ${validationErrors.join(', ')}. Regeneration required with proper database IDs.`,
         };
       }
 
@@ -263,7 +285,7 @@ class WeeklyContentGeneratorService {
       const weeklyPlan: WeeklyWorkoutPlan = {
         id: this.generateWeeklyPlanId(weekNumber),
         userId: 'current-user', // Will be set by calling code
-        weekNumber: weekNumber,
+        weekNumber,
         startDate: this.getWeekStartDate(weekNumber),
         endDate: this.getWeekEndDate(weekNumber),
         workouts: dayWorkouts,
@@ -274,22 +296,19 @@ class WeeklyContentGeneratorService {
         planDescription: aiPlan.planDescription,
         experienceLevel: aiPlan.experienceLevel,
         weeklyGoals: aiPlan.weeklyGoals || [],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
-
-
 
       return {
         success: true,
         data: weeklyPlan,
         confidence: 95,
-        generationTime: Date.now()
+        generationTime: Date.now(),
       };
-
     } catch (error) {
       return {
         success: false,
-        error: `Weekly workout plan generation failed: ${error}`
+        error: `Weekly workout plan generation failed: ${error}`,
       };
     }
   }
@@ -304,71 +323,100 @@ class WeeklyContentGeneratorService {
   ): Promise<AIResponse<WeeklyMealPlan>> {
     try {
       console.log(`🥗 Generating weekly meal plan for ${personalInfo.name}...`);
-      
+
       const macroTargets = this.calculateMacroTargets(personalInfo, fitnessGoals);
-      const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      const daysOfWeek = [
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday',
+      ];
       const dailyMeals: WeeklyMealPlan['dailyMeals'] = {};
 
       // Generate meals for each day of the week
       for (const day of daysOfWeek) {
         console.log(`  Generating meals for ${day}...`);
-        
+
         // Generate breakfast
         const breakfast = await this.generateMealForDay(
-          personalInfo, fitnessGoals, 'breakfast', day, macroTargets, weekNumber
+          personalInfo,
+          fitnessGoals,
+          'breakfast',
+          day,
+          macroTargets,
+          weekNumber
         );
-        
-        // Generate lunch  
+
+        // Generate lunch
         const lunch = await this.generateMealForDay(
-          personalInfo, fitnessGoals, 'lunch', day, macroTargets, weekNumber
+          personalInfo,
+          fitnessGoals,
+          'lunch',
+          day,
+          macroTargets,
+          weekNumber
         );
-        
+
         // Generate dinner
         const dinner = await this.generateMealForDay(
-          personalInfo, fitnessGoals, 'dinner', day, macroTargets, weekNumber
+          personalInfo,
+          fitnessGoals,
+          'dinner',
+          day,
+          macroTargets,
+          weekNumber
         );
 
         // Generate snacks
         const snack = await this.generateMealForDay(
-          personalInfo, fitnessGoals, 'snack', day, macroTargets, weekNumber
+          personalInfo,
+          fitnessGoals,
+          'snack',
+          day,
+          macroTargets,
+          weekNumber
         );
 
         dailyMeals[day] = {
-          breakfast: breakfast,
-          lunch: lunch,
-          dinner: dinner,
-          snacks: [snack]
+          breakfast,
+          lunch,
+          dinner,
+          snacks: [snack],
         };
       }
 
       // Generate alternative meals for swapping
       const alternativeMeals = await this.generateAlternativeMeals(
-        personalInfo, fitnessGoals, macroTargets
+        personalInfo,
+        fitnessGoals,
+        macroTargets
       );
 
       const weeklyPlan: WeeklyMealPlan = {
         id: this.generateWeeklyMealPlanId(weekNumber),
         userId: 'current-user', // Will be set by calling code
-        weekNumber: weekNumber,
+        weekNumber,
         startDate: this.getWeekStartDate(weekNumber),
         endDate: this.getWeekEndDate(weekNumber),
-        dailyMeals: dailyMeals,
+        dailyMeals,
         weeklyMacroTargets: macroTargets,
-        alternativeMeals: alternativeMeals,
-        createdAt: new Date().toISOString()
+        alternativeMeals,
+        createdAt: new Date().toISOString(),
       };
 
       return {
         success: true,
         data: weeklyPlan,
         confidence: 90,
-        generationTime: Date.now()
+        generationTime: Date.now(),
       };
-
     } catch (error) {
       return {
         success: false,
-        error: `Weekly meal plan generation failed: ${error}`
+        error: `Weekly meal plan generation failed: ${error}`,
       };
     }
   }
@@ -380,40 +428,46 @@ class WeeklyContentGeneratorService {
   private validateExerciseIds(dayWorkouts: DayWorkout[]): string[] {
     const errors: string[] = [];
     const validExerciseIds = exerciseFilterService.getAllExerciseIds();
-    
+
     dayWorkouts.forEach((workout, workoutIndex) => {
       workout.exercises?.forEach((exercise, exerciseIndex) => {
         if (!exercise.exerciseId || exercise.exerciseId === 'unknown') {
-          errors.push(`Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Missing exerciseId`);
+          errors.push(
+            `Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Missing exerciseId`
+          );
         } else if (!validExerciseIds.includes(exercise.exerciseId)) {
-          errors.push(`Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Invalid exerciseId "${exercise.exerciseId}" (not in database)`);
+          errors.push(
+            `Workout ${workoutIndex + 1}, Exercise ${exerciseIndex + 1}: Invalid exerciseId "${exercise.exerciseId}" (not in database)`
+          );
         }
       });
     });
-    
+
     return errors;
   }
 
   private quickValidateExerciseIds(aiPlan: any): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
     const validExerciseIds = exerciseFilterService.getAllExerciseIds();
-    
+
     if (!aiPlan?.workouts || !Array.isArray(aiPlan.workouts)) {
       return { isValid: false, errors: ['No workouts in AI response'] };
     }
-    
+
     aiPlan.workouts.forEach((workout: any, workoutIndex: number) => {
       if (workout.exercises && Array.isArray(workout.exercises)) {
         workout.exercises.forEach((exercise: any, exerciseIndex: number) => {
           if (!exercise.exerciseId) {
             errors.push(`W${workoutIndex + 1}E${exerciseIndex + 1}: Missing exerciseId`);
           } else if (!validExerciseIds.includes(exercise.exerciseId)) {
-            errors.push(`W${workoutIndex + 1}E${exerciseIndex + 1}: Invalid ID "${exercise.exerciseId}"`);
+            errors.push(
+              `W${workoutIndex + 1}E${exerciseIndex + 1}: Invalid ID "${exercise.exerciseId}"`
+            );
           }
         });
       }
     });
-    
+
     return { isValid: errors.length === 0, errors };
   }
 
@@ -431,7 +485,7 @@ CRITICAL REQUIREMENT: Use ONLY the exact exerciseId values from the provided exe
 - Use IDs like "VPPtusI" NOT descriptive names like "dynamic_elevators"
 - Copy the exact ID from the exercise list - do not modify or create new ones
 - This is your last chance - the response WILL BE REJECTED if it contains invalid exercise IDs
-`
+`,
     };
 
     return originalPrompt + (stricterWarnings[attempt as keyof typeof stricterWarnings] || '');
@@ -444,29 +498,29 @@ CRITICAL REQUIREMENT: Use ONLY the exact exerciseId values from the provided exe
   private getWeeklyPlanConfig(experienceLevel: string, weekNumber: number) {
     const configs = {
       beginner: {
-        name: "1 Week Starter Plan",
+        name: '1 Week Starter Plan',
         workoutDays: 3,
         workoutTypes: ['strength', 'cardio', 'flexibility'],
         restDays: ['tuesday', 'thursday', 'saturday', 'sunday'],
         assignedDays: ['monday', 'wednesday', 'friday'],
-        totalWeeks: 1
+        totalWeeks: 1,
       },
       intermediate: {
-        name: "1.5 Week Progressive Plan", 
+        name: '1.5 Week Progressive Plan',
         workoutDays: 5,
         workoutTypes: ['strength', 'cardio', 'strength', 'hiit', 'flexibility'],
         restDays: ['wednesday', 'sunday'],
         assignedDays: ['monday', 'tuesday', 'thursday', 'friday', 'saturday'],
-        totalWeeks: 1.5
+        totalWeeks: 1.5,
       },
       advanced: {
-        name: "2 Week Intensive Plan",
+        name: '2 Week Intensive Plan',
         workoutDays: 6,
         workoutTypes: ['strength', 'cardio', 'strength', 'hiit', 'strength', 'flexibility'],
         restDays: ['sunday'],
         assignedDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
-        totalWeeks: 2
-      }
+        totalWeeks: 2,
+      },
     };
 
     return configs[experienceLevel as keyof typeof configs] || configs.intermediate;
@@ -480,16 +534,25 @@ CRITICAL REQUIREMENT: Use ONLY the exact exerciseId values from the provided exe
   ): string {
     // Get filtered exercises based on user profile
     const filteredExercises = exerciseFilterService.filterExercises(personalInfo, fitnessGoals);
-    
+
     // Separate exercises by type
-    const warmupExercises = exerciseFilterService.getExercisesByType(filteredExercises, 'warmup', 20);
-    const mainExercises = filteredExercises.filter(ex => 
-      !ex.name.toLowerCase().includes('warm') && 
-      !ex.name.toLowerCase().includes('cool') &&
-      !ex.name.toLowerCase().includes('stretch')
+    const warmupExercises = exerciseFilterService.getExercisesByType(
+      filteredExercises,
+      'warmup',
+      20
     );
-    const cooldownExercises = exerciseFilterService.getExercisesByType(filteredExercises, 'cooldown', 15);
-    
+    const mainExercises = filteredExercises.filter(
+      (ex) =>
+        !ex.name.toLowerCase().includes('warm') &&
+        !ex.name.toLowerCase().includes('cool') &&
+        !ex.name.toLowerCase().includes('stretch')
+    );
+    const cooldownExercises = exerciseFilterService.getExercisesByType(
+      filteredExercises,
+      'cooldown',
+      15
+    );
+
     return `${PROMPT_TEMPLATES.WORKOUT_GENERATION}
 
 WEEKLY PLAN GENERATION REQUEST:
@@ -525,13 +588,25 @@ YOU MUST ONLY USE EXERCISES FROM THE PROVIDED LISTS BELOW. NO EXCEPTIONS.
 MANDATORY: Use these EXACT exercise IDs in your response:
 
 WARM-UP EXERCISES (use for warm-up sections):
-${warmupExercises.slice(0, 15).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+${warmupExercises
+  .slice(0, 15)
+  .map((ex) => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`)
+  .join('\n')}
 
 MAIN EXERCISES (use for main workout):
-${mainExercises.slice(0, 50).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Target: ${ex.targetMuscles.join(', ')} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+${mainExercises
+  .slice(0, 50)
+  .map(
+    (ex) =>
+      `- ID: ${ex.exerciseId} | Name: ${ex.name} | Target: ${ex.targetMuscles.join(', ')} | Equipment: ${ex.equipments.join(', ')}`
+  )
+  .join('\n')}
 
 COOL-DOWN EXERCISES (use for cool-down sections):
-${cooldownExercises.slice(0, 10).map(ex => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`).join('\n')}
+${cooldownExercises
+  .slice(0, 10)
+  .map((ex) => `- ID: ${ex.exerciseId} | Name: ${ex.name} | Equipment: ${ex.equipments.join(', ')}`)
+  .join('\n')}
 
 SPECIFIC REQUIREMENTS FOR EACH WORKOUT:
 1. MANDATORY: Use the exact exerciseId (like "VPPtusI") in the exerciseId field
@@ -595,7 +670,7 @@ PERSONALIZATION DATA:
   ): Promise<Meal> {
     // Calculate meal-specific calorie target
     const mealCalories = this.getMealCalorieTarget(mealType, macroTargets.dailyCalories);
-    
+
     const mealPrompt = `${PROMPT_TEMPLATES.NUTRITION_PLANNING}
 
 MEAL CONTEXT:
@@ -610,15 +685,15 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
 
     // 🔧 Using simplified nutrition schema for reliable meal generation
     console.log('🧪 Using simplified daily nutrition schema in weekly content generator...');
-    
+
     const response = await geminiService.generateResponse<any>(
       mealPrompt,
       {},
       SIMPLIFIED_DAILY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex NUTRITION_SCHEMA
-      2, // Reduced retries for faster debugging 
+      2, // Reduced retries for faster debugging
       {
         maxOutputTokens: 2048, // 🔧 Significantly reduced from 6144 to avoid token overflow
-        temperature: 0.4 // 🔧 Lower temperature for consistent JSON structure
+        temperature: 0.4, // 🔧 Lower temperature for consistent JSON structure
       }
     );
 
@@ -628,17 +703,21 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
         id: this.generateMealId(mealType, day, weekNumber),
         name: mealData.name,
         type: mealType as MealType,
-        description: mealData.description,
         items: mealData.items,
         totalCalories: mealData.totalCalories,
-        totalProtein: mealData.totalProtein,
-        totalCarbohydrates: mealData.totalCarbohydrates,
-        totalFat: mealData.totalFat,
-        preparationTime: 15, // Default
-        difficulty: 'easy', // Default
+        totalMacros: {
+          protein: mealData.totalProtein || 0,
+          carbohydrates: mealData.totalCarbohydrates || 0,
+          fat: mealData.totalFat || 0,
+          fiber: 0,
+        },
+        prepTime: 15, // Default
+        difficulty: 'easy' as const,
         tags: [`week-${weekNumber}`, day, mealType],
+        isPersonalized: true,
         aiGenerated: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
     }
 
@@ -653,10 +732,10 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
   ): Promise<Meal[]> {
     const alternatives: Meal[] = [];
     const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
-    
+
     for (const mealType of mealTypes) {
       const calories = this.getMealCalorieTarget(mealType, macroTargets.dailyCalories);
-      
+
       try {
         // 🔧 Using simplified nutrition schema for alternative meals
         const response = await geminiService.generateResponse<any>(
@@ -668,7 +747,7 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
           2, // Reduced retries
           {
             maxOutputTokens: 2048, // 🔧 Reduced from 4096 to avoid token overflow
-            temperature: 0.4 // 🔧 Lower temperature for consistency (was 0.8)
+            temperature: 0.4, // 🔧 Lower temperature for consistency (was 0.8)
           }
         );
 
@@ -678,17 +757,22 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
               id: `alt-${mealType}-${index}`,
               name: meal.name,
               type: mealType as MealType,
-              description: meal.description,
+              // description: meal.description, // Not part of Meal interface
               items: meal.items,
               totalCalories: meal.totalCalories,
-              totalProtein: meal.totalProtein,
-              totalCarbohydrates: meal.totalCarbohydrates,
-              totalFat: meal.totalFat,
-              preparationTime: 15,
-              difficulty: 'easy',
+              totalMacros: {
+                protein: meal.totalProtein || 0,
+                carbohydrates: meal.totalCarbohydrates || 0,
+                fat: meal.totalFat || 0,
+                fiber: 0,
+              },
+              prepTime: 15,
+              difficulty: 'easy' as const,
               tags: ['alternative', mealType],
+              isPersonalized: true,
               aiGenerated: true,
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             });
           });
         }
@@ -704,9 +788,17 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     // Basic calorie calculation (Mifflin-St Jeor)
     let bmr: number;
     if (personalInfo.gender.toLowerCase() === 'male') {
-      bmr = 10 * Number(personalInfo.weight) + 6.25 * Number(personalInfo.height) - 5 * Number(personalInfo.age) + 5;
+      bmr =
+        10 * Number(personalInfo.weight) +
+        6.25 * Number(personalInfo.height) -
+        5 * Number(personalInfo.age) +
+        5;
     } else {
-      bmr = 10 * Number(personalInfo.weight) + 6.25 * Number(personalInfo.height) - 5 * Number(personalInfo.age) - 161;
+      bmr =
+        10 * Number(personalInfo.weight) +
+        6.25 * Number(personalInfo.height) -
+        5 * Number(personalInfo.age) -
+        161;
     }
 
     // Activity multiplier
@@ -715,11 +807,13 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
       light: 1.375,
       moderate: 1.55,
       active: 1.725,
-      extreme: 1.9
+      extreme: 1.9,
     };
-    
-    const tdee = bmr * (activityMultipliers[personalInfo.activityLevel as keyof typeof activityMultipliers] || 1.55);
-    
+
+    const tdee =
+      bmr *
+      (activityMultipliers[personalInfo.activityLevel as keyof typeof activityMultipliers] || 1.55);
+
     // Adjust based on goals
     let dailyCalories = tdee;
     if (fitnessGoals.primaryGoals.includes('weight_loss')) {
@@ -731,24 +825,24 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     // Macro split (protein: 25%, carbs: 45%, fat: 30%)
     const dailyProtein = Math.round((dailyCalories * 0.25) / 4); // 4 cal per gram
     const dailyCarbs = Math.round((dailyCalories * 0.45) / 4);
-    const dailyFat = Math.round((dailyCalories * 0.30) / 9); // 9 cal per gram
+    const dailyFat = Math.round((dailyCalories * 0.3) / 9); // 9 cal per gram
 
     return {
       dailyCalories: Math.round(dailyCalories),
       dailyProtein,
       dailyCarbs,
-      dailyFat
+      dailyFat,
     };
   }
 
   private getMealCalorieTarget(mealType: string, dailyCalories: number): number {
     const mealSplits = {
       breakfast: 0.25, // 25%
-      lunch: 0.35,     // 35%
-      dinner: 0.30,    // 30%
-      snack: 0.10      // 10%
+      lunch: 0.35, // 35%
+      dinner: 0.3, // 30%
+      snack: 0.1, // 10%
     };
-    
+
     return Math.round(dailyCalories * (mealSplits[mealType as keyof typeof mealSplits] || 0.25));
   }
 
@@ -756,49 +850,55 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     return {
       id: `fallback-${mealType}`,
       name: `Simple ${mealType.charAt(0).toUpperCase() + mealType.slice(1)}`,
-      type: mealType,
-      description: `A nutritious ${mealType} option`,
-      items: [{
-        foodId: `fallback-food-${mealType}`,
-        food: {
-          id: `fallback-food-${mealType}`,
-          name: 'Balanced meal components',
-          category: 'mixed',
-          nutrition: {
-            calories: calories,
-            macros: {
-              protein: Math.round(calories * 0.25 / 4),
-              carbohydrates: Math.round(calories * 0.45 / 4),
-              fat: Math.round(calories * 0.30 / 9),
-              fiber: 5
+      type: mealType as MealType,
+      items: [
+        {
+          foodId: `fallback-food-${mealType}`,
+          food: {
+            id: `fallback-food-${mealType}`,
+            name: 'Balanced meal components',
+            category: 'grains',
+            nutrition: {
+              calories,
+              macros: {
+                protein: Math.round((calories * 0.25) / 4),
+                carbohydrates: Math.round((calories * 0.45) / 4),
+                fat: Math.round((calories * 0.3) / 9),
+                fiber: 5,
+              },
+              servingSize: 100,
+              servingUnit: 'g',
             },
-            servingSize: 100,
-            servingUnit: 'g'
+            allergens: [],
+            dietaryLabels: [],
+            verified: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           },
-          allergens: [],
-          dietaryLabels: [],
-          verified: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          quantity: 1,
+          calories,
+          macros: {
+            protein: Math.round((calories * 0.25) / 4),
+            carbohydrates: Math.round((calories * 0.45) / 4),
+            fat: Math.round((calories * 0.3) / 9),
+            fiber: 5,
+          },
         },
-        quantity: 1,
-        calories: calories,
-        macros: {
-          protein: Math.round(calories * 0.25 / 4),
-          carbohydrates: Math.round(calories * 0.45 / 4),
-          fat: Math.round(calories * 0.30 / 9),
-          fiber: 5
-        }
-      }],
+      ],
       totalCalories: calories,
-      totalProtein: Math.round(calories * 0.25 / 4),
-      totalCarbohydrates: Math.round(calories * 0.45 / 4),
-      totalFat: Math.round(calories * 0.30 / 9),
-      preparationTime: 10,
-      difficulty: 'easy',
+      totalMacros: {
+        protein: Math.round((calories * 0.25) / 4),
+        carbohydrates: Math.round((calories * 0.45) / 4),
+        fat: Math.round((calories * 0.3) / 9),
+        fiber: 5,
+      },
+      prepTime: 10,
+      difficulty: 'easy' as const,
       tags: ['fallback'],
+      isPersonalized: false,
       aiGenerated: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
   }
 
@@ -806,26 +906,26 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
     const baseNotes = [
       'Focus on proper form and technique',
       'Listen to your body and rest when needed',
-      'Stay consistent with the schedule'
+      'Stay consistent with the schedule',
     ];
 
     if (experienceLevel === 'beginner') {
       return [
         ...baseNotes,
         'Start with lighter weights and master the movements',
-        'Gradually increase intensity as you feel stronger'
+        'Gradually increase intensity as you feel stronger',
       ];
     } else if (experienceLevel === 'intermediate') {
       return [
         ...baseNotes,
         'Increase weight by 5-10% when you can complete all sets easily',
-        'Focus on mind-muscle connection'
+        'Focus on mind-muscle connection',
       ];
     } else {
       return [
         ...baseNotes,
         'Push your limits while maintaining form',
-        'Consider advanced techniques like drop sets or supersets'
+        'Consider advanced techniques like drop sets or supersets',
       ];
     }
   }
@@ -867,7 +967,7 @@ Create a single ${mealType} meal that fits the calorie target and supports the u
       cardio: '🏃',
       flexibility: '🧘',
       hiit: '🔥',
-      hybrid: '⚡'
+      hybrid: '⚡',
     };
     return icons[category] || '🏋️';
   }

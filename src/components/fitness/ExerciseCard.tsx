@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Animated,
-  LayoutAnimation,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, LayoutAnimation } from 'react-native';
 import { Card, THEME } from '../ui';
 import { Exercise, WorkoutSet } from '../../types/workout';
 
@@ -75,26 +68,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
   const getDifficultyIcon = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return '🟢';
-      case 'intermediate': return '🟡';
-      case 'advanced': return '🔴';
-      default: return '⚪';
+      case 'beginner':
+        return '🟢';
+      case 'intermediate':
+        return '🟡';
+      case 'advanced':
+        return '🔴';
+      default:
+        return '⚪';
     }
   };
 
   return (
     <Card style={[styles.card, isCompleted && styles.cardCompleted, style]} variant="outlined">
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={handleToggleExpand}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.cardContent} onPress={handleToggleExpand} activeOpacity={0.7}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.exerciseNumber}>
             <Text style={styles.exerciseNumberText}>{exerciseNumber}</Text>
           </View>
-          
+
           <View style={styles.titleSection}>
             <Text style={[styles.exerciseName, isCompleted && styles.exerciseNameCompleted]}>
               {exercise.name}
@@ -103,9 +96,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <Text style={styles.metaText}>
                 {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
               </Text>
-              {workoutSet.weight && (
-                <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
-              )}
+              {workoutSet.weight && <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>}
               {workoutSet.duration && (
                 <Text style={styles.metaText}> • {formatTime(workoutSet.duration)}</Text>
               )}
@@ -146,7 +137,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   {getDifficultyIcon(exercise.difficulty)} {exercise.difficulty}
                 </Text>
               </View>
-              
+
               {workoutSet.restTime && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailIcon}>⏱️</Text>
@@ -154,7 +145,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                   <Text style={styles.detailValue}>{formatTime(workoutSet.restTime)}</Text>
                 </View>
               )}
-              
+
               {exercise.calories && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailIcon}>🔥</Text>
@@ -174,12 +165,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                       key={index}
                       style={[
                         styles.muscleGroupChip,
-                        { backgroundColor: getMuscleGroupColor(group) }
+                        { backgroundColor: getMuscleGroupColor(group) },
                       ]}
                     >
-                      <Text style={styles.muscleGroupText}>
-                        {group.replace('_', ' ')}
-                      </Text>
+                      <Text style={styles.muscleGroupText}>{group.replace('_', ' ')}</Text>
                     </View>
                   ))}
                 </View>
@@ -193,9 +182,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <View style={styles.equipmentContainer}>
                   {exercise.equipment.map((item, index) => (
                     <View key={index} style={styles.equipmentChip}>
-                      <Text style={styles.equipmentText}>
-                        {item.replace('_', ' ')}
-                      </Text>
+                      <Text style={styles.equipmentText}>{item.replace('_', ' ')}</Text>
                     </View>
                   ))}
                 </View>
@@ -244,9 +231,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         {/* Expand/Collapse Indicator */}
         <View style={styles.expandIndicator}>
-          <Text style={styles.expandIcon}>
-            {isExpanded ? '▲' : '▼'}
-          </Text>
+          <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
         </View>
       </TouchableOpacity>
     </Card>
@@ -257,22 +242,22 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   cardCompleted: {
     backgroundColor: `${THEME.colors.success}08`,
     borderColor: THEME.colors.success,
   },
-  
+
   cardContent: {
     padding: THEME.spacing.md,
   },
-  
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: THEME.spacing.sm,
   },
-  
+
   exerciseNumber: {
     width: 32,
     height: 32,
@@ -282,42 +267,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: THEME.spacing.md,
   },
-  
+
   exerciseNumberText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.bold,
   },
-  
+
   titleSection: {
     flex: 1,
   },
-  
+
   exerciseName: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: 4,
   },
-  
+
   exerciseNameCompleted: {
     color: THEME.colors.success,
   },
-  
+
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   metaText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
   },
-  
+
   statusSection: {
     alignItems: 'center',
   },
-  
+
   completedBadge: {
     width: 32,
     height: 32,
@@ -326,13 +311,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   completedIcon: {
     color: THEME.colors.white,
     fontSize: 16,
     fontWeight: 'bold',
   },
-  
+
   playButton: {
     width: 32,
     height: 32,
@@ -341,128 +326,128 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   playIcon: {
     fontSize: 14,
   },
-  
+
   timerSection: {
     alignItems: 'center',
     marginBottom: THEME.spacing.md,
   },
-  
+
   timerDisplay: {
     backgroundColor: THEME.colors.warning,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
   },
-  
+
   timerText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.bold,
   },
-  
+
   expandedContent: {
     marginTop: THEME.spacing.md,
     paddingTop: THEME.spacing.md,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
-  
+
   detailsSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: THEME.spacing.xs,
   },
-  
+
   detailIcon: {
     fontSize: 16,
     marginRight: THEME.spacing.sm,
     width: 20,
   },
-  
+
   detailLabel: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     marginRight: THEME.spacing.sm,
     minWidth: 80,
   },
-  
+
   detailValue: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.text,
     fontWeight: THEME.fontWeight.medium,
   },
-  
+
   sectionTitle: {
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
-  
+
   muscleGroupsSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   muscleGroupsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: THEME.spacing.xs,
   },
-  
+
   muscleGroupChip: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  
+
   muscleGroupText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.medium,
     textTransform: 'capitalize',
   },
-  
+
   equipmentSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   equipmentContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: THEME.spacing.xs,
   },
-  
+
   equipmentChip: {
     backgroundColor: THEME.colors.backgroundSecondary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  
+
   equipmentText: {
     color: THEME.colors.text,
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.medium,
     textTransform: 'capitalize',
   },
-  
+
   instructionsSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   instructionItem: {
     flexDirection: 'row',
     marginBottom: THEME.spacing.sm,
   },
-  
+
   instructionNumber: {
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.bold,
@@ -470,59 +455,59 @@ const styles = StyleSheet.create({
     marginRight: THEME.spacing.sm,
     minWidth: 20,
   },
-  
+
   instructionText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.text,
     flex: 1,
     lineHeight: 20,
   },
-  
+
   tipsSection: {
     marginBottom: THEME.spacing.md,
   },
-  
+
   tipText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     marginBottom: THEME.spacing.xs,
     lineHeight: 18,
   },
-  
+
   actionButtons: {
     alignItems: 'center',
     marginTop: THEME.spacing.md,
   },
-  
+
   completeButton: {
     backgroundColor: THEME.colors.success,
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
   },
-  
+
   completeButtonText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.semibold,
   },
-  
+
   completedStatus: {
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.sm,
   },
-  
+
   completedStatusText: {
     color: THEME.colors.success,
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.semibold,
   },
-  
+
   expandIndicator: {
     alignItems: 'center',
     marginTop: THEME.spacing.sm,
   },
-  
+
   expandIcon: {
     fontSize: 12,
     color: THEME.colors.textMuted,

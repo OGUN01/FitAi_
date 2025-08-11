@@ -12,14 +12,14 @@ const getDimensions = () => {
     const heightScale = screenHeight / baseHeight;
     const scale = Math.min(widthScale, heightScale);
     const fontScale = PixelRatio.getFontScale();
-    
+
     return {
       screenWidth,
       screenHeight,
       widthScale,
       heightScale,
       scale,
-      fontScale
+      fontScale,
     };
   } catch (error) {
     // Fallback for when Dimensions is not available (during module loading)
@@ -30,7 +30,7 @@ const getDimensions = () => {
       widthScale: 1,
       heightScale: 1,
       scale: 1,
-      fontScale: 1
+      fontScale: 1,
     };
   }
 };
@@ -137,18 +137,16 @@ export const rlh = (fontSize: number, multiplier: number = 1.5): number => {
 /**
  * Create responsive styles object
  */
-export const createResponsiveStyles = <T extends Record<string, any>>(
-  styles: T
-): T => {
+export const createResponsiveStyles = <T extends Record<string, any>>(styles: T): T => {
   const responsiveStyles: any = {};
-  
+
   for (const key in styles) {
     const style = styles[key];
     const responsiveStyle: any = {};
-    
+
     for (const prop in style) {
       const value = style[prop];
-      
+
       // Handle numeric values for specific properties
       if (typeof value === 'number') {
         switch (prop) {
@@ -198,10 +196,10 @@ export const createResponsiveStyles = <T extends Record<string, any>>(
         responsiveStyle[prop] = value;
       }
     }
-    
+
     responsiveStyles[key] = responsiveStyle;
   }
-  
+
   return responsiveStyles as T;
 };
 

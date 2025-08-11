@@ -38,12 +38,12 @@ export class RecognizedFoodLogger {
         userId,
         foodCount: recognizedFoods.length,
         mealType,
-        customMealName
+        customMealName,
       });
 
       // Step 1: Create or find foods in the database
       const foodMappings = await this.createOrFindFoods(recognizedFoods);
-      
+
       if (foodMappings.length === 0) {
         throw new Error('Failed to create food entries in database');
       }
@@ -55,17 +55,17 @@ export class RecognizedFoodLogger {
       console.log('📊 Meal preparation:', {
         mealName,
         totalCalories,
-        foodMappings: foodMappings.length
+        foodMappings: foodMappings.length,
       });
 
       // Step 3: Log the meal using existing nutrition data service
       const mealData = {
         name: mealName,
         type: mealType,
-        foods: foodMappings.map(mapping => ({
+        foods: foodMappings.map((mapping) => ({
           food_id: mapping.databaseFoodId,
-          quantity_grams: mapping.recognizedFood.portionSize.estimatedGrams
-        }))
+          quantity_grams: mapping.recognizedFood.portionSize.estimatedGrams,
+        })),
       };
 
       const logResult = await nutritionDataService.logMeal(userId, mealData);
@@ -77,15 +77,11 @@ export class RecognizedFoodLogger {
       console.log('✅ Successfully logged recognized foods as meal:', {
         mealId: logResult.data?.id,
         totalCalories,
-        foodCount: recognizedFoods.length
+        foodCount: recognizedFoods.length,
       });
 
       // Step 4: Store additional metadata for food recognition tracking
-      await this.storeRecognitionMetadata(
-        logResult.data!.id,
-        recognizedFoods,
-        foodMappings
-      );
+      await this.storeRecognitionMetadata(logResult.data!.id, recognizedFoods, foodMappings);
 
       // Step 5: Trigger nutrition data refresh for real-time UI updates
       await nutritionRefreshService.refreshAfterMealLogged(userId, logResult.data!);
@@ -96,12 +92,11 @@ export class RecognizedFoodLogger {
         totalCalories: Math.round(totalCalories),
         // meal removed from return type for type safety
       };
-
     } catch (error) {
       console.error('❌ Failed to log recognized foods:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -109,11 +104,13 @@ export class RecognizedFoodLogger {
   /**
    * Create or find foods in the database from recognized foods
    */
-  private async createOrFindFoods(recognizedFoods: RecognizedFood[]): Promise<{
-    recognizedFood: RecognizedFood;
-    databaseFoodId: string;
-    isNewFood: boolean;
-  }[]> {
+  private async createOrFindFoods(recognizedFoods: RecognizedFood[]): Promise<
+    {
+      recognizedFood: RecognizedFood;
+      databaseFoodId: string;
+      isNewFood: boolean;
+    }[]
+  > {
     const foodMappings: {
       recognizedFood: RecognizedFood;
       databaseFoodId: string;
@@ -124,31 +121,30 @@ export class RecognizedFoodLogger {
       try {
         // Step 1: Try to find existing food by name
         const existingFood = await this.findExistingFood(recognizedFood.name);
-        
+
         if (existingFood) {
           console.log(`✅ Found existing food: ${recognizedFood.name} -> ${existingFood.id}`);
           foodMappings.push({
             recognizedFood,
             databaseFoodId: existingFood.id,
-            isNewFood: false
+            isNewFood: false,
           });
           continue;
         }
 
         // Step 2: Create new food entry
         const newFood = await this.createFoodFromRecognized(recognizedFood);
-        
+
         if (newFood) {
           console.log(`🆕 Created new food: ${recognizedFood.name} -> ${newFood.id}`);
           foodMappings.push({
             recognizedFood,
             databaseFoodId: newFood.id,
-            isNewFood: true
+            isNewFood: true,
           });
         } else {
           console.warn(`⚠️ Failed to create food: ${recognizedFood.name}`);
         }
-
       } catch (error) {
         console.error(`❌ Error processing food ${recognizedFood.name}:`, error);
         // Continue with other foods even if one fails
@@ -180,17 +176,16 @@ export class RecognizedFoodLogger {
       }
 
       // Try fuzzy match with cleaned name
-      const cleanedName = foodName.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-      const searchTerms = cleanedName.split(' ').filter(term => term.length > 2);
-      
+      const cleanedName = foodName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .trim();
+      const searchTerms = cleanedName.split(' ').filter((term) => term.length > 2);
+
       if (searchTerms.length > 0) {
-        const searchQuery = searchTerms.map(term => `name.ilike.%${term}%`).join(',');
-        
-        ({ data, error } = await supabase
-          .from('foods')
-          .select('*')
-          .or(searchQuery)
-          .limit(1));
+        const searchQuery = searchTerms.map((term) => `name.ilike.%${term}%`).join(',');
+
+        ({ data, error } = await supabase.from('foods').select('*').or(searchQuery).limit(1));
 
         if (!error && data && data.length > 0) {
           console.log(`🔍 Fuzzy matched: "${foodName}" -> "${data[0].name}"`);
@@ -213,23 +208,48 @@ export class RecognizedFoodLogger {
       const foodData = {
         name: recognizedFood.name,
         category: recognizedFood.category,
-        calories_per_100g: Math.round((recognizedFood.nutrition.calories / recognizedFood.portionSize.estimatedGrams) * 100),
-        protein_per_100g: Math.round((recognizedFood.nutrition.protein / recognizedFood.portionSize.estimatedGrams) * 100 * 10) / 10,
-        carbs_per_100g: Math.round((recognizedFood.nutrition.carbs / recognizedFood.portionSize.estimatedGrams) * 100 * 10) / 10,
-        fat_per_100g: Math.round((recognizedFood.nutrition.fat / recognizedFood.portionSize.estimatedGrams) * 100 * 10) / 10,
-        fiber_per_100g: recognizedFood.nutrition.fiber ? Math.round((recognizedFood.nutrition.fiber / recognizedFood.portionSize.estimatedGrams) * 100 * 10) / 10 : null,
-        sugar_per_100g: recognizedFood.nutrition.sugar ? Math.round((recognizedFood.nutrition.sugar / recognizedFood.portionSize.estimatedGrams) * 100 * 10) / 10 : null,
-        sodium_per_100g: recognizedFood.nutrition.sodium ? Math.round((recognizedFood.nutrition.sodium / recognizedFood.portionSize.estimatedGrams) * 100) : null,
-        created_at: new Date().toISOString()
+        calories_per_100g: Math.round(
+          (recognizedFood.nutrition.calories / recognizedFood.portionSize.estimatedGrams) * 100
+        ),
+        protein_per_100g:
+          Math.round(
+            (recognizedFood.nutrition.protein / recognizedFood.portionSize.estimatedGrams) *
+              100 *
+              10
+          ) / 10,
+        carbs_per_100g:
+          Math.round(
+            (recognizedFood.nutrition.carbs / recognizedFood.portionSize.estimatedGrams) * 100 * 10
+          ) / 10,
+        fat_per_100g:
+          Math.round(
+            (recognizedFood.nutrition.fat / recognizedFood.portionSize.estimatedGrams) * 100 * 10
+          ) / 10,
+        fiber_per_100g: recognizedFood.nutrition.fiber
+          ? Math.round(
+              (recognizedFood.nutrition.fiber / recognizedFood.portionSize.estimatedGrams) *
+                100 *
+                10
+            ) / 10
+          : null,
+        sugar_per_100g: recognizedFood.nutrition.sugar
+          ? Math.round(
+              (recognizedFood.nutrition.sugar / recognizedFood.portionSize.estimatedGrams) *
+                100 *
+                10
+            ) / 10
+          : null,
+        sodium_per_100g: recognizedFood.nutrition.sodium
+          ? Math.round(
+              (recognizedFood.nutrition.sodium / recognizedFood.portionSize.estimatedGrams) * 100
+            )
+          : null,
+        created_at: new Date().toISOString(),
       };
 
       console.log('🆕 Creating new food:', foodData);
 
-      const { data, error } = await supabase
-        .from('foods')
-        .insert(foodData)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('foods').insert(foodData).select().single();
 
       if (error) {
         console.error('Error creating food:', error);
@@ -258,15 +278,15 @@ export class RecognizedFoodLogger {
     // For multiple foods, create a descriptive name
     const mainFoods = recognizedFoods.slice(0, 2);
     const remainingCount = recognizedFoods.length - 2;
-    
-    let mealName = mainFoods.map(food => food.name).join(', ');
-    
+
+    let mealName = mainFoods.map((food) => food.name).join(', ');
+
     if (remainingCount > 0) {
       mealName += ` & ${remainingCount} more item${remainingCount !== 1 ? 's' : ''}`;
     }
 
     // Add meal type context if it's a complex meal
-    const cuisineTypes = [...new Set(recognizedFoods.map(food => food.cuisine))];
+    const cuisineTypes = [...new Set(recognizedFoods.map((food) => food.cuisine))];
     if (cuisineTypes.length === 1 && cuisineTypes[0] === 'indian') {
       mealName = `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} - ${mealName}`;
     }
@@ -287,10 +307,12 @@ export class RecognizedFoodLogger {
         meal_id: mealId,
         recognition_data: {
           totalFoods: recognizedFoods.length,
-          averageConfidence: recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) / recognizedFoods.length,
-          cuisineTypes: [...new Set(recognizedFoods.map(food => food.cuisine))],
-          enhancementSources: [...new Set(recognizedFoods.map(food => food.enhancementSource))],
-          newFoodsCreated: foodMappings.filter(mapping => mapping.isNewFood).length,
+          averageConfidence:
+            recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
+            recognizedFoods.length,
+          cuisineTypes: [...new Set(recognizedFoods.map((food) => food.cuisine))],
+          enhancementSources: [...new Set(recognizedFoods.map((food) => food.enhancementSource))],
+          newFoodsCreated: foodMappings.filter((mapping) => mapping.isNewFood).length,
           recognizedAt: new Date().toISOString(),
           foods: recognizedFoods.map((food, index) => ({
             id: food.id,
@@ -299,10 +321,10 @@ export class RecognizedFoodLogger {
             cuisine: food.cuisine,
             enhancementSource: food.enhancementSource,
             databaseFoodId: foodMappings[index]?.databaseFoodId,
-            isNewFood: foodMappings[index]?.isNewFood
-          }))
+            isNewFood: foodMappings[index]?.isNewFood,
+          })),
         },
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       // Store in meal_recognition_metadata table (if it exists)
@@ -313,7 +335,10 @@ export class RecognizedFoodLogger {
         .single();
       if (metaError) {
         // Table might not exist, which is fine for now
-        console.log('Recognition metadata storage skipped (table may not exist):', metaError.message);
+        console.log(
+          'Recognition metadata storage skipped (table may not exist):',
+          metaError.message
+        );
       }
 
       console.log('📊 Recognition metadata stored successfully');
@@ -326,7 +351,10 @@ export class RecognizedFoodLogger {
   /**
    * Get recognition statistics for improvement insights
    */
-  async getRecognitionStats(userId: string, days: number = 30): Promise<{
+  async getRecognitionStats(
+    userId: string,
+    days: number = 30
+  ): Promise<{
     totalRecognitions: number;
     averageConfidence: number;
     cuisineBreakdown: Record<string, number>;
@@ -348,7 +376,7 @@ export class RecognizedFoodLogger {
           totalRecognitions: 0,
           averageConfidence: 0,
           cuisineBreakdown: {},
-          accuracyTrends: []
+          accuracyTrends: [],
         };
       }
 
@@ -356,7 +384,7 @@ export class RecognizedFoodLogger {
         totalRecognitions: data?.length || 0,
         averageConfidence: 0,
         cuisineBreakdown: {} as Record<string, number>,
-        accuracyTrends: [] as Array<{ date: string; confidence: number }>
+        accuracyTrends: [] as Array<{ date: string; confidence: number }>,
       };
 
       if (data && data.length > 0) {
@@ -367,7 +395,7 @@ export class RecognizedFoodLogger {
         stats.averageConfidence = totalConfidence / data.length;
 
         // Build cuisine breakdown
-        data.forEach(record => {
+        data.forEach((record) => {
           const cuisines = record.recognition_data?.cuisineTypes || [];
           cuisines.forEach((cuisine: string) => {
             stats.cuisineBreakdown[cuisine] = (stats.cuisineBreakdown[cuisine] || 0) + 1;
@@ -375,9 +403,9 @@ export class RecognizedFoodLogger {
         });
 
         // Build accuracy trends
-        stats.accuracyTrends = data.map(record => ({
+        stats.accuracyTrends = data.map((record) => ({
           date: record.created_at.split('T')[0],
-          confidence: record.recognition_data?.averageConfidence || 0
+          confidence: record.recognition_data?.averageConfidence || 0,
         }));
       }
 
@@ -388,7 +416,7 @@ export class RecognizedFoodLogger {
         totalRecognitions: 0,
         averageConfidence: 0,
         cuisineBreakdown: {},
-        accuracyTrends: []
+        accuracyTrends: [],
       };
     }
   }

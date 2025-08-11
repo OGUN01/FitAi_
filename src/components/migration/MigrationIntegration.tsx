@@ -25,7 +25,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 }) => {
   const { user, isAuthenticated } = useAuth();
   const migration = useMigration();
-  
+
   const [showProgress, setShowProgress] = useState(false);
   const [showConflicts, setShowConflicts] = useState(false);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
@@ -96,13 +96,13 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       }
 
       await migration.startProfileMigration();
-      
+
       // Handle migration result
       if (migration.result) {
         if (migration.result.success) {
           console.log('✅ Migration completed successfully');
           onMigrationComplete?.(true);
-          
+
           if (showProgressModal) {
             // Auto-close progress modal after success
             setTimeout(() => {
@@ -118,7 +118,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
           console.error('❌ Migration failed:', migration.result.errors);
           setShowProgress(false);
           onMigrationComplete?.(false);
-          
+
           Alert.alert(
             'Migration Failed',
             `Failed to sync your data: ${migration.result.errors.join(', ')}`,
@@ -133,7 +133,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       console.error('❌ Migration error:', error);
       setShowProgress(false);
       onMigrationComplete?.(false);
-      
+
       Alert.alert(
         'Sync Error',
         'An unexpected error occurred while syncing your data. Please try again.',
@@ -151,24 +151,24 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const handleConflictResolution = async (resolutions: ConflictResolution[]) => {
     console.log('🔧 Resolving conflicts:', resolutions);
-    
+
     setShowConflicts(false);
-    
+
     try {
       // For now, we'll restart migration with the resolutions
       // TODO: Implement proper conflict resolution in migration manager
-      
+
       if (showProgressModal) {
         setShowProgress(true);
       }
 
       // Apply resolutions and restart migration
       await migration.startProfileMigration();
-      
+
       if (migration.result?.success) {
         console.log('✅ Migration completed after conflict resolution');
         onMigrationComplete?.(true);
-        
+
         if (showProgressModal) {
           setTimeout(() => {
             setShowProgress(false);
@@ -178,23 +178,19 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
         console.error('❌ Migration failed after conflict resolution');
         setShowProgress(false);
         onMigrationComplete?.(false);
-        
-        Alert.alert(
-          'Migration Failed',
-          'Failed to complete migration after resolving conflicts.',
-          [{ text: 'OK' }]
-        );
+
+        Alert.alert('Migration Failed', 'Failed to complete migration after resolving conflicts.', [
+          { text: 'OK' },
+        ]);
       }
     } catch (error) {
       console.error('❌ Conflict resolution error:', error);
       setShowProgress(false);
       onMigrationComplete?.(false);
-      
-      Alert.alert(
-        'Resolution Error',
-        'Failed to resolve conflicts. Please try again.',
-        [{ text: 'OK' }]
-      );
+
+      Alert.alert('Resolution Error', 'Failed to resolve conflicts. Please try again.', [
+        { text: 'OK' },
+      ]);
     }
   };
 
@@ -205,7 +201,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   const handleProgressComplete = (success: boolean) => {
     setShowProgress(false);
     onMigrationComplete?.(success);
-    
+
     if (!success) {
       Alert.alert(
         'Migration Failed',
@@ -217,7 +213,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const handleProgressCancel = () => {
     setShowProgress(false);
-    
+
     Alert.alert(
       'Cancel Migration',
       'Are you sure you want to cancel the data sync? You can start it again later.',
@@ -237,7 +233,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const handleConflictCancel = () => {
     setShowConflicts(false);
-    
+
     Alert.alert(
       'Skip Sync',
       'Your data will not be synced to the cloud. You can try again later from your profile settings.',

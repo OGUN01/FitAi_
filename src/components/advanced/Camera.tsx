@@ -35,14 +35,8 @@ class CameraErrorBoundary extends React.Component<
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Camera Error</Text>
-          <Text style={styles.errorSubtext}>
-            Unable to load camera. Please try again.
-          </Text>
-          <Button
-            title="Close"
-            onPress={this.props.onError}
-            variant="outline"
-          />
+          <Text style={styles.errorSubtext}>Unable to load camera. Please try again.</Text>
+          <Button title="Close" onPress={this.props.onError} variant="outline" />
         </View>
       );
     }
@@ -60,12 +54,7 @@ interface CameraProps {
   style?: any;
 }
 
-const CameraComponent: React.FC<CameraProps> = ({
-  mode,
-  onCapture,
-  onClose,
-  style,
-}) => {
+const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, style }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
@@ -99,15 +88,11 @@ const CameraComponent: React.FC<CameraProps> = ({
   };
 
   const toggleCameraType = () => {
-    setCameraType(current => 
-      current === 'back' ? 'front' : 'back'
-    );
+    setCameraType((current) => (current === 'back' ? 'front' : 'back'));
   };
 
   const toggleFlash = () => {
-    setFlashMode(current => 
-      current === 'off' ? 'on' : 'off'
-    );
+    setFlashMode((current) => (current === 'off' ? 'on' : 'off'));
   };
 
   if (!permission) {
@@ -126,12 +111,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         <Text style={styles.permissionSubtext}>
           Please enable camera permissions in your device settings
         </Text>
-        <Button
-          title="Close"
-          onPress={onClose}
-          variant="outline"
-          style={styles.closeButton}
-        />
+        <Button title="Close" onPress={onClose} variant="outline" style={styles.closeButton} />
       </View>
     );
   }
@@ -167,9 +147,7 @@ const CameraComponent: React.FC<CameraProps> = ({
         </TouchableOpacity>
         <Text style={styles.title}>{getModeTitle()}</Text>
         <TouchableOpacity style={styles.flashButton} onPress={toggleFlash}>
-          <Text style={styles.flashIcon}>
-            {flashMode === 'on' ? '⚡' : '⚡'}
-          </Text>
+          <Text style={styles.flashIcon}>{flashMode === 'on' ? '⚡' : '⚡'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -197,7 +175,7 @@ const CameraComponent: React.FC<CameraProps> = ({
                 <View style={[styles.frameCorner, styles.frameCornerBottomRight]} />
               </View>
             )}
-            
+
             {mode === 'progress' && (
               <View style={styles.progressFrame}>
                 <View style={styles.bodyOutline} />
@@ -209,10 +187,7 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity
-          style={styles.flipButton}
-          onPress={toggleCameraType}
-        >
+        <TouchableOpacity style={styles.flipButton} onPress={toggleCameraType}>
           <Text style={styles.flipIcon}>🔄</Text>
         </TouchableOpacity>
 
@@ -237,13 +212,11 @@ const CameraComponent: React.FC<CameraProps> = ({
             </Text>
           </View>
         )}
-        
+
         {mode === 'progress' && (
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>📏</Text>
-            <Text style={styles.tipText}>
-              Stand 3-4 feet away from the camera for best results
-            </Text>
+            <Text style={styles.tipText}>Stand 3-4 feet away from the camera for best results</Text>
           </View>
         )}
       </View>
@@ -267,7 +240,7 @@ const styles = StyleSheet.create({
 
   permissionText: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
     textAlign: 'center',
     marginBottom: THEME.spacing.sm,
@@ -305,7 +278,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
   },
 
@@ -494,7 +467,7 @@ const styles = StyleSheet.create({
 
   errorText: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: THEME.fontWeight.bold as '700',
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
     textAlign: 'center',

@@ -43,43 +43,49 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
 }) => {
   const getTypeIcon = () => {
     if (icon) return icon;
-    
+
     switch (type) {
-      case 'success': return '🎉';
-      case 'warning': return '⚠️';
-      case 'error': return '❌';
-      default: return 'ℹ️';
+      case 'success':
+        return '🎉';
+      case 'warning':
+        return '⚠️';
+      case 'error':
+        return '❌';
+      default:
+        return 'ℹ️';
     }
   };
 
   const getTypeColor = () => {
     switch (type) {
-      case 'success': return THEME.colors.success;
-      case 'warning': return THEME.colors.warning;
-      case 'error': return THEME.colors.error;
-      default: return THEME.colors.primary;
+      case 'success':
+        return THEME.colors.success;
+      case 'warning':
+        return THEME.colors.warning;
+      case 'error':
+        return THEME.colors.error;
+      default:
+        return THEME.colors.primary;
     }
   };
 
   const getButtonVariant = (action: DialogAction) => {
     if (action.variant) return action.variant;
-    
+
     switch (action.style) {
-      case 'destructive': return 'primary';
-      case 'cancel': return 'outline';
-      default: return 'primary';
+      case 'destructive':
+        return 'primary';
+      case 'cancel':
+        return 'outline';
+      default:
+        return 'primary';
     }
   };
 
   if (!visible) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
@@ -92,9 +98,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
             <Text style={styles.title}>{title}</Text>
 
             {/* Message */}
-            {message && (
-              <Text style={styles.message}>{message}</Text>
-            )}
+            {message && <Text style={styles.message}>{message}</Text>}
 
             {/* Actions */}
             {actions.length > 0 && (
@@ -116,7 +120,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         variant={getButtonVariant(action)}
                         style={[
                           styles.actionButton,
-                          index === actions.length - 1 && styles.lastActionButton
+                          index === actions.length - 1 && styles.lastActionButton,
                         ]}
                       />
                     ))}
@@ -138,15 +142,15 @@ export const showDialog = {
     // For now, it's a placeholder
     console.log('Info Dialog:', { title, message, actions });
   },
-  
+
   success: (title: string, message?: string, actions?: DialogAction[]) => {
     console.log('Success Dialog:', { title, message, actions });
   },
-  
+
   warning: (title: string, message?: string, actions?: DialogAction[]) => {
     console.log('Warning Dialog:', { title, message, actions });
   },
-  
+
   error: (title: string, message?: string, actions?: DialogAction[]) => {
     console.log('Error Dialog:', { title, message, actions });
   },
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
   },
 
   safeArea: {
-    width: '85%',  // Use percentage instead of screenWidth
+    width: '85%', // Use percentage instead of screenWidth
     maxWidth: 400,
   },
 
@@ -279,11 +283,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
   onDone,
 }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-    >
+    <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
@@ -297,10 +297,8 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
             {/* Stats */}
             <View style={styles.statsContainer}>
-              <Text style={styles.statsTitle}>
-                Great job! You completed "{workoutTitle}"
-              </Text>
-              
+              <Text style={styles.statsTitle}>Great job! You completed "{workoutTitle}"</Text>
+
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
                   <Text style={styles.statValue}>{duration}</Text>
@@ -311,7 +309,9 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                   <Text style={styles.statLabel}>calories</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{exercisesCompleted}/{totalExercises}</Text>
+                  <Text style={styles.statValue}>
+                    {exercisesCompleted}/{totalExercises}
+                  </Text>
                   <Text style={styles.statLabel}>exercises</Text>
                 </View>
               </View>
@@ -325,12 +325,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 variant="outline"
                 style={styles.actionButton}
               />
-              <Button
-                title="Done"
-                onPress={onDone}
-                variant="primary"
-                style={styles.actionButton}
-              />
+              <Button title="Done" onPress={onDone} variant="primary" style={styles.actionButton} />
             </View>
           </Card>
         </SafeAreaView>

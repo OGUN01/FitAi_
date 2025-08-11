@@ -29,6 +29,10 @@ module.exports = [
         process: 'readonly',
         Buffer: 'readonly',
         __dirname: 'readonly',
+        __DEV__: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
         global: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
@@ -111,6 +115,35 @@ module.exports = [
   // Prettier config to disable conflicting rules
   prettierConfig,
   
+  // JavaScript files (Node.js scripts) with different rules
+  {
+    files: ['**/*.js'],
+    rules: {
+      'no-undef': 'off', // Allow Node.js globals in .js files
+      '@typescript-eslint/no-var-requires': 'off',
+    },
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+        global: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        Promise: 'readonly',
+        fetch: 'readonly',
+        fs: 'readonly',
+        path: 'readonly',
+      },
+    },
+  },
+
   // Ignore patterns
   {
     ignores: [

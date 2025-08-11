@@ -78,12 +78,7 @@ const recipePrompts: RecipePrompt[] = [
     title: 'How many servings?',
     placeholder: 'Number of people or portions...',
     icon: '👥',
-    examples: [
-      '2 servings for dinner',
-      'Meal prep for 4 days',
-      'Family of 5',
-      'Single serving',
-    ],
+    examples: ['2 servings for dinner', 'Meal prep for 4 days', 'Family of 5', 'Single serving'],
   },
 ];
 
@@ -98,26 +93,24 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [activeInput, setActiveInput] = useState<string | null>(null);
 
   const handleInputChange = (id: string, value: string) => {
-    setInputs(prev => ({ ...prev, [id]: value }));
+    setInputs((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleExamplePress = (promptId: string, example: string) => {
-    setInputs(prev => ({ ...prev, [promptId]: example }));
+    setInputs((prev) => ({ ...prev, [promptId]: example }));
   };
 
   const validateInputs = () => {
     const required = ['description'];
-    const missing = required.filter(key => !inputs[key]?.trim());
-    
+    const missing = required.filter((key) => !inputs[key]?.trim());
+
     if (missing.length > 0) {
-      Alert.alert(
-        'Missing Information',
-        'Please describe what you want to cook.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Missing Information', 'Please describe what you want to cook.', [
+        { text: 'OK' },
+      ]);
       return false;
     }
-    
+
     return true;
   };
 
@@ -135,13 +128,17 @@ ${inputs.dietary ? `DIETARY REQUIREMENTS: ${inputs.dietary}` : ''}
 ${inputs.time ? `TIME CONSTRAINT: ${inputs.time}` : ''}
 ${inputs.servings ? `SERVINGS: ${inputs.servings}` : ''}
 
-${profile?.personalInfo ? `
+${
+  profile?.personalInfo
+    ? `
 USER PROFILE:
 - Age: ${profile.personalInfo.age}
 - Gender: ${profile.personalInfo.gender}
 - Activity Level: ${profile.personalInfo.activityLevel}
 - Fitness Goals: ${profile.fitnessGoals?.primaryGoals?.join(', ') || 'General health'}
-` : ''}
+`
+    : ''
+}
 
 Requirements:
 - Create a complete recipe with creative name and detailed description
@@ -155,18 +152,15 @@ Requirements:
 Generate a comprehensive recipe that's practical, healthy, and aligned with the user's goals.`;
 
       // Use structured output for 100% reliable recipe generation
-      const response = await geminiService.generateResponse(
-        prompt,
-        {},
-        RECIPE_CREATION_SCHEMA,
-        3,
-        { temperature: 0.8, maxOutputTokens: 4096 }
-      );
+      const response = await geminiService.generateResponse(prompt, {}, RECIPE_CREATION_SCHEMA, 3, {
+        temperature: 0.8,
+        maxOutputTokens: 4096,
+      });
 
       if (response.success && response.data) {
         // Recipe data is already structured - no parsing needed!
         const structuredRecipe = response.data as any;
-        
+
         const recipeData = {
           id: Date.now().toString(),
           name: structuredRecipe.name,
@@ -181,20 +175,16 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
         };
 
         onRecipeCreated(recipeData);
-        
-        Alert.alert(
-          '🎉 Recipe Created!',
-          `Your custom recipe has been generated successfully!`,
-          [
-            {
-              text: 'View Recipe',
-              onPress: () => {
-                onClose();
-                // You could navigate to a recipe detail screen here
-              }
-            }
-          ]
-        );
+
+        Alert.alert('🎉 Recipe Created!', `Your custom recipe has been generated successfully!`, [
+          {
+            text: 'View Recipe',
+            onPress: () => {
+              onClose();
+              // You could navigate to a recipe detail screen here
+            },
+          },
+        ]);
 
         // Reset form
         setInputs({});
@@ -214,7 +204,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
   };
 
   const getFilledFields = () => {
-    return Object.keys(inputs).filter(key => inputs[key]?.trim()).length;
+    return Object.keys(inputs).filter((key) => inputs[key]?.trim()).length;
   };
 
   return (
@@ -224,7 +214,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
@@ -244,11 +234,11 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
         {/* Progress indicator */}
         <View style={styles.progressSection}>
           <View style={styles.progressBar}>
-            <View 
+            <View
               style={[
-                styles.progressFill, 
-                { width: `${(getFilledFields() / recipePrompts.length) * 100}%` }
-              ]} 
+                styles.progressFill,
+                { width: `${(getFilledFields() / recipePrompts.length) * 100}%` },
+              ]}
             />
           </View>
           <Text style={styles.progressText}>
@@ -256,7 +246,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
           </Text>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -298,10 +288,12 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
                     ]}
                     onPress={() => handleExamplePress(prompt.id, example)}
                   >
-                    <Text style={[
-                      styles.exampleText,
-                      inputs[prompt.id] === example && styles.exampleTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.exampleText,
+                        inputs[prompt.id] === example && styles.exampleTextSelected,
+                      ]}
+                    >
                       {example}
                     </Text>
                   </TouchableOpacity>

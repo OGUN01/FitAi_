@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -21,11 +15,7 @@ interface SignUpScreenProps {
   onLogin: () => void;
 }
 
-export const SignUpScreen: React.FC<SignUpScreenProps> = ({
-  onSignUpSuccess,
-  onBack,
-  onLogin,
-}) => {
+export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onBack, onLogin }) => {
   const [formData, setFormData] = useState<RegisterCredentials>({
     email: '',
     password: '',
@@ -37,10 +27,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const { register, signInWithGoogle } = useAuth();
 
   const updateField = (field: keyof RegisterCredentials, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -86,14 +76,15 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
         password: formData.password.trim(),
-        confirmPassword: formData.confirmPassword.trim()
+        confirmPassword: formData.confirmPassword.trim(),
       };
       console.log('🔐 SignUpScreen: Using credentials:', { email: trimmedCredentials.email });
       const result = await register(trimmedCredentials);
 
       if (result.success) {
-        let alertTitle = 'Registration Successful!';
-        let alertMessage = 'Please check your email and click the verification link to activate your account. After verification, you can log in to continue.';
+        const alertTitle = 'Registration Successful!';
+        let alertMessage =
+          'Please check your email and click the verification link to activate your account. After verification, you can log in to continue.';
 
         // If there's local data, mention it will be preserved
         if (hasLocalData) {
@@ -101,14 +92,15 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
           console.log('✅ SignUpScreen: User has local data - will trigger migration on login');
         }
 
-        Alert.alert(
-          alertTitle,
-          alertMessage,
-          [{ text: 'OK', onPress: () => {
-            // After user acknowledges the message, redirect to login screen
-            onSignUpSuccess();
-          }}]
-        );
+        Alert.alert(alertTitle, alertMessage, [
+          {
+            text: 'OK',
+            onPress: () => {
+              // After user acknowledges the message, redirect to login screen
+              onSignUpSuccess();
+            },
+          },
+        ]);
       } else {
         Alert.alert('Registration Failed', result.error || 'Please try again');
       }
@@ -132,18 +124,17 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
 
       if (response.success) {
         // Google sign-up is immediate (no email verification)
-        let alertMessage = 'Welcome to FitAI! Let\'s set up your profile.';
-        
+        let alertMessage = "Welcome to FitAI! Let's set up your profile.";
+
         if (hasLocalData) {
-          alertMessage = 'Welcome to FitAI! Your profile data will be automatically synced. Let\'s set up your profile.';
+          alertMessage =
+            "Welcome to FitAI! Your profile data will be automatically synced. Let's set up your profile.";
           console.log('✅ SignUpScreen: Google user has local data - will trigger migration');
         }
 
-        Alert.alert(
-          'Google Sign-Up Successful!', 
-          alertMessage,
-          [{ text: 'Continue', onPress: onSignUpSuccess }]
-        );
+        Alert.alert('Google Sign-Up Successful!', alertMessage, [
+          { text: 'Continue', onPress: onSignUpSuccess },
+        ]);
       } else {
         Alert.alert('Google Sign-Up Failed', response.error || 'Please try again.');
       }
@@ -245,18 +236,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
-  
+
   header: {
     alignItems: 'center',
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   title: {
     fontSize: rf(28),
     fontWeight: 'bold',
@@ -264,54 +255,54 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
   },
-  
+
   subtitle: {
     fontSize: rf(16),
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: rf(24),
   },
-  
+
   form: {
     paddingVertical: ResponsiveTheme.spacing.lg,
   },
-  
+
   signUpButton: {
     marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: ResponsiveTheme.spacing.lg,
   },
-  
+
   dividerLine: {
     flex: 1,
     height: rh(1),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
-  
+
   dividerText: {
     color: ResponsiveTheme.colors.textMuted,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     fontSize: rf(14),
   },
-  
+
   googleButton: {
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   loginButton: {
     marginTop: ResponsiveTheme.spacing.sm,
   },
-  
+
   footer: {
     padding: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.md,
   },
-  
+
   backButton: {
     alignSelf: 'flex-start',
     paddingHorizontal: ResponsiveTheme.spacing.xl,

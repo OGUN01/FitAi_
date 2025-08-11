@@ -32,7 +32,7 @@ export interface ConflictContext {
   relatedFields?: string[];
 }
 
-export type ConflictType = 
+export type ConflictType =
   | 'value_mismatch'
   | 'missing_local'
   | 'missing_remote'
@@ -41,7 +41,7 @@ export type ConflictType =
   | 'duplicate_record'
   | 'schema_version_mismatch';
 
-export type ResolutionStrategy = 
+export type ResolutionStrategy =
   | 'local_wins'
   | 'remote_wins'
   | 'merge_values'
@@ -136,17 +136,17 @@ export class ConflictResolutionService {
   async resolveConflicts(conflicts: DataConflict[]): Promise<ConflictResolutionResult> {
     const resolvedConflicts: ConflictResolution[] = [];
     const unresolvedConflicts: DataConflict[] = [];
-    let mergedData: any = {};
+    const mergedData: any = {};
     let requiresUserInput = false;
 
     for (const conflict of conflicts) {
       try {
         const resolution = await this.resolveConflict(conflict);
-        
+
         if (resolution) {
           resolvedConflicts.push(resolution);
           mergedData[conflict.field] = resolution.resolvedValue;
-          
+
           if (resolution.userChoice) {
             requiresUserInput = true;
           }
@@ -167,8 +167,8 @@ export class ConflictResolutionService {
       requiresUserInput,
       summary: {
         total: conflicts.length,
-        autoResolved: resolvedConflicts.filter(r => !r.userChoice).length,
-        userResolved: resolvedConflicts.filter(r => r.userChoice).length,
+        autoResolved: resolvedConflicts.filter((r) => !r.userChoice).length,
+        userResolved: resolvedConflicts.filter((r) => r.userChoice).length,
         unresolved: unresolvedConflicts.length,
       },
     };
@@ -177,7 +177,10 @@ export class ConflictResolutionService {
   /**
    * Register a custom resolution rule for specific field patterns
    */
-  registerResolutionRule(fieldPattern: string, rule: (conflict: DataConflict) => ResolutionStrategy): void {
+  registerResolutionRule(
+    fieldPattern: string,
+    rule: (conflict: DataConflict) => ResolutionStrategy
+  ): void {
     this.resolutionRules.set(fieldPattern, rule);
   }
 
@@ -205,13 +208,13 @@ export class ConflictResolutionService {
     let autoResolvable = 0;
     let requiresUserInput = 0;
 
-    conflicts.forEach(conflict => {
+    conflicts.forEach((conflict) => {
       // Count by type
       byType[conflict.type] = (byType[conflict.type] || 0) + 1;
-      
+
       // Count by severity
       bySeverity[conflict.severity] = (bySeverity[conflict.severity] || 0) + 1;
-      
+
       // Count resolution requirements
       if (conflict.autoResolvable) {
         autoResolvable++;
@@ -326,7 +329,7 @@ export class ConflictResolutionService {
 
     // Apply resolution strategy
     const resolvedValue = this.applyResolutionStrategy(strategy, conflict);
-    
+
     if (resolvedValue === undefined && strategy !== 'skip_field') {
       return null; // Could not resolve
     }
@@ -345,26 +348,26 @@ export class ConflictResolutionService {
     switch (strategy) {
       case 'local_wins':
         return conflict.localValue;
-      
+
       case 'remote_wins':
         return conflict.remoteValue;
-      
+
       case 'merge_values':
         return this.mergeValues(conflict.localValue, conflict.remoteValue);
-      
+
       case 'use_latest_timestamp':
         if (conflict.context?.lastModified) {
           const { local, remote } = conflict.context.lastModified;
           return local > remote ? conflict.localValue : conflict.remoteValue;
         }
         return conflict.remoteValue; // Default to remote if no timestamp info
-      
+
       case 'create_new':
         return this.createMergedValue(conflict.localValue, conflict.remoteValue);
-      
+
       case 'skip_field':
         return undefined;
-      
+
       default:
         return conflict.remoteValue; // Default fallback
     }
@@ -375,12 +378,12 @@ export class ConflictResolutionService {
       // Merge arrays, removing duplicates
       return [...new Set([...localValue, ...remoteValue])];
     }
-    
+
     if (typeof localValue === 'object' && typeof remoteValue === 'object') {
       // Merge objects
       return { ...remoteValue, ...localValue };
     }
-    
+
     // For primitive values, prefer the more recent or non-null value
     return localValue != null ? localValue : remoteValue;
   }
@@ -390,33 +393,37 @@ export class ConflictResolutionService {
     if (typeof localValue === 'string' && typeof remoteValue === 'string') {
       return `${localValue} | ${remoteValue}`;
     }
-    
+
     if (typeof localValue === 'number' && typeof remoteValue === 'number') {
       return (localValue + remoteValue) / 2; // Average
     }
-    
+
     return { local: localValue, remote: remoteValue };
   }
 
-  private determineSeverity(field: string, localValue: any, remoteValue: any): 'low' | 'medium' | 'high' | 'critical' {
+  private determineSeverity(
+    field: string,
+    localValue: any,
+    remoteValue: any
+  ): 'low' | 'medium' | 'high' | 'critical' {
     // Critical fields that affect core functionality
     const criticalFields = ['id', 'user_id', 'email', 'password'];
     if (criticalFields.includes(field.toLowerCase())) {
       return 'critical';
     }
-    
+
     // High importance fields
     const highFields = ['name', 'age', 'weight', 'height', 'goals'];
-    if (highFields.some(f => field.toLowerCase().includes(f))) {
+    if (highFields.some((f) => field.toLowerCase().includes(f))) {
       return 'high';
     }
-    
+
     // Medium importance fields
     const mediumFields = ['preferences', 'settings', 'notes'];
-    if (mediumFields.some(f => field.toLowerCase().includes(f))) {
+    if (mediumFields.some((f) => field.toLowerCase().includes(f))) {
       return 'medium';
     }
-    
+
     return 'low';
   }
 
@@ -427,7 +434,9 @@ export class ConflictResolutionService {
   }
 
   private hasTimestampInfo(field: string): boolean {
-    return field.includes('updated_at') || field.includes('created_at') || field.includes('timestamp');
+    return (
+      field.includes('updated_at') || field.includes('created_at') || field.includes('timestamp')
+    );
   }
 
   private suggestResolution(
@@ -440,22 +449,22 @@ export class ConflictResolutionService {
     if (context.lastModified && this.hasTimestampInfo(field)) {
       return 'use_latest_timestamp';
     }
-    
+
     // For arrays, suggest merging
     if (Array.isArray(localValue) && Array.isArray(remoteValue)) {
       return 'merge_values';
     }
-    
+
     // For objects, suggest merging
     if (typeof localValue === 'object' && typeof remoteValue === 'object') {
       return 'merge_values';
     }
-    
+
     // For critical fields, require user choice
     if (this.determineSeverity(field, localValue, remoteValue) === 'critical') {
       return 'user_choice';
     }
-    
+
     // Default to remote wins (server is source of truth)
     return 'remote_wins';
   }
@@ -484,7 +493,7 @@ export class ConflictResolutionService {
   private initializeDefaultRules(): void {
     // Rule for timestamp fields - always use latest
     this.registerResolutionRule('.*(_at|timestamp)$', () => 'use_latest_timestamp');
-    
+
     // Rule for array fields - merge by default
     this.registerResolutionRule('.*(preferences|tags|categories).*', (conflict) => {
       if (Array.isArray(conflict.localValue) && Array.isArray(conflict.remoteValue)) {
@@ -492,7 +501,7 @@ export class ConflictResolutionService {
       }
       return 'remote_wins';
     });
-    
+
     // Rule for settings - prefer local (user customizations)
     this.registerResolutionRule('.*settings.*', () => 'local_wins');
   }
@@ -501,19 +510,19 @@ export class ConflictResolutionService {
     if (a === b) return true;
     if (a == null || b == null) return a === b;
     if (typeof a !== typeof b) return false;
-    
+
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
       return a.every((item, index) => this.deepEqual(item, b[index]));
     }
-    
+
     if (typeof a === 'object') {
       const keysA = Object.keys(a);
       const keysB = Object.keys(b);
       if (keysA.length !== keysB.length) return false;
-      return keysA.every(key => this.deepEqual(a[key], b[key]));
+      return keysA.every((key) => this.deepEqual(a[key], b[key]));
     }
-    
+
     return false;
   }
 

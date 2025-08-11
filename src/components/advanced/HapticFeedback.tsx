@@ -1,6 +1,13 @@
 import { Vibration, Platform } from 'react-native';
 
-export type HapticType = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection';
+export type HapticType =
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'selection';
 
 export class HapticFeedback {
   private static isEnabled = true;

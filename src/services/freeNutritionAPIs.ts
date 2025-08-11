@@ -1,11 +1,11 @@
 /**
  * Free Nutrition APIs Integration Service
  * Integrates with free nutrition databases to enhance food recognition accuracy
- * 
+ *
  * Supported APIs:
  * - USDA FoodData Central (720K requests/month - completely free)
  * - Open Food Facts (unlimited - open source)
- * - FatSecret Basic (150K requests/month - free tier) 
+ * - FatSecret Basic (150K requests/month - free tier)
  */
 
 interface NutritionData {
@@ -32,12 +32,12 @@ interface USDAFood {
 interface OpenFoodFactsProduct {
   nutriments: {
     'energy-kcal_100g': number;
-    'proteins_100g': number;
-    'carbohydrates_100g': number;
-    'fat_100g': number;
-    'fiber_100g': number;
-    'sugars_100g': number;
-    'salt_100g': number;
+    proteins_100g: number;
+    carbohydrates_100g: number;
+    fat_100g: number;
+    fiber_100g: number;
+    sugars_100g: number;
+    salt_100g: number;
   };
   product_name: string;
 }
@@ -47,9 +47,9 @@ export class FreeNutritionAPIs {
   private fatSecretKeys = [
     process.env.FATSECRET_KEY_1,
     process.env.FATSECRET_KEY_2,
-    process.env.FATSECRET_KEY_3
+    process.env.FATSECRET_KEY_3,
   ].filter(Boolean);
-  
+
   private currentFatSecretKeyIndex = 0;
   private cache = new Map<string, NutritionData>();
 
@@ -59,7 +59,7 @@ export class FreeNutritionAPIs {
   async enhanceNutritionData(foodName: string): Promise<NutritionData | null> {
     try {
       console.log(`🔍 Enhancing nutrition data for: ${foodName}`);
-      
+
       // Check cache first
       const cacheKey = foodName.toLowerCase().trim();
       const cached = this.cache.get(cacheKey);
@@ -72,7 +72,7 @@ export class FreeNutritionAPIs {
       const promises = [
         this.searchUSDAFoodData(foodName),
         this.searchOpenFoodFacts(foodName),
-        this.searchFatSecret(foodName)
+        this.searchFatSecret(foodName),
       ];
 
       const results = await Promise.allSettled(promises);
@@ -84,7 +84,10 @@ export class FreeNutritionAPIs {
           nutritionData.push(result.value);
         } else {
           const apiNames = ['USDA', 'OpenFoodFacts', 'FatSecret'];
-          console.warn(`⚠️ ${apiNames[index]} API failed:`, result.status === 'rejected' ? result.reason : 'No data');
+          console.warn(
+            `⚠️ ${apiNames[index]} API failed:`,
+            result.status === 'rejected' ? result.reason : 'No data'
+          );
         }
       });
 
@@ -95,13 +98,14 @@ export class FreeNutritionAPIs {
 
       // Calculate weighted average based on confidence scores
       const enhancedData = this.calculateWeightedAverage(nutritionData);
-      
+
       // Cache the result
       this.cache.set(cacheKey, enhancedData);
-      
-      console.log(`✅ Enhanced nutrition data with ${nutritionData.length} sources, confidence: ${enhancedData.confidence}%`);
-      return enhancedData;
 
+      console.log(
+        `✅ Enhanced nutrition data with ${nutritionData.length} sources, confidence: ${enhancedData.confidence}%`
+      );
+      return enhancedData;
     } catch (error) {
       console.error('❌ Error enhancing nutrition data:', error);
       return null;
@@ -130,7 +134,7 @@ export class FreeNutritionAPIs {
       }
 
       const data = await response.json();
-      
+
       if (!data.foods || data.foods.length === 0) {
         return null;
       }
@@ -141,13 +145,13 @@ export class FreeNutritionAPIs {
 
       // Extract key nutrients (USDA nutrient IDs)
       const nutritionMap = {
-        208: 'calories',    // Energy
-        203: 'protein',     // Protein
-        205: 'carbs',       // Carbohydrates
-        204: 'fat',         // Total fat
-        291: 'fiber',       // Fiber
-        269: 'sugar',       // Sugars
-        307: 'sodium'       // Sodium
+        208: 'calories', // Energy
+        203: 'protein', // Protein
+        205: 'carbs', // Carbohydrates
+        204: 'fat', // Total fat
+        291: 'fiber', // Fiber
+        269: 'sugar', // Sugars
+        307: 'sodium', // Sodium
       };
 
       const nutritionData: any = {
@@ -157,7 +161,7 @@ export class FreeNutritionAPIs {
         fat: 0,
         fiber: 0,
         sugar: 0,
-        sodium: 0
+        sodium: 0,
       };
 
       nutrients.forEach((nutrient: any) => {
@@ -175,9 +179,8 @@ export class FreeNutritionAPIs {
       return {
         ...nutritionData,
         source: 'USDA',
-        confidence: this.calculateMatchConfidence(foodName, food.description)
+        confidence: this.calculateMatchConfidence(foodName, food.description),
       };
-
     } catch (error) {
       console.warn('USDA API error:', error);
       return null;
@@ -206,7 +209,7 @@ export class FreeNutritionAPIs {
       }
 
       const data = await response.json();
-      
+
       if (!data.products || data.products.length === 0) {
         return null;
       }
@@ -228,9 +231,8 @@ export class FreeNutritionAPIs {
         sugar: nutrients['sugars_100g'] || 0,
         sodium: (nutrients['salt_100g'] || 0) / 2.5, // Convert salt to sodium
         source: 'OpenFoodFacts',
-        confidence: this.calculateMatchConfidence(foodName, product.product_name || '')
+        confidence: this.calculateMatchConfidence(foodName, product.product_name || ''),
       };
-
     } catch (error) {
       console.warn('OpenFoodFacts API error:', error);
       return null;
@@ -249,7 +251,7 @@ export class FreeNutritionAPIs {
 
     try {
       const apiKey = this.fatSecretKeys[this.currentFatSecretKeyIndex];
-      
+
       // FatSecret uses OAuth 1.0, but for simplicity using their basic API
       // Note: This is a simplified implementation - production would need proper OAuth
       const searchUrl = `https://platform.fatsecret.com/rest/server.api`;
@@ -260,11 +262,11 @@ export class FreeNutritionAPIs {
       // This can be implemented later with proper OAuth 1.0 signing
       console.log('FatSecret API integration pending OAuth implementation');
       return null;
-
     } catch (error) {
       console.warn('FatSecret API error:', error);
       // Rotate to next key
-      this.currentFatSecretKeyIndex = (this.currentFatSecretKeyIndex + 1) % this.fatSecretKeys.length;
+      this.currentFatSecretKeyIndex =
+        (this.currentFatSecretKeyIndex + 1) % this.fatSecretKeys.length;
       return null;
     }
   }
@@ -278,7 +280,7 @@ export class FreeNutritionAPIs {
     }
 
     const totalWeight = nutritionData.reduce((sum, data) => sum + data.confidence, 0);
-    
+
     const weightedData = {
       calories: 0,
       protein: 0,
@@ -288,11 +290,11 @@ export class FreeNutritionAPIs {
       sugar: 0,
       sodium: 0,
       source: 'hybrid',
-      confidence: 0
+      confidence: 0,
     };
 
     // Calculate weighted averages
-    nutritionData.forEach(data => {
+    nutritionData.forEach((data) => {
       const weight = data.confidence / totalWeight;
       weightedData.calories += data.calories * weight;
       weightedData.protein += data.protein * weight;
@@ -309,7 +311,7 @@ export class FreeNutritionAPIs {
     weightedData.confidence = Math.min(95, Math.round(avgConfidence + multiSourceBoost));
 
     // Update source information
-    const sources = [...new Set(nutritionData.map(d => d.source))];
+    const sources = [...new Set(nutritionData.map((d) => d.source))];
     weightedData.source = sources.join(' + ');
 
     // Round to reasonable precision
@@ -322,7 +324,7 @@ export class FreeNutritionAPIs {
       sugar: Math.round((weightedData.sugar || 0) * 10) / 10,
       sodium: Math.round((weightedData.sodium || 0) * 10) / 10,
       source: weightedData.source,
-      confidence: weightedData.confidence
+      confidence: weightedData.confidence,
     };
   }
 
@@ -331,29 +333,29 @@ export class FreeNutritionAPIs {
    */
   private calculateMatchConfidence(searchTerm: string, foundName: string): number {
     if (!foundName) return 30;
-    
+
     const search = searchTerm.toLowerCase().trim();
     const found = foundName.toLowerCase().trim();
-    
+
     // Exact match
     if (search === found) return 95;
-    
+
     // One contains the other
     if (search.includes(found) || found.includes(search)) return 85;
-    
+
     // Word overlap
     const searchWords = search.split(/\s+/);
     const foundWords = found.split(/\s+/);
-    
+
     let matchingWords = 0;
-    searchWords.forEach(word => {
-      if (word.length > 2 && foundWords.some(fw => fw.includes(word) || word.includes(fw))) {
+    searchWords.forEach((word) => {
+      if (word.length > 2 && foundWords.some((fw) => fw.includes(word) || word.includes(fw))) {
         matchingWords++;
       }
     });
-    
+
     const wordMatchRatio = matchingWords / Math.max(searchWords.length, foundWords.length);
-    return Math.round(30 + (wordMatchRatio * 50)); // 30-80 range
+    return Math.round(30 + wordMatchRatio * 50); // 30-80 range
   }
 
   /**
@@ -362,14 +364,16 @@ export class FreeNutritionAPIs {
   async searchByBarcode(barcode: string): Promise<NutritionData | null> {
     try {
       // OpenFoodFacts barcode search
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-      
+      const response = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
+      );
+
       if (!response.ok) {
         return null;
       }
 
       const data = await response.json();
-      
+
       if (data.status !== 1 || !data.product) {
         return null;
       }
@@ -390,9 +394,8 @@ export class FreeNutritionAPIs {
         sugar: nutrients['sugars_100g'] || 0,
         sodium: (nutrients['salt_100g'] || 0) / 2.5,
         source: 'OpenFoodFacts_Barcode',
-        confidence: 90 // High confidence for barcode matches
+        confidence: 90, // High confidence for barcode matches
       };
-
     } catch (error) {
       console.warn('Barcode search error:', error);
       return null;
@@ -410,7 +413,7 @@ export class FreeNutritionAPIs {
     return {
       cacheSize: this.cache.size,
       totalRequests: 0, // TODO: Implement request tracking
-      successRate: 0 // TODO: Implement success tracking
+      successRate: 0, // TODO: Implement success tracking
     };
   }
 
@@ -432,11 +435,11 @@ export class FreeNutritionAPIs {
     if (data.carbs < 0 || data.carbs > 100) return false;
     if (data.fat < 0 || data.fat > 100) return false;
     if (data.fiber < 0 || data.fiber > 50) return false;
-    
+
     // Macro consistency check (calories should roughly match macros)
-    const calculatedCalories = (data.protein * 4) + (data.carbs * 4) + (data.fat * 9);
+    const calculatedCalories = data.protein * 4 + data.carbs * 4 + data.fat * 9;
     const variance = Math.abs(data.calories - calculatedCalories) / data.calories;
-    
+
     return variance < 0.5; // Allow 50% variance for processing, cooking effects
   }
 }

@@ -17,10 +17,10 @@ interface FitnessState {
   weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
   isGeneratingPlan: boolean;
   planError: string | null;
-  
+
   // Workout progress tracking
   workoutProgress: Record<string, WorkoutProgress>;
-  
+
   // Current workout session
   currentWorkoutSession: {
     workoutId: string;
@@ -43,17 +43,22 @@ interface FitnessState {
   loadWeeklyWorkoutPlan: () => Promise<WeeklyWorkoutPlan | null>;
   setGeneratingPlan: (isGenerating: boolean) => void;
   setPlanError: (error: string | null) => void;
-  
+
   // Workout progress actions
   updateWorkoutProgress: (workoutId: string, progress: number) => void;
   completeWorkout: (workoutId: string, sessionId?: string) => void;
   getWorkoutProgress: (workoutId: string) => WorkoutProgress | null;
-  
+
   // Workout session actions
   startWorkoutSession: (workout: DayWorkout) => Promise<string>;
   endWorkoutSession: (sessionId: string) => Promise<void>;
-  updateExerciseProgress: (exerciseId: string, setIndex: number, reps: number, weight: number) => void;
-  
+  updateExerciseProgress: (
+    exerciseId: string,
+    setIndex: number,
+    reps: number,
+    weight: number
+  ) => void;
+
   // Data persistence
   persistData: () => Promise<void>;
   loadData: () => Promise<void>;
@@ -80,39 +85,45 @@ export const useFitnessStore = create<FitnessState>()(
       saveWeeklyWorkoutPlan: async (plan) => {
         try {
           console.log('💾 Saving weekly workout plan:', plan.planTitle);
-          
+
           // 🔍 Debug: Validate incoming plan data
           console.log('🔍 Store Debug - Plan validation:');
           console.log('  - Plan object:', plan ? '✅' : '❌');
           console.log('  - Plan title:', plan?.planTitle || 'undefined');
           console.log('  - Workouts array:', Array.isArray(plan?.workouts) ? '✅' : '❌');
           console.log('  - Workouts count:', plan?.workouts?.length || 0);
-          
+
           // Save to local storage via Zustand persist first
           console.log('🔍 Store Debug - Setting state...');
           set({ weeklyWorkoutPlan: plan });
-          
+
           // 🔍 Debug: Verify state was set
           const currentState = get();
           console.log('🔍 Store Debug - State after set:');
           console.log('  - State has plan:', currentState.weeklyWorkoutPlan ? '✅' : '❌');
-          console.log('  - State plan title:', currentState.weeklyWorkoutPlan?.planTitle || 'undefined');
-          console.log('  - State workouts count:', currentState.weeklyWorkoutPlan?.workouts?.length || 0);
-          
+          console.log(
+            '  - State plan title:',
+            currentState.weeklyWorkoutPlan?.planTitle || 'undefined'
+          );
+          console.log(
+            '  - State workouts count:',
+            currentState.weeklyWorkoutPlan?.workouts?.length || 0
+          );
+
           console.log('✅ Plan saved to local storage');
-          
+
           // Validate plan data
           if (!plan.workouts || plan.workouts.length === 0) {
             console.warn('⚠️ No workouts in plan to save to database');
             return;
           }
-          
+
           console.log(`📋 Saving ${plan.workouts.length} workouts to database`);
-          
+
           // Save individual workouts to database for tracking
           let savedCount = 0;
           let errorCount = 0;
-          
+
           for (const workout of plan.workouts) {
             try {
               // Validate workout data
@@ -121,7 +132,7 @@ export const useFitnessStore = create<FitnessState>()(
                 errorCount++;
                 continue;
               }
-              
+
               // Create a proper WorkoutSession object matching the expected schema
               const workoutSession = {
                 id: `workout_${workout.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
@@ -131,10 +142,13 @@ export const useFitnessStore = create<FitnessState>()(
                 completedAt: null,
                 duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range
                 caloriesBurned: Math.max(0, Math.min(10000, workout.estimatedCalories || 200)), // Ensure 0-10000 range
-                exercises: (workout.exercises || []).map(exercise => ({
+                exercises: (workout.exercises || []).map((exercise) => ({
                   exerciseId: exercise.exerciseId || 'unknown_exercise',
                   sets: Array.from({ length: Math.max(1, exercise.sets || 3) }, (_, index) => ({
-                    reps: typeof exercise.reps === 'string' ? parseInt(exercise.reps) || 10 : exercise.reps || 10,
+                    reps:
+                      typeof exercise.reps === 'string'
+                        ? parseInt(exercise.reps) || 10
+                        : exercise.reps || 10,
                     weight: exercise.weight || 0,
                     duration: 0,
                     restTime: exercise.restTime || 60,
@@ -151,19 +165,19 @@ export const useFitnessStore = create<FitnessState>()(
 
               await crudOperations.createWorkoutSession(workoutSession);
               savedCount++;
-              
             } catch (workoutError) {
               console.error(`❌ Failed to save workout ${workout.title}:`, workoutError);
               errorCount++;
             }
           }
-          
-          console.log(`✅ Weekly workout plan saved: ${savedCount} successful, ${errorCount} errors`);
-          
+
+          console.log(
+            `✅ Weekly workout plan saved: ${savedCount} successful, ${errorCount} errors`
+          );
+
           if (errorCount > 0 && savedCount === 0) {
             throw new Error(`Failed to save any workouts (${errorCount} errors)`);
           }
-          
         } catch (error) {
           console.error('❌ Failed to save workout plan:', error);
           // Don't throw error if local storage succeeded
@@ -181,14 +195,14 @@ export const useFitnessStore = create<FitnessState>()(
           if (currentPlan) {
             return currentPlan;
           }
-          
+
           // Try to load from database
           const workoutSessions = await crudOperations.readWorkoutSessions();
           if (workoutSessions.length > 0) {
             console.log('📋 Found existing workout sessions in database');
             // Could reconstruct weekly plan from sessions if needed
           }
-          
+
           return null;
         } catch (error) {
           console.error('❌ Failed to load workout plan:', error);
@@ -239,7 +253,7 @@ export const useFitnessStore = create<FitnessState>()(
       // Workout session actions
       startWorkoutSession: async (workout) => {
         const sessionId = `session_${workout.id}_${Date.now()}`;
-        
+
         try {
           // Create a proper WorkoutSession object for active session
           const workoutSession = {
@@ -250,10 +264,11 @@ export const useFitnessStore = create<FitnessState>()(
             completedAt: null,
             duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range
             caloriesBurned: Math.max(0, Math.min(10000, workout.estimatedCalories || 200)), // Ensure 0-10000 range
-            exercises: workout.exercises.map(exercise => ({
+            exercises: workout.exercises.map((exercise) => ({
               exerciseId: exercise.exerciseId,
               sets: Array.from({ length: exercise.sets }, (_, index) => ({
-                reps: typeof exercise.reps === 'string' ? parseInt(exercise.reps) || 10 : exercise.reps,
+                reps:
+                  typeof exercise.reps === 'string' ? parseInt(exercise.reps) || 10 : exercise.reps,
                 weight: exercise.weight || 0,
                 duration: 0,
                 restTime: exercise.restTime || 60,
@@ -269,27 +284,29 @@ export const useFitnessStore = create<FitnessState>()(
           };
 
           await crudOperations.createWorkoutSession(workoutSession);
-          
+
           set({
             currentWorkoutSession: {
               workoutId: workout.id,
               sessionId,
               startedAt: new Date().toISOString(),
-              exercises: workout.exercises.map(exercise => ({
+              exercises: workout.exercises.map((exercise) => ({
                 exerciseId: exercise.exerciseId,
                 completed: false,
-                sets: Array(exercise.sets).fill(null).map(() => ({
-                  reps: 0,
-                  weight: 0,
-                  completed: false,
-                })),
+                sets: Array(exercise.sets)
+                  .fill(null)
+                  .map(() => ({
+                    reps: 0,
+                    weight: 0,
+                    completed: false,
+                  })),
               })),
             },
           });
 
           // Initialize progress
           get().updateWorkoutProgress(workout.id, 0);
-          
+
           console.log(`🏋️ Started workout session: ${sessionId}`);
           return sessionId;
         } catch (error) {
@@ -313,9 +330,9 @@ export const useFitnessStore = create<FitnessState>()(
 
           // Complete the workout
           get().completeWorkout(currentSession.workoutId, sessionId);
-          
+
           set({ currentWorkoutSession: null });
-          
+
           console.log(`✅ Completed workout session: ${sessionId}`);
         } catch (error) {
           console.error('❌ Failed to end workout session:', error);
@@ -327,7 +344,7 @@ export const useFitnessStore = create<FitnessState>()(
         set((state) => {
           if (!state.currentWorkoutSession) return state;
 
-          const updatedExercises = state.currentWorkoutSession.exercises.map(exercise => {
+          const updatedExercises = state.currentWorkoutSession.exercises.map((exercise) => {
             if (exercise.exerciseId === exerciseId) {
               const updatedSets = [...exercise.sets];
               if (updatedSets[setIndex]) {
@@ -337,10 +354,10 @@ export const useFitnessStore = create<FitnessState>()(
                   completed: reps > 0,
                 };
               }
-              
-              const completedSets = updatedSets.filter(set => set.completed).length;
+
+              const completedSets = updatedSets.filter((set) => set.completed).length;
               const exerciseCompleted = completedSets === updatedSets.length;
-              
+
               return {
                 ...exercise,
                 sets: updatedSets,
@@ -352,9 +369,9 @@ export const useFitnessStore = create<FitnessState>()(
 
           // Calculate overall progress
           const totalExercises = updatedExercises.length;
-          const completedExercises = updatedExercises.filter(ex => ex.completed).length;
+          const completedExercises = updatedExercises.filter((ex) => ex.completed).length;
           const progressPercent = Math.round((completedExercises / totalExercises) * 100);
-          
+
           // Update workout progress
           get().updateWorkoutProgress(state.currentWorkoutSession!.workoutId, progressPercent);
 
@@ -373,11 +390,11 @@ export const useFitnessStore = create<FitnessState>()(
         try {
           const state = get();
           await crudOperations.clearAllData(); // Clear old data
-          
+
           if (state.weeklyWorkoutPlan) {
             await get().saveWeeklyWorkoutPlan(state.weeklyWorkoutPlan);
           }
-          
+
           console.log('💾 Fitness data persisted');
         } catch (error) {
           console.error('❌ Failed to persist fitness data:', error);
@@ -408,22 +425,21 @@ export const useFitnessStore = create<FitnessState>()(
       clearOldWorkoutData: async () => {
         try {
           console.log('🧹 Clearing old workout data with descriptive exercise names...');
-          
+
           // Clear local store data
           get().clearData();
-          
+
           // Clear database data
           await crudOperations.clearAllData();
-          
+
           // Clear AsyncStorage
           const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
           await AsyncStorage.removeItem('fitness-storage');
-          
+
           console.log('✅ Old workout data cleared successfully');
-          
+
           // Set flag to force regeneration
           get().forceWorkoutRegeneration();
-          
         } catch (error) {
           console.error('❌ Failed to clear old workout data:', error);
           throw error;

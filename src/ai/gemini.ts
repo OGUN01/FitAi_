@@ -1,7 +1,7 @@
 // Google Gemini AI Integration Service for FitAI
 // Enhanced with API key rotation and food recognition support
 
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold, Type } from '@google/genai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { AIResponse } from '../types/ai';
 import * as FileSystem from 'expo-file-system';
 import { APIKeyRotator } from '../utils/apiKeyRotator';
@@ -47,11 +47,14 @@ const MODEL_NAME = 'gemini-2.5-flash'; // Latest Gemini 2.5 Flash model
 console.log(`🔑 Available API keys: ${GEMINI_KEYS.length}`);
 
 // Log API key status for debugging (only first few characters for security)
-console.log('🔑 Gemini API Key Status:', GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET');
+console.log(
+  '🔑 Gemini API Key Status:',
+  GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET'
+);
 console.log('🤖 Using Latest Model:', MODEL_NAME);
 
 // Initialize Gemini AI
-let genAI: GoogleGenAI | null = null;
+let genAI: GoogleGenerativeAI | null = null;
 let model: any | null = null;
 
 // Check API key on module load
@@ -71,7 +74,7 @@ const initializeGemini = () => {
   }
 
   try {
-    genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     // With @google/genai we don't bind config at model creation; we pass it per request
     model = { __placeholder: true } as any;
@@ -233,7 +236,7 @@ Create motivational content including:
 - Quote: inspirational fitness or life quote
 - Fact of the day: interesting fitness or health fact
 - Personalized message: content tailored to the user's current situation and goals
-`
+`,
 };
 
 /**
@@ -257,34 +260,34 @@ export const generateResponseWithImage = async (
     }
 
     // Initialize model with specific API key
-    const genai = new GoogleGenAI({ apiKey });
+    const genai = new GoogleGenerativeAI(apiKey);
 
     // Read image file
     const imageData = await FileSystem.readAsStringAsync(imageUri, {
-      encoding: FileSystem.EncodingType.Base64
+      encoding: FileSystem.EncodingType.Base64,
     });
 
     const imagePart = {
       inlineData: {
         data: imageData,
-        mimeType: 'image/jpeg'
-      }
+        mimeType: 'image/jpeg',
+      },
     };
 
     // Generate response using official per-request config
-    const result = await genai.models.generateContent({
-      model: MODEL_NAME,
-      contents: [prompt, imagePart] as any,
-      config: {
+    const model = genai.getGenerativeModel({ model: MODEL_NAME });
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }, imagePart] }],
+      generationConfig: {
         responseMimeType: options.schema ? 'application/json' : 'text/plain',
         responseSchema: options.schema,
         temperature: options.temperature || 0.7,
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 8192,
-      }
+      },
     });
-    const text = result.text;
+    const text = result.response.text();
 
     console.log('✅ Image analysis completed');
 
@@ -302,7 +305,6 @@ export const generateResponseWithImage = async (
     }
 
     return text;
-
   } catch (error) {
     console.error('❌ Image generation failed:', error);
     throw error;
@@ -325,11 +327,15 @@ class GeminiService {
     setTimeout(() => {
       try {
         const status = this.getRotationStatus();
-        console.log(`🔄 API Key Rotation Status: ${status.totalKeys} total keys, ${status.availableKeys} available`);
+        console.log(
+          `🔄 API Key Rotation Status: ${status.totalKeys} total keys, ${status.availableKeys} available`
+        );
         if (status.totalKeys > 1) {
           console.log('✅ Multi-key rotation enabled for workout generation');
         } else {
-          console.log('⚠️ Only 1 API key configured - add EXPO_PUBLIC_GEMINI_KEY_1, KEY_2, etc. for rotation');
+          console.log(
+            '⚠️ Only 1 API key configured - add EXPO_PUBLIC_GEMINI_KEY_1, KEY_2, etc. for rotation'
+          );
         }
       } catch (error) {
         console.warn('Failed to check rotation status:', error);
@@ -362,7 +368,7 @@ class GeminiService {
     if (!this.isAvailable()) {
       return {
         success: false,
-        error: 'Gemini 2.5 Flash is not available. Please check your API key configuration.'
+        error: 'Gemini 2.5 Flash is not available. Please check your API key configuration.',
       };
     }
 
@@ -373,6 +379,14 @@ class GeminiService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       // Try to get an available API key through rotation
       let currentApiKey = GEMINI_API_KEY; // Default fallback
+
+      // Enhanced generation config for Gemini 2.5 Flash with structured output
+      const generationConfig: any = {
+        temperature: options?.temperature ?? 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: options?.maxOutputTokens ?? 4096,
+      };
 
       try {
         const rotatedKey = await this.apiKeyRotator.getAvailableKey();
@@ -404,28 +418,20 @@ class GeminiService {
           prompt = prompt.replace(new RegExp(placeholder, 'g'), replacement);
         });
 
-        // Enhanced generation config for Gemini 2.5 Flash with structured output
-        const generationConfig: any = {
-          temperature: options?.temperature ?? 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: options?.maxOutputTokens ?? 4096,
-        };
-
         // Use OFFICIAL structured output if schema is provided
         if (schema) {
-          generationConfig.responseMimeType = "application/json";
+          generationConfig.responseMimeType = 'application/json';
           generationConfig.responseSchema = schema;
         } else {
-          generationConfig.responseMimeType = "text/plain";
+          generationConfig.responseMimeType = 'text/plain';
         }
 
         // Create request with official per-request config using @google/genai
-        const currentGenAI = new GoogleGenAI({ apiKey: currentApiKey });
-        const result = await currentGenAI.models.generateContent({
-          model: MODEL_NAME,
-          contents: [{ text: prompt }],
-          config: generationConfig,
+        const currentGenAI = new GoogleGenerativeAI(currentApiKey);
+        const model = currentGenAI.getGenerativeModel({ model: MODEL_NAME });
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig,
           safetySettings: [
             {
               category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -445,31 +451,40 @@ class GeminiService {
             },
           ],
         });
-        const response: any = { text: result.text, usageMetadata: result.usageMetadata } as any;
+        const response: any = {
+          text: result.response.text(),
+          usageMetadata: result.response.usageMetadata || null,
+        } as any;
 
         // CRITICAL: Verify structured output configuration before making the call
         if (schema) {
           console.log('🎯 STRUCTURED OUTPUT CONFIG VERIFICATION:');
           console.log('  - Model:', MODEL_NAME);
           console.log('  - responseMimeType:', generationConfig.responseMimeType);
-          console.log('  - responseSchema keys:', Object.keys(generationConfig.responseSchema || {}));
+          console.log(
+            '  - responseSchema keys:',
+            Object.keys(generationConfig.responseSchema || {})
+          );
           console.log('  - maxOutputTokens:', generationConfig.maxOutputTokens);
           console.log('  - temperature:', generationConfig.temperature);
 
           // Ensure configuration is exactly what we expect for structured output
-          if (generationConfig.responseMimeType !== "application/json") {
-            throw new Error(`❌ CRITICAL: responseMimeType should be "application/json" but is "${generationConfig.responseMimeType}"`);
+          if (generationConfig.responseMimeType !== 'application/json') {
+            throw new Error(
+              `❌ CRITICAL: responseMimeType should be "application/json" but is "${generationConfig.responseMimeType}"`
+            );
           }
           if (!generationConfig.responseSchema) {
             throw new Error(`❌ CRITICAL: responseSchema is missing for structured output`);
           }
         }
 
-        console.log(`🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries} (Key: ${currentApiKey.substring(0, 10)}...)`);
+        console.log(
+          `🚀 Gemini 2.5 Flash - Attempt ${attempt}/${maxRetries} (Key: ${currentApiKey.substring(0, 10)}...)`
+        );
 
         // Generate content with enhanced error tracking
         // response already available via result
-
 
         // Check for safety blocks or other issues
         if ((result as any).promptFeedback?.blockReason) {
@@ -512,7 +527,10 @@ class GeminiService {
             if (schema && (structuredData as any)?.workouts) {
               console.log('🏋️ Workout plan validation:');
               console.log('  - workouts property:', (structuredData as any).workouts ? '✅' : '❌');
-              console.log('  - workouts is array:', Array.isArray((structuredData as any).workouts) ? '✅' : '❌');
+              console.log(
+                '  - workouts is array:',
+                Array.isArray((structuredData as any).workouts) ? '✅' : '❌'
+              );
               console.log('  - workouts count:', (structuredData as any).workouts?.length || 0);
             }
 
@@ -520,7 +538,9 @@ class GeminiService {
           } catch (parseError) {
             // Enhanced debugging for unexpected structured output issues
             lastError = `Google structured output failed - API returned malformed JSON: ${parseError}`;
-            console.warn(`⚠️ UNEXPECTED JSON parse error on attempt ${attempt}: [${parseError.constructor.name}: ${parseError.message}]`);
+            console.warn(
+              `⚠️ UNEXPECTED JSON parse error on attempt ${attempt}: [${(parseError as Error).constructor.name}: ${(parseError as Error).message}]`
+            );
             console.warn('🚨 CRITICAL DEBUG INFO:');
             console.warn('  - Response length:', text.length, 'characters');
             console.warn('  - Response starts with:', text.substring(0, 100));
@@ -541,8 +561,14 @@ class GeminiService {
         lastError = `Gemini 2.5 Flash generation failed: ${error.message || error}`;
 
         // Handle API key rotation errors
-        if (error.message?.includes('QUOTA_EXCEEDED') || error.message?.includes('quota') || error.message?.includes('429')) {
-          console.error(`🚫 Quota exceeded for key ${currentApiKey.substring(0, 10)}... - marking as blocked`);
+        if (
+          error.message?.includes('QUOTA_EXCEEDED') ||
+          error.message?.includes('quota') ||
+          error.message?.includes('429')
+        ) {
+          console.error(
+            `🚫 Quota exceeded for key ${currentApiKey.substring(0, 10)}... - marking as blocked`
+          );
 
           // Mark current key as blocked
           try {
@@ -567,12 +593,15 @@ class GeminiService {
           console.error('  1. Wait for quota reset (usually midnight PST)');
           console.error('  2. Add more EXPO_PUBLIC_GEMINI_KEY_X environment variables');
           console.error('  3. Upgrade to a paid Google Cloud plan');
-          console.error('  4. Check usage at: https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com');
+          console.error(
+            '  4. Check usage at: https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com'
+          );
 
           return {
             success: false,
-            error: '🚨 Daily API quota exceeded on all available keys (250 requests/day per key on free tier). Please wait for reset or add more API keys.',
-            generationTime: Date.now() - startTime
+            error:
+              '🚨 Daily API quota exceeded on all available keys (250 requests/day per key on free tier). Please wait for reset or add more API keys.',
+            generationTime: Date.now() - startTime,
           };
         }
 
@@ -596,7 +625,7 @@ class GeminiService {
           return {
             success: false,
             error: 'Invalid API key. Please check your Gemini API key configuration.',
-            generationTime: Date.now() - startTime
+            generationTime: Date.now() - startTime,
           };
         }
 
@@ -612,7 +641,7 @@ class GeminiService {
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
         console.log(`⏳ Retrying in ${Math.round(delay)}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -620,7 +649,7 @@ class GeminiService {
       success: false,
       error: lastError,
       generationTime: Date.now() - startTime,
-      tokensUsed: totalTokensUsed
+      tokensUsed: totalTokensUsed,
     };
   }
 
@@ -647,7 +676,7 @@ class GeminiService {
       confidence: Math.min(confidence, 100),
       generationTime,
       tokensUsed,
-      modelVersion: MODEL_NAME
+      modelVersion: MODEL_NAME,
     };
   }
 
@@ -664,7 +693,12 @@ class GeminiService {
     // If logs leaked before JSON, attempt to extract the first top-level JSON object/array
     const firstBrace = text.indexOf('{');
     const firstBracket = text.indexOf('[');
-    const start = (firstBrace === -1) ? firstBracket : (firstBracket === -1 ? firstBrace : Math.min(firstBrace, firstBracket));
+    const start =
+      firstBrace === -1
+        ? firstBracket
+        : firstBracket === -1
+          ? firstBrace
+          : Math.min(firstBrace, firstBracket);
     if (start < 0) throw new Error('No JSON start found in response');
 
     // Attempt to find matching closing bracket by stack scanning
@@ -676,7 +710,8 @@ class GeminiService {
       if (ch === '"' && prev !== '\\') {
         // Toggle in-string state, naive but effective for most well-formed JSON
         const last = stack[stack.length - 1];
-        if (last === '"') stack.pop(); else stack.push('"');
+        if (last === '"') stack.pop();
+        else stack.push('"');
         continue;
       }
       if (stack[stack.length - 1] === '"') continue; // ignore chars inside strings
@@ -685,7 +720,10 @@ class GeminiService {
         const open = stack.pop();
         if (!open) break;
         if ((open === '{' && ch === '}') || (open === '[' && ch === ']')) {
-          if (stack.length === 0) { end = i + 1; break; }
+          if (stack.length === 0) {
+            end = i + 1;
+            break;
+          }
         } else {
           // mismatched
           break;
@@ -710,8 +748,6 @@ class GeminiService {
     return JSON.parse(jsonSlice) as T;
   }
 
-
-
   /**
    * Generate content with custom prompt
    */
@@ -719,33 +755,33 @@ class GeminiService {
     if (!this.isAvailable()) {
       return {
         success: false,
-        error: 'Gemini AI is not available.'
+        error: 'Gemini AI is not available.',
       };
     }
 
     try {
       const startTime = Date.now();
-      const result = await genAI!.models.generateContent({
-        model: MODEL_NAME,
-        contents: [{ text: prompt }],
-        config: {
+      const model = genAI!.getGenerativeModel({ model: MODEL_NAME });
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
           responseMimeType: 'text/plain',
           temperature: 0.7,
           maxOutputTokens: 2048,
-        }
+        },
       });
-      const text = result.text as string;
+      const text = result.response.text() as string;
 
       return {
         success: true,
         data: text,
         generationTime: Date.now() - startTime,
-        tokensUsed: result.usageMetadata?.totalTokenCount || 0
+        tokensUsed: (result.response as any).usageMetadata?.totalTokenCount || 0,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Custom content generation failed: ${error}`
+        error: `Custom content generation failed: ${error}`,
       };
     }
   }
@@ -754,7 +790,9 @@ class GeminiService {
    * Test AI connectivity
    */
   async testConnection(): Promise<AIResponse<string>> {
-    return this.generateCustomContent('Respond with "AI connection successful" if you can read this message.');
+    return this.generateCustomContent(
+      'Respond with "AI connection successful" if you can read this message.'
+    );
   }
 
   /**
@@ -772,14 +810,14 @@ class GeminiService {
         totalKeys: stats.totalKeys,
         availableKeys: stats.availableKeys,
         rotationEnabled: true,
-        statistics: stats
+        statistics: stats,
       };
     } catch (error) {
       return {
         totalKeys: 0,
         availableKeys: 0,
         rotationEnabled: false,
-        statistics: null
+        statistics: null,
       };
     }
   }
@@ -809,7 +847,7 @@ export const formatUserProfileForAI = (personalInfo: any, fitnessGoals: any) => 
     primaryGoals: Array.isArray(fitnessGoals.primaryGoals)
       ? fitnessGoals.primaryGoals.join(', ')
       : fitnessGoals.primaryGoals,
-    timeCommitment: fitnessGoals.timeCommitment
+    timeCommitment: fitnessGoals.timeCommitment,
   };
 };
 
@@ -833,7 +871,7 @@ export const calculateDailyCalories = (personalInfo: any): number => {
     light: 1.375,
     moderate: 1.55,
     active: 1.725,
-    extreme: 1.9
+    extreme: 1.9,
   };
 
   const multiplier = activityMultipliers[activityLevel] || 1.55;

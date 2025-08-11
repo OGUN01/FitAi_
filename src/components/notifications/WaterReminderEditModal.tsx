@@ -15,9 +15,10 @@ import { Card, Button, THEME } from '../ui';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection
-const isExpoGo = Constants.appOwnership === 'expo' || 
-                 Constants.executionEnvironment === 'storeClient' ||
-                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
 
 // Load water reminders safely
 let useWaterReminders: any = null;
@@ -44,7 +45,7 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
   if (isExpoGo || !useWaterReminders) {
     return null;
   }
-  
+
   const waterReminders = useWaterReminders();
   const [dailyGoal, setDailyGoal] = useState(waterReminders.config.dailyGoalLiters.toString());
   const [wakeUpTime, setWakeUpTime] = useState(waterReminders.config.wakeUpTime);
@@ -62,10 +63,10 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
 
   const handleSave = async () => {
     setIsLoading(true);
-    
+
     try {
       const goalLiters = parseFloat(dailyGoal);
-      
+
       // Validation
       if (isNaN(goalLiters) || goalLiters < 1 || goalLiters > 10) {
         Alert.alert('Invalid Goal', 'Please enter a daily water goal between 1 and 10 liters.');
@@ -82,14 +83,14 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
       // Check if wake time is before sleep time (basic validation)
       const wakeMinutes = timeToMinutes(wakeUpTime);
       const sleepMinutes = timeToMinutes(sleepTime);
-      
+
       if (wakeMinutes >= sleepMinutes && sleepMinutes !== 0) {
         Alert.alert(
-          'Time Conflict', 
+          'Time Conflict',
           'Wake up time should be before sleep time. Are you sure about these times?',
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Save Anyway', onPress: () => saveTimes() }
+            { text: 'Save Anyway', onPress: () => saveTimes() },
           ]
         );
         setIsLoading(false);
@@ -132,20 +133,21 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
   const calculateAwakeHours = (): number => {
     const wakeMinutes = timeToMinutes(wakeUpTime);
     const sleepMinutes = timeToMinutes(sleepTime);
-    const awakeMinutes = sleepMinutes > wakeMinutes 
-      ? sleepMinutes - wakeMinutes 
-      : (24 * 60) - wakeMinutes + sleepMinutes;
+    const awakeMinutes =
+      sleepMinutes > wakeMinutes
+        ? sleepMinutes - wakeMinutes
+        : 24 * 60 - wakeMinutes + sleepMinutes;
     return Math.floor(awakeMinutes / 60);
   };
 
   const calculateReminderFrequency = (): string => {
     const awakeHours = calculateAwakeHours();
     const goalLiters = parseFloat(dailyGoal);
-    
+
     if (isNaN(goalLiters) || awakeHours <= 0) return 'N/A';
-    
+
     const avgInterval = awakeHours / Math.ceil(goalLiters * 4); // Assuming 4 reminders per liter
-    
+
     if (avgInterval < 1) return 'Every 30-60 min';
     if (avgInterval < 2) return 'Every 1-2 hours';
     return `Every ${Math.round(avgInterval)} hours`;
@@ -154,15 +156,21 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
   const getPresetTime = (type: 'morning' | 'evening', preset: 'early' | 'normal' | 'late') => {
     if (type === 'morning') {
       switch (preset) {
-        case 'early': return '06:00';
-        case 'normal': return '07:30';
-        case 'late': return '09:00';
+        case 'early':
+          return '06:00';
+        case 'normal':
+          return '07:30';
+        case 'late':
+          return '09:00';
       }
     } else {
       switch (preset) {
-        case 'early': return '21:30';
-        case 'normal': return '23:00';
-        case 'late': return '00:30';
+        case 'early':
+          return '21:30';
+        case 'normal':
+          return '23:00';
+        case 'late':
+          return '00:30';
       }
     }
   };
@@ -201,19 +209,21 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
                 />
               </View>
               <View style={styles.presetButtons}>
-                {[2, 3, 4, 5].map(liters => (
+                {[2, 3, 4, 5].map((liters) => (
                   <TouchableOpacity
                     key={liters}
                     style={[
                       styles.presetButton,
-                      dailyGoal === liters.toString() && styles.presetButtonActive
+                      dailyGoal === liters.toString() && styles.presetButtonActive,
                     ]}
                     onPress={() => setDailyGoal(liters.toString())}
                   >
-                    <Text style={[
-                      styles.presetButtonText,
-                      dailyGoal === liters.toString() && styles.presetButtonTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.presetButtonText,
+                        dailyGoal === liters.toString() && styles.presetButtonTextActive,
+                      ]}
+                    >
                       {liters}L
                     </Text>
                   </TouchableOpacity>
@@ -242,21 +252,23 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
                 />
               </View>
               <View style={styles.presetButtons}>
-                {['early', 'normal', 'late'].map(preset => {
+                {['early', 'normal', 'late'].map((preset) => {
                   const time = getPresetTime('morning', preset as any);
                   return (
                     <TouchableOpacity
                       key={preset}
                       style={[
                         styles.presetButton,
-                        wakeUpTime === time && styles.presetButtonActive
+                        wakeUpTime === time && styles.presetButtonActive,
                       ]}
                       onPress={() => setWakeUpTime(time)}
                     >
-                      <Text style={[
-                        styles.presetButtonText,
-                        wakeUpTime === time && styles.presetButtonTextActive
-                      ]}>
+                      <Text
+                        style={[
+                          styles.presetButtonText,
+                          wakeUpTime === time && styles.presetButtonTextActive,
+                        ]}
+                      >
                         {time}
                       </Text>
                     </TouchableOpacity>
@@ -278,21 +290,20 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
                 />
               </View>
               <View style={styles.presetButtons}>
-                {['early', 'normal', 'late'].map(preset => {
+                {['early', 'normal', 'late'].map((preset) => {
                   const time = getPresetTime('evening', preset as any);
                   return (
                     <TouchableOpacity
                       key={preset}
-                      style={[
-                        styles.presetButton,
-                        sleepTime === time && styles.presetButtonActive
-                      ]}
+                      style={[styles.presetButton, sleepTime === time && styles.presetButtonActive]}
                       onPress={() => setSleepTime(time)}
                     >
-                      <Text style={[
-                        styles.presetButtonText,
-                        sleepTime === time && styles.presetButtonTextActive
-                      ]}>
+                      <Text
+                        style={[
+                          styles.presetButtonText,
+                          sleepTime === time && styles.presetButtonTextActive,
+                        ]}
+                      >
                         {time}
                       </Text>
                     </TouchableOpacity>
@@ -319,7 +330,8 @@ export const WaterReminderEditModal: React.FC<WaterReminderEditModalProps> = ({
                 <Text style={styles.previewValue}>{calculateReminderFrequency()}</Text>
               </View>
               <Text style={styles.previewNote}>
-                💡 Reminders are distributed intelligently: more frequent in morning/afternoon, less in evening.
+                💡 Reminders are distributed intelligently: more frequent in morning/afternoon, less
+                in evening.
               </Text>
             </Card>
           </View>

@@ -2,13 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { TabBar } from './TabBar';
-import {
-  HomeIcon,
-  FitnessIcon,
-  DietIcon,
-  ProgressIcon,
-  ProfileIcon
-} from '../icons/TabIcons';
+import { HomeIcon, FitnessIcon, DietIcon, ProgressIcon, ProfileIcon } from '../icons/TabIcons';
 import { HomeScreen } from '../../screens/main/HomeScreen';
 import { FitnessScreen } from '../../screens/main/FitnessScreen';
 import { DietScreen } from '../../screens/main/DietScreen';
@@ -25,9 +19,7 @@ interface MainNavigationProps {
   initialTab?: string;
 }
 
-export const MainNavigation: React.FC<MainNavigationProps> = ({
-  initialTab = 'home'
-}) => {
+export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'home' }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
@@ -45,14 +37,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     navigate: (screen: string, params?: any) => {
       console.log(`🧭 NAVIGATION: Navigating to ${screen}`, { params });
       if (screen === 'WorkoutSession') {
-        console.log(`🧭 Setting workout session:`, { 
-          workout: params?.workout?.title, 
-          sessionId: params?.sessionId 
+        console.log(`🧭 Setting workout session:`, {
+          workout: params?.workout?.title,
+          sessionId: params?.sessionId,
         });
-        setWorkoutSession({ 
-          isActive: true, 
+        setWorkoutSession({
+          isActive: true,
           workout: params.workout,
-          sessionId: params.sessionId 
+          sessionId: params.sessionId,
         });
       } else if (screen === 'MealSession') {
         setMealSession({ isActive: true, meal: params.meal });
@@ -62,7 +54,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       console.log(`🧭 NAVIGATION: Going back from workout/meal session`);
       setWorkoutSession({ isActive: false });
       setMealSession({ isActive: false });
-    }
+    },
   };
 
   const tabs = [
@@ -104,14 +96,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       console.log(`🧭 RENDERING: WorkoutSessionScreen with:`, {
         workoutTitle: workoutSession.workout.title,
         sessionId: workoutSession.sessionId,
-        exerciseCount: workoutSession.workout.exercises?.length
+        exerciseCount: workoutSession.workout.exercises?.length,
       });
       return (
         <WorkoutSessionScreen
-          route={{ params: { 
-            workout: workoutSession.workout,
-            sessionId: workoutSession.sessionId 
-          }}}
+          route={{
+            params: {
+              workout: workoutSession.workout,
+              sessionId: workoutSession.sessionId,
+            },
+          }}
           navigation={navigation}
         />
       );
@@ -119,12 +113,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
     // If meal session is active, show meal session screen
     if (mealSession.isActive && mealSession.meal) {
-      return (
-        <MealSession
-          route={{ params: { meal: mealSession.meal } }}
-          navigation={navigation}
-        />
-      );
+      return <MealSession route={{ params: { meal: mealSession.meal } }} navigation={navigation} />;
     }
 
     // Otherwise show normal tab screens
@@ -146,17 +135,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.screenContainer}>
-        {renderScreen()}
-      </View>
+      <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* Hide tab bar when any session is active */}
       {!workoutSession.isActive && !mealSession.isActive && (
-        <TabBar
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabPress={setActiveTab}
-        />
+        <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
       )}
     </View>
   );
@@ -167,7 +150,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   screenContainer: {
     flex: 1,
   },

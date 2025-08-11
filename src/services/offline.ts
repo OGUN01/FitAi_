@@ -55,12 +55,12 @@ class OfflineService {
       this.isOnline = netInfo.isConnected ?? false;
 
       // Listen for network changes
-      NetInfo.addEventListener(state => {
+      NetInfo.addEventListener((state) => {
         const wasOnline = this.isOnline;
         this.isOnline = state.isConnected ?? false;
 
         // Notify listeners
-        this.listeners.forEach(listener => listener(this.isOnline));
+        this.listeners.forEach((listener) => listener(this.isOnline));
 
         // Auto-sync when coming back online
         if (!wasOnline && this.isOnline) {
@@ -215,7 +215,7 @@ class OfflineService {
           result.syncedActions++;
         } catch (error) {
           action.retryCount++;
-          
+
           if (action.retryCount >= action.maxRetries) {
             // Remove failed action after max retries
             successfulActions.push(action.id);
@@ -226,7 +226,7 @@ class OfflineService {
       }
 
       // Remove successful and failed actions from queue
-      this.syncQueue = this.syncQueue.filter(action => !successfulActions.includes(action.id));
+      this.syncQueue = this.syncQueue.filter((action) => !successfulActions.includes(action.id));
       await this.saveOfflineData();
 
       result.success = result.failedActions === 0;
@@ -248,26 +248,18 @@ class OfflineService {
 
     switch (type) {
       case 'CREATE':
-        const { error: createError } = await supabase
-          .from(table)
-          .insert([data]);
+        const { error: createError } = await supabase.from(table).insert([data]);
         if (createError) throw createError;
         break;
 
       case 'UPDATE':
         const { id, ...updateData } = data;
-        const { error: updateError } = await supabase
-          .from(table)
-          .update(updateData)
-          .eq('id', id);
+        const { error: updateError } = await supabase.from(table).update(updateData).eq('id', id);
         if (updateError) throw updateError;
         break;
 
       case 'DELETE':
-        const { error: deleteError } = await supabase
-          .from(table)
-          .delete()
-          .eq('id', data.id);
+        const { error: deleteError } = await supabase.from(table).delete().eq('id', data.id);
         if (deleteError) throw deleteError;
         break;
 
@@ -301,7 +293,8 @@ class OfflineService {
       queueLength: this.syncQueue.length,
       isOnline: this.isOnline,
       syncInProgress: this.syncInProgress,
-      lastSyncAttempt: this.syncQueue.length > 0 ? Math.max(...this.syncQueue.map(a => a.timestamp)) : null,
+      lastSyncAttempt:
+        this.syncQueue.length > 0 ? Math.max(...this.syncQueue.map((a) => a.timestamp)) : null,
     };
   }
 
@@ -334,7 +327,7 @@ class OfflineService {
   isDataStale(data: OfflineData, maxAgeMinutes: number = 30): boolean {
     const timestamp = data._offline_timestamp;
     if (!timestamp) return true;
-    
+
     const ageMinutes = (Date.now() - timestamp) / (1000 * 60);
     return ageMinutes > maxAgeMinutes;
   }
@@ -342,12 +335,7 @@ class OfflineService {
   /**
    * Optimistic update - update local data immediately and queue for sync
    */
-  async optimisticUpdate(
-    table: string,
-    id: string,
-    data: any,
-    userId: string
-  ): Promise<void> {
+  async optimisticUpdate(table: string, id: string, data: any, userId: string): Promise<void> {
     // Update local data immediately
     const key = `${table}_${id}`;
     await this.storeOfflineData(key, { ...data, id });
@@ -393,11 +381,7 @@ class OfflineService {
   /**
    * Optimistic delete - remove local data immediately and queue for sync
    */
-  async optimisticDelete(
-    table: string,
-    id: string,
-    userId: string
-  ): Promise<void> {
+  async optimisticDelete(table: string, id: string, userId: string): Promise<void> {
     // Remove local data immediately
     const key = `${table}_${id}`;
     await this.removeOfflineData(key);

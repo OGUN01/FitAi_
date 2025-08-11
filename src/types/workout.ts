@@ -129,7 +129,7 @@ export interface WorkoutPreferences {
   preferredTime: 'morning' | 'afternoon' | 'evening' | 'flexible';
 }
 
-export type WorkoutType = 
+export type WorkoutType =
   | 'strength'
   | 'cardio'
   | 'hiit'

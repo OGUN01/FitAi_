@@ -15,7 +15,14 @@ import { dataManager } from '../services/dataManager';
  */
 export const useOnboardingIntegration = () => {
   const { user: authUser, isAuthenticated, isGuestMode, guestId } = useAuth();
-  const { createProfile, updateProfile, createFitnessGoals, updateFitnessGoals, updatePersonalInfo, updateFitnessGoalsLocal } = useUser();
+  const {
+    createProfile,
+    updateProfile,
+    createFitnessGoals,
+    updateFitnessGoals,
+    updatePersonalInfo,
+    updateFitnessGoalsLocal,
+  } = useUser();
   const { optimisticCreate } = useOffline();
 
   // Helper function to get user ID (authenticated user or guest)
@@ -30,14 +37,16 @@ export const useOnboardingIntegration = () => {
    * Save personal info from onboarding
    * Works for both guest and authenticated users
    */
-  const savePersonalInfo = async (personalInfo: PersonalInfo): Promise<{ success: boolean; error?: string }> => {
+  const savePersonalInfo = async (
+    personalInfo: PersonalInfo
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
-      
+
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataManager.setUserId(currentUserId);
       const localSaveSuccess = await dataManager.savePersonalInfo(personalInfo);
-      
+
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save personal info locally');
       }
@@ -50,16 +59,16 @@ export const useOnboardingIntegration = () => {
         // Try to update profile first, create if it doesn't exist
         const profileData = {
           name: personalInfo.name,
-          age: personalInfo.age ? parseInt(personalInfo.age) : undefined,
+          age: personalInfo.age ? personalInfo.age.toString() : undefined,
           gender: personalInfo.gender as 'male' | 'female' | 'other',
-          height_cm: personalInfo.height ? parseInt(personalInfo.height) : undefined,
-          weight_kg: personalInfo.weight ? parseFloat(personalInfo.weight) : undefined,
-          activity_level: personalInfo.activityLevel as any,
+          height: personalInfo.height ? parseInt(personalInfo.height) : undefined,
+          weight: personalInfo.weight ? parseFloat(personalInfo.weight) : undefined,
+          activityLevel: personalInfo.activityLevel as any,
         };
 
         // Try update first
         let response = await updateProfile(authUser.id, profileData);
-        
+
         // If update fails (profile doesn't exist), create it
         if (!response.success) {
           const createData = {
@@ -69,7 +78,7 @@ export const useOnboardingIntegration = () => {
           };
           response = await createProfile(createData);
         }
-        
+
         if (!response.success) {
           console.warn('⚠️ Failed to save personal info to remote, but saved locally');
         }
@@ -80,9 +89,9 @@ export const useOnboardingIntegration = () => {
       return { success: true };
     } catch (error) {
       console.error('❌ Error saving personal info:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to save personal info' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save personal info',
       };
     }
   };
@@ -91,14 +100,16 @@ export const useOnboardingIntegration = () => {
    * Save fitness goals from onboarding
    * Works for both guest and authenticated users
    */
-  const saveFitnessGoals = async (fitnessGoals: FitnessGoals): Promise<{ success: boolean; error?: string }> => {
+  const saveFitnessGoals = async (
+    fitnessGoals: FitnessGoals
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
-      
+
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataManager.setUserId(currentUserId);
       const localSaveSuccess = await dataManager.saveFitnessGoals(fitnessGoals);
-      
+
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save fitness goals locally');
       }
@@ -110,14 +121,15 @@ export const useOnboardingIntegration = () => {
 
         // Try to update fitness goals first, create if they don't exist
         const goalsData = {
-          primary_goals: fitnessGoals.primaryGoals,
-          time_commitment: fitnessGoals.timeCommitment as any,
-          experience_level: fitnessGoals.experience as any,
+          primaryGoals: fitnessGoals.primaryGoals,
+          timeCommitment: fitnessGoals.timeCommitment as any,
+          experience: fitnessGoals.experience as any,
+          user_id: authUser.id,
         };
 
         // Try update first
         let response = await updateFitnessGoals(authUser.id, goalsData);
-        
+
         // If update fails (goals don't exist), create them
         if (!response.success) {
           const createData = {
@@ -126,7 +138,7 @@ export const useOnboardingIntegration = () => {
           };
           response = await createFitnessGoals(createData);
         }
-        
+
         if (!response.success) {
           console.warn('⚠️ Failed to save fitness goals to remote, but saved locally');
         }
@@ -137,9 +149,9 @@ export const useOnboardingIntegration = () => {
       return { success: true };
     } catch (error) {
       console.error('❌ Error saving fitness goals:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to save fitness goals' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save fitness goals',
       };
     }
   };
@@ -148,14 +160,16 @@ export const useOnboardingIntegration = () => {
    * Save diet preferences
    * Works for both guest and authenticated users
    */
-  const saveDietPreferences = async (dietPreferences: NonNullable<OnboardingData['dietPreferences']>): Promise<{ success: boolean; error?: string }> => {
+  const saveDietPreferences = async (
+    dietPreferences: NonNullable<OnboardingData['dietPreferences']>
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
-      
+
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataManager.setUserId(currentUserId);
       const localSaveSuccess = await dataManager.saveDietPreferences(dietPreferences);
-      
+
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save diet preferences locally');
       }
@@ -163,21 +177,25 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
-            .from('diet_preferences')
-            .upsert({
-              user_id: authUser.id,
-              diet_type: dietPreferences.dietType,
-              allergies: dietPreferences.allergies,
-              cuisine_preferences: dietPreferences.cuisinePreferences,
-              restrictions: dietPreferences.restrictions,
-            });
+          const { data, error } = await supabase.from('diet_preferences').upsert({
+            user_id: authUser.id,
+            diet_type: dietPreferences.dietType,
+            allergies: dietPreferences.allergies,
+            cuisine_preferences: dietPreferences.cuisinePreferences,
+            restrictions: dietPreferences.restrictions,
+          });
 
           if (error) {
-            console.warn('⚠️ Failed to save diet preferences to remote, but saved locally:', error.message);
+            console.warn(
+              '⚠️ Failed to save diet preferences to remote, but saved locally:',
+              error.message
+            );
           }
         } catch (remoteError) {
-          console.warn('⚠️ Failed to save diet preferences to remote, but saved locally:', remoteError);
+          console.warn(
+            '⚠️ Failed to save diet preferences to remote, but saved locally:',
+            remoteError
+          );
         }
       } else {
         console.log('📱 Guest mode: Diet preferences saved locally only');
@@ -188,7 +206,7 @@ export const useOnboardingIntegration = () => {
       console.error('❌ Error saving diet preferences:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save diet preferences'
+        error: error instanceof Error ? error.message : 'Failed to save diet preferences',
       };
     }
   };
@@ -197,14 +215,16 @@ export const useOnboardingIntegration = () => {
    * Save workout preferences
    * Works for both guest and authenticated users
    */
-  const saveWorkoutPreferences = async (workoutPreferences: NonNullable<OnboardingData['workoutPreferences']>): Promise<{ success: boolean; error?: string }> => {
+  const saveWorkoutPreferences = async (
+    workoutPreferences: NonNullable<OnboardingData['workoutPreferences']>
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
-      
+
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataManager.setUserId(currentUserId);
       const localSaveSuccess = await dataManager.saveWorkoutPreferences(workoutPreferences);
-      
+
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save workout preferences locally');
       }
@@ -212,22 +232,26 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
-            .from('workout_preferences')
-            .upsert({
-              user_id: authUser.id,
-              location: workoutPreferences.location,
-              equipment: workoutPreferences.equipment,
-              time_preference: workoutPreferences.timePreference,
-              intensity: workoutPreferences.intensity,
-              workout_types: workoutPreferences.workoutTypes,
-            });
+          const { data, error } = await supabase.from('workout_preferences').upsert({
+            user_id: authUser.id,
+            location: workoutPreferences.location,
+            equipment: workoutPreferences.equipment,
+            time_preference: workoutPreferences.timePreference,
+            intensity: workoutPreferences.intensity,
+            workout_types: workoutPreferences.workoutTypes,
+          });
 
           if (error) {
-            console.warn('⚠️ Failed to save workout preferences to remote, but saved locally:', error.message);
+            console.warn(
+              '⚠️ Failed to save workout preferences to remote, but saved locally:',
+              error.message
+            );
           }
         } catch (remoteError) {
-          console.warn('⚠️ Failed to save workout preferences to remote, but saved locally:', remoteError);
+          console.warn(
+            '⚠️ Failed to save workout preferences to remote, but saved locally:',
+            remoteError
+          );
         }
       } else {
         console.log('📱 Guest mode: Workout preferences saved locally only');
@@ -238,7 +262,7 @@ export const useOnboardingIntegration = () => {
       console.error('❌ Error saving workout preferences:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save workout preferences'
+        error: error instanceof Error ? error.message : 'Failed to save workout preferences',
       };
     }
   };
@@ -247,10 +271,12 @@ export const useOnboardingIntegration = () => {
    * Save body analysis
    * Works for both guest and authenticated users
    */
-  const saveBodyAnalysis = async (bodyAnalysis: NonNullable<OnboardingData['bodyAnalysis']>): Promise<{ success: boolean; error?: string }> => {
+  const saveBodyAnalysis = async (
+    bodyAnalysis: NonNullable<OnboardingData['bodyAnalysis']>
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
-      
+
       // For now, body analysis is stored locally only since it's optional
       // TODO: In future, could implement remote storage for body analysis
       console.log('📱 Body analysis saved locally only (feature is optional)');
@@ -258,19 +284,23 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         try {
-          const { data, error } = await supabase
-            .from('body_analysis')
-            .upsert({
-              user_id: authUser.id,
-              photos: bodyAnalysis.photos,
-              analysis: bodyAnalysis.analysis,
-            });
+          const { data, error } = await supabase.from('body_analysis').upsert({
+            user_id: authUser.id,
+            photos: bodyAnalysis.photos,
+            analysis: bodyAnalysis.analysis,
+          });
 
           if (error) {
-            console.warn('⚠️ Failed to save body analysis to remote, continuing without it:', error.message);
+            console.warn(
+              '⚠️ Failed to save body analysis to remote, continuing without it:',
+              error.message
+            );
           }
         } catch (remoteError) {
-          console.warn('⚠️ Failed to save body analysis to remote, continuing without it:', remoteError);
+          console.warn(
+            '⚠️ Failed to save body analysis to remote, continuing without it:',
+            remoteError
+          );
         }
       }
 
@@ -279,7 +309,7 @@ export const useOnboardingIntegration = () => {
       console.error('❌ Error saving body analysis:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save body analysis'
+        error: error instanceof Error ? error.message : 'Failed to save body analysis',
       };
     }
   };
@@ -287,7 +317,9 @@ export const useOnboardingIntegration = () => {
   /**
    * Save complete onboarding data
    */
-  const saveOnboardingData = async (onboardingData: OnboardingData): Promise<{ success: boolean; error?: string }> => {
+  const saveOnboardingData = async (
+    onboardingData: OnboardingData
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       // Save personal info first
       const personalInfoResult = await savePersonalInfo(onboardingData.personalInfo);
@@ -318,7 +350,10 @@ export const useOnboardingIntegration = () => {
       }
 
       // Save body analysis if provided
-      if (onboardingData.bodyAnalysis && Object.keys(onboardingData.bodyAnalysis.photos).length > 0) {
+      if (
+        onboardingData.bodyAnalysis &&
+        Object.keys(onboardingData.bodyAnalysis.photos).length > 0
+      ) {
         const bodyResult = await saveBodyAnalysis(onboardingData.bodyAnalysis);
         if (!bodyResult.success) {
           return bodyResult;
@@ -329,7 +364,7 @@ export const useOnboardingIntegration = () => {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to save onboarding data'
+        error: error instanceof Error ? error.message : 'Failed to save onboarding data',
       };
     }
   };
@@ -399,7 +434,7 @@ export const useDashboardIntegration = () => {
 
     const heightCm = parseInt(height);
     const weightKg = parseFloat(weight);
-    
+
     if (isNaN(heightCm) || isNaN(weightKg)) {
       return null;
     }
@@ -431,7 +466,7 @@ export const useDashboardIntegration = () => {
     const heightCm = parseInt(height);
     const weightKg = parseFloat(weight);
     const ageNum = parseInt(age);
-    
+
     if (isNaN(heightCm) || isNaN(weightKg) || isNaN(ageNum)) {
       return null;
     }
@@ -482,12 +517,20 @@ export const useUnitConversion = () => {
     convertHeight: api.utils.convertHeight,
     userUnits: preferences.units,
     formatWeight: (weight: number, fromUnit: 'kg' | 'lbs' = 'kg') => {
-      const converted = api.utils.convertWeight(weight, fromUnit, preferences.units === 'metric' ? 'kg' : 'lbs');
+      const converted = api.utils.convertWeight(
+        weight,
+        fromUnit,
+        preferences.units === 'metric' ? 'kg' : 'lbs'
+      );
       const unit = preferences.units === 'metric' ? 'kg' : 'lbs';
       return `${Math.round(converted * 10) / 10} ${unit}`;
     },
     formatHeight: (height: number, fromUnit: 'cm' | 'ft' = 'cm') => {
-      const converted = api.utils.convertHeight(height, fromUnit, preferences.units === 'metric' ? 'cm' : 'ft');
+      const converted = api.utils.convertHeight(
+        height,
+        fromUnit,
+        preferences.units === 'metric' ? 'cm' : 'ft'
+      );
       const unit = preferences.units === 'metric' ? 'cm' : 'ft';
       return `${Math.round(converted * 10) / 10} ${unit}`;
     },
@@ -509,17 +552,21 @@ export const useErrorHandling = () => {
       }
       return 'An unexpected error occurred';
     },
-    
+
     isNetworkError: (error: any) => {
-      return error?.message?.includes('network') || 
-             error?.message?.includes('fetch') ||
-             error?.code === 'NETWORK_ERROR';
+      return (
+        error?.message?.includes('network') ||
+        error?.message?.includes('fetch') ||
+        error?.code === 'NETWORK_ERROR'
+      );
     },
-    
+
     isAuthError: (error: any) => {
-      return error?.message?.includes('auth') ||
-             error?.message?.includes('unauthorized') ||
-             error?.code === 'AUTH_ERROR';
+      return (
+        error?.message?.includes('auth') ||
+        error?.message?.includes('unauthorized') ||
+        error?.code === 'AUTH_ERROR'
+      );
     },
   };
 };

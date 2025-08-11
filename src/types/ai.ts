@@ -5,27 +5,28 @@ import { Workout } from './workout';
 import { NutritionPlan } from './diet';
 
 // Re-export types from other modules that AI uses
-export type { 
-  Exercise, 
-  WorkoutSet, 
-  Workout, 
+export type {
+  Exercise,
+  WorkoutSet,
+  Workout,
   WorkoutPlan,
   CompletedExercise,
   CompletedSet,
-  WorkoutSession
+  WorkoutSession,
 } from './workout';
 
-export type { 
+export type {
   Macronutrients,
   Micronutrients,
   Food,
   MealItem,
   Meal,
+  MealType,
   DailyMealPlan,
   NutritionPlan,
   MealLog,
   WaterLog,
-  LoggedFood
+  LoggedFood,
 } from './diet';
 
 // ============================================================================
@@ -36,10 +37,10 @@ export interface AIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-  confidence?: number;  // Add confidence as direct property
-  generationTime?: number;  // Add generationTime as direct property
-  tokensUsed?: number;  // Add tokensUsed as direct property
-  modelVersion?: string;  // Add modelVersion as direct property
+  confidence?: number; // Add confidence as direct property
+  generationTime?: number; // Add generationTime as direct property
+  tokensUsed?: number; // Add tokensUsed as direct property
+  modelVersion?: string; // Add modelVersion as direct property
   metadata?: {
     model?: string;
     tokensUsed?: number;

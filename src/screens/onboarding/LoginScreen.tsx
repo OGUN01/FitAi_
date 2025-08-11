@@ -1,11 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -22,11 +16,7 @@ interface LoginScreenProps {
   onSignUp: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({
-  onLoginSuccess,
-  onBack,
-  onSignUp,
-}) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack, onSignUp }) => {
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -37,10 +27,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const { login, signInWithGoogle, resendEmailVerification } = useAuth();
 
   const updateField = (field: keyof LoginCredentials, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -72,11 +62,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       // Ensure we trim the credentials before sending
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
-        password: formData.password.trim()
+        password: formData.password.trim(),
       };
       console.log('🔐 LoginScreen: Using credentials:', { email: trimmedCredentials.email });
       const result = await login(trimmedCredentials);
-      console.log('🔐 LoginScreen: Login result:', { success: result.success, error: result.error });
+      console.log('🔐 LoginScreen: Login result:', {
+        success: result.success,
+        error: result.error,
+      });
 
       if (result.success) {
         // Check if user's email is verified
@@ -86,7 +79,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             'Please check your email and click the verification link to activate your account before logging in.',
             [
               { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
-              { text: 'OK' }
+              { text: 'OK' },
             ]
           );
           return;
@@ -101,58 +94,93 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
           if (hasLocalData) {
             console.log('🚀 LoginScreen: Starting automatic migration of local data');
-            
+
             // Show migration starting alert
             Alert.alert(
-              'Syncing Your Data', 
+              'Syncing Your Data',
               'We found your profile data and are syncing it to your account. This will only take a moment.',
-              [{ text: 'OK', onPress: async () => {
-                try {
-                  // Start migration
-                  const migrationResult = await migrationManager.startProfileMigration(result.user.id);
-                  
-                  if (migrationResult.success) {
-                    console.log('✅ LoginScreen: Migration completed successfully');
-                    Alert.alert(
-                      'Data Synced Successfully!', 
-                      'Your profile data has been synced to your account. Welcome back!',
-                      [{ text: 'Continue', onPress: () => {
-                        console.log('🔐 LoginScreen: Calling onLoginSuccess after migration');
-                        onLoginSuccess();
-                      }}]
-                    );
-                  } else {
-                    console.warn('⚠️ LoginScreen: Migration failed, continuing anyway');
-                    Alert.alert(
-                      'Sync Issue', 
-                      'There was an issue syncing some data, but you can continue. Your local data is preserved.',
-                      [{ text: 'Continue', onPress: () => {
-                        console.log('🔐 LoginScreen: Calling onLoginSuccess despite migration issues');
-                        onLoginSuccess();
-                      }}]
-                    );
-                  }
-                } catch (migrationError) {
-                  console.error('❌ LoginScreen: Migration error:', migrationError);
-                  Alert.alert(
-                    'Sync Issue', 
-                    'There was an issue syncing your data, but you can continue. Your local data is preserved.',
-                    [{ text: 'Continue', onPress: () => {
-                      console.log('🔐 LoginScreen: Calling onLoginSuccess after migration error');
-                      onLoginSuccess();
-                    }}]
-                  );
-                }
-              }}]
+              [
+                {
+                  text: 'OK',
+                  onPress: async () => {
+                    try {
+                      // Start migration
+                      const migrationResult = await migrationManager.startProfileMigration(
+                        result.user.id
+                      );
+
+                      if (migrationResult.success) {
+                        console.log('✅ LoginScreen: Migration completed successfully');
+                        Alert.alert(
+                          'Data Synced Successfully!',
+                          'Your profile data has been synced to your account. Welcome back!',
+                          [
+                            {
+                              text: 'Continue',
+                              onPress: () => {
+                                console.log(
+                                  '🔐 LoginScreen: Calling onLoginSuccess after migration'
+                                );
+                                onLoginSuccess();
+                              },
+                            },
+                          ]
+                        );
+                      } else {
+                        console.warn('⚠️ LoginScreen: Migration failed, continuing anyway');
+                        Alert.alert(
+                          'Sync Issue',
+                          'There was an issue syncing some data, but you can continue. Your local data is preserved.',
+                          [
+                            {
+                              text: 'Continue',
+                              onPress: () => {
+                                console.log(
+                                  '🔐 LoginScreen: Calling onLoginSuccess despite migration issues'
+                                );
+                                onLoginSuccess();
+                              },
+                            },
+                          ]
+                        );
+                      }
+                    } catch (migrationError) {
+                      console.error('❌ LoginScreen: Migration error:', migrationError);
+                      Alert.alert(
+                        'Sync Issue',
+                        'There was an issue syncing your data, but you can continue. Your local data is preserved.',
+                        [
+                          {
+                            text: 'Continue',
+                            onPress: () => {
+                              console.log(
+                                '🔐 LoginScreen: Calling onLoginSuccess after migration error'
+                              );
+                              onLoginSuccess();
+                            },
+                          },
+                        ]
+                      );
+                    }
+                  },
+                },
+              ]
             );
           } else {
             // No local data, proceed normally
-            Alert.alert('Success', 'Welcome back! You will now be taken to complete your profile.', [
-              { text: 'Continue', onPress: () => {
-                console.log('🔐 LoginScreen: Calling onLoginSuccess (no migration needed)');
-                onLoginSuccess();
-              }}
-            ]);
+            Alert.alert(
+              'Success',
+              'Welcome back! You will now be taken to complete your profile.',
+              [
+                {
+                  text: 'Continue',
+                  onPress: () => {
+                    console.log('🔐 LoginScreen: Calling onLoginSuccess (no migration needed)');
+                    onLoginSuccess();
+                  },
+                },
+              ]
+            );
           }
         }
       } else {
@@ -163,7 +191,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             'Please check your email and click the verification link to activate your account.',
             [
               { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
-              { text: 'OK' }
+              { text: 'OK' },
             ]
           );
         } else {
@@ -213,67 +241,107 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           Alert.alert(
             'Syncing Your Data',
             'We found your profile data and are syncing it to your account. This will only take a moment.',
-            [{ text: 'OK', onPress: async () => {
-              try {
-                // Start migration
-                const migrationResult = await migrationManager.startProfileMigration(response.user.id);
+            [
+              {
+                text: 'OK',
+                onPress: async () => {
+                  try {
+                    // Start migration
+                    const migrationResult = await migrationManager.startProfileMigration(
+                      response.user.id
+                    );
 
-                if (migrationResult.success) {
-                  console.log('✅ LoginScreen: Google migration completed successfully');
-                  Alert.alert(
-                    'Data Synced Successfully!',
-                    'Your profile data has been synced. Welcome to FitAI!',
-                    [{ text: 'Continue', onPress: () => {
-                      console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration');
-                      onLoginSuccess();
-                    }}]
-                  );
-                } else {
-                  console.warn('⚠️ LoginScreen: Google migration failed, continuing anyway');
-                  Alert.alert(
-                    'Welcome to FitAI!',
-                    'There was an issue syncing some data, but you can continue. Let\'s complete your profile setup.',
-                    [{ text: 'Continue Setup', onPress: () => {
-                      console.log('🚀 LoginScreen: Calling onLoginSuccess despite Google migration issues');
-                      onLoginSuccess();
-                    }}]
-                  );
-                }
-              } catch (migrationError) {
-                console.error('❌ LoginScreen: Google migration error:', migrationError);
-                Alert.alert(
-                  'Welcome to FitAI!',
-                  'There was an issue syncing your data, but you can continue. Let\'s complete your profile setup.',
-                  [{ text: 'Continue Setup', onPress: () => {
-                    console.log('🚀 LoginScreen: Calling onLoginSuccess after Google migration error');
-                    onLoginSuccess();
-                  }}]
-                );
-              }
-            }}]
+                    if (migrationResult.success) {
+                      console.log('✅ LoginScreen: Google migration completed successfully');
+                      Alert.alert(
+                        'Data Synced Successfully!',
+                        'Your profile data has been synced. Welcome to FitAI!',
+                        [
+                          {
+                            text: 'Continue',
+                            onPress: () => {
+                              console.log(
+                                '🚀 LoginScreen: Calling onLoginSuccess after Google migration'
+                              );
+                              onLoginSuccess();
+                            },
+                          },
+                        ]
+                      );
+                    } else {
+                      console.warn('⚠️ LoginScreen: Google migration failed, continuing anyway');
+                      Alert.alert(
+                        'Welcome to FitAI!',
+                        "There was an issue syncing some data, but you can continue. Let's complete your profile setup.",
+                        [
+                          {
+                            text: 'Continue Setup',
+                            onPress: () => {
+                              console.log(
+                                '🚀 LoginScreen: Calling onLoginSuccess despite Google migration issues'
+                              );
+                              onLoginSuccess();
+                            },
+                          },
+                        ]
+                      );
+                    }
+                  } catch (migrationError) {
+                    console.error('❌ LoginScreen: Google migration error:', migrationError);
+                    Alert.alert(
+                      'Welcome to FitAI!',
+                      "There was an issue syncing your data, but you can continue. Let's complete your profile setup.",
+                      [
+                        {
+                          text: 'Continue Setup',
+                          onPress: () => {
+                            console.log(
+                              '🚀 LoginScreen: Calling onLoginSuccess after Google migration error'
+                            );
+                            onLoginSuccess();
+                          },
+                        },
+                      ]
+                    );
+                  }
+                },
+              },
+            ]
           );
         } else {
           // No local data, handle normal Google sign-in flow
           if (response.onboardingRequired) {
             // New user or user who hasn't completed onboarding
             const message = response.isNewUser
-              ? 'Welcome to FitAI! Let\'s set up your personalized fitness profile to get started.'
-              : 'Welcome back! Let\'s complete your profile setup to unlock all features.';
+              ? "Welcome to FitAI! Let's set up your personalized fitness profile to get started."
+              : "Welcome back! Let's complete your profile setup to unlock all features.";
 
             Alert.alert('Welcome!', message, [
-              { text: 'Continue Setup', onPress: () => {
-                console.log('🚀 LoginScreen: Redirecting to onboarding for Google user');
-                onLoginSuccess();
-              }}
+              {
+                text: 'Continue Setup',
+                onPress: () => {
+                  console.log('🚀 LoginScreen: Redirecting to onboarding for Google user');
+                  onLoginSuccess();
+                },
+              },
             ]);
           } else {
             // Returning user with complete onboarding
-            Alert.alert('Welcome Back!', 'Great to see you again! Taking you back to your dashboard.', [
-              { text: 'Continue', onPress: () => {
-                console.log('🏠 LoginScreen: Redirecting to main app for returning Google user');
-                onLoginSuccess();
-              }}
-            ]);
+            Alert.alert(
+              'Welcome Back!',
+              'Great to see you again! Taking you back to your dashboard.',
+              [
+                {
+                  text: 'Continue',
+                  onPress: () => {
+                    console.log(
+                      '🏠 LoginScreen: Redirecting to main app for returning Google user'
+                    );
+                    onLoginSuccess();
+                  },
+                },
+              ]
+            );
           }
         }
       } else {
@@ -292,9 +360,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to continue your fitness journey
-          </Text>
+          <Text style={styles.subtitle}>Sign in to continue your fitness journey</Text>
         </View>
 
         <View style={styles.form}>

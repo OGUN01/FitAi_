@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { THEME } from '../../utils/constants';
 
@@ -41,7 +34,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   const getFilteredData = () => {
     const now = new Date();
     const cutoffDate = new Date();
-    
+
     switch (selectedPeriod) {
       case 'week':
         cutoffDate.setDate(now.getDate() - 7);
@@ -54,14 +47,14 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         break;
     }
 
-    return data.filter(point => new Date(point.date) >= cutoffDate);
+    return data.filter((point) => new Date(point.date) >= cutoffDate);
   };
 
   const filteredData = getFilteredData();
-  
+
   // Prepare chart data
   const chartData = {
-    labels: filteredData.map(point => {
+    labels: filteredData.map((point) => {
       const date = new Date(point.date);
       if (selectedPeriod === 'week') {
         return date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -73,7 +66,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     }),
     datasets: [
       {
-        data: filteredData.map(point => point[metric] || 0),
+        data: filteredData.map((point) => point[metric] || 0),
         color: (opacity = 1) => THEME.colors.primary,
         strokeWidth: 3,
       },
@@ -112,11 +105,11 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   // Calculate trend
   const getTrend = () => {
     if (filteredData.length < 2) return { value: 0, isPositive: true };
-    
+
     const firstValue = filteredData[0][metric] || 0;
     const lastValue = filteredData[filteredData.length - 1][metric] || 0;
     const change = lastValue - firstValue;
-    
+
     return {
       value: Math.abs(change),
       isPositive: change >= 0,
@@ -133,17 +126,20 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
           <Text style={styles.title}>{title}</Text>
           <View style={styles.trendContainer}>
             <Text style={styles.trendValue}>
-              {trend.isPositive ? '+' : '-'}{trend.value.toFixed(1)} {unit}
+              {trend.isPositive ? '+' : '-'}
+              {trend.value.toFixed(1)} {unit}
             </Text>
-            <Text style={[
-              styles.trendLabel,
-              { color: trend.isPositive ? THEME.colors.success : THEME.colors.error }
-            ]}>
+            <Text
+              style={[
+                styles.trendLabel,
+                { color: trend.isPositive ? THEME.colors.success : THEME.colors.error },
+              ]}
+            >
               {trend.isPositive ? '↗' : '↘'} {selectedPeriod}
             </Text>
           </View>
         </View>
-        
+
         {/* Period Selector */}
         <View style={styles.periodSelector}>
           {periods.map((period) => (

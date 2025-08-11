@@ -144,13 +144,13 @@ export class RealTimeSyncService {
     try {
       // Load sync status from storage
       await this.loadSyncStatus();
-      
+
       // Load pending operations
       await this.loadSyncQueue();
-      
+
       // Start connection monitoring
       this.startConnectionMonitoring();
-      
+
       // Start auto-sync if enabled
       if (this.config.autoSyncEnabled) {
         this.startAutoSync();
@@ -184,7 +184,7 @@ export class RealTimeSyncService {
 
       // Execute sync phases
       const result = await this.executeSyncPhases();
-      
+
       const endTime = new Date();
       const syncResult: SyncResult = {
         success: true,
@@ -208,7 +208,6 @@ export class RealTimeSyncService {
 
       this.notifyResultCallbacks(syncResult);
       return syncResult;
-
     } catch (error) {
       const endTime = new Date();
       const syncResult: SyncResult = {
@@ -218,15 +217,17 @@ export class RealTimeSyncService {
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
         syncedItems: { uploaded: 0, downloaded: 0, conflicts: 0, errors: 1 },
-        errors: [{
-          id: this.generateErrorId(),
-          type: 'unknown',
-          message: error.message,
-          details: error,
-          timestamp: new Date(),
-          retryable: true,
-          retryCount: 0,
-        }],
+        errors: [
+          {
+            id: this.generateErrorId(),
+            type: 'unknown',
+            message: error.message,
+            details: error,
+            timestamp: new Date(),
+            retryable: true,
+            retryCount: 0,
+          },
+        ],
         conflicts: [],
         nextSyncTime: this.calculateNextSyncTime(),
       };
@@ -265,7 +266,9 @@ export class RealTimeSyncService {
   /**
    * Queue a sync operation
    */
-  async queueOperation(operation: Omit<SyncOperation, 'id' | 'timestamp' | 'retryCount'>): Promise<void> {
+  async queueOperation(
+    operation: Omit<SyncOperation, 'id' | 'timestamp' | 'retryCount'>
+  ): Promise<void> {
     const syncOperation: SyncOperation = {
       id: this.generateOperationId(),
       timestamp: new Date(),
@@ -298,7 +301,7 @@ export class RealTimeSyncService {
    */
   updateConfig(newConfig: Partial<SyncConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     // Restart auto-sync if interval changed
     if (newConfig.syncIntervalMs && this.config.autoSyncEnabled) {
       this.startAutoSync();
@@ -378,7 +381,6 @@ export class RealTimeSyncService {
       // Phase 4: Cleanup and finalize (100%)
       await this.cleanupSyncQueue();
       this.updateSyncStatus({ syncProgress: 100 });
-
     } catch (error) {
       errors.push({
         id: this.generateErrorId(),
@@ -402,13 +404,13 @@ export class RealTimeSyncService {
     try {
       // Process queued operations in batches
       const batches = this.chunkArray(this.syncQueue, this.config.batchSize);
-      
+
       for (const batch of batches) {
         for (const operation of batch) {
           try {
             await this.executeUploadOperation(operation);
             uploaded++;
-            
+
             // Remove successful operation from queue
             const index = this.syncQueue.indexOf(operation);
             if (index > -1) {
@@ -450,10 +452,10 @@ export class RealTimeSyncService {
     try {
       // Get delta sync info
       const deltaInfo = await this.getDeltaSyncInfo();
-      
+
       // Download changes since last sync
       const remoteChanges = await this.fetchRemoteChanges(deltaInfo);
-      
+
       for (const change of remoteChanges) {
         try {
           await this.applyRemoteChange(change);
@@ -473,7 +475,6 @@ export class RealTimeSyncService {
 
       // Update delta sync info
       await this.updateDeltaSyncInfo(deltaInfo);
-
     } catch (error) {
       errors.push({
         id: this.generateErrorId(),
@@ -495,7 +496,7 @@ export class RealTimeSyncService {
     try {
       // Get pending conflicts
       const pendingConflicts = await this.getPendingConflicts();
-      
+
       for (const conflict of pendingConflicts) {
         try {
           const resolution = await this.resolveConflict(conflict);
@@ -547,10 +548,10 @@ export class RealTimeSyncService {
     // In real implementation, this would check actual network conditions
     const isOnline = Math.random() > 0.1; // 90% online simulation
     const quality = isOnline ? 'good' : 'offline';
-    
-    this.updateSyncStatus({ 
-      isOnline, 
-      connectionQuality: quality as any 
+
+    this.updateSyncStatus({
+      isOnline,
+      connectionQuality: quality as any,
     });
   }
 
@@ -560,7 +561,7 @@ export class RealTimeSyncService {
   }
 
   private notifyStatusCallbacks(status: SyncStatus): void {
-    this.statusCallbacks.forEach(callback => {
+    this.statusCallbacks.forEach((callback) => {
       try {
         callback(status);
       } catch (error) {
@@ -570,7 +571,7 @@ export class RealTimeSyncService {
   }
 
   private notifyResultCallbacks(result: SyncResult): void {
-    this.resultCallbacks.forEach(callback => {
+    this.resultCallbacks.forEach((callback) => {
       try {
         callback(result);
       } catch (error) {

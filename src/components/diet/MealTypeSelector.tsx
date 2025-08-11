@@ -132,26 +132,22 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
       statusBarTranslucent
     >
       <SafeAreaView style={styles.container}>
-        <Animated.View 
+        <Animated.View
           style={[
             styles.overlay,
             {
               opacity: fadeAnim,
-            }
+            },
           ]}
         >
-          <TouchableOpacity 
-            style={styles.backdropTouchable}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-          
-          <Animated.View 
+          <TouchableOpacity style={styles.backdropTouchable} activeOpacity={1} onPress={onClose} />
+
+          <Animated.View
             style={[
               styles.modalContent,
               {
                 transform: [{ translateY: slideAnim }],
-              }
+              },
             ]}
           >
             {/* Header */}
@@ -172,8 +168,9 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             <View style={styles.suggestionBanner}>
               <Text style={styles.suggestionIcon}>💡</Text>
               <Text style={styles.suggestionText}>
-                Based on current time, we suggest: <Text style={styles.suggestionMeal}>
-                  {mealTypeOptions.find(m => m.type === suggestedMeal)?.label}
+                Based on current time, we suggest:{' '}
+                <Text style={styles.suggestionMeal}>
+                  {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
                 </Text>
               </Text>
             </View>
@@ -183,7 +180,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
               {mealTypeOptions.map((option) => {
                 const isSelected = selectedType === option.type;
                 const isSuggested = option.type === suggestedMeal;
-                
+
                 return (
                   <TouchableOpacity
                     key={option.type}
@@ -199,7 +196,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                       <View style={[styles.optionEmoji, { backgroundColor: option.color + '20' }]}>
                         <Text style={styles.optionEmojiText}>{option.emoji}</Text>
                       </View>
-                      
+
                       <View style={styles.optionInfo}>
                         <View style={styles.optionHeader}>
                           <Text style={styles.optionLabel}>{option.label}</Text>
@@ -212,10 +209,12 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                         <Text style={styles.optionDescription}>{option.description}</Text>
                         <Text style={styles.optionTime}>{option.suggestedTime}</Text>
                       </View>
-                      
+
                       <View style={[styles.selectIndicator, { borderColor: option.color }]}>
                         {isSelected && (
-                          <View style={[styles.selectIndicatorInner, { backgroundColor: option.color }]} />
+                          <View
+                            style={[styles.selectIndicatorInner, { backgroundColor: option.color }]}
+                          />
                         )}
                       </View>
                     </View>
@@ -228,7 +227,8 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             <View style={styles.footer}>
               <Text style={styles.footerIcon}>🎯</Text>
               <Text style={styles.footerText}>
-                Selecting the correct meal type helps our AI provide more accurate nutrition analysis
+                Selecting the correct meal type helps our AI provide more accurate nutrition
+                analysis
               </Text>
             </View>
           </Animated.View>
@@ -242,17 +242,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
+
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
-  
+
   backdropTouchable: {
     flex: 1,
   },
-  
+
   modalContent: {
     backgroundColor: ResponsiveTheme.colors.surface,
     borderTopLeftRadius: rs(24),
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
     paddingBottom: rh(34), // Account for home indicator
   },
-  
+
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -269,31 +269,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
   },
-  
+
   headerContent: {
     flex: 1,
     alignItems: 'center',
   },
-  
+
   headerEmoji: {
     fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   headerTitle: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   headerSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: rf(18),
   },
-  
+
   closeButton: {
     width: rw(32),
     height: rh(32),
@@ -305,13 +305,13 @@ const styles = StyleSheet.create({
     right: ResponsiveTheme.spacing.lg,
     top: ResponsiveTheme.spacing.lg,
   },
-  
+
   closeButtonText: {
     fontSize: rf(16),
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
-  
+
   suggestionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,27 +320,27 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
-  
+
   suggestionIcon: {
     fontSize: rf(16),
     marginRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   suggestionText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: '#92400e', // amber-800
     flex: 1,
   },
-  
+
   suggestionMeal: {
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
-  
+
   optionsContainer: {
     padding: ResponsiveTheme.spacing.lg,
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   optionCard: {
     backgroundColor: ResponsiveTheme.colors.background,
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -348,12 +348,12 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.border,
     overflow: 'hidden',
   },
-  
+
   optionCardSelected: {
     borderColor: ResponsiveTheme.colors.primary,
     transform: [{ scale: 0.98 }],
   },
-  
+
   optionCardSuggested: {
     borderColor: '#f59e0b',
     shadowColor: '#f59e0b',
@@ -362,13 +362,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  
+
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   optionEmoji: {
     width: rw(56),
     height: rh(56),
@@ -377,54 +377,54 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   optionEmojiText: {
     fontSize: rf(24),
   },
-  
+
   optionInfo: {
     flex: 1,
   },
-  
+
   optionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   optionLabel: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     flex: 1,
   },
-  
+
   suggestedBadge: {
     backgroundColor: '#f59e0b',
     paddingHorizontal: rp(8),
     paddingVertical: rp(2),
     borderRadius: rs(8),
   },
-  
+
   suggestedBadgeText: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.white,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
-  
+
   optionDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.xs,
     lineHeight: rf(16),
   },
-  
+
   optionTime: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
-  
+
   selectIndicator: {
     width: rw(24),
     height: rh(24),
@@ -434,13 +434,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: ResponsiveTheme.spacing.md,
   },
-  
+
   selectIndicatorInner: {
     width: rw(12),
     height: rh(12),
     borderRadius: rs(6),
   },
-  
+
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -449,12 +449,12 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
-  
+
   footerIcon: {
     fontSize: rf(16),
     marginRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   footerText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,

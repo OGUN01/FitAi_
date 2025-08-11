@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Modal,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,11 +12,11 @@ import { EditProvider, useEditActions, useEditStatus } from '../../contexts/Edit
 import { EditOverlay } from '../../components/profile/EditOverlay';
 import { dataManager } from '../../services/dataManager';
 import { profileValidator } from '../../services/profileValidator';
-import { 
-  NotificationsScreen, 
-  PrivacySecurityScreen, 
-  HelpSupportScreen, 
-  AboutFitAIScreen 
+import {
+  NotificationsScreen,
+  PrivacySecurityScreen,
+  HelpSupportScreen,
+  AboutFitAIScreen,
 } from '../settings';
 
 // Internal ProfileScreen component
@@ -49,7 +41,7 @@ const ProfileScreenInternal: React.FC = () => {
         if (intentData) {
           const intent = JSON.parse(intentData);
           // Check if intent is recent (within last 5 minutes)
-          const isRecent = (Date.now() - intent.timestamp) < 5 * 60 * 1000;
+          const isRecent = Date.now() - intent.timestamp < 5 * 60 * 1000;
 
           if (isRecent && intent.section) {
             console.log('🎯 ProfileScreen: Found edit intent:', intent);
@@ -144,27 +136,28 @@ const ProfileScreenInternal: React.FC = () => {
 
   // Real user stats from hooks
   const quickStats = [
-    { 
-      label: 'Workouts', 
-      value: userStats.totalWorkouts.toString(), 
-      icon: '🏋️' 
+    {
+      label: 'Workouts',
+      value: userStats.totalWorkouts.toString(),
+      icon: '🏋️',
     },
-    { 
-      label: 'Streak', 
-      value: userStats.currentStreak.toString(), 
-      icon: '🔥' 
+    {
+      label: 'Streak',
+      value: userStats.currentStreak.toString(),
+      icon: '🔥',
     },
-    { 
-      label: 'Calories', 
-      value: userStats.totalCaloriesBurned > 1000 
-        ? `${(userStats.totalCaloriesBurned / 1000).toFixed(1)}k` 
-        : userStats.totalCaloriesBurned.toString(), 
-      icon: '⚡' 
+    {
+      label: 'Calories',
+      value:
+        userStats.totalCaloriesBurned > 1000
+          ? `${(userStats.totalCaloriesBurned / 1000).toFixed(1)}k`
+          : userStats.totalCaloriesBurned.toString(),
+      icon: '⚡',
     },
-    { 
-      label: 'Longest', 
-      value: userStats.longestStreak.toString(), 
-      icon: '⏱️' 
+    {
+      label: 'Longest',
+      value: userStats.longestStreak.toString(),
+      icon: '⏱️',
     },
   ];
 
@@ -173,28 +166,24 @@ const ProfileScreenInternal: React.FC = () => {
     if (!name) return 'U';
     return name
       .split(' ')
-      .map(n => n[0])
+      .map((n) => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Sign Out', 
-          style: 'destructive',
-          onPress: () => {
-            logout();
-            Alert.alert('Signed Out', 'You have been successfully signed out.');
-          }
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          Alert.alert('Signed Out', 'You have been successfully signed out.');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleEditProfile = () => {
@@ -277,159 +266,159 @@ const ProfileScreenInternal: React.FC = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View>
           {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Profile</Text>
-          <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-            <Text style={styles.editIcon}>✏️</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.header}>
+            <Text style={styles.title}>Profile</Text>
+            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
+              <Text style={styles.editIcon}>✏️</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Profile Info */}
-        <View style={styles.section}>
-          <Card style={styles.profileCard} variant="elevated">
-            <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {getInitials(profile?.personalInfo?.name || user?.name)}
+          {/* Profile Info */}
+          <View style={styles.section}>
+            <Card style={styles.profileCard} variant="elevated">
+              <View style={styles.profileHeader}>
+                <View style={styles.avatarContainer}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {getInitials(profile?.personalInfo?.name || user?.name)}
+                    </Text>
+                  </View>
+                  <View style={styles.statusDot} />
+                </View>
+
+                <View style={styles.profileInfo}>
+                  <Text style={styles.userName}>
+                    {profile?.personalInfo?.name || user?.name || 'Anonymous User'}
+                  </Text>
+                  <Text style={styles.userEmail}>{user?.email || 'No email provided'}</Text>
+                  <Text style={styles.memberSince}>
+                    Member since{' '}
+                    {user?.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : 'Recently'}
                   </Text>
                 </View>
-                <View style={styles.statusDot} />
               </View>
-              
-              <View style={styles.profileInfo}>
-                <Text style={styles.userName}>
-                  {profile?.personalInfo?.name || user?.name || 'Anonymous User'}
-                </Text>
-                <Text style={styles.userEmail}>
-                  {user?.email || 'No email provided'}
-                </Text>
-                <Text style={styles.memberSince}>
-                  Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'}
-                </Text>
-              </View>
-            </View>
-            
-            <View style={styles.profileStats}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {healthMetrics?.weight || profile?.personalInfo?.weight || '-'}
-                </Text>
-                <Text style={styles.statLabel}>kg</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {healthMetrics?.height || profile?.personalInfo?.height || '-'}
-                </Text>
-                <Text style={styles.statLabel}>cm</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {healthMetrics?.bmi || '-'}
-                </Text>
-                <Text style={styles.statLabel}>BMI</Text>
-              </View>
-            </View>
-          </Card>
-        </View>
 
-        {/* Guest User Sign-up Prompt */}
-        {isGuestMode && (
-          <View style={styles.section}>
-            <Card style={styles.guestPromptCard} variant="elevated">
-              <View style={styles.guestPromptContent}>
-                <Text style={styles.guestPromptIcon}>🔐</Text>
-                <Text style={styles.guestPromptTitle}>Create Your Account</Text>
-                <Text style={styles.guestPromptSubtitle}>
-                  Save your progress and sync across devices by creating a free account
-                </Text>
-                <Button
-                  title="Sign Up Now"
-                  onPress={() => setShowSignUpPrompt(true)}
-                  variant="primary"
-                  size="md"
-                  style={styles.guestPromptButton}
-                />
+              <View style={styles.profileStats}>
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {healthMetrics?.weight || profile?.personalInfo?.weight || '-'}
+                  </Text>
+                  <Text style={styles.statLabel}>kg</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>
+                    {healthMetrics?.height || profile?.personalInfo?.height || '-'}
+                  </Text>
+                  <Text style={styles.statLabel}>cm</Text>
+                </View>
+                <View style={styles.statDivider} />
+                <View style={styles.statItem}>
+                  <Text style={styles.statValue}>{healthMetrics?.bmi || '-'}</Text>
+                  <Text style={styles.statLabel}>BMI</Text>
+                </View>
               </View>
             </Card>
           </View>
-        )}
 
-        {/* Quick Stats */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Stats</Text>
-          <View style={styles.quickStatsGrid}>
-            {quickStats.map((stat, index) => (
-              <Card key={index} style={styles.quickStatCard} variant="outlined">
-                <Text style={styles.quickStatIcon}>{stat.icon}</Text>
-                <Text style={styles.quickStatValue}>{stat.value}</Text>
-                <Text style={styles.quickStatLabel}>{stat.label}</Text>
+          {/* Guest User Sign-up Prompt */}
+          {isGuestMode && (
+            <View style={styles.section}>
+              <Card style={styles.guestPromptCard} variant="elevated">
+                <View style={styles.guestPromptContent}>
+                  <Text style={styles.guestPromptIcon}>🔐</Text>
+                  <Text style={styles.guestPromptTitle}>Create Your Account</Text>
+                  <Text style={styles.guestPromptSubtitle}>
+                    Save your progress and sync across devices by creating a free account
+                  </Text>
+                  <Button
+                    title="Sign Up Now"
+                    onPress={() => setShowSignUpPrompt(true)}
+                    variant="primary"
+                    size="md"
+                    style={styles.guestPromptButton}
+                  />
+                </View>
               </Card>
+            </View>
+          )}
+
+          {/* Quick Stats */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Stats</Text>
+            <View style={styles.quickStatsGrid}>
+              {quickStats.map((stat, index) => (
+                <Card key={index} style={styles.quickStatCard} variant="outlined">
+                  <Text style={styles.quickStatIcon}>{stat.icon}</Text>
+                  <Text style={styles.quickStatValue}>{stat.value}</Text>
+                  <Text style={styles.quickStatLabel}>{stat.label}</Text>
+                </Card>
+              ))}
+            </View>
+          </View>
+
+          {/* Settings Items */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Settings</Text>
+
+            {settingsItems.map((item) => (
+              <TouchableOpacity key={item.id} onPress={() => handleSettingsItemPress(item)}>
+                <Card style={styles.menuCard} variant="outlined">
+                  <View style={styles.menuContent}>
+                    <View style={styles.menuIcon}>
+                      <Text style={styles.menuIconText}>{item.icon}</Text>
+                    </View>
+
+                    <View style={styles.menuInfo}>
+                      <Text style={styles.menuTitle}>{item.title}</Text>
+                      <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                    </View>
+
+                    {item.hasArrow && <Text style={styles.menuArrow}>›</Text>}
+                  </View>
+                </Card>
+              </TouchableOpacity>
             ))}
           </View>
-        </View>
 
-        {/* Settings Items */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          
-          {settingsItems.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => handleSettingsItemPress(item)}>
-              <Card style={styles.menuCard} variant="outlined">
-                <View style={styles.menuContent}>
-                  <View style={styles.menuIcon}>
-                    <Text style={styles.menuIconText}>{item.icon}</Text>
-                  </View>
-                  
-                  <View style={styles.menuInfo}>
-                    <Text style={styles.menuTitle}>{item.title}</Text>
-                    <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-                  </View>
-                  
-                  {item.hasArrow && (
-                    <Text style={styles.menuArrow}>›</Text>
-                  )}
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* App Info */}
-        <View style={styles.section}>
-          <Card style={styles.appInfoCard} variant="outlined">
-            <View style={styles.appInfoContent}>
-              <View style={styles.appLogo}>
-                <Text style={styles.appLogoText}>FitAI</Text>
-              </View>
-              <View style={styles.appInfo}>
-                <Text style={styles.appName}>FitAI</Text>
-                <Text style={styles.appVersion}>Version 1.0.0</Text>
-                <Text style={styles.appDescription}>
-                  Your AI-powered fitness companion for a healthier lifestyle
-                </Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-        {/* Logout Button */}
-        {isAuthenticated && (
+          {/* App Info */}
           <View style={styles.section}>
-            <TouchableOpacity onPress={handleSignOut}>
-              <Card style={styles.logoutCard} variant="outlined">
-                <View style={styles.logoutContent}>
-                  <Text style={styles.logoutIcon}>🚪</Text>
-                  <Text style={styles.logoutText}>Sign Out</Text>
+            <Card style={styles.appInfoCard} variant="outlined">
+              <View style={styles.appInfoContent}>
+                <View style={styles.appLogo}>
+                  <Text style={styles.appLogoText}>FitAI</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+                <View style={styles.appInfo}>
+                  <Text style={styles.appName}>FitAI</Text>
+                  <Text style={styles.appVersion}>Version 1.0.0</Text>
+                  <Text style={styles.appDescription}>
+                    Your AI-powered fitness companion for a healthier lifestyle
+                  </Text>
+                </View>
+              </View>
+            </Card>
           </View>
-        )}
 
-        <View style={styles.bottomSpacing} />
+          {/* Logout Button */}
+          {isAuthenticated && (
+            <View style={styles.section}>
+              <TouchableOpacity onPress={handleSignOut}>
+                <Card style={styles.logoutCard} variant="outlined">
+                  <View style={styles.logoutContent}>
+                    <Text style={styles.logoutIcon}>🚪</Text>
+                    <Text style={styles.logoutText}>Sign Out</Text>
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={styles.bottomSpacing} />
         </View>
       </ScrollView>
 
@@ -455,57 +444,57 @@ const ProfileScreenInternal: React.FC = () => {
           <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
             <View>
               {/* Profile Picture Section */}
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>Profile Picture</Text>
-              <View style={styles.profilePictureEdit}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {getInitials(profile?.personalInfo?.name || user?.name)}
-                  </Text>
+              <View style={styles.modalSection}>
+                <Text style={styles.modalSectionTitle}>Profile Picture</Text>
+                <View style={styles.profilePictureEdit}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {getInitials(profile?.personalInfo?.name || user?.name)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.changePictureButton}
+                    onPress={() =>
+                      Alert.alert('Change Picture', 'Profile picture editing coming soon!')
+                    }
+                  >
+                    <Text style={styles.changePictureText}>Change Picture</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.changePictureButton} onPress={() => Alert.alert('Change Picture', 'Profile picture editing coming soon!')}>
-                  <Text style={styles.changePictureText}>Change Picture</Text>
-                </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Edit Profile Items */}
-            <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>Profile Settings</Text>
-              
-              {editProfileItems.map((item) => (
-                <TouchableOpacity key={item.id} onPress={() => handleEditProfileItemPress(item)}>
-                  <Card style={styles.menuCard} variant="outlined">
-                    <View style={styles.menuContent}>
-                      <View style={styles.menuIcon}>
-                        <Text style={styles.menuIconText}>{item.icon}</Text>
-                      </View>
-                      
-                      <View style={styles.menuInfo}>
-                        <Text style={styles.menuTitle}>{item.title}</Text>
-                        <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-                      </View>
-                      
-                      {item.hasArrow && (
-                        <Text style={styles.menuArrow}>›</Text>
-                      )}
-                    </View>
-                  </Card>
-                </TouchableOpacity>
-              ))}
-            </View>
+              {/* Edit Profile Items */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalSectionTitle}>Profile Settings</Text>
 
-            <View style={styles.modalBottomSpacing} />
+                {editProfileItems.map((item) => (
+                  <TouchableOpacity key={item.id} onPress={() => handleEditProfileItemPress(item)}>
+                    <Card style={styles.menuCard} variant="outlined">
+                      <View style={styles.menuContent}>
+                        <View style={styles.menuIcon}>
+                          <Text style={styles.menuIconText}>{item.icon}</Text>
+                        </View>
+
+                        <View style={styles.menuInfo}>
+                          <Text style={styles.menuTitle}>{item.title}</Text>
+                          <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                        </View>
+
+                        {item.hasArrow && <Text style={styles.menuArrow}>›</Text>}
+                      </View>
+                    </Card>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalBottomSpacing} />
             </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
 
       {/* Edit Overlay */}
-      <EditOverlay
-        visible={showOverlay}
-        onClose={() => setShowOverlay(false)}
-      />
+      <EditOverlay visible={showOverlay} onClose={() => setShowOverlay(false)} />
     </SafeAreaView>
   );
 };
@@ -555,11 +544,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -568,13 +557,13 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   editButton: {
     width: rw(40),
     height: rh(40),
@@ -583,38 +572,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   editIcon: {
     fontSize: rf(20),
   },
-  
+
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   profileCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   avatarContainer: {
     position: 'relative',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   avatar: {
     width: rw(64),
     height: rh(64),
@@ -623,13 +612,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   avatarText: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
   },
-  
+
   statusDot: {
     position: 'absolute',
     bottom: 2,
@@ -641,29 +630,29 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.backgroundTertiary,
   },
-  
+
   profileInfo: {
     flex: 1,
   },
-  
+
   userName: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   userEmail: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   memberSince: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   profileStats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -672,68 +661,68 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
   },
-  
+
   statItem: {
     alignItems: 'center',
   },
-  
+
   statValue: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   statLabel: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   statDivider: {
     width: rw(1),
     height: rh(24),
     backgroundColor: ResponsiveTheme.colors.border,
   },
-  
+
   quickStatsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   quickStatCard: {
     width: '47%',
     padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
-  
+
   quickStatIcon: {
     fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   quickStatValue: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   quickStatLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   menuCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   menuContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   menuIcon: {
     width: rw(40),
     height: rh(40),
@@ -743,42 +732,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   menuIconText: {
     fontSize: rf(20),
   },
-  
+
   menuInfo: {
     flex: 1,
   },
-  
+
   menuTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   menuSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   menuArrow: {
     fontSize: rf(20),
     color: ResponsiveTheme.colors.textMuted,
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
-  
+
   appInfoCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   appInfoContent: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   appLogo: {
     width: rw(48),
     height: rh(48),
@@ -788,57 +777,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   appLogoText: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
   },
-  
+
   appInfo: {
     flex: 1,
   },
-  
+
   appName: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   appVersion: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   appDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   logoutCard: {
     borderColor: ResponsiveTheme.colors.error,
   },
-  
+
   logoutContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   logoutIcon: {
     fontSize: rf(20),
     marginRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   logoutText: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.error,
   },
-  
+
   bottomSpacing: {
     height: ResponsiveTheme.spacing.xl,
   },

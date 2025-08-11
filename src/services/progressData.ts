@@ -120,11 +120,14 @@ class ProgressDataService {
   /**
    * Get user's progress entries using Track B's data layer
    */
-  async getUserProgressEntries(userId: string, limit?: number): Promise<ProgressDataResponse<ProgressEntry[]>> {
+  async getUserProgressEntries(
+    userId: string,
+    limit?: number
+  ): Promise<ProgressDataResponse<ProgressEntry[]>> {
     try {
       // First try to get from Track B's local storage
       const localMeasurements = await crudOperations.readBodyMeasurements(limit);
-      
+
       if (localMeasurements.length > 0) {
         // Convert Track B's BodyMeasurement format to our ProgressEntry format
         const entries = localMeasurements.map(this.convertBodyMeasurementToProgressEntry);
@@ -171,21 +174,24 @@ class ProgressDataService {
   /**
    * Create a new progress entry using Track B's data layer
    */
-  async createProgressEntry(userId: string, entryData: {
-    weight_kg: number;
-    body_fat_percentage?: number;
-    muscle_mass_kg?: number;
-    measurements?: {
-      chest?: number;
-      waist?: number;
-      hips?: number;
-      bicep?: number;
-      thigh?: number;
-      neck?: number;
-    };
-    progress_photos?: string[];
-    notes?: string;
-  }): Promise<ProgressDataResponse<ProgressEntry>> {
+  async createProgressEntry(
+    userId: string,
+    entryData: {
+      weight_kg: number;
+      body_fat_percentage?: number;
+      muscle_mass_kg?: number;
+      measurements?: {
+        chest?: number;
+        waist?: number;
+        hips?: number;
+        bicep?: number;
+        thigh?: number;
+        neck?: number;
+      };
+      progress_photos?: string[];
+      notes?: string;
+    }
+  ): Promise<ProgressDataResponse<ProgressEntry>> {
     try {
       const entryDate = new Date().toISOString().split('T')[0];
 
@@ -230,7 +236,7 @@ class ProgressDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in createProgressEntry:', error);
@@ -264,7 +270,7 @@ class ProgressDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in getUserBodyAnalysis:', error);
@@ -278,10 +284,13 @@ class ProgressDataService {
   /**
    * Calculate progress statistics
    */
-  async getProgressStats(userId: string, timeRange: number = 30): Promise<ProgressDataResponse<ProgressStats>> {
+  async getProgressStats(
+    userId: string,
+    timeRange: number = 30
+  ): Promise<ProgressDataResponse<ProgressStats>> {
     try {
       const entriesResponse = await this.getUserProgressEntries(userId);
-      
+
       if (!entriesResponse.success || !entriesResponse.data || entriesResponse.data.length < 2) {
         return {
           success: false,
@@ -316,7 +325,13 @@ class ProgressDataService {
       };
 
       // Calculate measurement changes
-      const measurementChanges: { [K in 'chest' | 'waist' | 'hips' | 'bicep' | 'thigh' | 'neck']?: { current: number; previous: number; change: number } } = {};
+      const measurementChanges: {
+        [K in 'chest' | 'waist' | 'hips' | 'bicep' | 'thigh' | 'neck']?: {
+          current: number;
+          previous: number;
+          change: number;
+        };
+      } = {};
       const measurementKeys = ['chest', 'waist', 'hips', 'bicep', 'thigh', 'neck'] as const;
 
       measurementKeys.forEach((key) => {

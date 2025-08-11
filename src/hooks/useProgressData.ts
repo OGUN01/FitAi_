@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { progressDataService, ProgressEntry, BodyAnalysis, ProgressStats, ProgressGoals } from '../services/progressData';
+import {
+  progressDataService,
+  ProgressEntry,
+  BodyAnalysis,
+  ProgressStats,
+  ProgressGoals,
+} from '../services/progressData';
 import { useAuth } from './useAuth';
 import useTrackBIntegration from './useTrackBIntegration';
 
@@ -90,26 +96,31 @@ export const useProgressData = (): UseProgressDataReturn => {
   }, [isAuthenticated, trackB.integration.isInitialized]);
 
   // Load progress entries
-  const loadProgressEntries = useCallback(async (limit?: number) => {
-    if (!user?.id) return;
+  const loadProgressEntries = useCallback(
+    async (limit?: number) => {
+      if (!user?.id) return;
 
-    setProgressLoading(true);
-    setProgressError(null);
+      setProgressLoading(true);
+      setProgressError(null);
 
-    try {
-      const response = await progressDataService.getUserProgressEntries(user.id, limit);
-      
-      if (response.success && response.data) {
-        setProgressEntries(response.data);
-      } else {
-        setProgressError(response.error || 'Failed to load progress entries');
+      try {
+        const response = await progressDataService.getUserProgressEntries(user.id, limit);
+
+        if (response.success && response.data) {
+          setProgressEntries(response.data);
+        } else {
+          setProgressError(response.error || 'Failed to load progress entries');
+        }
+      } catch (error) {
+        setProgressError(
+          error instanceof Error ? error.message : 'Failed to load progress entries'
+        );
+      } finally {
+        setProgressLoading(false);
       }
-    } catch (error) {
-      setProgressError(error instanceof Error ? error.message : 'Failed to load progress entries');
-    } finally {
-      setProgressLoading(false);
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Load body analysis
   const loadBodyAnalysis = useCallback(async () => {
@@ -120,7 +131,7 @@ export const useProgressData = (): UseProgressDataReturn => {
 
     try {
       const response = await progressDataService.getUserBodyAnalysis(user.id);
-      
+
       if (response.success && response.data) {
         setBodyAnalysis(response.data);
       } else {
@@ -134,26 +145,31 @@ export const useProgressData = (): UseProgressDataReturn => {
   }, [user?.id]);
 
   // Load progress statistics
-  const loadProgressStats = useCallback(async (timeRange: number = 30) => {
-    if (!user?.id) return;
+  const loadProgressStats = useCallback(
+    async (timeRange: number = 30) => {
+      if (!user?.id) return;
 
-    setStatsLoading(true);
-    setStatsError(null);
+      setStatsLoading(true);
+      setStatsError(null);
 
-    try {
-      const response = await progressDataService.getProgressStats(user.id, timeRange);
-      
-      if (response.success && response.data) {
-        setProgressStats(response.data);
-      } else {
-        setStatsError(response.error || 'Failed to load progress statistics');
+      try {
+        const response = await progressDataService.getProgressStats(user.id, timeRange);
+
+        if (response.success && response.data) {
+          setProgressStats(response.data);
+        } else {
+          setStatsError(response.error || 'Failed to load progress statistics');
+        }
+      } catch (error) {
+        setStatsError(
+          error instanceof Error ? error.message : 'Failed to load progress statistics'
+        );
+      } finally {
+        setStatsLoading(false);
       }
-    } catch (error) {
-      setStatsError(error instanceof Error ? error.message : 'Failed to load progress statistics');
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [user?.id]);
+    },
+    [user?.id]
+  );
 
   // Load progress goals
   const loadProgressGoals = useCallback(async () => {
@@ -175,42 +191,44 @@ export const useProgressData = (): UseProgressDataReturn => {
   }, [user?.id]);
 
   // Create progress entry
-  const createProgressEntry = useCallback(async (entryData: {
-    weight_kg: number;
-    body_fat_percentage?: number;
-    muscle_mass_kg?: number;
-    measurements?: {
-      chest?: number;
-      waist?: number;
-      hips?: number;
-      bicep?: number;
-      thigh?: number;
-      neck?: number;
-    };
-    progress_photos?: string[];
-    notes?: string;
-  }): Promise<boolean> => {
-    if (!user?.id) return false;
+  const createProgressEntry = useCallback(
+    async (entryData: {
+      weight_kg: number;
+      body_fat_percentage?: number;
+      muscle_mass_kg?: number;
+      measurements?: {
+        chest?: number;
+        waist?: number;
+        hips?: number;
+        bicep?: number;
+        thigh?: number;
+        neck?: number;
+      };
+      progress_photos?: string[];
+      notes?: string;
+    }): Promise<boolean> => {
+      if (!user?.id) return false;
 
-    try {
-      const response = await progressDataService.createProgressEntry(user.id, entryData);
+      try {
+        const response = await progressDataService.createProgressEntry(user.id, entryData);
 
-      if (response.success) {
-        // Refresh progress data
-        await Promise.all([
-          loadProgressEntries(),
-          loadProgressStats(),
-        ]);
-        return true;
-      } else {
-        setProgressError(response.error || 'Failed to create progress entry');
+        if (response.success) {
+          // Refresh progress data
+          await Promise.all([loadProgressEntries(), loadProgressStats()]);
+          return true;
+        } else {
+          setProgressError(response.error || 'Failed to create progress entry');
+          return false;
+        }
+      } catch (error) {
+        setProgressError(
+          error instanceof Error ? error.message : 'Failed to create progress entry'
+        );
         return false;
       }
-    } catch (error) {
-      setProgressError(error instanceof Error ? error.message : 'Failed to create progress entry');
-      return false;
-    }
-  }, [user?.id, loadProgressEntries, loadProgressStats]);
+    },
+    [user?.id, loadProgressEntries, loadProgressStats]
+  );
 
   // Refresh all data
   const refreshAll = useCallback(async () => {
@@ -222,7 +240,14 @@ export const useProgressData = (): UseProgressDataReturn => {
       loadProgressStats(),
       loadProgressGoals(),
     ]);
-  }, [isAuthenticated, user?.id, loadProgressEntries, loadBodyAnalysis, loadProgressStats, loadProgressGoals]);
+  }, [
+    isAuthenticated,
+    user?.id,
+    loadProgressEntries,
+    loadBodyAnalysis,
+    loadProgressStats,
+    loadProgressGoals,
+  ]);
 
   // Clear all errors
   const clearErrors = useCallback(() => {

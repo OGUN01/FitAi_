@@ -73,12 +73,12 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
       });
 
       if (!result.canceled) {
-        const uris = result.assets.map(asset => asset.uri);
+        const uris = result.assets.map((asset) => asset.uri);
         if (mode === 'single') {
           onImagesSelected(uris);
           onClose();
         } else {
-          setSelectedImages(prev => {
+          setSelectedImages((prev) => {
             const newImages = [...prev, ...uris];
             return newImages.slice(0, maxImages);
           });
@@ -94,11 +94,9 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   const takePhoto = async () => {
     const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Sorry, we need camera permissions to take photos.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Permission Required', 'Sorry, we need camera permissions to take photos.', [
+        { text: 'OK' },
+      ]);
       return;
     }
 
@@ -116,7 +114,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           onImagesSelected([uri]);
           onClose();
         } else {
-          setSelectedImages(prev => {
+          setSelectedImages((prev) => {
             const newImages = [...prev, uri];
             return newImages.slice(0, maxImages);
           });
@@ -130,7 +128,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   };
 
   const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const confirmSelection = () => {
@@ -141,7 +139,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   const canAddMore = selectedImages.length < maxImages;
 
   return (
-    <Modal visible={visible} onClose={onClose} title="Select Images">
+    <Modal visible={visible} onClose={onClose}>
       <View style={styles.container}>
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
@@ -174,19 +172,16 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             <Text style={styles.selectedTitle}>
               Selected Images ({selectedImages.length}/{maxImages})
             </Text>
-            
-            <ScrollView 
-              horizontal 
+
+            <ScrollView
+              horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.selectedImagesContainer}
             >
               {selectedImages.map((uri, index) => (
                 <View key={index} style={styles.selectedImageContainer}>
                   <Image source={{ uri }} style={styles.selectedImage} />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeImage(index)}
-                  >
+                  <TouchableOpacity style={styles.removeButton} onPress={() => removeImage(index)}>
                     <Text style={styles.removeButtonText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -215,13 +210,8 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               style={styles.confirmButton}
             />
           )}
-          
-          <Button
-            title="Cancel"
-            onPress={onClose}
-            variant="outline"
-            fullWidth
-          />
+
+          <Button title="Cancel" onPress={onClose} variant="outline" fullWidth />
         </View>
       </View>
     </Modal>
@@ -263,7 +253,7 @@ const styles = StyleSheet.create({
 
   actionText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
     textAlign: 'center',
   },
@@ -274,7 +264,7 @@ const styles = StyleSheet.create({
 
   selectedTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
@@ -309,7 +299,7 @@ const styles = StyleSheet.create({
   removeButtonText: {
     fontSize: 12,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: THEME.fontWeight.bold as '700',
   },
 
   tipsCard: {
@@ -321,7 +311,7 @@ const styles = StyleSheet.create({
 
   tipsTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.info,
     marginBottom: THEME.spacing.sm,
   },

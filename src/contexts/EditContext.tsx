@@ -57,7 +57,8 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   // Get current user for dataManager initialization
   const { user } = useAuth();
   const { getCompleteProfile } = useUserStore();
-  const { savePersonalInfo, saveFitnessGoals, saveDietPreferences, saveWorkoutPreferences } = useOnboardingIntegration();
+  const { savePersonalInfo, saveFitnessGoals, saveDietPreferences, saveWorkoutPreferences } =
+    useOnboardingIntegration();
 
   // State management
   const [isEditMode, setIsEditMode] = useState(false);
@@ -74,179 +75,189 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   // EDIT ACTIONS
   // ============================================================================
 
-  const startEdit = useCallback(async (section: string, data?: any) => {
-    try {
-      setIsLoading(true);
+  const startEdit = useCallback(
+    async (section: string, data?: any) => {
+      try {
+        setIsLoading(true);
 
+        let sectionData = data;
 
-      let sectionData = data;
+        // Load existing data if not provided
+        if (!sectionData && user?.id) {
+          try {
+            const profileResponse = await getCompleteProfile(user.id);
 
-      // Load existing data if not provided
-      if (!sectionData && user?.id) {
-        try {
-          const profileResponse = await getCompleteProfile(user.id);
-          
-          if (profileResponse.success && profileResponse.data) {
-            const profile = profileResponse.data;
+            if (profileResponse.success && profileResponse.data) {
+              const profile = profileResponse.data;
 
-            switch (section) {
-              case 'personalInfo':
-                sectionData = profile.personalInfo;
-                break;
-              case 'fitnessGoals':
-                sectionData = profile.fitnessGoals;
-                break;
-              case 'dietPreferences':
-                sectionData = profile.dietPreferences;
-                break;
-              case 'workoutPreferences':
-                sectionData = profile.workoutPreferences;
-                break;
-              default:
-                throw new Error(`Unknown section: ${section}`);
+              switch (section) {
+                case 'personalInfo':
+                  sectionData = profile.personalInfo;
+                  break;
+                case 'fitnessGoals':
+                  sectionData = profile.fitnessGoals;
+                  break;
+                case 'dietPreferences':
+                  sectionData = profile.dietPreferences;
+                  break;
+                case 'workoutPreferences':
+                  sectionData = profile.workoutPreferences;
+                  break;
+                default:
+                  throw new Error(`Unknown section: ${section}`);
+              }
             }
+          } catch (error) {
+            console.error(`Error loading ${section}:`, error);
           }
-        } catch (error) {
-          console.error(`Error loading ${section}:`, error);
         }
-      }
 
-      // If no data found, create default structure for editing
-      if (!sectionData || Object.keys(sectionData).length === 0) {
-        switch (section) {
-          case 'personalInfo':
-            sectionData = {
-              name: user?.name || '',
-              email: user?.email || '',
-              age: '',
-              gender: '',
-              height: '',
-              weight: '',
-              activityLevel: '',
-              id: `personalInfo_${user?.id || 'guest'}_${Date.now()}`,
-              version: 1,
-              updatedAt: new Date().toISOString(),
-              syncStatus: 'pending' as const,
-              source: 'local' as const,
-            };
-            break;
-          case 'fitnessGoals':
-            sectionData = {
-              primaryGoals: [],
-              experience: '',
-              timeCommitment: '',
-              id: `fitnessGoals_${user?.id || 'guest'}_${Date.now()}`,
-              version: 1,
-              updatedAt: new Date().toISOString(),
-              syncStatus: 'pending' as const,
-              source: 'local' as const,
-            };
-            break;
-          case 'dietPreferences':
-            sectionData = {
-              dietType: 'non-veg' as const,
-              allergies: [],
-              cuisinePreferences: [],
-              restrictions: [],
-              id: `dietPreferences_${user?.id || 'guest'}_${Date.now()}`,
-              version: 1,
-              updatedAt: new Date().toISOString(),
-              syncStatus: 'pending' as const,
-              source: 'local' as const,
-            };
-            break;
-          case 'workoutPreferences':
-            sectionData = {
-              workoutTypes: [],
-              equipment: [],
-              location: 'both' as const,
-              intensity: 'beginner' as const,
-              timePreference: 30,
-              id: `workoutPreferences_${user?.id || 'guest'}_${Date.now()}`,
-              version: 1,
-              updatedAt: new Date().toISOString(),
-              syncStatus: 'pending' as const,
-              source: 'local' as const,
-            };
-            break;
+        // If no data found, create default structure for editing
+        if (!sectionData || Object.keys(sectionData).length === 0) {
+          switch (section) {
+            case 'personalInfo':
+              sectionData = {
+                name: user?.name || '',
+                email: user?.email || '',
+                age: '',
+                gender: '',
+                height: '',
+                weight: '',
+                activityLevel: '',
+                id: `personalInfo_${user?.id || 'guest'}_${Date.now()}`,
+                version: 1,
+                updatedAt: new Date().toISOString(),
+                syncStatus: 'pending' as const,
+                source: 'local' as const,
+              };
+              break;
+            case 'fitnessGoals':
+              sectionData = {
+                primaryGoals: [],
+                experience: '',
+                timeCommitment: '',
+                id: `fitnessGoals_${user?.id || 'guest'}_${Date.now()}`,
+                version: 1,
+                updatedAt: new Date().toISOString(),
+                syncStatus: 'pending' as const,
+                source: 'local' as const,
+              };
+              break;
+            case 'dietPreferences':
+              sectionData = {
+                dietType: 'non-veg' as const,
+                allergies: [],
+                cuisinePreferences: [],
+                restrictions: [],
+                id: `dietPreferences_${user?.id || 'guest'}_${Date.now()}`,
+                version: 1,
+                updatedAt: new Date().toISOString(),
+                syncStatus: 'pending' as const,
+                source: 'local' as const,
+              };
+              break;
+            case 'workoutPreferences':
+              sectionData = {
+                workoutTypes: [],
+                equipment: [],
+                location: 'both' as const,
+                intensity: 'beginner' as const,
+                timePreference: 30,
+                id: `workoutPreferences_${user?.id || 'guest'}_${Date.now()}`,
+                version: 1,
+                updatedAt: new Date().toISOString(),
+                syncStatus: 'pending' as const,
+                source: 'local' as const,
+              };
+              break;
+          }
         }
-      }
 
-      // Set up edit state
-      setEditSection(section as EditContextData['editSection']);
-      setOriginalData(sectionData);
-      setCurrentData(sectionData ? { ...sectionData } : {});
-      setIsEditMode(true);
-      setHasChanges(false);
-      setValidationErrors([]);
-      setShowOverlay(true);
-    } catch (error) {
-      console.error('Failed to start edit:', error);
-      Alert.alert('Error', 'Failed to load data for editing');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
+        // Set up edit state
+        setEditSection(section as EditContextData['editSection']);
+        setOriginalData(sectionData);
+        setCurrentData(sectionData ? { ...sectionData } : {});
+        setIsEditMode(true);
+        setHasChanges(false);
+        setValidationErrors([]);
+        setShowOverlay(true);
+      } catch (error) {
+        console.error('Failed to start edit:', error);
+        Alert.alert('Error', 'Failed to load data for editing');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [user?.id]
+  );
 
   // Validation function - moved before debouncedValidation to fix hoisting issue
-  const validateData = useCallback((data?: any): ValidationResult => {
-    if (!editSection) {
-      return { isValid: true, errors: [], warnings: [] };
-    }
-
-    const dataToValidate = data || currentData;
-    if (!dataToValidate || Object.keys(dataToValidate).length === 0) {
-      return { isValid: true, errors: [], warnings: [] }; // Allow empty data during editing
-    }
-
-    try {
-      switch (editSection) {
-        case 'personalInfo':
-          return profileValidator.validatePersonalInfo(dataToValidate);
-        case 'fitnessGoals':
-          return profileValidator.validateFitnessGoals(dataToValidate);
-        case 'dietPreferences':
-          return profileValidator.validateDietPreferences(dataToValidate);
-        case 'workoutPreferences':
-          return profileValidator.validateWorkoutPreferences(dataToValidate);
-        default:
-          return { isValid: true, errors: [], warnings: [] };
+  const validateData = useCallback(
+    (data?: any): ValidationResult => {
+      if (!editSection) {
+        return { isValid: true, errors: [], warnings: [] };
       }
-    } catch (error) {
-      console.warn('Validation error:', error);
-      return { isValid: true, errors: [], warnings: [] }; // Don't block on validation errors
-    }
-  }, [editSection, currentData]);
+
+      const dataToValidate = data || currentData;
+      if (!dataToValidate || Object.keys(dataToValidate).length === 0) {
+        return { isValid: true, errors: [], warnings: [] }; // Allow empty data during editing
+      }
+
+      try {
+        switch (editSection) {
+          case 'personalInfo':
+            return profileValidator.validatePersonalInfo(dataToValidate);
+          case 'fitnessGoals':
+            return profileValidator.validateFitnessGoals(dataToValidate);
+          case 'dietPreferences':
+            return profileValidator.validateDietPreferences(dataToValidate);
+          case 'workoutPreferences':
+            return profileValidator.validateWorkoutPreferences(dataToValidate);
+          default:
+            return { isValid: true, errors: [], warnings: [] };
+        }
+      } catch (error) {
+        console.warn('Validation error:', error);
+        return { isValid: true, errors: [], warnings: [] }; // Don't block on validation errors
+      }
+    },
+    [editSection, currentData]
+  );
 
   // Debounced validation to improve performance (increased delay)
   const debouncedValidation = useMemo(
-    () => debounce((data: any) => {
-      if (data && Object.keys(data).length > 0) {
-        const validationResult = validateData(data);
-        setValidationErrors(validationResult.errors);
-      }
-    }, 1000), // Increased from 300ms to 1000ms
+    () =>
+      debounce((data: any) => {
+        if (data && Object.keys(data).length > 0) {
+          const validationResult = validateData(data);
+          setValidationErrors(validationResult.errors);
+        }
+      }, 1000), // Increased from 300ms to 1000ms
     [validateData]
   );
 
-  const updateData = useCallback((newData: any) => {
-    if (!newData) return;
-    
-    // Only update if data actually changed
-    const dataChanged = JSON.stringify(newData) !== JSON.stringify(currentData);
-    if (!dataChanged) return;
+  const updateData = useCallback(
+    (newData: any) => {
+      if (!newData) return;
 
-    setCurrentData(newData);
+      // Only update if data actually changed
+      const dataChanged = JSON.stringify(newData) !== JSON.stringify(currentData);
+      if (!dataChanged) return;
 
-    // Check if data has changed from original
-    const hasActualChanges = JSON.stringify(newData) !== JSON.stringify(originalData);
-    setHasChanges(hasActualChanges);
+      setCurrentData(newData);
 
-    // Only validate if we have meaningful data
-    if (Object.keys(newData).length > 2) { // More than just id and timestamps
-      debouncedValidation(newData);
-    }
-  }, [originalData, currentData, debouncedValidation]);
+      // Check if data has changed from original
+      const hasActualChanges = JSON.stringify(newData) !== JSON.stringify(originalData);
+      setHasChanges(hasActualChanges);
+
+      // Only validate if we have meaningful data
+      if (Object.keys(newData).length > 2) {
+        // More than just id and timestamps
+        debouncedValidation(newData);
+      }
+    },
+    [originalData, currentData, debouncedValidation]
+  );
 
   const saveChanges = useCallback(async (): Promise<boolean> => {
     if (!editSection || !currentData) {
@@ -270,7 +281,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       // Save using integration functions (same as onboarding)
       let saveResult: { success: boolean; error?: string } = { success: false };
-      
+
       switch (editSection) {
         case 'personalInfo':
           saveResult = await savePersonalInfo(currentData as PersonalInfo);
@@ -291,7 +302,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       const saveSuccess = saveResult.success;
 
       if (saveSuccess) {
-        
         // Reset edit state
         setIsEditMode(false);
         setEditSection(null);
@@ -310,7 +320,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         const errorMessage = saveResult.error || 'Failed to save data';
         throw new Error(errorMessage);
       }
-
     } catch (error) {
       console.error('Failed to save changes:', error);
       Alert.alert('Error', 'Failed to save changes. Please try again.');
@@ -360,7 +369,6 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     }
   }, [hasChanges, onEditCancel]);
 
-
   // ============================================================================
   // CONTEXT VALUE
   // ============================================================================
@@ -388,11 +396,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     setShowOverlay,
   };
 
-  return (
-    <EditContext.Provider value={contextValue}>
-      {children}
-    </EditContext.Provider>
-  );
+  return <EditContext.Provider value={contextValue}>{children}</EditContext.Provider>;
 };
 
 // ============================================================================

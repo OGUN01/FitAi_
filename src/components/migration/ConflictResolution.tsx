@@ -2,15 +2,7 @@
 // Provides user interface for resolving data conflicts during migration
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Modal,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -48,22 +40,33 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
 }) => {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return '#EF4444';
-      case 'high': return '#F59E0B';
-      case 'medium': return '#3B82F6';
-      case 'low': return '#10B981';
-      default: return '#6B7280';
+      case 'critical':
+        return '#EF4444';
+      case 'high':
+        return '#F59E0B';
+      case 'medium':
+        return '#3B82F6';
+      case 'low':
+        return '#10B981';
+      default:
+        return '#6B7280';
     }
   };
 
   const getConflictTypeIcon = (type: string) => {
     switch (type) {
-      case 'value_mismatch': return 'swap-horizontal-outline';
-      case 'missing_local': return 'cloud-download-outline';
-      case 'missing_remote': return 'cloud-upload-outline';
-      case 'type_mismatch': return 'warning-outline';
-      case 'duplicate_record': return 'copy-outline';
-      default: return 'alert-circle-outline';
+      case 'value_mismatch':
+        return 'swap-horizontal-outline';
+      case 'missing_local':
+        return 'cloud-download-outline';
+      case 'missing_remote':
+        return 'cloud-upload-outline';
+      case 'type_mismatch':
+        return 'warning-outline';
+      case 'duplicate_record':
+        return 'copy-outline';
+      default:
+        return 'alert-circle-outline';
     }
   };
 
@@ -77,28 +80,29 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
     return String(value);
   };
 
-  const resolutionOptions: { strategy: ResolutionStrategy; label: string; description: string }[] = [
-    {
-      strategy: 'local_wins',
-      label: 'Keep Local',
-      description: 'Use the value from your device',
-    },
-    {
-      strategy: 'remote_wins',
-      label: 'Use Cloud',
-      description: 'Use the value from the cloud',
-    },
-    {
-      strategy: 'merge_values',
-      label: 'Merge Both',
-      description: 'Combine both values when possible',
-    },
-    {
-      strategy: 'skip_field',
-      label: 'Skip Field',
-      description: 'Ignore this field for now',
-    },
-  ];
+  const resolutionOptions: { strategy: ResolutionStrategy; label: string; description: string }[] =
+    [
+      {
+        strategy: 'local_wins',
+        label: 'Keep Local',
+        description: 'Use the value from your device',
+      },
+      {
+        strategy: 'remote_wins',
+        label: 'Use Cloud',
+        description: 'Use the value from the cloud',
+      },
+      {
+        strategy: 'merge_values',
+        label: 'Merge Both',
+        description: 'Combine both values when possible',
+      },
+      {
+        strategy: 'skip_field',
+        label: 'Skip Field',
+        description: 'Ignore this field for now',
+      },
+    ];
 
   return (
     <View style={styles.conflictItem}>
@@ -111,10 +115,7 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
           />
           <Text style={styles.conflictField}>{conflict.field}</Text>
           <View
-            style={[
-              styles.severityBadge,
-              { backgroundColor: getSeverityColor(conflict.severity) },
-            ]}
+            style={[styles.severityBadge, { backgroundColor: getSeverityColor(conflict.severity) }]}
           >
             <Text style={styles.severityText}>{conflict.severity.toUpperCase()}</Text>
           </View>
@@ -160,7 +161,8 @@ const ConflictItem: React.FC<ConflictItemProps> = ({
               <Text
                 style={[
                   styles.resolutionOptionDescription,
-                  selectedStrategy === option.strategy && styles.resolutionOptionDescriptionSelected,
+                  selectedStrategy === option.strategy &&
+                    styles.resolutionOptionDescriptionSelected,
                 ]}
               >
                 {option.description}
@@ -189,14 +191,14 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
 }) => {
   const [resolutions, setResolutions] = useState<Record<string, ResolutionStrategy>>(() => {
     const initial: Record<string, ResolutionStrategy> = {};
-    conflicts.forEach(conflict => {
+    conflicts.forEach((conflict) => {
       initial[conflict.id] = conflict.suggestedResolution;
     });
     return initial;
   });
 
   const handleStrategyChange = (conflictId: string, strategy: ResolutionStrategy) => {
-    setResolutions(prev => ({
+    setResolutions((prev) => ({
       ...prev,
       [conflictId]: strategy,
     }));
@@ -204,17 +206,17 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
 
   const handleAutoResolve = () => {
     const autoResolutions: Record<string, ResolutionStrategy> = {};
-    conflicts.forEach(conflict => {
+    conflicts.forEach((conflict) => {
       if (conflict.autoResolvable) {
         autoResolutions[conflict.id] = conflict.suggestedResolution;
       }
     });
-    setResolutions(prev => ({ ...prev, ...autoResolutions }));
+    setResolutions((prev) => ({ ...prev, ...autoResolutions }));
   };
 
   const handleResolveAll = () => {
     const unresolvedConflicts = conflicts.filter(
-      conflict => !resolutions[conflict.id] || resolutions[conflict.id] === 'user_choice'
+      (conflict) => !resolutions[conflict.id] || resolutions[conflict.id] === 'user_choice'
     );
 
     if (unresolvedConflicts.length > 0) {
@@ -232,9 +234,9 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
   const getConflictStats = () => {
     const total = conflicts.length;
     const resolved = Object.keys(resolutions).filter(
-      id => resolutions[id] && resolutions[id] !== 'user_choice'
+      (id) => resolutions[id] && resolutions[id] !== 'user_choice'
     ).length;
-    const autoResolvable = conflicts.filter(c => c.autoResolvable).length;
+    const autoResolvable = conflicts.filter((c) => c.autoResolvable).length;
 
     return { total, resolved, autoResolvable };
   };
@@ -250,7 +252,7 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
             <Text style={styles.subtitle}>
               We found {conflicts.length} conflicts that need your attention
             </Text>
-            
+
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
                 <Text style={styles.statNumber}>{stats.total}</Text>
@@ -269,7 +271,9 @@ export const ConflictResolutionComponent: React.FC<ConflictResolutionProps> = ({
             {autoResolveEnabled && stats.autoResolvable > 0 && (
               <TouchableOpacity style={styles.autoResolveButton} onPress={handleAutoResolve}>
                 <Ionicons name="flash" size={16} color="#FFFFFF" />
-                <Text style={styles.autoResolveText}>Auto-Resolve {stats.autoResolvable} Conflicts</Text>
+                <Text style={styles.autoResolveText}>
+                  Auto-Resolve {stats.autoResolvable} Conflicts
+                </Text>
               </TouchableOpacity>
             )}
           </View>

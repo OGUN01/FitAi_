@@ -1,14 +1,19 @@
 // Workout Engine - Integrates AI generation with exercise database
 
 import { workoutGenerator } from '../../ai/workoutGenerator';
-import { EXERCISES, getExerciseById, getExercisesByEquipment, getExercisesByMuscleGroup } from '../../data/exercises';
-import { 
-  Workout, 
-  WorkoutPlan, 
-  Exercise, 
-  WorkoutSet, 
+import {
+  EXERCISES,
+  getExerciseById,
+  getExercisesByEquipment,
+  getExercisesByMuscleGroup,
+} from '../../data/exercises';
+import {
+  Workout,
+  WorkoutPlan,
+  Exercise,
+  WorkoutSet,
   AIResponse,
-  AIGenerationContext 
+  AIGenerationContext,
 } from '../../types/ai';
 import { PersonalInfo, FitnessGoals } from '../../types/user';
 
@@ -17,7 +22,6 @@ import { PersonalInfo, FitnessGoals } from '../../types/user';
 // ============================================================================
 
 class WorkoutEngineService {
-  
   /**
    * Generate a complete workout with real exercise data
    */
@@ -48,7 +52,7 @@ class WorkoutEngineService {
       const enhancedWorkout = await this.enhanceWorkoutWithExerciseData(
         aiResponse.data,
         preferences?.equipment || ['bodyweight'],
-        preferences?.difficulty || fitnessGoals.experience as any
+        preferences?.difficulty || (fitnessGoals.experience as any)
       );
 
       return {
@@ -56,12 +60,12 @@ class WorkoutEngineService {
         data: enhancedWorkout,
         confidence: aiResponse.confidence,
         generationTime: aiResponse.generationTime,
-        tokensUsed: aiResponse.tokensUsed
+        tokensUsed: aiResponse.tokensUsed,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Smart workout generation failed: ${error}`
+        error: `Smart workout generation failed: ${error}`,
       };
     }
   }
@@ -77,8 +81,8 @@ class WorkoutEngineService {
     const preferences = {
       duration: timeAvailable,
       equipment: ['bodyweight'],
-      workoutType: timeAvailable <= 20 ? 'hiit' as const : 'strength' as const,
-      difficulty: fitnessGoals.experience as 'beginner' | 'intermediate' | 'advanced'
+      workoutType: timeAvailable <= 20 ? ('hiit' as const) : ('strength' as const),
+      difficulty: fitnessGoals.experience as 'beginner' | 'intermediate' | 'advanced',
     };
 
     return this.generateSmartWorkout(personalInfo, fitnessGoals, preferences);
@@ -93,15 +97,15 @@ class WorkoutEngineService {
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals
   ): Workout {
-    const exercises = exerciseIds.map(id => getExerciseById(id)).filter(Boolean) as Exercise[];
-    
+    const exercises = exerciseIds.map((id) => getExerciseById(id)).filter(Boolean) as Exercise[];
+
     if (exercises.length === 0) {
       throw new Error('No valid exercises found');
     }
 
     // Calculate workout duration and calories
     const totalDuration = exercises.reduce((sum, ex) => {
-      const exerciseTime = ex.duration || (ex.sets! * ex.reps! * 3); // Estimate 3 seconds per rep
+      const exerciseTime = ex.duration || ex.sets! * ex.reps! * 3; // Estimate 3 seconds per rep
       const restTime = ex.restTime || 60;
       return sum + exerciseTime + restTime;
     }, 0);
@@ -109,16 +113,16 @@ class WorkoutEngineService {
     const totalCalories = exercises.reduce((sum, ex) => sum + (ex.calories || 5), 0);
 
     // Determine workout category based on exercises
-    const categories = exercises.map(ex => this.categorizeExercise(ex));
+    const categories = exercises.map((ex) => this.categorizeExercise(ex));
     const primaryCategory = this.getMostCommonCategory(categories);
 
     // Create workout sets
-    const workoutSets: WorkoutSet[] = exercises.map(exercise => ({
+    const workoutSets: WorkoutSet[] = exercises.map((exercise) => ({
       exerciseId: exercise.id,
       sets: exercise.sets || this.getDefaultSets(exercise, fitnessGoals.experience),
       reps: exercise.reps || this.getDefaultReps(exercise, fitnessGoals.experience),
       restTime: exercise.restTime || this.getDefaultRestTime(exercise),
-      weight: undefined // User will set this
+      weight: undefined, // User will set this
     }));
 
     return {
@@ -136,7 +140,7 @@ class WorkoutEngineService {
       tags: ['custom', primaryCategory],
       isPersonalized: true,
       aiGenerated: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
   }
 
@@ -150,34 +154,30 @@ class WorkoutEngineService {
     count: number = 10
   ): Exercise[] {
     let availableExercises = getExercisesByEquipment(equipment);
-    
+
     // Filter by difficulty based on experience
     const experienceLevel = fitnessGoals.experience;
     if (experienceLevel === 'beginner') {
-      availableExercises = availableExercises.filter(ex => 
-        ex.difficulty === 'beginner' || ex.difficulty === 'intermediate'
+      availableExercises = availableExercises.filter(
+        (ex) => ex.difficulty === 'beginner' || ex.difficulty === 'intermediate'
       );
     }
 
     // Filter by goals
     if (fitnessGoals.primaryGoals.includes('strength')) {
-      availableExercises = availableExercises.filter(ex => 
-        ex.muscleGroups.some(mg => 
+      availableExercises = availableExercises.filter((ex) =>
+        ex.muscleGroups.some((mg) =>
           ['chest', 'back', 'shoulders', 'arms', 'legs', 'glutes'].includes(mg)
         )
       );
     }
 
     if (fitnessGoals.primaryGoals.includes('weight_loss')) {
-      availableExercises = availableExercises.filter(ex => 
-        ex.calories && ex.calories > 5
-      );
+      availableExercises = availableExercises.filter((ex) => ex.calories && ex.calories > 5);
     }
 
     // Shuffle and return requested count
-    return availableExercises
-      .sort(() => 0.5 - Math.random())
-      .slice(0, count);
+    return availableExercises.sort(() => 0.5 - Math.random()).slice(0, count);
   }
 
   /**
@@ -190,18 +190,16 @@ class WorkoutEngineService {
     equipment: string[] = ['bodyweight']
   ): Exercise[] {
     let exercises = getExercisesByMuscleGroup(muscleGroup);
-    
+
     // Filter by available equipment
-    exercises = exercises.filter(ex => 
-      ex.equipment.some(eq => equipment.includes(eq))
-    );
+    exercises = exercises.filter((ex) => ex.equipment.some((eq) => equipment.includes(eq)));
 
     // Filter by experience level
     const experienceLevel = fitnessGoals.experience;
     if (experienceLevel === 'beginner') {
-      exercises = exercises.filter(ex => ex.difficulty !== 'advanced');
+      exercises = exercises.filter((ex) => ex.difficulty !== 'advanced');
     } else if (experienceLevel === 'intermediate') {
-      exercises = exercises.filter(ex => ex.difficulty !== 'beginner');
+      exercises = exercises.filter((ex) => ex.difficulty !== 'beginner');
     }
 
     return exercises;
@@ -221,7 +219,7 @@ class WorkoutEngineService {
     for (const workoutSet of aiWorkout.exercises) {
       // Try to find matching exercise in our database
       let exercise = getExerciseById(workoutSet.exerciseId);
-      
+
       if (!exercise) {
         // If not found, find a similar exercise based on the ID/name
         exercise = this.findSimilarExercise(workoutSet.exerciseId, equipment, difficulty);
@@ -233,7 +231,7 @@ class WorkoutEngineService {
           exerciseId: exercise.id,
           sets: workoutSet.sets || exercise.sets || this.getDefaultSets(exercise, difficulty),
           reps: workoutSet.reps || exercise.reps || this.getDefaultReps(exercise, difficulty),
-          restTime: workoutSet.restTime || exercise.restTime || this.getDefaultRestTime(exercise)
+          restTime: workoutSet.restTime || exercise.restTime || this.getDefaultRestTime(exercise),
         });
       } else {
         // Keep original if no match found
@@ -245,7 +243,7 @@ class WorkoutEngineService {
       ...aiWorkout,
       exercises: enhancedExercises,
       equipment: this.getUniqueEquipmentFromSets(enhancedExercises),
-      targetMuscleGroups: this.getUniqueMuscleGroupsFromSets(enhancedExercises)
+      targetMuscleGroups: this.getUniqueMuscleGroupsFromSets(enhancedExercises),
     };
   }
 
@@ -256,16 +254,18 @@ class WorkoutEngineService {
   ): Exercise | null {
     // Extract keywords from the exercise ID
     const keywords = exerciseId.toLowerCase().split('_');
-    
+
     // Find exercises that match keywords and constraints
-    const candidates = EXERCISES.filter(exercise => {
-      const matchesEquipment = exercise.equipment.some(eq => equipment.includes(eq));
-      const matchesDifficulty = exercise.difficulty === difficulty || 
+    const candidates = EXERCISES.filter((exercise) => {
+      const matchesEquipment = exercise.equipment.some((eq) => equipment.includes(eq));
+      const matchesDifficulty =
+        exercise.difficulty === difficulty ||
         (difficulty === 'beginner' && exercise.difficulty === 'intermediate') ||
         (difficulty === 'advanced' && exercise.difficulty === 'intermediate');
-      const matchesKeywords = keywords.some(keyword => 
-        exercise.name.toLowerCase().includes(keyword) ||
-        exercise.muscleGroups.some(mg => mg.toLowerCase().includes(keyword))
+      const matchesKeywords = keywords.some(
+        (keyword) =>
+          exercise.name.toLowerCase().includes(keyword) ||
+          exercise.muscleGroups.some((mg) => mg.toLowerCase().includes(keyword))
       );
 
       return matchesEquipment && matchesDifficulty && matchesKeywords;
@@ -276,19 +276,27 @@ class WorkoutEngineService {
 
   private categorizeExercise(exercise: Exercise): 'strength' | 'cardio' | 'flexibility' | 'hiit' {
     if (exercise.muscleGroups.includes('cardiovascular')) return 'cardio';
-    if (exercise.name.toLowerCase().includes('stretch') || 
-        exercise.name.toLowerCase().includes('pose')) return 'flexibility';
+    if (
+      exercise.name.toLowerCase().includes('stretch') ||
+      exercise.name.toLowerCase().includes('pose')
+    )
+      return 'flexibility';
     if (exercise.calories && exercise.calories > 10) return 'hiit';
     return 'strength';
   }
 
-  private getMostCommonCategory(categories: string[]): 'strength' | 'cardio' | 'flexibility' | 'hiit' {
-    const counts = categories.reduce((acc, cat) => {
-      acc[cat] = (acc[cat] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  private getMostCommonCategory(
+    categories: string[]
+  ): 'strength' | 'cardio' | 'flexibility' | 'hiit' {
+    const counts = categories.reduce(
+      (acc, cat) => {
+        acc[cat] = (acc[cat] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
-    const mostCommon = Object.entries(counts).sort(([,a], [,b]) => b - a)[0];
+    const mostCommon = Object.entries(counts).sort(([, a], [, b]) => b - a)[0];
     return mostCommon[0] as 'strength' | 'cardio' | 'flexibility' | 'hiit';
   }
 
@@ -296,11 +304,12 @@ class WorkoutEngineService {
     exercises: Exercise[],
     userExperience: string
   ): 'beginner' | 'intermediate' | 'advanced' {
-    const difficulties = exercises.map(ex => ex.difficulty);
-    const avgDifficulty = difficulties.reduce((sum, diff) => {
-      const score = diff === 'beginner' ? 1 : diff === 'intermediate' ? 2 : 3;
-      return sum + score;
-    }, 0) / difficulties.length;
+    const difficulties = exercises.map((ex) => ex.difficulty);
+    const avgDifficulty =
+      difficulties.reduce((sum, diff) => {
+        const score = diff === 'beginner' ? 1 : diff === 'intermediate' ? 2 : 3;
+        return sum + score;
+      }, 0) / difficulties.length;
 
     if (avgDifficulty <= 1.5) return 'beginner';
     if (avgDifficulty <= 2.5) return 'intermediate';
@@ -309,41 +318,42 @@ class WorkoutEngineService {
 
   private getDefaultSets(exercise: Exercise, experience: string): number {
     if (exercise.sets) return exercise.sets;
-    
+
     const baseSets = experience === 'beginner' ? 2 : experience === 'intermediate' ? 3 : 4;
     return exercise.muscleGroups.includes('core') ? baseSets + 1 : baseSets;
   }
 
   private getDefaultReps(exercise: Exercise, experience: string): string {
     if (exercise.reps) return exercise.reps;
-    
+
     if (exercise.duration) return `${exercise.duration}s`;
-    
-    const baseReps = experience === 'beginner' ? '8-10' : experience === 'intermediate' ? '10-12' : '12-15';
+
+    const baseReps =
+      experience === 'beginner' ? '8-10' : experience === 'intermediate' ? '10-12' : '12-15';
     return baseReps;
   }
 
   private getDefaultRestTime(exercise: Exercise): number {
     if (exercise.restTime) return exercise.restTime;
-    
+
     if (exercise.muscleGroups.includes('cardiovascular')) return 30;
     if (exercise.difficulty === 'advanced') return 90;
     return 60;
   }
 
   private getUniqueEquipment(exercises: Exercise[]): string[] {
-    const equipment = exercises.flatMap(ex => ex.equipment);
+    const equipment = exercises.flatMap((ex) => ex.equipment);
     return [...new Set(equipment)];
   }
 
   private getUniqueMuscleGroups(exercises: Exercise[]): string[] {
-    const muscleGroups = exercises.flatMap(ex => ex.muscleGroups);
+    const muscleGroups = exercises.flatMap((ex) => ex.muscleGroups);
     return [...new Set(muscleGroups)];
   }
 
   private getUniqueEquipmentFromSets(workoutSets: WorkoutSet[]): string[] {
     const equipment: string[] = [];
-    workoutSets.forEach(set => {
+    workoutSets.forEach((set) => {
       const exercise = getExerciseById(set.exerciseId);
       if (exercise) {
         equipment.push(...exercise.equipment);
@@ -354,7 +364,7 @@ class WorkoutEngineService {
 
   private getUniqueMuscleGroupsFromSets(workoutSets: WorkoutSet[]): string[] {
     const muscleGroups: string[] = [];
-    workoutSets.forEach(set => {
+    workoutSets.forEach((set) => {
       const exercise = getExerciseById(set.exerciseId);
       if (exercise) {
         muscleGroups.push(...exercise.muscleGroups);
@@ -368,7 +378,7 @@ class WorkoutEngineService {
       strength: '💪',
       cardio: '🏃',
       flexibility: '🧘',
-      hiit: '🔥'
+      hiit: '🔥',
     };
     return icons[category] || '🏋️';
   }

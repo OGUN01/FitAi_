@@ -13,7 +13,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { MigrationProgress as MigrationProgressType, MigrationResult } from '../../services/migration';
+import {
+  MigrationProgress as MigrationProgressType,
+  MigrationResult,
+} from '../../services/migration';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -103,9 +106,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
   allowCancel = true,
 }) => {
   const [progressAnimation] = useState(new Animated.Value(0));
-  const [stepAnimations] = useState(
-    MIGRATION_STEPS.map(() => new Animated.Value(0))
-  );
+  const [stepAnimations] = useState(MIGRATION_STEPS.map(() => new Animated.Value(0)));
   const [pulseAnimation] = useState(new Animated.Value(1));
   const [celebrationAnimation] = useState(new Animated.Value(0));
 
@@ -126,9 +127,9 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 
       // Animate current step
       const currentStepIndex = MIGRATION_STEPS.findIndex(
-        step => step.name === progress.currentStep
+        (step) => step.name === progress.currentStep
       );
-      
+
       if (currentStepIndex >= 0) {
         // Animate completed steps
         stepAnimations.forEach((animation, index) => {
@@ -184,7 +185,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 
   const renderProgressBar = () => {
     const progressPercentage = progress?.percentage || 0;
-    
+
     return (
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBarBackground}>
@@ -214,7 +215,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
 
   const renderMigrationSteps = () => {
     const currentStepIndex = progress
-      ? MIGRATION_STEPS.findIndex(step => step.name === progress.currentStep)
+      ? MIGRATION_STEPS.findIndex((step) => step.name === progress.currentStep)
       : -1;
 
     return (
@@ -233,11 +234,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                   opacity: stepAnimations[index],
                   transform: [
                     {
-                      scale: isCurrent
-                        ? stepAnimations[index]
-                        : isCompleted
-                        ? 1
-                        : 0.8,
+                      scale: isCurrent ? stepAnimations[index] : isCompleted ? 1 : 0.8,
                     },
                   ],
                 },
@@ -252,19 +249,9 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                 ]}
               >
                 <Ionicons
-                  name={
-                    isCompleted
-                      ? 'checkmark'
-                      : (step.icon as any)
-                  }
+                  name={isCompleted ? 'checkmark' : (step.icon as any)}
                   size={20}
-                  color={
-                    isCompleted
-                      ? '#10B981'
-                      : isCurrent
-                      ? '#4F46E5'
-                      : '#6B7280'
-                  }
+                  color={isCompleted ? '#10B981' : isCurrent ? '#4F46E5' : '#6B7280'}
                 />
               </View>
               <View style={styles.stepContent}>
@@ -277,12 +264,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                 >
                   {step.title}
                 </Text>
-                <Text
-                  style={[
-                    styles.stepDescription,
-                    isCurrent && styles.stepDescriptionCurrent,
-                  ]}
-                >
+                <Text style={[styles.stepDescription, isCurrent && styles.stepDescriptionCurrent]}>
                   {step.description}
                 </Text>
               </View>
@@ -320,8 +302,8 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
           {result.migratedDataCount && (
             <View style={styles.migrationStats}>
               <Text style={styles.statsText}>
-                Migrated: {result.migratedDataCount.workoutSessions} workouts, {' '}
-                {result.migratedDataCount.mealLogs} meals, {' '}
+                Migrated: {result.migratedDataCount.workoutSessions} workouts,{' '}
+                {result.migratedDataCount.mealLogs} meals,{' '}
                 {result.migratedDataCount.bodyMeasurements} measurements
               </Text>
             </View>
@@ -395,10 +377,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <LinearGradient
-            colors={['#1F2937', '#111827']}
-            style={styles.gradient}
-          >
+          <LinearGradient colors={['#1F2937', '#111827']} style={styles.gradient}>
             {renderStatusMessage()}
             {renderProgressBar()}
             {renderMigrationSteps()}

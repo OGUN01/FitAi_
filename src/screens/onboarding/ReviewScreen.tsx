@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -55,7 +49,12 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
     const total = 5;
 
     // Personal Info (required)
-    if (data.personalInfo.name && data.personalInfo.age && data.personalInfo.height && data.personalInfo.weight) {
+    if (
+      data.personalInfo.name &&
+      data.personalInfo.age &&
+      data.personalInfo.height &&
+      data.personalInfo.weight
+    ) {
       completed++;
     }
 
@@ -65,7 +64,10 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
     }
 
     // Diet Preferences (required)
-    if (data.dietPreferences.cuisinePreferences && data.dietPreferences.cuisinePreferences.length > 0) {
+    if (
+      data.dietPreferences.cuisinePreferences &&
+      data.dietPreferences.cuisinePreferences.length > 0
+    ) {
       completed++;
     }
 
@@ -89,10 +91,8 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Review Your Profile</Text>
-          <Text style={styles.subtitle}>
-            Check your information and complete your setup
-          </Text>
-          
+          <Text style={styles.subtitle}>Check your information and complete your setup</Text>
+
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -119,9 +119,15 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 <Text style={styles.dataItem}>Name: {data.personalInfo.name || 'Not set'}</Text>
                 <Text style={styles.dataItem}>Age: {data.personalInfo.age || 'Not set'}</Text>
                 <Text style={styles.dataItem}>Gender: {data.personalInfo.gender || 'Not set'}</Text>
-                <Text style={styles.dataItem}>Height: {data.personalInfo.height ? `${data.personalInfo.height} cm` : 'Not set'}</Text>
-                <Text style={styles.dataItem}>Weight: {data.personalInfo.weight ? `${data.personalInfo.weight} kg` : 'Not set'}</Text>
-                <Text style={styles.dataItem}>Activity Level: {data.personalInfo.activityLevel || 'Not set'}</Text>
+                <Text style={styles.dataItem}>
+                  Height: {data.personalInfo.height ? `${data.personalInfo.height} cm` : 'Not set'}
+                </Text>
+                <Text style={styles.dataItem}>
+                  Weight: {data.personalInfo.weight ? `${data.personalInfo.weight} kg` : 'Not set'}
+                </Text>
+                <Text style={styles.dataItem}>
+                  Activity Level: {data.personalInfo.activityLevel || 'Not set'}
+                </Text>
               </View>
             </Card>
           </TouchableOpacity>
@@ -159,7 +165,9 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 <View>
                   <Text style={styles.sectionTitle}>🍽️ Diet Preferences</Text>
                   <Text style={styles.sectionStatus}>
-                    {data.dietPreferences.cuisinePreferences?.length > 0 ? 'Complete' : 'Incomplete'}
+                    {data.dietPreferences.cuisinePreferences?.length > 0
+                      ? 'Complete'
+                      : 'Incomplete'}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
@@ -198,7 +206,10 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                   Location: {data.workoutPreferences.location || 'Not set'}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Duration: {data.workoutPreferences.timePreference ? formatTime(data.workoutPreferences.timePreference) : 'Not set'}
+                  Duration:{' '}
+                  {data.workoutPreferences.timePreference
+                    ? formatTime(data.workoutPreferences.timePreference)
+                    : 'Not set'}
                 </Text>
                 <Text style={styles.dataItem}>
                   Intensity: {data.workoutPreferences.intensity || 'Not set'}
@@ -220,7 +231,9 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                 <View>
                   <Text style={styles.sectionTitle}>📸 Body Analysis</Text>
                   <Text style={styles.sectionStatus}>
-                    {Object.keys(data.bodyAnalysis.photos || {}).length > 0 ? 'Complete' : 'Optional'}
+                    {Object.keys(data.bodyAnalysis.photos || {}).length > 0
+                      ? 'Complete'
+                      : 'Optional'}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
@@ -266,12 +279,7 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
 
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button
-            title="Back"
-            onPress={onBack}
-            variant="outline"
-            style={styles.backButton}
-          />
+          <Button title="Back" onPress={onBack} variant="outline" style={styles.backButton} />
           <Button
             title="Complete Setup"
             onPress={onComplete}

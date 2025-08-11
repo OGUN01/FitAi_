@@ -237,7 +237,6 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-
       initialize: async () => {
         if (get().isInitialized) {
           console.log('🔄 AuthStore: Already initialized, skipping...');
@@ -251,7 +250,10 @@ export const useAuthStore = create<AuthState>()(
           const response = await authService.restoreSession();
 
           if (response.success && response.user) {
-            console.log('✅ AuthStore: Session restored successfully for user:', response.user.email);
+            console.log(
+              '✅ AuthStore: Session restored successfully for user:',
+              response.user.email
+            );
             set({
               user: response.user,
               isAuthenticated: response.user.isEmailVerified,
@@ -333,7 +335,8 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to link Google account';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to link Google account';
           set({
             isLoading: false,
             error: errorMessage,
@@ -354,7 +357,8 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to unlink Google account';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to unlink Google account';
           set({
             isLoading: false,
             error: errorMessage,
@@ -377,8 +381,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setGuestMode: (enabled: boolean) => {
-        const guestId = enabled ? `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` : null;
-        
+        const guestId = enabled
+          ? `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          : null;
+
         set({
           isGuestMode: enabled,
           guestId,

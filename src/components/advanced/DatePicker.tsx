@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Button, Card, THEME } from '../ui';
 
 interface DatePickerProps {
@@ -90,8 +83,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (mode === 'date') {
       return date.toDateString() === selectedDate.toDateString();
     } else if (mode === 'time') {
-      return date.getHours() === selectedDate.getHours() && 
-             date.getMinutes() === selectedDate.getMinutes();
+      return (
+        date.getHours() === selectedDate.getHours() &&
+        date.getMinutes() === selectedDate.getMinutes()
+      );
     } else {
       return date.getTime() === selectedDate.getTime();
     }
@@ -130,15 +125,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               disabled={isPast}
             >
               <View style={styles.optionContent}>
-                <Text style={[
-                  styles.optionText,
-                  isSelected && styles.optionTextSelected,
-                  isPast && styles.optionTextPast,
-                ]}>
-                  {date.toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
+                <Text
+                  style={[
+                    styles.optionText,
+                    isSelected && styles.optionTextSelected,
+                    isPast && styles.optionTextPast,
+                  ]}
+                >
+                  {date.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
                   })}
                 </Text>
                 {isToday && (
@@ -166,20 +163,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           return (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.optionItem,
-                isSelected && styles.optionItemSelected,
-              ]}
+              style={[styles.optionItem, isSelected && styles.optionItemSelected]}
               onPress={() => {
                 const newDate = new Date(selectedDate);
                 newDate.setHours(time.getHours(), time.getMinutes(), 0, 0);
                 setSelectedDate(newDate);
               }}
             >
-              <Text style={[
-                styles.optionText,
-                isSelected && styles.optionTextSelected,
-              ]}>
+              <Text style={[styles.optionText, isSelected && styles.optionTextSelected]}>
                 {time.toLocaleTimeString('en-US', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -224,7 +215,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      
+
       <TouchableOpacity
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
@@ -235,12 +226,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <Text style={styles.triggerIcon}>📅</Text>
       </TouchableOpacity>
 
-      <Modal
-        visible={isVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={handleCancel}
-      >
+      <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -279,7 +265,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
@@ -334,7 +320,7 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
     textAlign: 'center',
   },
@@ -378,7 +364,7 @@ const styles = StyleSheet.create({
 
   optionTextSelected: {
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
   },
 
   optionTextPast: {
@@ -395,13 +381,13 @@ const styles = StyleSheet.create({
   todayText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
   },
 
   checkmark: {
     fontSize: THEME.fontSize.lg,
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: THEME.fontWeight.bold as '700',
   },
 
   dateTimeContainer: {
@@ -416,7 +402,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold,
+    fontWeight: THEME.fontWeight.semibold as '600',
     color: THEME.colors.text,
     textAlign: 'center',
     paddingVertical: THEME.spacing.sm,

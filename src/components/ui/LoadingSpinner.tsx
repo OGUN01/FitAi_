@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  ViewStyle,
-} from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet, ViewStyle } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -50,14 +44,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   text: {
     marginTop: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
-  
+
   overlay: {
     position: 'absolute',
     top: 0,
@@ -69,7 +63,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
   },
-  
+
   overlayContent: {
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -78,7 +72,7 @@ const styles = StyleSheet.create({
     minWidth: rw(120),
     ...THEME.shadows.lg,
   },
-  
+
   overlayText: {
     marginTop: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.md,

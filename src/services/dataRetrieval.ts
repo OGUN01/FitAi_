@@ -49,24 +49,23 @@ class DataRetrievalService {
     console.log('📊 getTodaysData - Today is:', todayName);
 
     // Get today's workout
-    const todaysWorkout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
-      workout => workout.dayOfWeek === todayName
-    ) || null;
+    const todaysWorkout =
+      fitnessStore.weeklyWorkoutPlan?.workouts.find((workout) => workout.dayOfWeek === todayName) ||
+      null;
 
     // Get today's meals
-    const todaysMeals = nutritionStore.weeklyMealPlan?.meals.filter(
-      meal => meal.dayOfWeek === todayName
-    ) || [];
+    const todaysMeals =
+      nutritionStore.weeklyMealPlan?.meals.filter((meal) => meal.dayOfWeek === todayName) || [];
 
-    console.log('📊 getTodaysData - Today\'s meals:', {
+    console.log("📊 getTodaysData - Today's meals:", {
       count: todaysMeals.length,
-      meals: todaysMeals.map(m => ({
+      meals: todaysMeals.map((m) => ({
         id: m.id,
         name: m.name,
         type: m.type,
         totalCalories: m.totalCalories,
-        dayOfWeek: m.dayOfWeek
-      }))
+        dayOfWeek: m.dayOfWeek,
+      })),
     });
 
     // Calculate progress
@@ -74,7 +73,7 @@ class DataRetrievalService {
       ? fitnessStore.getWorkoutProgress(todaysWorkout.id)?.progress || 0
       : 0;
 
-    const mealsCompleted = todaysMeals.filter(meal => {
+    const mealsCompleted = todaysMeals.filter((meal) => {
       const progress = nutritionStore.getMealProgress(meal.id);
       console.log(`📊 Meal ${meal.name} progress:`, progress);
       return progress?.progress === 100;
@@ -89,15 +88,16 @@ class DataRetrievalService {
       return total;
     }, 0);
 
-    const targetCalories = todaysMeals.reduce((total, meal) =>
-      total + (meal.totalCalories || 0), 0
+    const targetCalories = todaysMeals.reduce(
+      (total, meal) => total + (meal.totalCalories || 0),
+      0
     );
 
     console.log('📊 getTodaysData - Final calculations:', {
       mealsCompleted,
       totalMeals: todaysMeals.length,
       caloriesConsumed,
-      targetCalories
+      targetCalories,
     });
 
     return {
@@ -121,40 +121,41 @@ class DataRetrievalService {
     // Calculate workout progress
     const totalWorkouts = fitnessStore.weeklyWorkoutPlan?.workouts.length || 0;
     const workoutsCompleted = Object.values(fitnessStore.workoutProgress).filter(
-      progress => progress.progress === 100
+      (progress) => progress.progress === 100
     ).length;
 
     // Calculate meal progress
     const totalMeals = nutritionStore.weeklyMealPlan?.meals.length || 0;
     const mealsCompleted = Object.values(nutritionStore.mealProgress).filter(
-      progress => progress.progress === 100
+      (progress) => progress.progress === 100
     ).length;
 
     // Calculate average calories
     const completedMealProgresses = Object.values(nutritionStore.mealProgress).filter(
-      progress => progress.progress === 100
+      (progress) => progress.progress === 100
     );
     const totalCalories = completedMealProgresses.reduce((total, progress) => {
-      const meal = nutritionStore.weeklyMealPlan?.meals.find(m => m.id === progress.mealId);
+      const meal = nutritionStore.weeklyMealPlan?.meals.find((m) => m.id === progress.mealId);
       return total + (meal?.totalCalories || 0);
     }, 0);
-    const averageCalories = completedMealProgresses.length > 0 
-      ? Math.round(totalCalories / completedMealProgresses.length)
-      : 0;
+    const averageCalories =
+      completedMealProgresses.length > 0
+        ? Math.round(totalCalories / completedMealProgresses.length)
+        : 0;
 
     // Calculate streak (simplified - consecutive days with completed activities)
     const streak = this.calculateStreak();
 
     // Get last activity dates
     const workoutDates = Object.values(fitnessStore.workoutProgress)
-      .filter(p => p.completedAt)
-      .map(p => p.completedAt!)
+      .filter((p) => p.completedAt)
+      .map((p) => p.completedAt!)
       .sort()
       .reverse();
-    
+
     const mealDates = Object.values(nutritionStore.mealProgress)
-      .filter(p => p.completedAt)
-      .map(p => p.completedAt!)
+      .filter((p) => p.completedAt)
+      .map((p) => p.completedAt!)
       .sort()
       .reverse();
 
@@ -179,9 +180,11 @@ class DataRetrievalService {
 
     // Add completed workouts
     Object.values(fitnessStore.workoutProgress)
-      .filter(progress => progress.progress === 100 && progress.completedAt)
-      .forEach(progress => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(w => w.id === progress.workoutId);
+      .filter((progress) => progress.progress === 100 && progress.completedAt)
+      .forEach((progress) => {
+        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+          (w) => w.id === progress.workoutId
+        );
         if (workout) {
           activities.push({
             id: `workout_${progress.workoutId}`,
@@ -196,9 +199,9 @@ class DataRetrievalService {
 
     // Add completed meals
     Object.values(nutritionStore.mealProgress)
-      .filter(progress => progress.progress === 100 && progress.completedAt)
-      .forEach(progress => {
-        const meal = nutritionStore.weeklyMealPlan?.meals.find(m => m.id === progress.mealId);
+      .filter((progress) => progress.progress === 100 && progress.completedAt)
+      .forEach((progress) => {
+        const meal = nutritionStore.weeklyMealPlan?.meals.find((m) => m.id === progress.mealId);
         if (meal) {
           // Ensure meal name is a string and handle potential array/object issues
           let mealName = meal.name;
@@ -233,22 +236,22 @@ class DataRetrievalService {
     const completionDates = new Set<string>();
 
     Object.values(fitnessStore.workoutProgress)
-      .filter(p => p.completedAt)
-      .forEach(p => {
+      .filter((p) => p.completedAt)
+      .forEach((p) => {
         const date = new Date(p.completedAt!).toDateString();
         completionDates.add(date);
       });
 
     Object.values(nutritionStore.mealProgress)
-      .filter(p => p.completedAt)
-      .forEach(p => {
+      .filter((p) => p.completedAt)
+      .forEach((p) => {
         const date = new Date(p.completedAt!).toDateString();
         completionDates.add(date);
       });
 
     // Convert to sorted array of dates
     const sortedDates = Array.from(completionDates)
-      .map(dateStr => new Date(dateStr))
+      .map((dateStr) => new Date(dateStr))
       .sort((a, b) => b.getTime() - a.getTime());
 
     if (sortedDates.length === 0) return 0;
@@ -261,9 +264,9 @@ class DataRetrievalService {
     for (let i = 0; i < sortedDates.length; i++) {
       const date = new Date(sortedDates[i]);
       date.setHours(0, 0, 0, 0);
-      
+
       const daysDifference = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      
+
       if (daysDifference === streak) {
         streak++;
       } else {
@@ -277,11 +280,13 @@ class DataRetrievalService {
   // Get calories burned from completed workouts
   static getTotalCaloriesBurned(): number {
     const fitnessStore = useFitnessStore.getState();
-    
+
     return Object.values(fitnessStore.workoutProgress)
-      .filter(progress => progress.progress === 100)
+      .filter((progress) => progress.progress === 100)
       .reduce((total, progress) => {
-        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(w => w.id === progress.workoutId);
+        const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
+          (w) => w.id === progress.workoutId
+        );
         return total + (workout?.estimatedCalories || 0);
       }, 0);
   }
@@ -290,7 +295,7 @@ class DataRetrievalService {
   static hasDataForHome(): boolean {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
-    
+
     return !!(fitnessStore.weeklyWorkoutPlan || nutritionStore.weeklyMealPlan);
   }
 
@@ -317,8 +322,8 @@ class DataRetrievalService {
     const todayName = dayNames[today.getDay()];
 
     // Check if today is a rest day
-    const isRestDay = hasWeeklyPlan &&
-      fitnessStore.weeklyWorkoutPlan?.restDays?.includes(todayName) || false;
+    const isRestDay =
+      (hasWeeklyPlan && fitnessStore.weeklyWorkoutPlan?.restDays?.includes(todayName)) || false;
 
     // Determine workout type and day status
     let workoutType = 'none';
@@ -331,9 +336,9 @@ class DataRetrievalService {
       } else if (workout) {
         workoutType = workout.category || 'workout';
         // Capitalize first letter and make it more readable
-        dayStatus = workout.category ?
-          workout.category.charAt(0).toUpperCase() + workout.category.slice(1) + ' Day' :
-          'Workout Day';
+        dayStatus = workout.category
+          ? workout.category.charAt(0).toUpperCase() + workout.category.slice(1) + ' Day'
+          : 'Workout Day';
       } else {
         // There's a plan but no workout for today (shouldn't happen, but handle it)
         workoutType = 'unknown';
@@ -361,12 +366,9 @@ class DataRetrievalService {
     try {
       const fitnessStore = useFitnessStore.getState();
       const nutritionStore = useNutritionStore.getState();
-      
-      await Promise.all([
-        fitnessStore.loadData(),
-        nutritionStore.loadData(),
-      ]);
-      
+
+      await Promise.all([fitnessStore.loadData(), nutritionStore.loadData()]);
+
       console.log('📂 All data loaded from stores');
     } catch (error) {
       console.error('❌ Failed to load data:', error);
@@ -377,10 +379,10 @@ class DataRetrievalService {
   static clearAllData(): void {
     const fitnessStore = useFitnessStore.getState();
     const nutritionStore = useNutritionStore.getState();
-    
+
     fitnessStore.clearData();
     nutritionStore.clearData();
-    
+
     console.log('🗑️ All data cleared');
   }
 }

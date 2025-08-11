@@ -93,7 +93,9 @@ export const apiUtils = {
    */
   async checkAuthentication(): Promise<boolean> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       return !!session;
     } catch {
       return false;
@@ -105,7 +107,9 @@ export const apiUtils = {
    */
   async getCurrentUserId(): Promise<string | null> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       return session?.user?.id || null;
     } catch {
       return null;
@@ -127,14 +131,14 @@ export const apiUtils = {
         return await fn();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error('Unknown error');
-        
+
         if (i === maxRetries) {
           throw lastError;
         }
 
         // Exponential backoff
         const delay = baseDelay * Math.pow(2, i);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -160,13 +164,13 @@ export const apiUtils = {
    */
   convertWeight(weight: number, fromUnit: 'kg' | 'lbs', toUnit: 'kg' | 'lbs'): number {
     if (fromUnit === toUnit) return weight;
-    
+
     if (fromUnit === 'kg' && toUnit === 'lbs') {
       return weight * 2.20462;
     } else if (fromUnit === 'lbs' && toUnit === 'kg') {
       return weight / 2.20462;
     }
-    
+
     return weight;
   },
 
@@ -175,13 +179,13 @@ export const apiUtils = {
    */
   convertHeight(height: number, fromUnit: 'cm' | 'ft', toUnit: 'cm' | 'ft'): number {
     if (fromUnit === toUnit) return height;
-    
+
     if (fromUnit === 'cm' && toUnit === 'ft') {
       return height / 30.48;
     } else if (fromUnit === 'ft' && toUnit === 'cm') {
       return height * 30.48;
     }
-    
+
     return height;
   },
 
@@ -216,9 +220,9 @@ export const apiUtils = {
     // Calculate BMR
     let bmr: number;
     if (gender === 'male') {
-      bmr = 88.362 + (13.397 * weightKg) + (4.799 * heightCm) - (5.677 * age);
+      bmr = 88.362 + 13.397 * weightKg + 4.799 * heightCm - 5.677 * age;
     } else {
-      bmr = 447.593 + (9.247 * weightKg) + (3.098 * heightCm) - (4.330 * age);
+      bmr = 447.593 + 9.247 * weightKg + 3.098 * heightCm - 4.33 * age;
     }
 
     // Apply activity multiplier
@@ -307,7 +311,7 @@ export const apiUtils = {
       if (!inThrottle) {
         func(...args);
         inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
+        setTimeout(() => (inThrottle = false), limit);
       }
     };
   },
@@ -363,10 +367,7 @@ export class FitAIApi {
    */
   async healthCheck(): Promise<ApiResponse<{ status: string; timestamp: string }>> {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('count')
-        .limit(1);
+      const { data, error } = await supabase.from('profiles').select('count').limit(1);
 
       if (error) {
         return apiUtils.createErrorResponse('Database connection failed');

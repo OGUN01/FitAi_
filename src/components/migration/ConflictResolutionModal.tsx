@@ -45,16 +45,14 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
       userChoice: true,
     };
 
-    setResolutions(prev => new Map(prev.set(conflictId, newResolution)));
+    setResolutions((prev) => new Map(prev.set(conflictId, newResolution)));
   };
 
   const handleResolveAll = () => {
     if (resolutions.size !== conflicts.length) {
-      Alert.alert(
-        'Incomplete Resolution',
-        'Please resolve all conflicts before proceeding.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Incomplete Resolution', 'Please resolve all conflicts before proceeding.', [
+        { text: 'OK' },
+      ]);
       return;
     }
 
@@ -72,7 +70,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
           text: 'Use Local',
           style: 'destructive',
           onPress: () => {
-            const allLocalResolutions = conflicts.map(conflict => ({
+            const allLocalResolutions = conflicts.map((conflict) => ({
               conflictId: conflict.id,
               resolution: 'use_local' as const,
               userChoice: true,
@@ -94,7 +92,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
           text: 'Use Cloud',
           style: 'destructive',
           onPress: () => {
-            const allRemoteResolutions = conflicts.map(conflict => ({
+            const allRemoteResolutions = conflicts.map((conflict) => ({
               conflictId: conflict.id,
               resolution: 'use_remote' as const,
               userChoice: true,
@@ -156,8 +154,8 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
         <View style={styles.header}>
           <Text style={styles.title}>Resolve Data Conflicts</Text>
           <Text style={styles.subtitle}>
-            We found some differences between your local and cloud data. 
-            Please choose which version to keep for each item.
+            We found some differences between your local and cloud data. Please choose which version
+            to keep for each item.
           </Text>
         </View>
 
@@ -165,15 +163,15 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {conflicts.map((conflict, index) => {
             const resolution = resolutions.get(conflict.id);
-            
+
             return (
               <Card key={conflict.id} style={styles.conflictCard}>
                 <View style={styles.conflictHeader}>
-                  <Text style={styles.conflictTitle}>
-                    {getFieldDisplayName(conflict.field)}
-                  </Text>
+                  <Text style={styles.conflictTitle}>{getFieldDisplayName(conflict.field)}</Text>
                   <Text style={styles.conflictType}>
-                    {conflict.conflictType === 'value_mismatch' ? 'Different Values' : 'Version Conflict'}
+                    {conflict.conflictType === 'value_mismatch'
+                      ? 'Different Values'
+                      : 'Version Conflict'}
                   </Text>
                 </View>
 
@@ -181,9 +179,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
                 <View style={styles.valueSection}>
                   <Text style={styles.valueLabel}>📱 Your Device</Text>
                   <View style={styles.valueContainer}>
-                    <Text style={styles.valueText}>
-                      {formatValue(conflict.localValue)}
-                    </Text>
+                    <Text style={styles.valueText}>{formatValue(conflict.localValue)}</Text>
                     <Text style={styles.timestampText}>
                       Updated: {new Date(conflict.localTimestamp).toLocaleString()}
                     </Text>
@@ -195,10 +191,12 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
                     ]}
                     onPress={() => handleConflictResolution(conflict.id, 'use_local')}
                   >
-                    <Text style={[
-                      styles.choiceButtonText,
-                      resolution?.resolution === 'use_local' && styles.choiceButtonTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.choiceButtonText,
+                        resolution?.resolution === 'use_local' && styles.choiceButtonTextSelected,
+                      ]}
+                    >
                       Use This
                     </Text>
                   </TouchableOpacity>
@@ -208,9 +206,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
                 <View style={styles.valueSection}>
                   <Text style={styles.valueLabel}>☁️ Cloud</Text>
                   <View style={styles.valueContainer}>
-                    <Text style={styles.valueText}>
-                      {formatValue(conflict.remoteValue)}
-                    </Text>
+                    <Text style={styles.valueText}>{formatValue(conflict.remoteValue)}</Text>
                     <Text style={styles.timestampText}>
                       Updated: {new Date(conflict.remoteTimestamp).toLocaleString()}
                     </Text>
@@ -222,10 +218,12 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
                     ]}
                     onPress={() => handleConflictResolution(conflict.id, 'use_remote')}
                   >
-                    <Text style={[
-                      styles.choiceButtonText,
-                      resolution?.resolution === 'use_remote' && styles.choiceButtonTextSelected,
-                    ]}>
+                    <Text
+                      style={[
+                        styles.choiceButtonText,
+                        resolution?.resolution === 'use_remote' && styles.choiceButtonTextSelected,
+                      ]}
+                    >
                       Use This
                     </Text>
                   </TouchableOpacity>
@@ -239,17 +237,11 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
         <View style={styles.actions}>
           {/* Quick Actions */}
           <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={handleUseAllLocal}
-            >
+            <TouchableOpacity style={styles.quickActionButton} onPress={handleUseAllLocal}>
               <Text style={styles.quickActionText}>Use All Local</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={handleUseAllRemote}
-            >
+
+            <TouchableOpacity style={styles.quickActionButton} onPress={handleUseAllRemote}>
               <Text style={styles.quickActionText}>Use All Cloud</Text>
             </TouchableOpacity>
           </View>
@@ -262,7 +254,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
               variant="outline"
               style={styles.cancelButton}
             />
-            
+
             <Button
               title={`Resolve ${resolutions.size}/${conflicts.length}`}
               onPress={handleResolveAll}

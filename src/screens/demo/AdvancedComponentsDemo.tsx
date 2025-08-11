@@ -1,22 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
-import { 
-  ProgressChart, 
-  NutritionChart, 
-  WorkoutIntensityChart 
-} from '../../components/charts';
-import { 
-  LoadingAnimation, 
-  ProgressAnimation 
-} from '../../components/animations';
+import { ProgressChart, NutritionChart, WorkoutIntensityChart } from '../../components/charts';
+import { LoadingAnimation, ProgressAnimation } from '../../components/animations';
 import {
   Camera,
   ImagePicker,
@@ -30,11 +16,7 @@ import {
   HapticFeedback,
   useHapticFeedback,
 } from '../../components/advanced';
-import {
-  WorkoutDetail,
-  ExerciseDetail,
-  MealDetail,
-} from '../details';
+import { WorkoutDetail, ExerciseDetail, MealDetail } from '../details';
 
 export const AdvancedComponentsDemo: React.FC = () => {
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
@@ -142,29 +124,15 @@ export const AdvancedComponentsDemo: React.FC = () => {
     switch (activeDemo) {
       case 'progress':
         return (
-          <ProgressChart
-            data={progressData}
-            metric="weight"
-            title="Weight Progress"
-            unit="kg"
-          />
+          <ProgressChart data={progressData} metric="weight" title="Weight Progress" unit="kg" />
         );
-      
+
       case 'nutrition':
-        return (
-          <NutritionChart
-            data={nutritionData}
-            targetCalories={2000}
-          />
-        );
-      
+        return <NutritionChart data={nutritionData} targetCalories={2000} />;
+
       case 'intensity':
-        return (
-          <WorkoutIntensityChart
-            data={workoutData}
-          />
-        );
-      
+        return <WorkoutIntensityChart data={workoutData} />;
+
       case 'loading':
         return (
           <View style={styles.animationDemo}>
@@ -174,7 +142,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
             <LoadingAnimation type="wave" size="md" text="Syncing..." />
           </View>
         );
-      
+
       case 'progress-anim':
         return (
           <View style={styles.animationDemo}>
@@ -277,11 +245,29 @@ export const AdvancedComponentsDemo: React.FC = () => {
           <View style={styles.formDemo}>
             <SwipeGesture
               leftActions={[
-                { id: 'edit', label: 'Edit', icon: '✏️', color: THEME.colors.primary, onPress: () => alert('Edit') },
-                { id: 'share', label: 'Share', icon: '📤', color: THEME.colors.info, onPress: () => alert('Share') },
+                {
+                  id: 'edit',
+                  label: 'Edit',
+                  icon: '✏️',
+                  color: THEME.colors.primary,
+                  onPress: () => alert('Edit'),
+                },
+                {
+                  id: 'share',
+                  label: 'Share',
+                  icon: '📤',
+                  color: THEME.colors.info,
+                  onPress: () => alert('Share'),
+                },
               ]}
               rightActions={[
-                { id: 'delete', label: 'Delete', icon: '🗑️', color: THEME.colors.error, onPress: () => alert('Delete') },
+                {
+                  id: 'delete',
+                  label: 'Delete',
+                  icon: '🗑️',
+                  color: THEME.colors.error,
+                  onPress: () => alert('Delete'),
+                },
               ]}
             >
               <Card style={styles.swipeCard}>
@@ -296,7 +282,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
         return (
           <PullToRefresh
             onRefresh={async () => {
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              await new Promise((resolve) => setTimeout(resolve, 2000));
               alert('Refreshed!');
             }}
             style={styles.pullRefreshDemo}
@@ -319,9 +305,20 @@ export const AdvancedComponentsDemo: React.FC = () => {
             <LongPressMenu
               menuItems={[
                 { id: 'edit', label: 'Edit Workout', icon: '✏️', onPress: () => alert('Edit') },
-                { id: 'duplicate', label: 'Duplicate', icon: '📋', onPress: () => alert('Duplicate') },
+                {
+                  id: 'duplicate',
+                  label: 'Duplicate',
+                  icon: '📋',
+                  onPress: () => alert('Duplicate'),
+                },
                 { id: 'share', label: 'Share', icon: '📤', onPress: () => alert('Share') },
-                { id: 'delete', label: 'Delete', icon: '🗑️', onPress: () => alert('Delete'), destructive: true },
+                {
+                  id: 'delete',
+                  label: 'Delete',
+                  icon: '🗑️',
+                  onPress: () => alert('Delete'),
+                  destructive: true,
+                },
               ]}
             >
               <Card style={styles.longPressCard}>
@@ -340,7 +337,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
             onStartWorkout={() => alert('Starting workout!')}
           />
         );
-      
+
       case 'exercise-detail':
         return (
           <ExerciseDetail
@@ -349,7 +346,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
             onStartExercise={() => alert('Starting exercise!')}
           />
         );
-      
+
       case 'meal-detail':
         return (
           <MealDetail
@@ -359,7 +356,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
             onDelete={() => alert('Deleting meal!')}
           />
         );
-      
+
       default:
         return null;
     }
@@ -381,7 +378,7 @@ export const AdvancedComponentsDemo: React.FC = () => {
           <Card key={section.id} style={styles.sectionCard}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
             <Text style={styles.sectionDescription}>{section.description}</Text>
-            
+
             <View style={styles.itemsContainer}>
               {section.items.map((item) => (
                 <TouchableOpacity
@@ -406,20 +403,18 @@ export const AdvancedComponentsDemo: React.FC = () => {
         ))}
 
         {/* Active Demo */}
-        {activeDemo && !['workout-detail', 'exercise-detail', 'meal-detail'].includes(activeDemo) && (
-          <Card style={styles.demoContainer}>
-            <View style={styles.demoHeader}>
-              <Text style={styles.demoTitle}>Live Demo</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setActiveDemo(null)}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            {renderDemo()}
-          </Card>
-        )}
+        {activeDemo &&
+          !['workout-detail', 'exercise-detail', 'meal-detail'].includes(activeDemo) && (
+            <Card style={styles.demoContainer}>
+              <View style={styles.demoHeader}>
+                <Text style={styles.demoTitle}>Live Demo</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setActiveDemo(null)}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              {renderDemo()}
+            </Card>
+          )}
       </ScrollView>
 
       {/* Camera Modal */}

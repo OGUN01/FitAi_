@@ -157,9 +157,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
                 transform: [
                   {
                     translateX: translateX.interpolate({
-                      inputRange: isLeft 
-                        ? [0, 80 * actions.length]
-                        : [-80 * actions.length, 0],
+                      inputRange: isLeft ? [0, 80 * actions.length] : [-80 * actions.length, 0],
                       outputRange: isLeft
                         ? [-80 * (actions.length - index), 0]
                         : [0, 80 * (actions.length - index)],
@@ -267,7 +265,7 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 12,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     textAlign: 'center',
   },
 });

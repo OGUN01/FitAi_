@@ -51,22 +51,18 @@ export const Input: React.FC<InputProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {label && (
-        <Text style={styles.label}>{label}</Text>
-      )}
-      
-      <View style={[
-        styles.inputContainer,
-        isFocused && styles.inputContainerFocused,
-        error && styles.inputContainerError,
-        disabled && styles.inputContainerDisabled,
-      ]}>
-        {leftIcon && (
-          <View style={styles.leftIconContainer}>
-            {leftIcon}
-          </View>
-        )}
-        
+      {label && <Text style={styles.label}>{label}</Text>}
+
+      <View
+        style={[
+          styles.inputContainer,
+          isFocused && styles.inputContainerFocused,
+          error && styles.inputContainerError,
+          disabled && styles.inputContainerDisabled,
+        ]}
+      >
+        {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
+
         <TextInput
           style={[
             styles.input,
@@ -88,7 +84,7 @@ export const Input: React.FC<InputProps> = ({
           numberOfLines={numberOfLines}
           selectionColor={THEME.colors.primary}
         />
-        
+
         {rightIcon && (
           <TouchableOpacity
             style={styles.rightIconContainer}
@@ -99,10 +95,8 @@ export const Input: React.FC<InputProps> = ({
           </TouchableOpacity>
         )}
       </View>
-      
-      {error && (
-        <Text style={styles.errorText}>{error}</Text>
-      )}
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -111,14 +105,14 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   label: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -128,21 +122,21 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.border,
     minHeight: rh(48),
   },
-  
+
   inputContainerFocused: {
     borderColor: ResponsiveTheme.colors.primary,
     ...THEME.shadows.sm,
   },
-  
+
   inputContainerError: {
     borderColor: ResponsiveTheme.colors.error,
   },
-  
+
   inputContainerDisabled: {
     opacity: 0.6,
     backgroundColor: ResponsiveTheme.colors.surface,
   },
-  
+
   input: {
     flex: 1,
     fontSize: ResponsiveTheme.fontSize.md,
@@ -150,30 +144,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.md,
   },
-  
+
   inputWithLeftIcon: {
     paddingLeft: ResponsiveTheme.spacing.sm,
   },
-  
+
   inputWithRightIcon: {
     paddingRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   inputMultiline: {
     textAlignVertical: 'top',
     minHeight: rh(80),
   },
-  
+
   leftIconContainer: {
     paddingLeft: ResponsiveTheme.spacing.md,
     paddingRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   rightIconContainer: {
     paddingRight: ResponsiveTheme.spacing.md,
     paddingLeft: ResponsiveTheme.spacing.sm,
   },
-  
+
   errorText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.error,

@@ -31,10 +31,12 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   };
 
   const EyeIcon = () => (
-    <Text style={{
-      fontSize: 18,
-      color: THEME.colors.textSecondary,
-    }}>
+    <Text
+      style={{
+        fontSize: 18,
+        color: THEME.colors.textSecondary,
+      }}
+    >
       {isVisible ? '👁️' : '🙈'}
     </Text>
   );

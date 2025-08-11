@@ -94,12 +94,12 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
 
       // Check if migration is needed
       const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(userId);
-      
+
       if (!migrationNeeded) {
         setProgress({
           step: 'complete',
           progress: 100,
-          message: 'No migration needed - you\'re all set!',
+          message: "No migration needed - you're all set!",
           isComplete: true,
           hasErrors: false,
         });
@@ -108,7 +108,7 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
 
       // Start the migration
       const result = await migrationManager.startProfileMigration(userId);
-      
+
       if (!result.success) {
         setProgress({
           step: 'error',
@@ -181,12 +181,7 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="none"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent={true} animationType="none" onRequestClose={onCancel}>
       <Animated.View
         style={[
           styles.overlay,
@@ -211,12 +206,8 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
                 <>
                   {/* Step Icon and Title */}
                   <View style={styles.stepInfo}>
-                    <Text style={styles.stepIcon}>
-                      {getStepIcon(progress.step)}
-                    </Text>
-                    <Text style={styles.stepTitle}>
-                      {getStepTitle(progress.step)}
-                    </Text>
+                    <Text style={styles.stepIcon}>{getStepIcon(progress.step)}</Text>
+                    <Text style={styles.stepTitle}>{getStepTitle(progress.step)}</Text>
                   </View>
 
                   {/* Progress Bar */}
@@ -230,26 +221,26 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
                               inputRange: [0, 1],
                               outputRange: ['0%', '100%'],
                             }),
-                            backgroundColor: hasErrors 
-                              ? THEME.colors.error 
-                              : isComplete 
-                                ? THEME.colors.success 
+                            backgroundColor: hasErrors
+                              ? THEME.colors.error
+                              : isComplete
+                                ? THEME.colors.success
                                 : THEME.colors.primary,
                           },
                         ]}
                       />
                     </View>
-                    <Text style={styles.progressText}>
-                      {Math.round(progress.progress)}%
-                    </Text>
+                    <Text style={styles.progressText}>{Math.round(progress.progress)}%</Text>
                   </View>
 
                   {/* Status Message */}
-                  <Text style={[
-                    styles.statusMessage,
-                    hasErrors && styles.errorMessage,
-                    isComplete && !hasErrors && styles.successMessage,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.statusMessage,
+                      hasErrors && styles.errorMessage,
+                      isComplete && !hasErrors && styles.successMessage,
+                    ]}
+                  >
                     {progress.message}
                   </Text>
                 </>
@@ -266,20 +257,19 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
                   ]}
                   onPress={() => onComplete(!hasErrors)}
                 >
-                  <Text style={[
-                    styles.actionButtonText,
-                    hasErrors ? styles.retryButtonText : styles.continueButtonText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.actionButtonText,
+                      hasErrors ? styles.retryButtonText : styles.continueButtonText,
+                    ]}
+                  >
                     {hasErrors ? 'Try Again' : 'Continue'}
                   </Text>
                 </TouchableOpacity>
               )}
 
               {!isComplete && onCancel && (
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={onCancel}
-                >
+                <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
               )}
@@ -310,7 +300,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     borderRadius: THEME.borderRadius.xl,
     padding: THEME.spacing.xl,
-    width: SCREEN_WIDTH - (THEME.spacing.lg * 2),
+    width: SCREEN_WIDTH - THEME.spacing.lg * 2,
     maxWidth: 400,
     shadowColor: '#000',
     shadowOffset: {

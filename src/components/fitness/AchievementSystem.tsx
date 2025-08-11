@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Card, THEME } from '../ui';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../services/supabase';
@@ -70,7 +63,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     const newAchievements: Omit<Achievement, 'id' | 'earned_at'>[] = [];
 
     // First Workout Achievement
-    if (workoutStats.totalWorkouts >= 1 && !achievements.find(a => a.type === 'first_workout')) {
+    if (workoutStats.totalWorkouts >= 1 && !achievements.find((a) => a.type === 'first_workout')) {
       newAchievements.push({
         user_id: user.id,
         type: 'first_workout',
@@ -83,14 +76,45 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
 
     // Workout Milestones
     const workoutMilestones = [
-      { count: 5, type: 'workouts_5', title: 'Getting Started', description: 'Completed 5 workouts', icon: '🌟', value: 25 },
-      { count: 10, type: 'workouts_10', title: 'Consistent', description: 'Completed 10 workouts', icon: '💪', value: 50 },
-      { count: 25, type: 'workouts_25', title: 'Dedicated', description: 'Completed 25 workouts', icon: '🏆', value: 100 },
-      { count: 50, type: 'workouts_50', title: 'Committed', description: 'Completed 50 workouts', icon: '🥇', value: 200 },
+      {
+        count: 5,
+        type: 'workouts_5',
+        title: 'Getting Started',
+        description: 'Completed 5 workouts',
+        icon: '🌟',
+        value: 25,
+      },
+      {
+        count: 10,
+        type: 'workouts_10',
+        title: 'Consistent',
+        description: 'Completed 10 workouts',
+        icon: '💪',
+        value: 50,
+      },
+      {
+        count: 25,
+        type: 'workouts_25',
+        title: 'Dedicated',
+        description: 'Completed 25 workouts',
+        icon: '🏆',
+        value: 100,
+      },
+      {
+        count: 50,
+        type: 'workouts_50',
+        title: 'Committed',
+        description: 'Completed 50 workouts',
+        icon: '🥇',
+        value: 200,
+      },
     ];
 
     for (const milestone of workoutMilestones) {
-      if (workoutStats.totalWorkouts >= milestone.count && !achievements.find(a => a.type === milestone.type)) {
+      if (
+        workoutStats.totalWorkouts >= milestone.count &&
+        !achievements.find((a) => a.type === milestone.type)
+      ) {
         newAchievements.push({
           user_id: user.id,
           type: milestone.type,
@@ -104,13 +128,37 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
 
     // Calorie Burn Achievements
     const calorieMilestones = [
-      { calories: 1000, type: 'calories_1k', title: 'Calorie Crusher', description: 'Burned 1,000 calories', icon: '🔥', value: 50 },
-      { calories: 5000, type: 'calories_5k', title: 'Inferno', description: 'Burned 5,000 calories', icon: '🌋', value: 150 },
-      { calories: 10000, type: 'calories_10k', title: 'Furnace', description: 'Burned 10,000 calories', icon: '⚡', value: 300 },
+      {
+        calories: 1000,
+        type: 'calories_1k',
+        title: 'Calorie Crusher',
+        description: 'Burned 1,000 calories',
+        icon: '🔥',
+        value: 50,
+      },
+      {
+        calories: 5000,
+        type: 'calories_5k',
+        title: 'Inferno',
+        description: 'Burned 5,000 calories',
+        icon: '🌋',
+        value: 150,
+      },
+      {
+        calories: 10000,
+        type: 'calories_10k',
+        title: 'Furnace',
+        description: 'Burned 10,000 calories',
+        icon: '⚡',
+        value: 300,
+      },
     ];
 
     for (const milestone of calorieMilestones) {
-      if (workoutStats.totalCalories >= milestone.calories && !achievements.find(a => a.type === milestone.type)) {
+      if (
+        workoutStats.totalCalories >= milestone.calories &&
+        !achievements.find((a) => a.type === milestone.type)
+      ) {
         newAchievements.push({
           user_id: user.id,
           type: milestone.type,
@@ -123,7 +171,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     }
 
     // Variety Achievement
-    if (Object.keys(workoutStats.workoutsByType).length >= 3 && !achievements.find(a => a.type === 'variety')) {
+    if (
+      Object.keys(workoutStats.workoutsByType).length >= 3 &&
+      !achievements.find((a) => a.type === 'variety')
+    ) {
       newAchievements.push({
         user_id: user.id,
         type: 'variety',
@@ -137,19 +188,15 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     // Award new achievements
     if (newAchievements.length > 0) {
       try {
-        const { error } = await supabase
-          .from('achievements')
-          .insert(newAchievements);
+        const { error } = await supabase.from('achievements').insert(newAchievements);
 
         if (!error) {
           // Show achievement notification
-          const titles = newAchievements.map(a => a.title).join(', ');
-          Alert.alert(
-            '🎉 Achievement Unlocked!',
-            `Congratulations! You earned: ${titles}`,
-            [{ text: 'Awesome!' }]
-          );
-          
+          const titles = newAchievements.map((a) => a.title).join(', ');
+          Alert.alert('🎉 Achievement Unlocked!', `Congratulations! You earned: ${titles}`, [
+            { text: 'Awesome!' },
+          ]);
+
           // Reload achievements
           loadAchievements();
         }
@@ -218,7 +265,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
                 <View style={styles.achievementIcon}>
                   <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
                 </View>
-                
+
                 <View style={styles.achievementContent}>
                   <Text style={styles.achievementTitle}>{achievement.title}</Text>
                   <Text style={styles.achievementDescription}>{achievement.description}</Text>
@@ -226,7 +273,7 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
                     Earned on {formatDate(achievement.earned_at)}
                   </Text>
                 </View>
-                
+
                 <View style={styles.achievementValue}>
                   <Text style={styles.achievementPoints}>+{achievement.value}</Text>
                 </View>

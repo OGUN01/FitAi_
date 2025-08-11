@@ -11,7 +11,7 @@ import {
   LocalStorageSchema,
   ValidationResult,
   SyncStatus,
-  UserPreferences
+  UserPreferences,
 } from '../types/localData';
 
 // ============================================================================
@@ -117,7 +117,7 @@ export class CrudOperationsService {
         workoutId: session.workoutId,
         duration: session.duration,
         calories: session.caloriesBurned,
-        exerciseCount: session.exercises?.length || 0
+        exerciseCount: session.exercises?.length || 0,
       });
 
       // Ensure data layer is initialized before writing
@@ -155,7 +155,7 @@ export class CrudOperationsService {
       // Ensure data layer is initialized before reading
       await this.initialize();
       const sessions = await dataManager.getWorkoutSessions();
-      return sessions.find(session => session.id === sessionId) || null;
+      return sessions.find((session) => session.id === sessionId) || null;
     } catch (error) {
       console.error('Failed to read workout session:', error);
       return null;
@@ -177,8 +177,8 @@ export class CrudOperationsService {
   async deleteWorkoutSession(sessionId: string): Promise<void> {
     try {
       // For now, we'll mark as deleted rather than actually removing
-      await this.updateWorkoutSession(sessionId, { 
-        notes: (await this.readWorkoutSession(sessionId))?.notes + ' [DELETED]' || '[DELETED]'
+      await this.updateWorkoutSession(sessionId, {
+        notes: (await this.readWorkoutSession(sessionId))?.notes + ' [DELETED]' || '[DELETED]',
       });
       console.log(`Workout session ${sessionId} marked as deleted`);
     } catch (error) {
@@ -198,7 +198,7 @@ export class CrudOperationsService {
         userId: mealLog.userId || 'local-user',
         mealType: mealLog.mealType,
         foodCount: mealLog.foods?.length || 0,
-        calories: mealLog.totalCalories
+        calories: mealLog.totalCalories,
       });
 
       // Ensure data layer is initialized before writing
@@ -236,7 +236,7 @@ export class CrudOperationsService {
       // Ensure data layer is initialized before reading
       await this.initialize();
       const logs = await dataManager.getMealLogs();
-      return logs.find(log => log.id === logId) || null;
+      return logs.find((log) => log.id === logId) || null;
     } catch (error) {
       console.error('Failed to read meal log:', error);
       return null;
@@ -269,8 +269,8 @@ export class CrudOperationsService {
   async deleteMealLog(logId: string): Promise<void> {
     try {
       // For now, we'll mark as deleted rather than actually removing
-      await this.updateMealLog(logId, { 
-        notes: (await this.readMealLog(logId))?.notes + ' [DELETED]' || '[DELETED]'
+      await this.updateMealLog(logId, {
+        notes: (await this.readMealLog(logId))?.notes + ' [DELETED]' || '[DELETED]',
       });
       console.log(`Meal log ${logId} marked as deleted`);
     } catch (error) {
@@ -311,14 +311,17 @@ export class CrudOperationsService {
       // Ensure data layer is initialized before reading
       await this.initialize();
       const measurements = await dataManager.getBodyMeasurements();
-      return measurements.find(measurement => measurement.id === measurementId) || null;
+      return measurements.find((measurement) => measurement.id === measurementId) || null;
     } catch (error) {
       console.error('Failed to read body measurement:', error);
       return null;
     }
   }
 
-  async updateBodyMeasurement(measurementId: string, updates: Partial<BodyMeasurement>): Promise<void> {
+  async updateBodyMeasurement(
+    measurementId: string,
+    updates: Partial<BodyMeasurement>
+  ): Promise<void> {
     try {
       const existing = await this.readBodyMeasurement(measurementId);
       if (!existing) {
@@ -342,8 +345,8 @@ export class CrudOperationsService {
   async deleteBodyMeasurement(measurementId: string): Promise<void> {
     try {
       // For now, we'll mark as deleted rather than actually removing
-      await this.updateBodyMeasurement(measurementId, { 
-        notes: (await this.readBodyMeasurement(measurementId))?.notes + ' [DELETED]' || '[DELETED]'
+      await this.updateBodyMeasurement(measurementId, {
+        notes: (await this.readBodyMeasurement(measurementId))?.notes + ' [DELETED]' || '[DELETED]',
       });
       console.log(`Body measurement ${measurementId} marked as deleted`);
     } catch (error) {
@@ -356,7 +359,9 @@ export class CrudOperationsService {
   // BATCH OPERATIONS
   // ============================================================================
 
-  async batchCreateWorkoutSessions(sessions: WorkoutSession[]): Promise<{ success: number; failed: number; errors: string[] }> {
+  async batchCreateWorkoutSessions(
+    sessions: WorkoutSession[]
+  ): Promise<{ success: number; failed: number; errors: string[] }> {
     const result = { success: 0, failed: 0, errors: [] as string[] };
 
     for (const session of sessions) {
@@ -372,7 +377,9 @@ export class CrudOperationsService {
     return result;
   }
 
-  async batchCreateMealLogs(logs: MealLog[]): Promise<{ success: number; failed: number; errors: string[] }> {
+  async batchCreateMealLogs(
+    logs: MealLog[]
+  ): Promise<{ success: number; failed: number; errors: string[] }> {
     const result = { success: 0, failed: 0, errors: [] as string[] };
 
     for (const log of logs) {
@@ -398,7 +405,9 @@ export class CrudOperationsService {
       if (!schema) {
         return {
           isValid: false,
-          errors: [{ field: 'schema', message: 'No data found', code: 'NO_DATA', severity: 'error' }],
+          errors: [
+            { field: 'schema', message: 'No data found', code: 'NO_DATA', severity: 'error' },
+          ],
           warnings: [],
         };
       }
@@ -409,7 +418,14 @@ export class CrudOperationsService {
       console.error('Failed to validate data:', error);
       return {
         isValid: false,
-        errors: [{ field: 'validation', message: 'Validation failed', code: 'VALIDATION_ERROR', severity: 'error' }],
+        errors: [
+          {
+            field: 'validation',
+            message: 'Validation failed',
+            code: 'VALIDATION_ERROR',
+            severity: 'error',
+          },
+        ],
         warnings: [],
       };
     }
@@ -464,7 +480,6 @@ export class CrudOperationsService {
       throw error;
     }
   }
-
 
   // ============================================================================
   // UTILITY METHODS

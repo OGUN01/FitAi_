@@ -30,7 +30,7 @@ export class AuthFlowTester {
       console.log('🧪 Testing user registration...');
       const registrationResult = await this.testRegistration();
       results.push(registrationResult);
-      
+
       if (!registrationResult.success) {
         return results;
       }
@@ -39,7 +39,7 @@ export class AuthFlowTester {
       console.log('🧪 Testing user login...');
       const loginResult = await this.testLogin();
       results.push(loginResult);
-      
+
       if (!loginResult.success) {
         return results;
       }
@@ -69,7 +69,6 @@ export class AuthFlowTester {
 
       console.log('✅ Authentication flow test completed');
       return results;
-
     } catch (error) {
       console.error('❌ Authentication flow test failed:', error);
       results.push({
@@ -77,7 +76,7 @@ export class AuthFlowTester {
         step: 'test_execution',
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      
+
       await this.cleanup();
       return results;
     }
@@ -163,10 +162,7 @@ export class AuthFlowTester {
       ];
 
       for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .limit(1);
+        const { data, error } = await supabase.from(table).select('*').limit(1);
 
         if (error) {
           return {
@@ -240,21 +236,19 @@ export class AuthFlowTester {
       };
 
       // Save personal info
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: this.testUserId,
-          email: testOnboardingData.personalInfo.email,
-          name: testOnboardingData.personalInfo.name,
-          age: testOnboardingData.personalInfo.age,
-          gender: testOnboardingData.personalInfo.gender,
-          height_cm: testOnboardingData.personalInfo.height,
-          weight_kg: testOnboardingData.personalInfo.weight,
-          activity_level: testOnboardingData.personalInfo.activityLevel,
-          units: 'metric',
-          notifications_enabled: true,
-          dark_mode: false,
-        });
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: this.testUserId,
+        email: testOnboardingData.personalInfo.email,
+        name: testOnboardingData.personalInfo.name,
+        age: testOnboardingData.personalInfo.age,
+        gender: testOnboardingData.personalInfo.gender,
+        height_cm: testOnboardingData.personalInfo.height,
+        weight_kg: testOnboardingData.personalInfo.weight,
+        activity_level: testOnboardingData.personalInfo.activityLevel,
+        units: 'metric',
+        notifications_enabled: true,
+        dark_mode: false,
+      });
 
       if (profileError) {
         return {
@@ -265,14 +259,12 @@ export class AuthFlowTester {
       }
 
       // Save fitness goals
-      const { error: goalsError } = await supabase
-        .from('fitness_goals')
-        .upsert({
-          user_id: this.testUserId,
-          primary_goals: testOnboardingData.fitnessGoals.primaryGoals,
-          time_commitment: testOnboardingData.fitnessGoals.timeCommitment,
-          experience_level: testOnboardingData.fitnessGoals.experience,
-        });
+      const { error: goalsError } = await supabase.from('fitness_goals').upsert({
+        user_id: this.testUserId,
+        primary_goals: testOnboardingData.fitnessGoals.primaryGoals,
+        time_commitment: testOnboardingData.fitnessGoals.timeCommitment,
+        experience_level: testOnboardingData.fitnessGoals.experience,
+      });
 
       if (goalsError) {
         return {
@@ -283,15 +275,13 @@ export class AuthFlowTester {
       }
 
       // Save diet preferences
-      const { error: dietError } = await supabase
-        .from('diet_preferences')
-        .upsert({
-          user_id: this.testUserId,
-          diet_type: testOnboardingData.dietPreferences.dietType,
-          allergies: testOnboardingData.dietPreferences.allergies,
-          cuisine_preferences: testOnboardingData.dietPreferences.cuisinePreferences,
-          restrictions: testOnboardingData.dietPreferences.restrictions,
-        });
+      const { error: dietError } = await supabase.from('diet_preferences').upsert({
+        user_id: this.testUserId,
+        diet_type: testOnboardingData.dietPreferences.dietType,
+        allergies: testOnboardingData.dietPreferences.allergies,
+        cuisine_preferences: testOnboardingData.dietPreferences.cuisinePreferences,
+        restrictions: testOnboardingData.dietPreferences.restrictions,
+      });
 
       if (dietError) {
         return {
@@ -302,16 +292,14 @@ export class AuthFlowTester {
       }
 
       // Save workout preferences
-      const { error: workoutError } = await supabase
-        .from('workout_preferences')
-        .upsert({
-          user_id: this.testUserId,
-          location: testOnboardingData.workoutPreferences.location,
-          equipment: testOnboardingData.workoutPreferences.equipment,
-          time_preference: testOnboardingData.workoutPreferences.timePreference,
-          intensity: testOnboardingData.workoutPreferences.intensity,
-          workout_types: testOnboardingData.workoutPreferences.workoutTypes,
-        });
+      const { error: workoutError } = await supabase.from('workout_preferences').upsert({
+        user_id: this.testUserId,
+        location: testOnboardingData.workoutPreferences.location,
+        equipment: testOnboardingData.workoutPreferences.equipment,
+        time_preference: testOnboardingData.workoutPreferences.timePreference,
+        intensity: testOnboardingData.workoutPreferences.intensity,
+        workout_types: testOnboardingData.workoutPreferences.workoutTypes,
+      });
 
       if (workoutError) {
         return {
@@ -401,11 +389,11 @@ export class AuthFlowTester {
     try {
       // Test that Google auth methods exist and are callable
       const isLinked = await authService.isGoogleLinked();
-      
+
       return {
         success: true,
         step: 'google_auth_setup',
-        details: { 
+        details: {
           isGoogleLinked: isLinked,
           methodsAvailable: [
             'signInWithGoogle',
@@ -431,17 +419,17 @@ export class AuthFlowTester {
     try {
       if (this.testUserId) {
         console.log('🧹 Cleaning up test data...');
-        
+
         // Delete in reverse order due to foreign key constraints
         await supabase.from('body_analysis').delete().eq('user_id', this.testUserId);
         await supabase.from('workout_preferences').delete().eq('user_id', this.testUserId);
         await supabase.from('diet_preferences').delete().eq('user_id', this.testUserId);
         await supabase.from('fitness_goals').delete().eq('user_id', this.testUserId);
         await supabase.from('profiles').delete().eq('id', this.testUserId);
-        
+
         // Delete auth user
         await supabase.auth.admin.deleteUser(this.testUserId);
-        
+
         console.log('✅ Test data cleaned up');
       }
     } catch (error) {
@@ -455,10 +443,10 @@ export class AuthFlowTester {
  */
 export async function runAuthFlowTest(): Promise<AuthFlowTestResult[]> {
   console.log('🚀 Starting authentication flow test...');
-  
+
   const tester = new AuthFlowTester();
   const results = await tester.testCompleteFlow();
-  
+
   // Log results
   console.log('\n📊 Test Results:');
   results.forEach((result, index) => {
@@ -471,9 +459,9 @@ export async function runAuthFlowTest(): Promise<AuthFlowTestResult[]> {
       console.log(`   Details:`, result.details);
     }
   });
-  
-  const successCount = results.filter(r => r.success).length;
+
+  const successCount = results.filter((r) => r.success).length;
   console.log(`\n🎯 Overall: ${successCount}/${results.length} tests passed`);
-  
+
   return results;
 }

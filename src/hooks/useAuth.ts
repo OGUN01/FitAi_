@@ -127,14 +127,8 @@ export const useAuthError = (): string | null => {
  * Useful when you only need actions without state
  */
 export const useAuthActions = () => {
-  const {
-    login,
-    register,
-    logout,
-    resetPassword,
-    resendEmailVerification,
-    clearError,
-  } = useAuthStore();
+  const { login, register, logout, resetPassword, resendEmailVerification, clearError } =
+    useAuthStore();
 
   return {
     login,

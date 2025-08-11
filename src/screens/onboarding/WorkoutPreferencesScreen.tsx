@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -72,21 +66,13 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
   };
 
   const data = getInitialData();
-  const [location, setLocation] = useState<WorkoutPreferences['location']>(
-    data.location || 'both'
-  );
-  const [equipment, setEquipment] = useState<string[]>(
-    data.equipment || []
-  );
-  const [timePreference, setTimePreference] = useState<number>(
-    data.timePreference || 30
-  );
+  const [location, setLocation] = useState<WorkoutPreferences['location']>(data.location || 'both');
+  const [equipment, setEquipment] = useState<string[]>(data.equipment || []);
+  const [timePreference, setTimePreference] = useState<number>(data.timePreference || 30);
   const [intensity, setIntensity] = useState<WorkoutPreferences['intensity']>(
     data.intensity || 'beginner'
   );
-  const [workoutTypes, setWorkoutTypes] = useState<string[]>(
-    data.workoutTypes || []
-  );
+  const [workoutTypes, setWorkoutTypes] = useState<string[]>(data.workoutTypes || []);
 
   const [errors, setErrors] = useState<{
     location?: string;
@@ -107,7 +93,12 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
   // Update form data when edit context data changes (only once)
   useEffect(() => {
-    if (isEditMode && editContextData?.currentData && Object.keys(editContextData.currentData).length > 0 && !isDataPopulated) {
+    if (
+      isEditMode &&
+      editContextData?.currentData &&
+      Object.keys(editContextData.currentData).length > 0 &&
+      !isDataPopulated
+    ) {
       const data = editContextData.currentData;
       setLocation(data.location || 'both');
       setEquipment(data.equipment || []);
@@ -124,29 +115,29 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       const timeoutId = setTimeout(() => {
         editContextData.updateData(formData);
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [location, equipment, timePreference, intensity, workoutTypes, isEditMode, isDataPopulated]);
 
   const locationOptions = [
-    { 
-      id: 'home', 
-      title: 'Home', 
-      icon: '🏠', 
-      description: 'Workout from the comfort of your home' 
+    {
+      id: 'home',
+      title: 'Home',
+      icon: '🏠',
+      description: 'Workout from the comfort of your home',
     },
-    { 
-      id: 'gym', 
-      title: 'Gym', 
-      icon: '🏋️', 
-      description: 'Access to full gym equipment' 
+    {
+      id: 'gym',
+      title: 'Gym',
+      icon: '🏋️',
+      description: 'Access to full gym equipment',
     },
-    { 
-      id: 'both', 
-      title: 'Both', 
-      icon: '🔄', 
-      description: 'Flexible workouts anywhere' 
+    {
+      id: 'both',
+      title: 'Both',
+      icon: '🔄',
+      description: 'Flexible workouts anywhere',
     },
   ];
 
@@ -166,23 +157,23 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
   ];
 
   const intensityOptions = [
-    { 
-      value: 'beginner', 
-      label: 'Beginner', 
+    {
+      value: 'beginner',
+      label: 'Beginner',
       description: 'New to fitness or returning after a break',
-      icon: '🌱'
+      icon: '🌱',
     },
-    { 
-      value: 'intermediate', 
-      label: 'Intermediate', 
+    {
+      value: 'intermediate',
+      label: 'Intermediate',
       description: 'Some experience with regular exercise',
-      icon: '💪'
+      icon: '💪',
     },
-    { 
-      value: 'advanced', 
-      label: 'Advanced', 
+    {
+      value: 'advanced',
+      label: 'Advanced',
       description: 'Experienced with consistent training',
-      icon: '🔥'
+      icon: '🔥',
     },
   ];
 
@@ -272,9 +263,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>What are your workout preferences?</Text>
-          <Text style={styles.subtitle}>
-            Let's customize your fitness experience
-          </Text>
+          <Text style={styles.subtitle}>Let's customize your fitness experience</Text>
         </View>
 
         <View style={styles.content}>
@@ -288,7 +277,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                   onPress={() => {
                     setLocation(option.id as WorkoutPreferences['location']);
                     if (errors.location) {
-                      setErrors(prev => ({ ...prev, location: undefined }));
+                      setErrors((prev) => ({ ...prev, location: undefined }));
                     }
                   }}
                   style={styles.locationItem}
@@ -302,15 +291,15 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                   >
                     <View style={styles.locationContent}>
                       <Text style={styles.locationIcon}>{option.icon}</Text>
-                      <Text style={[
-                        styles.locationTitle,
-                        location === option.id && styles.locationTitleSelected,
-                      ]}>
+                      <Text
+                        style={[
+                          styles.locationTitle,
+                          location === option.id && styles.locationTitleSelected,
+                        ]}
+                      >
                         {option.title}
                       </Text>
-                      <Text style={styles.locationDescription}>
-                        {option.description}
-                      </Text>
+                      <Text style={styles.locationDescription}>{option.description}</Text>
                     </View>
                   </Card>
                 </TouchableOpacity>
@@ -333,12 +322,8 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
           {/* Time Preference */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Workout Duration: {formatTime(timePreference)}
-            </Text>
-            <Text style={styles.sectionSubtitle}>
-              How much time can you dedicate per workout?
-            </Text>
+            <Text style={styles.sectionTitle}>Workout Duration: {formatTime(timePreference)}</Text>
+            <Text style={styles.sectionSubtitle}>How much time can you dedicate per workout?</Text>
             <View style={styles.sliderContainer}>
               <Slider
                 value={timePreference}
@@ -370,16 +355,16 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                   <View style={styles.intensityContent}>
                     <View style={styles.intensityHeader}>
                       <Text style={styles.intensityIcon}>{option.icon}</Text>
-                      <Text style={[
-                        styles.intensityTitle,
-                        intensity === option.value && styles.intensityTitleSelected,
-                      ]}>
+                      <Text
+                        style={[
+                          styles.intensityTitle,
+                          intensity === option.value && styles.intensityTitleSelected,
+                        ]}
+                      >
                         {option.label}
                       </Text>
                     </View>
-                    <Text style={styles.intensityDescription}>
-                      {option.description}
-                    </Text>
+                    <Text style={styles.intensityDescription}>{option.description}</Text>
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -394,7 +379,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
               onSelectionChange={(values) => {
                 setWorkoutTypes(values);
                 if (errors.workoutTypes) {
-                  setErrors(prev => ({ ...prev, workoutTypes: undefined }));
+                  setErrors((prev) => ({ ...prev, workoutTypes: undefined }));
                 }
               }}
               label="Preferred Workout Types"
@@ -402,9 +387,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
               searchable={true}
               maxSelections={5}
             />
-            {errors.workoutTypes && (
-              <Text style={styles.errorText}>{errors.workoutTypes}</Text>
-            )}
+            {errors.workoutTypes && <Text style={styles.errorText}>{errors.workoutTypes}</Text>}
           </View>
         </View>
       </ScrollView>
@@ -412,13 +395,13 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? "Cancel" : "Back"}
+            title={isEditMode ? 'Cancel' : 'Back'}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? "Save Changes" : "Next"}
+            title={isEditMode ? 'Save Changes' : 'Next'}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}

@@ -62,7 +62,7 @@ export class MigrationManager {
     result: null,
     unsubscribe: null,
   };
-  
+
   private progressCallbacks: ((progress: MigrationProgress) => void)[] = [];
   private resultCallbacks: ((result: MigrationResult) => void)[] = [];
   private stateCallbacks: ((state: MigrationState) => void)[] = [];
@@ -129,7 +129,7 @@ export class MigrationManager {
 
       // Start migration
       const result = await migrationEngine.migrateToSupabase(userId);
-      
+
       this.currentMigration.result = result;
       this.notifyResultChange(result);
 
@@ -138,7 +138,6 @@ export class MigrationManager {
 
       // Update state
       await this.checkMigrationStatus();
-
     } catch (error) {
       const errorResult: MigrationResult = {
         success: false,
@@ -153,14 +152,16 @@ export class MigrationManager {
           startTime: new Date(),
           endTime: new Date(),
           message: `Migration failed: ${error.message}`,
-          errors: [{
-            step: 'unknown',
-            code: 'MIGRATION_START_FAILED',
-            message: error.message,
-            timestamp: new Date(),
-            retryCount: 0,
-            recoverable: true,
-          }],
+          errors: [
+            {
+              step: 'unknown',
+              code: 'MIGRATION_START_FAILED',
+              message: error.message,
+              timestamp: new Date(),
+              retryCount: 0,
+              recoverable: true,
+            },
+          ],
           warnings: [],
         },
         migratedDataCount: {
@@ -170,14 +171,16 @@ export class MigrationManager {
           bodyMeasurements: 0,
           achievements: 0,
         },
-        errors: [{
-          step: 'unknown',
-          code: 'MIGRATION_START_FAILED',
-          message: error.message,
-          timestamp: new Date(),
-          retryCount: 0,
-          recoverable: true,
-        }],
+        errors: [
+          {
+            step: 'unknown',
+            code: 'MIGRATION_START_FAILED',
+            message: error.message,
+            timestamp: new Date(),
+            retryCount: 0,
+            recoverable: true,
+          },
+        ],
         warnings: [],
         duration: 0,
       };
@@ -208,7 +211,7 @@ export class MigrationManager {
     try {
       // TODO: Implement migration cancellation in migration engine
       console.log('Migration cancellation requested');
-      
+
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();
         this.currentMigration.unsubscribe = null;
@@ -313,18 +316,16 @@ export class MigrationManager {
 
       // Check if there's meaningful data to migrate
       const hasUserData = localData.user && Object.keys(localData.user).length > 0;
-      const hasFitnessData = localData.fitness && (
-        localData.fitness.workouts?.length > 0 ||
-        localData.fitness.sessions?.length > 0
-      );
-      const hasNutritionData = localData.nutrition && (
-        localData.nutrition.meals?.length > 0 ||
-        localData.nutrition.logs?.length > 0
-      );
-      const hasProgressData = localData.progress && (
-        localData.progress.measurements?.length > 0 ||
-        localData.progress.achievements?.length > 0
-      );
+      const hasFitnessData =
+        localData.fitness &&
+        (localData.fitness.workouts?.length > 0 || localData.fitness.sessions?.length > 0);
+      const hasNutritionData =
+        localData.nutrition &&
+        (localData.nutrition.meals?.length > 0 || localData.nutrition.logs?.length > 0);
+      const hasProgressData =
+        localData.progress &&
+        (localData.progress.measurements?.length > 0 ||
+          localData.progress.achievements?.length > 0);
 
       return hasUserData || hasFitnessData || hasNutritionData || hasProgressData;
     } catch (error) {
@@ -372,7 +373,7 @@ export class MigrationManager {
   }
 
   private notifyProgressChange(progress: MigrationProgress): void {
-    this.progressCallbacks.forEach(callback => {
+    this.progressCallbacks.forEach((callback) => {
       try {
         callback(progress);
       } catch (error) {
@@ -382,7 +383,7 @@ export class MigrationManager {
   }
 
   private notifyResultChange(result: MigrationResult): void {
-    this.resultCallbacks.forEach(callback => {
+    this.resultCallbacks.forEach((callback) => {
       try {
         callback(result);
       } catch (error) {
@@ -392,7 +393,7 @@ export class MigrationManager {
   }
 
   private notifyStateChange(state: MigrationState): void {
-    this.stateCallbacks.forEach(callback => {
+    this.stateCallbacks.forEach((callback) => {
       try {
         callback(state);
       } catch (error) {
@@ -444,7 +445,9 @@ export class MigrationManager {
 
       // If user has local data but no remote data, migration is needed
       const migrationNeeded = hasLocalData && !remoteProfile;
-      console.log(`📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`);
+      console.log(
+        `📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`
+      );
 
       return migrationNeeded;
     } catch (error) {
@@ -474,7 +477,7 @@ export class MigrationManager {
           success: true,
           dataCount: {
             workouts: 0, // Profile migration doesn't include workouts
-            meals: 0,    // Profile migration doesn't include meals
+            meals: 0, // Profile migration doesn't include meals
             measurements: 0, // Profile migration doesn't include measurements
           },
         };
@@ -512,7 +515,7 @@ export class MigrationManager {
       if (personalInfo) {
         const validation = profileValidator.validatePersonalInfo(personalInfo);
         if (!validation.isValid) {
-          errors.push(...validation.errors.map(e => `Personal Info: ${e}`));
+          errors.push(...validation.errors.map((e) => `Personal Info: ${e}`));
         }
       }
 
@@ -521,7 +524,7 @@ export class MigrationManager {
       if (fitnessGoals) {
         const validation = profileValidator.validateFitnessGoals(fitnessGoals);
         if (!validation.isValid) {
-          errors.push(...validation.errors.map(e => `Fitness Goals: ${e}`));
+          errors.push(...validation.errors.map((e) => `Fitness Goals: ${e}`));
         }
       }
 
@@ -530,7 +533,7 @@ export class MigrationManager {
       if (dietPreferences) {
         const validation = profileValidator.validateDietPreferences(dietPreferences);
         if (!validation.isValid) {
-          errors.push(...validation.errors.map(e => `Diet Preferences: ${e}`));
+          errors.push(...validation.errors.map((e) => `Diet Preferences: ${e}`));
         }
       }
 

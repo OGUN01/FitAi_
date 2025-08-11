@@ -29,7 +29,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
   const [hasChanges, setHasChanges] = useState(false);
 
   const toggleSetting = (key: string) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       [key]: !prev[key as keyof typeof prev],
     }));
@@ -42,11 +42,14 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
       'Your data export will be prepared and sent to your email address. This may take a few minutes.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Export', 
+        {
+          text: 'Export',
           onPress: () => {
-            Alert.alert('Export Started', 'Your data export has been initiated. You will receive an email when it\'s ready.');
-          }
+            Alert.alert(
+              'Export Started',
+              "Your data export has been initiated. You will receive an email when it's ready."
+            );
+          },
         },
       ]
     );
@@ -72,7 +75,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
                   style: 'destructive',
                   onPress: () => {
                     // TODO: Implement account deletion
-                    Alert.alert('Account Deletion', 'Account deletion process will be implemented here.');
+                    Alert.alert(
+                      'Account Deletion',
+                      'Account deletion process will be implemented here.'
+                    );
                   },
                 },
               ]
@@ -86,10 +92,10 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
   const saveSettings = async () => {
     try {
       console.log('Saving privacy settings:', settings);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       setHasChanges(false);
       Alert.alert('Success', 'Privacy settings saved successfully!');
     } catch (error) {
@@ -113,7 +119,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         {/* Data Privacy Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Privacy</Text>
-          
+
           <Card style={styles.settingCard} variant="outlined">
             <View style={styles.settingContent}>
               <View style={styles.settingInfo}>
@@ -189,7 +195,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
                 value={settings.locationTracking}
                 onValueChange={() => toggleSetting('locationTracking')}
                 trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.locationTracking ? THEME.colors.primary : THEME.colors.textMuted}
+                thumbColor={
+                  settings.locationTracking ? THEME.colors.primary : THEME.colors.textMuted
+                }
               />
             </View>
           </Card>
@@ -198,7 +206,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         {/* Security Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Security</Text>
-          
+
           <Card style={styles.settingCard} variant="outlined">
             <View style={styles.settingContent}>
               <View style={styles.settingInfo}>
@@ -243,7 +251,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         {/* Data Management Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Data Management</Text>
-          
+
           <Card style={styles.actionCard} variant="outlined">
             <TouchableOpacity onPress={handleDataExport}>
               <View style={styles.actionContent}>
@@ -260,14 +268,16 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
           </Card>
 
           <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity onPress={() => Alert.alert('Privacy Policy', 'Privacy policy will be displayed here.')}>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert('Privacy Policy', 'Privacy policy will be displayed here.')
+              }
+            >
               <View style={styles.actionContent}>
                 <Text style={styles.actionIcon}>📄</Text>
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Privacy Policy</Text>
-                  <Text style={styles.actionDescription}>
-                    Read our complete privacy policy
-                  </Text>
+                  <Text style={styles.actionDescription}>Read our complete privacy policy</Text>
                 </View>
                 <Text style={styles.actionArrow}>›</Text>
               </View>
@@ -275,14 +285,16 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
           </Card>
 
           <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity onPress={() => Alert.alert('Terms of Service', 'Terms of service will be displayed here.')}>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert('Terms of Service', 'Terms of service will be displayed here.')
+              }
+            >
               <View style={styles.actionContent}>
                 <Text style={styles.actionIcon}>📋</Text>
                 <View style={styles.actionInfo}>
                   <Text style={styles.actionTitle}>Terms of Service</Text>
-                  <Text style={styles.actionDescription}>
-                    Review our terms and conditions
-                  </Text>
+                  <Text style={styles.actionDescription}>Review our terms and conditions</Text>
                 </View>
                 <Text style={styles.actionArrow}>›</Text>
               </View>
@@ -293,7 +305,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         {/* Danger Zone */}
         <View style={styles.section}>
           <Text style={styles.dangerTitle}>Danger Zone</Text>
-          
+
           <Card style={[styles.actionCard, styles.dangerCard]} variant="outlined">
             <TouchableOpacity onPress={handleDeleteAccount}>
               <View style={styles.actionContent}>
@@ -334,11 +346,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -347,7 +359,7 @@ const styles = StyleSheet.create({
     paddingTop: THEME.spacing.lg,
     paddingBottom: THEME.spacing.md,
   },
-  
+
   backButton: {
     width: 40,
     height: 40,
@@ -356,144 +368,144 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   backIcon: {
     fontSize: 24,
     color: THEME.colors.text,
     fontWeight: 'bold',
   },
-  
+
   title: {
     fontSize: THEME.fontSize.xxl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
   },
-  
+
   headerSpacer: {
     width: 40,
   },
-  
+
   section: {
     paddingHorizontal: THEME.spacing.lg,
     marginBottom: THEME.spacing.xl,
   },
-  
+
   sectionTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
-  
+
   dangerTitle: {
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.error,
     marginBottom: THEME.spacing.md,
   },
-  
+
   settingCard: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   settingContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: THEME.spacing.lg,
   },
-  
+
   settingInfo: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  
+
   settingIcon: {
     fontSize: 24,
     marginRight: THEME.spacing.md,
     marginTop: 2,
   },
-  
+
   settingTexts: {
     flex: 1,
   },
-  
+
   settingTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
-  
+
   settingDescription: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     lineHeight: 18,
   },
-  
+
   actionCard: {
     marginBottom: THEME.spacing.sm,
   },
-  
+
   dangerCard: {
     borderColor: THEME.colors.error + '50',
     backgroundColor: THEME.colors.error + '05',
   },
-  
+
   actionContent: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: THEME.spacing.lg,
   },
-  
+
   actionIcon: {
     fontSize: 20,
     marginRight: THEME.spacing.md,
   },
-  
+
   dangerIcon: {
     fontSize: 20,
     marginRight: THEME.spacing.md,
   },
-  
+
   actionInfo: {
     flex: 1,
   },
-  
+
   actionTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.text,
   },
-  
+
   dangerActionTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.error,
   },
-  
+
   actionDescription: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
     marginTop: THEME.spacing.xs,
   },
-  
+
   actionArrow: {
     fontSize: 20,
     color: THEME.colors.textMuted,
     fontWeight: THEME.fontWeight.bold,
   },
-  
+
   saveSection: {
     paddingHorizontal: THEME.spacing.lg,
     marginBottom: THEME.spacing.xl,
   },
-  
+
   saveButton: {
     marginTop: THEME.spacing.md,
   },
-  
+
   bottomSpacing: {
     height: THEME.spacing.xl,
   },

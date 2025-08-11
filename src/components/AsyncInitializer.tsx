@@ -12,9 +12,9 @@ interface AsyncInitializerProps {
   onInitializationComplete: () => void;
 }
 
-export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({ 
-  children, 
-  onInitializationComplete 
+export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
+  children,
+  onInitializationComplete,
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState<string | null>(null);
@@ -23,15 +23,15 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
     const initializeApp = async () => {
       const startTime = Date.now();
       const TIMEOUT_MS = 10000; // 10 second timeout
-      
+
       try {
         console.log('🚀 AsyncInitializer: Starting app initialization...');
-        
+
         // Create timeout promise
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Initialization timeout after 10s')), TIMEOUT_MS);
         });
-        
+
         // Initialize with timeout
         await Promise.race([
           timeoutPromise,
@@ -41,32 +41,40 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
               console.log('🔄 AsyncInitializer: Initializing backend...');
               await initializeBackend();
               console.log('✅ AsyncInitializer: Backend initialized');
-              
+
               // Initialize Google Auth (skip if it fails)
               try {
                 console.log('🔄 AsyncInitializer: Configuring Google Auth...');
                 await googleAuthService.configure();
                 console.log('✅ AsyncInitializer: Google Auth initialized');
               } catch (authError) {
-                console.warn('⚠️ AsyncInitializer: Google Auth initialization failed (non-critical):', authError);
+                console.warn(
+                  '⚠️ AsyncInitializer: Google Auth initialization failed (non-critical):',
+                  authError
+                );
               }
-              
+
               // Run data migrations (skip if it fails)
               try {
                 console.log('🔄 AsyncInitializer: Running migrations...');
                 await migrationService.runMigrations();
                 console.log('✅ AsyncInitializer: Migrations completed');
               } catch (migrationError) {
-                console.warn('⚠️ AsyncInitializer: Migration failed (non-critical):', migrationError);
+                console.warn(
+                  '⚠️ AsyncInitializer: Migration failed (non-critical):',
+                  migrationError
+                );
               }
             } catch (error) {
               throw error;
             }
-          })()
+          })(),
         ]);
-        
+
         const duration = Date.now() - startTime;
-        console.log(`✅ AsyncInitializer: All initialization completed successfully in ${duration}ms`);
+        console.log(
+          `✅ AsyncInitializer: All initialization completed successfully in ${duration}ms`
+        );
         setIsInitialized(true);
         onInitializationComplete();
       } catch (error) {
@@ -89,9 +97,7 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
         <ActivityIndicator size="large" color={THEME.colors.primary} />
         <Text style={styles.loadingText}>Initializing FitAI...</Text>
         {initializationError && (
-          <Text style={styles.errorText}>
-            Warning: {initializationError}
-          </Text>
+          <Text style={styles.errorText}>Warning: {initializationError}</Text>
         )}
       </View>
     );

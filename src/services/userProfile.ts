@@ -74,11 +74,7 @@ class UserProfileService {
    */
   async getProfile(userId: string): Promise<UserProfileResponse> {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       if (error) {
         return {
@@ -206,7 +202,10 @@ class UserProfileService {
   /**
    * Update fitness goals for a user
    */
-  async updateFitnessGoals(userId: string, updates: UpdateFitnessGoalsRequest): Promise<FitnessGoalsResponse> {
+  async updateFitnessGoals(
+    userId: string,
+    updates: UpdateFitnessGoalsRequest
+  ): Promise<FitnessGoalsResponse> {
     try {
       const { data, error } = await supabase
         .from('fitness_goals')
@@ -252,7 +251,7 @@ class UserProfileService {
       }
 
       const userProfile = profileResponse.data!;
-      
+
       // Add fitness goals if available
       if (goalsResponse.success && goalsResponse.data) {
         userProfile.fitnessGoals = goalsResponse.data;
@@ -275,10 +274,7 @@ class UserProfileService {
    */
   async deleteProfile(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      const { error } = await supabase.from('profiles').delete().eq('id', userId);
 
       if (error) {
         return {

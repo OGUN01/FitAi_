@@ -13,9 +13,11 @@ interface AIStatusIndicatorProps {
 
 export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({ onPress, style }) => {
   const status = aiService.getAIStatus();
-  
+
   const getStatusColor = () => {
-    return status.mode === 'real' ? THEME.colors.success || '#4CAF50' : THEME.colors.warning || '#FF9800';
+    return status.mode === 'real'
+      ? THEME.colors.success || '#4CAF50'
+      : THEME.colors.warning || '#FF9800';
   };
 
   const getStatusIcon = () => {
@@ -29,7 +31,10 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({ onPress, s
   const Component = onPress ? TouchableOpacity : View;
 
   return (
-    <Component style={[styles.container, { borderColor: getStatusColor() }, style]} onPress={onPress}>
+    <Component
+      style={[styles.container, { borderColor: getStatusColor() }, style]}
+      onPress={onPress}
+    >
       <Text style={styles.icon}>{getStatusIcon()}</Text>
       <Text style={[styles.text, { color: getStatusColor() }]}>{getStatusText()}</Text>
     </Component>
@@ -46,12 +51,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  
+
   icon: {
     fontSize: 14,
     marginRight: THEME.spacing.xs,
   },
-  
+
   text: {
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.medium,

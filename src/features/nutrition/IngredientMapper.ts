@@ -16,7 +16,10 @@ export interface MappedFood {
 const cache = new Map<string, MappedFood>();
 
 export class IngredientMapper {
-  static async mapIngredient(raw: string, constraints?: { dietType?: string; exclude?: string[] }): Promise<MappedFood | null> {
+  static async mapIngredient(
+    raw: string,
+    constraints?: { dietType?: string; exclude?: string[] }
+  ): Promise<MappedFood | null> {
     const normalized = normalizeName(raw);
     if (!normalized) return null;
 
@@ -57,7 +60,7 @@ export class IngredientMapper {
       avocado: 'fats',
       almond: 'fats',
     };
-    const hintKey = Object.keys(categoryHints).find(k => normalized.includes(k));
+    const hintKey = Object.keys(categoryHints).find((k) => normalized.includes(k));
     if (hintKey) {
       const cat = categoryHints[hintKey];
       const list = getFoodsByCategory(cat);
@@ -110,7 +113,10 @@ export class IngredientMapper {
     };
   }
 
-  static async mapIngredients(raws: string[], constraints?: { dietType?: string; exclude?: string[] }): Promise<MappedFood[]> {
+  static async mapIngredients(
+    raws: string[],
+    constraints?: { dietType?: string; exclude?: string[] }
+  ): Promise<MappedFood[]> {
     const results: MappedFood[] = [];
     for (const r of raws || []) {
       const m = await this.mapIngredient(r, constraints);
@@ -127,4 +133,3 @@ export class IngredientMapper {
 }
 
 export default new IngredientMapper();
-

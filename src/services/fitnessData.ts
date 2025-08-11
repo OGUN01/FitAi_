@@ -92,10 +92,7 @@ class FitnessDataService {
     search?: string;
   }): Promise<FitnessDataResponse<Exercise[]>> {
     try {
-      let query = supabase
-        .from('exercises')
-        .select('*')
-        .order('name');
+      let query = supabase.from('exercises').select('*').order('name');
 
       // Apply filters
       if (filters?.category && filters.category !== 'all') {
@@ -144,13 +141,15 @@ class FitnessDataService {
     try {
       let query = supabase
         .from('workouts')
-        .select(`
+        .select(
+          `
           *,
           workout_exercises (
             *,
             exercises (*)
           )
-        `)
+        `
+        )
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -169,13 +168,15 @@ class FitnessDataService {
       }
 
       // Transform the data to match our interface
-      const workouts = data?.map(workout => ({
-        ...workout,
-        exercises: workout.workout_exercises?.map((we: any) => ({
-          ...we,
-          exercise: we.exercises,
-        })) || [],
-      })) || [];
+      const workouts =
+        data?.map((workout) => ({
+          ...workout,
+          exercises:
+            workout.workout_exercises?.map((we: any) => ({
+              ...we,
+              exercise: we.exercises,
+            })) || [],
+        })) || [];
 
       return {
         success: true,
@@ -193,7 +194,9 @@ class FitnessDataService {
   /**
    * Get user's workout preferences
    */
-  async getUserWorkoutPreferences(userId: string): Promise<FitnessDataResponse<UserWorkoutPreferences>> {
+  async getUserWorkoutPreferences(
+    userId: string
+  ): Promise<FitnessDataResponse<UserWorkoutPreferences>> {
     try {
       const { data, error } = await supabase
         .from('workout_preferences')
@@ -211,7 +214,7 @@ class FitnessDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in getUserWorkoutPreferences:', error);
@@ -243,7 +246,7 @@ class FitnessDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in getUserFitnessGoals:', error);
@@ -266,11 +269,7 @@ class FitnessDataService {
     notes?: string;
   }): Promise<FitnessDataResponse<Workout>> {
     try {
-      const { data, error } = await supabase
-        .from('workouts')
-        .insert(workoutData)
-        .select()
-        .single();
+      const { data, error } = await supabase.from('workouts').insert(workoutData).select().single();
 
       if (error) {
         console.error('Error creating workout:', error);
@@ -282,7 +281,7 @@ class FitnessDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in createWorkout:', error);
@@ -296,11 +295,14 @@ class FitnessDataService {
   /**
    * Complete a workout
    */
-  async completeWorkout(workoutId: string, completionData: {
-    duration_minutes?: number;
-    calories_burned?: number;
-    notes?: string;
-  }): Promise<FitnessDataResponse<Workout>> {
+  async completeWorkout(
+    workoutId: string,
+    completionData: {
+      duration_minutes?: number;
+      calories_burned?: number;
+      notes?: string;
+    }
+  ): Promise<FitnessDataResponse<Workout>> {
     try {
       const { data, error } = await supabase
         .from('workouts')
@@ -322,7 +324,7 @@ class FitnessDataService {
 
       return {
         success: true,
-        data: data,
+        data,
       };
     } catch (error) {
       console.error('Error in completeWorkout:', error);
@@ -336,20 +338,22 @@ class FitnessDataService {
   /**
    * Add exercises to a workout
    */
-  async addExercisesToWorkout(workoutId: string, exercises: {
-    exercise_id: string;
-    sets?: number;
-    reps?: number;
-    weight_kg?: number;
-    duration_seconds?: number;
-    rest_seconds?: number;
-    order_index: number;
-  }[]): Promise<FitnessDataResponse<WorkoutExercise[]>> {
+  async addExercisesToWorkout(
+    workoutId: string,
+    exercises: {
+      exercise_id: string;
+      sets?: number;
+      reps?: number;
+      weight_kg?: number;
+      duration_seconds?: number;
+      rest_seconds?: number;
+      order_index: number;
+    }[]
+  ): Promise<FitnessDataResponse<WorkoutExercise[]>> {
     try {
       const { data, error } = await supabase
         .from('workout_exercises')
-        .insert(exercises.map(ex => ({ ...ex, workout_id: workoutId })))
-        .select(`
+        .insert(exercises.map((ex) => ({ ...ex, workout_id: workoutId }))).select(`
           *,
           exercises (*)
         `);
@@ -364,10 +368,11 @@ class FitnessDataService {
 
       return {
         success: true,
-        data: data?.map(we => ({
-          ...we,
-          exercise: we.exercises,
-        })) || [],
+        data:
+          data?.map((we) => ({
+            ...we,
+            exercise: we.exercises,
+          })) || [],
       };
     } catch (error) {
       console.error('Error in addExercisesToWorkout:', error);
@@ -381,13 +386,18 @@ class FitnessDataService {
   /**
    * Get workout statistics for a user
    */
-  async getWorkoutStats(userId: string, timeRange?: 'week' | 'month' | 'year'): Promise<FitnessDataResponse<{
-    totalWorkouts: number;
-    totalDuration: number;
-    totalCalories: number;
-    averageDuration: number;
-    workoutsByType: Record<string, number>;
-  }>> {
+  async getWorkoutStats(
+    userId: string,
+    timeRange?: 'week' | 'month' | 'year'
+  ): Promise<
+    FitnessDataResponse<{
+      totalWorkouts: number;
+      totalDuration: number;
+      totalCalories: number;
+      averageDuration: number;
+      workoutsByType: Record<string, number>;
+    }>
+  > {
     try {
       let query = supabase
         .from('workouts')
@@ -432,10 +442,13 @@ class FitnessDataService {
       const totalCalories = workouts.reduce((sum, w) => sum + (w.calories_burned || 0), 0);
       const averageDuration = totalWorkouts > 0 ? totalDuration / totalWorkouts : 0;
 
-      const workoutsByType = workouts.reduce((acc, w) => {
-        acc[w.type] = (acc[w.type] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const workoutsByType = workouts.reduce(
+        (acc, w) => {
+          acc[w.type] = (acc[w.type] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         success: true,
@@ -459,18 +472,21 @@ class FitnessDataService {
   /**
    * Start a workout session (create workout with exercises)
    */
-  async startWorkoutSession(userId: string, workoutData: {
-    name: string;
-    type: string;
-    exercises: {
-      exercise_id: string;
-      sets?: number;
-      reps?: number;
-      weight_kg?: number;
-      duration_seconds?: number;
-      rest_seconds?: number;
-    }[];
-  }): Promise<FitnessDataResponse<Workout>> {
+  async startWorkoutSession(
+    userId: string,
+    workoutData: {
+      name: string;
+      type: string;
+      exercises: {
+        exercise_id: string;
+        sets?: number;
+        reps?: number;
+        weight_kg?: number;
+        duration_seconds?: number;
+        rest_seconds?: number;
+      }[];
+    }
+  ): Promise<FitnessDataResponse<Workout>> {
     try {
       // First create the workout
       const workoutResponse = await this.createWorkout({
@@ -506,16 +522,17 @@ class FitnessDataService {
   /**
    * Get recommended exercises based on user preferences
    */
-  async getRecommendedExercises(userId: string, workoutType?: string, limit: number = 5): Promise<FitnessDataResponse<Exercise[]>> {
+  async getRecommendedExercises(
+    userId: string,
+    workoutType?: string,
+    limit: number = 5
+  ): Promise<FitnessDataResponse<Exercise[]>> {
     try {
       // Get user preferences
       const preferencesResponse = await this.getUserWorkoutPreferences(userId);
       const goalsResponse = await this.getUserFitnessGoals(userId);
 
-      let query = supabase
-        .from('exercises')
-        .select('*')
-        .limit(limit);
+      let query = supabase.from('exercises').select('*').limit(limit);
 
       // Filter by workout type if specified
       if (workoutType) {

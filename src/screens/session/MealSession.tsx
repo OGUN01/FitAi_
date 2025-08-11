@@ -39,7 +39,7 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
     let interval: NodeJS.Timeout;
     if (sessionStarted && !isPaused) {
       interval = setInterval(() => {
-        setSessionTime(prev => prev + 1);
+        setSessionTime((prev) => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
@@ -53,20 +53,29 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
 
   const getMealTypeIcon = (type: string) => {
     switch (type) {
-      case 'breakfast': return '🌅';
-      case 'lunch': return '☀️';
-      case 'dinner': return '🌙';
-      case 'snack': return '🍎';
-      default: return '🍽️';
+      case 'breakfast':
+        return '🌅';
+      case 'lunch':
+        return '☀️';
+      case 'dinner':
+        return '🌙';
+      case 'snack':
+        return '🍎';
+      default:
+        return '🍽️';
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return THEME.colors.success;
-      case 'medium': return THEME.colors.warning;
-      case 'hard': return THEME.colors.error;
-      default: return THEME.colors.textSecondary;
+      case 'easy':
+        return THEME.colors.success;
+      case 'medium':
+        return THEME.colors.warning;
+      case 'hard':
+        return THEME.colors.error;
+      default:
+        return THEME.colors.textSecondary;
     }
   };
 
@@ -96,8 +105,8 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
       [
         {
           text: 'Finish',
-          onPress: () => navigation.goBack()
-        }
+          onPress: () => navigation.goBack(),
+        },
       ]
     );
   };
@@ -115,13 +124,13 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
         {
           text: 'Quit',
           style: 'destructive',
-          onPress: () => navigation.goBack()
-        }
+          onPress: () => navigation.goBack(),
+        },
       ]
     );
   };
 
-  const progress = completedSteps.filter(Boolean).length / meal.items.length * 100;
+  const progress = (completedSteps.filter(Boolean).length / meal.items.length) * 100;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -145,7 +154,8 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
         <Text style={styles.progressText}>
-          {Math.round(progress)}% Complete ({completedSteps.filter(Boolean).length}/{meal.items.length} ingredients)
+          {Math.round(progress)}% Complete ({completedSteps.filter(Boolean).length}/
+          {meal.items.length} ingredients)
         </Text>
       </View>
 
@@ -218,10 +228,12 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
             {/* Current Step */}
             <Card style={styles.currentStepCard} variant="elevated">
               <View style={styles.stepHeader}>
-                <Text style={styles.stepNumber}>Step {currentStep + 1} of {meal.items.length}</Text>
+                <Text style={styles.stepNumber}>
+                  Step {currentStep + 1} of {meal.items.length}
+                </Text>
                 <Text style={styles.stepTitle}>Prepare {meal.items[currentStep]?.name}</Text>
               </View>
-              
+
               <View style={styles.stepContent}>
                 <View style={styles.stepDetails}>
                   <Text style={styles.stepQuantity}>
@@ -257,12 +269,12 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
             <View style={styles.stepsOverview}>
               <Text style={styles.sectionTitle}>All Ingredients</Text>
               {meal.items.map((item, index) => (
-                <Card 
-                  key={index} 
+                <Card
+                  key={index}
                   style={[
                     styles.stepOverviewCard,
                     index === currentStep && styles.currentStepOverview,
-                    completedSteps[index] && styles.completedStepOverview
+                    completedSteps[index] && styles.completedStepOverview,
                   ]}
                 >
                   <View style={styles.stepOverviewContent}>

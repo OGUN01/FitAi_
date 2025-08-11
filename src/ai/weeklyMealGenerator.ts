@@ -1,6 +1,9 @@
 import { geminiService } from './gemini';
 import { WEEKLY_MEAL_PLAN_SCHEMA } from './schemas';
-import { SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, DIAGNOSTIC_NUTRITION_SCHEMA } from './schemas/simplifiedNutritionSchema';
+import {
+  SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA,
+  DIAGNOSTIC_NUTRITION_SCHEMA,
+} from './schemas/simplifiedNutritionSchema';
 import { PersonalInfo, FitnessGoals, DietPreferences } from '../types/user';
 import { AIResponse } from '../types/ai';
 
@@ -77,7 +80,7 @@ class WeeklyMealContentGenerator {
   ): Promise<MealGenerationResponse> {
     try {
       console.log('🍽️ Generating complete 7-day meal plan with structured output...');
-      
+
       // Add timeout wrapper
       const timeoutPromise = new Promise<MealGenerationResponse>((_, reject) => {
         setTimeout(() => {
@@ -85,8 +88,12 @@ class WeeklyMealContentGenerator {
         }, 60000); // 60 second timeout
       });
 
-      const generationPromise = this.performMealGeneration(personalInfo, fitnessGoals, dietPreferences);
-      
+      const generationPromise = this.performMealGeneration(
+        personalInfo,
+        fitnessGoals,
+        dietPreferences
+      );
+
       // Race between generation and timeout
       return await Promise.race([generationPromise, timeoutPromise]);
     } catch (error) {
@@ -110,136 +117,150 @@ class WeeklyMealContentGenerator {
 
     // 🔧 Using SIMPLIFIED schema to fix diet generation issues
     console.log('🧪 Using simplified nutrition schema for reliable generation...');
-    
+
     const aiResponse: AIResponse<any> = await geminiService.generateResponse(
-        prompt,
-        {
-          name: personalInfo.name,
-          age: personalInfo.age,
-          gender: personalInfo.gender,
-          weight: personalInfo.weight,
-          height: personalInfo.height,
-          activityLevel: personalInfo.activityLevel,
-          primaryGoals: fitnessGoals.primaryGoals.join(', '),
-          experience: fitnessGoals.experience,
-          timeCommitment: fitnessGoals.timeCommitment,
-          dietType: dietPreferences.dietType,
-          allergies: dietPreferences.allergies?.join(', ') || 'None',
-          dislikes: dietPreferences.dislikes?.join(', ') || 'None',
-          cookingSkill: dietPreferences.cookingSkill,
-          mealPrepTime: dietPreferences.mealPrepTime,
-          calorieTarget: calorieTarget,
-          proteinTarget: macroTargets.protein,
-          carbTarget: macroTargets.carbs,
-          fatTarget: macroTargets.fat
-        },
-        SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex WEEKLY_MEAL_PLAN_SCHEMA
-        2, // Reduced retries for faster debugging
-        {
-          maxOutputTokens: 4096, // 🔧 Significantly reduced from 16384 to avoid token overflow  
-          temperature: 0.4 // 🔧 Lower temperature for more consistent JSON structure
-        }
-      );
-
-      if (!aiResponse.success || !aiResponse.data) {
-        return {
-          success: false,
-          error: aiResponse.error || 'Failed to generate weekly meal plan'
-        };
+      prompt,
+      {
+        name: personalInfo.name,
+        age: personalInfo.age,
+        gender: personalInfo.gender,
+        weight: personalInfo.weight,
+        height: personalInfo.height,
+        activityLevel: personalInfo.activityLevel,
+        primaryGoals: fitnessGoals.primaryGoals.join(', '),
+        experience: fitnessGoals.experience,
+        timeCommitment: fitnessGoals.timeCommitment,
+        dietType: dietPreferences.dietType,
+        allergies: dietPreferences.allergies?.join(', ') || 'None',
+        dislikes: dietPreferences.dislikes?.join(', ') || 'None',
+        cookingSkill: dietPreferences.cookingSkill,
+        mealPrepTime: dietPreferences.mealPrepTime,
+        calorieTarget,
+        proteinTarget: macroTargets.protein,
+        carbTarget: macroTargets.carbs,
+        fatTarget: macroTargets.fat,
+      },
+      SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex WEEKLY_MEAL_PLAN_SCHEMA
+      2, // Reduced retries for faster debugging
+      {
+        maxOutputTokens: 4096, // 🔧 Significantly reduced from 16384 to avoid token overflow
+        temperature: 0.4, // 🔧 Lower temperature for more consistent JSON structure
       }
+    );
 
-      const aiPlan = aiResponse.data;
-
-      // Transform AI response to our WeeklyMealPlan format
-      // Note: We compute per-meal targets below using deterministic math
-      const meals = Array.isArray(aiPlan.meals) ? await Promise.all(aiPlan.meals.map(async (meal: any, index: number) => {
-          const mealType = meal.type || meal.mealType;
-          const simplifiedIngredients: string[] = Array.isArray(meal.mainIngredients) ? meal.mainIngredients : [];
-
-          const { IngredientMapper } = await import('../features/nutrition/IngredientMapper');
-          const { NutritionPortioner } = await import('../features/nutrition/NutritionPortioner');
-
-          const mapped = await IngredientMapper.mapIngredients(simplifiedIngredients, {
-            dietType: dietPreferences.dietType,
-            exclude: (dietPreferences.allergies || []).concat(dietPreferences.dislikes || [])
-          });
-
-          const mealTargets = this.getPerMealTargets(mealType, macroTargets, calorieTarget);
-          const portioned = NutritionPortioner.allocatePortions(mapped, mealTargets);
-
-          const items = portioned.items.map((it, itemIndex) => ({
-            id: `item_${Date.now()}_${itemIndex}`,
-            name: it.name,
-            quantity: Math.round(it.grams),
-            unit: 'grams',
-            calories: it.calories,
-            macros: it.macros,
-            protein: it.macros.protein,
-            carbs: it.macros.carbohydrates,
-            fat: it.macros.fat,
-            fiber: it.macros.fiber,
-            category: 'food',
-            preparationTime: Number(meal.prepTime ?? 5),
-            instructions: '',
-          }));
-
-          return {
-            id: `meal_w1_${meal.dayOfWeek}_${mealType}_${Date.now() + index}`,
-            type: mealType,
-            name: meal.name,
-            description: meal.description,
-            items,
-            totalCalories: portioned.totals.calories,
-            totalMacros: {
-              protein: portioned.totals.protein,
-              carbohydrates: portioned.totals.carbohydrates,
-              fat: portioned.totals.fat,
-              fiber: portioned.totals.fiber,
-            },
-            totalProtein: portioned.totals.protein,
-            totalCarbs: portioned.totals.carbohydrates,
-            totalFat: portioned.totals.fat,
-            totalFiber: portioned.totals.fiber,
-            preparationTime: meal.preparationTime ?? meal.prepTime ?? 15,
-            difficulty: meal.difficulty ?? 'easy',
-            tags: meal.tags ?? (Array.isArray(meal.mainIngredients) ? meal.mainIngredients.slice(0, 3) : []),
-            dayOfWeek: meal.dayOfWeek,
-            isPersonalized: true,
-            aiGenerated: true,
-            createdAt: new Date().toISOString(),
-          };
-        })) : [];
-
-      const weeklyPlan: WeeklyMealPlan = {
-        id: `weekly_meal_plan_w1_${Date.now()}`,
-        userId: 'current-user',
-        weekNumber: 1,
-        startDate: this.getWeekStartDate(),
-        endDate: this.getWeekEndDate(),
-        meals,
-        totalEstimatedCalories: meals.reduce((acc: number, m: any) => acc + (m.totalCalories || 0), 0),
-        planTitle: aiPlan.planTitle,
-        planDescription: aiPlan.planDescription,
-        dietaryRestrictions: aiPlan.dietaryRestrictions || [],
-        weeklyGoals: aiPlan.weeklyGoals || [],
-        createdAt: new Date().toISOString(),
+    if (!aiResponse.success || !aiResponse.data) {
+      return {
+        success: false,
+        error: aiResponse.error || 'Failed to generate weekly meal plan',
       };
+    }
 
-      console.log('✅ Weekly meal plan generated successfully with structured output');
-      console.log(`🔍 Generated plan details:`, {
-        title: weeklyPlan.planTitle,
-        totalMeals: weeklyPlan.meals.length,
-        mealsByDay: weeklyPlan.meals.reduce((acc, meal) => {
+    const aiPlan = aiResponse.data;
+
+    // Transform AI response to our WeeklyMealPlan format
+    // Note: We compute per-meal targets below using deterministic math
+    const meals = Array.isArray(aiPlan.meals)
+      ? await Promise.all(
+          aiPlan.meals.map(async (meal: any, index: number) => {
+            const mealType = meal.type || meal.mealType;
+            const simplifiedIngredients: string[] = Array.isArray(meal.mainIngredients)
+              ? meal.mainIngredients
+              : [];
+
+            const { IngredientMapper } = await import('../features/nutrition/IngredientMapper');
+            const { NutritionPortioner } = await import('../features/nutrition/NutritionPortioner');
+
+            const mapped = await IngredientMapper.mapIngredients(simplifiedIngredients, {
+              dietType: dietPreferences.dietType,
+              exclude: (dietPreferences.allergies || []).concat(dietPreferences.dislikes || []),
+            });
+
+            const mealTargets = this.getPerMealTargets(mealType, macroTargets, calorieTarget);
+            const portioned = NutritionPortioner.allocatePortions(mapped, mealTargets);
+
+            const items = portioned.items.map((it, itemIndex) => ({
+              id: `item_${Date.now()}_${itemIndex}`,
+              name: it.name,
+              quantity: Math.round(it.grams),
+              unit: 'grams',
+              calories: it.calories,
+              macros: it.macros,
+              protein: it.macros.protein,
+              carbs: it.macros.carbohydrates,
+              fat: it.macros.fat,
+              fiber: it.macros.fiber,
+              category: 'food',
+              preparationTime: Number(meal.prepTime ?? 5),
+              instructions: '',
+            }));
+
+            return {
+              id: `meal_w1_${meal.dayOfWeek}_${mealType}_${Date.now() + index}`,
+              type: mealType,
+              name: meal.name,
+              description: meal.description,
+              items,
+              totalCalories: portioned.totals.calories,
+              totalMacros: {
+                protein: portioned.totals.protein,
+                carbohydrates: portioned.totals.carbohydrates,
+                fat: portioned.totals.fat,
+                fiber: portioned.totals.fiber,
+              },
+              totalProtein: portioned.totals.protein,
+              totalCarbs: portioned.totals.carbohydrates,
+              totalFat: portioned.totals.fat,
+              totalFiber: portioned.totals.fiber,
+              preparationTime: meal.preparationTime ?? meal.prepTime ?? 15,
+              difficulty: meal.difficulty ?? 'easy',
+              tags:
+                meal.tags ??
+                (Array.isArray(meal.mainIngredients) ? meal.mainIngredients.slice(0, 3) : []),
+              dayOfWeek: meal.dayOfWeek,
+              isPersonalized: true,
+              aiGenerated: true,
+              createdAt: new Date().toISOString(),
+            };
+          })
+        )
+      : [];
+
+    const weeklyPlan: WeeklyMealPlan = {
+      id: `weekly_meal_plan_w1_${Date.now()}`,
+      userId: 'current-user',
+      weekNumber: 1,
+      startDate: this.getWeekStartDate(),
+      endDate: this.getWeekEndDate(),
+      meals,
+      totalEstimatedCalories: meals.reduce(
+        (acc: number, m: any) => acc + (m.totalCalories || 0),
+        0
+      ),
+      planTitle: aiPlan.planTitle,
+      planDescription: aiPlan.planDescription,
+      dietaryRestrictions: aiPlan.dietaryRestrictions || [],
+      weeklyGoals: aiPlan.weeklyGoals || [],
+      createdAt: new Date().toISOString(),
+    };
+
+    console.log('✅ Weekly meal plan generated successfully with structured output');
+    console.log(`🔍 Generated plan details:`, {
+      title: weeklyPlan.planTitle,
+      totalMeals: weeklyPlan.meals.length,
+      mealsByDay: weeklyPlan.meals.reduce(
+        (acc, meal) => {
           acc[meal.dayOfWeek] = (acc[meal.dayOfWeek] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>),
-        totalCalories: weeklyPlan.totalEstimatedCalories
-      });
-      
-      return {
-        success: true,
-        data: weeklyPlan,
-      };
+        },
+        {} as Record<string, number>
+      ),
+      totalCalories: weeklyPlan.totalEstimatedCalories,
+    });
+
+    return {
+      success: true,
+      data: weeklyPlan,
+    };
   }
 
   private buildMealGenerationPrompt(
@@ -320,7 +341,9 @@ Generate a complete 7-day meal plan with breakfast, lunch, and dinner for each d
       very_active: 1.9,
     };
 
-    const tdee = bmr * (activityMultipliers[personalInfo.activityLevel as keyof typeof activityMultipliers] || 1.55);
+    const tdee =
+      bmr *
+      (activityMultipliers[personalInfo.activityLevel as keyof typeof activityMultipliers] || 1.55);
 
     // Adjust based on goals
     if (fitnessGoals.primaryGoals.includes('Weight Loss')) {
@@ -332,9 +355,18 @@ Generate a complete 7-day meal plan with breakfast, lunch, and dinner for each d
     return Math.round(tdee);
   }
 
-  private getPerMealTargets(mealType: string, macro: { protein: number; carbs: number; fat: number }, dailyCalories: number) {
+  private getPerMealTargets(
+    mealType: string,
+    macro: { protein: number; carbs: number; fat: number },
+    dailyCalories: number
+  ) {
     // Percent split per meal
-    const splits: Record<string, number> = { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snack: 0.10 };
+    const splits: Record<string, number> = {
+      breakfast: 0.25,
+      lunch: 0.35,
+      dinner: 0.3,
+      snack: 0.1,
+    };
     const key = (mealType || 'lunch').toLowerCase();
     const pct = splits[key] ?? 0.33;
     // Convert macro grams per day to per-meal grams
@@ -350,14 +382,14 @@ Generate a complete 7-day meal plan with breakfast, lunch, and dinner for each d
     // Macro distribution based on goals
     let proteinRatio = 0.25;
     let carbRatio = 0.45;
-    let fatRatio = 0.30;
+    let fatRatio = 0.3;
 
     if (fitnessGoals.primaryGoals.includes('Muscle Building')) {
-      proteinRatio = 0.30;
-      carbRatio = 0.40;
-      fatRatio = 0.30;
+      proteinRatio = 0.3;
+      carbRatio = 0.4;
+      fatRatio = 0.3;
     } else if (fitnessGoals.primaryGoals.includes('Weight Loss')) {
-      proteinRatio = 0.30;
+      proteinRatio = 0.3;
       carbRatio = 0.35;
       fatRatio = 0.35;
     }

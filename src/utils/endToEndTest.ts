@@ -63,11 +63,11 @@ export class EndToEndTester {
   private async testAuthenticationFlow(): Promise<E2ETestResult> {
     try {
       const authResults = await runAuthFlowTest();
-      const successCount = authResults.filter(r => r.success).length;
+      const successCount = authResults.filter((r) => r.success).length;
       const totalCount = authResults.length;
 
       const issues: string[] = [];
-      authResults.forEach(result => {
+      authResults.forEach((result) => {
         if (!result.success) {
           issues.push(`${result.step}: ${result.error}`);
         }
@@ -99,7 +99,7 @@ export class EndToEndTester {
       // Check if all onboarding screens are properly exported
       const screens = [
         'WelcomeScreen',
-        'LoginScreen', 
+        'LoginScreen',
         'PersonalInfoScreen',
         'GoalsScreen',
         'DietPreferencesScreen',
@@ -109,7 +109,9 @@ export class EndToEndTester {
       ];
 
       // Check if OnboardingFlow exists and has proper structure
-      const onboardingFlowExists = await this.checkFileExists('src/screens/onboarding/OnboardingFlow.tsx');
+      const onboardingFlowExists = await this.checkFileExists(
+        'src/screens/onboarding/OnboardingFlow.tsx'
+      );
       if (!onboardingFlowExists) {
         issues.push('OnboardingFlow.tsx not found');
       }
@@ -166,7 +168,7 @@ export class EndToEndTester {
         'profiles',
         'fitness_goals',
         'diet_preferences',
-        'workout_preferences', 
+        'workout_preferences',
         'body_analysis',
         'exercises',
         'foods',
@@ -177,16 +179,15 @@ export class EndToEndTester {
 
       for (const table of requiredTables) {
         try {
-          const { error } = await supabase
-            .from(table)
-            .select('*')
-            .limit(1);
+          const { error } = await supabase.from(table).select('*').limit(1);
 
           if (error) {
             issues.push(`Table ${table} not accessible: ${error.message}`);
           }
         } catch (error) {
-          issues.push(`Table ${table} check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          issues.push(
+            `Table ${table} check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          );
         }
       }
 
@@ -361,15 +362,15 @@ export class EndToEndTester {
     console.log('📊 END-TO-END TEST SUMMARY');
     console.log('='.repeat(60));
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     const totalCount = results.length;
 
     results.forEach((result, index) => {
       const status = result.success ? '✅' : '❌';
       console.log(`${status} ${result.category}: ${result.details}`);
-      
+
       if (result.issues && result.issues.length > 0) {
-        result.issues.forEach(issue => {
+        result.issues.forEach((issue) => {
           console.log(`   ⚠️ ${issue}`);
         });
       }
@@ -377,13 +378,13 @@ export class EndToEndTester {
 
     console.log('\n' + '-'.repeat(60));
     console.log(`🎯 Overall Result: ${successCount}/${totalCount} test categories passed`);
-    
+
     if (successCount === totalCount) {
       console.log('🎉 All tests passed! Track A is ready for production.');
     } else {
       console.log('⚠️ Some tests failed. Please review the issues above.');
     }
-    
+
     console.log('='.repeat(60) + '\n');
   }
 }

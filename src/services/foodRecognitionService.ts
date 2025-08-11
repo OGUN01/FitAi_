@@ -24,7 +24,7 @@ export interface RecognizedFood {
   cuisine: 'indian' | 'international';
   region?: 'north' | 'south' | 'east' | 'west';
   spiceLevel?: 'mild' | 'medium' | 'hot' | 'extra_hot';
-  cookingMethod?: 'fried' | 'steamed' | 'baked' | 'curry' | 'grilled' | 'raw';
+  cookingMethod?: 'fried' | 'steamed' | 'baked' | 'curry' | 'grilled' | 'raw' | 'boiled';
   portionSize: {
     estimatedGrams: number;
     confidence: number;
@@ -51,7 +51,7 @@ class FoodRecognitionService {
   private indianFoodEnhancer: IndianFoodEnhancer;
   private freeAPIs: FreeNutritionAPIs;
   private cache: Map<string, FoodRecognitionResult> = new Map();
-  
+
   constructor() {
     this.apiKeyRotator = new APIKeyRotator();
     this.indianFoodEnhancer = new IndianFoodEnhancer();
@@ -62,15 +62,15 @@ class FoodRecognitionService {
    * Main food recognition method - achieves 90%+ accuracy
    */
   async recognizeFood(
-    imageUri: string, 
+    imageUri: string,
     mealType: MealType,
     userProfile?: { personalInfo: PersonalInfo; fitnessGoals: FitnessGoals }
   ): Promise<FoodRecognitionResult> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`🔍 Starting food recognition for ${mealType}...`);
-      
+
       // Step 1: Check cache first for faster results
       const cacheKey = this.generateCacheKey(imageUri, mealType);
       const cachedResult = this.cache.get(cacheKey);
@@ -81,10 +81,10 @@ class FoodRecognitionService {
 
       // Step 2: Image preprocessing and optimization
       const optimizedImage = await this.optimizeImage(imageUri);
-      
+
       // Step 3: Gemini Vision analysis with key rotation
       const geminiResult = await this.analyzeWithGemini(optimizedImage, mealType);
-      
+
       if (!geminiResult.success || !geminiResult.data) {
         throw new Error(geminiResult.error || 'Gemini analysis failed');
       }
@@ -92,22 +92,24 @@ class FoodRecognitionService {
       // Step 4: Food type classification
       const foodType = this.classifyFoodType(geminiResult.data);
       console.log(`🔍 Classified as: ${foodType.cuisine} food (${foodType.region || 'general'})`);
-      
+
       // Step 5: Accuracy enhancement based on food type
-      const enhancedResult = foodType.cuisine === 'indian' 
-        ? await this.enhanceIndianFood(geminiResult.data, foodType)
-        : await this.enhanceInternationalFood(geminiResult.data);
-      
+      const enhancedResult =
+        foodType.cuisine === 'indian'
+          ? await this.enhanceIndianFood(geminiResult.data, foodType)
+          : await this.enhanceInternationalFood(geminiResult.data);
+
       // Step 6: Confidence scoring and validation
       const finalResult = this.validateAndScore(enhancedResult, mealType, startTime);
-      
+
       // Step 7: Cache the result for 24 hours
       this.cache.set(cacheKey, finalResult);
       setTimeout(() => this.cache.delete(cacheKey), 24 * 60 * 60 * 1000);
-      
-      console.log(`✅ Food recognition completed in ${finalResult.processingTime}ms with ${finalResult.confidence}% confidence`);
+
+      console.log(
+        `✅ Food recognition completed in ${finalResult.processingTime}ms with ${finalResult.confidence}% confidence`
+      );
       return finalResult;
-      
     } catch (error) {
       console.error('❌ Food recognition failed:', error);
       return {
@@ -115,7 +117,7 @@ class FoodRecognitionService {
         confidence: 0,
         accuracy: 0,
         processingTime: Date.now() - startTime,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   }
@@ -123,7 +125,10 @@ class FoodRecognitionService {
   /**
    * Analyze image with Gemini Vision using structured prompts
    */
-  private async analyzeWithGemini(imageUri: string, mealType: MealType): Promise<{
+  private async analyzeWithGemini(
+    imageUri: string,
+    mealType: MealType
+  ): Promise<{
     success: boolean;
     data?: any;
     error?: string;
@@ -137,37 +142,35 @@ class FoodRecognitionService {
 
       // Enhanced prompt for food recognition
       const prompt = this.buildGeminiPrompt(mealType);
-      
+
       // Use official food recognition schema for structured output
       const schema = FOOD_RECOGNITION_SCHEMA;
 
       // Call Gemini with current API key
-      const response = await generateResponseWithImage(
-        prompt,
-        imageUri,
-        { schema, apiKey }
-      );
+      const response = await generateResponseWithImage(prompt, imageUri, { schema, apiKey });
 
       return {
         success: true,
-        data: response
+        data: response,
       };
-
     } catch (error) {
       console.error('Gemini analysis error:', error);
 
       // Try with next API key if rate limited
-      if (error instanceof Error && (error.message?.includes('429') || error.message?.includes('quota'))) {
+      if (
+        error instanceof Error &&
+        (error.message?.includes('429') || error.message?.includes('quota'))
+      ) {
         console.log('🔄 Rate limited, trying next API key...');
         const nextKey = await this.apiKeyRotator.getNextAvailableKey();
         if (nextKey) {
           return this.analyzeWithGemini(imageUri, mealType);
         }
       }
-      
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Gemini analysis failed'
+        error: error instanceof Error ? error.message : 'Gemini analysis failed',
       };
     }
   }
@@ -217,22 +220,51 @@ Return structured JSON only.
     // Analyze each detected food
     for (const food of foods) {
       const foodName = food.name.toLowerCase();
-      
+
       // Check for Indian food keywords
       const indianKeywords = [
-        'biryani', 'dal', 'curry', 'roti', 'naan', 'dosa', 'idli', 'sambar',
-        'rasam', 'chutney', 'chapati', 'paratha', 'sabji', 'masala', 'paneer',
-        'tandoori', 'korma', 'vindaloo', 'samosa', 'pakora', 'kheer', 'gulab',
-        'jalebi', 'laddu', 'barfi', 'raita', 'pickle', 'papad', 'pulao'
+        'biryani',
+        'dal',
+        'curry',
+        'roti',
+        'naan',
+        'dosa',
+        'idli',
+        'sambar',
+        'rasam',
+        'chutney',
+        'chapati',
+        'paratha',
+        'sabji',
+        'masala',
+        'paneer',
+        'tandoori',
+        'korma',
+        'vindaloo',
+        'samosa',
+        'pakora',
+        'kheer',
+        'gulab',
+        'jalebi',
+        'laddu',
+        'barfi',
+        'raita',
+        'pickle',
+        'papad',
+        'pulao',
       ];
-      
-      if (indianKeywords.some(keyword => foodName.includes(keyword))) {
+
+      if (indianKeywords.some((keyword) => foodName.includes(keyword))) {
         indianFoodCount++;
-        
+
         // Detect region based on dish name
         if (foodName.includes('dosa') || foodName.includes('idli') || foodName.includes('sambar')) {
           detectedRegion = 'south';
-        } else if (foodName.includes('biryani') || foodName.includes('naan') || foodName.includes('tandoori')) {
+        } else if (
+          foodName.includes('biryani') ||
+          foodName.includes('naan') ||
+          foodName.includes('tandoori')
+        ) {
           detectedRegion = 'north';
         } else if (foodName.includes('fish curry') || foodName.includes('mishti')) {
           detectedRegion = 'east';
@@ -243,11 +275,11 @@ Return structured JSON only.
     }
 
     const confidence = foods.length > 0 ? (indianFoodCount / foods.length) * 100 : 0;
-    
+
     return {
       cuisine: indianFoodCount > foods.length / 2 ? 'indian' : 'international',
       region: detectedRegion as any,
-      confidence
+      confidence,
     };
   }
 
@@ -264,7 +296,7 @@ Return structured JSON only.
    */
   private async enhanceInternationalFood(geminiData: any): Promise<RecognizedFood[]> {
     console.log('🌍 Enhancing international food recognition...');
-    
+
     const foods = geminiData.foods || [];
     const enhancedFoods: RecognizedFood[] = [];
 
@@ -272,7 +304,7 @@ Return structured JSON only.
       try {
         // Try to enhance with free APIs
         const enhancedNutrition = await this.freeAPIs.enhanceNutritionData(food.name);
-        
+
         const recognizedFood: RecognizedFood = {
           id: `food_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: food.name,
@@ -281,26 +313,25 @@ Return structured JSON only.
           portionSize: {
             estimatedGrams: food.estimatedGrams || 100,
             confidence: food.confidence || 70,
-            servingType: this.estimateServingType(food.estimatedGrams || 100)
+            servingType: this.estimateServingType(food.estimatedGrams || 100),
           },
           nutrition: enhancedNutrition || {
             calories: food.calories || 0,
             protein: food.protein || 0,
             carbs: food.carbs || 0,
             fat: food.fat || 0,
-            fiber: food.fiber || 0
+            fiber: food.fiber || 0,
           },
           ingredients: food.ingredients || [],
           confidence: food.confidence || 70,
           enhancementSource: enhancedNutrition ? 'free_api' : 'gemini',
-          cookingMethod: food.cookingMethod
+          cookingMethod: food.cookingMethod,
         };
 
         enhancedFoods.push(recognizedFood);
-        
       } catch (error) {
         console.warn(`Failed to enhance ${food.name}:`, error);
-        
+
         // Fallback to Gemini data only
         const recognizedFood: RecognizedFood = {
           id: `food_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -310,19 +341,19 @@ Return structured JSON only.
           portionSize: {
             estimatedGrams: food.estimatedGrams || 100,
             confidence: food.confidence || 60,
-            servingType: this.estimateServingType(food.estimatedGrams || 100)
+            servingType: this.estimateServingType(food.estimatedGrams || 100),
           },
           nutrition: {
             calories: food.calories || 0,
             protein: food.protein || 0,
             carbs: food.carbs || 0,
             fat: food.fat || 0,
-            fiber: food.fiber || 0
+            fiber: food.fiber || 0,
           },
           ingredients: food.ingredients || [],
           confidence: food.confidence || 60,
           enhancementSource: 'gemini',
-          cookingMethod: food.cookingMethod
+          cookingMethod: food.cookingMethod,
         };
 
         enhancedFoods.push(recognizedFood);
@@ -336,8 +367,8 @@ Return structured JSON only.
    * Validate results and calculate final confidence score
    */
   private validateAndScore(
-    foods: RecognizedFood[], 
-    mealType: MealType, 
+    foods: RecognizedFood[],
+    mealType: MealType,
     startTime: number
   ): FoodRecognitionResult {
     if (!foods || foods.length === 0) {
@@ -346,29 +377,29 @@ Return structured JSON only.
         confidence: 0,
         accuracy: 0,
         processingTime: Date.now() - startTime,
-        error: 'No foods recognized in image'
+        error: 'No foods recognized in image',
       };
     }
 
     // Calculate overall confidence
     const avgConfidence = foods.reduce((sum, food) => sum + food.confidence, 0) / foods.length;
-    
+
     // Calculate accuracy based on enhancement sources
     let accuracyBoost = 0;
-    foods.forEach(food => {
+    foods.forEach((food) => {
       if (food.enhancementSource === 'indian_db') accuracyBoost += 5;
       else if (food.enhancementSource === 'free_api') accuracyBoost += 3;
       else if (food.enhancementSource === 'hybrid') accuracyBoost += 4;
     });
-    
-    const finalAccuracy = Math.min(95, 85 + (accuracyBoost / foods.length));
-    
+
+    const finalAccuracy = Math.min(95, 85 + accuracyBoost / foods.length);
+
     return {
       success: true,
       data: foods,
       confidence: Math.round(avgConfidence),
       accuracy: Math.round(finalAccuracy),
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
     };
   }
 
@@ -407,7 +438,7 @@ Return structured JSON only.
   ): Promise<void> {
     // Store user corrections for continuous learning
     console.log('📝 User feedback received:', userCorrections);
-    
+
     // TODO: Implement learning system
     // - Store corrections in Supabase
     // - Update accuracy algorithms
@@ -428,7 +459,7 @@ Return structured JSON only.
       totalRecognitions: 0,
       averageConfidence: 0,
       averageAccuracy: 0,
-      cacheHitRate: 0
+      cacheHitRate: 0,
     };
   }
 }

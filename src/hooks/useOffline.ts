@@ -15,7 +15,7 @@ export interface UseOfflineReturn {
   syncNow: () => Promise<SyncResult>;
   clearOfflineData: () => Promise<void>;
   setAutoSync: (enabled: boolean) => void;
-  
+
   // Utility functions
   isDataStale: (data: any, maxAgeMinutes?: number) => boolean;
   optimisticUpdate: (table: string, id: string, data: any, userId: string) => Promise<void>;
@@ -45,7 +45,7 @@ export const useOffline = (): UseOfflineReturn => {
   // Initialize offline functionality
   useEffect(() => {
     initialize();
-    
+
     // Update sync status periodically
     const interval = setInterval(() => {
       updateSyncStatus();
@@ -130,14 +130,13 @@ export const useOfflineActions = () => {
  */
 export const useOptimisticUpdates = (userId: string) => {
   return {
-    create: (table: string, data: any, tempId?: string) => 
+    create: (table: string, data: any, tempId?: string) =>
       offlineService.optimisticCreate(table, data, userId, tempId),
-    
-    update: (table: string, id: string, data: any) => 
+
+    update: (table: string, id: string, data: any) =>
       offlineService.optimisticUpdate(table, id, data, userId),
-    
-    delete: (table: string, id: string) => 
-      offlineService.optimisticDelete(table, id, userId),
+
+    delete: (table: string, id: string) => offlineService.optimisticDelete(table, id, userId),
   };
 };
 
@@ -147,7 +146,7 @@ export const useOptimisticUpdates = (userId: string) => {
  */
 export const useOfflineData = (table: string) => {
   const { isOnline } = useOffline();
-  
+
   const getOfflineData = (id?: string) => {
     if (id) {
       return offlineService.getOfflineData(`${table}_${id}`);

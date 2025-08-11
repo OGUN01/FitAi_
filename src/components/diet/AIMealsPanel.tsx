@@ -147,7 +147,7 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
       };
 
       await onGenerateMeal(option.type, generationOptions);
-      
+
       // Reset selections after successful generation
       setSelectedOptions([]);
     } catch (error) {
@@ -167,27 +167,25 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
   };
 
   const toggleSuggestion = (suggestion: string) => {
-    setSelectedOptions(prev => 
-      prev.includes(suggestion)
-        ? prev.filter(s => s !== suggestion)
-        : [...prev, suggestion]
+    setSelectedOptions((prev) =>
+      prev.includes(suggestion) ? prev.filter((s) => s !== suggestion) : [...prev, suggestion]
     );
   };
 
   const getProfileStatus = () => {
     if (!profile) return { status: 'incomplete', message: 'Profile not available' };
-    
+
     const missingItems = [];
     if (!profile.personalInfo) missingItems.push('Personal Info');
     if (!profile.fitnessGoals) missingItems.push('Fitness Goals');
     if (!profile.dietPreferences) missingItems.push('Diet Preferences');
-    
+
     if (missingItems.length === 0) {
       return { status: 'complete', message: 'Profile complete - ready for personalized meals!' };
     } else {
-      return { 
-        status: 'partial', 
-        message: `Missing: ${missingItems.join(', ')}. Meals will be less personalized.` 
+      return {
+        status: 'partial',
+        message: `Missing: ${missingItems.join(', ')}. Meals will be less personalized.`,
       };
     }
   };
@@ -213,17 +211,21 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
           </View>
 
           {/* Profile Status */}
-          <View style={[
-            styles.statusBanner,
-            { backgroundColor: profileStatus.status === 'complete' ? '#dcfce7' : '#fef3c7' }
-          ]}>
+          <View
+            style={[
+              styles.statusBanner,
+              { backgroundColor: profileStatus.status === 'complete' ? '#dcfce7' : '#fef3c7' },
+            ]}
+          >
             <Text style={styles.statusIcon}>
               {profileStatus.status === 'complete' ? '✅' : '⚠️'}
             </Text>
-            <Text style={[
-              styles.statusText,
-              { color: profileStatus.status === 'complete' ? '#15803d' : '#92400e' }
-            ]}>
+            <Text
+              style={[
+                styles.statusText,
+                { color: profileStatus.status === 'complete' ? '#15803d' : '#92400e' },
+              ]}
+            >
               {profileStatus.message}
             </Text>
           </View>
@@ -250,14 +252,11 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
           {/* Meal Type Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Generate Specific Meal</Text>
-            
+
             {mealOptions.map((option) => (
               <TouchableOpacity
                 key={option.id}
-                style={[
-                  styles.mealCard,
-                  isGenerating && styles.mealCardDisabled
-                ]}
+                style={[styles.mealCard, isGenerating && styles.mealCardDisabled]}
                 onPress={() => handleMealGeneration(option)}
                 disabled={isGenerating}
               >
@@ -269,7 +268,7 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
                   <View style={styles.mealInfo}>
                     <Text style={styles.mealTitle}>{option.title}</Text>
                     <Text style={styles.mealDescription}>{option.description}</Text>
-                    
+
                     <View style={styles.mealMeta}>
                       <Text style={styles.mealTime}>⏱️ {option.estimatedTime}</Text>
                       <Text style={styles.mealSuggestions}>

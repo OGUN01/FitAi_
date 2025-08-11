@@ -23,10 +23,12 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Suppress Metro symbolication errors from console
-    if (error.message?.includes('unknown') ||
-        error.stack?.includes('getCodeFrame') ||
-        error.stack?.includes('symbolicate') ||
-        error.message?.includes('ENOENT')) {
+    if (
+      error.message?.includes('unknown') ||
+      error.stack?.includes('getCodeFrame') ||
+      error.stack?.includes('symbolicate') ||
+      error.message?.includes('ENOENT')
+    ) {
       // Silently ignore Metro symbolication errors
       return;
     }
@@ -61,9 +63,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             {__DEV__ && (
               <View style={styles.debugContainer}>
                 <Text style={styles.debugTitle}>Debug Info:</Text>
-                <Text style={styles.debugText}>
-                  {this.state.error?.stack}
-                </Text>
+                <Text style={styles.debugText}>{this.state.error?.stack}</Text>
               </View>
             )}
           </View>

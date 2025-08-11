@@ -65,7 +65,7 @@ class PerformanceMonitor {
   }
 
   getMetrics(): PerformanceMetric[] {
-    return Array.from(this.metrics.values()).filter(m => m.endTime);
+    return Array.from(this.metrics.values()).filter((m) => m.endTime);
   }
 
   clearMetrics() {
@@ -74,7 +74,7 @@ class PerformanceMonitor {
 
   logSummary() {
     const completedMetrics = this.getMetrics();
-    
+
     if (completedMetrics.length === 0) {
       console.log('📊 No performance metrics recorded');
       return;
@@ -83,7 +83,7 @@ class PerformanceMonitor {
     console.log('📊 Performance Summary:');
     completedMetrics
       .sort((a, b) => (b.duration || 0) - (a.duration || 0))
-      .forEach(metric => {
+      .forEach((metric) => {
         console.log(`  ${metric.name}: ${metric.duration}ms`);
       });
 
@@ -146,14 +146,14 @@ export function batchUpdates<T>(
   return new Promise(async (resolve) => {
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
-      
+
       await Promise.all(batch.map(processor));
-      
+
       if (delay > 0 && i + batchSize < items.length) {
-        await new Promise(r => setTimeout(r, delay));
+        await new Promise((r) => setTimeout(r, delay));
       }
     }
-    
+
     resolve();
   });
 }
@@ -170,9 +170,12 @@ export class MemoryOptimizer {
 
   private constructor() {
     // Cleanup expired cache entries every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000
+    );
   }
 
   static getInstance(): MemoryOptimizer {
@@ -186,11 +189,14 @@ export class MemoryOptimizer {
     this.maxCacheSize = size;
   }
 
-  set(key: string, data: any, ttl: number = 10 * 60 * 1000) { // 10 minutes default
+  set(key: string, data: any, ttl: number = 10 * 60 * 1000) {
+    // 10 minutes default
     // Remove oldest entries if cache is full
     if (this.cache.size >= this.maxCacheSize) {
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
     }
 
     this.cache.set(key, {
@@ -202,7 +208,7 @@ export class MemoryOptimizer {
 
   get(key: string): any | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -226,7 +232,7 @@ export class MemoryOptimizer {
 
   private cleanup() {
     const now = Date.now();
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (now - entry.timestamp > entry.ttl) {
         this.cache.delete(key);
@@ -261,9 +267,9 @@ export function shouldComponentUpdate<T extends Record<string, any>>(
   nextProps: T,
   keys?: (keyof T)[]
 ): boolean {
-  const keysToCheck = keys || Object.keys(nextProps) as (keyof T)[];
-  
-  return keysToCheck.some(key => prevProps[key] !== nextProps[key]);
+  const keysToCheck = keys || (Object.keys(nextProps) as (keyof T)[]);
+
+  return keysToCheck.some((key) => prevProps[key] !== nextProps[key]);
 }
 
 export function shallowEqual<T extends Record<string, any>>(obj1: T, obj2: T): boolean {
@@ -274,7 +280,7 @@ export function shallowEqual<T extends Record<string, any>>(obj1: T, obj2: T): b
     return false;
   }
 
-  return keys1.every(key => obj1[key] === obj2[key]);
+  return keys1.every((key) => obj1[key] === obj2[key]);
 }
 
 // ============================================================================
@@ -306,9 +312,7 @@ export const platformOptimizations = {
 
   // Get platform-specific optimizations
   get: () => {
-    return Platform.OS === 'ios' 
-      ? platformOptimizations.ios 
-      : platformOptimizations.android;
+    return Platform.OS === 'ios' ? platformOptimizations.ios : platformOptimizations.android;
   },
 };
 
@@ -323,7 +327,7 @@ export function measurePerformance(name?: string) {
 
     descriptor.value = async function (...args: any[]) {
       performanceMonitor.startTiming(methodName);
-      
+
       try {
         const result = await originalMethod.apply(this, args);
         performanceMonitor.endTiming(methodName);
@@ -342,17 +346,17 @@ export function measurePerformance(name?: string) {
 // BUNDLE SIZE OPTIMIZATION
 // ============================================================================
 
+import React from 'react';
+
 export const bundleOptimizations = {
   // Lazy load components
-  lazyLoad: <T extends React.ComponentType<any>>(
-    importFunc: () => Promise<{ default: T }>
-  ) => {
+  lazyLoad: <T extends React.ComponentType<any>>(importFunc: () => Promise<{ default: T }>) => {
     return React.lazy(importFunc);
   },
 
   // Preload critical resources
   preloadCritical: (resources: string[]) => {
-    resources.forEach(resource => {
+    resources.forEach((resource) => {
       // Preload logic would go here
       console.log(`Preloading: ${resource}`);
     });

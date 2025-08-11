@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Modal, ActivityIndicator, StyleSheet } from 'react-native';
 import { THEME } from '../ui';
 
 interface MigrationStatusModalProps {
@@ -23,44 +17,28 @@ export const MigrationStatusModal: React.FC<MigrationStatusModalProps> = ({
   onComplete,
 }) => {
   return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="fade"
-      statusBarTranslucent={true}
-    >
+    <Modal visible={visible} transparent={true} animationType="fade" statusBarTranslucent={true}>
       <View style={styles.overlay}>
         <View style={styles.container}>
           <View style={styles.header}>
-            <ActivityIndicator 
-              size="large" 
-              color={THEME.colors.primary} 
-              style={styles.spinner}
-            />
+            <ActivityIndicator size="large" color={THEME.colors.primary} style={styles.spinner} />
             <Text style={styles.title}>Syncing Your Data</Text>
             <Text style={styles.subtitle}>
               {progress?.message || 'Migrating your profile data to your account...'}
             </Text>
           </View>
-          
+
           {progress?.percentage !== undefined && (
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View 
-                  style={[
-                    styles.progressFill, 
-                    { width: `${progress.percentage}%` }
-                  ]} 
-                />
+                <View style={[styles.progressFill, { width: `${progress.percentage}%` }]} />
               </View>
               <Text style={styles.progressText}>{progress.percentage}%</Text>
             </View>
           )}
-          
+
           <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              🔒 Your data is being securely transferred
-            </Text>
+            <Text style={styles.footerText}>🔒 Your data is being securely transferred</Text>
             <Text style={styles.footerSubtext}>
               This process ensures no data is lost during migration
             </Text>

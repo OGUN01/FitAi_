@@ -15,7 +15,6 @@ import {
 } from '../types/profileData';
 
 class ProfileValidator implements DataValidationSchema {
-  
   // ============================================================================
   // PERSONAL INFO VALIDATION
   // ============================================================================
@@ -70,7 +69,9 @@ class ProfileValidator implements DataValidationSchema {
 
     if (!data.activityLevel) {
       errors.push('Activity level is required');
-    } else if (!['sedentary', 'light', 'moderate', 'active', 'very_active'].includes(data.activityLevel)) {
+    } else if (
+      !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes(data.activityLevel)
+    ) {
       errors.push('Invalid activity level');
     }
 
@@ -145,7 +146,11 @@ class ProfileValidator implements DataValidationSchema {
     // Required fields validation
     if (!data.dietType) {
       errors.push('Diet type is required');
-    } else if (!['vegetarian', 'vegan', 'non-veg', 'pescatarian', 'keto', 'paleo', 'mediterranean'].includes(data.dietType)) {
+    } else if (
+      !['vegetarian', 'vegan', 'non-veg', 'pescatarian', 'keto', 'paleo', 'mediterranean'].includes(
+        data.dietType
+      )
+    ) {
       errors.push('Invalid diet type');
     }
 
@@ -332,7 +337,9 @@ class ProfileValidator implements DataValidationSchema {
       } else {
         // Partial credit based on filled fields
         const requiredFields = ['name', 'age', 'gender', 'height', 'weight', 'activityLevel'];
-        const filledFields = requiredFields.filter(field => profile.personalInfo![field as keyof PersonalInfo]);
+        const filledFields = requiredFields.filter(
+          (field) => profile.personalInfo![field as keyof PersonalInfo]
+        );
         completeness += (filledFields.length / requiredFields.length) * 40;
       }
     }

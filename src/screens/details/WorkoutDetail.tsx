@@ -39,7 +39,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   const workout = {
     id: workoutId,
     name: 'Upper Body Strength',
-    description: 'Build strength and muscle mass in your upper body with this comprehensive workout',
+    description:
+      'Build strength and muscle mass in your upper body with this comprehensive workout',
     duration: '45-60 min',
     difficulty: 'Intermediate',
     targetMuscles: ['Chest', 'Back', 'Shoulders', 'Arms'],
@@ -57,7 +58,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           'Lie flat on bench with feet firmly on ground',
           'Grip barbell slightly wider than shoulder width',
           'Lower bar to chest with control',
-          'Press bar up explosively to starting position'
+          'Press bar up explosively to starting position',
         ],
         targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
         difficulty: 'Intermediate' as const,
@@ -74,7 +75,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           'Stand with feet hip-width apart, holding barbell',
           'Hinge at hips, keeping back straight',
           'Pull barbell to lower chest/upper abdomen',
-          'Lower with control to starting position'
+          'Lower with control to starting position',
         ],
         targetMuscles: ['Back', 'Biceps'],
         difficulty: 'Intermediate' as const,
@@ -91,7 +92,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           'Stand with feet shoulder-width apart',
           'Hold barbell at shoulder height',
           'Press barbell overhead until arms are fully extended',
-          'Lower with control to starting position'
+          'Lower with control to starting position',
         ],
         targetMuscles: ['Shoulders', 'Triceps'],
         difficulty: 'Intermediate' as const,
@@ -187,10 +188,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         {/* Exercises List */}
         <View style={styles.exercisesSection}>
           <Text style={styles.sectionTitle}>Exercises ({workout.exercises.length})</Text>
-          
+
           {workout.exercises.map((exercise, index) => (
-            <Card 
-              key={exercise.id} 
+            <Card
+              key={exercise.id}
               style={styles.exerciseCard}
               onPress={() => setSelectedExercise(exercise)}
             >
@@ -210,7 +211,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                   <Text style={styles.exerciseArrowText}>→</Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Target Muscles for Exercise */}
               <View style={styles.exerciseMuscles}>
                 {exercise.targetMuscles.map((muscle, muscleIndex) => (

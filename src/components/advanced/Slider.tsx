@@ -1,12 +1,5 @@
 import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  PanResponder,
-  Animated,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
 import { THEME } from '../../utils/constants';
 
 interface SliderProps {
@@ -47,7 +40,8 @@ export const Slider: React.FC<SliderProps> = ({
 
   // Calculate thumb position based on value
   React.useEffect(() => {
-    if (sliderWidth > 24) { // Ensure slider is wide enough
+    if (sliderWidth > 24) {
+      // Ensure slider is wide enough
       const percentage = (value - min) / (max - min);
       const position = percentage * (sliderWidth - 24); // 24 is thumb width
 
@@ -134,11 +128,14 @@ export const Slider: React.FC<SliderProps> = ({
             styles.activeTrack,
             {
               backgroundColor: activeTrackColor,
-              width: sliderWidth > 24 ? thumbPosition.interpolate({
-                inputRange: [0, sliderWidth - 24],
-                outputRange: [12, sliderWidth - 12],
-                extrapolate: 'clamp',
-              }) : 12,
+              width:
+                sliderWidth > 24
+                  ? thumbPosition.interpolate({
+                      inputRange: [0, sliderWidth - 24],
+                      outputRange: [12, sliderWidth - 12],
+                      extrapolate: 'clamp',
+                    })
+                  : 12,
             },
           ]}
         />
@@ -149,10 +146,7 @@ export const Slider: React.FC<SliderProps> = ({
             styles.thumb,
             {
               backgroundColor: thumbColor,
-              transform: [
-                { translateX: thumbPosition },
-                { scale: thumbScale },
-              ],
+              transform: [{ translateX: thumbPosition }, { scale: thumbScale }],
             },
             disabled && styles.thumbDisabled,
           ]}
@@ -164,8 +158,14 @@ export const Slider: React.FC<SliderProps> = ({
 
       {/* Min/Max Labels */}
       <View style={styles.minMaxContainer}>
-        <Text style={styles.minMaxText}>{min}{unit}</Text>
-        <Text style={styles.minMaxText}>{max}{unit}</Text>
+        <Text style={styles.minMaxText}>
+          {min}
+          {unit}
+        </Text>
+        <Text style={styles.minMaxText}>
+          {max}
+          {unit}
+        </Text>
       </View>
 
       {/* Step Indicators */}
@@ -174,7 +174,7 @@ export const Slider: React.FC<SliderProps> = ({
           {Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, index) => {
             const stepValue = min + index * step;
             const stepPercentage = ((stepValue - min) / (max - min)) * 100;
-            
+
             return (
               <View
                 key={index}
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
   },
 
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
 
   value: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold,
+    fontWeight: THEME.fontWeight.bold as '700',
     color: THEME.colors.primary,
   },
 

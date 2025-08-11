@@ -88,11 +88,11 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
   const showMenu = () => {
     const { x, y } = touchPosition.current;
-    
+
     // Calculate menu position to keep it on screen
     const menuWidth = 200;
     const menuHeight = menuItems.length * 50 + 20;
-    
+
     let adjustedX = x - menuWidth / 2;
     let adjustedY = y - menuHeight - 10;
 
@@ -145,7 +145,7 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
     }
 
     hideMenu();
-    
+
     // Delay the action slightly to allow menu to close
     setTimeout(() => {
       item.onPress();
@@ -168,17 +168,8 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
         {children}
       </Animated.View>
 
-      <Modal
-        visible={isMenuVisible}
-        transparent
-        animationType="none"
-        onRequestClose={hideMenu}
-      >
-        <TouchableOpacity
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={hideMenu}
-        >
+      <Modal visible={isMenuVisible} transparent animationType="none" onRequestClose={hideMenu}>
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={hideMenu}>
           <Animated.View
             style={[
               styles.menu,
@@ -203,11 +194,13 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
                 disabled={item.disabled}
               >
                 <Text style={styles.menuIcon}>{item.icon}</Text>
-                <Text style={[
-                  styles.menuLabel,
-                  item.destructive && styles.menuLabelDestructive,
-                  item.disabled && styles.menuLabelDisabled,
-                ]}>
+                <Text
+                  style={[
+                    styles.menuLabel,
+                    item.destructive && styles.menuLabelDestructive,
+                    item.disabled && styles.menuLabelDisabled,
+                  ]}
+                >
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -265,7 +258,7 @@ const styles = StyleSheet.create({
 
   menuLabel: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
+    fontWeight: THEME.fontWeight.medium as '500',
     color: THEME.colors.text,
     flex: 1,
   },

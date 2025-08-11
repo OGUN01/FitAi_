@@ -10,7 +10,11 @@ import {
   CreateFitnessGoalsRequest,
   UpdateFitnessGoalsRequest,
 } from '../types/user';
-import { userProfileService, UserProfileResponse, FitnessGoalsResponse } from '../services/userProfile';
+import {
+  userProfileService,
+  UserProfileResponse,
+  FitnessGoalsResponse,
+} from '../services/userProfile';
 
 interface UserState {
   // State
@@ -25,7 +29,10 @@ interface UserState {
   updateProfile: (userId: string, updates: UpdateProfileRequest) => Promise<UserProfileResponse>;
   createFitnessGoals: (goalsData: CreateFitnessGoalsRequest) => Promise<FitnessGoalsResponse>;
   getFitnessGoals: (userId: string) => Promise<FitnessGoalsResponse>;
-  updateFitnessGoals: (userId: string, updates: UpdateFitnessGoalsRequest) => Promise<FitnessGoalsResponse>;
+  updateFitnessGoals: (
+    userId: string,
+    updates: UpdateFitnessGoalsRequest
+  ) => Promise<FitnessGoalsResponse>;
   getCompleteProfile: (userId: string) => Promise<UserProfileResponse>;
   deleteProfile: (userId: string) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
@@ -116,7 +123,10 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      updateProfile: async (userId: string, updates: UpdateProfileRequest): Promise<UserProfileResponse> => {
+      updateProfile: async (
+        userId: string,
+        updates: UpdateProfileRequest
+      ): Promise<UserProfileResponse> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -151,7 +161,9 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      createFitnessGoals: async (goalsData: CreateFitnessGoalsRequest): Promise<FitnessGoalsResponse> => {
+      createFitnessGoals: async (
+        goalsData: CreateFitnessGoalsRequest
+      ): Promise<FitnessGoalsResponse> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -185,7 +197,8 @@ export const useUserStore = create<UserState>()(
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to create fitness goals';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to create fitness goals';
           set({
             isLoading: false,
             error: errorMessage,
@@ -232,7 +245,8 @@ export const useUserStore = create<UserState>()(
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to get fitness goals';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to get fitness goals';
           set({
             isLoading: false,
             error: errorMessage,
@@ -245,7 +259,10 @@ export const useUserStore = create<UserState>()(
         }
       },
 
-      updateFitnessGoals: async (userId: string, updates: UpdateFitnessGoalsRequest): Promise<FitnessGoalsResponse> => {
+      updateFitnessGoals: async (
+        userId: string,
+        updates: UpdateFitnessGoalsRequest
+      ): Promise<FitnessGoalsResponse> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -279,7 +296,8 @@ export const useUserStore = create<UserState>()(
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to update fitness goals';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to update fitness goals';
           set({
             isLoading: false,
             error: errorMessage,
@@ -314,7 +332,8 @@ export const useUserStore = create<UserState>()(
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Failed to get complete profile';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Failed to get complete profile';
           set({
             isLoading: false,
             error: errorMessage,
@@ -412,7 +431,7 @@ export const useUserStore = create<UserState>()(
       // Helper function to check if profile is complete
       checkProfileComplete: (profile: UserProfile): boolean => {
         const { personalInfo, fitnessGoals } = profile;
-        
+
         const hasPersonalInfo = !!(
           personalInfo.name &&
           personalInfo.age &&

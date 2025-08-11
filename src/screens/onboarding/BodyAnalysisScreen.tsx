@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Image,
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -43,9 +35,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
   onSkip,
   initialData = {},
 }) => {
-  const [photos, setPhotos] = useState<BodyAnalysis['photos']>(
-    initialData.photos || {}
-  );
+  const [photos, setPhotos] = useState<BodyAnalysis['photos']>(initialData.photos || {});
   const [analysis, setAnalysis] = useState<BodyAnalysis['analysis'] | null>(
     initialData.analysis || null
   );
@@ -60,37 +50,37 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
       title: 'Front View',
       icon: '👤',
       description: 'Stand facing the camera',
-      instruction: 'Stand straight, arms at your sides, facing the camera'
+      instruction: 'Stand straight, arms at your sides, facing the camera',
     },
     {
       type: 'back' as const,
       title: 'Back View',
       icon: '🔄',
       description: 'Turn around, back to camera',
-      instruction: 'Turn around, arms at your sides, back facing the camera'
+      instruction: 'Turn around, arms at your sides, back facing the camera',
     },
     {
       type: 'side' as const,
       title: 'Side View',
       icon: '↔️',
       description: 'Turn sideways to camera',
-      instruction: 'Turn to your side, arms at your sides, profile view'
+      instruction: 'Turn to your side, arms at your sides, profile view',
     },
   ];
 
   const handleCameraCapture = (imageUri: string) => {
-    setPhotos(prev => ({
+    setPhotos((prev) => ({
       ...prev,
-      [currentPhotoType]: imageUri
+      [currentPhotoType]: imageUri,
     }));
     setShowCamera(false);
   };
 
   const handleImagePickerSelect = (imageUris: string[]) => {
     if (imageUris.length > 0) {
-      setPhotos(prev => ({
+      setPhotos((prev) => ({
         ...prev,
-        [currentPhotoType]: imageUris[0]
+        [currentPhotoType]: imageUris[0],
       }));
     }
     setShowImagePicker(false);
@@ -98,19 +88,15 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
 
   const openPhotoOptions = (photoType: 'front' | 'back' | 'side') => {
     setCurrentPhotoType(photoType);
-    Alert.alert(
-      'Add Photo',
-      'How would you like to add your photo?',
-      [
-        { text: 'Camera', onPress: () => setShowCamera(true) },
-        { text: 'Photo Library', onPress: () => setShowImagePicker(true) },
-        { text: 'Cancel', style: 'cancel' }
-      ]
-    );
+    Alert.alert('Add Photo', 'How would you like to add your photo?', [
+      { text: 'Camera', onPress: () => setShowCamera(true) },
+      { text: 'Photo Library', onPress: () => setShowImagePicker(true) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const removePhoto = (photoType: 'front' | 'back' | 'side') => {
-    setPhotos(prev => {
+    setPhotos((prev) => {
       const newPhotos = { ...prev };
       delete newPhotos[photoType];
       return newPhotos;
@@ -132,8 +118,8 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
     try {
       // Simulate AI analysis for now
       // TODO: Integrate with Google Gemini Vision API
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
       const mockAnalysis = {
         bodyType: 'Mesomorph',
         muscleMass: 'Moderate',
@@ -143,8 +129,8 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
           'Focus on strength training to build lean muscle',
           'Incorporate cardio 3-4 times per week',
           'Maintain a balanced diet with adequate protein',
-          'Consider progressive overload in your workouts'
-        ]
+          'Consider progressive overload in your workouts',
+        ],
       };
 
       setAnalysis(mockAnalysis);
@@ -175,9 +161,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.title}>Body Analysis</Text>
-          <Text style={styles.subtitle}>
-            Take photos for AI-powered body composition analysis
-          </Text>
+          <Text style={styles.subtitle}>Take photos for AI-powered body composition analysis</Text>
         </View>
 
         <View style={styles.content}>
@@ -186,11 +170,9 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
             <Text style={styles.sectionTitle}>Photo Guidelines</Text>
             <Card style={styles.instructionCard}>
               <Text style={styles.instructionText}>
-                • Wear form-fitting clothes or workout attire{'\n'}
-                • Ensure good lighting{'\n'}
-                • Stand against a plain background{'\n'}
-                • Keep arms at your sides{'\n'}
-                • Take photos from about 6 feet away
+                • Wear form-fitting clothes or workout attire{'\n'}• Ensure good lighting{'\n'}•
+                Stand against a plain background{'\n'}• Keep arms at your sides{'\n'}• Take photos
+                from about 6 feet away
               </Text>
             </Card>
           </View>
@@ -225,17 +207,13 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
                         <View style={styles.photoPlaceholder}>
                           <Text style={styles.photoIcon}>{photoType.icon}</Text>
                           <Text style={styles.photoTitle}>{photoType.title}</Text>
-                          <Text style={styles.photoDescription}>
-                            {photoType.description}
-                          </Text>
+                          <Text style={styles.photoDescription}>{photoType.description}</Text>
                           <Text style={styles.addPhotoText}>Tap to add</Text>
                         </View>
                       )}
                     </Card>
                   </TouchableOpacity>
-                  <Text style={styles.photoInstruction}>
-                    {photoType.instruction}
-                  </Text>
+                  <Text style={styles.photoInstruction}>{photoType.instruction}</Text>
                 </View>
               ))}
             </View>
@@ -277,7 +255,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
                     <Text style={styles.analysisValue}>{analysis.fitnessLevel}</Text>
                   </View>
                 </View>
-                
+
                 <View style={styles.recommendationsSection}>
                   <Text style={styles.recommendationsTitle}>Recommendations</Text>
                   {analysis.recommendations.map((rec, index) => (
@@ -293,9 +271,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
           {/* Skip Option */}
           <View style={styles.section}>
             <TouchableOpacity onPress={onSkip}>
-              <Text style={styles.skipText}>
-                Skip body analysis (you can add photos later)
-              </Text>
+              <Text style={styles.skipText}>Skip body analysis (you can add photos later)</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -303,18 +279,8 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
 
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button
-            title="Back"
-            onPress={onBack}
-            variant="outline"
-            style={styles.backButton}
-          />
-          <Button
-            title="Next"
-            onPress={handleNext}
-            variant="primary"
-            style={styles.nextButton}
-          />
+          <Button title="Back" onPress={onBack} variant="outline" style={styles.backButton} />
+          <Button title="Next" onPress={handleNext} variant="primary" style={styles.nextButton} />
         </View>
       </View>
 

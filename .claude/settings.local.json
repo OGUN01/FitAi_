@@ -97,7 +97,9 @@
       "Bash(./gradlew:*)",
       "Bash(git rm:*)",
       "Bash(dir:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)"
     ],
     "deny": []
   },

@@ -1,6 +1,6 @@
 /**
  * Exercise Filter Service
- * 
+ *
  * Filters the complete exercise database based on user profile
  * to provide personalized exercise recommendations with 100% GIF coverage.
  */
@@ -39,31 +39,41 @@ class ExerciseFilterService {
    * Categorize exercises by difficulty based on equipment and complexity
    */
   private categorizeExercises(): FilteredExercise[] {
-    return exerciseDatabase.exercises.map(exercise => {
+    return exerciseDatabase.exercises.map((exercise) => {
       // Determine difficulty based on equipment and movement patterns
       let difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate';
-      
+
       const equipment = exercise.equipments[0] || 'body weight';
       const exerciseName = exercise.name.toLowerCase();
-      
+
       // Beginner: Body weight and simple movements
-      if (equipment === 'body weight' && !exerciseName.includes('advanced') && 
-          !exerciseName.includes('weighted') && !exerciseName.includes('one arm') &&
-          !exerciseName.includes('single') && !exerciseName.includes('pistol')) {
+      if (
+        equipment === 'body weight' &&
+        !exerciseName.includes('advanced') &&
+        !exerciseName.includes('weighted') &&
+        !exerciseName.includes('one arm') &&
+        !exerciseName.includes('single') &&
+        !exerciseName.includes('pistol')
+      ) {
         difficulty = 'beginner';
       }
-      
+
       // Advanced: Complex equipment or advanced variations
-      else if (equipment.includes('barbell') || equipment.includes('olympic') || 
-               exerciseName.includes('advanced') || exerciseName.includes('weighted') ||
-               exerciseName.includes('pistol') || exerciseName.includes('muscle up') ||
-               exerciseName.includes('handstand')) {
+      else if (
+        equipment.includes('barbell') ||
+        equipment.includes('olympic') ||
+        exerciseName.includes('advanced') ||
+        exerciseName.includes('weighted') ||
+        exerciseName.includes('pistol') ||
+        exerciseName.includes('muscle up') ||
+        exerciseName.includes('handstand')
+      ) {
         difficulty = 'advanced';
       }
-      
+
       return {
         ...exercise,
-        difficulty
+        difficulty,
       };
     });
   }
@@ -73,20 +83,24 @@ class ExerciseFilterService {
    */
   filterExercises(personalInfo: PersonalInfo, fitnessGoals: FitnessGoals): FilteredExercise[] {
     const criteria: FilterCriteria = this.buildFilterCriteria(personalInfo, fitnessGoals);
-    
-    return this.exercises.filter(exercise => {
+
+    return this.exercises.filter((exercise) => {
       // 1. Experience level filter
       const levelMatch = this.matchExperienceLevel(exercise.difficulty, criteria.experienceLevel);
-      
+
       // 2. Equipment filter
       const equipmentMatch = this.matchEquipment(exercise.equipments, criteria.availableEquipment);
-      
+
       // 3. Target areas filter
-      const targetMatch = this.matchTargetAreas(exercise.bodyParts, exercise.targetMuscles, criteria.targetAreas);
-      
+      const targetMatch = this.matchTargetAreas(
+        exercise.bodyParts,
+        exercise.targetMuscles,
+        criteria.targetAreas
+      );
+
       // 4. Fitness goals filter
       const goalMatch = this.matchFitnessGoals(exercise, criteria.fitnessGoals);
-      
+
       return levelMatch && equipmentMatch && targetMatch && goalMatch;
     });
   }
@@ -94,10 +108,13 @@ class ExerciseFilterService {
   /**
    * Build filter criteria from user profile
    */
-  private buildFilterCriteria(personalInfo: PersonalInfo, fitnessGoals: FitnessGoals): FilterCriteria {
+  private buildFilterCriteria(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals
+  ): FilterCriteria {
     // Map equipment availability
     const availableEquipment: string[] = ['body weight']; // Always include bodyweight
-    
+
     if (fitnessGoals.preferred_equipment?.includes('dumbbells')) {
       availableEquipment.push('dumbbell');
     }
@@ -107,7 +124,7 @@ class ExerciseFilterService {
     if (fitnessGoals.preferred_equipment?.includes('gym_equipment')) {
       availableEquipment.push('barbell', 'cable', 'machine', 'smith machine', 'leverage machine');
     }
-    
+
     // Map target areas
     const targetAreas: string[] = [];
     if (fitnessGoals.target_areas?.includes('full_body')) {
@@ -123,35 +140,35 @@ class ExerciseFilterService {
         targetAreas.push('waist', 'abs');
       }
     }
-    
+
     const level = (fitnessGoals.experience_level || fitnessGoals.experience || '').toLowerCase();
-    const experienceLevel: 'beginner'|'intermediate'|'advanced' =
-      level === 'beginner' || level === 'intermediate' || level === 'advanced' ? (level as any) : 'beginner';
+    const experienceLevel: 'beginner' | 'intermediate' | 'advanced' =
+      level === 'beginner' || level === 'intermediate' || level === 'advanced'
+        ? (level as any)
+        : 'beginner';
 
     return {
       experienceLevel,
       targetAreas,
       availableEquipment,
-      fitnessGoals: fitnessGoals.primaryGoals
+      fitnessGoals: fitnessGoals.primaryGoals,
     };
   }
 
   /**
    * Match exercise difficulty with user experience level
    */
-  private matchExperienceLevel(
-    exerciseDifficulty: string, 
-    userLevel: string
-  ): boolean {
-    const levelHierarchy: Record<'beginner'|'intermediate'|'advanced', number> = {
+  private matchExperienceLevel(exerciseDifficulty: string, userLevel: string): boolean {
+    const levelHierarchy: Record<'beginner' | 'intermediate' | 'advanced', number> = {
       beginner: 1,
       intermediate: 2,
       advanced: 3,
     };
 
-    const exerciseLevel = levelHierarchy[(exerciseDifficulty as 'beginner'|'intermediate'|'advanced')] ?? 2;
-    const userLevelNum = levelHierarchy[(userLevel as 'beginner'|'intermediate'|'advanced')] ?? 1;
-    
+    const exerciseLevel =
+      levelHierarchy[exerciseDifficulty as 'beginner' | 'intermediate' | 'advanced'] ?? 2;
+    const userLevelNum = levelHierarchy[userLevel as 'beginner' | 'intermediate' | 'advanced'] ?? 1;
+
     // Allow exercises at or below user's level
     return exerciseLevel <= userLevelNum;
   }
@@ -159,14 +176,12 @@ class ExerciseFilterService {
   /**
    * Match exercise equipment with available equipment
    */
-  private matchEquipment(
-    exerciseEquipment: string[], 
-    availableEquipment: string[]
-  ): boolean {
-    return exerciseEquipment.some(eq => 
-      availableEquipment.some(available => 
-        available.toLowerCase().includes(eq.toLowerCase()) ||
-        eq.toLowerCase().includes(available.toLowerCase())
+  private matchEquipment(exerciseEquipment: string[], availableEquipment: string[]): boolean {
+    return exerciseEquipment.some((eq) =>
+      availableEquipment.some(
+        (available) =>
+          available.toLowerCase().includes(eq.toLowerCase()) ||
+          eq.toLowerCase().includes(available.toLowerCase())
       )
     );
   }
@@ -175,19 +190,20 @@ class ExerciseFilterService {
    * Match exercise target areas with user's target areas
    */
   private matchTargetAreas(
-    bodyParts: string[], 
+    bodyParts: string[],
     targetMuscles: string[],
     userTargetAreas: string[]
   ): boolean {
     // If no specific targets, match all
     if (userTargetAreas.length === 0) return true;
-    
+
     const allTargets = [...bodyParts, ...targetMuscles];
-    
-    return allTargets.some(target => 
-      userTargetAreas.some(userTarget => 
-        target.toLowerCase().includes(userTarget.toLowerCase()) ||
-        userTarget.toLowerCase().includes(target.toLowerCase())
+
+    return allTargets.some((target) =>
+      userTargetAreas.some(
+        (userTarget) =>
+          target.toLowerCase().includes(userTarget.toLowerCase()) ||
+          userTarget.toLowerCase().includes(target.toLowerCase())
       )
     );
   }
@@ -195,50 +211,55 @@ class ExerciseFilterService {
   /**
    * Match exercise with fitness goals
    */
-  private matchFitnessGoals(
-    exercise: FilteredExercise,
-    goals: string[]
-  ): boolean {
+  private matchFitnessGoals(exercise: FilteredExercise, goals: string[]): boolean {
     // If no specific goals, match all
     if (!goals || goals.length === 0) return true;
-    
+
     // Map goals to exercise characteristics
     for (const goal of goals) {
       switch (goal) {
         case 'weight_loss':
           // Prefer cardio and full-body exercises
-          if (exercise.bodyParts.includes('cardio') || 
-              exercise.targetMuscles.includes('cardiovascular system')) {
+          if (
+            exercise.bodyParts.includes('cardio') ||
+            exercise.targetMuscles.includes('cardiovascular system')
+          ) {
             return true;
           }
           break;
-          
+
         case 'muscle_gain':
           // Prefer strength exercises with equipment
-          if (!exercise.bodyParts.includes('cardio') && 
-              exercise.equipments.some(eq => eq !== 'body weight')) {
+          if (
+            !exercise.bodyParts.includes('cardio') &&
+            exercise.equipments.some((eq) => eq !== 'body weight')
+          ) {
             return true;
           }
           break;
-          
+
         case 'endurance':
           // Prefer cardio and bodyweight exercises
-          if (exercise.bodyParts.includes('cardio') || 
-              exercise.equipments.includes('body weight')) {
+          if (
+            exercise.bodyParts.includes('cardio') ||
+            exercise.equipments.includes('body weight')
+          ) {
             return true;
           }
           break;
-          
+
         case 'flexibility':
           // Prefer stretching and mobility exercises
-          if (exercise.name.toLowerCase().includes('stretch') || 
-              exercise.name.toLowerCase().includes('mobility')) {
+          if (
+            exercise.name.toLowerCase().includes('stretch') ||
+            exercise.name.toLowerCase().includes('mobility')
+          ) {
             return true;
           }
           break;
       }
     }
-    
+
     // Default: match if it's a relevant exercise
     return true;
   }
@@ -247,42 +268,44 @@ class ExerciseFilterService {
    * Get a subset of exercises for a specific workout type
    */
   getExercisesByType(
-    filteredExercises: FilteredExercise[], 
+    filteredExercises: FilteredExercise[],
     type: 'warmup' | 'main' | 'cooldown',
     count: number = 10
   ): FilteredExercise[] {
     let typeFiltered: FilteredExercise[];
-    
+
     switch (type) {
       case 'warmup':
         // Light cardio and dynamic movements
-        typeFiltered = filteredExercises.filter(ex => 
-          ex.bodyParts.includes('cardio') || 
-          ex.name.toLowerCase().includes('jump') ||
-          ex.name.toLowerCase().includes('warm') ||
-          (ex.difficulty === 'beginner' && ex.equipments.includes('body weight'))
+        typeFiltered = filteredExercises.filter(
+          (ex) =>
+            ex.bodyParts.includes('cardio') ||
+            ex.name.toLowerCase().includes('jump') ||
+            ex.name.toLowerCase().includes('warm') ||
+            (ex.difficulty === 'beginner' && ex.equipments.includes('body weight'))
         );
         break;
-        
+
       case 'cooldown':
         // Stretching and light movements
-        typeFiltered = filteredExercises.filter(ex => 
-          ex.name.toLowerCase().includes('stretch') ||
-          ex.name.toLowerCase().includes('cool') ||
-          ex.name.toLowerCase().includes('mobility')
+        typeFiltered = filteredExercises.filter(
+          (ex) =>
+            ex.name.toLowerCase().includes('stretch') ||
+            ex.name.toLowerCase().includes('cool') ||
+            ex.name.toLowerCase().includes('mobility')
         );
         break;
-        
+
       default:
         // Main workout exercises
         typeFiltered = filteredExercises;
     }
-    
+
     // Return requested count, with fallback to main exercises if needed
     if (typeFiltered.length < count) {
       return [...typeFiltered, ...filteredExercises.slice(0, count - typeFiltered.length)];
     }
-    
+
     return typeFiltered.slice(0, count);
   }
 
@@ -290,14 +313,14 @@ class ExerciseFilterService {
    * Get exercise by ID for direct lookup
    */
   getExerciseById(exerciseId: string): FilteredExercise | null {
-    return this.exercises.find(ex => ex.exerciseId === exerciseId) || null;
+    return this.exercises.find((ex) => ex.exerciseId === exerciseId) || null;
   }
 
   /**
    * Get all exercise IDs for validation
    */
   getAllExerciseIds(): string[] {
-    return this.exercises.map(ex => ex.exerciseId);
+    return this.exercises.map((ex) => ex.exerciseId);
   }
 }
 

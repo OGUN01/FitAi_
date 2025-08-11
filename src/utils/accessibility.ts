@@ -104,9 +104,9 @@ export const createFormFieldProps = (options: {
   placeholder?: string;
 }) => {
   const label = options.required ? `${options.label} (required)` : options.label;
-  const hint = options.error 
-    ? `Error: ${options.error}` 
-    : options.placeholder 
+  const hint = options.error
+    ? `Error: ${options.error}`
+    : options.placeholder
       ? `Placeholder: ${options.placeholder}`
       : undefined;
 
@@ -130,9 +130,7 @@ export const createButtonProps = (options: {
   disabled?: boolean;
   loading?: boolean;
 }) => {
-  const hint = options.loading 
-    ? 'Loading, please wait' 
-    : options.hint;
+  const hint = options.loading ? 'Loading, please wait' : options.hint;
 
   return createAccessibilityProps({
     label: options.label,
@@ -145,11 +143,7 @@ export const createButtonProps = (options: {
   });
 };
 
-export const createProgressProps = (options: {
-  label: string;
-  progress: number;
-  max?: number;
-}) => {
+export const createProgressProps = (options: { label: string; progress: number; max?: number }) => {
   const max = options.max || 100;
   const percentage = Math.round((options.progress / max) * 100);
 
@@ -165,7 +159,10 @@ export const createProgressProps = (options: {
   });
 };
 
-export const createAlertProps = (message: string, type: 'info' | 'warning' | 'error' | 'success' = 'info') => {
+export const createAlertProps = (
+  message: string,
+  type: 'info' | 'warning' | 'error' | 'success' = 'info'
+) => {
   const typeLabels = {
     info: 'Information',
     warning: 'Warning',
@@ -228,18 +225,12 @@ export const AccessibilityTestHelpers = {
 
   // Check if form field has proper accessibility
   hasFormAccessibility: (element: any): boolean => {
-    return !!(
-      element.props.accessibilityLabel &&
-      element.props.accessibilityRole === 'textinput'
-    );
+    return !!(element.props.accessibilityLabel && element.props.accessibilityRole === 'textinput');
   },
 
   // Check if button has proper accessibility
   hasButtonAccessibility: (element: any): boolean => {
-    return !!(
-      element.props.accessibilityLabel &&
-      element.props.accessibilityRole === 'button'
-    );
+    return !!(element.props.accessibilityLabel && element.props.accessibilityRole === 'button');
   },
 
   // Generate accessibility test ID
@@ -258,108 +249,122 @@ export const AccessibilityTestHelpers = {
 export const ProfileEditingA11y = {
   // Personal Info Screen
   personalInfo: {
-    screen: () => createAccessibilityProps({
-      label: 'Personal Information',
-      role: AccessibilityRoles.HEADER,
-    }),
+    screen: () =>
+      createAccessibilityProps({
+        label: 'Personal Information',
+        role: AccessibilityRoles.HEADER,
+      }),
 
-    nameField: (value?: string, error?: string) => createFormFieldProps({
-      label: 'Full Name',
-      value,
-      error,
-      required: true,
-      placeholder: 'Enter your full name',
-    }),
+    nameField: (value?: string, error?: string) =>
+      createFormFieldProps({
+        label: 'Full Name',
+        value,
+        error,
+        required: true,
+        placeholder: 'Enter your full name',
+      }),
 
-    ageField: (value?: string, error?: string) => createFormFieldProps({
-      label: 'Age',
-      value,
-      error,
-      required: true,
-      placeholder: 'Enter your age',
-    }),
+    ageField: (value?: string, error?: string) =>
+      createFormFieldProps({
+        label: 'Age',
+        value,
+        error,
+        required: true,
+        placeholder: 'Enter your age',
+      }),
 
-    genderField: (value?: string) => createAccessibilityProps({
-      label: `Gender: ${value || 'Not selected'}`,
-      hint: 'Select your gender',
-      role: AccessibilityRoles.BUTTON,
-    }),
+    genderField: (value?: string) =>
+      createAccessibilityProps({
+        label: `Gender: ${value || 'Not selected'}`,
+        hint: 'Select your gender',
+        role: AccessibilityRoles.BUTTON,
+      }),
 
-    saveButton: (loading?: boolean) => createButtonProps({
-      label: 'Save Personal Information',
-      hint: 'Save your personal information changes',
-      loading,
-    }),
+    saveButton: (loading?: boolean) =>
+      createButtonProps({
+        label: 'Save Personal Information',
+        hint: 'Save your personal information changes',
+        loading,
+      }),
 
-    cancelButton: () => createButtonProps({
-      label: 'Cancel',
-      hint: 'Cancel editing and discard changes',
-    }),
+    cancelButton: () =>
+      createButtonProps({
+        label: 'Cancel',
+        hint: 'Cancel editing and discard changes',
+      }),
   },
 
   // Migration Progress
   migration: {
-    progressModal: () => createAccessibilityProps({
-      label: 'Data Migration Progress',
-      role: AccessibilityRoles.ALERT,
-    }),
+    progressModal: () =>
+      createAccessibilityProps({
+        label: 'Data Migration Progress',
+        role: AccessibilityRoles.ALERT,
+      }),
 
-    progressBar: (progress: number, step: string) => createProgressProps({
-      label: `Migration progress: ${step}`,
-      progress,
-    }),
+    progressBar: (progress: number, step: string) =>
+      createProgressProps({
+        label: `Migration progress: ${step}`,
+        progress,
+      }),
 
-    stepIcon: (step: string, icon: string) => createAccessibilityProps({
-      label: `${step} ${icon}`,
-      role: AccessibilityRoles.IMAGE,
-    }),
+    stepIcon: (step: string, icon: string) =>
+      createAccessibilityProps({
+        label: `${step} ${icon}`,
+        role: AccessibilityRoles.IMAGE,
+      }),
 
-    statusMessage: (message: string, hasError?: boolean) => createAlertProps(
-      message,
-      hasError ? 'error' : 'info'
-    ),
+    statusMessage: (message: string, hasError?: boolean) =>
+      createAlertProps(message, hasError ? 'error' : 'info'),
   },
 
   // Edit Overlay
   overlay: {
-    modal: () => createAccessibilityProps({
-      label: 'Edit Profile',
-      role: AccessibilityRoles.ALERT,
-    }),
+    modal: () =>
+      createAccessibilityProps({
+        label: 'Edit Profile',
+        role: AccessibilityRoles.ALERT,
+      }),
 
-    closeButton: () => createButtonProps({
-      label: 'Close',
-      hint: 'Close the edit profile modal',
-    }),
+    closeButton: () =>
+      createButtonProps({
+        label: 'Close',
+        hint: 'Close the edit profile modal',
+      }),
 
-    dragIndicator: () => createAccessibilityProps({
-      label: 'Drag to resize',
-      hint: 'Drag up or down to resize the modal',
-    }),
+    dragIndicator: () =>
+      createAccessibilityProps({
+        label: 'Drag to resize',
+        hint: 'Drag up or down to resize the modal',
+      }),
   },
 
   // Conflict Resolution
   conflicts: {
-    modal: () => createAccessibilityProps({
-      label: 'Resolve Data Conflicts',
-      role: AccessibilityRoles.ALERT,
-    }),
+    modal: () =>
+      createAccessibilityProps({
+        label: 'Resolve Data Conflicts',
+        role: AccessibilityRoles.ALERT,
+      }),
 
-    conflictItem: (field: string, localValue: string, remoteValue: string) => createAccessibilityProps({
-      label: `Conflict for ${field}: Local value is ${localValue}, Cloud value is ${remoteValue}`,
-      role: AccessibilityRoles.TEXT,
-    }),
+    conflictItem: (field: string, localValue: string, remoteValue: string) =>
+      createAccessibilityProps({
+        label: `Conflict for ${field}: Local value is ${localValue}, Cloud value is ${remoteValue}`,
+        role: AccessibilityRoles.TEXT,
+      }),
 
-    choiceButton: (choice: 'local' | 'remote', selected?: boolean) => createButtonProps({
-      label: `Use ${choice === 'local' ? 'device' : 'cloud'} value`,
-      hint: `Select the ${choice} value for this field`,
-    }),
+    choiceButton: (choice: 'local' | 'remote', selected?: boolean) =>
+      createButtonProps({
+        label: `Use ${choice === 'local' ? 'device' : 'cloud'} value`,
+        hint: `Select the ${choice} value for this field`,
+      }),
 
-    resolveAllButton: (resolved: number, total: number) => createButtonProps({
-      label: `Resolve All Conflicts (${resolved} of ${total} resolved)`,
-      hint: 'Apply all conflict resolutions',
-      disabled: resolved !== total,
-    }),
+    resolveAllButton: (resolved: number, total: number) =>
+      createButtonProps({
+        label: `Resolve All Conflicts (${resolved} of ${total} resolved)`,
+        hint: 'Apply all conflict resolutions',
+        disabled: resolved !== total,
+      }),
   },
 };
 
@@ -368,32 +373,28 @@ export const ProfileEditingA11y = {
 // ============================================================================
 
 export const AccessibilityAnnouncements = {
-  editStarted: (section: string) => 
+  editStarted: (section: string) =>
     ScreenReaderUtils.announceForAccessibility(`Started editing ${section}`),
 
-  editSaved: (section: string) => 
+  editSaved: (section: string) =>
     ScreenReaderUtils.announceForAccessibility(`${section} saved successfully`),
 
-  editCancelled: () => 
-    ScreenReaderUtils.announceForAccessibility('Edit cancelled'),
+  editCancelled: () => ScreenReaderUtils.announceForAccessibility('Edit cancelled'),
 
-  validationError: (errors: string[]) => 
+  validationError: (errors: string[]) =>
     ScreenReaderUtils.announceForAccessibility(`Validation errors: ${errors.join(', ')}`),
 
-  migrationStarted: () => 
-    ScreenReaderUtils.announceForAccessibility('Data migration started'),
+  migrationStarted: () => ScreenReaderUtils.announceForAccessibility('Data migration started'),
 
-  migrationCompleted: () => 
+  migrationCompleted: () =>
     ScreenReaderUtils.announceForAccessibility('Data migration completed successfully'),
 
-  migrationFailed: () => 
-    ScreenReaderUtils.announceForAccessibility('Data migration failed'),
+  migrationFailed: () => ScreenReaderUtils.announceForAccessibility('Data migration failed'),
 
-  conflictsDetected: (count: number) => 
+  conflictsDetected: (count: number) =>
     ScreenReaderUtils.announceForAccessibility(`${count} data conflicts detected`),
 
-  conflictsResolved: () => 
-    ScreenReaderUtils.announceForAccessibility('All conflicts resolved'),
+  conflictsResolved: () => ScreenReaderUtils.announceForAccessibility('All conflicts resolved'),
 };
 
 export default {

@@ -19,7 +19,7 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
 }) => {
   const [currentStep, setCurrentStep] = useState<'personal' | 'goals' | 'complete'>('personal');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { user } = useAuth();
   const { profile, isProfileComplete } = useUser();
   const { savePersonalInfo, saveFitnessGoals, saveOnboardingData } = useOnboardingIntegration();
@@ -35,10 +35,10 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
     }
 
     setIsLoading(true);
-    
+
     try {
       const result = await savePersonalInfo(personalInfo);
-      
+
       if (result.success) {
         setCurrentStep('goals');
         Alert.alert('Success', 'Personal information saved successfully!');
@@ -64,14 +64,14 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
     }
 
     setIsLoading(true);
-    
+
     try {
       const result = await saveFitnessGoals(fitnessGoals);
-      
+
       if (result.success) {
         setCurrentStep('complete');
         Alert.alert('Success', 'Fitness goals saved successfully!');
-        
+
         // Complete onboarding
         setTimeout(() => {
           onComplete();
@@ -101,14 +101,14 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
     }
 
     setIsLoading(true);
-    
+
     try {
       const result = await saveOnboardingData({
         personalInfo,
         fitnessGoals,
         isComplete: true,
       });
-      
+
       if (result.success) {
         Alert.alert('Success', 'Onboarding completed successfully!');
         onComplete();
@@ -142,7 +142,7 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
       <Text style={styles.subtitle}>
         Current Step: {currentStep === 'personal' ? 'Personal Info' : 'Fitness Goals'}
       </Text>
-      
+
       {/* Show current user info */}
       {user && (
         <View style={styles.userInfo}>
@@ -151,9 +151,7 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
             Profile Complete: {isProfileComplete ? 'Yes' : 'No'}
           </Text>
           {profile && (
-            <Text style={styles.userInfoText}>
-              Name: {profile.personalInfo.name || 'Not set'}
-            </Text>
+            <Text style={styles.userInfoText}>Name: {profile.personalInfo.name || 'Not set'}</Text>
           )}
         </View>
       )}
@@ -167,9 +165,7 @@ export const OnboardingIntegrationExample: React.FC<OnboardingIntegrationExample
         <Text style={styles.instructionsText}>
           2. Replace mock data saving in GoalsScreen with handleFitnessGoalsSubmit
         </Text>
-        <Text style={styles.instructionsText}>
-          3. Add loading states and error handling
-        </Text>
+        <Text style={styles.instructionsText}>3. Add loading states and error handling</Text>
         <Text style={styles.instructionsText}>
           4. Use useAuth and useUser hooks for state management
         </Text>

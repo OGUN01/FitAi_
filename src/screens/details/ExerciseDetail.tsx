@@ -32,7 +32,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   const exercise = {
     id: exerciseId,
     name: 'Bench Press',
-    description: 'A compound upper body exercise that primarily targets the chest, shoulders, and triceps',
+    description:
+      'A compound upper body exercise that primarily targets the chest, shoulders, and triceps',
     difficulty: 'Intermediate',
     targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
     equipment: ['Barbell', 'Bench'],
@@ -40,31 +41,39 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
       {
         step: 1,
         title: 'Setup Position',
-        description: 'Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.',
-        tips: ['Keep your back flat against the bench', 'Maintain a slight arch in your lower back'],
+        description:
+          'Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.',
+        tips: [
+          'Keep your back flat against the bench',
+          'Maintain a slight arch in your lower back',
+        ],
       },
       {
         step: 2,
         title: 'Grip the Bar',
-        description: 'Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.',
+        description:
+          'Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.',
         tips: ['Wrap your thumbs around the bar', 'Keep wrists straight and strong'],
       },
       {
         step: 3,
         title: 'Unrack the Weight',
-        description: 'Lift the bar off the rack and position it directly over your chest with arms fully extended.',
+        description:
+          'Lift the bar off the rack and position it directly over your chest with arms fully extended.',
         tips: ['Move slowly and controlled', 'Engage your core for stability'],
       },
       {
         step: 4,
         title: 'Lower the Bar',
-        description: 'Slowly lower the bar to your chest, keeping your elbows at about a 45-degree angle.',
+        description:
+          'Slowly lower the bar to your chest, keeping your elbows at about a 45-degree angle.',
         tips: ['Control the descent', 'Touch your chest lightly', 'Keep your shoulders back'],
       },
       {
         step: 5,
         title: 'Press Up',
-        description: 'Drive the bar back up to the starting position, focusing on pushing through your chest.',
+        description:
+          'Drive the bar back up to the starting position, focusing on pushing through your chest.',
         tips: ['Exhale during the press', 'Keep the bar path straight', 'Fully extend your arms'],
       },
     ],
@@ -99,7 +108,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   // Auto-play animation
   React.useEffect(() => {
     let interval: NodeJS.Timeout;
-    
+
     if (isPlaying) {
       interval = setInterval(() => {
         setCurrentStep((prev) => {
@@ -150,7 +159,9 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
               <Text style={styles.exerciseDescription}>{exercise.description}</Text>
             </View>
             <View style={styles.difficultyBadge}>
-              <Text style={[styles.difficultyText, { color: getDifficultyColor(exercise.difficulty) }]}>
+              <Text
+                style={[styles.difficultyText, { color: getDifficultyColor(exercise.difficulty) }]}
+              >
                 {exercise.difficulty}
               </Text>
             </View>
@@ -196,18 +207,13 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
               <Text style={styles.animationEmoji}>🏋️‍♂️</Text>
               <Text style={styles.animationText}>Exercise Animation</Text>
             </View>
-            
+
             {/* Animation Controls */}
             <View style={styles.animationControls}>
-              <TouchableOpacity
-                style={styles.playButton}
-                onPress={() => setIsPlaying(!isPlaying)}
-              >
-                <Text style={styles.playButtonText}>
-                  {isPlaying ? '⏸️' : '▶️'}
-                </Text>
+              <TouchableOpacity style={styles.playButton} onPress={() => setIsPlaying(!isPlaying)}>
+                <Text style={styles.playButtonText}>{isPlaying ? '⏸️' : '▶️'}</Text>
               </TouchableOpacity>
-              
+
               <View style={styles.stepIndicators}>
                 {exercise.instructions.map((_, index) => (
                   <TouchableOpacity
@@ -227,7 +233,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         {/* Instructions */}
         <Card style={styles.instructionsCard}>
           <Text style={styles.instructionsTitle}>Step-by-Step Instructions</Text>
-          
+
           {exercise.instructions.map((instruction, index) => (
             <View
               key={index}
@@ -237,29 +243,28 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
               ]}
             >
               <View style={styles.instructionHeader}>
-                <View style={[
-                  styles.stepNumber,
-                  currentStep === index && styles.stepNumberActive,
-                ]}>
-                  <Text style={[
-                    styles.stepNumberText,
-                    currentStep === index && styles.stepNumberTextActive,
-                  ]}>
+                <View style={[styles.stepNumber, currentStep === index && styles.stepNumberActive]}>
+                  <Text
+                    style={[
+                      styles.stepNumberText,
+                      currentStep === index && styles.stepNumberTextActive,
+                    ]}
+                  >
                     {instruction.step}
                   </Text>
                 </View>
-                <Text style={[
-                  styles.instructionTitle,
-                  currentStep === index && styles.instructionTitleActive,
-                ]}>
+                <Text
+                  style={[
+                    styles.instructionTitle,
+                    currentStep === index && styles.instructionTitleActive,
+                  ]}
+                >
                   {instruction.title}
                 </Text>
               </View>
-              
-              <Text style={styles.instructionDescription}>
-                {instruction.description}
-              </Text>
-              
+
+              <Text style={styles.instructionDescription}>{instruction.description}</Text>
+
               {instruction.tips.length > 0 && (
                 <View style={styles.tipsContainer}>
                   <Text style={styles.tipsTitle}>💡 Tips:</Text>

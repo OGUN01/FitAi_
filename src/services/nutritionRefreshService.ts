@@ -24,7 +24,7 @@ export class NutritionRefreshService {
    */
   onRefreshNeeded(callback: () => Promise<void>): () => void {
     this.refreshCallbacks.push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.refreshCallbacks.indexOf(callback);
@@ -44,10 +44,10 @@ export class NutritionRefreshService {
     }
 
     this.isRefreshing = true;
-    
+
     try {
       console.log('🔄 Triggering nutrition data refresh...');
-      
+
       // Execute all refresh callbacks in parallel
       await Promise.all(
         this.refreshCallbacks.map(async (callback) => {
@@ -58,7 +58,7 @@ export class NutritionRefreshService {
           }
         })
       );
-      
+
       console.log('✅ Nutrition data refresh completed');
     } catch (error) {
       console.error('❌ Error during nutrition refresh:', error);
@@ -71,19 +71,16 @@ export class NutritionRefreshService {
    * Refresh nutrition data after a meal has been logged
    * Optimized refresh that focuses on the data that changed
    */
-  async refreshAfterMealLogged(
-    userId: string, 
-    loggedMeal: Meal
-  ): Promise<void> {
+  async refreshAfterMealLogged(userId: string, loggedMeal: Meal): Promise<void> {
     try {
       console.log('🍽️ Refreshing nutrition data after meal logging:', {
         mealId: loggedMeal.id,
         mealType: loggedMeal.type,
-        calories: loggedMeal.total_calories
+        calories: loggedMeal.total_calories,
       });
 
       // Wait a small delay to ensure database consistency
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Trigger the general refresh
       await this.triggerRefresh();
@@ -99,7 +96,10 @@ export class NutritionRefreshService {
   /**
    * Get current daily nutrition totals (cached calculation)
    */
-  async getCurrentDailyNutrition(userId: string, date?: string): Promise<{
+  async getCurrentDailyNutrition(
+    userId: string,
+    date?: string
+  ): Promise<{
     calories: number;
     protein: number;
     carbs: number;
@@ -109,22 +109,25 @@ export class NutritionRefreshService {
     try {
       const targetDate = date || new Date().toISOString().split('T')[0];
       const response = await nutritionDataService.getUserMeals(userId, targetDate);
-      
+
       if (response.success && response.data) {
         const meals = response.data;
-        const stats = meals.reduce((acc, meal) => ({
-          calories: acc.calories + meal.total_calories,
-          protein: acc.protein + meal.total_protein,
-          carbs: acc.carbs + meal.total_carbs,
-          fat: acc.fat + meal.total_fat,
-          mealsCount: acc.mealsCount + 1,
-        }), {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fat: 0,
-          mealsCount: 0,
-        });
+        const stats = meals.reduce(
+          (acc, meal) => ({
+            calories: acc.calories + meal.total_calories,
+            protein: acc.protein + meal.total_protein,
+            carbs: acc.carbs + meal.total_carbs,
+            fat: acc.fat + meal.total_fat,
+            mealsCount: acc.mealsCount + 1,
+          }),
+          {
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            mealsCount: 0,
+          }
+        );
 
         console.log('📊 Current daily nutrition totals:', stats);
         return stats;
@@ -165,17 +168,17 @@ export class NutritionRefreshService {
   }> {
     try {
       const issues: string[] = [];
-      
+
       // Get today's meals
       const todayDate = new Date().toISOString().split('T')[0];
       const mealsResponse = await nutritionDataService.getUserMeals(userId, todayDate);
-      
+
       if (!mealsResponse.success) {
         issues.push('Failed to load user meals');
         return {
           isConsistent: false,
           issues,
-          stats: { totalMeals: 0, totalCalories: 0, averageConfidence: 0 }
+          stats: { totalMeals: 0, totalCalories: 0, averageConfidence: 0 },
         };
       }
 
@@ -189,7 +192,7 @@ export class NutritionRefreshService {
           issues.push(`Meal "${meal.name}" has zero or negative calories`);
           mealIssues++;
         }
-        
+
         if (meal.total_protein < 0 || meal.total_carbs < 0 || meal.total_fat < 0) {
           issues.push(`Meal "${meal.name}" has negative macronutrients`);
           mealIssues++;
@@ -202,28 +205,28 @@ export class NutritionRefreshService {
       const stats = {
         totalMeals: meals.length,
         totalCalories: Math.round(totalCalories),
-        averageConfidence: 85 // Placeholder - would come from recognition metadata
+        averageConfidence: 85, // Placeholder - would come from recognition metadata
       };
 
       const isConsistent = issues.length === 0;
-      
+
       console.log('🔍 Nutrition consistency check:', {
         isConsistent,
         issuesFound: issues.length,
-        stats
+        stats,
       });
 
       return {
         isConsistent,
         issues,
-        stats
+        stats,
       };
     } catch (error) {
       console.error('❌ Error validating nutrition consistency:', error);
       return {
         isConsistent: false,
         issues: ['Validation process failed'],
-        stats: { totalMeals: 0, totalCalories: 0, averageConfidence: 0 }
+        stats: { totalMeals: 0, totalCalories: 0, averageConfidence: 0 },
       };
     }
   }

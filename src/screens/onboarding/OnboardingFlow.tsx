@@ -54,27 +54,40 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       isInitialized,
       isAuthenticated,
       user: user ? `${user.email} (verified: ${user.isEmailVerified})` : 'null',
-      currentStep
+      currentStep,
     });
 
     // Only auto-redirect if user is fully authenticated (email verified) and on welcome screen
     // and we haven't already redirected them (to prevent redirect loops)
-    if (isInitialized && isAuthenticated && currentStep === 'welcome' && !hasAutoRedirected && startStep === 'welcome') {
-      console.log('🎭 OnboardingFlow: User is authenticated and verified, skipping to personal info');
+    if (
+      isInitialized &&
+      isAuthenticated &&
+      currentStep === 'welcome' &&
+      !hasAutoRedirected &&
+      startStep === 'welcome'
+    ) {
+      console.log(
+        '🎭 OnboardingFlow: User is authenticated and verified, skipping to personal info'
+      );
       setCurrentStep('personal-info');
       setHasAutoRedirected(true);
     }
   }, [isAuthenticated, isInitialized, currentStep, hasAutoRedirected]);
-  
+
   // Handle startStep initialization (only run once)
   useEffect(() => {
-    if (isInitialized && startStep !== 'welcome' && startStep !== currentStep && !hasAutoRedirected) {
+    if (
+      isInitialized &&
+      startStep !== 'welcome' &&
+      startStep !== currentStep &&
+      !hasAutoRedirected
+    ) {
       console.log('🎭 OnboardingFlow: Initializing with start step:', startStep);
       setCurrentStep(startStep as OnboardingStep);
       setHasAutoRedirected(true);
     }
   }, [isInitialized, startStep]);
-  
+
   // Load existing data when resuming onboarding
   useEffect(() => {
     const loadExistingData = async () => {
@@ -84,13 +97,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           const profileResponse = await getCompleteProfile(user.id);
           if (profileResponse.success && profileResponse.data) {
             const profile = profileResponse.data;
-            
+
             // Load personal info if exists
             if (profile.personalInfo) {
               console.log('📋 OnboardingFlow: Loading existing personal info');
               setPersonalInfo(profile.personalInfo);
             }
-            
+
             // Load fitness goals if exists
             if (profile.fitnessGoals && profile.fitnessGoals.primaryGoals?.length > 0) {
               console.log('🎯 OnboardingFlow: Loading existing fitness goals');
@@ -297,12 +310,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'welcome':
-        return (
-          <WelcomeScreen
-            onGetStarted={handleWelcomeNext}
-            onLogin={handleWelcomeLogin}
-          />
-        );
+        return <WelcomeScreen onGetStarted={handleWelcomeNext} onLogin={handleWelcomeLogin} />;
 
       case 'signup':
         return (
@@ -392,22 +400,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         );
 
       default:
-        return (
-          <WelcomeScreen
-            onGetStarted={handleWelcomeNext}
-            onLogin={handleWelcomeLogin}
-          />
-        );
+        return <WelcomeScreen onGetStarted={handleWelcomeNext} onLogin={handleWelcomeLogin} />;
     }
   };
 
   console.log('🎭 OnboardingFlow: Rendering step:', currentStep);
 
-  return (
-    <View style={styles.container}>
-      {renderCurrentStep()}
-    </View>
-  );
+  return <View style={styles.container}>{renderCurrentStep()}</View>;
 };
 
 const styles = StyleSheet.create({

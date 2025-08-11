@@ -58,11 +58,7 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
 
     return (
       <View style={styles.gifSection}>
-        <Image
-          source={{ uri: exercise.gifUrl }}
-          style={styles.modalGif}
-          resizeMode="contain"
-        />
+        <Image source={{ uri: exercise.gifUrl }} style={styles.modalGif} resizeMode="contain" />
       </View>
     );
   };
@@ -109,9 +105,7 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
             <View style={styles.stepNumber}>
               <Text style={styles.stepNumberText}>{index + 1}</Text>
             </View>
-            <Text style={styles.instructionText}>
-              {instruction.replace(/^Step:\d+\s*/, '')}
-            </Text>
+            <Text style={styles.instructionText}>{instruction.replace(/^Step:\d+\s*/, '')}</Text>
           </View>
         ))}
       </View>
@@ -190,18 +184,14 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
         <View style={styles.detailSection}>
           <Text style={styles.detailSectionTitle}>💡 Tips</Text>
           <View style={styles.tipContainer}>
-            <Text style={styles.tipText}>
-              • Focus on proper form over speed or weight
-            </Text>
+            <Text style={styles.tipText}>• Focus on proper form over speed or weight</Text>
             <Text style={styles.tipText}>
               • Control the movement throughout the full range of motion
             </Text>
             <Text style={styles.tipText}>
               • Breathe properly - exhale on exertion, inhale on release
             </Text>
-            <Text style={styles.tipText}>
-              • Stop if you feel pain or discomfort
-            </Text>
+            <Text style={styles.tipText}>• Stop if you feel pain or discomfort</Text>
           </View>
         </View>
       </View>
@@ -217,27 +207,18 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
     >
       <SafeAreaView style={styles.modalContainer}>
         {renderHeader()}
-        
-        <ScrollView 
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
           {renderGifSection()}
           {renderTabs()}
-          
+
           <View style={styles.tabContent}>
             {activeTab === 'instructions' ? renderInstructions() : renderDetails()}
           </View>
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button
-            title="Got It!"
-            onPress={onClose}
-            variant="primary"
-            style={styles.footerButton}
-          />
+          <Button title="Got It!" onPress={onClose} variant="primary" style={styles.footerButton} />
         </View>
       </SafeAreaView>
     </Modal>
@@ -313,7 +294,7 @@ const styles = StyleSheet.create({
   },
 
   modalGif: {
-    width: '80%',  // Use percentage instead of screenWidth
+    width: '80%', // Use percentage instead of screenWidth
     height: 200,
     borderRadius: THEME.borderRadius.lg,
   },

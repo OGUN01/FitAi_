@@ -20,7 +20,7 @@ class NormalizedNameMappingService {
   private wordIndex: { [key: string]: number[] };
   private muscleIndex: { [key: string]: number[] };
   private equipmentIndex: { [key: string]: number[] };
-  
+
   // AI-to-Database name mappings for common patterns
   private aiToDbMappings = new Map<string, string>([
     // Common AI variations -> Database names
@@ -49,7 +49,7 @@ class NormalizedNameMappingService {
     ['pike_push_ups', 'pike push up'],
     ['diamond_push_ups', 'diamond push-up'],
     ['wide_grip_push_ups', 'wide-grip push-up'],
-    
+
     // Equipment-based mappings
     ['dumbbell_press', 'dumbbell bench press'],
     ['dumbbell_rows', 'dumbbell row'],
@@ -61,7 +61,7 @@ class NormalizedNameMappingService {
     ['barbell_curls', 'barbell curl'],
     ['kettlebell_swings', 'kettlebell swing'],
     ['resistance_band_pulls', 'band pull apart'],
-    
+
     // Cardio mappings
     ['light_jogging', 'run'],
     ['jogging_intervals', 'run'],
@@ -70,7 +70,7 @@ class NormalizedNameMappingService {
     ['cardio_intervals', 'run'],
     ['step_ups', 'step up'],
     ['box_steps', 'step up'],
-    
+
     // Core mappings
     ['core_twists', 'russian twist'],
     ['side_bends', 'side bend'],
@@ -78,14 +78,14 @@ class NormalizedNameMappingService {
     ['knee_raises', 'hanging knee raise'],
     ['flutter_kicks', 'flutter kick'],
     ['scissors', 'flutter kick'],
-    
+
     // Flexibility mappings
     ['static_stretching', 'stretching'],
     ['dynamic_stretching', 'stretching'],
     ['flexibility_work', 'stretching'],
     ['cool_down_stretches', 'stretching'],
     ['yoga_poses', 'yoga'],
-    ['foam_rolling', 'stretching']
+    ['foam_rolling', 'stretching'],
   ]);
 
   // Semantic similarity patterns
@@ -111,7 +111,7 @@ class NormalizedNameMappingService {
     { pattern: /extension/i, target: 'extension', confidence: 0.7 },
     { pattern: /fly/i, target: 'fly', confidence: 0.8 },
     { pattern: /bridge/i, target: 'bridge', confidence: 0.85 },
-    { pattern: /twist/i, target: 'twist', confidence: 0.8 }
+    { pattern: /twist/i, target: 'twist', confidence: 0.8 },
   ];
 
   constructor() {
@@ -120,8 +120,10 @@ class NormalizedNameMappingService {
     this.wordIndex = this.buildWordIndex();
     this.muscleIndex = {}; // exerciseDatabase.indices.byMuscle; // Disabled to reduce bundle size
     this.equipmentIndex = {}; // exerciseDatabase.indices.byEquipment; // Disabled to reduce bundle size
-    
-    console.log(`🎯 Normalized Name Mapping initialized in fallback mode (bundle size optimization)`);
+
+    console.log(
+      `🎯 Normalized Name Mapping initialized in fallback mode (bundle size optimization)`
+    );
   }
 
   /**
@@ -129,7 +131,7 @@ class NormalizedNameMappingService {
    */
   async findBestMatch(aiGeneratedName: string): Promise<NameMappingResult> {
     const cleanName = this.cleanExerciseName(aiGeneratedName);
-    
+
     console.log(`🔍 Finding match for: "${aiGeneratedName}" -> "${cleanName}"`);
 
     // 1. Try exact mapping first
@@ -195,7 +197,7 @@ class NormalizedNameMappingService {
         exercise: this.exercises[index],
         confidence: 1.0,
         matchType: 'exact',
-        source: 'database'
+        source: 'database',
       };
     }
     return null;
@@ -214,7 +216,7 @@ class NormalizedNameMappingService {
           exercise: this.exercises[index],
           confidence: 0.95,
           matchType: 'normalized',
-          source: 'database'
+          source: 'database',
         };
       }
     }
@@ -224,7 +226,7 @@ class NormalizedNameMappingService {
       cleanName.replace(/\s+/g, '_'),
       cleanName.replace(/\s+/g, ''),
       cleanName.replace(/s$/, ''), // Remove plural
-      cleanName + 's' // Add plural
+      cleanName + 's', // Add plural
     ];
 
     for (const variation of variations) {
@@ -236,7 +238,7 @@ class NormalizedNameMappingService {
             exercise: this.exercises[index],
             confidence: 0.9,
             matchType: 'normalized',
-            source: 'database'
+            source: 'database',
           };
         }
       }
@@ -250,7 +252,7 @@ class NormalizedNameMappingService {
    */
   private findNormalizedMatch(cleanName: string): NameMappingResult | null {
     const words = cleanName.split(' ');
-    
+
     // Try different word combinations
     for (let i = 0; i < words.length; i++) {
       for (let j = i + 1; j <= words.length; j++) {
@@ -262,7 +264,7 @@ class NormalizedNameMappingService {
               exercise: this.exercises[index],
               confidence: 0.8 - (i + words.length - j) * 0.1,
               matchType: 'normalized',
-              source: 'database'
+              source: 'database',
             };
           }
         }
@@ -284,7 +286,7 @@ class NormalizedNameMappingService {
             exercise: this.exercises[index],
             confidence: pattern.confidence,
             matchType: 'semantic',
-            source: 'database'
+            source: 'database',
           };
         }
       }
@@ -305,7 +307,7 @@ class NormalizedNameMappingService {
         for (const exerciseIndex of this.wordIndex[word]) {
           const exercise = this.exercises[exerciseIndex];
           if (exercise) {
-            const existing = candidates.find(c => c.exercise.exerciseId === exercise.exerciseId);
+            const existing = candidates.find((c) => c.exercise.exerciseId === exercise.exerciseId);
             if (existing) {
               existing.score += word.length;
             } else {
@@ -321,13 +323,13 @@ class NormalizedNameMappingService {
       candidates.sort((a, b) => b.score - a.score);
       const best = candidates[0];
       const confidence = Math.min(0.8, best.score / cleanName.length);
-      
+
       if (confidence > 0.3) {
         return {
           exercise: best.exercise,
           confidence,
           matchType: 'fuzzy',
-          source: 'database'
+          source: 'database',
         };
       }
     }
@@ -340,18 +342,18 @@ class NormalizedNameMappingService {
    */
   private generateIntelligentFallback(originalName: string): NameMappingResult {
     const cleanName = this.cleanExerciseName(originalName);
-    
+
     // Infer exercise characteristics
     const muscles = this.inferTargetMuscles(cleanName);
     const equipment = this.inferEquipment(cleanName);
     const category = this.inferCategory(cleanName);
-    
+
     // Generate appropriate GIF URL based on exercise type
     const gifUrl = this.generateFallbackGifUrl(cleanName, category);
-    
+
     // Create normalized exercise name
     const normalizedName = this.createNormalizedName(originalName);
-    
+
     const fallbackExercise: ExerciseData = {
       exerciseId: `ai_generated_${cleanName.replace(/\s+/g, '_')}`,
       name: normalizedName,
@@ -360,14 +362,14 @@ class NormalizedNameMappingService {
       bodyParts: this.inferBodyParts(muscles),
       equipments: [equipment],
       secondaryMuscles: [],
-      instructions: this.generateInstructions(normalizedName, category)
+      instructions: this.generateInstructions(normalizedName, category),
     };
 
     return {
       exercise: fallbackExercise,
       confidence: 0.7,
       matchType: 'fallback',
-      source: 'generated'
+      source: 'generated',
     };
   }
 
@@ -379,7 +381,7 @@ class NormalizedNameMappingService {
     return originalName
       .replace(/[_-]/g, ' ')
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
   }
 
@@ -397,7 +399,7 @@ class NormalizedNameMappingService {
       { pattern: /core|abs|plank|crunch/, muscles: ['abs'] },
       { pattern: /glute|hip|bridge/, muscles: ['glutes'] },
       { pattern: /calf/, muscles: ['calves'] },
-      { pattern: /cardio|run|jump|jack/, muscles: ['cardiovascular system'] }
+      { pattern: /cardio|run|jump|jack/, muscles: ['cardiovascular system'] },
     ];
 
     for (const pattern of musclePatterns) {
@@ -438,21 +440,21 @@ class NormalizedNameMappingService {
    */
   private inferBodyParts(muscles: string[]): string[] {
     const bodyPartMap: { [key: string]: string } = {
-      'pectorals': 'chest',
-      'lats': 'back',
+      pectorals: 'chest',
+      lats: 'back',
       'upper back': 'back',
-      'delts': 'shoulders',
-      'biceps': 'upper arms',
-      'triceps': 'upper arms',
-      'quads': 'upper legs',
-      'glutes': 'upper legs',
-      'hamstrings': 'upper legs',
-      'calves': 'lower legs',
-      'abs': 'waist',
-      'cardiovascular system': 'cardio'
+      delts: 'shoulders',
+      biceps: 'upper arms',
+      triceps: 'upper arms',
+      quads: 'upper legs',
+      glutes: 'upper legs',
+      hamstrings: 'upper legs',
+      calves: 'lower legs',
+      abs: 'waist',
+      'cardiovascular system': 'cardio',
     };
 
-    const bodyParts = muscles.map(muscle => bodyPartMap[muscle] || 'full body');
+    const bodyParts = muscles.map((muscle) => bodyPartMap[muscle] || 'full body');
     return [...new Set(bodyParts)];
   }
 
@@ -461,18 +463,20 @@ class NormalizedNameMappingService {
    */
   private generateFallbackGifUrl(name: string, category: string): string {
     const gifMap: { [key: string]: string } = {
-      'cardio': 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-      'strength': 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif',
-      'core': 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif',
-      'flexibility': 'https://media.giphy.com/media/3oEjI5TqjzqZWQzKus/giphy.gif',
-      'general': 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif'
+      cardio: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+      strength: 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif',
+      core: 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif',
+      flexibility: 'https://media.giphy.com/media/3oEjI5TqjzqZWQzKus/giphy.gif',
+      general: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
     };
 
     // Use specific GIFs for common exercises
-    if (/jump.*jack/i.test(name)) return 'https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif';
+    if (/jump.*jack/i.test(name))
+      return 'https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif';
     if (/push.*up/i.test(name)) return 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif';
     if (/plank/i.test(name)) return 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif';
-    if (/mountain.*climb/i.test(name)) return 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif';
+    if (/mountain.*climb/i.test(name))
+      return 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif';
     if (/burpee/i.test(name)) return 'https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif';
 
     return gifMap[category] || gifMap['general'];
@@ -485,14 +489,14 @@ class NormalizedNameMappingService {
     const baseInstructions = [
       'Maintain proper form throughout the exercise',
       'Control the movement in both directions',
-      'Breathe steadily and avoid holding your breath'
+      'Breathe steadily and avoid holding your breath',
     ];
 
     const categoryInstructions: { [key: string]: string[] } = {
-      'cardio': ['Keep a steady pace', 'Land softly if jumping', 'Stay light on your feet'],
-      'strength': ['Use appropriate weight', 'Full range of motion', 'Focus on the target muscles'],
-      'core': ['Engage your core muscles', 'Keep your back neutral', 'Don\'t strain your neck'],
-      'flexibility': ['Hold stretches for 15-30 seconds', 'Don\'t bounce', 'Breathe deeply'],
+      cardio: ['Keep a steady pace', 'Land softly if jumping', 'Stay light on your feet'],
+      strength: ['Use appropriate weight', 'Full range of motion', 'Focus on the target muscles'],
+      core: ['Engage your core muscles', 'Keep your back neutral', "Don't strain your neck"],
+      flexibility: ['Hold stretches for 15-30 seconds', "Don't bounce", 'Breathe deeply'],
     };
 
     const specific = categoryInstructions[category] || ['Follow proper technique'];
@@ -504,10 +508,10 @@ class NormalizedNameMappingService {
    */
   private buildWordIndex(): { [key: string]: number[] } {
     const index: { [key: string]: number[] } = {};
-    
+
     this.exercises.forEach((exercise, idx) => {
       const words = exercise.name.toLowerCase().split(/\s+/);
-      words.forEach(word => {
+      words.forEach((word) => {
         if (word.length > 2) {
           if (!index[word]) index[word] = [];
           if (!index[word].includes(idx)) {
@@ -528,7 +532,7 @@ class NormalizedNameMappingService {
       totalExercises: this.exercises.length,
       aiMappings: this.aiToDbMappings.size,
       semanticPatterns: this.semanticPatterns.length,
-      wordIndexSize: Object.keys(this.wordIndex).length
+      wordIndexSize: Object.keys(this.wordIndex).length,
     };
   }
 }

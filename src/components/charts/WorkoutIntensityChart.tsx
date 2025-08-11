@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { THEME } from '../../utils/constants';
 
 interface WorkoutDay {
@@ -20,26 +14,23 @@ interface WorkoutIntensityChartProps {
   style?: any;
 }
 
-export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
-  data,
-  style,
-}) => {
+export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ data, style }) => {
   // Generate calendar grid for the last 12 weeks
   const generateCalendarData = () => {
     const weeks = [];
     const today = new Date();
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (12 * 7)); // 12 weeks ago
+    startDate.setDate(today.getDate() - 12 * 7); // 12 weeks ago
 
     for (let week = 0; week < 12; week++) {
       const weekData = [];
       for (let day = 0; day < 7; day++) {
         const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + (week * 7) + day);
-        
+        currentDate.setDate(startDate.getDate() + week * 7 + day);
+
         const dateString = currentDate.toISOString().split('T')[0];
-        const workoutData = data.find(workout => workout.date === dateString);
-        
+        const workoutData = data.find((workout) => workout.date === dateString);
+
         weekData.push({
           date: currentDate,
           dateString,
@@ -48,7 +39,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
       }
       weeks.push(weekData);
     }
-    
+
     return weeks;
   };
 
@@ -58,7 +49,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
   // Get intensity color
   const getIntensityColor = (intensity: number) => {
     if (intensity === 0) return THEME.colors.surface;
-    
+
     const colors = [
       THEME.colors.surface,
       '#1a3d2e', // Very light green
@@ -67,15 +58,14 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
       '#53945b', // Dark green
       THEME.colors.success, // Darkest green
     ];
-    
+
     return colors[Math.min(intensity, 5)];
   };
 
   // Calculate stats
   const totalWorkouts = data.length;
-  const averageIntensity = data.length > 0 
-    ? data.reduce((sum, workout) => sum + workout.intensity, 0) / data.length 
-    : 0;
+  const averageIntensity =
+    data.length > 0 ? data.reduce((sum, workout) => sum + workout.intensity, 0) / data.length : 0;
   const totalDuration = data.reduce((sum, workout) => sum + workout.duration, 0);
 
   const [selectedDay, setSelectedDay] = React.useState<any>(null);
@@ -110,7 +100,9 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
           {/* Day labels */}
           <View style={styles.dayLabelsContainer}>
             {dayLabels.map((label, index) => (
-              <Text key={index} style={styles.dayLabel}>{label}</Text>
+              <Text key={index} style={styles.dayLabel}>
+                {label}
+              </Text>
             ))}
           </View>
 
@@ -143,10 +135,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
           {[0, 1, 2, 3, 4, 5].map((intensity) => (
             <View
               key={intensity}
-              style={[
-                styles.legendCell,
-                { backgroundColor: getIntensityColor(intensity) },
-              ]}
+              style={[styles.legendCell, { backgroundColor: getIntensityColor(intensity) }]}
             />
           ))}
         </View>
@@ -157,10 +146,10 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
       {selectedDay && selectedDay.workout && (
         <View style={styles.selectedDayContainer}>
           <Text style={styles.selectedDayDate}>
-            {selectedDay.date.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'short', 
-              day: 'numeric' 
+            {selectedDay.date.toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
             })}
           </Text>
           <View style={styles.selectedDayStats}>

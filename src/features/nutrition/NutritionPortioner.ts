@@ -3,8 +3,8 @@ import { MappedFood } from './IngredientMapper';
 export interface PortionTargets {
   calories: number;
   protein: number; // grams
-  carbs?: number;  // optional
-  fat?: number;    // optional
+  carbs?: number; // optional
+  fat?: number; // optional
 }
 
 export interface QuantifiedItem {
@@ -30,7 +30,11 @@ export class NutritionPortioner {
     let totalFat = 0;
     let totalFiber = 0;
 
-    const byProteinDensity = [...foods].sort((a, b) => (b.macrosPer100g.protein / (b.caloriesPer100g || 1)) - (a.macrosPer100g.protein / (a.caloriesPer100g || 1)));
+    const byProteinDensity = [...foods].sort(
+      (a, b) =>
+        b.macrosPer100g.protein / (b.caloriesPer100g || 1) -
+        a.macrosPer100g.protein / (a.caloriesPer100g || 1)
+    );
 
     const targetProtein = Math.max(0, targets.protein);
     const targetCalories = Math.max(0, targets.calories);
@@ -49,12 +53,17 @@ export class NutritionPortioner {
       const fat = (f.macrosPer100g.fat * gramsNeeded) / 100;
       const fiber = (f.macrosPer100g.fiber * gramsNeeded) / 100;
 
-      items.push({ name: f.name, grams: gramsNeeded, calories: Math.round(cals), macros: {
-        protein: Math.round((pPer100 * gramsNeeded) / 100 * 10) / 10,
-        carbohydrates: Math.round(carbs * 10) / 10,
-        fat: Math.round(fat * 10) / 10,
-        fiber: Math.round(fiber * 10) / 10,
-      }});
+      items.push({
+        name: f.name,
+        grams: gramsNeeded,
+        calories: Math.round(cals),
+        macros: {
+          protein: Math.round(((pPer100 * gramsNeeded) / 100) * 10) / 10,
+          carbohydrates: Math.round(carbs * 10) / 10,
+          fat: Math.round(fat * 10) / 10,
+          fiber: Math.round(fiber * 10) / 10,
+        },
+      });
 
       totalCalories += cals;
       totalProtein += (pPer100 * gramsNeeded) / 100;
@@ -66,7 +75,7 @@ export class NutritionPortioner {
     // Step 2: Fill remaining calories with remaining foods (carb/fat balance)
     const remainingCalories = Math.max(0, targetCalories - totalCalories);
     if (remainingCalories > 0) {
-      const byCaloricDensity = [...foods].sort((a, b) => (b.caloriesPer100g) - (a.caloriesPer100g));
+      const byCaloricDensity = [...foods].sort((a, b) => b.caloriesPer100g - a.caloriesPer100g);
       for (const f of byCaloricDensity) {
         if (totalCalories >= targetCalories) break;
         const cPer100 = f.caloriesPer100g;
@@ -81,12 +90,17 @@ export class NutritionPortioner {
         const fiber = (f.macrosPer100g.fiber * grams) / 100;
         const cals = (cPer100 * grams) / 100;
 
-        items.push({ name: f.name, grams, calories: Math.round(cals), macros: {
-          protein: Math.round(p * 10) / 10,
-          carbohydrates: Math.round(carbs * 10) / 10,
-          fat: Math.round(fat * 10) / 10,
-          fiber: Math.round(fiber * 10) / 10,
-        }});
+        items.push({
+          name: f.name,
+          grams,
+          calories: Math.round(cals),
+          macros: {
+            protein: Math.round(p * 10) / 10,
+            carbohydrates: Math.round(carbs * 10) / 10,
+            fat: Math.round(fat * 10) / 10,
+            fiber: Math.round(fiber * 10) / 10,
+          },
+        });
 
         totalCalories += cals;
         totalProtein += p;
@@ -104,10 +118,9 @@ export class NutritionPortioner {
         carbohydrates: Math.round(totalCarbs * 10) / 10,
         fat: Math.round(totalFat * 10) / 10,
         fiber: Math.round(totalFiber * 10) / 10,
-      }
+      },
     };
   }
 }
 
 export default new NutritionPortioner();
-

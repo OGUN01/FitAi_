@@ -98,19 +98,22 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   console.log('🏋️ ENHANCED WORKOUT SESSION: Initializing', {
     hasWorkout: !!workout,
     workoutTitle: workout?.title,
-    sessionId: sessionId,
-    exerciseCount: safeNumber(workout?.exercises?.length, 0)
+    sessionId,
+    exerciseCount: safeNumber(workout?.exercises?.length, 0),
   });
 
   // CRITICAL DEBUG: Log the actual exercise structure
   if (workout?.exercises?.length > 0) {
-    console.log('🔍 CRITICAL DEBUG - First Exercise Structure:', JSON.stringify(workout.exercises[0], null, 2));
+    console.log(
+      '🔍 CRITICAL DEBUG - First Exercise Structure:',
+      JSON.stringify(workout.exercises[0], null, 2)
+    );
     console.log('🔍 CRITICAL DEBUG - Exercise Keys:', Object.keys(workout.exercises[0] || {}));
     console.log('🔍 CRITICAL DEBUG - Looking for ID in:', {
       exerciseId: workout.exercises[0]?.exerciseId,
       id: workout.exercises[0]?.id,
       exerciseName: workout.exercises[0]?.exerciseName,
-      name: workout.exercises[0]?.name
+      name: workout.exercises[0]?.name,
     });
   }
 
@@ -138,7 +141,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     console.error('🚨 No exercises in workout');
     return (
       <SafeAreaView style={styles.container}>
-
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>🏋️‍♂️</Text>
           <Text style={styles.errorText}>No Exercises Found</Text>
@@ -193,15 +195,16 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     return repsDuration || restSeconds || 30;
   }, [currentExercise.reps, currentExercise.restTime]);
   const overallProgress = useMemo(() => {
-    const completed = exerciseProgress.filter(ep => ep?.isCompleted).length;
+    const completed = exerciseProgress.filter((ep) => ep?.isCompleted).length;
     return totalExercises > 0 ? completed / totalExercises : 0;
   }, [exerciseProgress, totalExercises]);
 
   const workoutStats = useMemo((): WorkoutStats => {
     const duration = Math.round((currentTime.getTime() - workoutStartTime.getTime()) / 60000);
-    const exercisesCompleted = exerciseProgress.filter(ep => ep?.isCompleted).length;
-    const setsCompleted = exerciseProgress.reduce((total, ep) =>
-      total + (ep?.completedSets?.filter(Boolean).length || 0), 0
+    const exercisesCompleted = exerciseProgress.filter((ep) => ep?.isCompleted).length;
+    const setsCompleted = exerciseProgress.reduce(
+      (total, ep) => total + (ep?.completedSets?.filter(Boolean).length || 0),
+      0
     );
     const caloriesBurned = Math.round((duration * safeNumber(workout.estimatedCalories, 300)) / 60);
 
@@ -209,7 +212,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       totalDuration: Math.max(0, duration),
       exercisesCompleted: Math.max(0, exercisesCompleted),
       setsCompleted: Math.max(0, setsCompleted),
-      caloriesBurned: Math.max(0, caloriesBurned)
+      caloriesBurned: Math.max(0, caloriesBurned),
     };
   }, [currentTime, workoutStartTime, exerciseProgress, workout.estimatedCalories]);
 
@@ -233,73 +236,84 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
-      })
+      }),
     ]).start();
   }, [currentExerciseIndex]);
 
   // Enhanced set completion with haptic feedback
-  const handleSetComplete = useCallback(async (setIndex: number) => {
-    try {
-      // Haptic feedback
-      if (Platform.OS !== 'web') {
-        Vibration.vibrate(50);
-      }
-
-      const newProgress = [...exerciseProgress];
-      if (!newProgress[currentExerciseIndex]) return;
-
-      newProgress[currentExerciseIndex].completedSets[setIndex] =
-        !newProgress[currentExerciseIndex].completedSets[setIndex];
-
-      // Check if all sets are completed
-      const allSetsCompleted = newProgress[currentExerciseIndex].completedSets.every(Boolean);
-      newProgress[currentExerciseIndex].isCompleted = allSetsCompleted;
-
-      // Track completion time
-      if (allSetsCompleted && !newProgress[currentExerciseIndex].endTime) {
-        newProgress[currentExerciseIndex].endTime = new Date();
-      }
-
-
-      setExerciseProgress(newProgress);
-
-      // Enhanced progress tracking
-      const completedExercises = newProgress.filter(ep => ep?.isCompleted).length;
-      const progressPercentage = totalExercises > 0 ?
-        Math.round((completedExercises / totalExercises) * 100) : 0;
-
-      // Save progress
-      await completionTrackingService.updateWorkoutProgress(
-        workout.id || 'unknown',
-        progressPercentage,
-        {
-          sessionId: sessionId || 'unknown',
-          exerciseIndex: currentExerciseIndex,
-          setIndex,
-          completedExercises,
-          totalExercises,
-          timestamp: new Date().toISOString(),
-          stats: workoutStats
+  const handleSetComplete = useCallback(
+    async (setIndex: number) => {
+      try {
+        // Haptic feedback
+        if (Platform.OS !== 'web') {
+          Vibration.vibrate(50);
         }
-      );
 
-      // Start rest timer if set is completed and not the last set
-      const currentSets = safeNumber(currentExercise.sets, 3);
-      if (newProgress[currentExerciseIndex].completedSets[setIndex] &&
-          setIndex < currentSets - 1) {
-        startRestTimer();
+        const newProgress = [...exerciseProgress];
+        if (!newProgress[currentExerciseIndex]) return;
+
+        newProgress[currentExerciseIndex].completedSets[setIndex] =
+          !newProgress[currentExerciseIndex].completedSets[setIndex];
+
+        // Check if all sets are completed
+        const allSetsCompleted = newProgress[currentExerciseIndex].completedSets.every(Boolean);
+        newProgress[currentExerciseIndex].isCompleted = allSetsCompleted;
+
+        // Track completion time
+        if (allSetsCompleted && !newProgress[currentExerciseIndex].endTime) {
+          newProgress[currentExerciseIndex].endTime = new Date();
+        }
+
+        setExerciseProgress(newProgress);
+
+        // Enhanced progress tracking
+        const completedExercises = newProgress.filter((ep) => ep?.isCompleted).length;
+        const progressPercentage =
+          totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+
+        // Save progress
+        await completionTrackingService.updateWorkoutProgress(
+          workout.id || 'unknown',
+          progressPercentage,
+          {
+            sessionId: sessionId || 'unknown',
+            exerciseIndex: currentExerciseIndex,
+            setIndex,
+            completedExercises,
+            totalExercises,
+            timestamp: new Date().toISOString(),
+            stats: workoutStats,
+          }
+        );
+
+        // Start rest timer if set is completed and not the last set
+        const currentSets = safeNumber(currentExercise.sets, 3);
+        if (
+          newProgress[currentExerciseIndex].completedSets[setIndex] &&
+          setIndex < currentSets - 1
+        ) {
+          startRestTimer();
+        }
+
+        // Show next exercise preview if exercise is completed
+        if (allSetsCompleted && currentExerciseIndex < totalExercises - 1) {
+          setShowNextExercisePreview(true);
+          setTimeout(() => setShowNextExercisePreview(false), 3000);
+        }
+      } catch (error) {
+        console.error('Failed to update workout progress:', error);
       }
-
-      // Show next exercise preview if exercise is completed
-      if (allSetsCompleted && currentExerciseIndex < totalExercises - 1) {
-        setShowNextExercisePreview(true);
-        setTimeout(() => setShowNextExercisePreview(false), 3000);
-      }
-
-    } catch (error) {
-      console.error('Failed to update workout progress:', error);
-    }
-  }, [exerciseProgress, currentExerciseIndex, currentExercise, sessionId, workout.id, workoutStats, totalExercises]);
+    },
+    [
+      exerciseProgress,
+      currentExerciseIndex,
+      currentExercise,
+      sessionId,
+      workout.id,
+      workoutStats,
+      totalExercises,
+    ]
+  );
 
   // Enhanced rest timer
   const startRestTimer = useCallback(() => {
@@ -316,7 +330,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
       // Find next incomplete set for the current exercise
       const sets = exerciseProgress[currentExerciseIndex]?.completedSets || [];
-      const nextIncompleteIndex = sets.findIndex(s => !s);
+      const nextIncompleteIndex = sets.findIndex((s) => !s);
 
       if (nextIncompleteIndex !== -1) {
         // Mark that set as completed
@@ -328,7 +342,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       setShowExerciseTimer(false);
     }
   }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
-
 
   // Enhanced navigation with animations
   const goToNextExercise = useCallback(() => {
@@ -343,9 +356,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           toValue: 0.8,
           duration: 200,
           useNativeDriver: true,
-        })
+        }),
       ]).start(() => {
-        setCurrentExerciseIndex(prev => prev + 1);
+        setCurrentExerciseIndex((prev) => prev + 1);
         setIsRestTime(false);
         setRestTimeRemaining(0);
         setShowNextExercisePreview(false);
@@ -367,9 +380,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           toValue: 0.8,
           duration: 200,
           useNativeDriver: true,
-        })
+        }),
       ]).start(() => {
-        setCurrentExerciseIndex(prev => prev - 1);
+        setCurrentExerciseIndex((prev) => prev - 1);
         setIsRestTime(false);
         setRestTimeRemaining(0);
       });
@@ -383,39 +396,36 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     try {
       const finalStats = {
         ...workoutStats,
-        totalDuration: Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000)
+        totalDuration: Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000),
       };
 
-      const success = await completionTrackingService.completeWorkout(
-        workout.id || 'unknown',
-        {
-          sessionId: sessionId || 'unknown',
-          duration: finalStats.totalDuration,
-          exercisesCompleted: finalStats.exercisesCompleted,
-          totalExercises,
-          completedAt: new Date().toISOString(),
-          stats: finalStats
-        }
-      );
+      const success = await completionTrackingService.completeWorkout(workout.id || 'unknown', {
+        sessionId: sessionId || 'unknown',
+        duration: finalStats.totalDuration,
+        exercisesCompleted: finalStats.exercisesCompleted,
+        totalExercises,
+        completedAt: new Date().toISOString(),
+        stats: finalStats,
+      });
 
       if (success) {
         Alert.alert(
           '🎉 Workout Complete!',
           `Outstanding performance! You completed "${safeString(workout.title, 'Workout')}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
-          `📊 Stats:\n` +
-          `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
-          `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
-          `• Calories: ~${safeString(finalStats.caloriesBurned)}`,
+            `📊 Stats:\n` +
+            `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
+            `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
+            `• Calories: ~${safeString(finalStats.caloriesBurned)}`,
           [
             {
               text: 'View Progress',
-              onPress: () => navigation.navigate('Progress')
+              onPress: () => navigation.navigate('Progress'),
             },
             {
               text: 'Done',
               onPress: () => navigation.goBack(),
-              style: 'default'
-            }
+              style: 'default',
+            },
           ]
         );
       } else {
@@ -440,8 +450,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     if (Platform.OS === 'web') {
       if (hasProgress) {
         try {
-          const progressPercentage = totalExercises > 0 ?
-            Math.round((workoutStats.exercisesCompleted / totalExercises) * 100) : 0;
+          const progressPercentage =
+            totalExercises > 0
+              ? Math.round((workoutStats.exercisesCompleted / totalExercises) * 100)
+              : 0;
           await completionTrackingService.updateWorkoutProgress(
             workout.id || 'unknown',
             progressPercentage,
@@ -449,7 +461,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               sessionId: sessionId || 'unknown',
               partialCompletion: true,
               exitedAt: new Date().toISOString(),
-              stats: workoutStats
+              stats: workoutStats,
             }
           );
         } catch (error) {
@@ -471,8 +483,10 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             text: 'Save & Exit',
             onPress: async () => {
               try {
-                const progressPercentage = totalExercises > 0 ?
-                  Math.round((workoutStats.exercisesCompleted / totalExercises) * 100) : 0;
+                const progressPercentage =
+                  totalExercises > 0
+                    ? Math.round((workoutStats.exercisesCompleted / totalExercises) * 100)
+                    : 0;
                 await completionTrackingService.updateWorkoutProgress(
                   workout.id || 'unknown',
                   progressPercentage,
@@ -480,30 +494,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                     sessionId: sessionId || 'unknown',
                     partialCompletion: true,
                     exitedAt: new Date().toISOString(),
-                    stats: workoutStats
+                    stats: workoutStats,
                   }
                 );
               } catch (error) {
                 console.error('❌ Failed to save progress:', error);
               }
               navigation.goBack();
-            }
-          }
+            },
+          },
         ]
       );
     } else {
-      Alert.alert(
-        'Exit Workout?',
-        'Are you sure you want to exit? No progress has been made.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Exit',
-            style: 'destructive',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
+      Alert.alert('Exit Workout?', 'Are you sure you want to exit? No progress has been made.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Exit',
+          style: 'destructive',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     }
   }, [workoutStats, totalExercises, workout.id, sessionId, navigation]);
 
@@ -512,7 +522,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     if (!exerciseId) return 'Exercise';
     return safeString(exerciseId, 'Exercise')
       .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
+      .replace(/\b\w/g, (l) => l.toUpperCase());
   }, []);
 
   // Next exercise preview
@@ -546,12 +556,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         </View>
 
         <View style={styles.headerRight}>
-          <Text style={styles.timerText}>
-            {safeString(workoutStats.totalDuration)}m
-          </Text>
-          <Text style={styles.caloriesText}>
-            {safeString(workoutStats.caloriesBurned)} cal
-          </Text>
+          <Text style={styles.timerText}>{safeString(workoutStats.totalDuration)}m</Text>
+          <Text style={styles.caloriesText}>{safeString(workoutStats.caloriesBurned)} cal</Text>
         </View>
       </View>
 
@@ -562,8 +568,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             styles.progressBar,
             {
               width: `${Math.min(100, overallProgress * 100)}%`,
-              opacity: fadeAnim
-            }
+              opacity: fadeAnim,
+            },
           ]}
         />
         <Text style={styles.progressPercentage}>
@@ -607,24 +613,23 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         <View style={styles.nextExercisePreview}>
           <Text style={styles.nextExerciseTitle}>Next Up:</Text>
           <Text style={styles.nextExerciseName}>
-            {safeString(nextExercise.name || getExerciseName(nextExercise.exerciseId), 'Next Exercise')}
+            {safeString(
+              nextExercise.name || getExerciseName(nextExercise.exerciseId),
+              'Next Exercise'
+            )}
           </Text>
         </View>
       )}
 
       {/* Enhanced Main Content */}
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
         <Animated.View
           style={[
             styles.exerciseContainer,
             {
               opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }]
-            }
+              transform: [{ scale: scaleAnim }],
+            },
           ]}
         >
           {/* Enhanced Exercise Visual */}
@@ -652,7 +657,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
               {/* Start Exercise Timer */}
               <Button
-                title={parseDurationFromReps(currentExercise.reps) ? `Start ${safeString(currentExercise.reps)}` : 'Start Timer'}
+                title={
+                  parseDurationFromReps(currentExercise.reps)
+                    ? `Start ${safeString(currentExercise.reps)}`
+                    : 'Start Timer'
+                }
                 onPress={() => setShowExerciseTimer(true)}
                 variant="primary"
                 style={{ marginTop: THEME.spacing.md }}
@@ -660,7 +669,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
               <View style={styles.exerciseDetails}>
                 <Text style={styles.exerciseDetailText}>
-                  {safeString(currentExercise.sets, '0')} sets × {safeString(currentExercise.reps, '0')} reps
+                  {safeString(currentExercise.sets, '0')} sets ×{' '}
+                  {safeString(currentExercise.reps, '0')} reps
                 </Text>
 
                 {safeNumber(currentExercise.weight, 0) > 0 && (
@@ -684,29 +694,24 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                 {currentProgress.completedSets?.map((isCompleted, setIndex) => (
                   <TouchableOpacity
                     key={setIndex}
-                    style={[
-                      styles.setButton,
-                      isCompleted && styles.setButtonCompleted
-                    ]}
+                    style={[styles.setButton, isCompleted && styles.setButtonCompleted]}
                     onPress={() => handleSetComplete(setIndex)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[
-                      styles.setButtonText,
-                      isCompleted && styles.setButtonTextCompleted
-                    ]}>
+                    <Text
+                      style={[styles.setButtonText, isCompleted && styles.setButtonTextCompleted]}
+                    >
                       {safeString(setIndex + 1)}
                     </Text>
-                    {isCompleted && (
-                      <Text style={styles.setButtonCheck}>✓</Text>
-                    )}
+                    {isCompleted && <Text style={styles.setButtonCheck}>✓</Text>}
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Sets Progress Text */}
               <Text style={styles.setsProgressText}>
-                {safeString(currentProgress.completedSets?.filter(Boolean).length || 0)} / {safeString(currentProgress.completedSets?.length || 0)} completed
+                {safeString(currentProgress.completedSets?.filter(Boolean).length || 0)} /{' '}
+                {safeString(currentProgress.completedSets?.length || 0)} completed
               </Text>
             </View>
 
@@ -715,7 +720,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               <Text style={styles.instructionsTitle}>Exercise Notes</Text>
               <Text style={styles.instructionsText}>
                 {safeString(
-                  currentExercise.notes || 'Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.',
+                  currentExercise.notes ||
+                    'Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.',
                   'Exercise instructions not available'
                 )}
               </Text>
@@ -759,7 +765,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         />
 
         <Button
-          title={currentExerciseIndex === totalExercises - 1 ? "Finish Workout" : "Next Exercise"}
+          title={currentExerciseIndex === totalExercises - 1 ? 'Finish Workout' : 'Next Exercise'}
           onPress={goToNextExercise}
           variant="primary"
           style={[styles.navButton, styles.primaryNavButton]}

@@ -31,14 +31,11 @@ interface IngredientProgress {
   notes?: string;
 }
 
-export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
-  route,
-  navigation,
-}) => {
+export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, navigation }) => {
   const { meal, logId } = route.params;
   const { user } = useAuth();
   const { loadDailyNutrition } = useNutritionData();
-  
+
   // State management
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [ingredientProgress, setIngredientProgress] = useState<IngredientProgress[]>(
@@ -51,7 +48,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
   const [fadeAnim] = useState(new Animated.Value(1));
 
   const totalSteps = meal.items.length;
-  const completedSteps = ingredientProgress.filter(ip => ip.isCompleted).length;
+  const completedSteps = ingredientProgress.filter((ip) => ip.isCompleted).length;
   const overallProgress = completedSteps / totalSteps;
 
   // Animation when changing steps
@@ -67,24 +64,20 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
   const handleIngredientComplete = async (itemIndex: number) => {
     const newProgress = [...ingredientProgress];
     newProgress[itemIndex].isCompleted = !newProgress[itemIndex].isCompleted;
-    
+
     setIngredientProgress(newProgress);
 
     // Update overall meal progress
-    const completedItems = newProgress.filter(ip => ip.isCompleted).length;
+    const completedItems = newProgress.filter((ip) => ip.isCompleted).length;
     const progressPercentage = Math.round((completedItems / totalSteps) * 100);
-    
+
     try {
-      await completionTrackingService.updateMealProgress(
-        meal.id,
-        progressPercentage,
-        {
-          logId,
-          itemIndex,
-          completedItems,
-          totalItems: totalSteps,
-        }
-      );
+      await completionTrackingService.updateMealProgress(meal.id, progressPercentage, {
+        logId,
+        itemIndex,
+        completedItems,
+        totalItems: totalSteps,
+      });
     } catch (error) {
       console.error('Failed to update meal progress:', error);
     }
@@ -121,17 +114,21 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
   // Complete meal
   const completeMeal = async () => {
     const preparationTime = Math.round((new Date().getTime() - mealStartTime.getTime()) / 60000);
-    
+
     try {
       // Mark meal as completed in the tracking service
-      const success = await completionTrackingService.completeMeal(meal.id, {
-        logId,
-        preparationTime,
-        itemsCompleted: completedSteps,
-        totalItems: totalSteps,
-        completedAt: new Date().toISOString(),
-      }, user?.id || 'dev-user-001');
-      
+      const success = await completionTrackingService.completeMeal(
+        meal.id,
+        {
+          logId,
+          preparationTime,
+          itemsCompleted: completedSteps,
+          totalItems: totalSteps,
+          completedAt: new Date().toISOString(),
+        },
+        user?.id || 'dev-user-001'
+      );
+
       if (success) {
         // Refresh nutrition data to update calorie display
         try {
@@ -149,13 +146,13 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
               text: 'View Nutrition',
               onPress: () => {
                 navigation.navigate('Diet');
-              }
+              },
             },
             {
               text: 'Done',
               onPress: () => navigation.goBack(),
-              style: 'default'
-            }
+              style: 'default',
+            },
           ]
         );
       } else {
@@ -170,7 +167,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
           {
             text: 'Done',
             onPress: () => navigation.goBack(),
-          }
+          },
         ]
       );
     }
@@ -179,33 +176,29 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
   // Exit meal preparation
   const exitMeal = async () => {
     const hasProgress = completedSteps > 0;
-    
+
     if (hasProgress) {
       Alert.alert(
         'Exit Meal Preparation?',
         `You've completed ${completedSteps}/${totalSteps} ingredients. Your progress will be saved.`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Save & Exit', 
+          {
+            text: 'Save & Exit',
             onPress: async () => {
               try {
                 const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
-                await completionTrackingService.updateMealProgress(
-                  meal.id,
-                  progressPercentage,
-                  {
-                    logId,
-                    partialCompletion: true,
-                    exitedAt: new Date().toISOString(),
-                  }
-                );
+                await completionTrackingService.updateMealProgress(meal.id, progressPercentage, {
+                  logId,
+                  partialCompletion: true,
+                  exitedAt: new Date().toISOString(),
+                });
               } catch (error) {
                 console.error('Failed to save progress:', error);
               }
               navigation.goBack();
-            }
-          }
+            },
+          },
         ]
       );
     } else {
@@ -214,7 +207,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
         'Are you sure you want to exit? No progress has been made.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', style: 'destructive', onPress: () => navigation.goBack() }
+          { text: 'Exit', style: 'destructive', onPress: () => navigation.goBack() },
         ]
       );
     }
@@ -253,17 +246,13 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
           {/* Current Ingredient/Step */}
           <Card style={styles.stepCard} variant="elevated">
             <View style={styles.stepHeader}>
-              <Text style={styles.stepTitle}>
-                {currentItem.name}
-              </Text>
+              <Text style={styles.stepTitle}>{currentItem.name}</Text>
               <View style={styles.stepDetails}>
                 <Text style={styles.stepDetailText}>
                   Quantity: {currentItem.quantity || '1 serving'}
                 </Text>
                 {currentItem.calories && (
-                  <Text style={styles.stepDetailText}>
-                    {currentItem.calories} cal
-                  </Text>
+                  <Text style={styles.stepDetailText}>{currentItem.calories} cal</Text>
                 )}
               </View>
             </View>
@@ -273,14 +262,17 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
               <TouchableOpacity
                 style={[
                   styles.statusButton,
-                  ingredientProgress[currentStepIndex]?.isCompleted && styles.statusButtonCompleted
+                  ingredientProgress[currentStepIndex]?.isCompleted && styles.statusButtonCompleted,
                 ]}
                 onPress={() => handleIngredientComplete(currentStepIndex)}
               >
-                <Text style={[
-                  styles.statusButtonText,
-                  ingredientProgress[currentStepIndex]?.isCompleted && styles.statusButtonTextCompleted
-                ]}>
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    ingredientProgress[currentStepIndex]?.isCompleted &&
+                      styles.statusButtonTextCompleted,
+                  ]}
+                >
                   {ingredientProgress[currentStepIndex]?.isCompleted ? '✓ Added' : 'Mark as Added'}
                 </Text>
               </TouchableOpacity>
@@ -290,7 +282,9 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
             <View style={styles.notesContainer}>
               <Text style={styles.notesTitle}>Preparation Notes</Text>
               <Text style={styles.notesText}>
-                {currentItem.preparation || meal.instructions || 'Add this ingredient to your meal preparation.'}
+                {currentItem.preparation ||
+                  meal.instructions ||
+                  'Add this ingredient to your meal preparation.'}
               </Text>
             </View>
           </Card>
@@ -312,7 +306,9 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
                 <Text style={styles.overviewLabel}>Difficulty</Text>
               </View>
               <View style={styles.overviewItem}>
-                <Text style={styles.overviewValue}>{completedSteps}/{totalSteps}</Text>
+                <Text style={styles.overviewValue}>
+                  {completedSteps}/{totalSteps}
+                </Text>
                 <Text style={styles.overviewLabel}>Progress</Text>
               </View>
             </View>
@@ -329,9 +325,9 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
           disabled={currentStepIndex === 0}
           style={styles.navButton}
         />
-        
+
         <Button
-          title={currentStepIndex === totalSteps - 1 ? "Finish Meal" : "Next"}
+          title={currentStepIndex === totalSteps - 1 ? 'Finish Meal' : 'Next'}
           onPress={goToNextStep}
           variant="primary"
           style={styles.navButton}

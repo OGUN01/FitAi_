@@ -56,12 +56,17 @@ const CustomSlider: React.FC<CustomSliderProps> = ({
         onLayout={(event) => setTrackWidth(event.nativeEvent.layout.width)}
         onTouchEnd={handleTrackPress}
       >
-        <View style={[styles.customSliderFill, { width: `${((value - minimumValue) / (maximumValue - minimumValue)) * 100}%` }]} />
+        <View
+          style={[
+            styles.customSliderFill,
+            { width: `${((value - minimumValue) / (maximumValue - minimumValue)) * 100}%` },
+          ]}
+        />
         <View
           style={[
             styles.customSliderThumb,
             { left: getThumbPosition() },
-            isDragging && styles.customSliderThumbActive
+            isDragging && styles.customSliderThumbActive,
           ]}
         />
       </View>
@@ -97,7 +102,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   React.useEffect(() => {
     if (recognizedFoods.length > 0) {
       setAdjustments(
-        recognizedFoods.map(food => ({
+        recognizedFoods.map((food) => ({
           foodId: food.id,
           originalGrams: food.portionSize.estimatedGrams,
           adjustedGrams: food.portionSize.estimatedGrams,
@@ -111,19 +116,23 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   const updateAdjustment = (index: number, adjustedGrams: number) => {
     const originalGrams = recognizedFoods[index].portionSize.estimatedGrams;
     const adjustmentRatio = adjustedGrams / originalGrams;
-    
-    setAdjustments(prev => prev.map((item, i) => 
-      i === index ? { 
-        ...item, 
-        adjustedGrams: Math.round(adjustedGrams), 
-        adjustmentRatio: Math.round(adjustmentRatio * 100) / 100
-      } : item
-    ));
+
+    setAdjustments((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              adjustedGrams: Math.round(adjustedGrams),
+              adjustmentRatio: Math.round(adjustmentRatio * 100) / 100,
+            }
+          : item
+      )
+    );
   };
 
   const applyAdjustments = async () => {
     setIsProcessing(true);
-    
+
     try {
       const adjustedFoods = recognizedFoods.map((food, index) => {
         const adjustment = adjustments[index];
@@ -137,9 +146,15 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           protein: Math.round(food.nutrition.protein * adjustment.adjustmentRatio * 10) / 10,
           carbs: Math.round(food.nutrition.carbs * adjustment.adjustmentRatio * 10) / 10,
           fat: Math.round(food.nutrition.fat * adjustment.adjustmentRatio * 10) / 10,
-          fiber: food.nutrition.fiber ? Math.round(food.nutrition.fiber * adjustment.adjustmentRatio * 10) / 10 : undefined,
-          sugar: food.nutrition.sugar ? Math.round(food.nutrition.sugar * adjustment.adjustmentRatio * 10) / 10 : undefined,
-          sodium: food.nutrition.sodium ? Math.round(food.nutrition.sodium * adjustment.adjustmentRatio) : undefined,
+          fiber: food.nutrition.fiber
+            ? Math.round(food.nutrition.fiber * adjustment.adjustmentRatio * 10) / 10
+            : undefined,
+          sugar: food.nutrition.sugar
+            ? Math.round(food.nutrition.sugar * adjustment.adjustmentRatio * 10) / 10
+            : undefined,
+          sodium: food.nutrition.sodium
+            ? Math.round(food.nutrition.sodium * adjustment.adjustmentRatio)
+            : undefined,
         };
 
         return {
@@ -154,9 +169,9 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       });
 
       onAdjustmentComplete(adjustedFoods);
-      
+
       // Show summary of adjustments
-      const changedFoods = adjustments.filter(adj => adj.adjustmentRatio !== 1.0);
+      const changedFoods = adjustments.filter((adj) => adj.adjustmentRatio !== 1.0);
       if (changedFoods.length > 0) {
         Alert.alert(
           '✅ Portions Adjusted!',
@@ -164,7 +179,6 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           [{ text: 'Perfect!' }]
         );
       }
-
     } catch (error) {
       console.error('Error applying portion adjustments:', error);
       Alert.alert('Error', 'Failed to apply portion adjustments. Please try again.');
@@ -184,7 +198,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
   const getCommonPortionSizes = (foodName: string): { label: string; grams: number }[] => {
     const name = foodName.toLowerCase();
-    
+
     // Common portion sizes for different food types
     if (name.includes('rice') || name.includes('biryani') || name.includes('pulao')) {
       return [
@@ -194,7 +208,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
         { label: 'Full plate', grams: 300 },
       ];
     }
-    
+
     if (name.includes('roti') || name.includes('naan') || name.includes('chapati')) {
       return [
         { label: '1 piece', grams: 40 },
@@ -203,7 +217,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
         { label: '4 pieces', grams: 160 },
       ];
     }
-    
+
     if (name.includes('dal') || name.includes('curry') || name.includes('sabji')) {
       return [
         { label: 'Small serving', grams: 80 },
@@ -236,7 +250,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   // Calculate updated nutrition for preview
   const previewNutrition = {
     calories: Math.round(currentFood.nutrition.calories * currentAdjustment.adjustmentRatio),
-    protein: Math.round(currentFood.nutrition.protein * currentAdjustment.adjustmentRatio * 10) / 10,
+    protein:
+      Math.round(currentFood.nutrition.protein * currentAdjustment.adjustmentRatio * 10) / 10,
     carbs: Math.round(currentFood.nutrition.carbs * currentAdjustment.adjustmentRatio * 10) / 10,
     fat: Math.round(currentFood.nutrition.fat * currentAdjustment.adjustmentRatio * 10) / 10,
   };
@@ -261,10 +276,12 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             Food {currentFoodIndex + 1} of {recognizedFoods.length}
           </Text>
           <View style={styles.progressBar}>
-            <View style={[
-              styles.progressFill,
-              { width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%` }
-            ]} />
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%` },
+              ]}
+            />
           </View>
         </View>
 
@@ -307,7 +324,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           {/* Portion Size Slider */}
           <Card style={styles.sliderCard}>
             <Text style={styles.sectionTitle}>Adjust Portion Size</Text>
-            
+
             <View style={styles.currentPortionDisplay}>
               <Text style={styles.currentPortionGrams}>{currentAdjustment.adjustedGrams}g</Text>
               <Text style={styles.currentPortionLabel}>
@@ -315,7 +332,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               </Text>
               {currentAdjustment.adjustmentRatio !== 1.0 && (
                 <Text style={styles.adjustmentRatio}>
-                  ({currentAdjustment.adjustmentRatio > 1 ? '+' : ''}{Math.round((currentAdjustment.adjustmentRatio - 1) * 100)}%)
+                  ({currentAdjustment.adjustmentRatio > 1 ? '+' : ''}
+                  {Math.round((currentAdjustment.adjustmentRatio - 1) * 100)}%)
                 </Text>
               )}
             </View>
@@ -343,20 +361,27 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   key={index}
                   style={[
                     styles.quickPortionButton,
-                    currentAdjustment.adjustedGrams === portion.grams && styles.quickPortionButtonActive
+                    currentAdjustment.adjustedGrams === portion.grams &&
+                      styles.quickPortionButtonActive,
                   ]}
                   onPress={() => updateAdjustment(currentFoodIndex, portion.grams)}
                 >
-                  <Text style={[
-                    styles.quickPortionLabel,
-                    currentAdjustment.adjustedGrams === portion.grams && styles.quickPortionLabelActive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.quickPortionLabel,
+                      currentAdjustment.adjustedGrams === portion.grams &&
+                        styles.quickPortionLabelActive,
+                    ]}
+                  >
                     {portion.label}
                   </Text>
-                  <Text style={[
-                    styles.quickPortionGrams,
-                    currentAdjustment.adjustedGrams === portion.grams && styles.quickPortionGramsActive
-                  ]}>
+                  <Text
+                    style={[
+                      styles.quickPortionGrams,
+                      currentAdjustment.adjustedGrams === portion.grams &&
+                        styles.quickPortionGramsActive,
+                    ]}
+                  >
                     {portion.grams}g
                   </Text>
                 </TouchableOpacity>
@@ -368,13 +393,17 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
           <Card style={styles.resetCard}>
             <TouchableOpacity
               style={styles.resetButton}
-              onPress={() => updateAdjustment(currentFoodIndex, currentFood.portionSize.estimatedGrams)}
+              onPress={() =>
+                updateAdjustment(currentFoodIndex, currentFood.portionSize.estimatedGrams)
+              }
               disabled={currentAdjustment.adjustmentRatio === 1.0}
             >
-              <Text style={[
-                styles.resetButtonText,
-                currentAdjustment.adjustmentRatio === 1.0 && styles.resetButtonTextDisabled
-              ]}>
+              <Text
+                style={[
+                  styles.resetButtonText,
+                  currentAdjustment.adjustmentRatio === 1.0 && styles.resetButtonTextDisabled,
+                ]}
+              >
                 🔄 Reset to Original ({currentFood.portionSize.estimatedGrams}g)
               </Text>
             </TouchableOpacity>
@@ -387,28 +416,28 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             {currentFoodIndex > 0 && (
               <Button
                 title="Previous"
-                onPress={() => setCurrentFoodIndex(prev => prev - 1)}
+                onPress={() => setCurrentFoodIndex((prev) => prev - 1)}
                 variant="outline"
                 style={styles.navButton}
               />
             )}
-            
+
             {currentFoodIndex < recognizedFoods.length - 1 ? (
               <Button
                 title="Next"
-                onPress={() => setCurrentFoodIndex(prev => prev + 1)}
+                onPress={() => setCurrentFoodIndex((prev) => prev + 1)}
                 style={styles.navButton}
               />
             ) : (
               <Button
-                title={isProcessing ? "Applying..." : "Apply Adjustments"}
+                title={isProcessing ? 'Applying...' : 'Apply Adjustments'}
                 onPress={applyAdjustments}
                 disabled={isProcessing}
                 style={styles.navButton}
               />
             )}
           </View>
-          
+
           {isProcessing && (
             <View style={styles.processingIndicator}>
               <ActivityIndicator size="small" color={ResponsiveTheme.colors.primary} />

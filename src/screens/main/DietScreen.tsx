@@ -12,7 +12,7 @@ import {
   TextInput,
   Animated,
   Platform,
-} from 'react-native'
+} from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -24,9 +24,10 @@ import { useNutritionStore } from '../../stores/nutritionStore';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection and safe loading
-const isExpoGo = Constants.appOwnership === 'expo' || 
-                 Constants.executionEnvironment === 'storeClient' ||
-                 (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
 
 let useWaterReminders: any = null;
 if (!isExpoGo) {
@@ -51,7 +52,9 @@ import AIMealsPanel from '../../components/diet/AIMealsPanel';
 import CreateRecipeModal from '../../components/diet/CreateRecipeModal';
 import { runQuickActionsTests, runFoodRecognitionE2ETests } from '../../utils/testQuickActions';
 import { recognizedFoodLogger } from '../../services/recognizedFoodLogger';
-import FoodRecognitionFeedback, { FoodFeedback } from '../../components/diet/FoodRecognitionFeedback';
+import FoodRecognitionFeedback, {
+  FoodFeedback,
+} from '../../components/diet/FoodRecognitionFeedback';
 import { foodRecognitionFeedbackService } from '../../services/foodRecognitionFeedbackService';
 import PortionAdjustment from '../../components/diet/PortionAdjustment';
 
@@ -79,7 +82,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     imageUri: string;
   } | null>(null);
   const [showMealPreparationModal, setShowMealPreparationModal] = useState(false);
-  const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(null);
+  const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(
+    null
+  );
   const [waterConsumed, setWaterConsumed] = useState(0); // in liters
   const waterReminders = useWaterReminders ? useWaterReminders() : null;
   const waterGoal = waterReminders?.config?.dailyGoalLiters || 4; // Default to 4L if no reminders
@@ -115,7 +120,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     loadWeeklyMealPlan,
     loadData,
   } = useNutritionStore();
-  
+
   const [selectedDay, setSelectedDay] = useState(() => {
     const today = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -127,7 +132,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
 
   // Debug: Monitor weeklyMealPlan changes
   useEffect(() => {
-    console.log(`🔍 weeklyMealPlan changed:`, weeklyMealPlan ? `Plan: ${weeklyMealPlan.planTitle}, meals: ${weeklyMealPlan.meals?.length}` : 'null');
+    console.log(
+      `🔍 weeklyMealPlan changed:`,
+      weeklyMealPlan
+        ? `Plan: ${weeklyMealPlan.planTitle}, meals: ${weeklyMealPlan.meals?.length}`
+        : 'null'
+    );
   }, [weeklyMealPlan]);
 
   // Load existing meal plan on component mount
@@ -136,29 +146,38 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       try {
         console.log('🔍 Loading existing meal plan from store...');
         await loadData(); // Load all nutrition data
-        
+
         const existingPlan = await loadWeeklyMealPlan();
         if (existingPlan) {
           console.log('✅ Found existing meal plan:', existingPlan.planTitle);
           setWeeklyMealPlan(existingPlan);
-          
+
           // Comprehensive retrieval test
           console.log('🧪 COMPREHENSIVE RETRIEVAL TEST:');
-          const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-          const mealAvailability = allDays.map(day => {
-            const mealsForDay = existingPlan.meals.filter(meal => meal.dayOfWeek === day);
+          const allDays = [
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+            'sunday',
+          ];
+          const mealAvailability = allDays.map((day) => {
+            const mealsForDay = existingPlan.meals.filter((meal) => meal.dayOfWeek === day);
             return {
               day,
               mealCount: mealsForDay.length,
-              mealTypes: mealsForDay.map(m => m.type)
+              mealTypes: mealsForDay.map((m) => m.type),
             };
           });
           console.log('📊 Meal availability by day:', mealAvailability);
-          
+
           const totalMeals = existingPlan.meals.length;
           const expectedMeals = 21; // 7 days × 3 meals
-          console.log(`📈 Total meals: ${totalMeals}/${expectedMeals} (${Math.round(totalMeals/expectedMeals*100)}% complete)`);
-          
+          console.log(
+            `📈 Total meals: ${totalMeals}/${expectedMeals} (${Math.round((totalMeals / expectedMeals) * 100)}% complete)`
+          );
         } else {
           console.log('📭 No existing meal plan found');
         }
@@ -177,11 +196,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       try {
         // Store the intent to edit diet preferences
         const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        await AsyncStorage.setItem('profileEditIntent', JSON.stringify({
-          section: 'dietPreferences',
-          fromScreen: 'Diet',
-          timestamp: Date.now()
-        }));
+        await AsyncStorage.setItem(
+          'profileEditIntent',
+          JSON.stringify({
+            section: 'dietPreferences',
+            fromScreen: 'Diet',
+            timestamp: Date.now(),
+          })
+        );
 
         console.log('🎯 DietScreen: Stored edit intent and navigating to Profile');
         navigation.navigate('Profile');
@@ -206,8 +228,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           onPress: () => {
             // This will be enhanced when we implement profile editing
             Alert.alert('Profile', 'Profile editing functionality will be available soon!');
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -252,30 +274,30 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     console.log('🍽️ NEW Food Recognition System - Image captured:', imageUri);
     console.log('🔑 Selected meal type:', selectedMealType);
     console.log('👤 Profile available:', !!profile);
-    
+
     setShowCamera(false);
-    
+
     // Check if we have the food recognition service
     if (!foodRecognitionService) {
       Alert.alert('Error', 'Food recognition service not available. Please check your setup.');
       return;
     }
-    
+
     try {
       setIsGeneratingMeal(true);
       setAiError(null);
-      
+
       // Show processing alert
       Alert.alert(
         '🔍 Revolutionary AI Food Recognition',
         `Our advanced AI is analyzing your ${selectedMealType} with 90%+ accuracy using Indian cuisine specialization...`,
         [{ text: 'Processing...', style: 'cancel' }]
       );
-      
+
       // Check if we have API keys available
-      const hasApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || 
-                       process.env.EXPO_PUBLIC_GEMINI_KEY_1;
-      
+      const hasApiKey =
+        process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_KEY_1;
+
       if (!hasApiKey) {
         // Demo mode without API keys
         Alert.alert(
@@ -283,34 +305,45 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           'API keys not configured. This is a demo of what the food recognition would show:\n\n• Detected: Rice Bowl with Curry (345 cal)\n• Detected: Mixed Vegetables (120 cal)\n• Total: 465 calories\n• Accuracy: 92%\n\nTo enable real recognition, add your Gemini API key to environment variables.',
           [
             { text: 'OK' },
-            { text: 'Setup Guide', onPress: () => {
-              Alert.alert('Setup', 'Add your Gemini API key to EXPO_PUBLIC_GEMINI_API_KEY in your .env file or use the test-api-keys.js script for setup.');
-            }}
+            {
+              text: 'Setup Guide',
+              onPress: () => {
+                Alert.alert(
+                  'Setup',
+                  'Add your Gemini API key to EXPO_PUBLIC_GEMINI_API_KEY in your .env file or use the test-api-keys.js script for setup.'
+                );
+              },
+            },
           ]
         );
         return;
       }
-      
+
       // Analyze food with the selected meal type
       console.log('🔍 Calling food recognition service...');
       const result = await foodRecognitionService.recognizeFood(
-        imageUri, 
+        imageUri,
         selectedMealType,
-        profile ? { personalInfo: profile.personalInfo, fitnessGoals: profile.fitnessGoals } : undefined
+        profile
+          ? { personalInfo: profile.personalInfo, fitnessGoals: profile.fitnessGoals }
+          : undefined
       );
       console.log('📊 Food recognition result:', result);
-      
+
       if (result.success && result.data) {
         const recognizedFoods = result.data;
-        const totalCalories = recognizedFoods.reduce((sum, food) => sum + food.nutrition.calories, 0);
-        
+        const totalCalories = recognizedFoods.reduce(
+          (sum, food) => sum + food.nutrition.calories,
+          0
+        );
+
         // Show success result with feedback option
         Alert.alert(
           '✅ Food Recognition Complete!',
           `Recognized ${recognizedFoods.length} food item(s):\n\n` +
-          `${recognizedFoods.map(food => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
-          `Total: ${Math.round(totalCalories)} calories\n` +
-          `Accuracy: ${result.accuracy}% | Confidence: ${result.confidence}%`,
+            `${recognizedFoods.map((food) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
+            `Total: ${Math.round(totalCalories)} calories\n` +
+            `Accuracy: ${result.accuracy}% | Confidence: ${result.confidence}%`,
           [
             { text: 'Cancel', style: 'cancel' },
             {
@@ -318,10 +351,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
               onPress: () => {
                 setPortionData({
                   recognizedFoods,
-                  imageUri
+                  imageUri,
                 });
                 setShowPortionAdjustment(true);
-              }
+              },
             },
             {
               text: 'Give Feedback',
@@ -329,106 +362,111 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                 setFeedbackData({
                   recognizedFoods,
                   imageUri,
-                  mealId: `temp_${Date.now()}` // Temporary ID, will be updated after logging
+                  mealId: `temp_${Date.now()}`, // Temporary ID, will be updated after logging
                 });
                 setShowFeedbackModal(true);
-              }
+              },
             },
             {
               text: 'Log Meal',
               onPress: async () => {
                 try {
                   console.log('🍽️ Starting meal logging process...');
-                  
+
                   // Use the recognized food logger service
                   const logResult = await recognizedFoodLogger.logRecognizedFoods(
                     user?.id || 'dev-user-001',
                     recognizedFoods,
                     selectedMealType
                   );
-                  
+
                   if (logResult.success) {
                     // Show success with detailed information
                     Alert.alert(
                       '🎉 Meal Logged Successfully!',
                       `✅ ${recognizedFoods.length} food item${recognizedFoods.length !== 1 ? 's' : ''} logged\n` +
-                      `📊 Total: ${logResult.totalCalories} calories\n` +
-                      `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
-                      `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
-                      `Your nutrition tracking has been updated!`,
+                        `📊 Total: ${logResult.totalCalories} calories\n` +
+                        `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                        `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                        `Your nutrition tracking has been updated!`,
                       [{ text: 'Awesome!' }]
                     );
-                    
+
                     console.log('✅ Meal logged successfully:', {
                       mealId: logResult.mealId,
                       totalCalories: logResult.totalCalories,
-                      foodCount: recognizedFoods.length
+                      foodCount: recognizedFoods.length,
                     });
-                    
+
                     // Update feedback data with real meal ID
                     if (feedbackData) {
-                      setFeedbackData(prev => prev ? { ...prev, mealId: logResult.mealId! } : null);
+                      setFeedbackData((prev) =>
+                        prev ? { ...prev, mealId: logResult.mealId! } : null
+                      );
                     }
-                    
+
                     // Refresh nutrition data to show updated totals
                     await loadDailyNutrition();
                     await refreshAll(); // Refresh all nutrition data
-                    
                   } else {
                     throw new Error(logResult.error || 'Failed to log meal');
                   }
-                  
                 } catch (logError) {
                   console.error('❌ Failed to log meal:', logError);
-                  
-                  const errorMessage = logError instanceof Error ? logError.message : 'Unknown error occurred';
+
+                  const errorMessage =
+                    logError instanceof Error ? logError.message : 'Unknown error occurred';
                   Alert.alert(
                     '❌ Meal Logging Failed',
                     `Error: ${errorMessage}\n\nThe food was recognized successfully, but we couldn't save it to your meal log. Please try again or check your connection.`,
                     [
                       { text: 'OK' },
-                      { text: 'Retry', onPress: async () => {
-                        // Retry the logging process
-                        try {
-                          const retryResult = await recognizedFoodLogger.logRecognizedFoods(
-                            user?.id || 'dev-user-001',
-                            recognizedFoods,
-                            selectedMealType
-                          );
-                          
-                          if (retryResult.success) {
-                            Alert.alert('✅ Success!', 'Meal logged successfully on retry!');
-                            await loadDailyNutrition();
-                            await refreshAll();
-                          } else {
-                            Alert.alert('❌ Still Failed', 'Please try again later or contact support.');
+                      {
+                        text: 'Retry',
+                        onPress: async () => {
+                          // Retry the logging process
+                          try {
+                            const retryResult = await recognizedFoodLogger.logRecognizedFoods(
+                              user?.id || 'dev-user-001',
+                              recognizedFoods,
+                              selectedMealType
+                            );
+
+                            if (retryResult.success) {
+                              Alert.alert('✅ Success!', 'Meal logged successfully on retry!');
+                              await loadDailyNutrition();
+                              await refreshAll();
+                            } else {
+                              Alert.alert(
+                                '❌ Still Failed',
+                                'Please try again later or contact support.'
+                              );
+                            }
+                          } catch (retryError) {
+                            Alert.alert('❌ Retry Failed', 'Please try again later.');
                           }
-                        } catch (retryError) {
-                          Alert.alert('❌ Retry Failed', 'Please try again later.');
-                        }
-                      }}
+                        },
+                      },
                     ]
                   );
                 }
-              }
-            }
+              },
+            },
           ]
         );
-        
       } else {
         throw new Error(result.error || 'Food recognition failed');
       }
-      
     } catch (error) {
       console.error('❌ Food recognition failed:', error);
       console.error('📊 Error details:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : undefined
+        name: error instanceof Error ? error.name : undefined,
       });
-      
+
       setAiError(error instanceof Error ? error.message : 'Food recognition failed');
-      
+
       // Check if it's an API key issue
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('API key') || errorMessage.includes('key')) {
@@ -437,19 +475,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           'The food recognition system needs a Gemini API key to work. Please add your API key to the environment variables.\n\nFor now, you can test the UI components without API calls.',
           [
             { text: 'OK' },
-            { text: 'See Setup Guide', onPress: () => {
-              Alert.alert('Setup Guide', 'Check the ENVIRONMENT_SETUP.md file in the docs folder for instructions on setting up API keys.');
-            }}
+            {
+              text: 'See Setup Guide',
+              onPress: () => {
+                Alert.alert(
+                  'Setup Guide',
+                  'Check the ENVIRONMENT_SETUP.md file in the docs folder for instructions on setting up API keys.'
+                );
+              },
+            },
           ]
         );
       } else {
         Alert.alert(
           '❌ Recognition Failed',
           `Error: ${errorMessage}\n\nThis could be due to:\n• Missing API keys\n• Network issues\n• Invalid image format\n\nCheck the console for detailed error information.`,
-          [
-            { text: 'OK' },
-            { text: 'Try Again', onPress: () => setShowCamera(true) }
-          ]
+          [{ text: 'OK' }, { text: 'Try Again', onPress: () => setShowCamera(true) }]
         );
       }
     } finally {
@@ -465,7 +506,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   const handleMealTypeSelected = (mealType: MealType) => {
     setSelectedMealType(mealType);
     setShowMealTypeSelector(false);
-    
+
     // Small delay for smooth transition
     setTimeout(() => {
       setShowCamera(true);
@@ -478,7 +519,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     if (mealType === 'daily_plan') {
       return generateDailyMealPlan();
     }
-    
+
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
         'Profile Incomplete',
@@ -487,8 +528,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Complete Profile',
-            onPress: () => navigateToProfileCompletion('Personal Information')
-          }
+            onPress: () => navigateToProfileCompletion('Personal Information'),
+          },
         ]
       );
       return;
@@ -525,7 +566,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       );
 
       if (response.success && response.data) {
-        setAiMeals(prev => [response.data!, ...prev]);
+        setAiMeals((prev) => [response.data!, ...prev]);
 
         // Optionally save the generated meal to the database
         if (user?.id && response.data.ingredients && foods.length > 0) {
@@ -533,10 +574,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           const mealData = {
             name: response.data.name,
             type: mealType,
-            foods: response.data.ingredients.slice(0, 3).map((ingredient: any, index: number) => ({
-              food_id: foods[index % foods.length]?.id || foods[0]?.id,
-              quantity_grams: 100, // Default quantity
-            })).filter(f => f.food_id),
+            foods: response.data.ingredients
+              .slice(0, 3)
+              .map((ingredient: any, index: number) => ({
+                food_id: foods[index % foods.length]?.id || foods[0]?.id,
+                quantity_grams: 100, // Default quantity
+              }))
+              .filter((f) => f.food_id),
           };
 
           if (mealData.foods.length > 0) {
@@ -544,11 +588,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           }
         }
 
-        Alert.alert(
-          'Meal Generated! 🍽️',
-          `Your personalized ${mealType} is ready!`,
-          [{ text: 'Great!' }]
-        );
+        Alert.alert('Meal Generated! 🍽️', `Your personalized ${mealType} is ready!`, [
+          { text: 'Great!' },
+        ]);
       } else {
         setAiError(response.error || 'Failed to generate meal');
         Alert.alert('Generation Failed', response.error || 'Failed to generate meal');
@@ -565,17 +607,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   // Generate Daily Meal Plan
   const generateDailyMealPlan = async () => {
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
-      Alert.alert(
-        'Profile Incomplete',
-        'Please complete your profile to generate meal plans.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Complete Profile',
-            onPress: () => navigateToProfileCompletion('Personal Information')
-          }
-        ]
-      );
+      Alert.alert('Profile Incomplete', 'Please complete your profile to generate meal plans.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete Profile',
+          onPress: () => navigateToProfileCompletion('Personal Information'),
+        },
+      ]);
       return;
     }
 
@@ -596,7 +634,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       );
 
       if (response.success && response.data) {
-        setAiMeals(prev => [...response.data!.meals, ...prev]);
+        setAiMeals((prev) => [...response.data!.meals, ...prev]);
         Alert.alert(
           'Daily Meal Plan Generated! 🗓️',
           `Your complete meal plan for today is ready!`,
@@ -621,7 +659,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     console.log('🔍 Profile check:', {
       personalInfo: !!profile?.personalInfo,
       fitnessGoals: !!profile?.fitnessGoals,
-      dietPreferences: !!profile?.dietPreferences || !!dietPreferences
+      dietPreferences: !!profile?.dietPreferences || !!dietPreferences,
     });
 
     // Check what's missing and provide specific guidance
@@ -640,8 +678,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           { text: 'Cancel', style: 'cancel' },
           {
             text: 'Complete Profile',
-            onPress: () => navigateToProfileCompletion(primaryMissing)
-          }
+            onPress: () => navigateToProfileCompletion(primaryMissing),
+          },
         ]
       );
       return;
@@ -658,7 +696,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
 
       // Use diet preferences from profile or from nutrition data service
       const userDietPreferences = profile.dietPreferences || {
-        dietType: dietPreferences?.diet_type?.[0] as any || 'non-veg',
+        dietType: (dietPreferences?.diet_type?.[0] as any) || 'non-veg',
         allergies: dietPreferences?.allergies || [],
         cuisinePreferences: [],
         restrictions: [],
@@ -671,45 +709,55 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       console.log('🔍 Parameters:', {
         personalInfo: profile.personalInfo,
         fitnessGoals: profile.fitnessGoals,
-        userDietPreferences
+        userDietPreferences,
       });
-      
+
       const response = await weeklyMealContentGenerator.generateWeeklyMealPlan(
         profile.personalInfo,
         profile.fitnessGoals,
         userDietPreferences
       );
-      
+
       console.log('🔍 Response from generator:', response);
 
       if (response.success && response.data) {
         console.log('✅ Weekly meal plan generated successfully');
         // Save to store and database
         await saveWeeklyMealPlan(response.data);
-        
+
         // Ensure state is updated (backup approach)
         setWeeklyMealPlan(response.data);
-        
-        setForceUpdate(prev => prev + 1); // Force re-render
+
+        setForceUpdate((prev) => prev + 1); // Force re-render
         console.log(`🔍 Meal plan saved to store and database`);
-        
+
         // COMPREHENSIVE GENERATION TEST
         console.log('🧪 COMPREHENSIVE GENERATION TEST:');
-        const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        const generatedMealsByDay = allDays.map(day => {
-          const mealsForDay = response.data.meals.filter(meal => meal.dayOfWeek === day);
+        const allDays = [
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+          'sunday',
+        ];
+        const generatedMealsByDay = allDays.map((day) => {
+          const mealsForDay = response.data.meals.filter((meal) => meal.dayOfWeek === day);
           return {
             day,
             mealCount: mealsForDay.length,
-            mealTypes: mealsForDay.map(m => m.type)
+            mealTypes: mealsForDay.map((m) => m.type),
           };
         });
         console.log('📊 Generated meals by day:', generatedMealsByDay);
-        
+
         const totalGenerated = response.data.meals.length;
         const expectedTotal = 21; // 7 days × 3 meals
-        console.log(`📈 Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round(totalGenerated/expectedTotal*100)}%)`);
-        
+        console.log(
+          `📈 Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`
+        );
+
         if (totalGenerated === expectedTotal) {
           console.log('✅ FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!');
         } else {
@@ -739,11 +787,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       console.log('🔍 getTodaysMeals: No weekly meal plan available');
       return [];
     }
-    const mealsForDay = weeklyMealPlan.meals.filter(meal => meal.dayOfWeek === selectedDay);
+    const mealsForDay = weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
     console.log(`🔍 getTodaysMeals for ${selectedDay}:`, {
       mealsFound: mealsForDay.length,
-      mealTypes: mealsForDay.map(m => m.type),
-      mealNames: mealsForDay.map(m => m.name)
+      mealTypes: mealsForDay.map((m) => m.type),
+      mealNames: mealsForDay.map((m) => m.name),
     });
     return mealsForDay;
   };
@@ -752,7 +800,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   const handleStartMeal = (meal: DayMeal) => {
     console.log('🍽️ handleStartMeal called with meal:', meal.name);
     console.log('🍽️ Navigation available:', !!navigation);
-    
+
     if (!navigation) {
       console.error('❌ Navigation not available for meal start');
       Alert.alert('Error', 'Navigation not available');
@@ -775,8 +823,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Start Cooking',
-          onPress: () => startMealPreparation(meal)
-        }
+          onPress: () => startMealPreparation(meal),
+        },
       ]
     );
   };
@@ -804,8 +852,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
             { text: 'Still Cooking', style: 'cancel' },
             {
               text: 'Mark Complete',
-              onPress: () => completeMealPreparation(meal)
-            }
+              onPress: () => completeMealPreparation(meal),
+            },
           ]
         );
       }
@@ -818,10 +866,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
 
     try {
       // Use completion tracking service for proper event emission
-      const success = await completionTrackingService.completeMeal(meal.id, {
-        completedAt: new Date().toISOString(),
-        source: 'diet_screen_manual',
-      }, user?.id || 'dev-user-001');
+      const success = await completionTrackingService.completeMeal(
+        meal.id,
+        {
+          completedAt: new Date().toISOString(),
+          source: 'diet_screen_manual',
+        },
+        user?.id || 'dev-user-001'
+      );
 
       if (success) {
         // Refresh nutrition data to update calorie display
@@ -838,7 +890,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           // You could show a success toast here for web
           console.log(`🎉 Meal completed: ${meal.name}`);
         } else {
-          Alert.alert('🎉 Meal Complete!', `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`);
+          Alert.alert(
+            '🎉 Meal Complete!',
+            `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`
+          );
         }
       } else {
         Alert.alert('Error', 'Failed to mark meal as complete. Please try again.');
@@ -858,9 +913,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   };
 
   const handleRecipeCreated = (recipe: any) => {
-    setUserRecipes(prev => [recipe, ...prev]);
+    setUserRecipes((prev) => [recipe, ...prev]);
     setShowCreateRecipe(false);
-    
+
     // You could save the recipe to the database here
     console.log('New recipe created:', recipe);
   };
@@ -868,7 +923,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   // Water tracking handlers with liters
   const handleAddWater = () => {
     const incrementAmount = 0.25; // 250ml increment
-    
+
     if (waterConsumed >= waterGoal) {
       Alert.alert(
         '🎉 Daily Goal Achieved!',
@@ -895,10 +950,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                 if (navigation) {
                   navigation.navigate('Settings', { screen: 'Notifications' });
                 } else {
-                  Alert.alert('Water Settings', 'Navigate to Settings > Notifications to adjust your water goal and reminder schedule.');
+                  Alert.alert(
+                    'Water Settings',
+                    'Navigate to Settings > Notifications to adjust your water goal and reminder schedule.'
+                  );
                 }
-              }
-            }
+              },
+            },
           ]
         );
       }, 500);
@@ -920,56 +978,55 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   };
 
   const handleLogWater = () => {
-    Alert.alert(
-      '💧 Log Water Intake',
-      'Choose how to log your water consumption:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Add 250ml',
-          onPress: () => handleAddWater()
+    Alert.alert('💧 Log Water Intake', 'Choose how to log your water consumption:', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Add 250ml',
+        onPress: () => handleAddWater(),
+      },
+      {
+        text: 'Add 500ml',
+        onPress: () => {
+          const newAmount = Math.min(waterConsumed + 0.5, waterGoal + 1);
+          setWaterConsumed(Math.round(newAmount * 100) / 100);
+          Alert.alert('Water Added!', 'Added 500ml to your daily intake.');
         },
-        {
-          text: 'Add 500ml',
-          onPress: () => {
-            const newAmount = Math.min(waterConsumed + 0.5, waterGoal + 1);
-            setWaterConsumed(Math.round(newAmount * 100) / 100);
-            Alert.alert('Water Added!', 'Added 500ml to your daily intake.');
-          }
-        },
-        {
-          text: 'Custom Amount',
-          onPress: () => {
-            Alert.prompt(
-              'Water Amount (Liters)',
-              'How many liters did you drink?',
-              [
-                {
-                  text: 'Cancel',
-                  style: 'cancel'
-                },
-                {
-                  text: 'Add',
-                  onPress: (value) => {
-                    const amount = parseFloat(value || '0');
-                    if (amount > 0 && amount <= 3) {
-                      const newTotal = Math.min(waterConsumed + amount, waterGoal + 2);
-                      setWaterConsumed(Math.round(newTotal * 100) / 100);
-                      Alert.alert('Water Added!', `Added ${amount}L to your daily intake.`);
-                    } else {
-                      Alert.alert('Invalid Amount', 'Please enter a number between 0.1 and 3.0 liters.');
-                    }
+      },
+      {
+        text: 'Custom Amount',
+        onPress: () => {
+          Alert.prompt(
+            'Water Amount (Liters)',
+            'How many liters did you drink?',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Add',
+                onPress: (value) => {
+                  const amount = parseFloat(value || '0');
+                  if (amount > 0 && amount <= 3) {
+                    const newTotal = Math.min(waterConsumed + amount, waterGoal + 2);
+                    setWaterConsumed(Math.round(newTotal * 100) / 100);
+                    Alert.alert('Water Added!', `Added ${amount}L to your daily intake.`);
+                  } else {
+                    Alert.alert(
+                      'Invalid Amount',
+                      'Please enter a number between 0.1 and 3.0 liters.'
+                    );
                   }
-                }
-              ],
-              'plain-text',
-              '',
-              'decimal-pad'
-            );
-          }
-        }
-      ]
-    );
+                },
+              },
+            ],
+            'plain-text',
+            '',
+            'decimal-pad'
+          );
+        },
+      },
+    ]);
   };
 
   // Handle feedback submission
@@ -1000,18 +1057,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   // Handle portion adjustment completion
   const handlePortionAdjustmentComplete = (adjustedFoods: any[]) => {
     setShowPortionAdjustment(false);
-    
+
     // Show updated recognition results with adjusted portions
     const totalCalories = adjustedFoods.reduce((sum, food) => sum + food.nutrition.calories, 0);
-    const adjustedCount = adjustedFoods.filter(food => 
-      food.portionSize.estimatedGrams !== portionData?.recognizedFoods.find(orig => orig.id === food.id)?.portionSize.estimatedGrams
+    const adjustedCount = adjustedFoods.filter(
+      (food) =>
+        food.portionSize.estimatedGrams !==
+        portionData?.recognizedFoods.find((orig) => orig.id === food.id)?.portionSize.estimatedGrams
     ).length;
-    
+
     Alert.alert(
       '✅ Portions Updated!',
       `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? 's' : ''}!\n\n` : ''}` +
-      `${adjustedFoods.map(food => `• ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
-      `Total: ${Math.round(totalCalories)} calories`,
+        `${adjustedFoods.map((food) => `• ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
+        `Total: ${Math.round(totalCalories)} calories`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -1020,34 +1079,34 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
             setFeedbackData({
               recognizedFoods: adjustedFoods,
               imageUri: portionData?.imageUri || '',
-              mealId: `temp_${Date.now()}`
+              mealId: `temp_${Date.now()}`,
             });
             setShowFeedbackModal(true);
-          }
+          },
         },
         {
           text: 'Log Meal',
           onPress: async () => {
             try {
               console.log('🍽️ Starting meal logging process with adjusted portions...');
-              
+
               const logResult = await recognizedFoodLogger.logRecognizedFoods(
                 user?.id || 'dev-user-001',
                 adjustedFoods,
                 selectedMealType
               );
-              
+
               if (logResult.success) {
                 Alert.alert(
                   '🎉 Meal Logged Successfully!',
                   `✅ ${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? 's' : ''} logged\n` +
-                  `📊 Total: ${logResult.totalCalories} calories\n` +
-                  `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
-                  `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
-                  `Your nutrition tracking has been updated!`,
+                    `📊 Total: ${logResult.totalCalories} calories\n` +
+                    `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                    `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                    `Your nutrition tracking has been updated!`,
                   [{ text: 'Awesome!' }]
                 );
-                
+
                 await loadDailyNutrition();
                 await refreshAll();
               } else {
@@ -1057,11 +1116,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
               console.error('❌ Failed to log adjusted meal:', error);
               Alert.alert('Error', 'Failed to log meal. Please try again.');
             }
-          }
-        }
+          },
+        },
       ]
     );
-    
+
     setPortionData(null);
   };
 
@@ -1115,12 +1174,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     }
   };
 
-
-
-
-
-
-
   // Use real daily nutrition data from Track B
   const currentNutrition = dailyNutrition || {
     calories: 0,
@@ -1132,7 +1185,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
 
   // Use real nutrition goals or defaults
   const nutritionTargets = {
-    calories: { current: currentNutrition.calories, target: nutritionGoals?.daily_calories || 2000 },
+    calories: {
+      current: currentNutrition.calories,
+      target: nutritionGoals?.daily_calories || 2000,
+    },
     protein: { current: currentNutrition.protein, target: nutritionGoals?.daily_protein || 120 },
     carbs: { current: currentNutrition.carbs, target: nutritionGoals?.daily_carbs || 250 },
     fat: { current: currentNutrition.fat, target: nutritionGoals?.daily_fat || 67 },
@@ -1155,379 +1211,397 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       >
         <View>
           {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Nutrition</Text>
-          <View style={styles.headerButtons}>
-            {/* Track B Status Indicator */}
-            <TouchableOpacity style={styles.statusButton}>
-              <Text style={styles.statusIcon}>
-                {trackBStatus.isConnected ? '🟢' : '🔴'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
-              onPress={generateWeeklyMealPlan}
-              disabled={isGeneratingPlan}
-            >
-              {isGeneratingPlan ? (
-                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
-              ) : (
-                <Text style={styles.aiButtonText}>🍽️ Week</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
-              onPress={generateDailyMealPlan}
-              disabled={isGeneratingMeal}
-            >
-              {isGeneratingMeal ? (
-                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
-              ) : (
-                <Text style={styles.aiButtonText}>🤖 Day</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: '#f59e0b' }]}
-              onPress={() => setShowTestComponent(true)}
-            >
-              <Text style={styles.aiButtonText}>🧪 Test</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: '#10b981' }]}
-              onPress={runQuickActionsTests}
-            >
-              <Text style={styles.aiButtonText}>✅ Quick</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: '#8b5cf6' }]}
-              onPress={runFoodRecognitionE2ETests}
-            >
-              <Text style={styles.aiButtonText}>🧪 E2E</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.aiButton, { backgroundColor: '#ef4444' }]}
-              onPress={() => {
-                console.log('🧪 Test button pressed - bypassing profile checks');
-                Alert.alert('Test Button', 'This button works! Check console for Generate Weekly Plan button logs.');
-              }}
-            >
-              <Text style={styles.aiButtonText}>🧪 Test</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={handleSearchFood}
-            >
-              <Text style={styles.addIcon}>🤖</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Loading State */}
-        {(foodsLoading || userMealsLoading) && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
-            <Text style={styles.loadingText}>Loading nutrition data...</Text>
-          </View>
-        )}
-
-        {/* Error State */}
-        {(foodsError || userMealsError) && (
-          <Card style={styles.errorCard} variant="outlined">
-            <Text style={styles.errorText}>
-              ⚠️ {foodsError || userMealsError}
-            </Text>
-            <Button
-              title="Retry"
-              onPress={refreshAll}
-              variant="outline"
-              size="sm"
-              style={styles.retryButton}
-            />
-          </Card>
-        )}
-
-        {/* No Authentication State */}
-        {!isAuthenticated && (
-          <Card style={styles.errorCard} variant="outlined">
-            <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
-          </Card>
-        )}
-
-        {/* Weekly Meal Plan Section */}
-        {weeklyMealPlan && (
-          <>
-            {/* Day Selector */}
-            <View style={styles.daySelector}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayButton,
-                      selectedDay === day && styles.selectedDayButton
-                    ]}
-                    onPress={() => setSelectedDay(day)}
-                  >
-                    <Text style={[
-                      styles.dayButtonText,
-                      selectedDay === day && styles.selectedDayButtonText
-                    ]}>
-                      {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+          <View style={styles.header}>
+            <Text style={styles.title}>Nutrition</Text>
+            <View style={styles.headerButtons}>
+              {/* Track B Status Indicator */}
+              <TouchableOpacity style={styles.statusButton}>
+                <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
+                onPress={generateWeeklyMealPlan}
+                disabled={isGeneratingPlan}
+              >
+                {isGeneratingPlan ? (
+                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                ) : (
+                  <Text style={styles.aiButtonText}>🍽️ Week</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
+                onPress={generateDailyMealPlan}
+                disabled={isGeneratingMeal}
+              >
+                {isGeneratingMeal ? (
+                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                ) : (
+                  <Text style={styles.aiButtonText}>🤖 Day</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, { backgroundColor: '#f59e0b' }]}
+                onPress={() => setShowTestComponent(true)}
+              >
+                <Text style={styles.aiButtonText}>🧪 Test</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, { backgroundColor: '#10b981' }]}
+                onPress={runQuickActionsTests}
+              >
+                <Text style={styles.aiButtonText}>✅ Quick</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, { backgroundColor: '#8b5cf6' }]}
+                onPress={runFoodRecognitionE2ETests}
+              >
+                <Text style={styles.aiButtonText}>🧪 E2E</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.aiButton, { backgroundColor: '#ef4444' }]}
+                onPress={() => {
+                  console.log('🧪 Test button pressed - bypassing profile checks');
+                  Alert.alert(
+                    'Test Button',
+                    'This button works! Check console for Generate Weekly Plan button logs.'
+                  );
+                }}
+              >
+                <Text style={styles.aiButtonText}>🧪 Test</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.addButton} onPress={handleSearchFood}>
+                <Text style={styles.addIcon}>🤖</Text>
+              </TouchableOpacity>
             </View>
+          </View>
 
-            {/* Today's Meals from Weekly Plan */}
-            <View style={styles.mealsSection}>
-              <Text style={styles.sectionTitle}>
-                {selectedDay ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals` : "Today's Meals"}
-              </Text>
-              {getTodaysMeals().map((meal) => {
-                const progress = getMealProgress(meal.id);
-                return (
-                  <MealCard
-                    key={meal.id}
-                    meal={meal}
-                    onStartMeal={handleStartMeal}
-                    progress={progress?.progress || 0}
-                  />
-                );
-              })}
-              {getTodaysMeals().length === 0 && (
-                <Card style={styles.emptyCard}>
-                  <Text style={styles.emptyText}>
-                    No meals planned for {selectedDay}
-                  </Text>
-                  <Button
-                    title="Generate Meals"
-                    onPress={generateWeeklyMealPlan}
-                    variant="outline"
-                    size="sm"
-                  />
-                </Card>
-              )}
+          {/* Loading State */}
+          {(foodsLoading || userMealsLoading) && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.loadingText}>Loading nutrition data...</Text>
             </View>
-          </>
-        )}
+          )}
 
+          {/* Error State */}
+          {(foodsError || userMealsError) && (
+            <Card style={styles.errorCard} variant="outlined">
+              <Text style={styles.errorText}>⚠️ {foodsError || userMealsError}</Text>
+              <Button
+                title="Retry"
+                onPress={refreshAll}
+                variant="outline"
+                size="sm"
+                style={styles.retryButton}
+              />
+            </Card>
+          )}
 
+          {/* No Authentication State */}
+          {!isAuthenticated && (
+            <Card style={styles.errorCard} variant="outlined">
+              <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
+            </Card>
+          )}
 
-        {/* Generate Weekly Plan Prompt */}
-        {!weeklyMealPlan && isAuthenticated && (
-          <Card style={styles.promptCard}>
-            <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
-            <Text style={styles.promptText}>
-              Get a personalized 7-day meal plan with recipes tailored to your goals and preferences.
-            </Text>
-            <Button
-              title={isGeneratingPlan ? "Generating..." : "Generate Weekly Plan"}
-              onPress={generateWeeklyMealPlan}
-              disabled={isGeneratingPlan}
-              style={styles.promptButton}
-            />
-          </Card>
-        )}
+          {/* Weekly Meal Plan Section */}
+          {weeklyMealPlan && (
+            <>
+              {/* Day Selector */}
+              <View style={styles.daySelector}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {[
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday',
+                  ].map((day) => (
+                    <TouchableOpacity
+                      key={day}
+                      style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
+                      onPress={() => setSelectedDay(day)}
+                    >
+                      <Text
+                        style={[
+                          styles.dayButtonText,
+                          selectedDay === day && styles.selectedDayButtonText,
+                        ]}
+                      >
+                        {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
 
-        {/* AI Meal Generation Panel */}
-        {showFoodSearch && (
-          <View style={styles.searchSection}>
-            <Card style={styles.aiMealCard} variant="elevated">
-              <View style={styles.aiMealContent}>
-                <Text style={styles.aiMealIcon}>🤖</Text>
-                <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
-                <Text style={styles.aiMealText}>
-                  Create personalized meals based on your dietary preferences and nutrition goals.
+              {/* Today's Meals from Weekly Plan */}
+              <View style={styles.mealsSection}>
+                <Text style={styles.sectionTitle}>
+                  {selectedDay
+                    ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals`
+                    : "Today's Meals"}
                 </Text>
-                <View style={styles.mealTypeButtons}>
-                  <TouchableOpacity 
-                    style={styles.mealTypeButton} 
-                    onPress={() => generateAIMeal('breakfast')}
-                    disabled={isGeneratingMeal}
+                {getTodaysMeals().map((meal) => {
+                  const progress = getMealProgress(meal.id);
+                  return (
+                    <MealCard
+                      key={meal.id}
+                      meal={meal}
+                      onStartMeal={handleStartMeal}
+                      progress={progress?.progress || 0}
+                    />
+                  );
+                })}
+                {getTodaysMeals().length === 0 && (
+                  <Card style={styles.emptyCard}>
+                    <Text style={styles.emptyText}>No meals planned for {selectedDay}</Text>
+                    <Button
+                      title="Generate Meals"
+                      onPress={generateWeeklyMealPlan}
+                      variant="outline"
+                      size="sm"
+                    />
+                  </Card>
+                )}
+              </View>
+            </>
+          )}
+
+          {/* Generate Weekly Plan Prompt */}
+          {!weeklyMealPlan && isAuthenticated && (
+            <Card style={styles.promptCard}>
+              <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
+              <Text style={styles.promptText}>
+                Get a personalized 7-day meal plan with recipes tailored to your goals and
+                preferences.
+              </Text>
+              <Button
+                title={isGeneratingPlan ? 'Generating...' : 'Generate Weekly Plan'}
+                onPress={generateWeeklyMealPlan}
+                disabled={isGeneratingPlan}
+                style={styles.promptButton}
+              />
+            </Card>
+          )}
+
+          {/* AI Meal Generation Panel */}
+          {showFoodSearch && (
+            <View style={styles.searchSection}>
+              <Card style={styles.aiMealCard} variant="elevated">
+                <View style={styles.aiMealContent}>
+                  <Text style={styles.aiMealIcon}>🤖</Text>
+                  <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
+                  <Text style={styles.aiMealText}>
+                    Create personalized meals based on your dietary preferences and nutrition goals.
+                  </Text>
+                  <View style={styles.mealTypeButtons}>
+                    <TouchableOpacity
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('breakfast')}
+                      disabled={isGeneratingMeal}
+                    >
+                      <Text style={styles.mealTypeEmoji}>🥣</Text>
+                      <Text style={styles.mealTypeText}>Breakfast</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('lunch')}
+                      disabled={isGeneratingMeal}
+                    >
+                      <Text style={styles.mealTypeEmoji}>🥗</Text>
+                      <Text style={styles.mealTypeText}>Lunch</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('dinner')}
+                      disabled={isGeneratingMeal}
+                    >
+                      <Text style={styles.mealTypeEmoji}>🍽️</Text>
+                      <Text style={styles.mealTypeText}>Dinner</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('snack')}
+                      disabled={isGeneratingMeal}
+                    >
+                      <Text style={styles.mealTypeEmoji}>🍎</Text>
+                      <Text style={styles.mealTypeText}>Snack</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.closeSearchButton}
+                    onPress={() => setShowFoodSearch(false)}
                   >
-                    <Text style={styles.mealTypeEmoji}>🥣</Text>
-                    <Text style={styles.mealTypeText}>Breakfast</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.mealTypeButton} 
-                    onPress={() => generateAIMeal('lunch')}
-                    disabled={isGeneratingMeal}
-                  >
-                    <Text style={styles.mealTypeEmoji}>🥗</Text>
-                    <Text style={styles.mealTypeText}>Lunch</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.mealTypeButton} 
-                    onPress={() => generateAIMeal('dinner')}
-                    disabled={isGeneratingMeal}
-                  >
-                    <Text style={styles.mealTypeEmoji}>🍽️</Text>
-                    <Text style={styles.mealTypeText}>Dinner</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.mealTypeButton} 
-                    onPress={() => generateAIMeal('snack')}
-                    disabled={isGeneratingMeal}
-                  >
-                    <Text style={styles.mealTypeEmoji}>🍎</Text>
-                    <Text style={styles.mealTypeText}>Snack</Text>
+                    <Text style={styles.closeSearchText}>Close</Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  style={styles.closeSearchButton}
-                  onPress={() => setShowFoodSearch(false)}
-                >
-                  <Text style={styles.closeSearchText}>Close</Text>
-                </TouchableOpacity>
+              </Card>
+            </View>
+          )}
+
+          {/* Daily Overview */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's Progress</Text>
+            <Card style={styles.overviewCard} variant="elevated">
+              <View style={styles.caloriesSection}>
+                <View style={styles.caloriesHeader}>
+                  <Text style={styles.caloriesConsumed}>{nutritionTargets.calories.current}</Text>
+                  <Text style={styles.caloriesTarget}>
+                    / {nutritionTargets.calories.target} cal
+                  </Text>
+                </View>
+                <View style={styles.caloriesProgress}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100)}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.remainingText}>
+                    {Math.max(
+                      nutritionTargets.calories.target - nutritionTargets.calories.current,
+                      0
+                    )}{' '}
+                    cal remaining
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.macrosGrid}>
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>
+                    {Math.round(nutritionTargets.protein.current)}g
+                  </Text>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.protein.target}g</Text>
+                </View>
+
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>
+                    {Math.round(nutritionTargets.carbs.current)}g
+                  </Text>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.carbs.target}g</Text>
+                </View>
+
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
+                  <Text style={styles.macroLabel}>Fat</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.fat.target}g</Text>
+                </View>
               </View>
             </Card>
           </View>
-        )}
 
-        {/* Daily Overview */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's Progress</Text>
-          <Card style={styles.overviewCard} variant="elevated">
-            <View style={styles.caloriesSection}>
-              <View style={styles.caloriesHeader}>
-                <Text style={styles.caloriesConsumed}>{nutritionTargets.calories.current}</Text>
-                <Text style={styles.caloriesTarget}>/ {nutritionTargets.calories.target} cal</Text>
-              </View>
-              <View style={styles.caloriesProgress}>
-                <View style={styles.progressBar}>
-                  <View style={[
-                    styles.progressFill,
-                    { width: `${Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100)}%` }
-                  ]} />
-                </View>
-                <Text style={styles.remainingText}>
-                  {Math.max(nutritionTargets.calories.target - nutritionTargets.calories.current, 0)} cal remaining
-                </Text>
-              </View>
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.actionsGrid}>
+              <TouchableOpacity style={styles.actionItem} onPress={handleScanFood}>
+                <Card style={styles.actionCard} variant="outlined">
+                  <Text style={styles.actionIcon}>📷</Text>
+                  <Text style={styles.actionText}>Scan Food</Text>
+                </Card>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionItem} onPress={handleSearchFood}>
+                <Card style={styles.actionCard} variant="outlined">
+                  <Text style={styles.actionIcon}>🤖</Text>
+                  <Text style={styles.actionText}>AI Meals</Text>
+                </Card>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionItem} onPress={handleCreateRecipe}>
+                <Card style={styles.actionCard} variant="outlined">
+                  <Text style={styles.actionIcon}>📝</Text>
+                  <Text style={styles.actionText}>Create Recipe</Text>
+                </Card>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionItem} onPress={handleLogWater}>
+                <Card style={styles.actionCard} variant="outlined">
+                  <Text style={styles.actionIcon}>💧</Text>
+                  <Text style={styles.actionText}>Log Water</Text>
+                </Card>
+              </TouchableOpacity>
             </View>
-
-            <View style={styles.macrosGrid}>
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(nutritionTargets.protein.current)}g</Text>
-                <Text style={styles.macroLabel}>Protein</Text>
-                <Text style={styles.macroTarget}>of {nutritionTargets.protein.target}g</Text>
-              </View>
-
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(nutritionTargets.carbs.current)}g</Text>
-                <Text style={styles.macroLabel}>Carbs</Text>
-                <Text style={styles.macroTarget}>of {nutritionTargets.carbs.target}g</Text>
-              </View>
-
-              <View style={styles.macroItem}>
-                <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
-                <Text style={styles.macroLabel}>Fat</Text>
-                <Text style={styles.macroTarget}>of {nutritionTargets.fat.target}g</Text>
-              </View>
-            </View>
-          </Card>
-        </View>
-
-
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity
-              style={styles.actionItem}
-              onPress={handleScanFood}
-            >
-              <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>📷</Text>
-                <Text style={styles.actionText}>Scan Food</Text>
-              </Card>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionItem}
-              onPress={handleSearchFood}
-            >
-              <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>🤖</Text>
-                <Text style={styles.actionText}>AI Meals</Text>
-              </Card>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionItem} onPress={handleCreateRecipe}>
-              <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>📝</Text>
-                <Text style={styles.actionText}>Create Recipe</Text>
-              </Card>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.actionItem} onPress={handleLogWater}>
-              <Card style={styles.actionCard} variant="outlined">
-                <Text style={styles.actionIcon}>💧</Text>
-                <Text style={styles.actionText}>Log Water</Text>
-              </Card>
-            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Water Intake */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Water Intake</Text>
-          <Card style={styles.waterCard} variant="elevated">
-            <View style={styles.waterHeader}>
-              <Text style={styles.waterIcon}>💧</Text>
-              <View style={styles.waterInfo}>
-                <Text style={styles.waterAmount}>{waterConsumed}L / {waterGoal}L</Text>
-                <Text style={styles.waterSubtext}>
-                  {waterConsumed === 0 ? 'Start tracking your hydration!' :
-                   waterConsumed >= waterGoal ? '🎉 Daily goal achieved!' :
-                   `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
-                </Text>
+          {/* Water Intake */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Water Intake</Text>
+            <Card style={styles.waterCard} variant="elevated">
+              <View style={styles.waterHeader}>
+                <Text style={styles.waterIcon}>💧</Text>
+                <View style={styles.waterInfo}>
+                  <Text style={styles.waterAmount}>
+                    {waterConsumed}L / {waterGoal}L
+                  </Text>
+                  <Text style={styles.waterSubtext}>
+                    {waterConsumed === 0
+                      ? 'Start tracking your hydration!'
+                      : waterConsumed >= waterGoal
+                        ? '🎉 Daily goal achieved!'
+                        : `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
+                  </Text>
+                </View>
               </View>
-            </View>
-            
-            <View style={styles.waterProgress}>
-              <View style={styles.progressBar}>
-                <View style={[
-                  styles.progressFill, 
-                  {
-                    width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
-                    backgroundColor: waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary
-                  }
-                ]} />
+
+              <View style={styles.waterProgress}>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
+                        backgroundColor:
+                          waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
               </View>
-            </View>
-            
-            <View style={styles.waterButtons}>
-              <Button
-                title="+ 250ml"
-                onPress={handleAddWater}
-                variant={waterConsumed >= waterGoal ? "solid" : "outline"}
-                size="sm"
-                style={[styles.waterButton, { flex: 1, marginRight: ResponsiveTheme.spacing.sm }]}
-              />
-              <Button
-                title="Custom"
-                onPress={handleLogWater}
-                variant="outline"
-                size="sm"
-                style={[styles.waterButton, { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm }]}
-              />
-              {waterConsumed > 0 && (
+
+              <View style={styles.waterButtons}>
                 <Button
-                  title="- 250ml"
-                  onPress={handleRemoveWater}
+                  title="+ 250ml"
+                  onPress={handleAddWater}
+                  variant={waterConsumed >= waterGoal ? 'solid' : 'outline'}
+                  size="sm"
+                  style={[styles.waterButton, { flex: 1, marginRight: ResponsiveTheme.spacing.sm }]}
+                />
+                <Button
+                  title="Custom"
+                  onPress={handleLogWater}
                   variant="outline"
                   size="sm"
-                  style={[styles.waterButton, { flex: 0.8 }]}
+                  style={[
+                    styles.waterButton,
+                    { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm },
+                  ]}
                 />
-              )}
-            </View>
-          </Card>
-        </View>
+                {waterConsumed > 0 && (
+                  <Button
+                    title="- 250ml"
+                    onPress={handleRemoveWater}
+                    variant="outline"
+                    size="sm"
+                    style={[styles.waterButton, { flex: 0.8 }]}
+                  />
+                )}
+              </View>
+            </Card>
+          </View>
 
-        <View style={styles.bottomSpacing} />
+          <View style={styles.bottomSpacing} />
         </View>
       </ScrollView>
 
@@ -1631,7 +1705,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
               {
                 left: Math.min(contextMenu.position.x, 300),
                 top: Math.min(contextMenu.position.y, 600),
-              }
+              },
             ]}
           >
             <TouchableOpacity
@@ -1687,24 +1761,28 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                 </View>
 
                 <View style={styles.mealModalContent}>
-                  <Text style={styles.mealModalMealName}>
-                    {selectedMealForPreparation.name}
-                  </Text>
-                  
+                  <Text style={styles.mealModalMealName}>{selectedMealForPreparation.name}</Text>
+
                   <View style={styles.mealModalDetails}>
                     <View style={styles.mealModalDetailItem}>
                       <Text style={styles.mealModalDetailLabel}>⏱️ Estimated Time:</Text>
-                      <Text style={styles.mealModalDetailValue}>{selectedMealForPreparation.preparationTime} minutes</Text>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.preparationTime} minutes
+                      </Text>
                     </View>
-                    
+
                     <View style={styles.mealModalDetailItem}>
                       <Text style={styles.mealModalDetailLabel}>🥘 Difficulty:</Text>
-                      <Text style={styles.mealModalDetailValue}>{selectedMealForPreparation.difficulty}</Text>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.difficulty}
+                      </Text>
                     </View>
-                    
+
                     <View style={styles.mealModalDetailItem}>
                       <Text style={styles.mealModalDetailLabel}>🛒 Ingredients:</Text>
-                      <Text style={styles.mealModalDetailValue}>{selectedMealForPreparation.items.length} items</Text>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.items.length} items
+                      </Text>
                     </View>
                   </View>
 
@@ -1720,7 +1798,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                   >
                     <Text style={styles.mealModalCancelText}>Cancel</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={styles.mealModalStartButton}
                     onPress={() => {
@@ -1745,11 +1823,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: ResponsiveTheme.colors.background,
   },
-  
+
   scrollView: {
     flex: 1,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1758,13 +1836,13 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1798,118 +1876,118 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   addIcon: {
     fontSize: rf(24),
     color: ResponsiveTheme.colors.white,
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
-  
+
   section: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.xl,
   },
-  
+
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   overviewCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   caloriesSection: {
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   caloriesHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   caloriesConsumed: {
     fontSize: ResponsiveTheme.fontSize.xxxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   caloriesTarget: {
     fontSize: ResponsiveTheme.fontSize.lg,
     color: ResponsiveTheme.colors.textSecondary,
     marginLeft: ResponsiveTheme.spacing.sm,
   },
-  
+
   caloriesProgress: {
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   progressBar: {
     height: rh(8),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   progressFill: {
     height: '100%',
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.sm,
   },
-  
+
   remainingText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
   },
-  
+
   macrosGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  
+
   macroItem: {
     alignItems: 'center',
     flex: 1,
   },
-  
+
   macroValue: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   macroLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   macroTarget: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   mealCard: {
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   mealContent: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   mealHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  
+
   mealInfo: {
     flex: 1,
   },
-  
+
   mealTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1945,119 +2023,119 @@ const styles = StyleSheet.create({
   mealAIText: {
     fontSize: rf(8),
   },
-  
+
   mealIcon: {
     fontSize: rf(20),
     marginRight: ResponsiveTheme.spacing.sm,
   },
-  
+
   mealType: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     flex: 1,
   },
-  
+
   mealTime: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   mealItems: {
     marginLeft: ResponsiveTheme.spacing.lg,
   },
-  
+
   mealItem: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
-  
+
   plannedText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
     fontStyle: 'italic',
     marginLeft: ResponsiveTheme.spacing.lg,
   },
-  
+
   mealCalories: {
     alignItems: 'center',
     marginLeft: ResponsiveTheme.spacing.md,
   },
-  
+
   caloriesValue: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
-  
+
   caloriesLabel: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
   },
-  
+
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: ResponsiveTheme.spacing.md,
   },
-  
+
   actionItem: {
     width: '47%',
   },
-  
+
   actionCard: {
     padding: ResponsiveTheme.spacing.lg,
     alignItems: 'center',
   },
-  
+
   actionIcon: {
     fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
-  
+
   actionText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     textAlign: 'center',
   },
-  
+
   waterCard: {
     padding: ResponsiveTheme.spacing.lg,
   },
-  
+
   waterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
   },
-  
+
   waterIcon: {
     fontSize: rf(32),
     marginRight: ResponsiveTheme.spacing.md,
   },
-  
+
   waterInfo: {
     flex: 1,
   },
-  
+
   waterAmount: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
-  
+
   waterSubtext: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
-  
+
   waterProgress: {
     marginBottom: ResponsiveTheme.spacing.lg,
   },
-  
+
   waterButton: {
     alignSelf: 'flex-start',
   },
@@ -2066,7 +2144,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  
+
   bottomSpacing: {
     height: ResponsiveTheme.spacing.xl,
   },
