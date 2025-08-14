@@ -381,9 +381,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setGuestMode: (enabled: boolean) => {
-        const guestId = enabled
-          ? `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-          : null;
+        const currentState = get();
+
+        let guestId: string | null = null;
+
+        if (enabled) {
+          // Reuse existing guest ID if available, otherwise create new one
+          guestId =
+            currentState.guestId ||
+            `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
 
         set({
           isGuestMode: enabled,

@@ -18,6 +18,8 @@ import { useAuth } from '../../hooks/useAuth';
 import DataRetrievalService from '../../services/dataRetrieval';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
+import { GuestSignUpScreen } from './GuestSignUpScreen';
+
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
 }
@@ -40,6 +42,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const [todaysData, setTodaysData] = useState<any>(null);
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -78,9 +81,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     ]).start();
   }, []);
 
-  const userStats = getUserStats();
-  const healthMetrics = getHealthMetrics();
-  const dailyCalories = getDailyCalorieNeeds();
+  const userStats = getUserStats() || {};
+  const healthMetrics = getHealthMetrics() || {};
+  const dailyCalories = getDailyCalorieNeeds() || 0;
   const aiStatus = aiService.getAIStatus();
 
   // Real data from stores
@@ -88,6 +91,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const realStreak = weeklyProgress?.streak || 0;
   const hasRealData = DataRetrievalService.hasDataForHome();
   const todaysWorkoutInfo = DataRetrievalService.getTodaysWorkoutForHome();
+
+  // Handle successful signup from guest signup screen
+  const handleGuestSignUpSuccess = () => {
+    console.log('✅ HomeScreen: Guest signup completed successfully');
+    setShowGuestSignUp(false);
+    // The app will automatically detect the new authenticated state
+  };
+
+  // Handle back from guest signup screen
+  const handleGuestSignUpBack = () => {
+    console.log('🔙 HomeScreen: User went back from guest signup');
+    setShowGuestSignUp(false);
+  };
+
+  // If guest signup screen is active, render it
+  if (showGuestSignUp) {
+    return (
+      <GuestSignUpScreen
+        onBack={handleGuestSignUpBack}
+        onSignUpSuccess={handleGuestSignUpSuccess}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -141,7 +167,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     </View>
                     <Button
                       title="Sign Up"
-                      onPress={() => Alert.alert('Sign Up', 'Sign up feature coming soon!')}
+                      onPress={() => setShowGuestSignUp(true)}
                       variant="primary"
                       size="sm"
                       style={styles.guestPromptButton}
@@ -157,7 +183,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <View style={styles.statsGrid}>
                 <Card style={styles.statCard} variant="elevated">
                   <Text style={styles.statValue}>
-                    {realCaloriesBurned || userStats.totalCaloriesBurned || 0}
+                    {realCaloriesBurned || userStats?.totalCaloriesBurned || 0}
                   </Text>
                   <Text style={styles.statLabel}>Calories Burned</Text>
                   <Text style={styles.statSubtext}>
@@ -166,7 +192,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 </Card>
 
                 <Card style={styles.statCard} variant="elevated">
-                  <Text style={styles.statValue}>{realStreak || userStats.currentStreak || 0}</Text>
+                  <Text style={styles.statValue}>{realStreak || userStats?.currentStreak || 0}</Text>
                   <Text style={styles.statLabel}>Day Streak</Text>
                   <Text style={styles.statSubtext}>
                     ⏱️ {realStreak > 0 ? 'Keep it up!' : 'Start your streak!'}

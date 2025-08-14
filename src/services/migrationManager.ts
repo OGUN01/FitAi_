@@ -432,10 +432,11 @@ export class MigrationManager {
       }
 
       // Check if user already has remote profile data
+      // Use the correct table name 'profiles' instead of 'user_profiles'
       const { data: remoteProfile, error } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('id')
-        .eq('user_id', userId)
+        .eq('id', userId)  // profiles table uses 'id' not 'user_id'
         .single();
 
       if (error && error.code !== 'PGRST116') {

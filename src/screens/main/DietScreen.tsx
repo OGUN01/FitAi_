@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,8 @@ import { foodRecognitionService, MealType } from '../../services/foodRecognition
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import { Meal, DailyMealPlan } from '../../types/ai';
+import { mealMotivationService } from '../../features/nutrition/MealMotivation';
+import MacroDashboard from '../../components/nutrition/MacroDashboard';
 import { Food } from '../../services/nutritionData';
 import { weeklyMealContentGenerator, WeeklyMealPlan, DayMeal } from '../../ai/weeklyMealGenerator';
 import { MealCard } from '../../components/diet/MealCard';
@@ -60,9 +62,11 @@ import PortionAdjustment from '../../components/diet/PortionAdjustment';
 
 interface DietScreenProps {
   navigation?: any; // Navigation prop for routing
+  route?: any; // Route params
+  isActive?: boolean; // Whether this screen is currently active
 }
 
-export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
+export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isActive = true }) => {
   const [showCamera, setShowCamera] = useState(false);
   const [showFoodSearch, setShowFoodSearch] = useState(false);
   const [showTestComponent, setShowTestComponent] = useState(false);
@@ -129,6 +133,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
     return todayName;
   });
   const [forceUpdate, setForceUpdate] = useState(0);
+  
+  // Force re-render when meal progress changes
+  const forceRefresh = useCallback(() => {
+    console.log('🔄 DietScreen: Force refresh triggered');
+    setForceUpdate(prev => prev + 1);
+  }, []);
 
   // Debug: Monitor weeklyMealPlan changes
   useEffect(() => {
@@ -139,6 +149,88 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
         : 'null'
     );
   }, [weeklyMealPlan]);
+
+  // Monitor meal progress changes and force refresh
+  useEffect(() => {
+    console.log('🔍 mealProgress changed:', mealProgress);
+    // Force a small delay to ensure state is fully updated
+    const timeout = setTimeout(() => {
+      forceRefresh();
+    }, 50);
+    
+    return () => clearTimeout(timeout);
+  }, [mealProgress, forceRefresh]);
+
+  // Subscribe to completion events for real-time updates
+  useEffect(() => {
+    console.log('🔔 DietScreen: Setting up completion event listener');
+    
+    const unsubscribe = completionTrackingService.subscribe((event) => {
+      console.log('🔔 DietScreen: Received completion event:', event);
+      
+      if (event.type === 'meal') {
+        console.log('🍽️ DietScreen: Meal completion event received for:', event.itemId);
+        
+        // Force refresh the UI to show updated completion status
+        setTimeout(() => {
+          console.log('🔄 DietScreen: Triggering refresh due to meal completion event');
+          forceRefresh();
+        }, 100);
+      }
+    });
+
+    return () => {
+      console.log('🔔 DietScreen: Cleaning up completion event listener');
+      unsubscribe();
+    };
+  }, [forceRefresh]);
+
+  // Handle navigation parameters when returning from cooking session
+  useEffect(() => {
+    if (route?.params?.mealCompleted) {
+      console.log('🔙 DietScreen: Returned from cooking session with completion:', {
+        completedMealId: route.params.completedMealId,
+        timestamp: route.params.timestamp
+      });
+      
+      // Force immediate refresh when returning from a completed cooking session
+      forceRefresh();
+      
+      // Clear the navigation parameters to prevent duplicate triggers
+      if (navigation?.setParams) {
+        navigation.setParams({ 
+          mealCompleted: undefined, 
+          completedMealId: undefined, 
+          timestamp: undefined 
+        });
+      }
+    }
+  }, [route?.params, navigation, forceRefresh]);
+
+  // Custom focus effect - refresh data when screen becomes active
+  useEffect(() => {
+    if (isActive) {
+      console.log('🔄 DietScreen became active - refreshing meal data...');
+      console.log('🔄 DietScreen: Current meal progress before refresh:', mealProgress);
+      
+      const refreshMealData = async () => {
+        try {
+          await loadData(); // Refresh nutrition store data
+          console.log('✅ Meal data refreshed on focus');
+          
+          // Log meal progress after refresh
+          setTimeout(() => {
+            const currentProgress = useNutritionStore.getState().mealProgress;
+            console.log('🔄 DietScreen: Meal progress after refresh:', currentProgress);
+          }, 100);
+        } catch (error) {
+          console.error('❌ Error refreshing meal data on focus:', error);
+        }
+      };
+
+      refreshMealData();
+    }
+  }, [isActive, loadData]);
 
   // Load existing meal plan on component mount
   useEffect(() => {
@@ -235,8 +327,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
   };
 
   // Authentication and user data
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isGuestMode } = useAuth();
   const { profile } = useUserStore();
+  
+  // Check if user can access meal features (authenticated or in guest mode)
+  const canAccessMealFeatures = isAuthenticated || isGuestMode;
 
   // Real nutrition data with Track B integration
   const {
@@ -815,14 +910,26 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       return;
     }
 
-    // For mobile platforms, use Alert.alert
+    // For mobile platforms, use Alert.alert with dynamic messaging
+    const motivationConfig = {
+      personalInfo: profile?.personalInfo,
+      fitnessGoals: profile?.fitnessGoals,
+      currentStreak: 0, // TODO: Implement streak tracking
+      completedMealsToday: 0, // TODO: Implement daily meal counting
+    };
+    
+    const dynamicMessage = mealMotivationService.getMealStartMessage(meal, motivationConfig);
+    const preparationTips = mealMotivationService.getPreparationTips(meal);
+    
+    const fullMessage = `${dynamicMessage}\n\n📋 Quick Tips:\n${preparationTips.slice(0, 2).map(tip => `• ${tip}`).join('\n')}`;
+    
     Alert.alert(
-      '🍽️ Start Meal Preparation',
-      `Ready to prepare "${meal.name}"?\n\nEstimated time: ${meal.preparationTime} minutes\nDifficulty: ${meal.difficulty}\nIngredients: ${meal.items.length}`,
+      '🍽️ Ready to Cook?',
+      fullMessage,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Maybe Later', style: 'cancel' },
         {
-          text: 'Start Cooking',
+          text: 'Let\'s Cook! 👨‍🍳',
           onPress: () => startMealPreparation(meal),
         },
       ]
@@ -839,25 +946,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
       startedAt: new Date().toISOString(),
     });
 
-    // For demo: Add a "Mark Complete" option for testing
-    setTimeout(() => {
-      if (Platform.OS === 'web') {
-        // For web, we'll handle this in the modal
-        console.log('🍽️ Meal preparation started on web platform');
-      } else {
-        Alert.alert(
-          'Meal Progress',
-          `Preparing "${meal.name}"...\n\nTap "Mark Complete" when finished.`,
-          [
-            { text: 'Still Cooking', style: 'cancel' },
-            {
-              text: 'Mark Complete',
-              onPress: () => completeMealPreparation(meal),
-            },
-          ]
-        );
-      }
-    }, 1000);
+    // Check if meal has cooking instructions
+    if (!meal.cookingInstructions || meal.cookingInstructions.length === 0) {
+      console.log('⚠️ Meal has no cooking instructions, generating basic ones...');
+      // Add basic cooking instructions if none exist
+      meal.cookingInstructions = [
+        { step: 1, instruction: 'Gather all ingredients and prepare your workspace' },
+        { step: 2, instruction: 'Follow your preferred cooking method for this meal' },
+        { step: 3, instruction: 'Cook according to the preparation time specified' },
+        { step: 4, instruction: 'Season to taste and serve immediately' },
+        { step: 5, instruction: 'Enjoy your healthy meal!' },
+      ];
+    }
+
+    // Navigate to CookingSessionScreen
+    console.log('🍽️ Navigating to CookingSessionScreen');
+    navigation.navigate('CookingSession', { meal });
   };
 
   // Separate function for meal completion logic
@@ -1299,7 +1403,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           )}
 
           {/* No Authentication State */}
-          {!isAuthenticated && (
+          {!canAccessMealFeatures && (
             <Card style={styles.errorCard} variant="outlined">
               <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
             </Card>
@@ -1347,6 +1451,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
                 </Text>
                 {getTodaysMeals().map((meal) => {
                   const progress = getMealProgress(meal.id);
+                  console.log(`🍽️ DietScreen: Rendering meal "${meal.name}" (${meal.id}) with progress:`, progress);
                   return (
                     <MealCard
                       key={meal.id}
@@ -1372,7 +1477,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
           )}
 
           {/* Generate Weekly Plan Prompt */}
-          {!weeklyMealPlan && isAuthenticated && (
+          {!weeklyMealPlan && canAccessMealFeatures && (
             <Card style={styles.promptCard}>
               <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
               <Text style={styles.promptText}>
@@ -1751,7 +1856,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
             {selectedMealForPreparation && (
               <>
                 <View style={styles.mealModalHeader}>
-                  <Text style={styles.mealModalTitle}>🍽️ Start Meal Preparation</Text>
+                  <Text style={styles.mealModalTitle}>🍽️ Ready to Cook?</Text>
                   <TouchableOpacity
                     onPress={() => setShowMealPreparationModal(false)}
                     style={styles.mealModalCloseButton}
@@ -1762,6 +1867,26 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation }) => {
 
                 <View style={styles.mealModalContent}>
                   <Text style={styles.mealModalMealName}>{selectedMealForPreparation.name}</Text>
+                  
+                  {/* Dynamic Motivation Message */}
+                  <View style={styles.motivationSection}>
+                    <Text style={styles.motivationText}>
+                      {mealMotivationService.getMealStartMessage(selectedMealForPreparation, {
+                        personalInfo: profile?.personalInfo,
+                        fitnessGoals: profile?.fitnessGoals,
+                        currentStreak: 0,
+                        completedMealsToday: 0,
+                      })}
+                    </Text>
+                  </View>
+
+                  {/* Macro Dashboard */}
+                  <MacroDashboard 
+                    meal={selectedMealForPreparation}
+                    compact={true}
+                    showTitle={false}
+                    style={styles.modalMacroDashboard}
+                  />
 
                   <View style={styles.mealModalDetails}>
                     <View style={styles.mealModalDetailItem}>
@@ -2492,6 +2617,27 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Motivation section styles
+  motivationSection: {
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
+  motivationText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(18),
+    textAlign: 'center',
+  },
+
+  modalMacroDashboard: {
+    marginVertical: ResponsiveTheme.spacing.md,
+    shadowOpacity: 0.05,
+    elevation: 2,
   },
 
   // Test component styles

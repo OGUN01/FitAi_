@@ -57,7 +57,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   } | null>(null);
 
   // Hooks
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isGuestMode } = useAuth();
   const { profile } = useUserStore();
   const { createWorkout, startWorkoutSession } = useFitnessData();
   const workoutReminders = useWorkoutReminders ? useWorkoutReminders() : null;
@@ -342,54 +342,112 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   // Handle starting a workout
   const handleStartWorkout = async (workout: DayWorkout) => {
-    if (!user?.id) {
+    console.log('🚨 DEBUG: handleStartWorkout called with:', {
+      workoutTitle: workout?.title,
+      workoutId: workout?.id,
+      hasWorkout: !!workout,
+      hasExercises: workout?.exercises?.length > 0,
+      user: !!user?.id,
+      isGuestMode,
+      isAuthenticated,
+    });
+
+    // Allow both authenticated users and guest users to start workouts
+    if (!user?.id && !isGuestMode) {
+      console.log('🚫 Blocking workout - no user and not guest mode');
       Alert.alert('Authentication Required', 'Please sign in to start workouts.');
       return;
     }
 
+    console.log('✅ Authentication check passed - proceeding with workout start');
+    console.log('🏋️ Starting workout session for:', {
+      workoutTitle: workout.title,
+      userType: user?.id ? 'authenticated' : 'guest',
+      exerciseCount: workout.exercises?.length || 0,
+    });
+
     try {
-      // Debug: Log the incoming workout data
-      console.log('🧭 Setting workout session:', {
-        workoutTitle: workout.title,
-        exerciseCount: workout.exercises?.length || 0,
-        sessionId: 'pending...',
-      });
+      let sessionId = '';
+      let legacySessionSuccess = false;
 
-      // Start workout session using store
-      const sessionId = await startStoreWorkoutSession(workout);
-      console.log('Starting workout session:', sessionId);
+      // 1. Try to start workout session using store (primary)
+      try {
+        sessionId = await startStoreWorkoutSession(workout);
+        console.log('✅ Store workout session started:', sessionId);
+      } catch (storeError) {
+        console.warn('⚠️ Store workout session failed:', storeError);
+        // Generate fallback session ID
+        sessionId = `fallback_session_${workout.id}_${Date.now()}`;
+        console.log('🔄 Using fallback session ID:', sessionId);
+      }
 
-      // Also start legacy workout session for compatibility
-      const workoutData = {
-        name: workout.title,
-        type: workout.category,
-        exercises: workout.exercises.map((exercise) => ({
-          exercise_id: exercise.exerciseId,
-          sets: exercise.sets,
-          reps: typeof exercise.reps === 'string' ? exercise.reps : exercise.reps.toString(),
-          weight: exercise.weight || 0,
-          rest_seconds: exercise.restTime,
-        })),
-      };
-      await startWorkoutSession(workoutData);
+      // 2. Try to start legacy workout session (secondary, for compatibility)
+      try {
+        const workoutData = {
+          name: workout.title,
+          type: workout.category,
+          exercises: workout.exercises.map((exercise) => ({
+            exercise_id: exercise.exerciseId,
+            sets: exercise.sets,
+            reps: typeof exercise.reps === 'string' ? exercise.reps : exercise.reps.toString(),
+            weight: exercise.weight || 0,
+            rest_seconds: exercise.restTime,
+          })),
+        };
+        legacySessionSuccess = await startWorkoutSession(workoutData);
+        console.log('✅ Legacy workout session started:', legacySessionSuccess);
+      } catch (legacyError) {
+        console.warn('⚠️ Legacy workout session failed:', legacyError);
+        // Continue anyway - not critical for workout to start
+      }
 
-      // Show custom dialog instead of Alert
+      // 3. Always show the workout dialog, even if background services failed
       const workoutWithSession = { ...workout, sessionId };
-      console.log('🧭 Setting workout session:', {
+      console.log('🧭 Showing workout start dialog:', {
         sessionId,
         workout: workout.title,
         exercises: workout.exercises?.length || 0,
-        firstExercise: workout.exercises?.[0] || 'No exercises',
+        storeSessionWorked: sessionId.includes('fallback') ? false : true,
+        legacySessionWorked: legacySessionSuccess,
       });
 
-      // Debug: Log full workout object
-      console.log('📋 Full workout object:', JSON.stringify(workoutWithSession, null, 2));
-
+      console.log('🚨 DEBUG: Setting selectedWorkout and showing dialog:', {
+        selectedWorkout: !!workoutWithSession,
+        dialogVisible: true,
+        workoutTitle: workoutWithSession?.title,
+      });
+      
       setSelectedWorkout(workoutWithSession);
       setShowWorkoutStartDialog(true);
+      
+      // Force a small delay to ensure state updates
+      setTimeout(() => {
+        console.log('🚨 DEBUG: Dialog state after timeout:', {
+          showWorkoutStartDialog,
+          selectedWorkout: !!selectedWorkout,
+        });
+      }, 100);
+
     } catch (error) {
-      console.error('Error starting workout:', error);
-      Alert.alert('Error', 'Failed to start workout. Please try again.');
+      console.error('❌ Critical error in handleStartWorkout:', error);
+      
+      // Even if everything fails, still try to show the workout
+      try {
+        const fallbackSessionId = `emergency_session_${workout.id}_${Date.now()}`;
+        const workoutWithSession = { ...workout, sessionId: fallbackSessionId };
+        
+        console.log('🚨 Using emergency fallback for workout session');
+        console.log('🚨 DEBUG: Emergency fallback - setting dialog:', {
+          workoutTitle: workoutWithSession?.title,
+          sessionId: fallbackSessionId,
+        });
+        
+        setSelectedWorkout(workoutWithSession);
+        setShowWorkoutStartDialog(true);
+      } catch (fallbackError) {
+        console.error('💀 Complete failure - cannot start workout:', fallbackError);
+        Alert.alert('Error', 'Failed to start workout. Please try restarting the app.');
+      }
     }
   };
 

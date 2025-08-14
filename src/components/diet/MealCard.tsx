@@ -174,6 +174,10 @@ export const MealCard: React.FC<MealCardProps> = ({
                 isCompleted && styles.completedButton,
               ]}
               onPress={() => {
+                if (isCompleted) {
+                  console.log('✅ Meal already completed:', meal.name);
+                  return;
+                }
                 console.log('🔴 MealCard: Start Meal button pressed for:', meal.name);
                 console.log('🔴 MealCard: onStartMeal function available:', !!onStartMeal);
                 if (onStartMeal) {
@@ -182,7 +186,8 @@ export const MealCard: React.FC<MealCardProps> = ({
                   console.error('❌ MealCard: onStartMeal function not provided');
                 }
               }}
-              activeOpacity={0.8}
+              activeOpacity={isCompleted ? 1.0 : 0.8}
+              disabled={isCompleted}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text
@@ -192,11 +197,18 @@ export const MealCard: React.FC<MealCardProps> = ({
                   isCompleted && styles.completedButtonText,
                 ]}
               >
-                {isCompleted ? '✓ Completed' : isInProgress ? 'Continue' : 'Start Meal'}
+                {isCompleted ? '✅ Completed' : isInProgress ? 'Continue' : 'Start Meal'}
               </Text>
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Completed Status Banner */}
+        {isCompleted && (
+          <View style={styles.completedBanner}>
+            <Text style={styles.completedBannerText}>🎉 Meal completed! Great job!</Text>
+          </View>
+        )}
       </View>
     </Card>
   );
@@ -428,5 +440,19 @@ const styles = StyleSheet.create({
 
   completedButtonText: {
     color: THEME.colors.surface,
+  },
+
+  completedBanner: {
+    backgroundColor: THEME.colors.success + '15',
+    borderRadius: 8,
+    padding: THEME.spacing.sm,
+    marginTop: THEME.spacing.md,
+    alignItems: 'center',
+  },
+
+  completedBannerText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.success,
+    fontWeight: '600',
   },
 });

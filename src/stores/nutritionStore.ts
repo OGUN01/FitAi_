@@ -279,8 +279,11 @@ export const useNutritionStore = create<NutritionState>()(
       },
 
       completeMeal: (mealId, logId) => {
-        set((state) => ({
-          mealProgress: {
+        console.log('🍽️ NutritionStore: completeMeal called:', { mealId, logId });
+        console.log('🍽️ NutritionStore: Previous progress:', get().mealProgress[mealId]);
+        
+        set((state) => {
+          const newProgress = {
             ...state.mealProgress,
             [mealId]: {
               ...state.mealProgress[mealId],
@@ -289,8 +292,21 @@ export const useNutritionStore = create<NutritionState>()(
               completedAt: new Date().toISOString(),
               logId,
             },
-          },
-        }));
+          };
+          
+          console.log('🍽️ NutritionStore: New progress:', newProgress[mealId]);
+          console.log('🍽️ NutritionStore: All meal progress:', newProgress);
+          
+          return {
+            mealProgress: newProgress,
+          };
+        });
+        
+        // Log the final state after update
+        setTimeout(() => {
+          const finalProgress = get().mealProgress[mealId];
+          console.log('🍽️ NutritionStore: Final state after completeMeal:', finalProgress);
+        }, 0);
       },
 
       getMealProgress: (mealId) => {
@@ -506,15 +522,27 @@ export const useNutritionStore = create<NutritionState>()(
 
       loadData: async () => {
         try {
+          console.log('📂 NutritionStore: Loading data...');
+          
+          // Preserve existing meal progress before loading
+          const currentMealProgress = get().mealProgress;
+          console.log('📂 NutritionStore: Current meal progress before load:', currentMealProgress);
+          
           const plan = await get().loadWeeklyMealPlan();
           if (plan) {
-            set({ weeklyMealPlan: plan });
+            // Set the plan while preserving meal progress
+            set((state) => ({
+              weeklyMealPlan: plan,
+              mealProgress: { ...currentMealProgress }, // Preserve meal progress
+            }));
           }
 
           // Load recent meal logs
           const mealLogs = await crudOperations.readMealLogs(
             new Date().toISOString().split('T')[0]
           );
+          
+          console.log('📂 NutritionStore: Data loaded, final meal progress:', get().mealProgress);
           console.log('📂 Nutrition data loaded');
         } catch (error) {
           console.error('❌ Failed to load nutrition data:', error);

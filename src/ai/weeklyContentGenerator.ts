@@ -125,8 +125,8 @@ class WeeklyContentGeneratorService {
             ? this.buildStrictConstraintPrompt(weeklyPlanPrompt, validationAttempt)
             : weeklyPlanPrompt;
 
-        // First, let's test with a super simple schema to verify API connectivity
-        console.log('🧪 Testing with simplified schema to diagnose issue...');
+        // Generate workout plan with proper schema
+        console.log('🏋️ Generating workout plan with structured output...');
 
         response = await geminiService.generateResponse<any>(
           currentPrompt,
@@ -136,10 +136,10 @@ class WeeklyContentGeneratorService {
             planConfig,
             validationAttempt,
           },
-          DIAGNOSTIC_WORKOUT_SCHEMA, // Using minimal schema for debugging JSON issues
+          SIMPLIFIED_WEEKLY_PLAN_SCHEMA, // Using proper schema for workout generation
           2, // Fewer retries per attempt since we have validation retry
           {
-            maxOutputTokens: 4096, // Reduced token limit to avoid truncation
+            maxOutputTokens: 12000, // Increased from 8192 to prevent truncation
             temperature: 0.3, // Lower temperature for more consistent JSON
           }
         );

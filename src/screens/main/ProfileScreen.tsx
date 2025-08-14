@@ -18,18 +18,19 @@ import {
   HelpSupportScreen,
   AboutFitAIScreen,
 } from '../settings';
+import { GuestSignUpScreen } from './GuestSignUpScreen';
 
 // Internal ProfileScreen component
 const ProfileScreenInternal: React.FC = () => {
-  const { user, isAuthenticated, isGuestMode, logout } = useAuth();
-  const { profile } = useUser();
+  const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
+  const { profile, clearProfile } = useUser();
   const userStats = useUserStats();
   const { getHealthMetrics } = useDashboardIntegration();
   const { startEdit } = useEditActions();
   const { showOverlay, setShowOverlay } = useEditStatus();
-  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<string | null>(null);
+  const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   const healthMetrics = getHealthMetrics();
 
@@ -241,6 +242,33 @@ const ProfileScreenInternal: React.FC = () => {
     setCurrentSettingsScreen(null);
   };
 
+  // Handle sign up redirect to guest signup screen
+  const handleSignUpRedirect = async () => {
+    try {
+      console.log('🔄 ProfileScreen: Opening guest signup screen...');
+      
+      // Show the guest signup screen instead of clearing data
+      setShowGuestSignUp(true);
+      
+    } catch (error) {
+      console.error('❌ ProfileScreen: Failed to open signup screen:', error);
+      Alert.alert('Error', 'Unable to open sign up. Please try again.');
+    }
+  };
+
+  // Handle successful signup from guest signup screen
+  const handleGuestSignUpSuccess = () => {
+    console.log('✅ ProfileScreen: Guest signup completed successfully');
+    setShowGuestSignUp(false);
+    // The app will automatically detect the new authenticated state
+  };
+
+  // Handle back from guest signup screen
+  const handleGuestSignUpBack = () => {
+    console.log('🔙 ProfileScreen: User went back from guest signup');
+    setShowGuestSignUp(false);
+  };
+
   const renderSettingsScreen = () => {
     switch (currentSettingsScreen) {
       case 'notifications':
@@ -255,6 +283,16 @@ const ProfileScreenInternal: React.FC = () => {
         return null;
     }
   };
+
+  // If guest signup screen is active, render it
+  if (showGuestSignUp) {
+    return (
+      <GuestSignUpScreen
+        onBack={handleGuestSignUpBack}
+        onSignUpSuccess={handleGuestSignUpSuccess}
+      />
+    );
+  }
 
   // If a settings screen is active, render it instead of the main profile
   if (currentSettingsScreen) {
@@ -338,7 +376,7 @@ const ProfileScreenInternal: React.FC = () => {
                   </Text>
                   <Button
                     title="Sign Up Now"
-                    onPress={() => setShowSignUpPrompt(true)}
+                    onPress={handleSignUpRedirect}
                     variant="primary"
                     size="md"
                     style={styles.guestPromptButton}

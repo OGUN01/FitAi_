@@ -20,6 +20,8 @@ import { useUserStore } from '../../stores/userStore';
 interface OnboardingFlowProps {
   onComplete: (userData: OnboardingReviewData) => void;
   startStep?: string;
+  initialData?: Partial<OnboardingReviewData>;
+  onPartialSave?: (partialData: Partial<OnboardingReviewData>) => void;
 }
 
 type OnboardingStep =
@@ -36,16 +38,41 @@ type OnboardingStep =
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
   startStep = 'welcome',
+  initialData,
+  onPartialSave,
 }) => {
   const { user, isInitialized, isAuthenticated, isGuestMode, setGuestMode } = useAuth();
   const { getCompleteProfile } = useUserStore();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(startStep as OnboardingStep);
   const [hasAutoRedirected, setHasAutoRedirected] = useState(false);
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(null);
-  const [fitnessGoals, setFitnessGoals] = useState<FitnessGoals | null>(null);
-  const [dietPreferences, setDietPreferences] = useState<DietPreferences | null>(null);
-  const [workoutPreferences, setWorkoutPreferences] = useState<WorkoutPreferences | null>(null);
-  const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(null);
+  const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(
+    initialData?.personalInfo || null
+  );
+  const [fitnessGoals, setFitnessGoals] = useState<FitnessGoals | null>(
+    initialData?.fitnessGoals || null
+  );
+  const [dietPreferences, setDietPreferences] = useState<DietPreferences | null>(
+    initialData?.dietPreferences || null
+  );
+  const [workoutPreferences, setWorkoutPreferences] = useState<WorkoutPreferences | null>(
+    initialData?.workoutPreferences || null
+  );
+  const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(
+    initialData?.bodyAnalysis || null
+  );
+
+  // Log when initial data is provided
+  useEffect(() => {
+    if (initialData) {
+      console.log('📥 OnboardingFlow: Initial data provided for resume:', {
+        hasPersonalInfo: !!initialData.personalInfo,
+        hasFitnessGoals: !!initialData.fitnessGoals,
+        hasDietPreferences: !!initialData.dietPreferences,
+        hasWorkoutPreferences: !!initialData.workoutPreferences,
+        hasBodyAnalysis: !!initialData.bodyAnalysis,
+      });
+    }
+  }, [initialData]);
 
   // Check if user is authenticated and skip to profile setup
   // Only auto-redirect from welcome screen, not from signup/login flow
@@ -167,6 +194,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handlePersonalInfoNext = async (data: PersonalInfo) => {
     console.log('📝 Personal info submitted:', data);
     setPersonalInfo(data);
+
+    // Save partial data
+    if (onPartialSave) {
+      onPartialSave({ personalInfo: data });
+    }
+
     console.log('✅ Personal info state updated');
     setCurrentStep('goals');
   };
@@ -193,6 +226,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleGoalsNext = async (data: FitnessGoals) => {
     console.log('🎯 Goals completed, proceeding to diet preferences');
     setFitnessGoals(data);
+
+    // Save partial data with current state
+    if (onPartialSave) {
+      onPartialSave({
+        personalInfo,
+        fitnessGoals: data,
+      });
+    }
+
     setCurrentStep('diet-preferences');
   };
 
@@ -204,6 +246,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleDietPreferencesNext = (data: DietPreferences) => {
     console.log('🍽️ Diet preferences completed');
     setDietPreferences(data);
+
+    // Save partial data with current state
+    if (onPartialSave) {
+      onPartialSave({
+        personalInfo,
+        fitnessGoals,
+        dietPreferences: data,
+      });
+    }
+
     setCurrentStep('workout-preferences');
   };
 
@@ -215,6 +267,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleWorkoutPreferencesNext = (data: WorkoutPreferences) => {
     console.log('💪 Workout preferences completed');
     setWorkoutPreferences(data);
+
+    // Save partial data with current state
+    if (onPartialSave) {
+      onPartialSave({
+        personalInfo,
+        fitnessGoals,
+        dietPreferences,
+        workoutPreferences: data,
+      });
+    }
+
     setCurrentStep('body-analysis');
   };
 
@@ -226,6 +289,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleBodyAnalysisNext = (data: BodyAnalysis) => {
     console.log('📸 Body analysis completed');
     setBodyAnalysis(data);
+
+    // Save partial data with current state
+    if (onPartialSave) {
+      onPartialSave({
+        personalInfo,
+        fitnessGoals,
+        dietPreferences,
+        workoutPreferences,
+        bodyAnalysis: data,
+      });
+    }
+
     setCurrentStep('review');
   };
 
@@ -235,7 +310,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const handleBodyAnalysisSkip = () => {
     console.log('📸 Body analysis skipped');
-    setBodyAnalysis({ photos: {} });
+    const emptyBodyAnalysis = { photos: {} };
+    setBodyAnalysis(emptyBodyAnalysis);
+
+    // Save partial data with current state
+    if (onPartialSave) {
+      onPartialSave({
+        personalInfo,
+        fitnessGoals,
+        dietPreferences,
+        workoutPreferences,
+        bodyAnalysis: emptyBodyAnalysis,
+      });
+    }
+
     setCurrentStep('review');
   };
 

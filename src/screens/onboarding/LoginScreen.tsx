@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -9,6 +9,7 @@ import { LoginCredentials } from '../../types/user';
 import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
 import { migrationManager } from '../../services/migrationManager';
 import { dataManager } from '../../services/dataManager';
+import { GoogleIcon } from '../../components/icons/GoogleIcon';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -87,10 +88,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
 
         console.log('🔐 LoginScreen: Login successful, user:', result.user?.email);
 
-        // Check for local data and trigger migration if needed
+        // Check for guest data and trigger migration if needed
         if (result.user) {
-          const hasLocalData = await dataManager.hasLocalData();
-          console.log('🔍 LoginScreen: Local data check result:', hasLocalData);
+          // CRITICAL: Check for guest data BEFORE setting userId in dataManager
+          const hasGuestDataForMigration = await dataManager.hasGuestDataForMigration();
+          console.log('🔍 LoginScreen: Guest data check result:', hasGuestDataForMigration);
+          
+          // Now set user ID in dataManager for future operations
+          dataManager.setUserId(result.user.id);
+          
+          const hasLocalData = hasGuestDataForMigration;
+          console.log('🔍 LoginScreen: Final local data check result:', hasLocalData);
 
           if (hasLocalData) {
             console.log('🚀 LoginScreen: Starting automatic migration of local data');
@@ -104,7 +112,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                   text: 'OK',
                   onPress: async () => {
                     try {
-                      // Start migration
+                      // First, migrate guest data to user-specific keys
+                      console.log('🔄 LoginScreen: Starting guest data key migration...');
+                      const keyMigrationResult = await dataManager.migrateGuestDataToUser(
+                        result.user.id
+                      );
+                      
+                      if (keyMigrationResult.success) {
+                        console.log('✅ LoginScreen: Guest data key migration successful:', keyMigrationResult.migratedKeys);
+                      } else {
+                        console.warn('⚠️ LoginScreen: Guest data key migration had issues:', keyMigrationResult.errors);
+                      }
+                      
+                      // Now start profile migration to remote storage
+                      console.log('🔄 LoginScreen: Starting remote profile migration...');
                       const migrationResult = await migrationManager.startProfileMigration(
                         result.user.id
                       );
@@ -230,9 +251,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
       const response = await signInWithGoogle();
 
       if (response.success) {
-        // Check for local data migration first
-        const hasLocalData = await dataManager.hasLocalData();
-        console.log('🔍 LoginScreen: Google sign-in - Local data check result:', hasLocalData);
+        // CRITICAL: Check for guest data BEFORE setting userId in dataManager
+        // This ensures we check guest keys instead of user-specific keys
+        const hasGuestDataForMigration = await dataManager.hasGuestDataForMigration();
+        console.log('🔍 LoginScreen: Google sign-in - Guest data check result:', hasGuestDataForMigration);
+        
+        // Now set user ID in dataManager for future operations
+        if (response.user) {
+          dataManager.setUserId(response.user.id);
+        }
+        
+        const hasLocalData = hasGuestDataForMigration;
+        console.log('🔍 LoginScreen: Google sign-in - Final local data check result:', hasLocalData);
 
         if (hasLocalData && response.user) {
           console.log('🚀 LoginScreen: Starting automatic migration for Google user');
@@ -246,7 +276,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                 text: 'OK',
                 onPress: async () => {
                   try {
-                    // Start migration
+                    // First, migrate guest data to user-specific keys
+                    console.log('🔄 LoginScreen: Starting guest data key migration...');
+                    const keyMigrationResult = await dataManager.migrateGuestDataToUser(
+                      response.user.id
+                    );
+                    
+                    if (keyMigrationResult.success) {
+                      console.log('✅ LoginScreen: Guest data key migration successful:', keyMigrationResult.migratedKeys);
+                    } else {
+                      console.warn('⚠️ LoginScreen: Guest data key migration had issues:', keyMigrationResult.errors);
+                    }
+                    
+                    // Now start profile migration to remote storage
+                    console.log('🔄 LoginScreen: Starting remote profile migration...');
                     const migrationResult = await migrationManager.startProfileMigration(
                       response.user.id
                     );
@@ -364,49 +407,56 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
         </View>
 
         <View style={styles.form}>
-          <Input
-            label="Email Address"
-            placeholder="Enter your email address"
-            value={formData.email}
-            onChangeText={(value) => updateField('email', value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={errors.email}
-          />
-
-          <PasswordInput
-            label="Password"
-            placeholder="Enter your password"
-            value={formData.password}
-            onChangeText={(value) => updateField('password', value)}
-            error={errors.password}
-          />
-
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={isLoading}
-            style={styles.loginButton}
-          />
+          {/* Google Sign-In as Primary */}
+          <TouchableOpacity
+            style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <View style={styles.googleButtonContent}>
+              <GoogleIcon size={20} style={styles.googleIcon} />
+              <Text style={styles.googlePrimaryText}>Continue with Google</Text>
+            </View>
+            <Text style={styles.googleSubtext}>Recommended • No email verification needed</Text>
+          </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>or use email</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Button
-            title="🔍 Continue with Google"
-            onPress={handleGoogleSignIn}
-            variant="outline"
-            size="lg"
-            fullWidth
-            loading={isLoading}
-            style={styles.googleButton}
-          />
+          {/* Email form as secondary option */}
+          <View style={styles.emailFormContainer}>
+            <Input
+              label="Email Address"
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChangeText={(value) => updateField('email', value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+            />
+
+            <PasswordInput
+              label="Password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChangeText={(value) => updateField('password', value)}
+              error={errors.password}
+            />
+
+            <Button
+              title="Sign In with Email"
+              onPress={handleLogin}
+              variant="outline"
+              size="lg"
+              fullWidth
+              loading={isLoading}
+              style={styles.emailLoginButton}
+            />
+          </View>
 
           <Button
             title="Don't have an account? Sign Up"
@@ -471,35 +521,81 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.lg,
   },
 
-  loginButton: {
+  // Google Primary Button Styles
+  googlePrimaryButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  googleIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  googlePrimaryText: {
+    color: '#FFFFFF',
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  googleSubtext: {
+    color: '#FFFFFF',
+    fontSize: ResponsiveTheme.fontSize.sm,
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+
+  // Email Form Styles
+  emailFormContainer: {
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  emailLoginButton: {
     marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
+    borderColor: ResponsiveTheme.colors.border,
   },
 
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.lg,
   },
 
   dividerLine: {
     flex: 1,
     height: rh(1),
     backgroundColor: ResponsiveTheme.colors.border,
+    opacity: 0.3,
   },
 
   dividerText: {
     marginHorizontal: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-  },
-
-  googleButton: {
-    marginBottom: ResponsiveTheme.spacing.md,
-    borderColor: ResponsiveTheme.colors.border,
+    fontStyle: 'italic',
   },
 
   signUpButton: {
+    marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 

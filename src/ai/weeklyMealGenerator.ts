@@ -39,6 +39,12 @@ export interface DayMeal {
     fiber: number;
   };
   preparationTime: number;
+  cookingTime?: number;
+  cookingInstructions?: Array<{
+    step: number;
+    instruction: string;
+    timeRequired?: number;
+  }>;
   difficulty: 'easy' | 'medium' | 'hard';
   tags: string[];
   dayOfWeek: string;
@@ -143,17 +149,28 @@ class WeeklyMealContentGenerator {
       SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA, // ✅ Using simplified schema instead of complex WEEKLY_MEAL_PLAN_SCHEMA
       2, // Reduced retries for faster debugging
       {
-        maxOutputTokens: 4096, // 🔧 Significantly reduced from 16384 to avoid token overflow
+        maxOutputTokens: 8192, // 🔧 Increased from 4096 to handle complete 7-day meal plan JSON
         temperature: 0.4, // 🔧 Lower temperature for more consistent JSON structure
       }
     );
 
     if (!aiResponse.success || !aiResponse.data) {
+      console.error('❌ AI Response failed:', {
+        success: aiResponse.success,
+        error: aiResponse.error,
+        hasData: !!aiResponse.data
+      });
       return {
         success: false,
         error: aiResponse.error || 'Failed to generate weekly meal plan',
       };
     }
+
+    console.log('✅ AI Response successful:', {
+      dataKeys: Object.keys(aiResponse.data),
+      mealsCount: Array.isArray(aiResponse.data.meals) ? aiResponse.data.meals.length : 0,
+      tokenUsage: 'Response completed successfully'
+    });
 
     const aiPlan = aiResponse.data;
 
@@ -212,6 +229,8 @@ class WeeklyMealContentGenerator {
               totalFat: portioned.totals.fat,
               totalFiber: portioned.totals.fiber,
               preparationTime: meal.preparationTime ?? meal.prepTime ?? 15,
+              cookingTime: meal.cookingTime ?? 10,
+              cookingInstructions: meal.cookingInstructions || [],
               difficulty: meal.difficulty ?? 'easy',
               tags:
                 meal.tags ??
@@ -307,6 +326,8 @@ You are a professional nutritionist and meal planning expert. Create a comprehen
 6. Include essential nutritional information (simplified)
 7. Each meal should be practical and realistic
 8. Focus on variety across the full week
+9. Provide prep time estimates for meal planning
+10. Make meals practical and achievable based on cooking skill level
 
 **Important Notes:**
 - Use the structured response format defined in the schema

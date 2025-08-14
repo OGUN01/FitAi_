@@ -164,14 +164,27 @@ class SyncManager {
         return { success: true, conflicts: [], syncedItems: 0, failedItems: 0, errors: [] };
       }
 
-      // Check if remote data exists
-      const { data: remoteData, error } = await supabase
-        .from('personal_info')
-        .select('*')
-        .eq('user_id', dataManager['userId'])
-        .single();
+      console.log('🔄 Migrating personal info to profiles table...');
+      
+      // Save personal info directly to profiles table (combines personal info with profile)
+      const profileData = {
+        id: dataManager['userId'],
+        email: localData.email || '',
+        name: localData.name,
+        age: localData.age ? parseInt(localData.age) : null,
+        gender: localData.gender,
+        height_cm: localData.height ? parseInt(localData.height) : null,
+        weight_kg: localData.weight ? parseFloat(localData.weight) : null,
+        activity_level: localData.activityLevel,
+        updated_at: new Date().toISOString()
+      };
 
-      if (error && error.code !== 'PGRST116') {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profileData, { onConflict: 'id' });
+
+      if (error) {
+        console.error('❌ Failed to save personal info to profiles:', error.message);
         return {
           success: false,
           conflicts: [],
@@ -181,28 +194,13 @@ class SyncManager {
         };
       }
 
-      // Handle conflicts if both exist
-      if (remoteData) {
-        const conflicts = this.detectConflicts('personalInfo', localData, remoteData);
-        if (conflicts.length > 0) {
-          return {
-            success: false,
-            conflicts,
-            syncedItems: 0,
-            failedItems: 1,
-            errors: ['Conflicts detected'],
-          };
-        }
-      }
-
-      // Save to remote
-      const success = await dataManager.savePersonalInfo(localData);
+      console.log('✅ Personal info migrated to profiles table successfully');
       return {
-        success,
+        success: true,
         conflicts: [],
-        syncedItems: success ? 1 : 0,
-        failedItems: success ? 0 : 1,
-        errors: success ? [] : ['Failed to save personal info'],
+        syncedItems: 1,
+        failedItems: 0,
+        errors: [],
       };
     } catch (error) {
       return {
@@ -222,13 +220,38 @@ class SyncManager {
         return { success: true, conflicts: [], syncedItems: 0, failedItems: 0, errors: [] };
       }
 
-      const success = await dataManager.saveFitnessGoals(localData);
+      console.log('🔄 Migrating fitness goals...');
+      
+      const fitnessGoalsData = {
+        user_id: dataManager['userId'],
+        primary_goals: localData.primaryGoals,
+        time_commitment: localData.timeCommitment,
+        experience_level: localData.experience,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('fitness_goals')
+        .upsert(fitnessGoalsData, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('❌ Failed to save fitness goals:', error.message);
+        return {
+          success: false,
+          conflicts: [],
+          syncedItems: 0,
+          failedItems: 1,
+          errors: [error.message],
+        };
+      }
+
+      console.log('✅ Fitness goals migrated successfully');
       return {
-        success,
+        success: true,
         conflicts: [],
-        syncedItems: success ? 1 : 0,
-        failedItems: success ? 0 : 1,
-        errors: success ? [] : ['Failed to save fitness goals'],
+        syncedItems: 1,
+        failedItems: 0,
+        errors: [],
       };
     } catch (error) {
       return {
@@ -248,13 +271,39 @@ class SyncManager {
         return { success: true, conflicts: [], syncedItems: 0, failedItems: 0, errors: [] };
       }
 
-      const success = await dataManager.saveDietPreferences(localData);
+      console.log('🔄 Migrating diet preferences...');
+      
+      const dietPreferencesData = {
+        user_id: dataManager['userId'],
+        diet_type: localData.dietType,
+        allergies: localData.allergies || [],
+        cuisine_preferences: localData.cuisinePreferences || [],
+        restrictions: localData.restrictions || [],
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('diet_preferences')
+        .upsert(dietPreferencesData, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('❌ Failed to save diet preferences:', error.message);
+        return {
+          success: false,
+          conflicts: [],
+          syncedItems: 0,
+          failedItems: 1,
+          errors: [error.message],
+        };
+      }
+
+      console.log('✅ Diet preferences migrated successfully');
       return {
-        success,
+        success: true,
         conflicts: [],
-        syncedItems: success ? 1 : 0,
-        failedItems: success ? 0 : 1,
-        errors: success ? [] : ['Failed to save diet preferences'],
+        syncedItems: 1,
+        failedItems: 0,
+        errors: [],
       };
     } catch (error) {
       return {
@@ -274,9 +323,41 @@ class SyncManager {
         return { success: true, conflicts: [], syncedItems: 0, failedItems: 0, errors: [] };
       }
 
-      // For now, we'll store workout preferences in local storage
-      // TODO: Add workout_preferences table to Supabase
-      return { success: true, conflicts: [], syncedItems: 1, failedItems: 0, errors: [] };
+      console.log('🔄 Migrating workout preferences...');
+      
+      const workoutPreferencesData = {
+        user_id: dataManager['userId'],
+        location: localData.location,
+        equipment: localData.equipment || [],
+        time_preference: localData.timePreference,
+        intensity: localData.intensity,
+        workout_types: localData.workoutTypes || [],
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('workout_preferences')
+        .upsert(workoutPreferencesData, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('❌ Failed to save workout preferences:', error.message);
+        return {
+          success: false,
+          conflicts: [],
+          syncedItems: 0,
+          failedItems: 1,
+          errors: [error.message],
+        };
+      }
+
+      console.log('✅ Workout preferences migrated successfully');
+      return {
+        success: true,
+        conflicts: [],
+        syncedItems: 1,
+        failedItems: 0,
+        errors: [],
+      };
     } catch (error) {
       return {
         success: false,

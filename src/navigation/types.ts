@@ -34,6 +34,7 @@ export type DietStackParamList = {
   MealLog: { mealType?: string };
   FoodDetails: { foodId: string };
   Nutrition: undefined;
+  CookingSession: { meal: any };
 };
 
 export type ProfileStackParamList = {

@@ -173,6 +173,42 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['meal_logs']['Row']>;
       };
+      meals: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | null;
+          consumed_at: string;
+          total_calories: number | null;
+          total_protein: number | null;
+          total_carbs: number | null;
+          total_fat: number | null;
+          notes: string | null;
+          description: string | null;
+          prep_time: number | null;
+          cooking_time: number | null;
+          cooking_instructions: Array<{
+            step: number;
+            instruction: string;
+            timeRequired?: number;
+          }> | null;
+          main_ingredients: string[] | null;
+          difficulty: 'easy' | 'medium' | 'hard' | null;
+          tags: string[] | null;
+          day_of_week: string | null;
+          meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | null;
+          estimated_calories: number | null;
+          is_personalized: boolean | null;
+          ai_generated: boolean | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['public']['Tables']['meals']['Row']> & {
+          id: string;
+          user_id: string;
+        };
+        Update: Partial<Database['public']['Tables']['meals']['Row']>;
+      };
       progress_entries: {
         Row: {
           id: string;

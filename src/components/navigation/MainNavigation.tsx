@@ -10,6 +10,7 @@ import { ProgressScreen } from '../../screens/main/ProgressScreen';
 import { ProfileScreen } from '../../screens/main/ProfileScreen';
 import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
 import { MealSession } from '../../screens/session/MealSession';
+import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
 import { DayWorkout } from '../../ai/weeklyContentGenerator';
@@ -32,6 +33,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
     meal?: DayMeal;
   }>({ isActive: false });
 
+  const [cookingSession, setCookingSession] = useState<{
+    isActive: boolean;
+    meal?: DayMeal;
+  }>({ isActive: false });
+
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
@@ -48,12 +54,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
         });
       } else if (screen === 'MealSession') {
         setMealSession({ isActive: true, meal: params.meal });
+      } else if (screen === 'CookingSession') {
+        console.log(`🧭 Setting cooking session:`, {
+          meal: params?.meal?.name,
+        });
+        setCookingSession({ isActive: true, meal: params.meal });
       }
     },
     goBack: () => {
-      console.log(`🧭 NAVIGATION: Going back from workout/meal session`);
+      console.log(`🧭 NAVIGATION: Going back from session`);
       setWorkoutSession({ isActive: false });
       setMealSession({ isActive: false });
+      setCookingSession({ isActive: false });
     },
   };
 
@@ -111,6 +123,24 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       );
     }
 
+    // If cooking session is active, show cooking session screen
+    if (cookingSession.isActive && cookingSession.meal) {
+      console.log(`🧭 RENDERING: CookingSessionScreen with:`, {
+        mealName: cookingSession.meal.name,
+        cookingInstructions: cookingSession.meal.cookingInstructions?.length,
+      });
+      return (
+        <CookingSessionScreen
+          route={{
+            params: {
+              meal: cookingSession.meal,
+            },
+          }}
+          navigation={navigation}
+        />
+      );
+    }
+
     // If meal session is active, show meal session screen
     if (mealSession.isActive && mealSession.meal) {
       return <MealSession route={{ params: { meal: mealSession.meal } }} navigation={navigation} />;
@@ -123,7 +153,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       case 'fitness':
         return <FitnessScreen navigation={navigation} />;
       case 'diet':
-        return <DietScreen navigation={navigation} />;
+        return <DietScreen navigation={navigation} isActive={activeTab === 'diet'} />;
       case 'progress':
         return <ProgressScreen />;
       case 'profile':
@@ -138,7 +168,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* Hide tab bar when any session is active */}
-      {!workoutSession.isActive && !mealSession.isActive && (
+      {!workoutSession.isActive && !mealSession.isActive && !cookingSession.isActive && (
         <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
       )}
     </View>

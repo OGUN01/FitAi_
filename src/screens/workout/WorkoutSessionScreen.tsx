@@ -17,6 +17,7 @@ import { DayWorkout } from '../../ai/weeklyContentGenerator';
 import { WorkoutTimer } from '../../components/fitness/WorkoutTimer';
 import { ExerciseGifPlayer } from '../../components/fitness/ExerciseGifPlayer';
 import { ExerciseInstructionModal } from '../../components/fitness/ExerciseInstructionModal';
+import { ExerciseSessionModal } from '../../components/fitness/ExerciseSessionModal';
 import completionTrackingService from '../../services/completionTracking';
 
 interface WorkoutSessionScreenProps {
@@ -56,31 +57,46 @@ const safeString = (value: any, fallback: string = ''): string => {
   }
 };
 // Parse a duration in seconds from reps like "30 seconds", "45s", "1:00", "1 min"
+// Returns 0 for rep ranges like "10-12", "8-15" to avoid treating them as timers
 const parseDurationFromReps = (reps: any): number => {
   if (!reps) return 0;
   const str = String(reps).toLowerCase().trim();
-  // mm:ss
+  
+  // First, check if this looks like a rep range (contains dash, "to", etc.)
+  if (str.includes('-') || str.includes('to') || str.match(/^\d+\s*[-–]\s*\d+$/)) {
+    return 0; // This is a rep range, not a time duration
+  }
+  
+  // mm:ss format
   const mmss = str.match(/^(\d+):(\d{1,2})$/);
   if (mmss) {
     const m = parseInt(mmss[1], 10);
     const s = parseInt(mmss[2], 10);
     if (!Number.isNaN(m) && !Number.isNaN(s)) return m * 60 + s;
   }
-  // e.g., 30 seconds, 30 sec, 30s
+  
+  // Time with explicit units: 30 seconds, 30 sec, 30s
   const sec = str.match(/^(\d+)\s*(seconds|second|secs|sec|s)$/);
   if (sec) {
     const v = parseInt(sec[1], 10);
     return Number.isNaN(v) ? 0 : v;
   }
-  // e.g., 1 minute, 2 min, 1m
+  
+  // Time with explicit units: 1 minute, 2 min, 1m
   const min = str.match(/^(\d+)\s*(minutes|minute|mins|min|m)$/);
   if (min) {
     const v = parseInt(min[1], 10);
     return Number.isNaN(v) ? 0 : v * 60;
   }
-  // If it's purely numeric, assume seconds
+  
+  // Only treat as time if it's purely numeric AND doesn't look like reps
+  // This catches cases like just "30" (30 seconds) but avoids "12" from "10-12"
   const pure = parseInt(str, 10);
-  return Number.isNaN(pure) ? 0 : pure;
+  if (!Number.isNaN(pure) && str === pure.toString()) {
+    return pure; // Pure number like "30" - treat as seconds
+  }
+  
+  return 0; // Not a time duration
 };
 
 // Safe number utility
@@ -173,6 +189,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [scaleAnim] = useState(new Animated.Value(1));
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
+  const [showExerciseSession, setShowExerciseSession] = useState(false);
 
   // Memoized calculations for performance
   const currentExercise = useMemo(() => {
@@ -340,6 +357,26 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     } catch (err) {
       console.error('completeSetAfterTimer error:', err);
       setShowExerciseTimer(false);
+    }
+  }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
+
+  // Complete set from the exercise session modal
+  const completeSetFromSession = useCallback(() => {
+    try {
+      // Hide the session modal
+      setShowExerciseSession(false);
+
+      // Find next incomplete set for the current exercise
+      const sets = exerciseProgress[currentExerciseIndex]?.completedSets || [];
+      const nextIncompleteIndex = sets.findIndex((s) => !s);
+
+      if (nextIncompleteIndex !== -1) {
+        // Mark that set as completed
+        handleSetComplete(nextIncompleteIndex);
+      }
+    } catch (err) {
+      console.error('completeSetFromSession error:', err);
+      setShowExerciseSession(false);
     }
   }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
 
@@ -584,7 +621,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         title="Rest Time"
         onComplete={() => {
           setIsRestTime(false);
-          setShowExerciseTimer(true);
+          // After rest, show appropriate interface based on exercise type
+          if (parseDurationFromReps(currentExercise.reps) > 0) {
+            // Time-based exercise - show timer
+            setShowExerciseTimer(true);
+          } else {
+            // Rep-based exercise - show breathing animation session
+            setShowExerciseSession(true);
+          }
         }}
         onCancel={() => setIsRestTime(false)}
       />
@@ -655,17 +699,34 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                 )}
               </Text>
 
-              {/* Start Exercise Timer */}
-              <Button
-                title={
-                  parseDurationFromReps(currentExercise.reps)
-                    ? `Start ${safeString(currentExercise.reps)}`
-                    : 'Start Timer'
-                }
-                onPress={() => setShowExerciseTimer(true)}
-                variant="primary"
-                style={{ marginTop: THEME.spacing.md }}
-              />
+              {/* Start Exercise - Different behavior for rep-based vs time-based */}
+              {parseDurationFromReps(currentExercise.reps) > 0 ? (
+                /* Time-based exercise - show timer */
+                <Button
+                  title={
+                    currentProgress.isCompleted
+                      ? "✅ Exercise Complete"
+                      : `Start ${safeString(currentExercise.reps)}`
+                  }
+                  onPress={() => setShowExerciseTimer(true)}
+                  variant={currentProgress.isCompleted ? "outline" : "primary"}
+                  disabled={currentProgress.isCompleted}
+                  style={{ marginTop: THEME.spacing.md }}
+                />
+              ) : (
+                /* Rep-based exercise - dynamic session */
+                <Button
+                  title={
+                    currentProgress.isCompleted
+                      ? "✅ Exercise Complete"
+                      : "Start Exercise"
+                  }
+                  onPress={() => setShowExerciseSession(true)}
+                  variant={currentProgress.isCompleted ? "outline" : "primary"}
+                  disabled={currentProgress.isCompleted}
+                  style={{ marginTop: THEME.spacing.md }}
+                />
+              )}
 
               <View style={styles.exerciseDetails}>
                 <Text style={styles.exerciseDetailText}>
@@ -752,6 +813,23 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         onClose={() => setShowInstructionModal(false)}
         exerciseId={safeString(currentExercise.exerciseId, '')}
         exerciseName={safeString(currentExercise.name, '')}
+      />
+
+      {/* Exercise Session Modal for Rep-Based Exercises */}
+      <ExerciseSessionModal
+        isVisible={showExerciseSession}
+        onComplete={completeSetFromSession}
+        onCancel={() => setShowExerciseSession(false)}
+        exerciseId={safeString(currentExercise.exerciseId, '')}
+        exerciseName={safeString(
+          currentExercise.name || getExerciseName(currentExercise.exerciseId),
+          'Current Exercise'
+        )}
+        reps={safeString(currentExercise.reps, '')}
+        currentSet={
+          (exerciseProgress[currentExerciseIndex]?.completedSets?.filter(Boolean).length || 0) + 1
+        }
+        totalSets={safeNumber(currentExercise.sets, 3)}
       />
 
       {/* Enhanced Navigation Buttons */}
@@ -975,6 +1053,7 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.xs,
     borderRadius: THEME.borderRadius.sm,
   },
+
 
   setsContainer: {
     marginBottom: THEME.spacing.xl,

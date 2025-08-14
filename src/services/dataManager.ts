@@ -570,6 +570,35 @@ export class DataManagerService {
     };
   }
 
+  /**
+   * Check if guest data exists that needs migration
+   */
+  async hasGuestDataForMigration(): Promise<boolean> {
+    try {
+      console.log('🔍 Checking for guest data that needs migration');
+      
+      const baseKeys = ['personalInfo', 'fitnessGoals', 'dietPreferences', 'workoutPreferences'];
+      
+      for (const baseKey of baseKeys) {
+        try {
+          const guestData = await enhancedLocalStorage.retrieveData(`${baseKey}_guest`);
+          if (guestData) {
+            console.log(`📊 Found guest data for migration: ${baseKey}`);
+            return true;
+          }
+        } catch (keyError) {
+          console.error(`❌ Error checking guest key ${baseKey}:`, keyError);
+        }
+      }
+      
+      console.log('💭 No guest data found for migration');
+      return false;
+    } catch (error) {
+      console.error('❌ Error checking guest data for migration:', error);
+      return false;
+    }
+  }
+
   // ============================================================================
   // ENHANCED PROFILE DATA MANAGEMENT
   // ============================================================================
@@ -590,23 +619,47 @@ export class DataManagerService {
     try {
       const localKey = `personalInfo_${this.userId || 'guest'}`;
 
-      // Save to local storage
+      // Save to local storage first
       const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+      if (!localSuccess) {
+        console.warn('⚠️ Failed to save personal info locally');
+      }
 
       // Save to remote if user is logged in
       let remoteSuccess = false;
       if (this.userId && this.isOnline) {
         try {
+          // Save to profiles table directly (no separate personal_info table)
+          const profileData = {
+            id: this.userId,
+            email: data.email || '',
+            name: data.name,
+            age: data.age ? parseInt(data.age) : null,
+            gender: data.gender,
+            height_cm: data.height ? parseInt(data.height) : null,
+            weight_kg: data.weight ? parseFloat(data.weight) : null,
+            activity_level: data.activityLevel,
+            updated_at: new Date().toISOString()
+          };
+          
           const { error } = await supabase
-            .from('personal_info')
-            .upsert({ ...data, user_id: this.userId });
+            .from('profiles')
+            .upsert(profileData, { onConflict: 'id' });
+          
           remoteSuccess = !error;
+          if (error) {
+            console.error('Failed to save personal info to profiles:', error.message);
+          } else {
+            console.log('✅ Personal info saved to profiles table');
+          }
         } catch (error) {
           console.error('Failed to save personal info to remote:', error);
         }
+      } else {
+        console.log('📱 Guest mode or offline: Personal info saved locally only');
       }
 
-      return localSuccess || remoteSuccess;
+      return localSuccess; // At minimum, local save must succeed
     } catch (error) {
       console.error('Failed to save personal info:', error);
       return false;
@@ -620,14 +673,31 @@ export class DataManagerService {
       // Try remote first if user is logged in
       if (this.userId && this.isOnline) {
         try {
+          // Load from profiles table
           const { data, error } = await supabase
-            .from('personal_info')
+            .from('profiles')
             .select('*')
-            .eq('user_id', this.userId)
+            .eq('id', this.userId)
             .single();
 
           if (!error && data) {
-            return data as PersonalInfo;
+            // Convert profiles data back to PersonalInfo format
+            const personalInfo: PersonalInfo = {
+              id: data.id,
+              name: data.name,
+              email: data.email,
+              age: data.age ? data.age.toString() : '',
+              gender: data.gender,
+              height: data.height_cm ? data.height_cm.toString() : '',
+              weight: data.weight_kg ? data.weight_kg.toString() : '',
+              activityLevel: data.activity_level,
+              version: 1,
+              createdAt: data.created_at,
+              updatedAt: data.updated_at,
+              syncStatus: 'synced',
+              source: 'remote'
+            };
+            return personalInfo;
           }
         } catch (error) {
           console.error('Failed to load personal info from remote:', error);
@@ -646,21 +716,42 @@ export class DataManagerService {
     try {
       const localKey = `fitnessGoals_${this.userId || 'guest'}`;
 
+      // Save to local storage first
       const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+      if (!localSuccess) {
+        console.warn('⚠️ Failed to save fitness goals locally');
+      }
 
+      // Save to remote if user is logged in
       let remoteSuccess = false;
       if (this.userId && this.isOnline) {
         try {
+          const fitnessGoalsData = {
+            user_id: this.userId,
+            primary_goals: data.primaryGoals,
+            time_commitment: data.timeCommitment,
+            experience_level: data.experience,
+            updated_at: new Date().toISOString()
+          };
+          
           const { error } = await supabase
             .from('fitness_goals')
-            .upsert({ ...data, user_id: this.userId });
+            .upsert(fitnessGoalsData, { onConflict: 'user_id' });
+            
           remoteSuccess = !error;
+          if (error) {
+            console.error('Failed to save fitness goals to remote:', error.message);
+          } else {
+            console.log('✅ Fitness goals saved to remote');
+          }
         } catch (error) {
           console.error('Failed to save fitness goals to remote:', error);
         }
+      } else {
+        console.log('📱 Guest mode or offline: Fitness goals saved locally only');
       }
 
-      return localSuccess || remoteSuccess;
+      return localSuccess; // At minimum, local save must succeed
     } catch (error) {
       console.error('Failed to save fitness goals:', error);
       return false;
@@ -680,7 +771,19 @@ export class DataManagerService {
             .single();
 
           if (!error && data) {
-            return data as FitnessGoals;
+            // Convert remote data to local FitnessGoals format
+            const fitnessGoals: FitnessGoals = {
+              id: data.id,
+              primaryGoals: data.primary_goals,
+              timeCommitment: data.time_commitment,
+              experience: data.experience_level,
+              version: 1,
+              createdAt: data.created_at,
+              updatedAt: data.updated_at,
+              syncStatus: 'synced',
+              source: 'remote'
+            };
+            return fitnessGoals;
           }
         } catch (error) {
           console.error('Failed to load fitness goals from remote:', error);
@@ -800,22 +903,32 @@ export class DataManagerService {
 
   /**
    * Check if user has any local profile data
+   * Checks both guest keys and user-specific keys for comprehensive migration detection
    */
   async hasLocalData(): Promise<boolean> {
     try {
       console.log('🔍 Checking for local data, userId:', this.userId);
 
-      const keys = [
-        `personalInfo_${this.userId || 'guest'}`,
-        `fitnessGoals_${this.userId || 'guest'}`,
-        `dietPreferences_${this.userId || 'guest'}`,
-        `workoutPreferences_${this.userId || 'guest'}`,
-      ];
+      // Define all possible key patterns to check
+      const baseKeys = ['personalInfo', 'fitnessGoals', 'dietPreferences', 'workoutPreferences'];
+      const keysToCheck: string[] = [];
 
-      console.log('🔍 Checking keys:', keys);
+      // Always check guest keys first (for migration scenarios)
+      baseKeys.forEach(baseKey => {
+        keysToCheck.push(`${baseKey}_guest`);
+      });
+
+      // If we have a userId, also check user-specific keys
+      if (this.userId) {
+        baseKeys.forEach(baseKey => {
+          keysToCheck.push(`${baseKey}_${this.userId}`);
+        });
+      }
+
+      console.log('🔍 Checking keys:', keysToCheck);
 
       // Check each key for data
-      for (const key of keys) {
+      for (const key of keysToCheck) {
         try {
           const data = await enhancedLocalStorage.retrieveData(key);
           console.log(`🔍 Key ${key}: ${data ? 'HAS DATA' : 'NO DATA'}`);
@@ -871,6 +984,7 @@ export class DataManagerService {
     hasDietPreferences: boolean;
     hasWorkoutPreferences: boolean;
     totalItems: number;
+    dataLocation: 'guest' | 'user' | 'mixed' | 'none';
   }> {
     try {
       const personalInfo = await this.loadPersonalInfo();
@@ -884,9 +998,24 @@ export class DataManagerService {
         hasDietPreferences: !!dietPreferences,
         hasWorkoutPreferences: !!workoutPreferences,
         totalItems: 0,
+        dataLocation: 'none' as 'guest' | 'user' | 'mixed' | 'none'
       };
 
-      summary.totalItems = Object.values(summary).filter(Boolean).length - 1; // Exclude totalItems itself
+      summary.totalItems = Object.values(summary).filter(Boolean).length - 2; // Exclude totalItems and dataLocation
+
+      // Determine data location for debugging
+      if (summary.totalItems > 0) {
+        const guestDataCount = await this.countGuestData();
+        const userDataCount = await this.countUserData();
+        
+        if (guestDataCount > 0 && userDataCount > 0) {
+          summary.dataLocation = 'mixed';
+        } else if (guestDataCount > 0) {
+          summary.dataLocation = 'guest';
+        } else if (userDataCount > 0) {
+          summary.dataLocation = 'user';
+        }
+      }
 
       console.log('📊 Profile data summary:', summary);
       return summary;
@@ -898,7 +1027,110 @@ export class DataManagerService {
         hasDietPreferences: false,
         hasWorkoutPreferences: false,
         totalItems: 0,
+        dataLocation: 'none'
       };
+    }
+  }
+
+  /**
+   * Count guest data entries
+   */
+  private async countGuestData(): Promise<number> {
+    let count = 0;
+    const baseKeys = ['personalInfo', 'fitnessGoals', 'dietPreferences', 'workoutPreferences'];
+    
+    for (const baseKey of baseKeys) {
+      try {
+        const data = await enhancedLocalStorage.retrieveData(`${baseKey}_guest`);
+        if (data) count++;
+      } catch (error) {
+        // Ignore individual key errors
+      }
+    }
+    
+    return count;
+  }
+
+  /**
+   * Count user-specific data entries
+   */
+  private async countUserData(): Promise<number> {
+    if (!this.userId) return 0;
+    
+    let count = 0;
+    const baseKeys = ['personalInfo', 'fitnessGoals', 'dietPreferences', 'workoutPreferences'];
+    
+    for (const baseKey of baseKeys) {
+      try {
+        const data = await enhancedLocalStorage.retrieveData(`${baseKey}_${this.userId}`);
+        if (data) count++;
+      } catch (error) {
+        // Ignore individual key errors
+      }
+    }
+    
+    return count;
+  }
+
+  /**
+   * Migrate guest data to authenticated user keys
+   * This handles the key transition when a user signs in after using the app as guest
+   */
+  async migrateGuestDataToUser(userId: string): Promise<{
+    success: boolean;
+    migratedKeys: string[];
+    errors: string[];
+  }> {
+    const result = {
+      success: true,
+      migratedKeys: [] as string[],
+      errors: [] as string[]
+    };
+
+    try {
+      console.log('🔄 Starting guest data migration to user:', userId);
+
+      const baseKeys = ['personalInfo', 'fitnessGoals', 'dietPreferences', 'workoutPreferences', 'bodyAnalysis'];
+
+      for (const baseKey of baseKeys) {
+        try {
+          const guestKey = `${baseKey}_guest`;
+          const userKey = `${baseKey}_${userId}`;
+
+          // Check if guest data exists
+          const guestData = await enhancedLocalStorage.retrieveData(guestKey);
+          if (guestData) {
+            console.log(`💾 Migrating ${baseKey} from guest to user key`);
+            
+            // Save to user-specific key
+            const saveSuccess = await enhancedLocalStorage.storeData(userKey, guestData);
+            if (saveSuccess) {
+              // Remove guest key after successful migration
+              await enhancedLocalStorage.removeData(guestKey);
+              result.migratedKeys.push(baseKey);
+              console.log(`✅ Successfully migrated ${baseKey}`);
+            } else {
+              result.errors.push(`Failed to save ${baseKey} to user key`);
+              result.success = false;
+            }
+          } else {
+            console.log(`💭 No guest data found for ${baseKey}`);
+          }
+        } catch (keyError) {
+          const errorMsg = `Error migrating ${baseKey}: ${keyError instanceof Error ? keyError.message : 'Unknown error'}`;
+          console.error(`❌ ${errorMsg}`);
+          result.errors.push(errorMsg);
+          result.success = false;
+        }
+      }
+
+      console.log(`🏁 Guest data migration completed. Migrated: ${result.migratedKeys.length} keys`);
+      return result;
+    } catch (error) {
+      console.error('❌ Guest data migration failed:', error);
+      result.success = false;
+      result.errors.push(error instanceof Error ? error.message : 'Unknown migration error');
+      return result;
     }
   }
 

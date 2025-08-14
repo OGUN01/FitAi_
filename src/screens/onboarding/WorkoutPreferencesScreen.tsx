@@ -326,13 +326,13 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
             <Text style={styles.sectionSubtitle}>How much time can you dedicate per workout?</Text>
             <View style={styles.sliderContainer}>
               <Slider
+                min={15}
+                max={120}
                 value={timePreference}
                 onValueChange={setTimePreference}
-                minimumValue={15}
-                maximumValue={120}
                 step={15}
-                showLabels={true}
-                formatLabel={formatTime}
+                showValue={true}
+                unit=" min"
               />
             </View>
           </View>

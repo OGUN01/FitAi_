@@ -495,7 +495,17 @@ class GeminiService {
         const usageMetadata = response.usageMetadata;
         totalTokensUsed = usageMetadata?.totalTokenCount || 0;
 
-        console.log(`✅ Gemini 2.5 Flash response received - ${totalTokensUsed} tokens`);
+        // Enhanced token logging for better debugging
+        console.log(`✅ Gemini 2.5 Flash response received:`);
+        console.log(`  - Input tokens: ${usageMetadata?.promptTokenCount || 'N/A'}`);
+        console.log(`  - Output tokens: ${usageMetadata?.candidatesTokenCount || 'N/A'}`);
+        console.log(`  - Total tokens: ${totalTokensUsed}`);
+        
+        // Warn if approaching output token limit
+        const outputTokens = usageMetadata?.candidatesTokenCount || 0;
+        if (outputTokens > 7500 && generationConfig.maxOutputTokens) {
+          console.warn(`⚠️ Output tokens (${outputTokens}) approaching limit (${generationConfig.maxOutputTokens})`);
+        }
 
         // Handle OFFICIAL structured output vs plain text
         if (schema) {
@@ -517,6 +527,30 @@ class GeminiService {
           console.log('  - Response text type:', typeof text);
           console.log('  - Response length:', text.length);
 
+          // Check for JSON completeness before parsing
+          const isValidJSON = (str: string): boolean => {
+            const trimmed = str.trim();
+            return (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+                   (trimmed.startsWith('[') && trimmed.endsWith(']'));
+          };
+
+          if (!isValidJSON(text)) {
+            lastError = `Response appears truncated - invalid JSON structure (missing closing bracket)`;
+            console.warn(`⚠️ Truncated JSON detected on attempt ${attempt}:`);
+            console.warn(`  - Response length: ${text.length} chars`);
+            console.warn(`  - Starts with: ${text.substring(0, 50)}`);
+            console.warn(`  - Ends with: ${text.slice(-50)}`);
+            
+            // Check if we hit the token limit
+            const outputTokens = usageMetadata?.candidatesTokenCount || 0;
+            if (outputTokens >= (generationConfig.maxOutputTokens - 100)) {
+              console.error(`🚨 Hit token limit: ${outputTokens}/${generationConfig.maxOutputTokens} output tokens`);
+              lastError = `Response truncated at token limit (${outputTokens} tokens)`;
+            }
+            
+            continue; // Retry
+          }
+
           try {
             // OFFICIAL structured output: extract the JSON payload safely without relying on brittle parsing
             const structuredData = JSON.parse(text) as T;
@@ -537,18 +571,37 @@ class GeminiService {
             return this.createSuccessResponse(structuredData, startTime, totalTokensUsed, text);
           } catch (parseError) {
             // Enhanced debugging for unexpected structured output issues
-            lastError = `Google structured output failed - API returned malformed JSON: ${parseError}`;
-            console.warn(
-              `⚠️ UNEXPECTED JSON parse error on attempt ${attempt}: [${(parseError as Error).constructor.name}: ${(parseError as Error).message}]`
-            );
-            console.warn('🚨 CRITICAL DEBUG INFO:');
-            console.warn('  - Response length:', text.length, 'characters');
-            console.warn('  - Response starts with:', text.substring(0, 100));
-            console.warn('  - Response ends with:', text.slice(-100));
-            console.warn('  - Contains "null":', text.includes('null'));
-            console.warn('  - Contains trailing comma:', /,\s*[}\]]/.test(text));
-            console.warn('  - Model config was verified:', !!schema);
-            console.warn('📝 Full raw response:', text);
+            const errorMessage = (parseError as Error).message;
+            
+            // Check if this is a truncation error
+            if (errorMessage.includes('Unterminated string') || 
+                errorMessage.includes('Unexpected end of JSON') ||
+                errorMessage.includes('Unexpected token')) {
+              
+              lastError = `Response truncated - JSON parsing failed: ${errorMessage}`;
+              console.warn(`⚠️ JSON truncation detected on attempt ${attempt}:`);
+              console.warn('  - Error type:', errorMessage);
+              console.warn('  - Response length:', text.length, 'characters');
+              console.warn('  - Response ends with:', text.slice(-100));
+              
+              // Check token usage
+              const outputTokens = usageMetadata?.candidatesTokenCount || 0;
+              console.warn(`  - Output tokens: ${outputTokens}/${generationConfig.maxOutputTokens}`);
+              
+              if (outputTokens >= (generationConfig.maxOutputTokens - 100)) {
+                console.error('🚨 Confirmed: Response truncated due to token limit');
+                
+                // On next retry, we could request simpler output
+                if (attempt < maxRetries) {
+                  console.log('🔄 Will retry with same token limit (may succeed due to variation)');
+                }
+              }
+            } else {
+              // Other JSON parsing errors
+              lastError = `Google structured output failed - API returned malformed JSON: ${parseError}`;
+              console.warn(`⚠️ Non-truncation JSON error on attempt ${attempt}: ${errorMessage}`);
+              console.warn('  - Response preview:', text.substring(0, 200));
+            }
 
             // Continue to retry - the next attempt might work (as shown in your logs)
             continue;

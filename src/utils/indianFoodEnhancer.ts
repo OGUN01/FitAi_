@@ -288,14 +288,19 @@ export class IndianFoodEnhancer {
       east: 'medium',
     };
 
-    return (regionalDefaults[region as keyof typeof regionalDefaults] || 'medium') as 'mild' | 'medium' | 'hot' | 'extra_hot';
+    return (regionalDefaults[region as keyof typeof regionalDefaults] || 'medium') as
+      | 'mild'
+      | 'medium'
+      | 'hot'
+      | 'extra_hot';
   }
 
   /**
    * Calculate traditional Indian serving size
    */
   private calculateTraditionalServing(foodName: string, region: string): number {
-    const servingSizes = (TRADITIONAL_SERVING_SIZES as any)[region] || TRADITIONAL_SERVING_SIZES.general;
+    const servingSizes =
+      (TRADITIONAL_SERVING_SIZES as any)[region] || TRADITIONAL_SERVING_SIZES.general;
 
     // Check for specific food in serving sizes
     for (const [pattern, size] of Object.entries(servingSizes)) {

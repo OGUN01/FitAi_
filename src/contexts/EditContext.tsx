@@ -55,10 +55,11 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   onEditCancel,
 }) => {
   // Get current user for dataManager initialization
-  const { user } = useAuth();
-  const { getCompleteProfile } = useUserStore();
+  const { user, isGuestMode } = useAuth();
+  const { getCompleteProfile, profile } = useUserStore();
   const { savePersonalInfo, saveFitnessGoals, saveDietPreferences, saveWorkoutPreferences } =
     useOnboardingIntegration();
+  const { setProfile } = useUserStore();
 
   // State management
   const [isEditMode, setIsEditMode] = useState(false);
@@ -83,28 +84,44 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         let sectionData = data;
 
         // Load existing data if not provided
-        if (!sectionData && user?.id) {
+        if (!sectionData) {
           try {
-            const profileResponse = await getCompleteProfile(user.id);
+            let profileData = null;
 
-            if (profileResponse.success && profileResponse.data) {
-              const profile = profileResponse.data;
+            if (user?.id && !isGuestMode) {
+              // For authenticated users, load from backend
+              console.log(`🔄 EditContext: Loading ${section} data for authenticated user`);
+              const profileResponse = await getCompleteProfile(user.id);
+              if (profileResponse.success && profileResponse.data) {
+                profileData = profileResponse.data;
+              }
+            } else if (isGuestMode && profile) {
+              // For guest users, use data from userStore
+              console.log(`🔄 EditContext: Loading ${section} data for guest user`);
+              profileData = profile;
+            }
 
+            // Extract section-specific data
+            if (profileData) {
               switch (section) {
                 case 'personalInfo':
-                  sectionData = profile.personalInfo;
+                  sectionData = profileData.personalInfo;
                   break;
                 case 'fitnessGoals':
-                  sectionData = profile.fitnessGoals;
+                  sectionData = profileData.fitnessGoals;
                   break;
                 case 'dietPreferences':
-                  sectionData = profile.dietPreferences;
+                  sectionData = profileData.dietPreferences;
                   break;
                 case 'workoutPreferences':
-                  sectionData = profile.workoutPreferences;
+                  sectionData = profileData.workoutPreferences;
                   break;
                 default:
                   throw new Error(`Unknown section: ${section}`);
+              }
+              
+              if (sectionData) {
+                console.log(`✅ EditContext: Found existing ${section} data:`, sectionData);
               }
             }
           } catch (error) {
@@ -114,16 +131,18 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
         // If no data found, create default structure for editing
         if (!sectionData || Object.keys(sectionData).length === 0) {
+          console.log(`📝 EditContext: No existing ${section} data found, creating default structure`);
+          
           switch (section) {
             case 'personalInfo':
               sectionData = {
-                name: user?.name || '',
-                email: user?.email || '',
-                age: '',
-                gender: '',
-                height: '',
-                weight: '',
-                activityLevel: '',
+                name: user?.name || profile?.personalInfo?.name || '',
+                email: user?.email || profile?.personalInfo?.email || '',
+                age: profile?.personalInfo?.age || '',
+                gender: profile?.personalInfo?.gender || '',
+                height: profile?.personalInfo?.height || '',
+                weight: profile?.personalInfo?.weight || '',
+                activityLevel: profile?.personalInfo?.activityLevel || '',
                 id: `personalInfo_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -133,9 +152,9 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               break;
             case 'fitnessGoals':
               sectionData = {
-                primaryGoals: [],
-                experience: '',
-                timeCommitment: '',
+                primaryGoals: profile?.fitnessGoals?.primaryGoals || [],
+                experience: profile?.fitnessGoals?.experience || '',
+                timeCommitment: profile?.fitnessGoals?.timeCommitment || '',
                 id: `fitnessGoals_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -145,10 +164,13 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               break;
             case 'dietPreferences':
               sectionData = {
-                dietType: 'non-veg' as const,
-                allergies: [],
-                cuisinePreferences: [],
-                restrictions: [],
+                dietType: profile?.dietPreferences?.dietType || 'non-veg' as const,
+                allergies: profile?.dietPreferences?.allergies || [],
+                cuisinePreferences: profile?.dietPreferences?.cuisinePreferences || [],
+                restrictions: profile?.dietPreferences?.restrictions || [],
+                cookingSkill: profile?.dietPreferences?.cookingSkill || 'beginner',
+                mealPrepTime: profile?.dietPreferences?.mealPrepTime || 30,
+                dislikes: profile?.dietPreferences?.dislikes || [],
                 id: `dietPreferences_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -158,11 +180,20 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               break;
             case 'workoutPreferences':
               sectionData = {
-                workoutTypes: [],
-                equipment: [],
-                location: 'both' as const,
-                intensity: 'beginner' as const,
-                timePreference: 30,
+                workoutTypes: profile?.workoutPreferences?.workoutTypes || [],
+                equipment: profile?.workoutPreferences?.equipment || [],
+                location: profile?.workoutPreferences?.location || 'both' as const,
+                intensity: profile?.workoutPreferences?.intensity || 'beginner' as const,
+                timePreference: profile?.workoutPreferences?.timePreference || 30,
+                workoutType: profile?.workoutPreferences?.workoutType || 'strength' as const,
+                timeSlots: profile?.workoutPreferences?.timeSlots || [],
+                duration: profile?.workoutPreferences?.duration || 30,
+                frequency: profile?.workoutPreferences?.frequency || 3,
+                restDays: profile?.workoutPreferences?.restDays || [],
+                trainingStyle: profile?.workoutPreferences?.trainingStyle || 'balanced' as const,
+                goals: profile?.workoutPreferences?.goals || [],
+                injuries: profile?.workoutPreferences?.injuries || [],
+                experience: profile?.workoutPreferences?.experience || 'beginner' as const,
                 id: `workoutPreferences_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -188,7 +219,7 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         setIsLoading(false);
       }
     },
-    [user?.id]
+    [user?.id, isGuestMode, profile, getCompleteProfile]
   );
 
   // Validation function - moved before debouncedValidation to fix hoisting issue
@@ -302,6 +333,28 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       const saveSuccess = saveResult.success;
 
       if (saveSuccess) {
+        // For guest users, update the profile in userStore to reflect changes immediately
+        if (isGuestMode && profile) {
+          const updatedProfile = { ...profile };
+          switch (editSection) {
+            case 'personalInfo':
+              updatedProfile.personalInfo = currentData as PersonalInfo;
+              break;
+            case 'fitnessGoals':
+              updatedProfile.fitnessGoals = currentData as FitnessGoals;
+              break;
+            case 'dietPreferences':
+              updatedProfile.dietPreferences = currentData as DietPreferences;
+              break;
+            case 'workoutPreferences':
+              updatedProfile.workoutPreferences = currentData as WorkoutPreferences;
+              break;
+          }
+          updatedProfile.updatedAt = new Date().toISOString();
+          setProfile(updatedProfile);
+          console.log(`✅ EditContext: Updated ${editSection} in profile for guest user`);
+        }
+
         // Reset edit state
         setIsEditMode(false);
         setEditSection(null);

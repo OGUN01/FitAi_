@@ -8,6 +8,10 @@ import { THEME } from './src/utils/constants';
 import { initializeBackend } from './src/utils/integration';
 import { useAuth } from './src/hooks/useAuth';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { useUserStore } from './src/stores/userStore';
+import { useAuthStore } from './src/stores/authStore';
+import { UserProfile } from './src/types/user';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -52,13 +56,159 @@ if (!isExpoGo) {
 export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
+  const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
 
-  const { user, isLoading, isInitialized, isGuestMode } = useAuth();
+  const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
+  const { setProfile, profile } = useUserStore();
+  const { setGuestMode: setGuestModeInStore } = useAuthStore();
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore ? useNotificationStore() : null;
   const initializeNotifications = notificationStore?.initialize;
   const areNotificationsInitialized = notificationStore?.isInitialized;
+
+  // Helper function to convert OnboardingReviewData to UserProfile
+  const convertOnboardingToProfile = (data: OnboardingReviewData): UserProfile => {
+    return {
+      id: guestId || `guest_${Date.now()}`,
+      personalInfo: data.personalInfo,
+      fitnessGoals: data.fitnessGoals,
+      dietPreferences: data.dietPreferences,
+      workoutPreferences: data.workoutPreferences || {
+        location: 'home' as const,
+        equipment: [],
+        timePreference: 30,
+        intensity: 'beginner' as const,
+        workoutTypes: [],
+        workoutType: 'strength' as const,
+        timeSlots: [],
+        duration: 30,
+        frequency: 3,
+        restDays: [],
+        trainingStyle: 'balanced' as const,
+        goals: [],
+        injuries: [],
+        experience: 'beginner' as const,
+      },
+      bodyAnalysis: data.bodyAnalysis,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
+  // Helper function to migrate existing guest data to current guest ID
+  const migrateExistingGuestData = async (
+    currentGuestId: string
+  ): Promise<OnboardingReviewData | null> => {
+    try {
+      // Get all AsyncStorage keys
+      const allKeys = await AsyncStorage.getAllKeys();
+
+      // Find any onboarding keys (both old and new format)
+      const onboardingKeys = allKeys.filter((key) => key.startsWith('onboarding_'));
+
+      console.log(`🔍 App: Found ${onboardingKeys.length} potential onboarding data keys`);
+
+      // Try to find data with different guest IDs
+      for (const key of onboardingKeys) {
+        if (key !== `onboarding_${currentGuestId}`) {
+          const data = await AsyncStorage.getItem(key);
+          if (data) {
+            console.log(`📦 App: Found legacy onboarding data at key: ${key}`);
+            const parsedData: OnboardingReviewData = JSON.parse(data);
+
+            // Migrate to new key
+            await AsyncStorage.setItem(`onboarding_${currentGuestId}`, data);
+
+            // Remove old key to prevent conflicts
+            await AsyncStorage.removeItem(key);
+
+            console.log(`✅ App: Migrated data from ${key} to onboarding_${currentGuestId}`);
+            return parsedData;
+          }
+        }
+      }
+
+      console.log('📭 App: No legacy onboarding data found to migrate');
+      return null;
+    } catch (error) {
+      console.error('❌ App: Failed to migrate guest data:', error);
+      return null;
+    }
+  };
+
+  // Load existing onboarding data on app startup
+  useEffect(() => {
+    const loadExistingData = async () => {
+      if (!isInitialized) return;
+
+      setIsLoadingOnboarding(true);
+
+      try {
+        console.log('📱 App: Loading existing onboarding data...');
+
+        // If user is authenticated, check if profile exists in store
+        if (user && profile) {
+          console.log('✅ App: Found existing user profile');
+          setIsOnboardingComplete(true);
+          setIsLoadingOnboarding(false);
+          return;
+        }
+
+        // For guest mode, check if we have stored onboarding data
+        if (isGuestMode && guestId) {
+          const storedData = await AsyncStorage.getItem(`onboarding_${guestId}`);
+          let parsedData: OnboardingReviewData | null = null;
+
+          if (storedData) {
+            console.log('✅ App: Found complete guest onboarding data');
+            parsedData = JSON.parse(storedData);
+            setIsOnboardingComplete(true);
+          } else {
+            // Check for partial data
+            const partialData = await AsyncStorage.getItem(`onboarding_partial_${guestId}`);
+            if (partialData) {
+              console.log('📝 App: Found partial guest onboarding data');
+              parsedData = JSON.parse(partialData);
+              setIsOnboardingComplete(false); // Onboarding not complete, but we have partial data
+            } else {
+              // Try to migrate data from legacy keys
+              console.log('🔄 App: No data found, checking for migration...');
+              parsedData = await migrateExistingGuestData(guestId);
+              if (parsedData) {
+                setIsOnboardingComplete(true);
+              }
+            }
+          }
+
+          if (parsedData) {
+            setUserData(parsedData);
+
+            // Only convert to profile and mark complete if we have complete data
+            if (isOnboardingComplete) {
+              const userProfile = convertOnboardingToProfile(parsedData as OnboardingReviewData);
+              setProfile(userProfile);
+            }
+          } else {
+            console.log('📝 App: No existing guest onboarding data found');
+            setIsOnboardingComplete(false);
+          }
+        } else if (!isGuestMode && !user) {
+          // Enable guest mode if no user is authenticated
+          console.log('👤 App: No user found, enabling guest mode...');
+          setGuestModeInStore(true);
+          setIsOnboardingComplete(false);
+        }
+      } catch (error) {
+        console.error('❌ App: Failed to load onboarding data:', error);
+        setIsOnboardingComplete(false);
+      } finally {
+        setIsLoadingOnboarding(false);
+      }
+    };
+
+    loadExistingData();
+  }, [isInitialized, user, isGuestMode, guestId, profile]);
 
   // Initialize backend on app start
   useEffect(() => {
@@ -86,36 +236,71 @@ export default function App() {
     initializeApp();
   }, []);
 
-  // Check if user is authenticated OR guest has completed onboarding
-  useEffect(() => {
-    if (isInitialized && user && !isLoading) {
-      // User is authenticated, they've completed onboarding
-      setIsOnboardingComplete(true);
-    } else if (isInitialized && !user && !isLoading) {
-      // Check if guest user and if they have completed onboarding
-      if (isGuestMode && userData) {
-        console.log('🎭 App: Guest user has completed onboarding, proceeding to main app');
-        setIsOnboardingComplete(true);
-      } else {
-        // No user and either not guest mode or no onboarding data
-        setIsOnboardingComplete(false);
-      }
-    }
-  }, [user, isLoading, isInitialized, isGuestMode, userData]);
+  // This effect is now handled by the loadExistingData effect above
 
-  const handleOnboardingComplete = (data: OnboardingReviewData) => {
-    console.log('🎉 App: Onboarding completed with data:', data);
-    setUserData(data);
-    setIsOnboardingComplete(true);
+  // Helper function to save partial onboarding data
+  const savePartialOnboardingData = async (partialData: Partial<OnboardingReviewData>) => {
+    try {
+      const currentGuestId =
+        guestId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Merge with existing data
+      const existingData = userData || {};
+      const mergedData = { ...existingData, ...partialData };
+
+      await AsyncStorage.setItem(
+        `onboarding_partial_${currentGuestId}`,
+        JSON.stringify(mergedData)
+      );
+      console.log('💾 App: Partial onboarding data saved');
+    } catch (error) {
+      console.error('❌ App: Failed to save partial onboarding data:', error);
+    }
   };
 
-  // Show loading while authentication is initializing
-  if (!isInitialized || isLoading) {
+  const handleOnboardingComplete = async (data: OnboardingReviewData) => {
+    console.log('🎉 App: Onboarding completed with data:', data);
+
+    try {
+      // Ensure guest mode is enabled if not authenticated
+      if (!user && !isGuestMode) {
+        console.log('👤 App: Enabling guest mode for onboarding completion');
+        setGuestModeInStore(true);
+      }
+
+      // Store in component state
+      setUserData(data);
+
+      // Convert to profile format and store in userStore for persistence
+      const userProfile = convertOnboardingToProfile(data);
+      setProfile(userProfile);
+
+      // Store complete data in AsyncStorage with guest ID
+      const currentGuestId =
+        guestId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await AsyncStorage.setItem(`onboarding_${currentGuestId}`, JSON.stringify(data));
+
+      // Remove partial data since onboarding is complete
+      await AsyncStorage.removeItem(`onboarding_partial_${currentGuestId}`);
+
+      console.log('✅ App: Onboarding data stored successfully');
+      setIsOnboardingComplete(true);
+    } catch (error) {
+      console.error('❌ App: Failed to store onboarding data:', error);
+      // Still allow onboarding to complete even if storage fails
+      setIsOnboardingComplete(true);
+    }
+  };
+
+  // Show loading while authentication is initializing or loading onboarding data
+  if (!isInitialized || isLoading || isLoadingOnboarding) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" backgroundColor={THEME.colors.background} />
         <ActivityIndicator size="large" color={THEME.colors.primary} />
-        <Text style={styles.loadingText}>Initializing FitAI...</Text>
+        <Text style={styles.loadingText}>
+          {!isInitialized || isLoading ? 'Initializing FitAI...' : 'Loading your profile...'}
+        </Text>
       </View>
     );
   }
@@ -128,7 +313,11 @@ export default function App() {
         {isOnboardingComplete ? (
           <MainNavigation />
         ) : (
-          <OnboardingFlow onComplete={handleOnboardingComplete} />
+          <OnboardingFlow
+            onComplete={handleOnboardingComplete}
+            initialData={userData || undefined}
+            onPartialSave={savePartialOnboardingData}
+          />
         )}
       </View>
     </ErrorBoundary>

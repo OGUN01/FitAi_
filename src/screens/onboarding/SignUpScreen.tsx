@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { RegisterCredentials } from '../../types/user';
 import { migrationManager } from '../../services/migrationManager';
 import { dataManager } from '../../services/dataManager';
+import { GoogleIcon } from '../../components/icons/GoogleIcon';
 
 interface SignUpScreenProps {
   onSignUpSuccess: () => void;
@@ -150,62 +151,86 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join FitAI and start your fitness journey</Text>
+          <Text style={styles.title}>Join FitAI</Text>
+          <Text style={styles.subtitle}>Start your personalized fitness journey today</Text>
         </View>
 
         <View style={styles.form}>
-          <Input
-            label="Email Address"
-            placeholder="Enter your email address"
-            value={formData.email}
-            onChangeText={(value) => updateField('email', value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            error={errors.email}
-          />
+          {/* Google Sign-Up as Primary */}
+          <TouchableOpacity
+            style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
+            onPress={handleGoogleSignUp}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <View style={styles.googleButtonContent}>
+              <GoogleIcon size={20} style={styles.googleIcon} />
+              <Text style={styles.googlePrimaryText}>Continue with Google</Text>
+            </View>
+            <Text style={styles.googleSubtext}>Instant access • No email verification</Text>
+          </TouchableOpacity>
 
-          <PasswordInput
-            label="Password"
-            placeholder="Create a strong password"
-            value={formData.password}
-            onChangeText={(value) => updateField('password', value)}
-            error={errors.password}
-          />
-
-          <PasswordInput
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            value={formData.confirmPassword}
-            onChangeText={(value) => updateField('confirmPassword', value)}
-            error={errors.confirmPassword}
-          />
-
-          <Button
-            title="Create Account"
-            onPress={handleSignUp}
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={isLoading}
-            style={styles.signUpButton}
-          />
+          <View style={styles.benefitsContainer}>
+            <View style={styles.benefitRow}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={styles.benefitText}>One-click sign up</Text>
+            </View>
+            <View style={styles.benefitRow}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={styles.benefitText}>No password to remember</Text>
+            </View>
+            <View style={styles.benefitRow}>
+              <Text style={styles.checkmark}>✓</Text>
+              <Text style={styles.benefitText}>Start immediately</Text>
+            </View>
+          </View>
 
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>or sign up with email</Text>
             <View style={styles.dividerLine} />
           </View>
 
-          <Button
-            title="🔍 Continue with Google"
-            onPress={handleGoogleSignUp}
-            variant="outline"
-            size="lg"
-            fullWidth
-            loading={isLoading}
-            style={styles.googleButton}
-          />
+          {/* Email form as secondary option */}
+          <View style={styles.emailFormContainer}>
+            <Input
+              label="Email Address"
+              placeholder="Enter your email address"
+              value={formData.email}
+              onChangeText={(value) => updateField('email', value)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={errors.email}
+            />
+
+            <PasswordInput
+              label="Password"
+              placeholder="Create a strong password"
+              value={formData.password}
+              onChangeText={(value) => updateField('password', value)}
+              error={errors.password}
+            />
+
+            <PasswordInput
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChangeText={(value) => updateField('confirmPassword', value)}
+              error={errors.confirmPassword}
+            />
+
+            <Button
+              title="Create Account with Email"
+              onPress={handleSignUp}
+              variant="outline"
+              size="lg"
+              fullWidth
+              loading={isLoading}
+              style={styles.emailSignUpButton}
+            />
+
+            <Text style={styles.emailNote}>Requires email verification</Text>
+          </View>
 
           <Button
             title="Already have an account? Sign In"
@@ -267,8 +292,88 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.lg,
   },
 
-  signUpButton: {
+  // Google Primary Button Styles
+  googlePrimaryButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  googleIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  googlePrimaryText: {
+    color: '#FFFFFF',
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  googleSubtext: {
+    color: '#FFFFFF',
+    fontSize: ResponsiveTheme.fontSize.sm,
+    textAlign: 'center',
+    opacity: 0.9,
+  },
+
+  // Benefits Section
+  benefitsContainer: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  checkmark: {
+    color: '#34A853',
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  benefitText: {
+    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: ResponsiveTheme.fontSize.sm,
+  },
+
+  // Email Form Styles
+  emailFormContainer: {
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  emailSignUpButton: {
     marginTop: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    borderColor: ResponsiveTheme.colors.border,
+  },
+
+  emailNote: {
+    textAlign: 'center',
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontStyle: 'italic',
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -282,20 +387,18 @@ const styles = StyleSheet.create({
     flex: 1,
     height: rh(1),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    opacity: 0.3,
   },
 
   dividerText: {
     color: ResponsiveTheme.colors.textMuted,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    fontSize: rf(14),
-  },
-
-  googleButton: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    fontSize: rf(13),
+    fontStyle: 'italic',
   },
 
   loginButton: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.lg,
   },
 
   footer: {

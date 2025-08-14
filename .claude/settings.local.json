@@ -99,7 +99,9 @@
       "Bash(dir:*)",
       "Bash(touch:*)",
       "Bash(git pull:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "mcp__supabase__search_docs",
+      "WebSearch"
     ],
     "deny": []
   },

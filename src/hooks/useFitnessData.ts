@@ -338,7 +338,12 @@ export const useFitnessData = (): UseFitnessDataReturn => {
         rest_seconds?: number;
       }[];
     }): Promise<boolean> => {
-      if (!user?.id) return false;
+      // For guest users, we should skip the database call and return true
+      // since workout sessions for guests are handled locally in the fitnessStore
+      if (!user?.id) {
+        console.log('🏃 Guest user - skipping database workout session, using local store only');
+        return true; // Return success since local store will handle it
+      }
 
       try {
         const response = await fitnessDataService.startWorkoutSession(user.id, workoutData);

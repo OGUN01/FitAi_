@@ -363,7 +363,7 @@ export const GoalsScreen: React.FC<GoalsScreenProps> = ({
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? 'Save Changes' : 'Complete Setup'}
+            title={isEditMode ? 'Save Changes' : 'Next'}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
