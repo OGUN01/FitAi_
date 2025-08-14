@@ -2,7 +2,7 @@
   "expo": {
     "name": "FitAI - AI Fitness Coach",
     "slug": "FitAI",
-    "version": "0.1.8",
+    "version": "1.0.0",
     "owner": "harsh9887",
     "description": "Your personal AI-powered fitness coach with workout plans, nutrition guidance, and progress tracking.",
     "orientation": "portrait",
@@ -27,7 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.fitai.app",
-      "versionCode": 7,
+      "versionCode": 10,
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
