@@ -103,7 +103,10 @@
       "mcp__supabase__search_docs",
       "WebSearch"
     ],
-    "deny": []
+    "deny": [],
+    "additionalDirectories": [
+      "D:\\d D:\\FitAi"
+    ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [

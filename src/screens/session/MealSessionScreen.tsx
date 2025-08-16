@@ -47,7 +47,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
   const [mealStartTime] = useState(new Date());
   const [fadeAnim] = useState(new Animated.Value(1));
 
-  const totalSteps = meal.items.length;
+  const totalSteps = meal.items?.length ?? 0;
   const completedSteps = ingredientProgress.filter((ip) => ip.isCompleted).length;
   const overallProgress = completedSteps / totalSteps;
 

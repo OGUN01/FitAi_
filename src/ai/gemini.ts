@@ -5,6 +5,7 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/ge
 import { AIResponse } from '../types/ai';
 import * as FileSystem from 'expo-file-system';
 import { APIKeyRotator } from '../utils/apiKeyRotator';
+import Constants from 'expo-constants';
 
 // ============================================================================
 // CONFIGURATION
@@ -13,9 +14,13 @@ import { APIKeyRotator } from '../utils/apiKeyRotator';
 // Safe environment variable access to prevent bundle evaluation errors
 const getEnvVar = (key: string) => {
   try {
-    return (typeof process !== 'undefined' && process.env && process.env[key]) || null;
+    // Try Expo Constants first (works in production builds)
+    const value = Constants.expoConfig?.extra?.[key] || 
+                  Constants.manifest?.extra?.[key] ||
+                  (typeof process !== 'undefined' && process.env && process.env[key]);
+    return value || null;
   } catch (error) {
-    console.warn(`Environment variable ${key} not available`);
+    console.warn(`Environment variable ${key} not available:`, error);
     return null;
   }
 };

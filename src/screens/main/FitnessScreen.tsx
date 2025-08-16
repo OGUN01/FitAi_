@@ -108,26 +108,30 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     });
 
     // Mark workout days
-    weeklyPlan.workouts.forEach((workout) => {
-      const progress = getWorkoutProgress(workout.id);
-      workoutData[workout.dayOfWeek] = {
-        hasWorkout: true,
-        isCompleted: progress?.progress === 100,
-        isRestDay: false,
-      };
-    });
+    if (weeklyPlan.workouts && Array.isArray(weeklyPlan.workouts)) {
+      weeklyPlan.workouts.forEach((workout) => {
+        const progress = getWorkoutProgress(workout.id);
+        workoutData[workout.dayOfWeek] = {
+          hasWorkout: true,
+          isCompleted: progress?.progress === 100,
+          isRestDay: false,
+        };
+      });
+    }
 
     // Mark actual rest days
-    weeklyPlan.restDays.forEach((day) => {
-      workoutData[day] = { hasWorkout: false, isCompleted: false, isRestDay: true };
-    });
+    if (weeklyPlan.restDays && Array.isArray(weeklyPlan.restDays)) {
+      weeklyPlan.restDays.forEach((day) => {
+        workoutData[day] = { hasWorkout: false, isCompleted: false, isRestDay: true };
+      });
+    }
 
     return workoutData;
   };
 
   // Get workouts for selected day
   const getWorkoutsForDay = (day: string): DayWorkout[] => {
-    if (!weeklyPlan) return [];
+    if (!weeklyPlan || !weeklyPlan.workouts || !Array.isArray(weeklyPlan.workouts)) return [];
     return weeklyPlan.workouts.filter((workout) => workout.dayOfWeek === day);
   };
 
@@ -142,7 +146,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   // Check if selected day is a rest day
   const isRestDay = (day: string): boolean => {
-    if (!weeklyPlan) return false;
+    if (!weeklyPlan || !weeklyPlan.restDays || !Array.isArray(weeklyPlan.restDays)) return false;
     return weeklyPlan.restDays.includes(day);
   };
 
@@ -496,7 +500,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const handleViewWorkoutDetails = (workout: DayWorkout) => {
     Alert.alert(
       workout.title,
-      `${workout.description}\n\nDuration: ${workout.duration} min\nCalories: ${workout.estimatedCalories}\nExercises: ${workout.exercises.length}\n\nTarget: ${workout.targetMuscleGroups.join(', ')}`,
+      `${workout.description}\n\nDuration: ${workout.duration} min\nCalories: ${workout.estimatedCalories}\nExercises: ${workout.exercises?.length ?? 0}\n\nTarget: ${workout.targetMuscleGroups?.join(', ') ?? 'Various'}`,
       [{ text: 'OK' }]
     );
   };
@@ -611,7 +615,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       </Animated.View>
 
       {/* Compact Plan Summary */}
-      {weeklyPlan && (
+      {weeklyPlan && weeklyPlan.workouts && weeklyPlan.restDays && (
         <View style={styles.compactPlanSummary}>
           <View style={styles.planHeader}>
             <View style={styles.planTitleContainer}>
@@ -626,19 +630,19 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
           <View style={styles.horizontalStats}>
             <View style={styles.compactStatItem}>
-              <Text style={styles.compactStatValue}>{weeklyPlan.workouts.length}</Text>
+              <Text style={styles.compactStatValue}>{weeklyPlan.workouts?.length ?? 0}</Text>
               <Text style={styles.compactStatLabel}>Workouts</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.compactStatItem}>
               <Text style={styles.compactStatValue}>
-                {Math.round(weeklyPlan.totalEstimatedCalories)}
+                {Math.round(weeklyPlan.totalEstimatedCalories || 0)}
               </Text>
               <Text style={styles.compactStatLabel}>Total Calories</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.compactStatItem}>
-              <Text style={styles.compactStatValue}>{weeklyPlan.restDays.length}</Text>
+              <Text style={styles.compactStatValue}>{weeklyPlan.restDays?.length ?? 0}</Text>
               <Text style={styles.compactStatLabel}>Rest Days</Text>
             </View>
           </View>

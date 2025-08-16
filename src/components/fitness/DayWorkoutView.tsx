@@ -137,8 +137,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           {/* Expanded Exercise Details */}
           {expandedWorkout === workout.id && (
             <View style={styles.exercisesContainer}>
-              <Text style={styles.exercisesTitle}>Exercises ({workout.exercises.length})</Text>
-              {workout.exercises.map((exerciseSet, exerciseIndex) => {
+              <Text style={styles.exercisesTitle}>Exercises ({workout.exercises?.length ?? 0})</Text>
+              {workout.exercises?.map((exerciseSet, exerciseIndex) => {
                 // Create a mock Exercise object for display
                 const mockExercise = {
                   id: `${workout.id}_${exerciseIndex}`,

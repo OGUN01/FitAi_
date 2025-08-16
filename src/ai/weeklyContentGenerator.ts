@@ -192,6 +192,12 @@ class WeeklyContentGeneratorService {
         '  - aiPlan preview (first 500 chars):',
         JSON.stringify(aiPlan, null, 1)?.substring(0, 500)
       );
+      
+      // 🚨 PRODUCTION DEBUG: Log missing required fields
+      console.log('🚨 Required Field Check (for production debugging):');
+      console.log('  - planTitle:', aiPlan?.planTitle ? `"${aiPlan.planTitle}"` : '❌ MISSING - will use fallback');
+      console.log('  - planDescription:', aiPlan?.planDescription ? `"${aiPlan.planDescription.substring(0, 50)}..."` : '❌ MISSING - will use fallback');
+      console.log('  - experienceLevel:', aiPlan?.experienceLevel ? `"${aiPlan.experienceLevel}"` : '❌ MISSING - will use fallback');
 
       // Additional validation for the expected properties
       console.log('🔍 Expected properties check:');
@@ -281,7 +287,7 @@ class WeeklyContentGeneratorService {
         };
       }
 
-      // Create enhanced weekly plan
+      // Create enhanced weekly plan with production-safe fallbacks
       const weeklyPlan: WeeklyWorkoutPlan = {
         id: this.generateWeeklyPlanId(weekNumber),
         userId: 'current-user', // Will be set by calling code
@@ -292,10 +298,10 @@ class WeeklyContentGeneratorService {
         restDays: aiPlan.restDays || planConfig.restDays,
         progressionNotes: aiPlan.weeklyProgression?.nextWeekAdjustments || [],
         totalEstimatedCalories: aiPlan.estimatedWeeklyCalories || 0,
-        planTitle: aiPlan.planTitle,
-        planDescription: aiPlan.planDescription,
-        experienceLevel: aiPlan.experienceLevel,
-        weeklyGoals: aiPlan.weeklyGoals || [],
+        planTitle: aiPlan.planTitle || `${personalInfo.name}'s Week ${weekNumber} Plan`,
+        planDescription: aiPlan.planDescription || `Personalized ${fitnessGoals.experience_level} workout plan for ${personalInfo.name}`,
+        experienceLevel: aiPlan.experienceLevel || fitnessGoals.experience_level,
+        weeklyGoals: aiPlan.weeklyGoals || [`Improve ${fitnessGoals.primary_goals?.join(' and ') || 'fitness'}`],
         createdAt: new Date().toISOString(),
       };
 

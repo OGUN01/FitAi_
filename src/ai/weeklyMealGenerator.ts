@@ -255,10 +255,10 @@ class WeeklyMealContentGenerator {
         (acc: number, m: any) => acc + (m.totalCalories || 0),
         0
       ),
-      planTitle: aiPlan.planTitle,
-      planDescription: aiPlan.planDescription,
+      planTitle: aiPlan.planTitle || `${personalInfo.name}'s Weekly Meal Plan`,
+      planDescription: aiPlan.planDescription || `Personalized nutrition plan for ${personalInfo.name} targeting ${fitnessGoals.primary_goals?.join(' and ') || 'health goals'}`,
       dietaryRestrictions: aiPlan.dietaryRestrictions || [],
-      weeklyGoals: aiPlan.weeklyGoals || [],
+      weeklyGoals: aiPlan.weeklyGoals || [`Meet nutritional targets for ${fitnessGoals.primary_goals?.join(' and ') || 'fitness goals'}`],
       createdAt: new Date().toISOString(),
     };
 

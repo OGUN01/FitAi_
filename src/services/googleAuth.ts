@@ -5,6 +5,7 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
+import Constants from 'expo-constants';
 
 /**
  * Google Authentication Service
@@ -41,9 +42,28 @@ class GoogleAuthService {
     try {
       if (Platform.OS !== 'web') {
         // Configure for mobile platforms (iOS/Android)
+        // Debug: Check what Constants actually contains
+        console.log('🔍 Google Auth Debug - Constants check:');
+        console.log('  - expoConfig.extra keys:', Object.keys(Constants.expoConfig?.extra || {}));
+        console.log('  - manifest.extra keys:', Object.keys(Constants.manifest?.extra || {}));
+        console.log('  - Web Client ID from expoConfig:', Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+        console.log('  - Web Client ID from manifest:', Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+
+        const webClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
+          Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
+          process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+          
+        const iosClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 
+          Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+          process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
+
+        console.log('🔍 Final client IDs:');
+        console.log('  - Web Client ID:', webClientId ? webClientId.substring(0, 20) + '...' : 'NOT SET');
+        console.log('  - iOS Client ID:', iosClientId ? iosClientId.substring(0, 20) + '...' : 'NOT SET');
+
         await GoogleSignin.configure({
-          webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '', // You'll need to set this
-          iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '', // You'll need to set this
+          webClientId,
+          iosClientId,
           offlineAccess: true,
           hostedDomain: '',
           forceCodeForRefreshToken: true,
@@ -91,6 +111,7 @@ class GoogleAuthService {
       // Get user info from Google
       const userInfo: any = await GoogleSignin.signIn();
       console.log('✅ Google Sign-In successful');
+      console.log('🔍 Google userInfo structure:', JSON.stringify(userInfo, null, 2));
 
       // Get ID token for Supabase
       const tokens = await GoogleSignin.getTokens();
@@ -129,7 +150,7 @@ class GoogleAuthService {
 
       // Check if this is a new user
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('id')
         .eq('id', data.user.id)
         .single();
@@ -138,17 +159,39 @@ class GoogleAuthService {
 
       if (isNewUser) {
         // Create basic profile for new Google user
-        const { error: profileError } = await supabase.from('user_profiles').insert({
+        console.log('🔍 Creating profile for new Google user...');
+        console.log('🔍 Available user data:', {
+          userId: data.user.id,
+          email: data.user.email,
+          userInfo: userInfo
+        });
+        
+        // Extract name from Google userInfo - try different possible structures
+        const userName = userInfo?.data?.user?.name || 
+                        userInfo?.user?.name || 
+                        userInfo?.user?.givenName || 
+                        userInfo?.displayName ||
+                        userInfo?.name ||
+                        'Google User';
+        
+        console.log('🔍 Extracted user name:', userName);
+        
+        const { error: profileError } = await supabase.from('profiles').insert({
           id: data.user.id,
           email: data.user.email!,
-          name: (userInfo as any)?.user?.name || (userInfo as any)?.user?.givenName || '',
+          name: userName,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
 
         if (profileError) {
           console.warn('⚠️ Failed to create profile for Google user:', profileError);
+          console.warn('⚠️ Profile error details:', JSON.stringify(profileError, null, 2));
+        } else {
+          console.log('✅ Successfully created profile for Google user');
         }
+      } else {
+        console.log('✅ Returning Google user - profile exists');
       }
 
       console.log('✅ Google Sign-In completed successfully');
@@ -271,7 +314,7 @@ class GoogleAuthService {
 
       // Check if this is a new user by looking for existing profile
       const { data: profile } = await supabase
-        .from('user_profiles')
+        .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single();
@@ -280,7 +323,7 @@ class GoogleAuthService {
 
       if (isNewUser) {
         // Create profile for new Google user
-        const { error: profileError } = await supabase.from('user_profiles').insert({
+        const { error: profileError } = await supabase.from('profiles').insert({
           id: user.id,
           email: user.email!,
           name: user.user_metadata?.full_name || user.user_metadata?.name || '',

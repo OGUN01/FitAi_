@@ -150,7 +150,7 @@ export const MealCard: React.FC<MealCardProps> = ({
           </View>
           <View style={styles.detailItem}>
             <Text style={styles.detailIcon}>🥘</Text>
-            <Text style={styles.detailText}>{meal.items.length} ingredients</Text>
+            <Text style={styles.detailText}>{meal.items?.length ?? 0} ingredients</Text>
           </View>
         </View>
 

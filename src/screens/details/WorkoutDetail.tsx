@@ -187,9 +187,9 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
         {/* Exercises List */}
         <View style={styles.exercisesSection}>
-          <Text style={styles.sectionTitle}>Exercises ({workout.exercises.length})</Text>
+          <Text style={styles.sectionTitle}>Exercises ({workout.exercises?.length ?? 0})</Text>
 
-          {workout.exercises.map((exercise, index) => (
+          {workout.exercises?.map((exercise, index) => (
             <Card
               key={exercise.id}
               style={styles.exerciseCard}

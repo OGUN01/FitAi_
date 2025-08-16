@@ -137,7 +137,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
           <View style={styles.detailItem}>
             <Text style={styles.detailIcon}>🎯</Text>
             <Text style={styles.detailLabel}>Exercises</Text>
-            <Text style={styles.detailValue}>{workout.exercises.length}</Text>
+            <Text style={styles.detailValue}>{workout.exercises?.length ?? 0}</Text>
           </View>
         </View>
 

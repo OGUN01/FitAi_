@@ -878,8 +878,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Get meals for selected day
   const getTodaysMeals = (): DayMeal[] => {
-    if (!weeklyMealPlan) {
-      console.log('🔍 getTodaysMeals: No weekly meal plan available');
+    if (!weeklyMealPlan || !weeklyMealPlan.meals || !Array.isArray(weeklyMealPlan.meals)) {
+      console.log('🔍 getTodaysMeals: No weekly meal plan or meals available');
       return [];
     }
     const mealsForDay = weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
@@ -1906,7 +1906,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     <View style={styles.mealModalDetailItem}>
                       <Text style={styles.mealModalDetailLabel}>🛒 Ingredients:</Text>
                       <Text style={styles.mealModalDetailValue}>
-                        {selectedMealForPreparation.items.length} items
+                        {selectedMealForPreparation.items?.length ?? 0} items
                       </Text>
                     </View>
                   </View>

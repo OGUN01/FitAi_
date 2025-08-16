@@ -13,6 +13,7 @@ import { useAuthStore } from './src/stores/authStore';
 import { UserProfile } from './src/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import { googleAuthService } from './src/services/googleAuth';
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
 const isExpoGo = (() => {
@@ -155,6 +156,28 @@ export default function App() {
           return;
         }
 
+        // If user is authenticated but no profile in store, try to load from database
+        if (user && !profile) {
+          console.log('🔄 App: User authenticated but no profile in store, loading from database...');
+          try {
+            const { getProfile } = useUserStore.getState();
+            const profileResponse = await getProfile(user.id);
+            
+            if (profileResponse.success && profileResponse.data) {
+              console.log('✅ App: Profile loaded from database successfully');
+              setIsOnboardingComplete(true);
+              setIsLoadingOnboarding(false);
+              return;
+            } else {
+              console.log('📝 App: No profile found in database for authenticated user - needs onboarding');
+              setIsOnboardingComplete(false);
+            }
+          } catch (error) {
+            console.error('❌ App: Failed to load profile from database:', error);
+            setIsOnboardingComplete(false);
+          }
+        }
+
         // For guest mode, check if we have stored onboarding data
         if (isGuestMode && guestId) {
           const storedData = await AsyncStorage.getItem(`onboarding_${guestId}`);
@@ -217,6 +240,15 @@ export default function App() {
         console.log('🚀 FitAI: Starting app initialization...');
         await initializeBackend();
         console.log('✅ FitAI: Backend initialization completed');
+
+        // Initialize Google Sign-In
+        try {
+          console.log('📱 FitAI: Initializing Google Sign-In...');
+          await googleAuthService.configure();
+          console.log('✅ FitAI: Google Sign-In initialization completed');
+        } catch (error) {
+          console.error('❌ FitAI: Google Sign-In initialization failed:', error);
+        }
 
         // Initialize notifications only if not in Expo Go
         if (!isExpoGo && initializeNotifications && !areNotificationsInitialized) {
