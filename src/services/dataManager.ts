@@ -607,7 +607,40 @@ export class DataManagerService {
   private isOnline: boolean = true;
 
   setUserId(userId: string | null) {
+    console.log('🔐 DataManager.setUserId() called:', {
+      previousUserId: this.userId,
+      newUserId: userId,
+      timestamp: new Date().toISOString()
+    });
     this.userId = userId;
+  }
+
+  getCurrentUserId(): string {
+    return this.userId || 'guest_user';
+  }
+
+  getCurrentUserUUID(): string {
+    console.log('🔍 DataManager.getCurrentUserUUID() called:', {
+      hasUserId: !!this.userId,
+      userId: this.userId,
+      isGuestUser: this.userId === 'guest_user'
+    });
+    
+    // If we have a real user ID, return it (should already be UUID from Supabase)
+    if (this.userId && this.userId !== 'guest_user') {
+      console.log('✅ Returning real authenticated user ID:', this.userId);
+      return this.userId;
+    }
+    
+    // For guest users, generate a proper UUID v4 format
+    // This ensures guest users get a valid UUID for database operations
+    const generatedUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+    console.log('⚠️ Generating UUID for guest user:', generatedUUID);
+    return generatedUUID;
   }
 
   setOnlineStatus(isOnline: boolean) {
@@ -801,14 +834,22 @@ export class DataManagerService {
     try {
       const localKey = `dietPreferences_${this.userId || 'guest'}`;
 
-      const localSuccess = await enhancedLocalStorage.storeData(localKey, data);
+      // Add default values for optional fields if not provided
+      const dataWithDefaults = {
+        ...data,
+        cookingSkill: data.cookingSkill || 'intermediate',
+        mealPrepTime: data.mealPrepTime || 'moderate',
+        dislikes: data.dislikes || []
+      };
+
+      const localSuccess = await enhancedLocalStorage.storeData(localKey, dataWithDefaults);
 
       let remoteSuccess = false;
       if (this.userId && this.isOnline) {
         try {
           const { error } = await supabase
             .from('diet_preferences')
-            .upsert({ ...data, user_id: this.userId });
+            .upsert({ ...dataWithDefaults, user_id: this.userId });
           remoteSuccess = !error;
         } catch (error) {
           console.error('Failed to save diet preferences to remote:', error);

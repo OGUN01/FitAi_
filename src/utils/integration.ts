@@ -166,9 +166,23 @@ export const useOnboardingIntegration = () => {
     try {
       const currentUserId = getUserId();
 
+      // Add default values for optional fields
+      const dietPrefsWithDefaults: any = {
+        ...dietPreferences,
+        cookingSkill: (dietPreferences as any).cookingSkill || 'intermediate',
+        mealPrepTime: (dietPreferences as any).mealPrepTime || 'moderate',
+        dislikes: (dietPreferences as any).dislikes || [],
+        id: `diet_${currentUserId}`,
+        version: 1,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        syncStatus: 'pending' as const,
+        source: 'local' as const
+      };
+
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataManager.setUserId(currentUserId);
-      const localSaveSuccess = await dataManager.saveDietPreferences(dietPreferences);
+      const localSaveSuccess = await dataManager.saveDietPreferences(dietPrefsWithDefaults);
 
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save diet preferences locally');

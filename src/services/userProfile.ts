@@ -207,13 +207,21 @@ class UserProfileService {
     updates: UpdateFitnessGoalsRequest
   ): Promise<FitnessGoalsResponse> {
     try {
+      // Use upsert to handle update or insert
       const { data, error } = await supabase
         .from('fitness_goals')
-        .update(updates)
-        .eq('user_id', userId)
+        .upsert(
+          {
+            user_id: userId,
+            ...updates,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+            ignoreDuplicates: false,
+          }
+        )
         .select()
-        .order('created_at', { ascending: false })
-        .limit(1)
         .single();
 
       if (error) {
@@ -237,13 +245,15 @@ class UserProfileService {
   }
 
   /**
-   * Get complete user profile with fitness goals
+   * Get complete user profile with fitness goals, diet preferences, and workout preferences
    */
   async getCompleteProfile(userId: string): Promise<UserProfileResponse> {
     try {
-      const [profileResponse, goalsResponse] = await Promise.all([
+      const [profileResponse, goalsResponse, dietResponse, workoutResponse] = await Promise.all([
         this.getProfile(userId),
         this.getFitnessGoals(userId),
+        this.getDietPreferences(userId),
+        this.getWorkoutPreferences(userId),
       ]);
 
       if (!profileResponse.success) {
@@ -257,6 +267,16 @@ class UserProfileService {
         userProfile.fitnessGoals = goalsResponse.data;
       }
 
+      // Add diet preferences if available
+      if (dietResponse.success && dietResponse.data) {
+        userProfile.dietPreferences = dietResponse.data;
+      }
+
+      // Add workout preferences if available
+      if (workoutResponse.success && workoutResponse.data) {
+        userProfile.workoutPreferences = workoutResponse.data;
+      }
+
       return {
         success: true,
         data: userProfile,
@@ -265,6 +285,89 @@ class UserProfileService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to get complete profile',
+      };
+    }
+  }
+
+  /**
+   * Get diet preferences for a user
+   */
+  async getDietPreferences(userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('diet_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found - this is okay
+          return { success: true, data: null };
+        }
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          dietType: data.diet_type,
+          allergies: data.allergies || [],
+          cuisinePreferences: data.cuisine_preferences || [],
+          restrictions: data.restrictions || [],
+          // Optional fields with defaults
+          cookingSkill: 'intermediate',
+          mealPrepTime: 'moderate',
+          dislikes: []
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get diet preferences',
+      };
+    }
+  }
+
+  /**
+   * Get workout preferences for a user
+   */
+  async getWorkoutPreferences(userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      const { data, error } = await supabase
+        .from('workout_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found - this is okay
+          return { success: true, data: null };
+        }
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          workoutTypes: data.workout_types || [],
+          equipment: data.equipment || [],
+          location: data.location || 'home',
+          timePreference: data.time_preference || 30,
+          intensity: data.intensity || 'intermediate',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get workout preferences',
       };
     }
   }
@@ -340,9 +443,9 @@ class UserProfileService {
   private mapDatabaseGoalsToFitnessGoals(dbGoals: DatabaseFitnessGoals): FitnessGoals {
     return {
       primaryGoals: dbGoals.primary_goals,
-      timeCommitment: dbGoals.preferred_workout_duration?.toString?.() || '',
-      experience: dbGoals.fitness_level || '',
-      experience_level: dbGoals.fitness_level || '',
+      timeCommitment: dbGoals.time_commitment || '',
+      experience: dbGoals.experience_level || '',
+      experience_level: dbGoals.experience_level || '',
     };
   }
 }

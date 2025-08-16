@@ -5,7 +5,25 @@ import { WeeklyMealPlan, DayMeal } from '../ai/weeklyMealGenerator';
 import { SyncStatus } from '../types/localData';
 import { Meal } from '../types/ai';
 import { crudOperations } from '../services/crudOperations';
-import userSessionManager from '../utils/userSession';
+import { dataManager } from '../services/dataManager';
+import { offlineService } from '../services/offline';
+import { useAuthStore } from '../stores/authStore';
+import { supabase } from '../services/supabase';
+
+// React Native-compatible UUID v4 generator
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+// UUID validation helper
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
 
 interface MealProgress {
   mealId: string;
@@ -192,10 +210,70 @@ export const useNutritionStore = create<NutritionState>()(
             throw error;
           }
         }
+
+        // ALSO save the complete weekly meal plan to the new weekly_meal_plans table
+        try {
+          // Clear any failed UUID attempts in the queue first
+          await offlineService.clearFailedActionsForTable('weekly_meal_plans');
+          
+          console.log('🍽️ Saving complete weekly meal plan to database...');
+          
+          // Get authenticated user ID directly from auth store
+          const authUser = useAuthStore.getState().user;
+          const userId = authUser?.id;
+          const planId = generateUUID();
+          
+          console.log('🍽️ NutritionStore: Auth user from store:', authUser);
+          console.log('🍽️ NutritionStore: User ID from auth:', userId);
+          console.log('🍽️ NutritionStore: Plan ID generated:', planId);
+          
+          // Ensure user is authenticated before database operation
+          if (!userId) {
+            console.error('❌ No authenticated user - cannot save to database');
+            throw new Error('User must be authenticated to save meal plans');
+          }
+          
+          // Validate UUIDs before database operation
+          if (!isValidUUID(userId)) {
+            console.error('❌ Invalid user UUID format:', userId);
+            throw new Error('Invalid user UUID format');
+          }
+          if (!isValidUUID(planId)) {
+            console.error('❌ Invalid plan UUID format:', planId);
+            throw new Error('Invalid plan UUID format');
+          }
+          
+          console.log('✅ UUID validation passed:', { userId, planId });
+          
+          const weeklyMealPlanData = {
+            id: planId,
+            user_id: userId,
+            plan_title: plan.planTitle,
+            plan_description: plan.planDescription || `${plan.meals.length} meals planned`,
+            week_number: plan.weekNumber || 1,
+            total_meals: plan.meals.length,
+            total_calories: plan.totalCalories || plan.meals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
+            plan_data: plan, // Store complete meal plan as JSONB
+            is_active: true
+          };
+
+          await offlineService.queueAction({
+            type: 'CREATE',
+            table: 'weekly_meal_plans',
+            data: weeklyMealPlanData,
+            userId: useAuthStore.getState().user?.id || 'guest',
+            maxRetries: 3,
+          });
+          console.log('✅ Weekly meal plan queued for database sync');
+        } catch (weeklyMealPlanError) {
+          console.error('❌ Failed to save weekly meal plan to database:', weeklyMealPlanError);
+          // Don't fail the whole operation for this
+        }
       },
 
       loadWeeklyMealPlan: async () => {
         try {
+          // First check local storage
           const currentPlan = get().weeklyMealPlan;
           if (currentPlan) {
             console.log('📋 Found meal plan in store:', {
@@ -212,7 +290,41 @@ export const useNutritionStore = create<NutritionState>()(
             return currentPlan;
           }
 
-          // Try to load from database
+          // Try to load complete weekly meal plan from database
+          try {
+            const authUser = useAuthStore.getState().user;
+            const userId = authUser?.id;
+            if (userId) {
+              console.log('🔄 Loading weekly meal plan from database...');
+              const { data: weeklyMealPlans, error } = await supabase
+                .from('weekly_meal_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+              if (!error && weeklyMealPlans && weeklyMealPlans.length > 0) {
+                const latestPlan = weeklyMealPlans[0];
+                console.log(`✅ Found weekly meal plan in database: ${latestPlan.plan_title}`);
+                
+                // Extract the complete plan data from JSONB
+                const planData = latestPlan.plan_data;
+                if (planData && planData.meals) {
+                  // Update local storage with retrieved plan
+                  set({ weeklyMealPlan: planData });
+                  console.log('📋 Restored weekly meal plan from database to local storage');
+                  return planData;
+                }
+              } else {
+                console.log('📋 No weekly meal plan found in database');
+              }
+            }
+          } catch (dbError) {
+            console.warn('⚠️ Failed to load from database, trying individual meal logs:', dbError);
+          }
+
+          // Fallback: Try to load individual meal logs
           const mealLogs = await crudOperations.readMealLogs();
           if (mealLogs.length > 0) {
             console.log('📋 Found existing meal logs in database:', {
@@ -225,7 +337,7 @@ export const useNutritionStore = create<NutritionState>()(
                 {} as Record<string, number>
               ),
             });
-            // Could reconstruct weekly plan from logs if needed
+            // Could reconstruct weekly plan from logs if needed in the future
           } else {
             console.log('📭 No meal logs found in database');
           }

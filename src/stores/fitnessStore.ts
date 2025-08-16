@@ -3,7 +3,25 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WeeklyWorkoutPlan, DayWorkout } from '../ai/weeklyContentGenerator';
 import { crudOperations } from '../services/crudOperations';
-import userSessionManager from '../utils/userSession';
+import { dataManager } from '../services/dataManager';
+import { offlineService } from '../services/offline';
+import { useAuthStore } from '../stores/authStore';
+import { supabase } from '../services/supabase';
+
+// React Native-compatible UUID v4 generator
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
+// UUID validation helper
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
 
 interface WorkoutProgress {
   workoutId: string;
@@ -137,7 +155,7 @@ export const useFitnessStore = create<FitnessState>()(
               const workoutSession = {
                 id: `workout_${workout.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                 workoutId: workout.id,
-                userId: userSessionManager.getDevUserId(),
+                userId: useAuthStore.getState().user?.id || 'guest',
                 startedAt: new Date().toISOString(),
                 completedAt: null,
                 duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range
@@ -187,20 +205,115 @@ export const useFitnessStore = create<FitnessState>()(
             throw error;
           }
         }
+
+        // ALSO save the complete weekly plan to the new weekly_workout_plans table
+        try {
+          // Clear any failed UUID attempts in the queue first
+          await offlineService.clearFailedActionsForTable('weekly_workout_plans');
+          
+          console.log('📋 Saving complete weekly workout plan to database...');
+          
+          // Get authenticated user ID directly from auth store
+          const authUser = useAuthStore.getState().user;
+          const userId = authUser?.id;
+          const planId = generateUUID();
+          
+          console.log('🔍 FitnessStore: Auth user from store:', authUser);
+          console.log('🔍 FitnessStore: User ID from auth:', userId);
+          console.log('🔍 FitnessStore: Plan ID generated:', planId);
+          
+          // Ensure user is authenticated before database operation
+          if (!userId) {
+            console.error('❌ No authenticated user - cannot save to database');
+            throw new Error('User must be authenticated to save workout plans');
+          }
+          
+          // Validate UUIDs before database operation
+          if (!isValidUUID(userId)) {
+            console.error('❌ Invalid user UUID format:', userId);
+            throw new Error('Invalid user UUID format');
+          }
+          if (!isValidUUID(planId)) {
+            console.error('❌ Invalid plan UUID format:', planId);
+            throw new Error('Invalid plan UUID format');
+          }
+          
+          console.log('✅ UUID validation passed:', { userId, planId });
+          
+          const weeklyPlanData = {
+            id: planId,
+            user_id: userId,
+            plan_title: plan.planTitle,
+            plan_description: plan.planDescription || `${plan.workouts.length} workouts over ${plan.duration}`,
+            week_number: plan.weekNumber || 1,
+            total_workouts: plan.workouts.length,
+            duration_range: plan.duration,
+            plan_data: plan, // Store complete plan as JSONB
+            is_active: true
+          };
+
+          await offlineService.queueAction({
+            type: 'CREATE',
+            table: 'weekly_workout_plans',
+            data: weeklyPlanData,
+            userId: useAuthStore.getState().user?.id || 'guest',
+            maxRetries: 3,
+          });
+          console.log('✅ Weekly workout plan queued for database sync');
+        } catch (weeklyPlanError) {
+          console.error('❌ Failed to save weekly workout plan to database:', weeklyPlanError);
+          // Don't fail the whole operation for this
+        }
       },
 
       loadWeeklyWorkoutPlan: async () => {
         try {
+          // First check local storage
           const currentPlan = get().weeklyWorkoutPlan;
           if (currentPlan) {
+            console.log('📋 Found workout plan in local storage');
             return currentPlan;
           }
 
-          // Try to load from database
+          // Try to load complete weekly plan from database
+          try {
+            const authUser = useAuthStore.getState().user;
+            const userId = authUser?.id;
+            if (userId) {
+              console.log('🔄 Loading weekly workout plan from database...');
+              const { data: weeklyPlans, error } = await supabase
+                .from('weekly_workout_plans')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+              if (!error && weeklyPlans && weeklyPlans.length > 0) {
+                const latestPlan = weeklyPlans[0];
+                console.log(`✅ Found weekly workout plan in database: ${latestPlan.plan_title}`);
+                
+                // Extract the complete plan data from JSONB
+                const planData = latestPlan.plan_data;
+                if (planData && planData.workouts) {
+                  // Update local storage with retrieved plan
+                  set({ weeklyWorkoutPlan: planData });
+                  console.log('📋 Restored weekly workout plan from database to local storage');
+                  return planData;
+                }
+              } else {
+                console.log('📋 No weekly workout plan found in database');
+              }
+            }
+          } catch (dbError) {
+            console.warn('⚠️ Failed to load from database, trying individual sessions:', dbError);
+          }
+
+          // Fallback: Try to load individual workout sessions
           const workoutSessions = await crudOperations.readWorkoutSessions();
           if (workoutSessions.length > 0) {
-            console.log('📋 Found existing workout sessions in database');
-            // Could reconstruct weekly plan from sessions if needed
+            console.log(`📋 Found ${workoutSessions.length} individual workout sessions in database`);
+            // Could reconstruct weekly plan from sessions if needed in the future
           }
 
           return null;
@@ -259,7 +372,7 @@ export const useFitnessStore = create<FitnessState>()(
           const workoutSession = {
             id: sessionId,
             workoutId: workout.id,
-            userId: userSessionManager.getDevUserId(),
+            userId: useAuthStore.getState().user?.id || 'guest',
             startedAt: new Date().toISOString(),
             completedAt: null,
             duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range

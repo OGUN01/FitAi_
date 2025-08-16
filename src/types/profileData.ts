@@ -52,9 +52,9 @@ export interface DietPreferences extends SyncableData {
   allergies: string[];
   cuisinePreferences: string[];
   restrictions: string[];
-  cookingSkill: 'beginner' | 'intermediate' | 'advanced';
-  mealPrepTime: 'quick' | 'moderate' | 'extended'; // <30min, 30-60min, >60min
-  dislikes: string[];
+  cookingSkill?: 'beginner' | 'intermediate' | 'advanced';
+  mealPrepTime?: 'quick' | 'moderate' | 'extended'; // <30min, 30-60min, >60min
+  dislikes?: string[];
   preferredMealTimes?: string[];
   budgetRange?: 'low' | 'medium' | 'high';
   organicPreference?: boolean;

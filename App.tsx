@@ -14,6 +14,7 @@ import { UserProfile } from './src/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { googleAuthService } from './src/services/googleAuth';
+import { validateProductionEnvironment } from './src/ai/gemini';
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
 const isExpoGo = (() => {
@@ -248,6 +249,24 @@ export default function App() {
           console.log('✅ FitAI: Google Sign-In initialization completed');
         } catch (error) {
           console.error('❌ FitAI: Google Sign-In initialization failed:', error);
+        }
+
+        // 🎯 PRODUCTION VALIDATION - Run comprehensive tests
+        if (!__DEV__ || process.env.EXPO_PUBLIC_ENVIRONMENT === 'production') {
+          console.log('🎯 FitAI: Running production environment validation...');
+          try {
+            const isProductionReady = await validateProductionEnvironment();
+            if (isProductionReady) {
+              console.log('🎉 FitAI: Production validation PASSED - AI features should work!');
+            } else {
+              console.error('❌ FitAI: Production validation FAILED - AI features may not work!');
+              console.error('⚠️ FitAI: Check the logs above for specific issues');
+            }
+          } catch (validationError) {
+            console.error('❌ FitAI: Production validation error:', validationError);
+          }
+        } else {
+          console.log('🔧 FitAI: Development mode - skipping production validation');
         }
 
         // Initialize notifications only if not in Expo Go

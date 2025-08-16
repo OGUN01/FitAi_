@@ -154,15 +154,13 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Invalid diet type');
     }
 
-    if (!data.cookingSkill) {
-      errors.push('Cooking skill level is required');
-    } else if (!['beginner', 'intermediate', 'advanced'].includes(data.cookingSkill)) {
+    // Optional fields validation - cookingSkill
+    if (data.cookingSkill && !['beginner', 'intermediate', 'advanced'].includes(data.cookingSkill)) {
       errors.push('Invalid cooking skill level');
     }
 
-    if (!data.mealPrepTime) {
-      errors.push('Meal preparation time preference is required');
-    } else if (!['quick', 'moderate', 'extended'].includes(data.mealPrepTime)) {
+    // Optional fields validation - mealPrepTime
+    if (data.mealPrepTime && !['quick', 'moderate', 'extended'].includes(data.mealPrepTime)) {
       errors.push('Invalid meal preparation time preference');
     }
 

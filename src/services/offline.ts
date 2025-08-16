@@ -245,27 +245,72 @@ class OfflineService {
    */
   private async executeAction(action: OfflineAction): Promise<void> {
     const { type, table, data } = action;
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-    switch (type) {
-      case 'CREATE':
-        const { error: createError } = await supabase.from(table).insert([data]);
-        if (createError) throw createError;
-        break;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 Attempting ${type} on ${table} (attempt ${attempt}/${maxRetries})`);
 
-      case 'UPDATE':
-        const { id, ...updateData } = data;
-        const { error: updateError } = await supabase.from(table).update(updateData).eq('id', id);
-        if (updateError) throw updateError;
-        break;
+        switch (type) {
+          case 'CREATE':
+            const { error: createError } = await supabase.from(table).insert([data]);
+            if (createError) {
+              console.error(`❌ CREATE error on ${table}:`, createError);
+              throw createError;
+            }
+            console.log(`✅ Successfully created record in ${table}`);
+            break;
 
-      case 'DELETE':
-        const { error: deleteError } = await supabase.from(table).delete().eq('id', data.id);
-        if (deleteError) throw deleteError;
-        break;
+          case 'UPDATE':
+            const { id, ...updateData } = data;
+            if (!id) {
+              throw new Error(`UPDATE operation missing required 'id' field for table ${table}`);
+            }
+            const { error: updateError } = await supabase.from(table).update(updateData).eq('id', id);
+            if (updateError) {
+              console.error(`❌ UPDATE error on ${table}:`, updateError);
+              throw updateError;
+            }
+            console.log(`✅ Successfully updated record ${id} in ${table}`);
+            break;
 
-      default:
-        throw new Error(`Unknown action type: ${type}`);
+          case 'DELETE':
+            if (!data.id) {
+              throw new Error(`DELETE operation missing required 'id' field for table ${table}`);
+            }
+            const { error: deleteError } = await supabase.from(table).delete().eq('id', data.id);
+            if (deleteError) {
+              console.error(`❌ DELETE error on ${table}:`, deleteError);
+              throw deleteError;
+            }
+            console.log(`✅ Successfully deleted record ${data.id} from ${table}`);
+            break;
+
+          default:
+            throw new Error(`Unknown action type: ${type}`);
+        }
+
+        // Success - exit retry loop
+        return;
+
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`❌ Attempt ${attempt} failed for ${type} on ${table}:`, error);
+
+        if (attempt < maxRetries) {
+          // Wait before retry with exponential backoff
+          const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+          console.log(`⏳ Retrying in ${backoffDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        }
+      }
     }
+
+    // All attempts failed
+    const errorMessage = `Failed to execute ${type} on ${table} after ${maxRetries} attempts: ${lastError?.message}`;
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
 
   /**
@@ -278,6 +323,20 @@ class OfflineService {
       AsyncStorage.removeItem('offline_sync_queue'),
       AsyncStorage.removeItem('offline_data'),
     ]);
+  }
+
+  /**
+   * Clear failed actions for a specific table (useful for fixing UUID format issues)
+   */
+  async clearFailedActionsForTable(table: string): Promise<void> {
+    const initialCount = this.syncQueue.length;
+    this.syncQueue = this.syncQueue.filter(action => action.table !== table);
+    const clearedCount = initialCount - this.syncQueue.length;
+    
+    if (clearedCount > 0) {
+      await this.saveOfflineData();
+      console.log(`🧹 Cleared ${clearedCount} failed actions for table ${table}`);
+    }
   }
 
   /**
