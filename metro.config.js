@@ -8,12 +8,23 @@ config.resolver.platforms = ['web', 'native', 'ios', 'android'];
 // Proper polyfill handling for JSC engine
 config.resolver.resolverMainFields = ['react-native', 'browser', 'main'];
 
+// CRITICAL FIX: React Native 0.79.5 Flow v0.275.0 compatibility
+config.resolver = {
+  ...config.resolver,
+  // Fix for React Native 0.79.5 Metro bundler Flow syntax incompatibility
+  unstable_enablePackageExports: false,
+  // Handle polyfill modules properly
+  alias: {
+    ...config.resolver.alias,
+  },
+};
+
 // Clean serializer configuration
 config.serializer = {
   ...config.serializer,
 };
 
-// Optimized transformer for JSC compatibility
+// Enhanced transformer for React Native 0.79.5 + Flow v0.275.0 compatibility
 config.transformer = {
   ...config.transformer,
   getTransformOptions: async () => ({
@@ -22,15 +33,6 @@ config.transformer = {
       inlineRequires: false,
     },
   }),
-};
-
-// Clean resolver configuration
-config.resolver = {
-  ...config.resolver,
-  // Handle polyfill modules properly
-  alias: {
-    ...config.resolver.alias,
-  },
 };
 
 module.exports = config;

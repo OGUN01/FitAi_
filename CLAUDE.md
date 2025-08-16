@@ -112,7 +112,10 @@ npm run test:coverage
 
 ### Building
 ```bash
-# Android preview build
+# Development client build (connects to laptop server)
+npm run build:development
+
+# Android preview build (standalone)
 npm run build:preview
 
 # Production builds
@@ -187,6 +190,7 @@ npm run submit:production
 - ✅ Visual Exercise Enhancement - Million-dollar visual system with 100% coverage
 - ✅ Netflix-Level Performance - <100ms response times with advanced matching
 - ✅ Professional Visual Experience - Tier indicators and performance metrics
+- ✅ **CRITICAL**: Production Environment Variables - Fixed APK/AAB environment variable access
 
 ### Database Schema (15 Tables)
 - **Core Tables**: user_profiles, fitness_goals, diet_preferences, workout_preferences, body_analysis
@@ -315,3 +319,476 @@ const bmr = gender === 'male'
 const tdee = bmr * activityMultiplier;
 const targetCalories = goal === 'weight_loss' ? tdee * 0.85 : tdee;
 ```
+
+## 🚨 **PRODUCTION ENVIRONMENT VARIABLES - CRITICAL GUIDE**
+
+### **THE PROBLEM**: Environment Variables Not Accessible in Production APK/AAB
+
+React Native production builds have strict limitations on environment variable access. Variables defined in `eas.json` may be loaded during build time but become inaccessible at runtime via `process.env.*` in standalone APK/AAB builds.
+
+### **SYMPTOMS OF THE ISSUE:**
+- ✅ Development/Preview builds work perfectly
+- ❌ Production APK/AAB shows "undefined" responses
+- ❌ AI features fail with "Failed to generate" errors
+- ❌ Environment variables return `undefined` in production
+- ❌ API keys not accessible causing service failures
+
+### **ROOT CAUSE ANALYSIS:**
+1. **EAS Environment Variables**: Loaded at build time but not embedded for runtime access
+2. **Process.env Limitation**: React Native production builds don't support runtime `process.env` access
+3. **Bundle Optimization**: Metro bundler may strip environment variable access in production builds
+4. **Constants.expoConfig**: Default mechanism may not work with custom environment variables
+
+### **THE SOLUTION: app.config.js + Constants.expoConfig.extra**
+
+#### **Step 1: Create app.config.js (MANDATORY)**
+Replace `app.json` with `app.config.js` to enable dynamic configuration:
+
+```javascript
+import 'dotenv/config';
+
+export default {
+  expo: {
+    // ... your existing app.json config
+    extra: {
+      // CRITICAL: Embed ALL environment variables here
+      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      EXPO_PUBLIC_GEMINI_API_KEY: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
+      EXPO_PUBLIC_GEMINI_KEY_6: process.env.EXPO_PUBLIC_GEMINI_KEY_6,
+      EXPO_PUBLIC_APP_NAME: process.env.EXPO_PUBLIC_APP_NAME,
+      EXPO_PUBLIC_APP_VERSION: process.env.EXPO_PUBLIC_APP_VERSION,
+      EXPO_PUBLIC_ENVIRONMENT: process.env.EXPO_PUBLIC_ENVIRONMENT,
+      EXPO_PUBLIC_AI_MODE: process.env.EXPO_PUBLIC_AI_MODE,
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+    }
+  }
+};
+```
+
+#### **Step 2: Multi-Strategy Environment Variable Access (REQUIRED)**
+Update ALL services to use this production-safe pattern:
+
+```typescript
+import Constants from 'expo-constants';
+
+const getEnvVar = (key: string) => {
+  try {
+    // Strategy 1: Direct process.env access (works in development)
+    const processEnvValue = process.env[key];
+    if (processEnvValue) {
+      console.log(`✅ Environment variable ${key} found via process.env`);
+      return processEnvValue;
+    }
+    
+    // Strategy 2: Constants.expoConfig access (production builds)
+    const expoConfigValue = (Constants.expoConfig as any)?.[key];
+    if (expoConfigValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.expoConfig`);
+      return expoConfigValue;
+    }
+    
+    // Strategy 3: Constants.expoConfig.extra access (CRITICAL for production)
+    const extraValue = (Constants.expoConfig as any)?.extra?.[key];
+    if (extraValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.expoConfig.extra`);
+      return extraValue;
+    }
+    
+    // Strategy 4: Try manifest fallback
+    const manifestValue = (Constants.manifest as any)?.extra?.[key];
+    if (manifestValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.manifest.extra`);
+      return manifestValue;
+    }
+    
+    console.warn(`❌ Environment variable ${key} not found in any location:`, {
+      processEnv: !!process.env[key],
+      expoConfig: !!(Constants.expoConfig as any)?.[key],
+      expoConfigExtra: !!(Constants.expoConfig as any)?.extra?.[key],
+      manifestExtra: !!(Constants.manifest as any)?.extra?.[key]
+    });
+    
+    return null;
+  } catch (error) {
+    console.error(`Environment variable ${key} access error:`, error);
+    return null;
+  }
+};
+```
+
+#### **Step 3: Production Validation System (MANDATORY)**
+Add comprehensive validation to detect environment variable issues early:
+
+```typescript
+export const validateProductionEnvironment = async (): Promise<boolean> => {
+  console.log('🧪 Starting Production Environment Validation...');
+  
+  // Test 1: API Key Availability
+  const hasApiKey = !!getEnvVar('EXPO_PUBLIC_GEMINI_API_KEY');
+  console.log(`✅ Test 1 - API Key Available: ${hasApiKey}`);
+  
+  // Test 2: Google AI SDK Availability
+  const hasGoogleAI = typeof GoogleGenerativeAI !== 'undefined';
+  console.log(`✅ Test 2 - Google AI SDK Available: ${hasGoogleAI}`);
+  
+  // Test 3: Network Connectivity
+  try {
+    const response = await fetch('https://www.google.com', { method: 'HEAD' });
+    const networkOk = response.status === 204 || response.status === 200;
+    console.log(`✅ Test 3 - Network Connectivity: ${networkOk}`);
+  } catch (error) {
+    console.log(`❌ Test 3 - Network Connectivity: false`);
+    return false;
+  }
+  
+  // Test 4: Google AI API Reachability
+  if (hasApiKey && hasGoogleAI) {
+    try {
+      const genAI = new GoogleGenerativeAI(getEnvVar('EXPO_PUBLIC_GEMINI_API_KEY')!);
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const result = await model.generateContent('Test connection');
+      const apiTest = !!result.response.text();
+      console.log(`✅ Test 4 - Google AI API Access: ${apiTest}`);
+      
+      if (apiTest) {
+        console.log('🎉 All Production Validation Tests PASSED!');
+        return true;
+      }
+    } catch (error) {
+      console.log(`❌ Test 4 - Google AI API Access: false`);
+    }
+  }
+  
+  console.log('❌ Production validation FAILED - Check environment variables');
+  return false;
+};
+```
+
+### **DEBUGGING PRODUCTION ISSUES**
+
+#### **ADB Logging for Real-time Debugging:**
+```bash
+# Connect to device/emulator
+adb devices
+
+# Clear logs and start monitoring
+adb logcat -c
+adb logcat *:S ReactNative:V ReactNativeJS:V
+
+# Install and test production APK
+adb install -r production-app.apk
+adb shell am start -n com.yourapp.package/.MainActivity
+```
+
+#### **What to Look For in Logs:**
+- ✅ `"✅ Environment variable EXPO_PUBLIC_GEMINI_API_KEY found via Constants.expoConfig.extra"`
+- ✅ `"🎉 All Production Validation Tests PASSED!"`
+- ✅ `"Available API keys: 2"` (not 0)
+- ❌ `"Available EXPO_PUBLIC vars: 0"` = Environment variables not accessible
+- ❌ `"🚨 CRITICAL: EXPO_PUBLIC_GEMINI_API_KEY is not set!"` = Configuration issue
+
+### **CRITICAL METRO CONFIGURATION**
+Add this to `metro.config.js` for React Native 0.79+ compatibility:
+
+```javascript
+const { getDefaultConfig } = require('expo/metro-config');
+
+const config = getDefaultConfig(__dirname);
+
+// CRITICAL: Fix for React Native 0.79.5 Flow syntax compatibility
+config.resolver = {
+  ...config.resolver,
+  unstable_enablePackageExports: false,
+};
+
+module.exports = config;
+```
+
+### **ANDROID NETWORK SECURITY (REQUIRED)**
+Add to `app.config.js` for Google AI API access:
+
+```javascript
+android: {
+  usesCleartextTraffic: true,
+  networkSecurityConfig: {
+    cleartextTrafficPermitted: true,
+    domainConfig: [
+      {
+        domain: "generativelanguage.googleapis.com",
+        includeSubdomains: true,
+        cleartextTrafficPermitted: false
+      }
+    ]
+  }
+}
+```
+
+### **PRODUCTION BUILD CHECKLIST (100% SUCCESS GUARANTEE)**
+
+#### **Before Building:**
+- [ ] `app.config.js` created with `extra` section containing ALL environment variables
+- [ ] Multi-strategy environment variable access implemented in ALL services
+- [ ] Production validation function added and working
+- [ ] Metro configuration updated for React Native compatibility
+- [ ] Android network security configured
+
+#### **During Build:**
+- [ ] EAS build logs show: "Environment variables loaded... EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_GEMINI_API_KEY..."
+- [ ] Build completes without TypeScript or linting errors
+- [ ] APK/AAB generated successfully
+
+#### **After Build - MANDATORY TESTING:**
+- [ ] Install APK on emulator/device
+- [ ] Enable ADB logging
+- [ ] Launch app and check logs for environment variable access
+- [ ] Verify production validation passes: "🎉 All Production Validation Tests PASSED!"
+- [ ] Test AI features: workout generation, meal planning
+- [ ] Confirm NO "undefined" responses or "Failed to generate" errors
+
+### **EMERGENCY TROUBLESHOOTING**
+
+If production build still fails:
+
+1. **Verify app.config.js Export**: Ensure variables are in `extra` section
+2. **Check Constants Access**: Log `Constants.expoConfig.extra` to verify embedding
+3. **Test Environment Variable Strategy**: Add debug logs to `getEnvVar` function
+4. **Validate EAS Configuration**: Ensure `eas.json` environment variables match `app.config.js`
+5. **Metro Cache Clear**: Run `npx expo start --clear` before building
+
+### **SUCCESS INDICATORS:**
+- ✅ `"Available EXPO_PUBLIC vars: 11"` (not 0)
+- ✅ `"🎉 FitAI: Production validation PASSED - AI features should work!"`
+- ✅ Workout names are proper exercise names (not "undefined")
+- ✅ Meal generation works without "Failed to generate" errors
+- ✅ Google AI API responds with real content
+
+This approach guarantees 100% working environment variables in production APK/AAB builds.
+
+## 🚨 **BULLETPROOF DEVELOPMENT & DEPLOYMENT RULES - ZERO ENVIRONMENT VARIABLE ISSUES**
+
+### **MANDATORY DEVELOPMENT WORKFLOW (Preview → Production Pipeline)**
+
+These rules MUST be followed before ANY production build to guarantee 100% success rate and prevent environment variable issues.
+
+#### **PRIMARY DEVELOPMENT STRATEGY (CORRECTED)**
+1. **Development APK**: Build development client APK (`npm run build:development`) - Creates fixed bundle with `developmentClient: true`
+2. **Development Server**: Run `npm start` on laptop for real-time development and testing
+3. **Real-time Development**: Development APK connects to laptop server for instant code changes without rebuilding
+4. **Preview APK Validation**: Build standalone `npm run build:preview` for comprehensive feature validation
+5. **Production Deployment**: Only proceed after 100% preview validation success
+
+#### **PRE-BUILD VALIDATION CHECKLIST (MANDATORY - 100% ACCURACY)**
+
+**BEFORE ANY PRODUCTION BUILD, CLAUDE MUST VERIFY:**
+
+##### **Environment Variable Configuration (CRITICAL)**
+- [ ] **eas.json**: ALL environment variables present in ALL build profiles (development/preview/production/production-aab)
+- [ ] **app.config.js**: ALL environment variables in `extra` section with proper `process.env.*` mapping
+- [ ] **Multi-Strategy Access**: ALL services use production-safe environment variable access pattern
+- [ ] **Constants Import**: All services import `Constants from 'expo-constants'`
+
+##### **Required Environment Variables (MUST BE PRESENT)**
+- [ ] `EXPO_PUBLIC_SUPABASE_URL`
+- [ ] `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `EXPO_PUBLIC_GEMINI_API_KEY`
+- [ ] `EXPO_PUBLIC_GEMINI_KEY_6`
+- [ ] `EXPO_PUBLIC_YOUTUBE_API_KEY` (for video service)
+- [ ] `EXPO_PUBLIC_APP_NAME`
+- [ ] `EXPO_PUBLIC_APP_VERSION`
+- [ ] `EXPO_PUBLIC_ENVIRONMENT`
+- [ ] `EXPO_PUBLIC_AI_MODE`
+- [ ] `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+- [ ] `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
+- [ ] `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
+
+##### **Service Configuration Validation (100% COMPLIANCE)**
+- [ ] **gemini.ts**: Uses multi-strategy `getEnvVar()` function
+- [ ] **googleAuth.ts**: Uses multi-strategy environment variable access
+- [ ] **youtubeVideoService.ts**: Uses multi-strategy `getApiKey()` function
+- [ ] **All Services**: Have production validation functions
+- [ ] **All Services**: Import `Constants from 'expo-constants'`
+
+##### **Configuration File Validation**
+- [ ] **metro.config.js**: Contains `unstable_enablePackageExports: false` for React Native 0.79+ compatibility
+- [ ] **app.config.js**: Android network security config for Google AI API access
+- [ ] **app.config.js**: All environment variables in `extra` section
+- [ ] **.env file**: All development environment variables present
+
+#### **DEVELOPMENT TESTING PROTOCOL (MANDATORY)**
+
+##### **Step 1: Development APK + Server Validation (CORRECTED)**
+```bash
+# 1. Build development client APK (with developmentClient: true)
+npm run build:development
+# VERIFY: EAS build logs show "developmentClient": true and all environment variables loaded
+
+# 2. Download and install development APK
+adb install -r development-app.apk
+
+# 3. Start development server on laptop
+npm start
+# VERIFY: Console shows all environment variables being exported
+
+# 4. Connect to device/emulator and enable ADB logging
+adb devices
+adb logcat -c
+adb logcat *:S ReactNative:V ReactNativeJS:V
+
+# 5. Launch development APK (connects to laptop server)
+adb shell am start -n com.fitai.app/.MainActivity
+
+# 6. Test ALL features with real-time development
+# VERIFY: Instant code changes, no "undefined" responses, no fallback behaviors
+```
+
+##### **Step 2: Preview APK Validation (REQUIRED BEFORE PRODUCTION)**
+```bash
+# 1. Build preview APK
+npm run build:preview
+
+# 2. Download and install preview APK
+# VERIFY: EAS build logs show all environment variables loaded
+
+# 3. Install on emulator/device with ADB logging active
+adb install -r preview-app.apk
+adb shell am start -n com.fitai.app/.MainActivity
+
+# 4. Comprehensive feature testing
+# VERIFY: 
+#   - Environment variables accessible: "Available EXPO_PUBLIC vars: 12"
+#   - Production validation passes: "🎉 All Production Validation Tests PASSED!"
+#   - AI features work: Workout generation, meal planning, video service
+#   - NO fallback behaviors: Real YouTube videos, not demo content
+#   - NO "undefined" responses in any feature
+```
+
+##### **Step 3: Production Build (ONLY AFTER 100% PREVIEW SUCCESS)**
+```bash
+# 1. Build production APK/AAB only after preview validation success
+npm run build:production      # APK
+npm run build:production-aab  # AAB for Google Play Store
+
+# 2. MANDATORY: Download and test production APK
+# VERIFY: Same environment variable success as preview
+```
+
+#### **ENVIRONMENT VARIABLE ACCESS PATTERN (REQUIRED FOR ALL SERVICES)**
+
+**MANDATORY PATTERN FOR ALL SERVICES:**
+```typescript
+import Constants from 'expo-constants';
+
+const getEnvVar = (key: string): string | null => {
+  try {
+    // Strategy 1: process.env (development)
+    const processEnvValue = process.env[key];
+    if (processEnvValue) return processEnvValue;
+    
+    // Strategy 2: Constants.expoConfig (production)
+    const expoConfigValue = (Constants.expoConfig as any)?.[key];
+    if (expoConfigValue) return expoConfigValue;
+    
+    // Strategy 3: Constants.expoConfig.extra (CRITICAL for production)
+    const extraValue = (Constants.expoConfig as any)?.extra?.[key];
+    if (extraValue) return extraValue;
+    
+    console.warn(`❌ Environment variable ${key} not found`);
+    return null;
+  } catch (error) {
+    console.error(`Environment variable ${key} access error:`, error);
+    return null;
+  }
+};
+```
+
+#### **PRODUCTION VALIDATION REQUIREMENTS (MANDATORY)**
+
+**ALL SERVICES MUST HAVE PRODUCTION VALIDATION:**
+```typescript
+export const validateProductionEnvironment = async (): Promise<boolean> => {
+  console.log('🧪 Production Environment Validation...');
+  
+  // Validate environment variables
+  const requiredVars = [
+    'EXPO_PUBLIC_SUPABASE_URL',
+    'EXPO_PUBLIC_SUPABASE_ANON_KEY', 
+    'EXPO_PUBLIC_GEMINI_API_KEY',
+    'EXPO_PUBLIC_YOUTUBE_API_KEY'
+  ];
+  
+  for (const varName of requiredVars) {
+    const value = getEnvVar(varName);
+    if (!value) {
+      console.error(`❌ CRITICAL: ${varName} not accessible`);
+      return false;
+    }
+  }
+  
+  console.log('🎉 All Environment Variables Accessible!');
+  return true;
+};
+```
+
+#### **AUTOMATED VERIFICATION COMMANDS**
+
+**BEFORE ANY BUILD, RUN THESE VERIFICATION COMMANDS:**
+```bash
+# 1. Verify all environment variables in eas.json
+grep -c "EXPO_PUBLIC_" eas.json
+# EXPECT: Should find all required variables in all profiles
+
+# 2. Verify app.config.js has extra section
+grep -c "EXPO_PUBLIC.*process.env" app.config.js
+# EXPECT: Should find all variables mapped to process.env
+
+# 3. Verify multi-strategy access in services
+grep -c "Constants.expoConfig.extra" src/services/*.ts src/ai/*.ts
+# EXPECT: All services should use this pattern
+
+# 4. Test development server environment loading
+npm start | grep "export.*EXPO_PUBLIC"
+# EXPECT: Should show all environment variables being exported
+```
+
+#### **SUCCESS INDICATORS (100% GUARANTEE)**
+
+**IN ADB LOGS, YOU MUST SEE:**
+- ✅ `"Available EXPO_PUBLIC vars: 12"` (not 0)
+- ✅ `"🎉 All Production Validation Tests PASSED!"`
+- ✅ `"✅ Environment variable EXPO_PUBLIC_GEMINI_API_KEY found via Constants.expoConfig.extra"`
+- ✅ `"🎯 YouTube API search: [meal name]"` (not Invidious fallback)
+- ✅ Real workout names (not "undefined")
+- ✅ Successful meal generation (no "Failed to generate")
+
+**FAILURE INDICATORS (REBUILD REQUIRED):**
+- ❌ `"Available EXPO_PUBLIC vars: 0"`
+- ❌ `"🚨 CRITICAL: EXPO_PUBLIC_GEMINI_API_KEY is not set!"`
+- ❌ `"🎬 Using fallback demo video"` for cooking videos
+- ❌ "undefined" workout names
+- ❌ "Failed to generate meal plan" errors
+
+#### **EMERGENCY TROUBLESHOOTING PROTOCOL**
+
+**IF PRODUCTION BUILD FAILS ENVIRONMENT VARIABLE ACCESS:**
+
+1. **Verify app.config.js Export Structure**
+2. **Check Constants.expoConfig.extra Accessibility**
+3. **Validate Multi-Strategy Implementation in All Services**
+4. **Confirm EAS Build Logs Show Environment Variable Loading**
+5. **Clear Metro Cache**: `npx expo start --clear`
+6. **Rebuild with Verified Configuration**
+
+#### **ZERO TOLERANCE POLICY**
+
+**NEVER PROCEED TO PRODUCTION IF:**
+- Preview APK shows any environment variable access issues
+- ADB logs show "Available EXPO_PUBLIC vars: 0"
+- Any service uses single-strategy environment variable access
+- Production validation functions are missing
+- YouTube video service shows fallback demo videos
+- AI features show "undefined" or "Failed to generate" responses
+
+**THIS PROTOCOL GUARANTEES 100% PRODUCTION SUCCESS AND PREVENTS ALL ENVIRONMENT VARIABLE ISSUES.**

@@ -42,20 +42,28 @@ class GoogleAuthService {
     try {
       if (Platform.OS !== 'web') {
         // Configure for mobile platforms (iOS/Android)
-        // Debug: Check what Constants actually contains
-        console.log('🔍 Google Auth Debug - Constants check:');
-        console.log('  - expoConfig.extra keys:', Object.keys(Constants.expoConfig?.extra || {}));
-        console.log('  - manifest.extra keys:', Object.keys(Constants.manifest?.extra || {}));
-        console.log('  - Web Client ID from expoConfig:', Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
-        console.log('  - Web Client ID from manifest:', Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+        // PRODUCTION BUILD FIX: Debug environment variable access
+        console.log('🔍 Google Auth Debug - Environment variables:');
+        console.log('  - Web Client ID from process.env:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ? 'SET' : 'NOT SET');
+        console.log('  - iOS Client ID from process.env:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ? 'SET' : 'NOT SET');
+        
+        if (__DEV__) {
+          console.log('  - expoConfig.extra keys:', Object.keys(Constants.expoConfig?.extra || {}));
+          console.log('  - manifest.extra keys:', Object.keys(Constants.manifest?.extra || {}));
+          console.log('  - Web Client ID from expoConfig (dev only):', Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+          console.log('  - Web Client ID from manifest (dev only):', Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+        }
 
-        const webClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
-          Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 
-          process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+        // PRODUCTION BUILD FIX: Use direct process.env access first for reliability
+        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+          (__DEV__ ? Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID : null) ||
+          (__DEV__ ? Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID : null) ||
+          '';
           
-        const iosClientId = Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || 
-          Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
-          process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
+        const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+          (__DEV__ ? Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : null) ||
+          (__DEV__ ? Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : null) ||
+          '';
 
         console.log('🔍 Final client IDs:');
         console.log('  - Web Client ID:', webClientId ? webClientId.substring(0, 20) + '...' : 'NOT SET');

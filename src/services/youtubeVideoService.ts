@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export interface CookingVideo {
   id: string;
@@ -27,7 +28,22 @@ class YouTubeVideoService {
 
   // YouTube Data API v3 configuration
   private getApiKey(): string | undefined {
-    return process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
+    try {
+      // Multi-strategy environment variable access for production compatibility
+      const processEnvValue = process.env.EXPO_PUBLIC_YOUTUBE_API_KEY;
+      if (processEnvValue) return processEnvValue;
+      
+      const expoConfigValue = (Constants.expoConfig as any)?.EXPO_PUBLIC_YOUTUBE_API_KEY;
+      if (expoConfigValue) return expoConfigValue;
+      
+      const extraValue = (Constants.expoConfig as any)?.extra?.EXPO_PUBLIC_YOUTUBE_API_KEY;
+      if (extraValue) return extraValue;
+      
+      return undefined;
+    } catch (error) {
+      console.error('YouTube API key access error:', error);
+      return undefined;
+    }
   }
   private readonly YOUTUBE_API_BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
@@ -47,11 +63,13 @@ class YouTubeVideoService {
       // Debug API key loading
       const apiKey = this.getApiKey();
       console.log(
-        `🔑 API Key status: ${apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'MISSING'}`
+        `🔑 YouTube API Key status: ${apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'MISSING'}`
       );
-      console.log(
-        `🔑 Raw env value: ${process.env.EXPO_PUBLIC_YOUTUBE_API_KEY ? `Present (${process.env.EXPO_PUBLIC_YOUTUBE_API_KEY.substring(0, 10)}...)` : 'MISSING'}`
-      );
+      
+      // Debug all access strategies
+      console.log(`🔑 process.env: ${process.env.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
+      console.log(`🔑 Constants.expoConfig: ${(Constants.expoConfig as any)?.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
+      console.log(`🔑 Constants.expoConfig.extra: ${(Constants.expoConfig as any)?.extra?.EXPO_PUBLIC_YOUTUBE_API_KEY ? 'Present' : 'Missing'}`);
 
       // Check cache first
       const cachedVideo = await this.getCachedVideo(mealName);

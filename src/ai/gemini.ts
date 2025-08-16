@@ -11,16 +11,49 @@ import Constants from 'expo-constants';
 // CONFIGURATION
 // ============================================================================
 
-// Safe environment variable access to prevent bundle evaluation errors
+// PRODUCTION BUILD FIX: Multi-strategy environment variable access
+// Try multiple approaches to access environment variables in production builds
 const getEnvVar = (key: string) => {
   try {
-    // Try Expo Constants first (works in production builds)
-    const value = Constants.expoConfig?.extra?.[key] || 
-                  Constants.manifest?.extra?.[key] ||
-                  (typeof process !== 'undefined' && process.env && process.env[key]);
-    return value || null;
+    // Strategy 1: Direct process.env access (works in development)
+    const processEnvValue = process.env[key];
+    if (processEnvValue) {
+      console.log(`✅ Environment variable ${key} found via process.env`);
+      return processEnvValue;
+    }
+    
+    // Strategy 2: Constants.expoConfig access (production builds)
+    const expoConfigValue = (Constants.expoConfig as any)?.[key];
+    if (expoConfigValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.expoConfig`);
+      return expoConfigValue;
+    }
+    
+    // Strategy 3: Constants.expoConfig.extra access
+    const extraValue = (Constants.expoConfig as any)?.extra?.[key];
+    if (extraValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.expoConfig.extra`);
+      return extraValue;
+    }
+    
+    // Strategy 4: Try manifest fallback
+    const manifestValue = (Constants.manifest as any)?.extra?.[key];
+    if (manifestValue) {
+      console.log(`✅ Environment variable ${key} found via Constants.manifest.extra`);
+      return manifestValue;
+    }
+    
+    // Log failure for debugging
+    console.warn(`❌ Environment variable ${key} not found in any location:`, {
+      processEnv: !!process.env[key],
+      expoConfig: !!(Constants.expoConfig as any)?.[key],
+      expoConfigExtra: !!(Constants.expoConfig as any)?.extra?.[key],
+      manifestExtra: !!(Constants.manifest as any)?.extra?.[key]
+    });
+    
+    return null;
   } catch (error) {
-    console.warn(`Environment variable ${key} not available:`, error);
+    console.error(`Environment variable ${key} access error:`, error);
     return null;
   }
 };
@@ -51,34 +84,60 @@ const MODEL_NAME = 'gemini-2.5-flash'; // Latest Gemini 2.5 Flash model
 
 console.log(`🔑 Available API keys: ${GEMINI_KEYS.length}`);
 
-// Log API key status for debugging (only first few characters for security)
-console.log(
-  '🔑 Gemini API Key Status:',
-  GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET'
-);
+// 🎯 PRODUCTION VALIDATION SUITE - Critical for debugging production APK issues
+console.log('🔑 Gemini API Key Status:');
+console.log(`  - Primary key: ${GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET'}`);
+console.log(`  - Total keys available: ${GEMINI_KEYS.length}`);
+console.log(`  - Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'unknown'}`);
+console.log(`  - AI Mode: ${process.env.EXPO_PUBLIC_AI_MODE || 'unknown'}`);
+console.log(`  - Development mode: ${__DEV__ ? 'true' : 'false'}`);
 console.log('🤖 Using Latest Model:', MODEL_NAME);
+
+// 🎯 PRODUCTION ENVIRONMENT VALIDATION
+console.log('🎯 Production Environment Validation:');
+console.log(`  - process.env available: ${typeof process !== 'undefined' && !!process.env}`);
+console.log(`  - EXPO_PUBLIC vars count: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).length}`);
+console.log(`  - All EXPO_PUBLIC vars: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).join(', ')}`);
+console.log(`  - Direct API key access: ${!!process.env.EXPO_PUBLIC_GEMINI_API_KEY}`);
+console.log(`  - Network environment: ${typeof fetch !== 'undefined' ? 'Available' : 'Not Available'}`);
+console.log(`  - Platform detection: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}`);
+
+// 🎯 GOOGLE AI SDK VALIDATION  
+console.log('🎯 Google AI SDK Validation:');
+console.log(`  - GoogleGenerativeAI class: ${typeof GoogleGenerativeAI !== 'undefined' ? 'Available' : 'Not Available'}`);
+console.log(`  - SDK version: ${typeof GoogleGenerativeAI !== 'undefined' ? 'Loaded' : 'Failed to load'}`);
+console.log(`  - SDK initialization: ${genAI ? 'Success' : 'Failed'}`);
+console.log(`  - Model placeholder: ${model ? 'Available' : 'Not Available'}`);
 
 // Initialize Gemini AI
 let genAI: GoogleGenerativeAI | null = null;
 let model: any | null = null;
 
-// Check API key on module load
+// Enhanced production error handling for missing API key
 if (!GEMINI_API_KEY) {
   console.error('🚨 CRITICAL: EXPO_PUBLIC_GEMINI_API_KEY is not set!');
-  console.error('  - Check your environment variables');
-  console.error('  - Make sure .env.local file exists with EXPO_PUBLIC_GEMINI_API_KEY');
-  console.error('  - Restart Metro bundler after adding environment variables');
+  console.error('Production Build Debugging:');
+  console.error(`  - Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'unknown'}`);
+  console.error(`  - Build type: ${__DEV__ ? 'development' : 'production'}`);
+  console.error(`  - Available env vars: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).join(', ')}`);
+  console.error('Solution:');
+  console.error('  - For production builds: Check EAS environment configuration');
+  console.error('  - For development: Check .env.local file with EXPO_PUBLIC_GEMINI_API_KEY');
+  console.error('  - App will fall back to demo mode');
 }
 
 const initializeGemini = () => {
   if (!GEMINI_API_KEY) {
     console.warn('❌ Gemini API key not found. AI features will be disabled.');
-    console.warn('  - Expected: EXPO_PUBLIC_GEMINI_API_KEY environment variable');
-    console.warn('  - Current value:', GEMINI_API_KEY || 'undefined');
+    console.warn(`  - Production build environment: ${!__DEV__ ? 'YES' : 'NO'}`);
+    console.warn(`  - Expected: EXPO_PUBLIC_GEMINI_API_KEY environment variable`);
+    console.warn(`  - Available EXPO_PUBLIC vars: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).length}`);
+    console.warn('  - App will gracefully fall back to demo mode');
     return false;
   }
 
   try {
+    console.log(`🚀 Initializing Gemini AI in ${__DEV__ ? 'development' : 'production'} mode...`);
     genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
     // With @google/genai we don't bind config at model creation; we pass it per request
@@ -88,9 +147,14 @@ const initializeGemini = () => {
     // No-op here.
 
     console.log('✅ Gemini 2.5 Flash initialized with official structured output support');
+    console.log(`🎯 Production environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'unknown'}`);
     return true;
-  } catch (error) {
-    console.error('Failed to initialize Gemini AI:', error);
+  } catch (error: any) {
+    console.error('❌ Failed to initialize Gemini AI:', error);
+    console.error('🔧 Troubleshooting:');
+    console.error(`  - Error type: ${error?.constructor?.name || 'Unknown'}`);
+    console.error(`  - Error message: ${error?.message || 'No message'}`);
+    console.error('  - App will fall back to demo mode');
     return false;
   }
 };
@@ -313,6 +377,133 @@ export const generateResponseWithImage = async (
   } catch (error) {
     console.error('❌ Image generation failed:', error);
     throw error;
+  }
+};
+
+// ============================================================================
+// PRODUCTION VALIDATION FUNCTIONS - Test before building APK
+// ============================================================================
+
+// 🎯 PRODUCTION VALIDATION FUNCTIONS - Test before building APK
+export const validateProductionEnvironment = async (): Promise<boolean> => {
+  console.log('🧪 Starting Production Environment Validation...');
+  
+  try {
+    // Test 1: Environment Variables
+    const hasApiKey = !!process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+    console.log(`✅ Test 1 - API Key Available: ${hasApiKey}`);
+    
+    if (!hasApiKey) {
+      console.error('❌ CRITICAL: API Key not accessible in production mode');
+      return false;
+    }
+    
+    // Test 2: Google AI SDK
+    const hasSdk = typeof GoogleGenerativeAI !== 'undefined';
+    console.log(`✅ Test 2 - Google AI SDK Available: ${hasSdk}`);
+    
+    if (!hasSdk) {
+      console.error('❌ CRITICAL: Google AI SDK not loaded');
+      return false;
+    }
+    
+    // Test 3: Network Connectivity
+    const hasNetwork = await testNetworkConnectivity();
+    console.log(`✅ Test 3 - Network Connectivity: ${hasNetwork}`);
+    
+    if (!hasNetwork) {
+      console.error('❌ CRITICAL: Network connectivity failed');
+      return false;
+    }
+    
+    // Test 4: Google AI API Reachability
+    const hasApiAccess = await testGoogleAIAPI();
+    console.log(`✅ Test 4 - Google AI API Access: ${hasApiAccess}`);
+    
+    if (!hasApiAccess) {
+      console.error('❌ CRITICAL: Google AI API not reachable');
+      return false;
+    }
+    
+    console.log('🎉 All Production Validation Tests PASSED!');
+    return true;
+    
+  } catch (error: any) {
+    console.error('❌ Production Validation FAILED:', error?.message || error);
+    return false;
+  }
+};
+
+const testNetworkConnectivity = async (): Promise<boolean> => {
+  try {
+    console.log('🌐 Testing network connectivity...');
+    
+    // Test basic connectivity with Google's connectivity check endpoint
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    try {
+      const response = await fetch('https://clients3.google.com/generate_204', {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      const isConnected = response.status === 204;
+      console.log(`🌐 Network connectivity test: ${isConnected ? 'SUCCESS' : 'FAILED'} (status: ${response.status})`);
+      return isConnected;
+      
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      console.error('🌐 Network connectivity test FAILED:', fetchError?.message || fetchError);
+      return false;
+    }
+    
+  } catch (error: any) {
+    console.error('🌐 Network test error:', error?.message || error);
+    return false;
+  }
+};
+
+const testGoogleAIAPI = async (): Promise<boolean> => {
+  try {
+    console.log('🤖 Testing Google AI API reachability...');
+    
+    if (!GEMINI_API_KEY) {
+      console.error('🤖 No API key available for testing');
+      return false;
+    }
+    
+    // Test the actual Google Generative AI endpoint
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    try {
+      const testAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const testModel = testAI.getGenerativeModel({ model: MODEL_NAME });
+      
+      // Simple test prompt
+      const result = await testModel.generateContent('Test connection');
+      
+      clearTimeout(timeoutId);
+      const hasResponse = !!result?.response;
+      console.log(`🤖 Google AI API test: ${hasResponse ? 'SUCCESS' : 'FAILED'}`);
+      
+      if (hasResponse) {
+        console.log(`🤖 API Response preview: ${result.response.text().substring(0, 50)}...`);
+      }
+      
+      return hasResponse;
+      
+    } catch (apiError: any) {
+      clearTimeout(timeoutId);
+      console.error('🤖 Google AI API test FAILED:', apiError?.message || apiError);
+      return false;
+    }
+    
+  } catch (error: any) {
+    console.error('🤖 Google AI API test error:', error?.message || error);
+    return false;
   }
 };
 

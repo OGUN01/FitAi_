@@ -40,7 +40,23 @@
       ],
       "allowBackup": false,
       "googleServicesFile": "./google-services.json",
-      "jsEngine": "jsc"
+      "jsEngine": "jsc",
+      "usesCleartextTraffic": true,
+      "networkSecurityConfig": {
+        "cleartextTrafficPermitted": true,
+        "domainConfig": [
+          {
+            "domain": "generativelanguage.googleapis.com",
+            "includeSubdomains": true,
+            "cleartextTrafficPermitted": false
+          },
+          {
+            "domain": "googleapis.com",
+            "includeSubdomains": true,
+            "cleartextTrafficPermitted": false
+          }
+        ]
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
