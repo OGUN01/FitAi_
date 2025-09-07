@@ -252,7 +252,7 @@ export const useNutritionStore = create<NutritionState>()(
             plan_description: plan.planDescription || `${plan.meals.length} meals planned`,
             week_number: plan.weekNumber || 1,
             total_meals: plan.meals.length,
-            total_calories: plan.totalCalories || plan.meals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
+            total_calories: plan.totalEstimatedCalories || plan.meals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
             plan_data: plan, // Store complete meal plan as JSONB
             is_active: true
           };

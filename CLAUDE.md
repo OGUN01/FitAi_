@@ -64,6 +64,34 @@ try {
 3. Add detailed change descriptions for handover to other engineers
 4. Run quality checks: TypeScript, linting, testing
 
+## 🎯 **CURRENT PROJECT STATUS & CONTEXT**
+
+### **MISSION: World's #1 Fitness App** 🏆
+FitAI is becoming the world's most advanced AI-powered fitness platform, surpassing MyFitnessPal, HealthifyMe, and all competitors through revolutionary features and superior user experience.
+
+### **CURRENT PHASE: Week 1 - Foundation & Critical Features** 
+**Status**: 75% core features complete, implementing world-domination roadmap
+**Priority**: Social features, gamification, premium monetization, UI redesign
+
+### **ACTIVE DEVELOPMENT AREAS:**
+1. **✅ COMPLETED**: Production environment variables (APK/AAB builds working)
+2. **✅ COMPLETED**: Apple HealthKit bidirectional integration 
+3. **🚀 IN PROGRESS**: Friends system and community features
+4. **⏳ PENDING**: 100+ achievement badges system expansion
+5. **⏳ PENDING**: Premium subscription framework
+6. **🎨 PARALLEL**: Complete interface overhaul (ongoing)
+
+### **KEY FILES TO REFERENCE:**
+- `MARKET_RESEARCH_ANALYSIS.md` - Competitor analysis & opportunities
+- `IMPLEMENTATION_ROADMAP.md` - 20-week strategic development plan  
+- `COMPLETE_TODO_MASTERPLAN.md` - Comprehensive task tracking & milestones
+
+### **CRITICAL SUCCESS METRICS:**
+- **User Engagement**: Target 50%+ DAU/MAU (vs competitors' 35%)
+- **Premium Conversion**: Target 12%+ (vs industry 8%) 
+- **App Store Rating**: Target 4.8+ (vs MyFitnessPal's 4.1)
+- **Revenue Goal**: $270K monthly by month 24
+
 ## Project Overview
 
 FitAI is an AI-powered fitness companion mobile app built with React Native (Expo), TypeScript, and Supabase backend. It integrates Google Gemini 2.5 Flash for 100% personalized workout and nutrition content generation with ZERO generic data.
@@ -792,3 +820,38 @@ npm start | grep "export.*EXPO_PUBLIC"
 - AI features show "undefined" or "Failed to generate" responses
 
 **THIS PROTOCOL GUARANTEES 100% PRODUCTION SUCCESS AND PREVENTS ALL ENVIRONMENT VARIABLE ISSUES.**
+
+---
+
+## 📋 **MANDATORY TODO TRACKING PROTOCOL**
+
+### **CRITICAL RULE: ALWAYS UPDATE TODO FILES**
+Every development session MUST update progress tracking files:
+
+1. **Use TodoWrite tool** for active task management
+2. **Update COMPLETE_TODO_MASTERPLAN.md** when completing major milestones
+3. **Mark tasks complete IMMEDIATELY** after finishing (no batching)
+4. **Add new discovered tasks** during implementation
+5. **Keep exactly ONE task in_progress** at any time
+
+### **TODO Status Definitions:**
+- **pending**: Task not yet started
+- **in_progress**: Currently working on (LIMIT TO ONE TASK)
+- **completed**: Task finished successfully
+
+### **Weekly Progress Tracking:**
+- Mark Week milestones in COMPLETE_TODO_MASTERPLAN.md
+- Update success metrics and KPIs when achieved
+- Document any blocking issues or discoveries
+- Update competitive advantage features when implemented
+
+### **New Chat Session Protocol:**
+When starting a new Claude session, immediately:
+1. Check current TODO status via COMPLETE_TODO_MASTERPLAN.md
+2. Review active development areas from this CLAUDE.md file
+3. Understand project context and current phase
+4. Continue from last marked in_progress task
+5. Update TodoWrite tool with current task status
+
+**NEVER START WORK WITHOUT FIRST CHECKING TODO STATUS AND PROJECT CONTEXT.**
+- when we have done some big changes. after that we always need to check with npm run type-check, npm run build and want both to pass then we will proceed to next otherwise we will fix both

@@ -5,7 +5,6 @@ import { WelcomeScreen } from './WelcomeScreen';
 import { LoginScreen } from './LoginScreen';
 import { SignUpScreen } from './SignUpScreen';
 import { PersonalInfoScreen } from './PersonalInfoScreen';
-import { GoalsScreen } from './GoalsScreen';
 import { DietPreferencesScreen, DietPreferences } from './DietPreferencesScreen';
 import { WorkoutPreferencesScreen, WorkoutPreferences } from './WorkoutPreferencesScreen';
 import { BodyAnalysisScreen, BodyAnalysis } from './BodyAnalysisScreen';
@@ -29,10 +28,9 @@ type OnboardingStep =
   | 'signup'
   | 'login'
   | 'personal-info'
-  | 'goals'
-  | 'diet-preferences'
-  | 'workout-preferences'
   | 'body-analysis'
+  | 'workout-preferences'
+  | 'diet-preferences'
   | 'review';
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
@@ -201,7 +199,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
 
     console.log('✅ Personal info state updated');
-    setCurrentStep('goals');
+    setCurrentStep('diet-preferences');
   };
 
   const handlePersonalInfoBack = async () => {
@@ -223,24 +221,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
   };
 
-  const handleGoalsNext = async (data: FitnessGoals) => {
-    console.log('🎯 Goals completed, proceeding to diet preferences');
-    setFitnessGoals(data);
-
-    // Save partial data with current state
-    if (onPartialSave) {
-      onPartialSave({
-        personalInfo,
-        fitnessGoals: data,
-      });
-    }
-
-    setCurrentStep('diet-preferences');
-  };
-
-  const handleGoalsBack = () => {
-    setCurrentStep('personal-info');
-  };
 
   // Diet Preferences handlers
   const handleDietPreferencesNext = (data: DietPreferences) => {
@@ -256,33 +236,50 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('workout-preferences');
+    setCurrentStep('body-analysis');
   };
 
   const handleDietPreferencesBack = () => {
-    setCurrentStep('goals');
+    setCurrentStep('personal-info');
   };
 
   // Workout Preferences handlers
   const handleWorkoutPreferencesNext = (data: WorkoutPreferences) => {
     console.log('💪 Workout preferences completed');
+    
+    // Transform workout preferences data into the expected format for AI services
+    const transformedFitnessGoals: FitnessGoals = {
+      primaryGoals: data.primaryGoals,
+      timeCommitment: data.timePreference.toString(), // Convert minutes to string
+      experience: data.intensity,
+      experience_level: data.intensity, // Duplicate for backward compatibility
+    };
+    
+    // Update personalInfo to include activityLevel
+    const updatedPersonalInfo: PersonalInfo = {
+      ...personalInfo!,
+      activityLevel: data.activityLevel,
+    };
+    
     setWorkoutPreferences(data);
+    setFitnessGoals(transformedFitnessGoals);
+    setPersonalInfo(updatedPersonalInfo);
 
     // Save partial data with current state
     if (onPartialSave) {
       onPartialSave({
-        personalInfo,
-        fitnessGoals,
+        personalInfo: updatedPersonalInfo,
+        fitnessGoals: transformedFitnessGoals,
         dietPreferences,
         workoutPreferences: data,
       });
     }
 
-    setCurrentStep('body-analysis');
+    setCurrentStep('review');
   };
 
   const handleWorkoutPreferencesBack = () => {
-    setCurrentStep('diet-preferences');
+    setCurrentStep('body-analysis');
   };
 
   // Body Analysis handlers
@@ -301,11 +298,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('review');
+    setCurrentStep('workout-preferences');
   };
 
   const handleBodyAnalysisBack = () => {
-    setCurrentStep('workout-preferences');
+    setCurrentStep('diet-preferences');
   };
 
   const handleBodyAnalysisSkip = () => {
@@ -324,7 +321,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('review');
+    setCurrentStep('workout-preferences');
   };
 
   // Review handlers
@@ -370,7 +367,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const handleReviewBack = () => {
-    setCurrentStep('body-analysis');
+    setCurrentStep('workout-preferences');
   };
 
   const handleReviewEditSection = (section: keyof OnboardingReviewData) => {
@@ -381,7 +378,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         setCurrentStep('personal-info');
         break;
       case 'fitnessGoals':
-        setCurrentStep('goals');
+        setCurrentStep('workout-preferences');
         break;
       case 'dietPreferences':
         setCurrentStep('diet-preferences');
@@ -427,14 +424,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'goals':
-        return (
-          <GoalsScreen
-            onNext={handleGoalsNext}
-            onBack={handleGoalsBack}
-            initialData={fitnessGoals || undefined}
-          />
-        );
 
       case 'diet-preferences':
         return (
@@ -451,6 +440,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             onNext={handleWorkoutPreferencesNext}
             onBack={handleWorkoutPreferencesBack}
             initialData={workoutPreferences || undefined}
+            bodyAnalysis={bodyAnalysis}
           />
         );
 

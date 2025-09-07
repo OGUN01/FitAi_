@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
 import { authService, AuthResponse } from '../services/auth';
+import { generateGuestId, migrateGuestId } from '../utils/uuid';
 
 interface AuthState {
   // State
@@ -386,10 +387,19 @@ export const useAuthStore = create<AuthState>()(
         let guestId: string | null = null;
 
         if (enabled) {
-          // Reuse existing guest ID if available, otherwise create new one
-          guestId =
-            currentState.guestId ||
-            `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          // Migrate existing guest ID to proper UUID format if needed
+          if (currentState.guestId) {
+            guestId = migrateGuestId(currentState.guestId);
+            if (guestId !== currentState.guestId) {
+              console.log(`🔄 Migrated guest ID from ${currentState.guestId} to ${guestId}`);
+            } else {
+              guestId = currentState.guestId;
+            }
+          } else {
+            // Generate new proper UUID-based guest ID
+            guestId = generateGuestId();
+            console.log(`🆕 Generated new guest ID: ${guestId}`);
+          }
         }
 
         set({

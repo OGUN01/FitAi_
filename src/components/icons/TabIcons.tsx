@@ -87,6 +87,23 @@ export const ProgressIcon: React.FC<IconProps> = ({
   </View>
 );
 
+// Analytics Icon (Line Chart)
+export const AnalyticsIcon: React.FC<IconProps> = ({
+  size = 24,
+  color = THEME.colors.textMuted,
+  active = false,
+}) => (
+  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
+    <View style={[styles.analyticsLine1, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsLine2, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsLine3, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsPoint1, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsPoint2, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsPoint3, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View style={[styles.analyticsPoint4, { backgroundColor: active ? THEME.colors.primary : color }]} />
+  </View>
+);
+
 // Profile Icon
 export const ProfileIcon: React.FC<IconProps> = ({
   size = 24,
@@ -230,5 +247,69 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     position: 'absolute',
     bottom: 2,
+  },
+
+  // Analytics Icon Styles (Line Chart)
+  analyticsLine1: {
+    width: 4,
+    height: 1,
+    position: 'absolute',
+    left: 2,
+    top: 8,
+    transform: [{ rotate: '15deg' }],
+  },
+
+  analyticsLine2: {
+    width: 4,
+    height: 1,
+    position: 'absolute',
+    left: 6,
+    top: 6,
+    transform: [{ rotate: '-20deg' }],
+  },
+
+  analyticsLine3: {
+    width: 4,
+    height: 1,
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    transform: [{ rotate: '25deg' }],
+  },
+
+  analyticsPoint1: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 2,
+    top: 8,
+  },
+
+  analyticsPoint2: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 6,
+    top: 5,
+  },
+
+  analyticsPoint3: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    position: 'absolute',
+    left: 10,
+    top: 11,
+  },
+
+  analyticsPoint4: {
+    width: 2,
+    height: 2,
+    borderRadius: 1,
+    position: 'absolute',
+    right: 2,
+    top: 7,
   },
 });

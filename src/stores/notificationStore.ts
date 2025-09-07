@@ -57,8 +57,6 @@ const getDefaultPreferences = (): NotificationPreferences => ({
   progress: {
     enabled: true,
     frequency: 'weekly',
-    weekday: 1, // Monday
-    time: '09:00',
   },
 });
 

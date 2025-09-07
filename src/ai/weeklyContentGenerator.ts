@@ -299,9 +299,9 @@ class WeeklyContentGeneratorService {
         progressionNotes: aiPlan.weeklyProgression?.nextWeekAdjustments || [],
         totalEstimatedCalories: aiPlan.estimatedWeeklyCalories || 0,
         planTitle: aiPlan.planTitle || `${personalInfo.name}'s Week ${weekNumber} Plan`,
-        planDescription: aiPlan.planDescription || `Personalized ${fitnessGoals.experience_level} workout plan for ${personalInfo.name}`,
+        planDescription: aiPlan.planDescription || `Personalized ${fitnessGoals.experience_level || fitnessGoals.experience} workout plan for ${personalInfo.name}`,
         experienceLevel: aiPlan.experienceLevel || fitnessGoals.experience_level,
-        weeklyGoals: aiPlan.weeklyGoals || [`Improve ${fitnessGoals.primary_goals?.join(' and ') || 'fitness'}`],
+        weeklyGoals: aiPlan.weeklyGoals || [`Improve ${fitnessGoals.primaryGoals?.join(' and ') || 'fitness'}`],
         createdAt: new Date().toISOString(),
       };
 

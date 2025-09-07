@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { TabBar } from './TabBar';
-import { HomeIcon, FitnessIcon, DietIcon, ProgressIcon, ProfileIcon } from '../icons/TabIcons';
+import { HomeIcon, FitnessIcon, DietIcon, ProgressIcon, ProfileIcon, AnalyticsIcon } from '../icons/TabIcons';
 import { HomeScreen } from '../../screens/main/HomeScreen';
 import { FitnessScreen } from '../../screens/main/FitnessScreen';
 import { DietScreen } from '../../screens/main/DietScreen';
 import { ProgressScreen } from '../../screens/main/ProgressScreen';
 import { ProfileScreen } from '../../screens/main/ProfileScreen';
+import AnalyticsScreen from '../../screens/main/AnalyticsScreen';
 import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
 import { MealSession } from '../../screens/session/MealSession';
 import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
@@ -78,21 +79,21 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
     },
     {
       key: 'fitness',
-      title: 'Fitness',
+      title: 'Workout',
       icon: <FitnessIcon />,
       activeIcon: <FitnessIcon active />,
+    },
+    {
+      key: 'analytics',
+      title: 'Analytics',
+      icon: <AnalyticsIcon />,
+      activeIcon: <AnalyticsIcon active />,
     },
     {
       key: 'diet',
       title: 'Diet',
       icon: <DietIcon />,
       activeIcon: <DietIcon active />,
-    },
-    {
-      key: 'progress',
-      title: 'Progress',
-      icon: <ProgressIcon />,
-      activeIcon: <ProgressIcon active />,
     },
     {
       key: 'profile',
@@ -152,10 +153,10 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
         return <HomeScreen onNavigateToTab={setActiveTab} />;
       case 'fitness':
         return <FitnessScreen navigation={navigation} />;
+      case 'analytics':
+        return <AnalyticsScreen />;
       case 'diet':
         return <DietScreen navigation={navigation} isActive={activeTab === 'diet'} />;
-      case 'progress':
-        return <ProgressScreen />;
       case 'profile':
         return <ProfileScreen />;
       default:

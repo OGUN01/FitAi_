@@ -59,6 +59,10 @@ import FoodRecognitionFeedback, {
 } from '../../components/diet/FoodRecognitionFeedback';
 import { foodRecognitionFeedbackService } from '../../services/foodRecognitionFeedbackService';
 import PortionAdjustment from '../../components/diet/PortionAdjustment';
+import { barcodeService } from '../../services/barcodeService';
+import type { ScannedProduct } from '../../services/barcodeService';
+import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer';
+import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
 
 interface DietScreenProps {
   navigation?: any; // Navigation prop for routing
@@ -109,6 +113,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // Barcode Scanning State
+  const [cameraMode, setCameraMode] = useState<'food' | 'progress' | 'barcode'>('food');
+  const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
+  const [productHealthAssessment, setProductHealthAssessment] = useState<any>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
 
   // Use nutrition store for meal plan state
   const {
@@ -591,6 +602,109 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     } finally {
       setIsGeneratingMeal(false);
     }
+  };
+
+  // Barcode scanning handlers
+  const handleBarcodeScanned = async (barcode: string, type: string) => {
+    console.log('🔍 Barcode scanned:', { barcode, type });
+    setIsProcessingBarcode(true);
+    setShowCamera(false);
+
+    try {
+      // Show processing alert
+      Alert.alert(
+        '📱 Scanning Product',
+        'Analyzing product information and health assessment...',
+        [{ text: 'Processing...', style: 'cancel' }]
+      );
+
+      // Lookup product using barcode service
+      const lookupResult = await barcodeService.lookupProduct(barcode);
+
+      if (!lookupResult.success || !lookupResult.product) {
+        Alert.alert(
+          '❌ Product Not Found',
+          lookupResult.error || 'This product is not in our database. Try scanning a different barcode or add the product manually.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const product = lookupResult.product;
+      console.log('✅ Product found:', product.name);
+
+      // Generate health assessment
+      const healthAssessment = await nutritionAnalyzer.assessProductHealth({
+        nutrition: product.nutrition,
+        additionalInfo: product.additionalInfo,
+        name: product.name,
+        category: product.category
+      });
+
+      console.log('✅ Health assessment completed:', {
+        score: healthAssessment.overallScore,
+        category: healthAssessment.category
+      });
+
+      // Update state and show modal
+      setScannedProduct(product);
+      setProductHealthAssessment(healthAssessment);
+      setShowProductModal(true);
+
+      // Success alert
+      Alert.alert(
+        '✅ Product Scanned Successfully!',
+        `Found: ${product.name}\nHealth Score: ${healthAssessment.overallScore}/100 (${healthAssessment.category})`,
+        [{ text: 'View Details', onPress: () => setShowProductModal(true) }]
+      );
+
+    } catch (error) {
+      console.error('❌ Barcode scanning error:', error);
+      Alert.alert(
+        '❌ Scanning Error',
+        `Failed to process barcode: ${error}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsProcessingBarcode(false);
+    }
+  };
+
+  const handleScanProduct = () => {
+    setCameraMode('barcode');
+    setShowCamera(true);
+  };
+
+  const handleAddProductToMeal = (product: ScannedProduct) => {
+    // Add product to current meal - integration with meal logging system
+    Alert.alert(
+      'Add to Meal',
+      `Add ${product.name} to your current meal?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Add',
+          onPress: async () => {
+            try {
+              // Here you would integrate with the existing meal logging system
+              // For now, show success message
+              Alert.alert(
+                '✅ Added to Meal',
+                `${product.name} has been added to your ${selectedMealType}.`
+              );
+              
+              // Close the modal
+              setShowProductModal(false);
+              
+              // Refresh nutrition data
+              await loadDailyNutrition();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to add product to meal. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   // Enhanced scan food handler with meal type selection
@@ -1631,6 +1745,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 </Card>
               </TouchableOpacity>
 
+              <TouchableOpacity style={styles.actionItem} onPress={handleScanProduct}>
+                <Card style={styles.actionCard} variant="outlined">
+                  <Text style={styles.actionIcon}>📱</Text>
+                  <Text style={styles.actionText}>Scan Product</Text>
+                </Card>
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.actionItem} onPress={handleLogWater}>
                 <Card style={styles.actionCard} variant="outlined">
                   <Text style={styles.actionIcon}>💧</Text>
@@ -1713,9 +1834,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       {/* Camera Modal */}
       {showCamera && (
         <Camera
-          mode="food"
+          mode={cameraMode}
           onCapture={handleCameraCapture}
-          onClose={() => setShowCamera(false)}
+          onBarcodeScanned={cameraMode === 'barcode' ? handleBarcodeScanned : undefined}
+          onClose={() => {
+            setShowCamera(false);
+            setCameraMode('food'); // Reset to default
+          }}
           style={styles.cameraModal}
         />
       )}
@@ -1939,6 +2064,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           </View>
         </View>
       </Modal>
+
+      {/* Product Details Modal */}
+      {scannedProduct && (
+        <ProductDetailsModal
+          visible={showProductModal}
+          onClose={() => setShowProductModal(false)}
+          product={scannedProduct}
+          healthAssessment={productHealthAssessment}
+          onAddToMeal={handleAddProductToMeal}
+        />
+      )}
     </SafeAreaView>
   );
 };

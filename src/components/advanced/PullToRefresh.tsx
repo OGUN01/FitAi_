@@ -31,6 +31,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [canRefresh, setCanRefresh] = useState(false);
+  const [currentPullDistance, setCurrentPullDistance] = useState(0);
   const pullDistance = useRef(new Animated.Value(0)).current;
   const rotationValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(0)).current;
@@ -55,6 +56,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         // Apply resistance to the pull
         const resistance = Math.min(dy * 0.5, maxPullDistance);
         pullDistance.setValue(resistance);
+        setCurrentPullDistance(resistance);
 
         // Update refresh state
         const shouldRefresh = resistance >= pullThreshold;
@@ -200,7 +202,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         onScroll={(event) => {
           const { contentOffset } = event.nativeEvent;
           // Reset pull state if scrolled away from top
-          if (contentOffset.y > 0 && (canRefresh || pullDistance._value > 0)) {
+          if (contentOffset.y > 0 && (canRefresh || currentPullDistance > 0)) {
             resetPull();
           }
         }}

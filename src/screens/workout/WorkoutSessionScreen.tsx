@@ -18,7 +18,11 @@ import { WorkoutTimer } from '../../components/fitness/WorkoutTimer';
 import { ExerciseGifPlayer } from '../../components/fitness/ExerciseGifPlayer';
 import { ExerciseInstructionModal } from '../../components/fitness/ExerciseInstructionModal';
 import { ExerciseSessionModal } from '../../components/fitness/ExerciseSessionModal';
+import AchievementCelebration from '../../components/achievements/AchievementCelebration';
 import completionTrackingService from '../../services/completionTracking';
+import { useAchievementStore } from '../../stores/achievementStore';
+import { trackAchievementActivity } from '../../stores/achievementStore';
+import { useAuthStore } from '../../stores/authStore';
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -190,6 +194,22 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
   const [showExerciseSession, setShowExerciseSession] = useState(false);
+  
+  // Achievement system integration
+  const { user } = useAuthStore();
+  const { 
+    showCelebration, 
+    celebrationAchievement, 
+    hideCelebration, 
+    checkProgress 
+  } = useAchievementStore();
+  const [recentAchievements, setRecentAchievements] = useState<any[]>([]);
+  const [showAchievementToast, setShowAchievementToast] = useState(false);
+  const [toastAchievement, setToastAchievement] = useState<any>(null);
+  const [achievementToastAnim] = useState(new Animated.Value(0));
+  const [miniToastText, setMiniToastText] = useState('');
+  const [showMiniToast, setShowMiniToast] = useState(false);
+  const [miniToastAnim] = useState(new Animated.Value(0));
 
   // Memoized calculations for performance
   const currentExercise = useMemo(() => {
@@ -232,6 +252,67 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       caloriesBurned: Math.max(0, caloriesBurned),
     };
   }, [currentTime, workoutStartTime, exerciseProgress, workout.estimatedCalories]);
+
+  // Achievement notification helpers
+  const showAchievementMiniToast = useCallback((message: string) => {
+    setMiniToastText(message);
+    setShowMiniToast(true);
+    
+    Animated.sequence([
+      Animated.timing(miniToastAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(miniToastAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowMiniToast(false);
+    });
+  }, [miniToastAnim]);
+
+  const showAchievementNotification = useCallback((achievement: any) => {
+    setToastAchievement(achievement);
+    setShowAchievementToast(true);
+    
+    Animated.sequence([
+      Animated.timing(achievementToastAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.delay(3000),
+      Animated.timing(achievementToastAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setShowAchievementToast(false);
+    });
+  }, [achievementToastAnim]);
+
+  // Listen for achievement celebrations
+  useEffect(() => {
+    if (showCelebration && celebrationAchievement) {
+      console.log('🎉 Achievement earned during workout:', celebrationAchievement.title);
+      
+      // Show achievement toast notification first
+      showAchievementNotification(celebrationAchievement);
+      
+      // Add to recent achievements for session summary
+      setRecentAchievements(prev => [...prev, celebrationAchievement]);
+      
+      // Haptic feedback for achievement
+      if (Platform.OS !== 'web') {
+        Vibration.vibrate([100, 50, 100]);
+      }
+    }
+  }, [showCelebration, celebrationAchievement, showAchievementNotification]);
 
   // Enhanced timer for real-time updates
   useEffect(() => {
@@ -281,6 +362,39 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           newProgress[currentExerciseIndex].endTime = new Date();
         }
 
+        // Achievement tracking for set completion
+        if (user?.id) {
+          try {
+            // Track individual set completion
+            await checkProgress(user.id, {
+              action: 'set_completed',
+              exercise: currentExercise.name || currentExercise.exerciseName,
+              setNumber: setIndex + 1,
+              totalSets: currentProgress.completedSets.length,
+              workoutType: workout.category || 'General',
+              timestamp: new Date().toISOString(),
+            });
+
+            // Track exercise completion if all sets are done
+            if (allSetsCompleted) {
+              await checkProgress(user.id, {
+                action: 'exercise_completed',
+                exercise: currentExercise.name || currentExercise.exerciseName,
+                exerciseType: workout.category || 'General',
+                setsCompleted: currentProgress.completedSets.length,
+                exerciseIndex: currentExerciseIndex + 1,
+                totalExercises: totalExercises,
+                timestamp: new Date().toISOString(),
+              });
+
+              // Show mini achievement toast for exercise completion
+              showAchievementMiniToast(`Exercise ${currentExerciseIndex + 1}/${totalExercises} Complete! 💪`);
+            }
+          } catch (achievementError) {
+            console.warn('Achievement tracking for set completion failed:', achievementError);
+          }
+        }
+
         setExerciseProgress(newProgress);
 
         // Enhanced progress tracking
@@ -316,6 +430,36 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         if (allSetsCompleted && currentExerciseIndex < totalExercises - 1) {
           setShowNextExercisePreview(true);
           setTimeout(() => setShowNextExercisePreview(false), 3000);
+        }
+
+        // Track workout milestones
+        if (user?.id) {
+          try {
+            const completedExercises = newProgress.filter(ep => ep.isCompleted).length;
+            const completionPercentage = (completedExercises / totalExercises) * 100;
+
+            // Milestone tracking
+            if (completionPercentage === 50) {
+              await checkProgress(user.id, {
+                action: 'workout_halfway',
+                workoutType: workout.category || 'General',
+                exercisesCompleted: completedExercises,
+                totalExercises: totalExercises,
+                timeElapsed: Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000),
+              });
+              showAchievementMiniToast('Halfway There! 🔥 Keep Going!');
+            } else if (completionPercentage === 75) {
+              await checkProgress(user.id, {
+                action: 'workout_three_quarters',
+                workoutType: workout.category || 'General',
+                exercisesCompleted: completedExercises,
+                totalExercises: totalExercises,
+              });
+              showAchievementMiniToast('Almost Done! 💪 Final Push!');
+            }
+          } catch (milestoneError) {
+            console.warn('Milestone tracking failed:', milestoneError);
+          }
         }
       } catch (error) {
         console.error('Failed to update workout progress:', error);
@@ -446,14 +590,62 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       });
 
       if (success) {
+        // Track achievement progress for workout completion
+        if (user?.id) {
+          console.log('🏆 Tracking achievement progress for workout completion');
+          try {
+            // Track workout completion with detailed activity data
+            trackAchievementActivity.workoutCompleted(user.id, {
+              workoutType: workout.category || 'General',
+              duration: finalStats.totalDuration,
+              caloriesBurned: finalStats.caloriesBurned,
+              exercisesCompleted: finalStats.exercisesCompleted,
+              setsCompleted: finalStats.setsCompleted,
+              totalWorkouts: 1, // This will be accumulated in the achievement engine
+              completionRate: finalStats.exercisesCompleted / totalExercises,
+              workoutTitle: workout.title,
+            });
+
+            // Additional achievement tracking for specific milestones
+            await checkProgress(user.id, {
+              action: 'workout_completed',
+              workoutType: workout.category || 'General',
+              duration: finalStats.totalDuration,
+              caloriesBurned: finalStats.caloriesBurned,
+              exercisesCompleted: finalStats.exercisesCompleted,
+              setsCompleted: finalStats.setsCompleted,
+              completionRate: finalStats.exercisesCompleted / totalExercises,
+              isConsistent: true, // Could be enhanced with actual streak data
+            });
+          } catch (achievementError) {
+            console.warn('Achievement tracking failed:', achievementError);
+          }
+        }
+
+        // Create workout completion message with achievements
+        let completionMessage = `Outstanding performance! You completed "${safeString(workout.title, 'Workout')}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
+          `📊 Stats:\n` +
+          `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
+          `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
+          `• Calories: ~${safeString(finalStats.caloriesBurned)}`;
+
+        // Add achievements earned during this session
+        if (recentAchievements.length > 0) {
+          completionMessage += `\n\n🏆 Achievements Earned:\n`;
+          recentAchievements.forEach((achievement, index) => {
+            completionMessage += `• ${achievement.icon} ${achievement.title}\n`;
+          });
+        }
+
         Alert.alert(
           '🎉 Workout Complete!',
-          `Outstanding performance! You completed "${safeString(workout.title, 'Workout')}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
-            `📊 Stats:\n` +
-            `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
-            `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
-            `• Calories: ~${safeString(finalStats.caloriesBurned)}`,
+          completionMessage,
           [
+            {
+              text: 'View Achievements',
+              onPress: () => navigation.navigate('Analytics'),
+              style: 'default',
+            },
             {
               text: 'View Progress',
               onPress: () => navigation.navigate('Progress'),
@@ -849,6 +1041,63 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           style={[styles.navButton, styles.primaryNavButton]}
         />
       </View>
+
+      {/* Achievement Celebration Modal */}
+      <AchievementCelebration
+        visible={showCelebration}
+        achievement={celebrationAchievement}
+        onClose={hideCelebration}
+      />
+
+      {/* Achievement Toast Notification */}
+      {showAchievementToast && toastAchievement && (
+        <Animated.View
+          style={[
+            styles.achievementToast,
+            {
+              opacity: achievementToastAnim,
+              transform: [
+                {
+                  translateY: achievementToastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-100, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View style={styles.achievementToastContent}>
+            <Text style={styles.achievementToastIcon}>{toastAchievement.icon}</Text>
+            <View style={styles.achievementToastText}>
+              <Text style={styles.achievementToastTitle}>Achievement Unlocked!</Text>
+              <Text style={styles.achievementToastDescription}>{toastAchievement.title}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Mini Toast for Exercise Progress */}
+      {showMiniToast && (
+        <Animated.View
+          style={[
+            styles.miniToast,
+            {
+              opacity: miniToastAnim,
+              transform: [
+                {
+                  scale: miniToastAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Text style={styles.miniToastText}>{miniToastText}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 };
@@ -1181,5 +1430,73 @@ const styles = StyleSheet.create({
 
   primaryNavButton: {
     elevation: 2,
+  },
+
+  // Achievement Toast Styles
+  achievementToast: {
+    position: 'absolute',
+    top: 60,
+    left: THEME.spacing.lg,
+    right: THEME.spacing.lg,
+    zIndex: 1000,
+  },
+
+  achievementToastContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: THEME.colors.success,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  achievementToastIcon: {
+    fontSize: 28,
+    marginRight: THEME.spacing.sm,
+  },
+
+  achievementToastText: {
+    flex: 1,
+  },
+
+  achievementToastTitle: {
+    fontSize: THEME.fontSize.sm,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.white,
+    marginBottom: 2,
+  },
+
+  achievementToastDescription: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.white + 'CC',
+  },
+
+  // Mini Toast Styles
+  miniToast: {
+    position: 'absolute',
+    top: '50%',
+    alignSelf: 'center',
+    backgroundColor: THEME.colors.primary + 'E6',
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: 20,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
+  miniToastText: {
+    fontSize: THEME.fontSize.md,
+    fontWeight: THEME.fontWeight.semibold,
+    color: THEME.colors.white,
+    textAlign: 'center',
   },
 });

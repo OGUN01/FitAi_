@@ -32,12 +32,19 @@ export interface DietPreferences {
 }
 
 export interface WorkoutPreferences {
-  workoutType: string[];
+  location: 'home' | 'gym' | 'both';
   equipment: string[];
-  location: 'home' | 'gym' | 'outdoor';
-  timeSlots: string[];
-  intensity: 'low' | 'moderate' | 'high';
-  duration: string;
+  timePreference: number; // minutes
+  intensity: 'beginner' | 'intermediate' | 'advanced';
+  workoutTypes: string[];
+  // Added from GoalsScreen
+  primaryGoals: string[];
+  // Added from PersonalInfoScreen
+  activityLevel: string;
+  // Legacy compatibility fields
+  workoutType?: string[];
+  timeSlots?: string[];
+  duration?: string;
 }
 
 export interface User {

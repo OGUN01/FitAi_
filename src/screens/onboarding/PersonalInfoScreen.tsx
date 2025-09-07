@@ -61,7 +61,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     return initialData;
   };
 
-  const [formData, setFormData] = useState<PersonalInfo>(() => {
+  const [formData, setFormData] = useState<Omit<PersonalInfo, 'activityLevel'>>(() => {
     const data = getInitialData();
     return {
       name: data.name || '',
@@ -70,11 +70,10 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       gender: data.gender || '',
       height: data.height || '',
       weight: data.weight || '',
-      activityLevel: data.activityLevel || '',
     };
   });
 
-  const [errors, setErrors] = useState<Partial<PersonalInfo>>({});
+  const [errors, setErrors] = useState<Partial<Omit<PersonalInfo, 'activityLevel'>>>({});
 
   // Track if data has been populated to prevent loops
   const [isDataPopulated, setIsDataPopulated] = useState(false);
@@ -95,7 +94,6 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
         gender: data.gender || '',
         height: data.height?.toString() || '',
         weight: data.weight?.toString() || '',
-        activityLevel: data.activityLevel || '',
       };
       setFormData(newFormData);
       setIsDataPopulated(true);
@@ -115,7 +113,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   }, [formData, isEditMode, isDataPopulated]); // Removed editContextData?.updateData from deps
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<PersonalInfo> = {};
+    const newErrors: Partial<Omit<PersonalInfo, 'activityLevel'>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -145,10 +143,6 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       newErrors.weight = 'Please enter a valid weight (30-300 kg)';
     }
 
-    if (!formData.activityLevel) {
-      newErrors.activityLevel = 'Please select your activity level';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -169,7 +163,8 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     } else {
       // In onboarding mode, proceed to next step
       if (onNext) {
-        onNext(formData);
+        // Add placeholder activityLevel for backward compatibility
+        onNext({ ...formData, activityLevel: '' } as PersonalInfo);
       }
     }
   };
@@ -190,7 +185,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     }
   };
 
-  const updateField = (field: keyof PersonalInfo, value: string) => {
+  const updateField = (field: keyof Omit<PersonalInfo, 'activityLevel'>, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -203,21 +198,6 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     { label: 'Other', value: 'other' },
   ];
 
-  const activityLevels = [
-    { label: 'Sedentary', value: 'sedentary', description: 'Little to no exercise' },
-    { label: 'Lightly Active', value: 'light', description: 'Light exercise 1-3 days/week' },
-    {
-      label: 'Moderately Active',
-      value: 'moderate',
-      description: 'Moderate exercise 3-5 days/week',
-    },
-    { label: 'Very Active', value: 'active', description: 'Hard exercise 6-7 days/week' },
-    {
-      label: 'Extremely Active',
-      value: 'extreme',
-      description: 'Very hard exercise, physical job',
-    },
-  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -301,36 +281,6 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
             </View>
           </View>
 
-          <View style={styles.activitySection}>
-            <Text style={styles.inputLabel}>Activity Level</Text>
-            {activityLevels.map((level) => (
-              <TouchableOpacity
-                key={level.value}
-                onPress={() => updateField('activityLevel', level.value)}
-              >
-                <Card
-                  style={[
-                    styles.activityCard,
-                    formData.activityLevel === level.value && styles.activityCardSelected,
-                  ]}
-                  variant="outlined"
-                >
-                  <View style={styles.activityCardContent}>
-                    <Text
-                      style={[
-                        styles.activityTitle,
-                        formData.activityLevel === level.value && styles.activityTitleSelected,
-                      ]}
-                    >
-                      {level.label}
-                    </Text>
-                    <Text style={styles.activityDescription}>{level.description}</Text>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            ))}
-            {errors.activityLevel && <Text style={styles.errorText}>{errors.activityLevel}</Text>}
-          </View>
         </View>
       </ScrollView>
 

@@ -14,12 +14,17 @@ export interface WorkoutPreferences {
   timePreference: number; // minutes
   intensity: 'beginner' | 'intermediate' | 'advanced';
   workoutTypes: string[];
+  // Added from GoalsScreen
+  primaryGoals: string[];
+  // Added from PersonalInfoScreen
+  activityLevel: string;
 }
 
 interface WorkoutPreferencesScreenProps {
   onNext?: (data: WorkoutPreferences) => void;
   onBack?: () => void;
   initialData?: Partial<WorkoutPreferences>;
+  bodyAnalysis?: any; // For auto-population from body analysis
   // Edit mode props
   isEditMode?: boolean;
   onEditComplete?: () => void;
@@ -30,6 +35,7 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
   onNext,
   onBack,
   initialData = {},
+  bodyAnalysis,
   isEditMode: propIsEditMode = false,
   onEditComplete,
   onEditCancel,
@@ -73,10 +79,14 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
     data.intensity || 'beginner'
   );
   const [workoutTypes, setWorkoutTypes] = useState<string[]>(data.workoutTypes || []);
+  const [primaryGoals, setPrimaryGoals] = useState<string[]>(data.primaryGoals || []);
+  const [activityLevel, setActivityLevel] = useState<string>(data.activityLevel || '');
 
   const [errors, setErrors] = useState<{
     location?: string;
     workoutTypes?: string;
+    primaryGoals?: string;
+    activityLevel?: string;
   }>({});
 
   // Track if data has been populated to prevent loops
@@ -89,6 +99,8 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
     timePreference,
     intensity,
     workoutTypes,
+    primaryGoals,
+    activityLevel,
   };
 
   // Update form data when edit context data changes (only once)
@@ -105,6 +117,8 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       setTimePreference(data.timePreference || 30);
       setIntensity(data.intensity || 'beginner');
       setWorkoutTypes(data.workoutTypes || []);
+      setPrimaryGoals(data.primaryGoals || []);
+      setActivityLevel(data.activityLevel || '');
       setIsDataPopulated(true);
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
@@ -118,7 +132,76 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
       return () => clearTimeout(timeoutId);
     }
-  }, [location, equipment, timePreference, intensity, workoutTypes, isEditMode, isDataPopulated]);
+  }, [location, equipment, timePreference, intensity, workoutTypes, primaryGoals, activityLevel, isEditMode, isDataPopulated]);
+
+  // Auto-populate from body analysis if available
+  useEffect(() => {
+    if (bodyAnalysis?.analysis && !isDataPopulated) {
+      const analysis = bodyAnalysis.analysis;
+      
+      // Auto-set intensity based on fitness level
+      if (analysis.fitnessLevel) {
+        const fitnessMapping: Record<string, WorkoutPreferences['intensity']> = {
+          'Beginner': 'beginner',
+          'Intermediate': 'intermediate',
+          'Advanced': 'advanced'
+        };
+        setIntensity(fitnessMapping[analysis.fitnessLevel] || 'beginner');
+      }
+      
+      // Suggest goals based on body type
+      if (analysis.bodyType === 'Ectomorph' && primaryGoals.length === 0) {
+        setPrimaryGoals(['muscle_gain', 'strength']);
+      } else if (analysis.bodyType === 'Endomorph' && primaryGoals.length === 0) {
+        setPrimaryGoals(['weight_loss', 'endurance']);
+      }
+    }
+  }, [bodyAnalysis, isDataPopulated, primaryGoals.length]);
+
+  const fitnessGoals = [
+    {
+      id: 'weight_loss',
+      title: 'Weight Loss',
+      icon: '🔥',
+      description: 'Burn fat and lose weight',
+    },
+    { id: 'muscle_gain', title: 'Muscle Gain', icon: '💪', description: 'Build lean muscle mass' },
+    { id: 'strength', title: 'Strength', icon: '🏋️', description: 'Increase overall strength' },
+    {
+      id: 'endurance',
+      title: 'Endurance',
+      icon: '🏃',
+      description: 'Improve cardiovascular fitness',
+    },
+    {
+      id: 'flexibility',
+      title: 'Flexibility',
+      icon: '🧘',
+      description: 'Enhance mobility and flexibility',
+    },
+    {
+      id: 'general_fitness',
+      title: 'General Fitness',
+      icon: '⚡',
+      description: 'Overall health and wellness',
+    },
+  ];
+
+  const activityLevels = [
+    { value: 'sedentary', label: 'Sedentary', description: 'Little to no exercise' },
+    { value: 'light', label: 'Lightly Active', description: 'Light exercise 1-3 days/week' },
+    {
+      value: 'moderate',
+      label: 'Moderately Active',
+      description: 'Moderate exercise 3-5 days/week',
+    },
+    { value: 'active', label: 'Very Active', description: 'Hard exercise 6-7 days/week' },
+    {
+      value: 'extreme',
+      label: 'Extremely Active',
+      description: 'Very hard exercise, physical job',
+    },
+  ];
 
   const locationOptions = [
     {
@@ -196,6 +279,14 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
     if (workoutTypes.length === 0) {
       newErrors.workoutTypes = 'Please select at least one workout type';
     }
+    
+    if (primaryGoals.length === 0) {
+      newErrors.primaryGoals = 'Please select at least one fitness goal';
+    }
+    
+    if (!activityLevel) {
+      newErrors.activityLevel = 'Please select your activity level';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -212,6 +303,8 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       timePreference,
       intensity,
       workoutTypes,
+      primaryGoals,
+      activityLevel,
     };
 
     if (isEditMode) {
@@ -262,11 +355,95 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>What are your workout preferences?</Text>
-          <Text style={styles.subtitle}>Let's customize your fitness experience</Text>
+          <Text style={styles.title}>Let's create your fitness profile</Text>
+          <Text style={styles.subtitle}>Tell us about your goals, activity level, and workout preferences</Text>
         </View>
 
         <View style={styles.content}>
+          {/* Primary Fitness Goals */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>What are your fitness goals?</Text>
+            <Text style={styles.sectionSubtitle}>Select all that apply</Text>
+            <View style={styles.goalsGrid}>
+              {fitnessGoals.map((goal) => (
+                <TouchableOpacity
+                  key={goal.id}
+                  onPress={() => {
+                    if (primaryGoals.includes(goal.id)) {
+                      setPrimaryGoals(prev => prev.filter(id => id !== goal.id));
+                    } else {
+                      setPrimaryGoals(prev => [...prev, goal.id]);
+                    }
+                    if (errors.primaryGoals) {
+                      setErrors(prev => ({ ...prev, primaryGoals: undefined }));
+                    }
+                  }}
+                  style={styles.goalItem}
+                >
+                  <Card
+                    style={[
+                      styles.goalCard,
+                      primaryGoals.includes(goal.id) && styles.goalCardSelected,
+                    ]}
+                    variant="outlined"
+                  >
+                    <View style={styles.goalContent}>
+                      <Text style={styles.goalIcon}>{goal.icon}</Text>
+                      <Text
+                        style={[
+                          styles.goalTitle,
+                          primaryGoals.includes(goal.id) && styles.goalTitleSelected,
+                        ]}
+                      >
+                        {goal.title}
+                      </Text>
+                      <Text style={styles.goalDescription}>{goal.description}</Text>
+                    </View>
+                  </Card>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {errors.primaryGoals && <Text style={styles.errorText}>{errors.primaryGoals}</Text>}
+          </View>
+
+          {/* Activity Level */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Activity Level</Text>
+            <Text style={styles.sectionSubtitle}>Your current physical activity outside of planned workouts</Text>
+            {activityLevels.map((level) => (
+              <TouchableOpacity
+                key={level.value}
+                onPress={() => {
+                  setActivityLevel(level.value);
+                  if (errors.activityLevel) {
+                    setErrors(prev => ({ ...prev, activityLevel: undefined }));
+                  }
+                }}
+              >
+                <Card
+                  style={[
+                    styles.activityCard,
+                    activityLevel === level.value && styles.activityCardSelected,
+                  ]}
+                  variant="outlined"
+                >
+                  <View style={styles.activityContent}>
+                    <Text
+                      style={[
+                        styles.activityTitle,
+                        activityLevel === level.value && styles.activityTitleSelected,
+                      ]}
+                    >
+                      {level.label}
+                    </Text>
+                    <Text style={styles.activityDescription}>{level.description}</Text>
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            ))}
+            {errors.activityLevel && <Text style={styles.errorText}>{errors.activityLevel}</Text>}
+          </View>
+
           {/* Workout Location */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Where do you prefer to workout?</Text>
@@ -460,6 +637,82 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  goalsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  goalItem: {
+    width: '48%',
+  },
+
+  goalCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  goalCardSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+
+  goalContent: {
+    alignItems: 'center',
+    padding: ResponsiveTheme.spacing.md,
+  },
+
+  goalIcon: {
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  goalTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  goalTitleSelected: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  goalDescription: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  activityCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  activityCardSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+
+  activityContent: {
+    padding: ResponsiveTheme.spacing.md,
+  },
+
+  activityTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  activityTitleSelected: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  activityDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
   },
 
   locationGrid: {

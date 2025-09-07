@@ -8,6 +8,7 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
 import { useUser, useUserStats } from '../../hooks/useUser';
 import { useDashboardIntegration } from '../../utils/integration';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { EditProvider, useEditActions, useEditStatus } from '../../contexts/EditContext';
 import { EditOverlay } from '../../components/profile/EditOverlay';
 import { dataManager } from '../../services/dataManager';
@@ -32,7 +33,70 @@ const ProfileScreenInternal: React.FC = () => {
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<string | null>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
+  // Subscription management
+  const {
+    subscriptionStatus,
+    trialInfo,
+    premiumFeatures,
+    showPaywallModal,
+    initialize: initializeSubscription,
+    refreshSubscriptionStatus
+  } = useSubscriptionStore();
+  const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
+
   const healthMetrics = getHealthMetrics();
+
+  // Premium features display list (derived from subscription store)
+  const premiumFeaturesList = [
+    {
+      icon: '🤖',
+      name: 'Unlimited AI Generations',
+      description: 'Generate unlimited workouts and meal plans with AI',
+      enabled: premiumFeatures?.unlimitedAI || false
+    },
+    {
+      icon: '📊',
+      name: 'Advanced Analytics',
+      description: 'Detailed progress tracking and insights',
+      enabled: premiumFeatures?.advancedAnalytics || false
+    },
+    {
+      icon: '🎨',
+      name: 'Custom Themes',
+      description: 'Personalize your app appearance',
+      enabled: premiumFeatures?.customThemes || false
+    },
+    {
+      icon: '📤',
+      name: 'Export Data',
+      description: 'Export your fitness data and reports',
+      enabled: premiumFeatures?.exportData || false
+    },
+    {
+      icon: '🏆',
+      name: 'Premium Achievements',
+      description: 'Unlock exclusive badges and rewards',
+      enabled: premiumFeatures?.premiumAchievements || false
+    },
+    {
+      icon: '🚫',
+      name: 'Ad-Free Experience',
+      description: 'Enjoy FitAI without interruptions',
+      enabled: premiumFeatures?.removeAds || false
+    },
+    {
+      icon: '💪',
+      name: 'Advanced Workouts',
+      description: 'Access to premium workout templates',
+      enabled: premiumFeatures?.advancedWorkouts || false
+    },
+    {
+      icon: '🔄',
+      name: 'Multi-Device Sync',
+      description: 'Sync your data across all devices',
+      enabled: premiumFeatures?.multiDeviceSync || false
+    }
+  ];
 
   // Check for profile edit intent on component mount
   useEffect(() => {
@@ -71,6 +135,11 @@ const ProfileScreenInternal: React.FC = () => {
     checkEditIntent();
   }, [startEdit]);
 
+  // Initialize subscription system
+  useEffect(() => {
+    initializeSubscription();
+  }, [initializeSubscription]);
+
   // Edit Profile items (under pen icon)
   const editProfileItems = [
     {
@@ -107,27 +176,39 @@ const ProfileScreenInternal: React.FC = () => {
   const settingsItems = [
     {
       id: 5,
+      title: 'Subscription',
+      subtitle: subscriptionStatus === 'active' 
+        ? 'Manage your premium subscription'
+        : subscriptionStatus === 'trialing'
+        ? `${Math.ceil((trialInfo?.daysRemaining || 0))} days left in trial`
+        : 'Upgrade to Premium',
+      icon: subscriptionStatus === 'active' ? '👑' : subscriptionStatus === 'trialing' ? '⏰' : '💎',
+      hasArrow: true,
+      isPremium: subscriptionStatus === 'active' || subscriptionStatus === 'trialing',
+    },
+    {
+      id: 6,
       title: 'Notifications',
       subtitle: 'Manage your alerts and reminders',
       icon: '🔔',
       hasArrow: true,
     },
     {
-      id: 6,
+      id: 7,
       title: 'Privacy & Security',
       subtitle: 'Control your data and privacy',
       icon: '🔒',
       hasArrow: true,
     },
     {
-      id: 7,
+      id: 8,
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
       icon: '❓',
       hasArrow: true,
     },
     {
-      id: 8,
+      id: 9,
       title: 'About FitAI',
       subtitle: 'App version and information',
       icon: 'ℹ️',
@@ -221,16 +302,19 @@ const ProfileScreenInternal: React.FC = () => {
 
   const handleSettingsItemPress = (item: any) => {
     switch (item.id) {
-      case 5: // Notifications
+      case 5: // Subscription
+        setShowSubscriptionScreen(true);
+        break;
+      case 6: // Notifications
         setCurrentSettingsScreen('notifications');
         break;
-      case 6: // Privacy & Security
+      case 7: // Privacy & Security
         setCurrentSettingsScreen('privacy');
         break;
-      case 7: // Help & Support
+      case 8: // Help & Support
         setCurrentSettingsScreen('help');
         break;
-      case 8: // About FitAI
+      case 9: // About FitAI
         setCurrentSettingsScreen('about');
         break;
       default:
@@ -406,18 +490,39 @@ const ProfileScreenInternal: React.FC = () => {
 
             {settingsItems.map((item) => (
               <TouchableOpacity key={item.id} onPress={() => handleSettingsItemPress(item)}>
-                <Card style={styles.menuCard} variant="outlined">
+                <Card style={[
+                  styles.menuCard,
+                  (item as any).isPremium && styles.premiumMenuCard
+                ]} variant="outlined">
                   <View style={styles.menuContent}>
-                    <View style={styles.menuIcon}>
+                    <View style={[
+                      styles.menuIcon,
+                      (item as any).isPremium && styles.premiumMenuIcon
+                    ]}>
                       <Text style={styles.menuIconText}>{item.icon}</Text>
                     </View>
 
                     <View style={styles.menuInfo}>
-                      <Text style={styles.menuTitle}>{item.title}</Text>
-                      <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                      <Text style={[
+                        styles.menuTitle,
+                        (item as any).isPremium && styles.premiumMenuTitle
+                      ]}>{item.title}</Text>
+                      <Text style={[
+                        styles.menuSubtitle,
+                        (item as any).isPremium && styles.premiumMenuSubtitle
+                      ]}>{item.subtitle}</Text>
                     </View>
 
-                    {item.hasArrow && <Text style={styles.menuArrow}>›</Text>}
+                    {item.hasArrow && <Text style={[
+                      styles.menuArrow,
+                      (item as any).isPremium && styles.premiumMenuArrow
+                    ]}>›</Text>}
+                    
+                    {(item as any).isPremium && (
+                      <View style={styles.premiumBadge}>
+                        <Text style={styles.premiumBadgeText}>PRO</Text>
+                      </View>
+                    )}
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -523,6 +628,155 @@ const ProfileScreenInternal: React.FC = () => {
                     </Card>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              <View style={styles.modalBottomSpacing} />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Subscription Management Modal */}
+      <Modal
+        visible={showSubscriptionScreen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSubscriptionScreen(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowSubscriptionScreen(false)}
+            >
+              <Text style={styles.modalCloseText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Subscription</Text>
+            <View style={styles.modalHeaderSpacer} />
+          </View>
+
+          <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+            <View>
+              {/* Current Subscription Status */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalSectionTitle}>Current Plan</Text>
+                <Card style={[
+                  styles.subscriptionStatusCard,
+                  subscriptionStatus === 'active' && styles.activeSubscriptionCard
+                ]} variant="elevated">
+                  <View style={styles.subscriptionStatusContent}>
+                    <View style={styles.subscriptionStatusHeader}>
+                      <Text style={styles.subscriptionStatusIcon}>
+                        {subscriptionStatus === 'active' ? '👑' : 
+                         subscriptionStatus === 'trialing' ? '⏰' : '💎'}
+                      </Text>
+                      <View style={styles.subscriptionStatusInfo}>
+                        <Text style={styles.subscriptionStatusTitle}>
+                          {subscriptionStatus === 'active' ? 'FitAI Premium' :
+                           subscriptionStatus === 'trialing' ? 'Premium Trial' :
+                           'FitAI Free'}
+                        </Text>
+                        <Text style={styles.subscriptionStatusSubtitle}>
+                          {subscriptionStatus === 'active' ? 'Active subscription' :
+                           subscriptionStatus === 'trialing' 
+                             ? `${Math.ceil(trialInfo?.daysRemaining || 0)} days remaining`
+                             : 'Limited features'}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    {subscriptionStatus !== 'free' && trialInfo?.nextBillingDate && (
+                      <View style={styles.subscriptionBillingInfo}>
+                        <Text style={styles.subscriptionBillingText}>
+                          Next billing: {new Date(trialInfo.nextBillingDate).toLocaleDateString()}
+                        </Text>
+                        <Text style={styles.subscriptionAmountText}>
+                          ${trialInfo?.amount || '9.99'}/month
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </Card>
+              </View>
+
+              {/* Premium Features Preview */}
+              <View style={styles.modalSection}>
+                <Text style={styles.modalSectionTitle}>
+                  {subscriptionStatus === 'free' ? 'Premium Features' : 'Your Premium Features'}
+                </Text>
+                {premiumFeaturesList.map((feature, index) => (
+                  <Card key={index} style={styles.featureCard} variant="outlined">
+                    <View style={styles.featureContent}>
+                      <Text style={styles.featureIcon}>{feature.icon}</Text>
+                      <View style={styles.featureInfo}>
+                        <Text style={styles.featureTitle}>{feature.name}</Text>
+                        <Text style={styles.featureDescription}>{feature.description}</Text>
+                      </View>
+                      <View style={[
+                        styles.featureStatus,
+                        feature.enabled && styles.featureActiveStatus
+                      ]}>
+                        <Text style={[
+                          styles.featureStatusText,
+                          feature.enabled && styles.featureActiveStatusText
+                        ]}>
+                          {feature.enabled ? '✓' : '🔒'}
+                        </Text>
+                      </View>
+                    </View>
+                  </Card>
+                ))}
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.modalSection}>
+                {subscriptionStatus === 'free' ? (
+                  <Button
+                    title="Upgrade to Premium - $9.99/month"
+                    onPress={() => {
+                      setShowSubscriptionScreen(false);
+                      // TODO: Open paywall
+                      console.log('Opening paywall...');
+                    }}
+                    variant="primary"
+                    size="lg"
+                    style={styles.upgradeButton}
+                  />
+                ) : (
+                  <View style={styles.subscriptionActions}>
+                    <Button
+                      title="Manage Billing"
+                      onPress={() => {
+                        Alert.alert('Manage Billing', 'Opening billing management...');
+                      }}
+                      variant="outlined"
+                      size="md"
+                      style={styles.actionButton}
+                    />
+                    <Button
+                      title={subscriptionStatus === 'trialing' ? 'Cancel Trial' : 'Cancel Subscription'}
+                      onPress={() => {
+                        Alert.alert(
+                          'Cancel Subscription',
+                          'Are you sure you want to cancel your subscription? You\'ll lose access to premium features at the end of your billing period.',
+                          [
+                            { text: 'Keep Subscription', style: 'cancel' },
+                            { 
+                              text: 'Cancel', 
+                              style: 'destructive',
+                              onPress: () => {
+                                Alert.alert('Subscription Cancelled', 'Your subscription has been cancelled.');
+                              }
+                            }
+                          ]
+                        );
+                      }}
+                      variant="outlined"
+                      size="md"
+                      style={[styles.actionButton, styles.cancelButton]}
+                    />
+                  </View>
+                )}
               </View>
 
               <View style={styles.modalBottomSpacing} />
@@ -984,5 +1238,177 @@ const styles = StyleSheet.create({
 
   modalBottomSpacing: {
     height: ResponsiveTheme.spacing.xxl,
+  },
+
+  // Premium menu item styles
+  premiumMenuCard: {
+    borderColor: ResponsiveTheme.colors.primary + '40',
+    backgroundColor: ResponsiveTheme.colors.primary + '08',
+  },
+
+  premiumMenuIcon: {
+    backgroundColor: ResponsiveTheme.colors.primary + '20',
+  },
+
+  premiumMenuTitle: {
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  premiumMenuSubtitle: {
+    color: ResponsiveTheme.colors.primary + 'CC',
+  },
+
+  premiumMenuArrow: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  premiumBadge: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    paddingVertical: ResponsiveTheme.spacing.xxs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  premiumBadgeText: {
+    color: ResponsiveTheme.colors.white,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // Subscription management modal styles
+  subscriptionStatusCard: {
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  activeSubscriptionCard: {
+    borderColor: ResponsiveTheme.colors.primary + '40',
+    backgroundColor: ResponsiveTheme.colors.primary + '08',
+  },
+
+  subscriptionStatusContent: {
+    flex: 1,
+  },
+
+  subscriptionStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  subscriptionStatusIcon: {
+    fontSize: rf(32),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  subscriptionStatusInfo: {
+    flex: 1,
+  },
+
+  subscriptionStatusTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  subscriptionStatusSubtitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  subscriptionBillingInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: ResponsiveTheme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+  },
+
+  subscriptionBillingText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  subscriptionAmountText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  // Premium features styles
+  featureCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+    padding: ResponsiveTheme.spacing.md,
+  },
+
+  featureContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  featureIcon: {
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  featureInfo: {
+    flex: 1,
+  },
+
+  featureTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  featureDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  featureStatus: {
+    width: rw(24),
+    height: rh(24),
+    borderRadius: rs(12),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  featureActiveStatus: {
+    backgroundColor: ResponsiveTheme.colors.success,
+  },
+
+  featureStatusText: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textMuted,
+  },
+
+  featureActiveStatusText: {
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // Action buttons styles
+  upgradeButton: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  subscriptionActions: {
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  actionButton: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  cancelButton: {
+    borderColor: ResponsiveTheme.colors.error + '40',
   },
 });

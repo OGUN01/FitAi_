@@ -106,7 +106,7 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
         Animated.timing(animationValue, {
           toValue: 1,
           duration: 1500,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         })
       );

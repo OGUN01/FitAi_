@@ -23,7 +23,6 @@ import { THEME } from '../ui';
 
 // Import onboarding screens for reuse
 import { PersonalInfoScreen } from '../../screens/onboarding/PersonalInfoScreen';
-import { GoalsScreen } from '../../screens/onboarding/GoalsScreen';
 import { DietPreferencesScreen } from '../../screens/onboarding/DietPreferencesScreen';
 import { WorkoutPreferencesScreen } from '../../screens/onboarding/WorkoutPreferencesScreen';
 
@@ -116,8 +115,6 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
       switch (editSection) {
         case 'personalInfo':
           return <PersonalInfoScreen {...commonProps} />;
-        case 'fitnessGoals':
-          return <GoalsScreen {...commonProps} />;
         case 'dietPreferences':
           return <DietPreferencesScreen {...commonProps} />;
         case 'workoutPreferences':

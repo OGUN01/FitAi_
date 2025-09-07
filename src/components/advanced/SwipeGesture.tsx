@@ -45,6 +45,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
 }) => {
   const translateX = useRef(new Animated.Value(0)).current;
   const lastOffset = useRef(0);
+  const currentTranslateX = useRef(0);
   const isSwipeActive = useRef(false);
 
   const panResponder = PanResponder.create({
@@ -69,6 +70,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
       // Constrain the movement
       const constrainedDx = Math.max(maxRightSwipe, Math.min(maxLeftSwipe, dx));
       translateX.setValue(constrainedDx);
+      currentTranslateX.current = constrainedDx;
 
       // Haptic feedback at thresholds
       if (hapticFeedback) {
@@ -86,7 +88,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
       const shouldTriggerAction = Math.abs(dx) > swipeThreshold || velocity > 0.5;
 
       translateX.flattenOffset();
-      lastOffset.current = translateX._value;
+      lastOffset.current = currentTranslateX.current;
 
       if (shouldTriggerAction) {
         if (dx > 0) {
@@ -122,6 +124,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
       friction: 8,
     }).start();
     lastOffset.current = position;
+    currentTranslateX.current = position;
   };
 
   const resetPosition = () => {
@@ -132,6 +135,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
       friction: 8,
     }).start();
     lastOffset.current = 0;
+    currentTranslateX.current = 0;
   };
 
   const handleActionPress = (action: SwipeAction) => {

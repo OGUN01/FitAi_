@@ -17,9 +17,18 @@ export type OnboardingStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Workout: undefined;
-  Plus: undefined;
+  Analytics: undefined;
   Diet: undefined;
   Profile: undefined;
+};
+
+export type AnalyticsStackParamList = {
+  AnalyticsMain: undefined;
+  PredictiveInsights: undefined;
+  ProgressTrends: undefined;
+  BodyTransformation: undefined;
+  PerformanceMetrics: undefined;
+  AchievementDetails: { category?: string };
 };
 
 export type WorkoutStackParamList = {
@@ -42,4 +51,5 @@ export type ProfileStackParamList = {
   Settings: undefined;
   Progress: undefined;
   BodyAnalysisHistory: undefined;
+  HealthKitSettings: undefined;
 };

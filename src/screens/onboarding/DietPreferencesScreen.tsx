@@ -5,6 +5,7 @@ import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Card, THEME } from '../../components/ui';
 import { MultiSelect } from '../../components/advanced/MultiSelect';
+import { MultiSelectWithCustom } from '../../components/advanced/MultiSelectWithCustom';
 import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
 
 export interface DietPreferences {
@@ -151,19 +152,40 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
     { id: 'shellfish', label: 'Shellfish', value: 'shellfish', icon: '🦐' },
     { id: 'fish', label: 'Fish', value: 'fish', icon: '🐟' },
     { id: 'sesame', label: 'Sesame', value: 'sesame', icon: '🌰' },
+    { id: 'peanuts', label: 'Peanuts', value: 'peanuts', icon: '🥜' },
+    { id: 'tree-nuts', label: 'Tree Nuts', value: 'tree-nuts', icon: '🌰' },
   ];
 
   const cuisineOptions = [
-    { id: 'indian', label: 'Indian', value: 'indian', icon: '🍛' },
-    { id: 'mediterranean', label: 'Mediterranean', value: 'mediterranean', icon: '🫒' },
-    { id: 'asian', label: 'Asian', value: 'asian', icon: '🍜' },
-    { id: 'mexican', label: 'Mexican', value: 'mexican', icon: '🌮' },
-    { id: 'italian', label: 'Italian', value: 'italian', icon: '🍝' },
-    { id: 'american', label: 'American', value: 'american', icon: '🍔' },
-    { id: 'middle-eastern', label: 'Middle Eastern', value: 'middle-eastern', icon: '🥙' },
-    { id: 'japanese', label: 'Japanese', value: 'japanese', icon: '🍣' },
-    { id: 'thai', label: 'Thai', value: 'thai', icon: '🍲' },
-    { id: 'chinese', label: 'Chinese', value: 'chinese', icon: '🥢' },
+    // Indian Regional
+    { id: 'north-indian', label: 'North Indian', value: 'north-indian', icon: '🍛', region: 'India' },
+    { id: 'south-indian', label: 'South Indian', value: 'south-indian', icon: '🥥', region: 'India' },
+    { id: 'east-indian', label: 'East Indian', value: 'east-indian', icon: '🐟', region: 'India' },
+    { id: 'west-indian', label: 'West Indian', value: 'west-indian', icon: '🌶️', region: 'India' },
+    { id: 'gujarati', label: 'Gujarati', value: 'gujarati', icon: '🥗', region: 'India' },
+    { id: 'punjabi', label: 'Punjabi', value: 'punjabi', icon: '🫓', region: 'India' },
+    // Chinese Regional
+    { id: 'szechuan', label: 'Szechuan', value: 'szechuan', icon: '🌶️', region: 'China' },
+    { id: 'cantonese', label: 'Cantonese', value: 'cantonese', icon: '🥟', region: 'China' },
+    { id: 'hunan', label: 'Hunan', value: 'hunan', icon: '🔥', region: 'China' },
+    { id: 'beijing', label: 'Beijing', value: 'beijing', icon: '🦆', region: 'China' },
+    // Mexican Regional
+    { id: 'tex-mex', label: 'Tex-Mex', value: 'tex-mex', icon: '🌮', region: 'Mexico' },
+    { id: 'authentic-mexican', label: 'Authentic Mexican', value: 'authentic-mexican', icon: '🇲🇽', region: 'Mexico' },
+    { id: 'coastal-mexican', label: 'Coastal Mexican', value: 'coastal-mexican', icon: '🐟', region: 'Mexico' },
+    // Other Popular Cuisines
+    { id: 'mediterranean', label: 'Mediterranean', value: 'mediterranean', icon: '🫒', region: 'Mediterranean' },
+    { id: 'italian', label: 'Italian', value: 'italian', icon: '🍝', region: 'Italy' },
+    { id: 'american', label: 'American', value: 'american', icon: '🍔', region: 'USA' },
+    { id: 'middle-eastern', label: 'Middle Eastern', value: 'middle-eastern', icon: '🥙', region: 'Middle East' },
+    { id: 'japanese', label: 'Japanese', value: 'japanese', icon: '🍣', region: 'Japan' },
+    { id: 'thai', label: 'Thai', value: 'thai', icon: '🍲', region: 'Thailand' },
+    { id: 'korean', label: 'Korean', value: 'korean', icon: '🥢', region: 'Korea' },
+    { id: 'vietnamese', label: 'Vietnamese', value: 'vietnamese', icon: '🍜', region: 'Vietnam' },
+    { id: 'french', label: 'French', value: 'french', icon: '🥐', region: 'France' },
+    { id: 'german', label: 'German', value: 'german', icon: '🥨', region: 'Germany' },
+    { id: 'spanish', label: 'Spanish', value: 'spanish', icon: '🥘', region: 'Spain' },
+    { id: 'greek', label: 'Greek', value: 'greek', icon: '🥙', region: 'Greece' },
   ];
 
   const restrictionOptions = [
@@ -174,12 +196,12 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
     { id: 'keto', label: 'Keto', value: 'keto', icon: '🥑' },
     { id: 'paleo', label: 'Paleo', value: 'paleo', icon: '🦴' },
     { id: 'whole30', label: 'Whole30', value: 'whole30', icon: '🌿' },
-    {
-      id: 'intermittent-fasting',
-      label: 'Intermittent Fasting',
-      value: 'intermittent-fasting',
-      icon: '⏰',
-    },
+    { id: 'intermittent-fasting', label: 'Intermittent Fasting', value: 'intermittent-fasting', icon: '⏰' },
+    { id: 'low-fat', label: 'Low Fat', value: 'low-fat', icon: '🥗' },
+    { id: 'high-fiber', label: 'High Fiber', value: 'high-fiber', icon: '🌾' },
+    { id: 'diabetic-friendly', label: 'Diabetic Friendly', value: 'diabetic-friendly', icon: '📊' },
+    { id: 'heart-healthy', label: 'Heart Healthy', value: 'heart-healthy', icon: '❤️' },
+    { id: 'anti-inflammatory', label: 'Anti-Inflammatory', value: 'anti-inflammatory', icon: '🍃' },
   ];
 
   const validateForm = (): boolean => {
@@ -289,19 +311,22 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
           {/* Allergies */}
           <View style={styles.section}>
-            <MultiSelect
+            <MultiSelectWithCustom
               options={allergyOptions}
               selectedValues={allergies}
               onSelectionChange={setAllergies}
               label="Food Allergies"
               placeholder="Select any food allergies"
               searchable={true}
+              allowCustom={true}
+              customLabel="Add Custom Allergy"
+              customPlaceholder="Enter your specific allergy"
             />
           </View>
 
           {/* Cuisine Preferences */}
           <View style={styles.section}>
-            <MultiSelect
+            <MultiSelectWithCustom
               options={cuisineOptions}
               selectedValues={cuisinePreferences}
               onSelectionChange={(values) => {
@@ -313,7 +338,11 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
               label="Cuisine Preferences"
               placeholder="Select your favorite cuisines"
               searchable={true}
-              maxSelections={5}
+              maxSelections={8}
+              allowCustom={true}
+              customLabel="Add Custom Cuisine"
+              customPlaceholder="Enter regional cuisine (e.g., Maharashtrian, Odia)"
+              showRegions={true}
             />
             {errors.cuisinePreferences && (
               <Text style={styles.errorText}>{errors.cuisinePreferences}</Text>
@@ -322,13 +351,16 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
           {/* Dietary Restrictions */}
           <View style={styles.section}>
-            <MultiSelect
+            <MultiSelectWithCustom
               options={restrictionOptions}
               selectedValues={restrictions}
               onSelectionChange={setRestrictions}
               label="Dietary Restrictions (Optional)"
               placeholder="Select any dietary restrictions"
               searchable={true}
+              allowCustom={true}
+              customLabel="Add Custom Restriction"
+              customPlaceholder="Enter your specific dietary need"
             />
           </View>
         </View>

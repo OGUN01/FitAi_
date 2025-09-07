@@ -42,30 +42,55 @@ class GoogleAuthService {
     try {
       if (Platform.OS !== 'web') {
         // Configure for mobile platforms (iOS/Android)
-        // PRODUCTION BUILD FIX: Debug environment variable access
-        console.log('🔍 Google Auth Debug - Environment variables:');
-        console.log('  - Web Client ID from process.env:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ? 'SET' : 'NOT SET');
-        console.log('  - iOS Client ID from process.env:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ? 'SET' : 'NOT SET');
+        // PRODUCTION BUILD FIX: Multi-strategy environment variable access
+        const getEnvVar = (key: string): string | null => {
+          try {
+            // Strategy 1: Direct process.env access (works in development)
+            const processEnvValue = process.env[key];
+            if (processEnvValue) {
+              console.log(`✅ ${key} found via process.env`);
+              return processEnvValue;
+            }
+            
+            // Strategy 2: Constants.expoConfig access (production builds)
+            const expoConfigValue = (Constants.expoConfig as any)?.[key];
+            if (expoConfigValue) {
+              console.log(`✅ ${key} found via Constants.expoConfig`);
+              return expoConfigValue;
+            }
+            
+            // Strategy 3: Constants.expoConfig.extra access (CRITICAL for production)
+            const extraValue = (Constants.expoConfig as any)?.extra?.[key];
+            if (extraValue) {
+              console.log(`✅ ${key} found via Constants.expoConfig.extra`);
+              return extraValue;
+            }
+            
+            // Strategy 4: Try manifest fallback (legacy support)
+            const manifestValue = (Constants.manifest as any)?.extra?.[key];
+            if (manifestValue) {
+              console.log(`✅ ${key} found via Constants.manifest.extra`);
+              return manifestValue;
+            }
+            
+            console.warn(`❌ ${key} not found in any location`);
+            return null;
+          } catch (error) {
+            console.error(`Error accessing ${key}:`, error);
+            return null;
+          }
+        };
+
+        console.log('🔍 Google Auth Configuration Starting...');
         
-        if (__DEV__) {
-          console.log('  - expoConfig.extra keys:', Object.keys(Constants.expoConfig?.extra || {}));
-          console.log('  - manifest.extra keys:', Object.keys(Constants.manifest?.extra || {}));
-          console.log('  - Web Client ID from expoConfig (dev only):', Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
-          console.log('  - Web Client ID from manifest (dev only):', Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+        const webClientId = getEnvVar('EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID') || '';
+        const iosClientId = getEnvVar('EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID') || '';
+
+        if (!webClientId) {
+          console.error('❌ CRITICAL: Web Client ID not found! Google Sign-In will fail.');
         }
 
-        // PRODUCTION BUILD FIX: Use direct process.env access first for reliability
-        const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-          (__DEV__ ? Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID : null) ||
-          (__DEV__ ? Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID : null) ||
-          '';
-          
-        const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
-          (__DEV__ ? Constants.expoConfig?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : null) ||
-          (__DEV__ ? Constants.manifest?.extra?.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID : null) ||
-          '';
-
-        console.log('🔍 Final client IDs:');
+        console.log('🔍 Client IDs loaded:');
         console.log('  - Web Client ID:', webClientId ? webClientId.substring(0, 20) + '...' : 'NOT SET');
         console.log('  - iOS Client ID:', iosClientId ? iosClientId.substring(0, 20) + '...' : 'NOT SET');
 

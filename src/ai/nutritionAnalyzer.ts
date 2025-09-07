@@ -375,6 +375,418 @@ Return ONLY a valid JSON object with this structure:
     }
   }
 
+  /**
+   * Comprehensive health assessment for scanned products
+   */
+  async assessProductHealth(productData: {
+    nutrition: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber: number;
+      sugar?: number;
+      sodium?: number;
+    };
+    additionalInfo?: {
+      ingredients?: string[];
+      allergens?: string[];
+      labels?: string[];
+    };
+    name: string;
+    category?: string;
+  }): Promise<{
+    overallScore: number;
+    category: 'excellent' | 'good' | 'moderate' | 'poor' | 'unhealthy';
+    breakdown: {
+      calories: { score: number; status: string; message: string };
+      macros: { score: number; status: string; message: string };
+      additives: { score: number; status: string; message: string };
+      processing: { score: number; status: string; message: string };
+    };
+    recommendations: string[];
+    alerts: string[];
+    healthBenefits: string[];
+    concerns: string[];
+    alternatives?: string[];
+  }> {
+    try {
+      const { nutrition, additionalInfo } = productData;
+      
+      // Calculate individual component scores
+      const calorieAssessment = this.assessCalories(nutrition.calories);
+      const macroAssessment = this.assessMacros(nutrition);
+      const additiveAssessment = this.assessAdditives(additionalInfo?.ingredients || []);
+      const processingAssessment = this.assessProcessingLevel(
+        additionalInfo?.ingredients || [],
+        additionalInfo?.labels || []
+      );
+
+      // Calculate weighted overall score
+      const overallScore = Math.round(
+        (calorieAssessment.score * 0.25) +
+        (macroAssessment.score * 0.35) +
+        (additiveAssessment.score * 0.20) +
+        (processingAssessment.score * 0.20)
+      );
+
+      // Determine category
+      const category = this.getHealthCategory(overallScore);
+
+      // Generate recommendations and alerts
+      const recommendations = this.generateHealthRecommendations(nutrition, overallScore);
+      const alerts = this.generateHealthAlerts(nutrition, additionalInfo);
+      const healthBenefits = this.identifyHealthBenefits(nutrition, additionalInfo?.labels || []);
+      const concerns = this.identifyHealthConcerns(nutrition, additionalInfo);
+
+      return {
+        overallScore,
+        category,
+        breakdown: {
+          calories: calorieAssessment,
+          macros: macroAssessment,
+          additives: additiveAssessment,
+          processing: processingAssessment,
+        },
+        recommendations,
+        alerts,
+        healthBenefits,
+        concerns,
+        alternatives: this.suggestAlternatives(productData.category, overallScore)
+      };
+
+    } catch (error) {
+      console.error('Health assessment error:', error);
+      return {
+        overallScore: 50,
+        category: 'moderate',
+        breakdown: {
+          calories: { score: 50, status: 'unknown', message: 'Unable to assess' },
+          macros: { score: 50, status: 'unknown', message: 'Unable to assess' },
+          additives: { score: 50, status: 'unknown', message: 'Unable to assess' },
+          processing: { score: 50, status: 'unknown', message: 'Unable to assess' },
+        },
+        recommendations: ['Unable to generate recommendations due to assessment error'],
+        alerts: [],
+        healthBenefits: [],
+        concerns: ['Assessment could not be completed'],
+      };
+    }
+  }
+
+  // ============================================================================
+  // HEALTH ASSESSMENT HELPER METHODS
+  // ============================================================================
+
+  private assessCalories(calories: number): { score: number; status: string; message: string } {
+    if (calories <= 150) {
+      return { score: 90, status: 'excellent', message: 'Low calorie content' };
+    } else if (calories <= 250) {
+      return { score: 75, status: 'good', message: 'Moderate calorie content' };
+    } else if (calories <= 400) {
+      return { score: 50, status: 'moderate', message: 'High calorie content' };
+    } else if (calories <= 600) {
+      return { score: 25, status: 'poor', message: 'Very high calorie content' };
+    } else {
+      return { score: 10, status: 'unhealthy', message: 'Extremely high calorie content' };
+    }
+  }
+
+  private assessMacros(nutrition: any): { score: number; status: string; message: string } {
+    let score = 100;
+    const issues: string[] = [];
+
+    // Assess fat content
+    if (nutrition.fat > 30) {
+      score -= 30;
+      issues.push('high fat');
+    } else if (nutrition.fat > 20) {
+      score -= 15;
+      issues.push('moderate fat');
+    }
+
+    // Assess sugar content
+    if (nutrition.sugar && nutrition.sugar > 20) {
+      score -= 25;
+      issues.push('high sugar');
+    } else if (nutrition.sugar && nutrition.sugar > 10) {
+      score -= 10;
+      issues.push('moderate sugar');
+    }
+
+    // Assess sodium content
+    if (nutrition.sodium && nutrition.sodium > 1.5) {
+      score -= 20;
+      issues.push('high sodium');
+    } else if (nutrition.sodium && nutrition.sodium > 0.8) {
+      score -= 10;
+      issues.push('moderate sodium');
+    }
+
+    // Reward good protein content
+    if (nutrition.protein > 15) {
+      score += 10;
+    }
+
+    // Reward good fiber content
+    if (nutrition.fiber > 5) {
+      score += 15;
+    }
+
+    score = Math.max(0, Math.min(100, score));
+
+    const status = score >= 80 ? 'excellent' : 
+                   score >= 60 ? 'good' : 
+                   score >= 40 ? 'moderate' : 
+                   score >= 20 ? 'poor' : 'unhealthy';
+
+    const message = issues.length > 0 ? 
+      `Macro concerns: ${issues.join(', ')}` : 
+      'Good macronutrient profile';
+
+    return { score, status, message };
+  }
+
+  private assessAdditives(ingredients: string[]): { score: number; status: string; message: string } {
+    const harmfulAdditives = [
+      'artificial colors', 'artificial flavors', 'high fructose corn syrup',
+      'sodium benzoate', 'potassium sorbate', 'BHT', 'BHA', 'trans fat',
+      'partially hydrogenated', 'aspartame', 'sucralose', 'MSG'
+    ];
+
+    let score = 100;
+    const foundAdditives: string[] = [];
+
+    ingredients.forEach(ingredient => {
+      const lowerIngredient = ingredient.toLowerCase();
+      harmfulAdditives.forEach(additive => {
+        if (lowerIngredient.includes(additive.toLowerCase())) {
+          score -= 15;
+          foundAdditives.push(additive);
+        }
+      });
+    });
+
+    score = Math.max(0, score);
+
+    const status = score >= 80 ? 'excellent' : 
+                   score >= 60 ? 'good' : 
+                   score >= 40 ? 'moderate' : 
+                   score >= 20 ? 'poor' : 'unhealthy';
+
+    const message = foundAdditives.length > 0 ? 
+      `Contains: ${foundAdditives.join(', ')}` : 
+      'No concerning additives detected';
+
+    return { score, status, message };
+  }
+
+  private assessProcessingLevel(ingredients: string[], labels: string[]): { score: number; status: string; message: string } {
+    const processingIndicators = [
+      'natural', 'organic', 'whole grain', 'minimally processed'
+    ];
+    
+    const ultraProcessedIndicators = [
+      'modified', 'enriched', 'fortified', 'concentrate', 'isolate', 'extract'
+    ];
+
+    let score = 60; // Start with neutral score
+    
+    // Check for positive indicators
+    labels.forEach(label => {
+      const lowerLabel = label.toLowerCase();
+      processingIndicators.forEach(indicator => {
+        if (lowerLabel.includes(indicator)) {
+          score += 10;
+        }
+      });
+    });
+
+    // Check for negative indicators
+    ingredients.forEach(ingredient => {
+      const lowerIngredient = ingredient.toLowerCase();
+      ultraProcessedIndicators.forEach(indicator => {
+        if (lowerIngredient.includes(indicator)) {
+          score -= 8;
+        }
+      });
+    });
+
+    score = Math.max(0, Math.min(100, score));
+
+    const status = score >= 80 ? 'excellent' : 
+                   score >= 60 ? 'good' : 
+                   score >= 40 ? 'moderate' : 
+                   score >= 20 ? 'poor' : 'unhealthy';
+
+    const message = score >= 70 ? 'Minimally processed' : 
+                    score >= 40 ? 'Moderately processed' : 'Highly processed';
+
+    return { score, status, message };
+  }
+
+  private getHealthCategory(score: number): 'excellent' | 'good' | 'moderate' | 'poor' | 'unhealthy' {
+    if (score >= 85) return 'excellent';
+    if (score >= 70) return 'good';
+    if (score >= 50) return 'moderate';
+    if (score >= 30) return 'poor';
+    return 'unhealthy';
+  }
+
+  private generateHealthRecommendations(nutrition: any, overallScore: number): string[] {
+    const recommendations: string[] = [];
+
+    if (overallScore < 50) {
+      recommendations.push('Consider this as an occasional treat rather than regular consumption');
+    }
+
+    if (nutrition.calories > 300) {
+      recommendations.push('Watch portion sizes due to high calorie content');
+    }
+
+    if (nutrition.sugar && nutrition.sugar > 15) {
+      recommendations.push('High sugar content - consider pairing with protein or fiber');
+    }
+
+    if (nutrition.sodium && nutrition.sodium > 1.0) {
+      recommendations.push('High sodium - drink plenty of water and balance with low-sodium foods');
+    }
+
+    if (nutrition.fiber < 3) {
+      recommendations.push('Low fiber content - add fruits, vegetables, or whole grains to your meal');
+    }
+
+    if (nutrition.protein < 5) {
+      recommendations.push('Low protein - consider adding protein-rich foods to feel more satisfied');
+    }
+
+    return recommendations;
+  }
+
+  private generateHealthAlerts(nutrition: any, additionalInfo?: any): string[] {
+    const alerts: string[] = [];
+
+    if (nutrition.calories > 500) {
+      alerts.push('⚠️ Very high calorie content');
+    }
+
+    if (nutrition.sugar && nutrition.sugar > 25) {
+      alerts.push('🍯 Extremely high sugar content');
+    }
+
+    if (nutrition.sodium && nutrition.sodium > 2.0) {
+      alerts.push('🧂 Excessive sodium levels');
+    }
+
+    if (nutrition.fat > 35) {
+      alerts.push('🥓 Very high fat content');
+    }
+
+    if (additionalInfo?.allergens && additionalInfo.allergens.length > 0) {
+      alerts.push(`⚠️ Contains allergens: ${additionalInfo.allergens.join(', ')}`);
+    }
+
+    return alerts;
+  }
+
+  private identifyHealthBenefits(nutrition: any, labels: string[]): string[] {
+    const benefits: string[] = [];
+
+    if (nutrition.protein > 15) {
+      benefits.push('High protein content supports muscle maintenance');
+    }
+
+    if (nutrition.fiber > 8) {
+      benefits.push('High fiber content promotes digestive health');
+    }
+
+    if (labels.some(label => label.toLowerCase().includes('organic'))) {
+      benefits.push('Organic certification ensures no synthetic pesticides');
+    }
+
+    if (labels.some(label => label.toLowerCase().includes('whole grain'))) {
+      benefits.push('Whole grains provide sustained energy and nutrients');
+    }
+
+    if (nutrition.calories < 200 && nutrition.protein > 10) {
+      benefits.push('Good protein-to-calorie ratio for weight management');
+    }
+
+    return benefits;
+  }
+
+  private identifyHealthConcerns(nutrition: any, additionalInfo?: any): string[] {
+    const concerns: string[] = [];
+
+    if (nutrition.sugar && nutrition.sugar > 20) {
+      concerns.push('High sugar intake may contribute to blood sugar spikes');
+    }
+
+    if (nutrition.sodium && nutrition.sodium > 1.5) {
+      concerns.push('High sodium content may contribute to hypertension');
+    }
+
+    if (nutrition.fat > 30 && nutrition.carbs > 40) {
+      concerns.push('High fat and carb combination may be calorie-dense');
+    }
+
+    if (additionalInfo?.ingredients) {
+      const concerningIngredients = additionalInfo.ingredients.filter((ingredient: string) =>
+        ingredient.toLowerCase().includes('artificial') || 
+        ingredient.toLowerCase().includes('preservative')
+      );
+      
+      if (concerningIngredients.length > 0) {
+        concerns.push('Contains artificial ingredients or preservatives');
+      }
+    }
+
+    return concerns;
+  }
+
+  private suggestAlternatives(category?: string, currentScore?: number): string[] | undefined {
+    if (!category || !currentScore || currentScore >= 70) {
+      return undefined;
+    }
+
+    const alternatives: Record<string, string[]> = {
+      'snacks': [
+        'Fresh fruits and nuts',
+        'Vegetable sticks with hummus',
+        'Greek yogurt with berries',
+        'Air-popped popcorn'
+      ],
+      'beverages': [
+        'Sparkling water with lemon',
+        'Herbal teas',
+        'Coconut water',
+        'Fresh vegetable juices'
+      ],
+      'dairy': [
+        'Low-fat Greek yogurt',
+        'Unsweetened almond milk',
+        'Cottage cheese',
+        'Plant-based alternatives'
+      ],
+      'grains': [
+        'Whole grain options',
+        'Quinoa products',
+        'Brown rice varieties',
+        'Oat-based products'
+      ]
+    };
+
+    const categoryKey = Object.keys(alternatives).find(key => 
+      category.toLowerCase().includes(key)
+    );
+
+    return categoryKey ? alternatives[categoryKey] : [
+      'Look for organic or minimally processed alternatives',
+      'Choose products with fewer ingredients',
+      'Opt for items with higher protein and fiber content'
+    ];
+  }
+
   // ============================================================================
   // HELPER METHODS
   // ============================================================================

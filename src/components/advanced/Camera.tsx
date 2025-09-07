@@ -48,18 +48,20 @@ class CameraErrorBoundary extends React.Component<
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface CameraProps {
-  mode: 'food' | 'progress';
+  mode: 'food' | 'progress' | 'barcode';
   onCapture: (uri: string) => void;
+  onBarcodeScanned?: (barcode: string, type: string) => void;
   onClose: () => void;
   style?: any;
 }
 
-const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, style }) => {
+const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScanned, onClose, style }) => {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   React.useEffect(() => {
@@ -95,6 +97,19 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
     setFlashMode((current) => (current === 'off' ? 'on' : 'off'));
   };
 
+  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+    if (!isScanning && onBarcodeScanned) {
+      setIsScanning(true);
+      console.log('Barcode scanned:', { type, data });
+      onBarcodeScanned(data, type);
+      
+      // Reset scanning state after a delay to prevent multiple scans
+      setTimeout(() => {
+        setIsScanning(false);
+      }, 2000);
+    }
+  };
+
   if (!permission) {
     return (
       <View style={styles.permissionContainer}>
@@ -122,6 +137,8 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
         return 'Scan Food';
       case 'progress':
         return 'Progress Photo';
+      case 'barcode':
+        return 'Scan Product';
       default:
         return 'Camera';
     }
@@ -133,6 +150,8 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
         return 'Position your food in the center of the frame for best results';
       case 'progress':
         return 'Stand in good lighting and position yourself in the frame';
+      case 'barcode':
+        return 'Point your camera at the barcode or QR code on the product';
       default:
         return 'Take a photo';
     }
@@ -164,6 +183,22 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
           facing={cameraType}
           flash={flashMode}
           onCameraReady={() => setIsCameraReady(true)}
+          barcodeScannerSettings={
+            mode === 'barcode'
+              ? {
+                  barcodeTypes: [
+                    'qr',
+                    'ean13',
+                    'ean8', 
+                    'upc_a',
+                    'upc_e',
+                    'code128',
+                    'pdf417'
+                  ],
+                }
+              : undefined
+          }
+          onBarcodeScanned={mode === 'barcode' ? handleBarcodeScanned : undefined}
         >
           {/* Camera Overlay */}
           <View style={styles.overlay}>
@@ -181,6 +216,23 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
                 <View style={styles.bodyOutline} />
               </View>
             )}
+
+            {mode === 'barcode' && (
+              <View style={styles.barcodeFrame}>
+                <View style={styles.scanningArea}>
+                  <View style={styles.scanningLine} />
+                  {isScanning && (
+                    <View style={styles.scanningIndicator}>
+                      <Text style={styles.scanningText}>✓ Scanning...</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.barcodeCorner} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerTopRight]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]} />
+                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomRight]} />
+              </View>
+            )}
           </View>
         </CameraView>
       </View>
@@ -191,13 +243,21 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
           <Text style={styles.flipIcon}>🔄</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
-          onPress={takePicture}
-          disabled={isCapturing}
-        >
-          <View style={styles.captureButtonInner} />
-        </TouchableOpacity>
+        {mode !== 'barcode' ? (
+          <TouchableOpacity
+            style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
+            onPress={takePicture}
+            disabled={isCapturing}
+          >
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.scanningStatus}>
+            <Text style={styles.scanningStatusText}>
+              {isScanning ? '📱 Scanning...' : '📱 Ready to Scan'}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.placeholder} />
       </View>
@@ -217,6 +277,15 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onClose, styl
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>📏</Text>
             <Text style={styles.tipText}>Stand 3-4 feet away from the camera for best results</Text>
+          </View>
+        )}
+
+        {mode === 'barcode' && (
+          <View style={styles.tipItem}>
+            <Text style={styles.tipIcon}>🔍</Text>
+            <Text style={styles.tipText}>
+              Hold the barcode 6-8 inches away and keep it steady for best scanning
+            </Text>
           </View>
         )}
       </View>
@@ -478,6 +547,106 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
     textAlign: 'center',
     marginBottom: THEME.spacing.xl,
+  },
+
+  // Barcode scanning styles
+  barcodeFrame: {
+    width: 280,
+    height: 160,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  scanningArea: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: THEME.colors.primary,
+    borderRadius: THEME.borderRadius.md,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+
+  scanningLine: {
+    width: '90%',
+    height: 2,
+    backgroundColor: THEME.colors.primary,
+    opacity: 0.7,
+  },
+
+  scanningIndicator: {
+    position: 'absolute',
+    top: -30,
+    backgroundColor: THEME.colors.primary,
+    paddingHorizontal: THEME.spacing.sm,
+    paddingVertical: THEME.spacing.xs,
+    borderRadius: THEME.borderRadius.sm,
+  },
+
+  scanningText: {
+    color: THEME.colors.white,
+    fontSize: THEME.fontSize.sm,
+    fontWeight: THEME.fontWeight.medium as '500',
+  },
+
+  barcodeCorner: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderColor: THEME.colors.primary,
+    top: -2,
+    left: -2,
+  },
+
+  barcodeCornerTopRight: {
+    borderTopWidth: 3,
+    borderRightWidth: 3,
+    borderLeftWidth: 0,
+    top: -2,
+    right: -2,
+    left: 'auto',
+  },
+
+  barcodeCornerBottomLeft: {
+    borderBottomWidth: 3,
+    borderLeftWidth: 3,
+    borderTopWidth: 0,
+    bottom: -2,
+    top: 'auto',
+    left: -2,
+  },
+
+  barcodeCornerBottomRight: {
+    borderBottomWidth: 3,
+    borderRightWidth: 3,
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    bottom: -2,
+    right: -2,
+    top: 'auto',
+    left: 'auto',
+  },
+
+  scanningStatus: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: THEME.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: THEME.colors.primary,
+  },
+
+  scanningStatusText: {
+    fontSize: THEME.fontSize.xs,
+    color: THEME.colors.primary,
+    fontWeight: THEME.fontWeight.medium as '500',
+    textAlign: 'center',
   },
 });
 

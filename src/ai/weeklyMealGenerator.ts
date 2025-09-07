@@ -256,9 +256,9 @@ class WeeklyMealContentGenerator {
         0
       ),
       planTitle: aiPlan.planTitle || `${personalInfo.name}'s Weekly Meal Plan`,
-      planDescription: aiPlan.planDescription || `Personalized nutrition plan for ${personalInfo.name} targeting ${fitnessGoals.primary_goals?.join(' and ') || 'health goals'}`,
+      planDescription: aiPlan.planDescription || `Personalized nutrition plan for ${personalInfo.name} targeting ${fitnessGoals.primaryGoals?.join(' and ') || 'health goals'}`,
       dietaryRestrictions: aiPlan.dietaryRestrictions || [],
-      weeklyGoals: aiPlan.weeklyGoals || [`Meet nutritional targets for ${fitnessGoals.primary_goals?.join(' and ') || 'fitness goals'}`],
+      weeklyGoals: aiPlan.weeklyGoals || [`Meet nutritional targets for ${fitnessGoals.primaryGoals?.join(' and ') || 'fitness goals'}`],
       createdAt: new Date().toISOString(),
     };
 

@@ -73,6 +73,7 @@ export default function App() {
   const convertOnboardingToProfile = (data: OnboardingReviewData): UserProfile => {
     return {
       id: guestId || `guest_${Date.now()}`,
+      email: data.personalInfo.email || '',
       personalInfo: data.personalInfo,
       fitnessGoals: data.fitnessGoals,
       dietPreferences: data.dietPreferences,
@@ -92,9 +93,19 @@ export default function App() {
         injuries: [],
         experience: 'beginner' as const,
       },
-      bodyAnalysis: data.bodyAnalysis,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      preferences: {
+        units: 'metric' as const,
+        notifications: true,
+        darkMode: false,
+      },
+      stats: {
+        totalWorkouts: 0,
+        totalCaloriesBurned: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+      },
     };
   };
 

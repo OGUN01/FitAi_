@@ -5,6 +5,7 @@ import { enhancedLocalStorage } from './localStorage';
 import { validationService } from '../utils/validation';
 import { offlineService } from './offline';
 import { supabase } from './supabase';
+import { isGuestId } from '../utils/uuid';
 import {
   LocalStorageSchema,
   LocalUserData,
@@ -619,10 +620,32 @@ export class DataManagerService {
     return this.userId || 'guest_user';
   }
 
+  /**
+   * Checks if the current user is a guest user
+   */
+  private isGuestUser(): boolean {
+    return !this.userId || isGuestId(this.userId);
+  }
+
+  /**
+   * Checks if database operations should be attempted for saves
+   */
+  private shouldSaveToDatabase(): boolean {
+    return this.userId && this.isOnline && !this.isGuestUser();
+  }
+
+  /**
+   * Checks if database operations should be attempted for loads
+   */
+  private shouldLoadFromDatabase(): boolean {
+    return this.userId && this.isOnline && !this.isGuestUser();
+  }
+
   getCurrentUserUUID(): string {
     console.log('🔍 DataManager.getCurrentUserUUID() called:', {
       hasUserId: !!this.userId,
       userId: this.userId,
+      isGuest: this.isGuestUser(),
       isGuestUser: this.userId === 'guest_user'
     });
     
@@ -658,9 +681,9 @@ export class DataManagerService {
         console.warn('⚠️ Failed to save personal info locally');
       }
 
-      // Save to remote if user is logged in
+      // Save to remote only if user is authenticated (not guest)
       let remoteSuccess = false;
-      if (this.userId && this.isOnline) {
+      if (this.shouldSaveToDatabase()) {
         try {
           // Save to profiles table directly (no separate personal_info table)
           const profileData = {
@@ -689,7 +712,8 @@ export class DataManagerService {
           console.error('Failed to save personal info to remote:', error);
         }
       } else {
-        console.log('📱 Guest mode or offline: Personal info saved locally only');
+        const reason = this.isGuestUser() ? 'Guest mode' : 'Offline mode';
+        console.log(`📱 ${reason}: Personal info saved locally only (skipping database)`);
       }
 
       return localSuccess; // At minimum, local save must succeed
@@ -703,8 +727,8 @@ export class DataManagerService {
     try {
       const localKey = `personalInfo_${this.userId || 'guest'}`;
 
-      // Try remote first if user is logged in
-      if (this.userId && this.isOnline) {
+      // Try remote first if user is authenticated
+      if (this.shouldLoadFromDatabase()) {
         try {
           // Load from profiles table
           const { data, error } = await supabase
@@ -755,9 +779,9 @@ export class DataManagerService {
         console.warn('⚠️ Failed to save fitness goals locally');
       }
 
-      // Save to remote if user is logged in
+      // Save to remote only if user is authenticated (not guest)
       let remoteSuccess = false;
-      if (this.userId && this.isOnline) {
+      if (this.shouldSaveToDatabase()) {
         try {
           const fitnessGoalsData = {
             user_id: this.userId,
@@ -781,7 +805,8 @@ export class DataManagerService {
           console.error('Failed to save fitness goals to remote:', error);
         }
       } else {
-        console.log('📱 Guest mode or offline: Fitness goals saved locally only');
+        const reason = this.isGuestUser() ? 'Guest mode' : 'Offline mode';
+        console.log(`📱 ${reason}: Fitness goals saved locally only (skipping database)`);
       }
 
       return localSuccess; // At minimum, local save must succeed
@@ -795,7 +820,7 @@ export class DataManagerService {
     try {
       const localKey = `fitnessGoals_${this.userId || 'guest'}`;
 
-      if (this.userId && this.isOnline) {
+      if (this.shouldLoadFromDatabase()) {
         try {
           const { data, error } = await supabase
             .from('fitness_goals')
@@ -845,15 +870,21 @@ export class DataManagerService {
       const localSuccess = await enhancedLocalStorage.storeData(localKey, dataWithDefaults);
 
       let remoteSuccess = false;
-      if (this.userId && this.isOnline) {
+      if (this.shouldSaveToDatabase()) {
         try {
           const { error } = await supabase
             .from('diet_preferences')
             .upsert({ ...dataWithDefaults, user_id: this.userId });
           remoteSuccess = !error;
+          if (!error) {
+            console.log('✅ Diet preferences saved to remote');
+          }
         } catch (error) {
           console.error('Failed to save diet preferences to remote:', error);
         }
+      } else {
+        const reason = this.isGuestUser() ? 'Guest mode' : 'Offline mode';
+        console.log(`📱 ${reason}: Diet preferences saved locally only (skipping database)`);
       }
 
       return localSuccess || remoteSuccess;
@@ -867,7 +898,7 @@ export class DataManagerService {
     try {
       const localKey = `dietPreferences_${this.userId || 'guest'}`;
 
-      if (this.userId && this.isOnline) {
+      if (this.shouldLoadFromDatabase()) {
         try {
           const { data, error } = await supabase
             .from('diet_preferences')
@@ -899,7 +930,7 @@ export class DataManagerService {
       // For now, workout preferences are stored locally only
       // TODO: Add workout_preferences table to Supabase when ready
       let remoteSuccess = false;
-      if (this.userId && this.isOnline) {
+      if (this.shouldSaveToDatabase()) {
         try {
           // Placeholder for future Supabase integration
           console.log('📝 Workout preferences will be synced to Supabase in future update');
@@ -907,6 +938,9 @@ export class DataManagerService {
         } catch (error) {
           console.error('Failed to save workout preferences to remote:', error);
         }
+      } else {
+        const reason = this.isGuestUser() ? 'Guest mode' : 'Offline mode';
+        console.log(`📱 ${reason}: Workout preferences saved locally only`);
       }
 
       return localSuccess || remoteSuccess;
@@ -922,7 +956,7 @@ export class DataManagerService {
 
       // For now, load from local storage only
       // TODO: Add remote loading when Supabase table is ready
-      if (this.userId && this.isOnline) {
+      if (this.shouldLoadFromDatabase()) {
         try {
           // Placeholder for future Supabase integration
           console.log('📝 Workout preferences will be loaded from Supabase in future update');

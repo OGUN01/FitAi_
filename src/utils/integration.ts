@@ -1,7 +1,8 @@
 import { useAuth } from '../hooks/useAuth';
 import { useUser } from '../hooks/useUser';
 import { useOffline } from '../hooks/useOffline';
-import { PersonalInfo, FitnessGoals, OnboardingData } from '../types/user';
+import { PersonalInfo as UserPersonalInfo, FitnessGoals as UserFitnessGoals, OnboardingData } from '../types/user';
+import { PersonalInfo as ProfilePersonalInfo, FitnessGoals as ProfileFitnessGoals } from '../types/profileData';
 import { api, supabase } from '../services/api';
 import { dataManager } from '../services/dataManager';
 
@@ -38,7 +39,7 @@ export const useOnboardingIntegration = () => {
    * Works for both guest and authenticated users
    */
   const savePersonalInfo = async (
-    personalInfo: PersonalInfo
+    personalInfo: UserPersonalInfo
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
@@ -59,10 +60,10 @@ export const useOnboardingIntegration = () => {
         // Try to update profile first, create if it doesn't exist
         const profileData = {
           name: personalInfo.name,
-          age: personalInfo.age ? personalInfo.age.toString() : undefined,
+          age: personalInfo.age || undefined,
           gender: personalInfo.gender as 'male' | 'female' | 'other',
-          height: personalInfo.height ? parseInt(personalInfo.height) : undefined,
-          weight: personalInfo.weight ? parseFloat(personalInfo.weight) : undefined,
+          height: personalInfo.height || undefined,
+          weight: personalInfo.weight || undefined,
           activityLevel: personalInfo.activityLevel as any,
         };
 
@@ -72,9 +73,14 @@ export const useOnboardingIntegration = () => {
         // If update fails (profile doesn't exist), create it
         if (!response.success) {
           const createData = {
+            name: personalInfo.name,
+            age: personalInfo.age || '',
+            gender: personalInfo.gender as 'male' | 'female' | 'other',
+            height: personalInfo.height || '',
+            weight: personalInfo.weight || '',
+            activityLevel: personalInfo.activityLevel as any,
             id: authUser.id,
-            email: authUser.email,
-            ...profileData,
+            email: authUser.email || '',
           };
           response = await createProfile(createData);
         }
@@ -101,7 +107,7 @@ export const useOnboardingIntegration = () => {
    * Works for both guest and authenticated users
    */
   const saveFitnessGoals = async (
-    fitnessGoals: FitnessGoals
+    fitnessGoals: UserFitnessGoals
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const currentUserId = getUserId();
@@ -124,6 +130,7 @@ export const useOnboardingIntegration = () => {
           primaryGoals: fitnessGoals.primaryGoals,
           timeCommitment: fitnessGoals.timeCommitment as any,
           experience: fitnessGoals.experience as any,
+          experience_level: fitnessGoals.experience_level || fitnessGoals.experience,
           user_id: authUser.id,
         };
 
@@ -133,8 +140,11 @@ export const useOnboardingIntegration = () => {
         // If update fails (goals don't exist), create them
         if (!response.success) {
           const createData = {
+            primaryGoals: fitnessGoals.primaryGoals,
+            timeCommitment: fitnessGoals.timeCommitment as any,
+            experience: fitnessGoals.experience as any,
+            experience_level: fitnessGoals.experience_level || fitnessGoals.experience,
             user_id: authUser.id,
-            ...goalsData,
           };
           response = await createFitnessGoals(createData);
         }
