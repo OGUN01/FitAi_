@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import { OnboardingFlow } from './src/screens/onboarding/OnboardingFlow';
+import { OnboardingContainer } from './src/screens/onboarding/OnboardingContainer';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
 import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
 import { THEME } from './src/utils/constants';
@@ -56,6 +56,7 @@ if (!isExpoGo) {
 }
 
 export default function App() {
+  // Default to false - user must complete onboarding unless we find completed data
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
@@ -190,55 +191,45 @@ export default function App() {
           }
         }
 
-        // For guest mode, check if we have stored onboarding data
-        if (isGuestMode && guestId) {
-          const storedData = await AsyncStorage.getItem(`onboarding_${guestId}`);
-          let parsedData: OnboardingReviewData | null = null;
-
-          if (storedData) {
-            console.log('✅ App: Found complete guest onboarding data');
-            parsedData = JSON.parse(storedData);
-            setIsOnboardingComplete(true);
-          } else {
-            // Check for partial data
-            const partialData = await AsyncStorage.getItem(`onboarding_partial_${guestId}`);
-            if (partialData) {
-              console.log('📝 App: Found partial guest onboarding data');
-              parsedData = JSON.parse(partialData);
-              setIsOnboardingComplete(false); // Onboarding not complete, but we have partial data
+        // For guest/unauthenticated users, check if onboarding data exists
+        // useOnboardingState hook (used by OnboardingContainer) uses 'onboarding_data' key
+        const onboardingData = await AsyncStorage.getItem('onboarding_data');
+        if (onboardingData) {
+          try {
+            const parsedData = JSON.parse(onboardingData);
+            // Check if all required sections are complete
+            const hasAllSections = parsedData.personalInfo && 
+                                   parsedData.bodyAnalysis && 
+                                   parsedData.dietPreferences && 
+                                   parsedData.workoutPreferences;
+            
+            if (hasAllSections) {
+              console.log('✅ App: Found complete onboarding data');
+              setIsOnboardingComplete(true);
             } else {
-              // Try to migrate data from legacy keys
-              console.log('🔄 App: No data found, checking for migration...');
-              parsedData = await migrateExistingGuestData(guestId);
-              if (parsedData) {
-                setIsOnboardingComplete(true);
-              }
+              console.log('📝 App: Found partial onboarding data - continuing onboarding');
+              setIsOnboardingComplete(false);
             }
-          }
-
-          if (parsedData) {
-            setUserData(parsedData);
-
-            // Only convert to profile and mark complete if we have complete data
-            if (isOnboardingComplete) {
-              const userProfile = convertOnboardingToProfile(parsedData as OnboardingReviewData);
-              setProfile(userProfile);
-            }
-          } else {
-            console.log('📝 App: No existing guest onboarding data found');
+          } catch (error) {
+            console.error('❌ App: Error parsing onboarding data:', error);
             setIsOnboardingComplete(false);
           }
-        } else if (!isGuestMode && !user) {
-          // Enable guest mode if no user is authenticated
-          console.log('👤 App: No user found, enabling guest mode...');
-          setGuestModeInStore(true);
+        } else {
+          console.log('📝 App: No onboarding data found - new user');
           setIsOnboardingComplete(false);
+        }
+
+        // Enable guest mode if no user is authenticated
+        if (!isGuestMode && !user) {
+          console.log('👤 App: Enabling guest mode...');
+          setGuestModeInStore(true);
         }
       } catch (error) {
         console.error('❌ App: Failed to load onboarding data:', error);
         setIsOnboardingComplete(false);
       } finally {
         setIsLoadingOnboarding(false);
+        console.log(`🏁 App: Loading complete. Onboarding status: ${isOnboardingComplete ? 'COMPLETE' : 'INCOMPLETE'}`);
       }
     };
 
@@ -375,10 +366,12 @@ export default function App() {
         {isOnboardingComplete ? (
           <MainNavigation />
         ) : (
-          <OnboardingFlow
-            onComplete={handleOnboardingComplete}
-            initialData={userData || undefined}
-            onPartialSave={savePartialOnboardingData}
+          <OnboardingContainer
+            onComplete={() => {
+              console.log('🎉 App: Onboarding completed via OnboardingContainer');
+              setIsOnboardingComplete(true);
+            }}
+            showProgressIndicator={true}
           />
         )}
       </View>
