@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Card } from '../../../components/ui';
+import { Button, Card, InfoTooltip } from '../../../components/ui';
 import { 
   PersonalInfoData, 
   DietPreferencesData, 
@@ -11,11 +11,12 @@ import {
   WorkoutPreferencesData, 
   AdvancedReviewData 
 } from '../../../types/onboarding';
-import { HealthCalculationEngine } from '../../../utils/healthCalculations';
+import { HealthCalculationEngine, MetabolicCalculations } from '../../../utils/healthCalculations';
 import { ValidationEngine, ValidationResults } from '../../../services/validationEngine';
 import { ErrorCard } from '../../../components/onboarding/ErrorCard';
 import { WarningCard } from '../../../components/onboarding/WarningCard';
 import { AdjustmentWizard, Alternative } from '../../../components/onboarding/AdjustmentWizard';
+import { METRIC_DESCRIPTIONS } from '../../../constants/metricDescriptions';
 
 // ============================================================================
 // TYPES
@@ -125,9 +126,9 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       const completionMetrics = calculateCompletionMetrics();
       
       // Calculate additional metrics using new helper functions
-      const waterIntake = HealthCalculationEngine.calculateWaterIntake(bodyAnalysis.current_weight_kg);
-      const fiberIntake = HealthCalculationEngine.calculateFiber(validationResults.calculatedMetrics.targetCalories);
-      const dietReadinessScore = HealthCalculationEngine.calculateDietReadinessScore(dietPreferences);
+      const waterIntake = MetabolicCalculations.calculateWaterIntake(bodyAnalysis.current_weight_kg);
+      const fiberIntake = MetabolicCalculations.calculateFiber(validationResults.calculatedMetrics.targetCalories);
+      const dietReadinessScore = MetabolicCalculations.calculateDietReadinessScore(dietPreferences);
       
       const finalCalculations: AdvancedReviewData = {
         ...calculations,
@@ -336,7 +337,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         
         <View style={styles.metricsGrid}>
           <Card style={styles.metricCard}>
-            <Text style={styles.metricLabel}>BMI</Text>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricLabel}>BMI</Text>
+              <InfoTooltip 
+                title={METRIC_DESCRIPTIONS.BMI.title}
+                description={METRIC_DESCRIPTIONS.BMI.description}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_bmi}</Text>
             <Text style={styles.metricCategory}>
               {calculatedData.calculated_bmi! < 18.5 ? 'Underweight' :
@@ -346,19 +353,37 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           </Card>
           
           <Card style={styles.metricCard}>
-            <Text style={styles.metricLabel}>BMR</Text>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricLabel}>BMR</Text>
+              <InfoTooltip 
+                title={METRIC_DESCRIPTIONS.BMR.title}
+                description={METRIC_DESCRIPTIONS.BMR.description}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_bmr}</Text>
             <Text style={styles.metricCategory}>cal/day</Text>
           </Card>
           
           <Card style={styles.metricCard}>
-            <Text style={styles.metricLabel}>TDEE</Text>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricLabel}>TDEE</Text>
+              <InfoTooltip 
+                title={METRIC_DESCRIPTIONS.TDEE.title}
+                description={METRIC_DESCRIPTIONS.TDEE.description}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_tdee}</Text>
             <Text style={styles.metricCategory}>cal/day</Text>
           </Card>
           
           <Card style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Metabolic Age</Text>
+            <View style={styles.metricHeader}>
+              <Text style={styles.metricLabel}>Metabolic Age</Text>
+              <InfoTooltip 
+                title={METRIC_DESCRIPTIONS.METABOLIC_AGE.title}
+                description={METRIC_DESCRIPTIONS.METABOLIC_AGE.description}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.metabolic_age}</Text>
             <Text style={styles.metricCategory}>years</Text>
           </Card>
@@ -993,6 +1018,13 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
+  sectionSubtitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(18),
+  },
+
   // Data Summary Section
   summaryGrid: {
     gap: ResponsiveTheme.spacing.md,
@@ -1048,10 +1080,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  metricHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
   metricLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   metricValue: {

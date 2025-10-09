@@ -107,6 +107,14 @@ const WORKOUT_TIMES = [
   { value: 'evening', label: 'Evening', icon: '🌆', description: '6PM - 9PM' },
 ];
 
+const OCCUPATION_OPTIONS = [
+  { value: 'desk_job', label: 'Desk Job' },
+  { value: 'light_active', label: 'Light Activity' },
+  { value: 'moderate_active', label: 'Moderate Activity' },
+  { value: 'heavy_labor', label: 'Heavy Labor' },
+  { value: 'very_active', label: 'Very Active' },
+];
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -201,6 +209,30 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       }));
     }
   }, [formData.location]);
+  
+  // Auto-calculate activity level from occupation type (NEW APPROACH)
+  useEffect(() => {
+    if (personalInfoData?.occupation_type) {
+      // Map occupation to activity level
+      const OCCUPATION_TO_ACTIVITY: Record<string, WorkoutPreferencesData['activity_level']> = {
+        desk_job: 'sedentary',
+        light_active: 'light',
+        moderate_active: 'moderate',
+        heavy_labor: 'active',
+        very_active: 'extreme',
+      };
+      
+      const calculatedActivityLevel = OCCUPATION_TO_ACTIVITY[personalInfoData.occupation_type] || 'sedentary';
+      
+      // Only update if it's different to avoid unnecessary re-renders
+      if (formData.activity_level !== calculatedActivityLevel) {
+        setFormData(prev => ({
+          ...prev,
+          activity_level: calculatedActivityLevel,
+        }));
+      }
+    }
+  }, [personalInfoData?.occupation_type]);
   
   // Auto-populate from body analysis data
   useEffect(() => {
@@ -441,93 +473,92 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   // RENDER HELPERS
   // ============================================================================
   
-  const renderGoalsAndActivitySection = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Fitness Goals & Activity Level</Text>
-      
-      {/* Primary Goals */}
-      <View style={styles.goalField}>
-        <Text style={styles.fieldLabel}>What are your fitness goals? (Select all that apply)</Text>
-        {bodyAnalysisData?.ai_body_type && (
-          <Text style={styles.autoSuggestText}>
-            💡 Based on your {bodyAnalysisData.ai_body_type} body type, we suggest focusing on{' '}
-            {bodyAnalysisData.ai_body_type === 'ectomorph' ? 'muscle gain and strength' :
-             bodyAnalysisData.ai_body_type === 'endomorph' ? 'weight loss and endurance' :
-             'strength and muscle gain'}
-          </Text>
-        )}
+  const renderGoalsAndActivitySection = () => {
+    // Get activity level info for display
+    const currentActivityLevel = ACTIVITY_LEVELS.find(level => level.value === formData.activity_level);
+    const occupationType = personalInfoData?.occupation_type || 'desk_job';
+    const occupationLabel = OCCUPATION_OPTIONS.find(opt => opt.value === occupationType)?.label || 'Unknown';
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Fitness Goals</Text>
         
-        <View style={styles.goalsGrid}>
-          {FITNESS_GOALS.map((goal) => (
-            <TouchableOpacity
-              key={goal.id}
-              onPress={() => toggleGoal(goal.id)}
-              style={styles.goalItem}
-            >
-              <Card
-                style={StyleSheet.flatten([
-                  styles.goalCard,
-                  formData.primary_goals.includes(goal.id) ? styles.goalCardSelected : null,
-                ])}
-                variant="outlined"
+        {/* Primary Goals */}
+        <View style={styles.goalField}>
+          <Text style={styles.fieldLabel}>What are your fitness goals? (Select all that apply)</Text>
+          {bodyAnalysisData?.ai_body_type && (
+            <Text style={styles.autoSuggestText}>
+              💡 Based on your {bodyAnalysisData.ai_body_type} body type, we suggest focusing on{' '}
+              {bodyAnalysisData.ai_body_type === 'ectomorph' ? 'muscle gain and strength' :
+               bodyAnalysisData.ai_body_type === 'endomorph' ? 'weight loss and endurance' :
+               'strength and muscle gain'}
+            </Text>
+          )}
+          
+          <View style={styles.goalsGrid}>
+            {FITNESS_GOALS.map((goal) => (
+              <TouchableOpacity
+                key={goal.id}
+                onPress={() => toggleGoal(goal.id)}
+                style={styles.goalItem}
               >
-                <View style={styles.goalContent}>
-                  <Text style={styles.goalIcon}>{goal.icon}</Text>
-                  <Text style={[
-                    styles.goalTitle,
-                    formData.primary_goals.includes(goal.id) ? styles.goalTitleSelected : null,
-                  ]}>
-                    {goal.title}
-                  </Text>
-                  <Text style={styles.goalDescription}>{goal.description}</Text>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))}
+                <Card
+                  style={StyleSheet.flatten([
+                    styles.goalCard,
+                    formData.primary_goals.includes(goal.id) ? styles.goalCardSelected : null,
+                  ])}
+                  variant="outlined"
+                >
+                  <View style={styles.goalContent}>
+                    <Text style={styles.goalIcon}>{goal.icon}</Text>
+                    <Text style={[
+                      styles.goalTitle,
+                      formData.primary_goals.includes(goal.id) ? styles.goalTitleSelected : null,
+                    ]}>
+                      {goal.title}
+                    </Text>
+                    <Text style={styles.goalDescription}>{goal.description}</Text>
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {hasFieldError('goals') && (
+            <Text style={styles.errorText}>{getFieldError('goals')}</Text>
+          )}
         </View>
-        {hasFieldError('goals') && (
-          <Text style={styles.errorText}>{getFieldError('goals')}</Text>
-        )}
-      </View>
-      
-      {/* Activity Level */}
-      <View style={styles.activityField}>
-        <Text style={styles.fieldLabel}>Current Activity Level</Text>
-        <Text style={styles.fieldSubtitle}>Your physical activity outside of planned workouts</Text>
         
-        {ACTIVITY_LEVELS.map((level) => (
-          <TouchableOpacity
-            key={level.value}
-            onPress={() => updateField('activity_level', level.value as WorkoutPreferencesData['activity_level'])}
-          >
-            <Card
-              style={StyleSheet.flatten([
-                styles.activityCard,
-                formData.activity_level === level.value ? styles.activityCardSelected : null,
-              ])}
-              variant="outlined"
-            >
-              <View style={styles.activityContent}>
-                <Text style={styles.activityIcon}>{level.icon}</Text>
-                <View style={styles.activityText}>
-                  <Text style={[
-                    styles.activityTitle,
-                    formData.activity_level === level.value ? styles.activityTitleSelected : null,
-                  ]}>
-                    {level.label}
+        {/* Activity Level - Display Only (Auto-calculated from occupation) */}
+        <View style={styles.activityField}>
+          <Text style={styles.fieldLabel}>Daily Activity Level</Text>
+          <Text style={styles.fieldSubtitle}>
+            Auto-calculated based on your occupation ({occupationLabel})
+          </Text>
+          
+          <Card style={styles.calculatedActivityCard}>
+            <View style={styles.calculatedActivityContent}>
+              <Text style={styles.calculatedActivityIcon}>{currentActivityLevel?.icon || '🪑'}</Text>
+              <View style={styles.calculatedActivityText}>
+                <Text style={styles.calculatedActivityTitle}>
+                  {currentActivityLevel?.label || 'Sedentary'}
+                </Text>
+                <Text style={styles.calculatedActivityDescription}>
+                  {currentActivityLevel?.description || 'Little to no exercise'}
+                </Text>
+                <View style={styles.calculatedActivityNote}>
+                  <Text style={styles.calculatedActivityNoteIcon}>💡</Text>
+                  <Text style={styles.calculatedActivityNoteText}>
+                    Activity level is automatically determined by your occupation type from Personal Info (Tab 1). 
+                    This represents your daily movement outside of planned workouts.
                   </Text>
-                  <Text style={styles.activityDescription}>{level.description}</Text>
                 </View>
               </View>
-            </Card>
-          </TouchableOpacity>
-        ))}
-        {hasFieldError('activity') && (
-          <Text style={styles.errorText}>{getFieldError('activity')}</Text>
-        )}
+            </View>
+          </Card>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
   
   const renderCurrentFitnessSection = () => {
     const levelInfo = INTENSITY_OPTIONS.find(opt => opt.value === formData.intensity);
@@ -1997,6 +2028,64 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Calculated Activity Level Styles (Read-only display)
+  calculatedActivityCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.info}08`,
+    borderColor: `${ResponsiveTheme.colors.info || ResponsiveTheme.colors.primary}30`,
+    borderWidth: 1,
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  calculatedActivityContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  calculatedActivityIcon: {
+    fontSize: rf(32),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  calculatedActivityText: {
+    flex: 1,
+  },
+
+  calculatedActivityTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  calculatedActivityDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    lineHeight: rf(18),
+  },
+
+  calculatedActivityNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  calculatedActivityNoteIcon: {
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  calculatedActivityNoteText: {
+    flex: 1,
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(16),
   },
 });
 

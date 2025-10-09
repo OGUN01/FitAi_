@@ -8,6 +8,7 @@ export { Card } from './Card';
 export { Modal, BottomSheetModal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
 export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './CustomDialog';
+export { InfoTooltip } from './InfoTooltip';
 
 // Re-export theme for easy access
 export { THEME } from '../../utils/constants';

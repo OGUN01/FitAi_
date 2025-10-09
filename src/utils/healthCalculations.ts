@@ -1074,12 +1074,10 @@ export class HealthCalculationEngine {
       workoutPreferences.primary_goals, 
       dietPreferences
     );
-    const dailyWater = NutritionalCalculations.calculateDailyWaterNeeds(
-      bodyAnalysis.current_weight_kg, 
-      workoutPreferences.time_preference, 
-      workoutPreferences.activity_level
+    const dailyWater = MetabolicCalculations.calculateWaterIntake(
+      bodyAnalysis.current_weight_kg
     );
-    const dailyFiber = NutritionalCalculations.calculateDailyFiberNeeds(dailyCalories);
+    const dailyFiber = MetabolicCalculations.calculateFiber(dailyCalories);
     
     // Body composition
     const bodyFatRange = BodyCompositionCalculations.getHealthyBodyFatRange(personalInfo.age, personalInfo.gender);
@@ -1115,7 +1113,7 @@ export class HealthCalculationEngine {
     const overallHealthScore = HealthScoring.calculateOverallHealthScore(
       personalInfo, dietPreferences, bodyAnalysis, workoutPreferences
     );
-    const dietReadinessScore = HealthScoring.calculateDietReadinessScore(dietPreferences);
+    const dietReadinessScore = MetabolicCalculations.calculateDietReadinessScore(dietPreferences);
     const fitnessReadinessScore = HealthScoring.calculateFitnessReadinessScore(workoutPreferences, bodyAnalysis);
     const goalRealisticScore = HealthScoring.calculateGoalRealisticScore(bodyAnalysis, workoutPreferences);
     
