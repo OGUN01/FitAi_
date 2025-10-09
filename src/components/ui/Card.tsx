@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ViewStyle, TouchableOpacity, Text } from 'react-native';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -12,13 +12,15 @@ interface CardProps {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-export const Card: React.FC<CardProps> = ({
-  children,
-  style,
-  onPress,
-  variant = 'default',
-  padding = 'md',
-}) => {
+export const Card: React.FC<CardProps> = (props) => {
+  const {
+    children,
+    style,
+    onPress,
+    variant = 'default',
+    padding = 'md',
+  } = props;
+
   const getCardStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       ...styles.base,
@@ -35,15 +37,63 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
+  const cardStyle = [getCardStyle(), style];
+
+  const wrapChild = (child: React.ReactNode, index?: number): React.ReactNode => {
+    if (child === null || child === undefined || typeof child === 'boolean') {
+      return child;
+    }
+
+    if (typeof child === 'string' || typeof child === 'number') {
+      return <Text key={index}>{child}</Text>;
+    }
+
+    if (Array.isArray(child)) {
+      return child.map((nestedChild, nestedIndex) => wrapChild(nestedChild, nestedIndex));
+    }
+
+    if (React.isValidElement(child)) {
+      if (child.type === React.Fragment) {
+        const wrapped = React.Children.map(child.props.children, wrapChild);
+        return <React.Fragment key={child.key ?? index}>{wrapped}</React.Fragment>;
+      }
+
+      if (typeof child.type === 'string' && child.type.toLowerCase() === 'text') {
+        return child;
+      }
+
+      if (child.props && child.props.children) {
+        const wrappedChildren = React.Children.map(child.props.children, wrapChild);
+        if (wrappedChildren !== child.props.children) {
+          return React.cloneElement(child, child.props, wrappedChildren);
+        }
+      }
+    }
+
+    return child;
+  };
+
+  const renderChildrenSafely = (node: React.ReactNode): React.ReactNode => {
+    return React.Children.map(node, wrapChild);
+  };
+
   if (onPress) {
     return (
-      <TouchableOpacity style={[getCardStyle(), style]} onPress={onPress} activeOpacity={0.8}>
-        {children}
+      <TouchableOpacity 
+        style={cardStyle} 
+        onPress={onPress} 
+        activeOpacity={0.8}
+      >
+        {renderChildrenSafely(children)}
       </TouchableOpacity>
     );
   }
 
-  return <View style={[getCardStyle(), style]}>{children}</View>;
+  return (
+    <View style={cardStyle}>
+      {renderChildrenSafely(children)}
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

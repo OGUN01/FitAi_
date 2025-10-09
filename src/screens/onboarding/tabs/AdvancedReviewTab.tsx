@@ -11,8 +11,11 @@ import {
   WorkoutPreferencesData, 
   AdvancedReviewData 
 } from '../../../types/onboarding';
-import { useOnboardingState } from '../../../hooks/useOnboardingState';
 import { HealthCalculationEngine } from '../../../utils/healthCalculations';
+import { ValidationEngine, ValidationResults } from '../../../services/validationEngine';
+import { ErrorCard } from '../../../components/onboarding/ErrorCard';
+import { WarningCard } from '../../../components/onboarding/WarningCard';
+import { AdjustmentWizard, Alternative } from '../../../components/onboarding/AdjustmentWizard';
 
 // ============================================================================
 // TYPES
@@ -27,6 +30,10 @@ interface AdvancedReviewTabProps {
   onNext: () => void;
   onBack: () => void;
   onComplete: () => void;
+  onUpdate: (data: Partial<AdvancedReviewData>) => void;
+  onUpdateBodyAnalysis?: (data: Partial<BodyAnalysisData>) => void;
+  onUpdateWorkoutPreferences?: (data: Partial<WorkoutPreferencesData>) => void;
+  onNavigateToTab?: (tabNumber: number) => void;
   isComplete: boolean;
   isLoading?: boolean;
   isAutoSaving?: boolean;
@@ -45,15 +52,22 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   onNext,
   onBack,
   onComplete,
+  onUpdate,
+  onUpdateBodyAnalysis,
+  onUpdateWorkoutPreferences,
+  onNavigateToTab,
   isComplete,
   isLoading = false,
   isAutoSaving = false,
 }) => {
-  const { updateAdvancedReview } = useOnboardingState();
+  // No longer creating separate state instances - using props from parent
   
   const [calculatedData, setCalculatedData] = useState<AdvancedReviewData | null>(null);
+  const [validationResults, setValidationResults] = useState<ValidationResults | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [calculationError, setCalculationError] = useState<string | null>(null);
+  const [showAdjustmentWizard, setShowAdjustmentWizard] = useState(false);
+  const [currentError, setCurrentError] = useState<any | null>(null);
   
   // Calculate all metrics when component mounts or data changes
   useEffect(() => {
@@ -61,6 +75,21 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       performCalculations();
     }
   }, [personalInfo, dietPreferences, bodyAnalysis, workoutPreferences]);
+  
+  // Helper functions for scoring
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return ResponsiveTheme.colors.success;
+    if (score >= 60) return ResponsiveTheme.colors.warning;
+    return ResponsiveTheme.colors.error;
+  };
+  
+  const getScoreCategory = (score: number) => {
+    if (score >= 90) return 'Excellent';
+    if (score >= 80) return 'Very Good';
+    if (score >= 70) return 'Good';
+    if (score >= 60) return 'Fair';
+    return 'Needs Improvement';
+  };
   
   const performCalculations = async () => {
     if (!personalInfo || !dietPreferences || !bodyAnalysis || !workoutPreferences) {
@@ -72,11 +101,19 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     setCalculationError(null);
     
     try {
-      console.log('🧮 AdvancedReviewTab: Performing comprehensive health calculations...');
+      console.log('🧮 AdvancedReviewTab: Running validation and calculations...');
       
-      // Simulate calculation time for better UX
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Use ValidationEngine for comprehensive validation
+      const validationResults = ValidationEngine.validateUserPlan(
+        personalInfo,
+        dietPreferences,
+        bodyAnalysis,
+        workoutPreferences
+      );
       
+      setValidationResults(validationResults);
+      
+      // Also run legacy calculations for additional metrics
       const calculations = HealthCalculationEngine.calculateAllMetrics(
         personalInfo,
         dietPreferences,
@@ -84,17 +121,44 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         workoutPreferences
       );
       
-      // Add completion metrics
+      // Merge validation metrics with legacy calculations
       const completionMetrics = calculateCompletionMetrics();
-      const finalCalculations = {
+      
+      // Calculate additional metrics using new helper functions
+      const waterIntake = HealthCalculationEngine.calculateWaterIntake(bodyAnalysis.current_weight_kg);
+      const fiberIntake = HealthCalculationEngine.calculateFiber(validationResults.calculatedMetrics.targetCalories);
+      const dietReadinessScore = HealthCalculationEngine.calculateDietReadinessScore(dietPreferences);
+      
+      const finalCalculations: AdvancedReviewData = {
         ...calculations,
         ...completionMetrics,
+        // Override with validation engine results (more accurate)
+        calculated_bmr: validationResults.calculatedMetrics.bmr,
+        calculated_tdee: validationResults.calculatedMetrics.tdee,
+        daily_calories: validationResults.calculatedMetrics.targetCalories,
+        daily_protein_g: validationResults.calculatedMetrics.protein,
+        daily_carbs_g: validationResults.calculatedMetrics.carbs,
+        daily_fat_g: validationResults.calculatedMetrics.fat,
+        daily_water_ml: waterIntake,
+        daily_fiber_g: fiberIntake,
+        weekly_weight_loss_rate: validationResults.calculatedMetrics.weeklyRate,
+        estimated_timeline_weeks: validationResults.calculatedMetrics.timeline,
+        diet_readiness_score: dietReadinessScore,
+        // Add validation results for storage
+        validation_status: validationResults.hasErrors ? 'blocked' : (validationResults.hasWarnings ? 'warnings' : 'passed'),
+        validation_errors: validationResults.errors.length > 0 ? validationResults.errors : undefined,
+        validation_warnings: validationResults.warnings.length > 0 ? validationResults.warnings : undefined,
+        refeed_schedule: validationResults.adjustments?.refeedSchedule,
+        medical_adjustments: validationResults.adjustments?.medicalNotes,
       };
       
       setCalculatedData(finalCalculations);
-      updateAdvancedReview(finalCalculations);
+      onUpdate(finalCalculations);
       
-      console.log('✅ AdvancedReviewTab: All calculations completed successfully');
+      console.log('✅ AdvancedReviewTab: Validation and calculations completed');
+      console.log('  - Can Proceed:', validationResults.canProceed);
+      console.log('  - Errors:', validationResults.errors.length);
+      console.log('  - Warnings:', validationResults.warnings.length);
     } catch (error) {
       console.error('❌ AdvancedReviewTab: Calculation error:', error);
       setCalculationError('Failed to calculate health metrics. Please try again.');
@@ -162,7 +226,6 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     // Reduce score for missing critical data
     if (!bodyAnalysis?.height_cm || !bodyAnalysis?.current_weight_kg) score -= 20;
     if (!workoutPreferences?.primary_goals?.length) score -= 15;
-    if (!dietPreferences?.cuisine_preferences?.length) score -= 10;
     
     // Reduce score for unrealistic goals
     if (bodyAnalysis && bodyAnalysis.current_weight_kg && bodyAnalysis.target_weight_kg && bodyAnalysis.target_timeline_weeks) {
@@ -184,7 +247,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       
       <View style={styles.summaryGrid}>
         {/* Personal Info Summary */}
-        <TouchableOpacity onPress={() => {/* Navigate to tab 1 */}}>
+        <TouchableOpacity onPress={() => onNavigateToTab?.(1)}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>👤</Text>
@@ -203,14 +266,14 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </TouchableOpacity>
         
         {/* Diet Summary */}
-        <TouchableOpacity onPress={() => {/* Navigate to tab 2 */}}>
+        <TouchableOpacity onPress={() => onNavigateToTab?.(2)}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>🍽️</Text>
               <View style={styles.summaryContent}>
                 <Text style={styles.summaryTitle}>Diet Preferences</Text>
                 <Text style={styles.summaryDetails}>
-                  {dietPreferences?.diet_type}, {dietPreferences?.cuisine_preferences?.length || 0} cuisines
+                  {dietPreferences?.diet_type}
                 </Text>
                 <Text style={styles.summaryDetails}>
                   {dietPreferences?.breakfast_enabled ? '✓' : '✗'} Breakfast, 
@@ -224,7 +287,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </TouchableOpacity>
         
         {/* Body Analysis Summary */}
-        <TouchableOpacity onPress={() => {/* Navigate to tab 3 */}}>
+        <TouchableOpacity onPress={() => onNavigateToTab?.(3)}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>📊</Text>
@@ -243,7 +306,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </TouchableOpacity>
         
         {/* Workout Summary */}
-        <TouchableOpacity onPress={() => {/* Navigate to tab 4 */}}>
+        <TouchableOpacity onPress={() => onNavigateToTab?.(4)}>
           <Card style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>💪</Text>
@@ -474,55 +537,60 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   const renderHealthScores = () => {
     if (!calculatedData) return null;
     
-    const getScoreColor = (score: number) => {
-      if (score >= 80) return ResponsiveTheme.colors.success;
-      if (score >= 60) return ResponsiveTheme.colors.warning;
-      return ResponsiveTheme.colors.error;
-    };
+    // Check if all required scores are available
+    const hasAllScores = 
+      calculatedData.overall_health_score !== undefined &&
+      calculatedData.diet_readiness_score !== undefined &&
+      calculatedData.fitness_readiness_score !== undefined &&
+      calculatedData.goal_realistic_score !== undefined;
     
-    const getScoreCategory = (score: number) => {
-      if (score >= 90) return 'Excellent';
-      if (score >= 80) return 'Very Good';
-      if (score >= 70) return 'Good';
-      if (score >= 60) return 'Fair';
-      return 'Needs Improvement';
-    };
+    if (!hasAllScores) {
+      console.warn('⚠️ Health scores not fully calculated');
+      return null;
+    }
     
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📊 Health Assessment Scores</Text>
+        <Text style={styles.sectionSubtitle}>
+          Your readiness scores based on current health status and goals
+        </Text>
         
         <View style={styles.scoresGrid}>
           <Card style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Overall Health</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score!) }]}>
+            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score) }]}>
               {calculatedData.overall_health_score}/100
             </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score!)}</Text>
+            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score)}</Text>
+            <Text style={styles.scoreDescription}>Combined health assessment</Text>
           </Card>
           
           <Card style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Diet Readiness</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.diet_readiness_score!) }]}>
+            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.diet_readiness_score) }]}>
               {calculatedData.diet_readiness_score}/100
             </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.diet_readiness_score!)}</Text>
+            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.diet_readiness_score)}</Text>
+            <Text style={styles.scoreDescription}>Nutrition habits & readiness</Text>
           </Card>
           
           <Card style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Fitness Readiness</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.fitness_readiness_score!) }]}>
+            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.fitness_readiness_score) }]}>
               {calculatedData.fitness_readiness_score}/100
             </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.fitness_readiness_score!)}</Text>
+            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.fitness_readiness_score)}</Text>
+            <Text style={styles.scoreDescription}>Exercise experience & capacity</Text>
           </Card>
           
           <Card style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Goal Realistic</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.goal_realistic_score!) }]}>
+            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.goal_realistic_score) }]}>
               {calculatedData.goal_realistic_score}/100
             </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.goal_realistic_score!)}</Text>
+            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.goal_realistic_score)}</Text>
+            <Text style={styles.scoreDescription}>Timeline & target feasibility</Text>
           </Card>
         </View>
       </View>
@@ -591,7 +659,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               <View style={styles.personalizationBar}>
                 <View style={[
                   styles.personalizationFill,
-                  { width: `${calculatedData.data_completeness_percentage}%` }
+                  { width: `${calculatedData.data_completeness_percentage || 0}%` }
                 ]} />
               </View>
             </View>
@@ -604,7 +672,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               <View style={styles.personalizationBar}>
                 <View style={[
                   styles.personalizationFill,
-                  { width: `${calculatedData.reliability_score}%` }
+                  { width: `${calculatedData.reliability_score || 0}%` }
                 ]} />
               </View>
             </View>
@@ -617,7 +685,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               <View style={styles.personalizationBar}>
                 <View style={[
                   styles.personalizationFill,
-                  { width: `${calculatedData.personalization_level}%` }
+                  { width: `${calculatedData.personalization_level || 0}%` }
                 ]} />
               </View>
             </View>
@@ -676,6 +744,24 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         
         {/* Content */}
         <View style={styles.content}>
+          {/* Validation Errors Section */}
+          {validationResults?.hasErrors && (
+            <ErrorCard 
+              errors={validationResults.errors}
+              onAdjust={(error) => {
+                console.log('🔧 Opening adjustment wizard for error:', error);
+                setCurrentError(validationResults.errors[0]); // Use first error
+                setShowAdjustmentWizard(true);
+              }}
+            />
+          )}
+          
+          {/* Validation Warnings Section */}
+          {validationResults?.hasWarnings && (
+            <WarningCard warnings={validationResults.warnings} />
+          )}
+          
+          {/* Existing Sections */}
           {renderDataSummary()}
           {renderMetabolicProfile()}
           {renderNutritionalNeeds()}
@@ -690,7 +776,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Card style={[
               styles.completionCard,
               isComplete ? styles.completionCardComplete : styles.completionCardIncomplete
-            ]}>
+            ] as any}>
               <Text style={styles.completionIcon}>
                 {isComplete ? '🎉' : '📋'}
               </Text>
@@ -718,15 +804,89 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             style={styles.backButton}
           />
           <Button
-            title={isComplete ? "🚀 Start FitAI Journey" : "Complete Setup"}
+            title={
+              validationResults?.hasErrors 
+                ? "⛔ Fix Issues to Continue" 
+                : isComplete 
+                  ? "🚀 Start FitAI Journey" 
+                  : "Complete Setup"
+            }
             onPress={isComplete ? onNext : onComplete}
             variant="primary"
             style={styles.completeButton}
-            disabled={!calculatedData || isCalculating}
+            disabled={!calculatedData || isCalculating || !validationResults?.canProceed}
             loading={isLoading}
           />
         </View>
       </View>
+      
+      {/* Adjustment Wizard Modal */}
+      {showAdjustmentWizard && currentError && bodyAnalysis && (
+        <AdjustmentWizard
+          visible={showAdjustmentWizard}
+          error={currentError}
+          currentData={{
+            bmr: calculatedData?.calculated_bmr || 0,
+            tdee: calculatedData?.calculated_tdee || 0,
+            currentWeight: bodyAnalysis.current_weight_kg,
+            targetWeight: bodyAnalysis.target_weight_kg,
+            currentTimeline: bodyAnalysis.target_timeline_weeks,
+            currentFrequency: workoutPreferences?.workout_frequency_per_week || 0,
+          }}
+          onSelectAlternative={(alternative: Alternative) => {
+            console.log('✅ Alternative selected:', alternative);
+            
+            // Determine which tab to navigate to based on what changed
+            let targetTab: number | null = null;
+            
+            // Update body analysis if timeline or target weight changed
+            if (alternative.newTimeline !== undefined || alternative.newTargetWeight !== undefined) {
+              const updates: Partial<BodyAnalysisData> = {};
+              
+              if (alternative.newTimeline !== undefined) {
+                updates.target_timeline_weeks = alternative.newTimeline;
+                console.log(`📅 Updating timeline: ${bodyAnalysis?.target_timeline_weeks} → ${alternative.newTimeline} weeks`);
+              }
+              
+              if (alternative.newTargetWeight !== undefined) {
+                updates.target_weight_kg = alternative.newTargetWeight;
+                console.log(`🎯 Updating target weight: ${bodyAnalysis?.target_weight_kg} → ${alternative.newTargetWeight} kg`);
+              }
+              
+              onUpdateBodyAnalysis?.(updates);
+              targetTab = 3; // Navigate to Body Analysis tab to show changes
+            }
+            
+            // Update workout preferences if frequency changed
+            if (alternative.newWorkoutFrequency !== undefined) {
+              onUpdateWorkoutPreferences?.({
+                workout_frequency_per_week: alternative.newWorkoutFrequency
+              });
+              console.log(`🏋️ Updating workout frequency: ${workoutPreferences?.workout_frequency_per_week} → ${alternative.newWorkoutFrequency}/week`);
+              
+              // If only frequency changed (not timeline), navigate to Workout tab
+              if (targetTab === null) {
+                targetTab = 4; // Navigate to Workout Preferences tab
+              }
+            }
+            
+            // Close wizard
+            setShowAdjustmentWizard(false);
+            
+            // Navigate to the relevant tab to show the changes
+            if (targetTab !== null && onNavigateToTab) {
+              setTimeout(() => {
+                onNavigateToTab(targetTab!);
+                console.log(`🧭 Navigated to tab ${targetTab} to review changes`);
+              }, 300);
+            } else {
+              // If no navigation, just re-calculate on current tab
+              setTimeout(() => performCalculations(), 500);
+            }
+          }}
+          onClose={() => setShowAdjustmentWizard(false)}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -1184,6 +1344,14 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
     textAlign: 'center',
+  },
+
+  scoreDescription: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontStyle: 'italic',
   },
 
   // Sleep Section

@@ -34,6 +34,11 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   startingTab = 1,
   showProgressIndicator = false,
 }) => {
+  // ============================================================================
+  // STATE MANAGEMENT - SINGLE SOURCE OF TRUTH
+  // ============================================================================
+  // All state is managed here in OnboardingContainer and passed down as props
+  // This ensures ONE source of truth with no conflicting state instances
   const {
     // State
     personalInfo,
@@ -57,6 +62,11 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     saveToLocal,
     completeOnboarding,
     isOnboardingComplete,
+    updatePersonalInfo,
+    updateDietPreferences,
+    updateBodyAnalysis,
+    updateWorkoutPreferences,
+    updateAdvancedReview,
   } = useOnboardingState();
   
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -157,10 +167,11 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     }
   };
   
-  const handleNextTab = () => {
+  const handleNextTab = (currentTabData?: any) => {
     console.log('🎭 OnboardingContainer: handleNextTab called, currentTab:', currentTab);
+    console.log('🎭 OnboardingContainer: currentTabData provided:', currentTabData ? 'Yes' : 'No');
     
-    const validation = validateTab(currentTab);
+    const validation = validateTab(currentTab, currentTabData);
     console.log('🎭 OnboardingContainer: Validation result:', validation);
     
     if (!validation.is_valid) {
@@ -253,9 +264,14 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   const renderTabContent = () => {
     console.log('🎭 OnboardingContainer: renderTabContent called, currentTab:', currentTab);
     
+    // Only show "Jump to Review" if tab 5 (Advanced Review) has been accessed
+    // This prevents users from jumping to review during initial onboarding flow
+    const canJumpToReview = completedTabs.has(4) || completedTabs.has(5);
+    
     const commonProps = {
       onNext: handleNextTab,
       onBack: handlePreviousTab,
+      onNavigateToTab: canJumpToReview ? setCurrentTab : undefined,
       isLoading,
       isAutoSaving,
     };
@@ -267,6 +283,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             {...commonProps}
             data={personalInfo}
             validationResult={tabValidationStatus[1]}
+            onUpdate={updatePersonalInfo}
           />
         );
         
@@ -276,6 +293,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             {...commonProps}
             data={dietPreferences}
             validationResult={tabValidationStatus[2]}
+            onUpdate={updateDietPreferences}
           />
         );
         
@@ -284,7 +302,9 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
           <BodyAnalysisTab
             {...commonProps}
             data={bodyAnalysis}
+            personalInfoData={personalInfo}
             validationResult={tabValidationStatus[3]}
+            onUpdate={updateBodyAnalysis}
           />
         );
         
@@ -295,6 +315,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             data={workoutPreferences}
             validationResult={tabValidationStatus[4]}
             bodyAnalysisData={bodyAnalysis} // For auto-population
+            personalInfoData={personalInfo} // For intensity calculation
+            onUpdate={updateWorkoutPreferences}
           />
         );
         
@@ -308,6 +330,10 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             workoutPreferences={workoutPreferences}
             advancedReview={advancedReview}
             onComplete={handleCompleteOnboarding}
+            onUpdate={updateAdvancedReview}
+            onUpdateBodyAnalysis={updateBodyAnalysis}
+            onUpdateWorkoutPreferences={updateWorkoutPreferences}
+            onNavigateToTab={setCurrentTab}
             isComplete={isOnboardingComplete()}
           />
         );
@@ -318,6 +344,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             {...commonProps}
             data={personalInfo}
             validationResult={tabValidationStatus[1]}
+            onUpdate={updatePersonalInfo}
           />
         );
     }

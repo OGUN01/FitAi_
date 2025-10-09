@@ -5,8 +5,8 @@ import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Card } from '../../../components/ui';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
-import { WorkoutPreferencesData, BodyAnalysisData, TabValidationResult } from '../../../types/onboarding';
-import { useOnboardingState } from '../../../hooks/useOnboardingState';
+import { WorkoutPreferencesData, BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
+import { MetabolicCalculations } from '../../../utils/healthCalculations';
 
 // ============================================================================
 // TYPES
@@ -15,9 +15,12 @@ import { useOnboardingState } from '../../../hooks/useOnboardingState';
 interface WorkoutPreferencesTabProps {
   data: WorkoutPreferencesData | null;
   bodyAnalysisData?: BodyAnalysisData | null; // For auto-population
+  personalInfoData?: PersonalInfoData | null; // For intensity calculation
   validationResult?: TabValidationResult;
-  onNext: () => void;
+  onNext: (currentData?: WorkoutPreferencesData) => void;
   onBack: () => void;
+  onUpdate: (data: Partial<WorkoutPreferencesData>) => void;
+  onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
 }
@@ -27,8 +30,9 @@ interface WorkoutPreferencesTabProps {
 // ============================================================================
 
 const FITNESS_GOALS = [
-  { id: 'weight_loss', title: 'Weight Loss', icon: '🔥', description: 'Burn fat and lose weight' },
-  { id: 'muscle_gain', title: 'Muscle Gain', icon: '💪', description: 'Build lean muscle mass' },
+  { id: 'weight-loss', title: 'Weight Loss', icon: '🔥', description: 'Burn fat and lose weight' },
+  { id: 'weight-gain', title: 'Weight Gain', icon: '📈', description: 'Gain healthy weight (muscle and mass)' },
+  { id: 'muscle-gain', title: 'Muscle Gain', icon: '💪', description: 'Build lean muscle mass' },
   { id: 'strength', title: 'Strength', icon: '🏋️', description: 'Increase overall strength' },
   { id: 'endurance', title: 'Endurance', icon: '🏃', description: 'Improve cardiovascular fitness' },
   { id: 'flexibility', title: 'Flexibility', icon: '🧘', description: 'Enhance mobility and flexibility' },
@@ -59,6 +63,18 @@ const EQUIPMENT_OPTIONS = [
   { id: 'yoga-mat', label: 'Yoga Mat', value: 'yoga-mat', icon: '🧘' },
   { id: 'treadmill', label: 'Treadmill', value: 'treadmill', icon: '🏃' },
   { id: 'stationary-bike', label: 'Stationary Bike', value: 'stationary-bike', icon: '🚴' },
+];
+
+// Standard gym equipment - auto-populated when gym is selected
+const STANDARD_GYM_EQUIPMENT = [
+  'bodyweight',
+  'dumbbells', 
+  'barbell',
+  'kettlebells',
+  'pull-up-bar',
+  'treadmill',
+  'stationary-bike',
+  'yoga-mat'
 ];
 
 const INTENSITY_OPTIONS = [
@@ -98,13 +114,22 @@ const WORKOUT_TIMES = [
 const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   data,
   bodyAnalysisData,
+  personalInfoData,
   validationResult,
   onNext,
   onBack,
+  onUpdate,
+  onNavigateToTab,
   isLoading = false,
   isAutoSaving = false,
 }) => {
-  const { updateWorkoutPreferences } = useOnboardingState();
+  // No longer creating separate state instances - using props from parent
+  
+  // Intensity recommendation state
+  const [intensityRecommendation, setIntensityRecommendation] = useState<{
+    level: 'beginner' | 'intermediate' | 'advanced';
+    reasoning: string;
+  } | null>(null);
   
   // Form state
   const [formData, setFormData] = useState<WorkoutPreferencesData>({
@@ -138,6 +163,44 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     needs_motivation: data?.needs_motivation ?? false,
     prefers_variety: data?.prefers_variety ?? true,
   });
+  
+  // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
+  useEffect(() => {
+    if (data) {
+      setFormData({
+        location: data.location || 'both',
+        equipment: data.equipment || [],
+        time_preference: data.time_preference || 30,
+        intensity: data.intensity || 'beginner',
+        workout_types: data.workout_types || [],
+        primary_goals: data.primary_goals || [],
+        activity_level: data.activity_level || 'sedentary',
+        workout_experience_years: data.workout_experience_years || 0,
+        workout_frequency_per_week: data.workout_frequency_per_week || 0,
+        can_do_pushups: data.can_do_pushups || 0,
+        can_run_minutes: data.can_run_minutes || 0,
+        flexibility_level: data.flexibility_level || 'fair',
+        weekly_weight_loss_goal: data.weekly_weight_loss_goal || undefined,
+        preferred_workout_times: data.preferred_workout_times || [],
+        enjoys_cardio: data.enjoys_cardio ?? true,
+        enjoys_strength_training: data.enjoys_strength_training ?? true,
+        enjoys_group_classes: data.enjoys_group_classes ?? false,
+        prefers_outdoor_activities: data.prefers_outdoor_activities ?? false,
+        needs_motivation: data.needs_motivation ?? false,
+        prefers_variety: data.prefers_variety ?? true,
+      });
+    }
+  }, [data]);
+  
+  // Auto-populate gym equipment when location is gym
+  useEffect(() => {
+    if (formData.location === 'gym' && formData.equipment.length === 0) {
+      setFormData(prev => ({
+        ...prev,
+        equipment: STANDARD_GYM_EQUIPMENT,
+      }));
+    }
+  }, [formData.location]);
   
   // Auto-populate from body analysis data
   useEffect(() => {
@@ -177,10 +240,6 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     }
   }, [bodyAnalysisData, data?.weekly_weight_loss_goal, formData.primary_goals.length]);
   
-  // Update parent state when form data changes
-  useEffect(() => {
-    updateWorkoutPreferences(formData);
-  }, [formData, updateWorkoutPreferences]);
   
   // ============================================================================
   // FORM HANDLERS
@@ -190,7 +249,23 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     field: K,
     value: WorkoutPreferencesData[K]
   ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    let updated = { ...formData, [field]: value };
+    
+    // Auto-populate equipment when gym is selected
+    if (field === 'location') {
+      if (value === 'gym') {
+        updated.equipment = STANDARD_GYM_EQUIPMENT;
+      } else if (value === 'home') {
+        // Reset to empty when switching to home, let user select
+        updated.equipment = [];
+      } else if (value === 'both') {
+        // For both, keep current selection or reset to empty
+        updated.equipment = formData.equipment.length > 0 ? formData.equipment : [];
+      }
+    }
+    
+    setFormData(updated);
+    onUpdate(updated);
   };
   
   const toggleGoal = (goalId: string) => {
@@ -216,6 +291,137 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     if (remainingMinutes === 0) return `${hours}h`;
     return `${hours}h ${remainingMinutes}m`;
   };
+  
+  // ============================================================================
+  // FITNESS LEVEL AUTO-DETERMINATION (NEW - Using MetabolicCalculations)
+  // ============================================================================
+  
+  // Auto-calculate and show intensity recommendation when fitness assessment changes
+  React.useEffect(() => {
+    // Only calculate if we have all required data
+    if (
+      formData.workout_experience_years !== undefined &&
+      formData.can_do_pushups !== undefined &&
+      formData.can_run_minutes !== undefined &&
+      personalInfoData?.age &&
+      personalInfoData?.gender
+    ) {
+      
+      const { recommendedIntensity, reasoning } = 
+        MetabolicCalculations.calculateRecommendedIntensity(
+          formData.workout_experience_years,
+          formData.can_do_pushups,
+          formData.can_run_minutes,
+          personalInfoData.age,
+          personalInfoData.gender
+        );
+      
+      // Set recommendation for display
+      setIntensityRecommendation({
+        level: recommendedIntensity,
+        reasoning
+      });
+      
+      // Auto-set intensity (user can override)
+      if (formData.intensity !== recommendedIntensity) {
+        setFormData(prev => ({
+          ...prev,
+          intensity: recommendedIntensity
+        }));
+      }
+    }
+  }, [
+    formData.workout_experience_years,
+    formData.can_do_pushups,
+    formData.can_run_minutes,
+    personalInfoData?.age,
+    personalInfoData?.gender
+  ]);
+
+  // ============================================================================
+  // WORKOUT TYPE AUTO-RECOMMENDATION
+  // ============================================================================
+  
+  const calculateRecommendedWorkoutTypes = (): string[] => {
+    const recommendedTypes: string[] = [];
+    const { primary_goals, intensity, time_preference, location, equipment } = formData;
+    
+    // Base recommendations for everyone
+    recommendedTypes.push('strength'); // Everyone benefits from strength training
+    
+    // Goal-based recommendations
+    if (primary_goals.includes('weight-loss') || primary_goals.includes('endurance')) {
+      recommendedTypes.push('cardio');
+      if (time_preference >= 30) {
+        recommendedTypes.push('hiit'); // HIIT for efficient fat burning
+      }
+    }
+    
+    if (primary_goals.includes('muscle-gain') || primary_goals.includes('strength')) {
+      recommendedTypes.push('strength');
+      if (intensity === 'advanced') {
+        recommendedTypes.push('functional'); // Advanced functional training
+      }
+    }
+    
+    if (primary_goals.includes('flexibility') || primary_goals.includes('general-fitness')) {
+      recommendedTypes.push('yoga');
+      recommendedTypes.push('flexibility');
+    }
+    
+    // Fitness level adjustments
+    if (intensity === 'beginner') {
+      recommendedTypes.push('yoga'); // Gentle start
+      recommendedTypes.push('flexibility');
+    } else if (intensity === 'intermediate') {
+      recommendedTypes.push('hiit');
+      recommendedTypes.push('functional');
+    } else if (intensity === 'advanced') {
+      recommendedTypes.push('hiit');
+      recommendedTypes.push('functional');
+      recommendedTypes.push('pilates');
+    }
+    
+    // Equipment-based adjustments
+    if (location === 'home' && equipment.includes('yoga-mat')) {
+      recommendedTypes.push('yoga', 'pilates');
+    }
+    
+    if (equipment.includes('resistance-bands')) {
+      recommendedTypes.push('functional');
+    }
+    
+    // Body analysis integration (if available)
+    if (bodyAnalysisData?.ai_body_type) {
+      if (bodyAnalysisData.ai_body_type === 'ectomorph') {
+        // Focus on muscle building
+        recommendedTypes.push('strength', 'functional');
+      } else if (bodyAnalysisData.ai_body_type === 'endomorph') {
+        // Focus on fat burning
+        recommendedTypes.push('cardio', 'hiit');
+      } else if (bodyAnalysisData.ai_body_type === 'mesomorph') {
+        // Balanced approach
+        recommendedTypes.push('strength', 'hiit', 'functional');
+      }
+    }
+    
+    // Remove duplicates and return top 4-5 recommendations
+    const uniqueTypes = [...new Set(recommendedTypes)];
+    return uniqueTypes.slice(0, 5);
+  };
+
+  // Auto-update workout types when relevant data changes
+  React.useEffect(() => {
+    const recommendedTypes = calculateRecommendedWorkoutTypes();
+    setFormData(prev => ({ ...prev, workout_types: recommendedTypes }));
+  }, [
+    formData.primary_goals,
+    formData.intensity,
+    formData.time_preference,
+    formData.location,
+    formData.equipment,
+    bodyAnalysisData?.ai_body_type
+  ]);
   
   // ============================================================================
   // VALIDATION HELPERS
@@ -323,12 +529,57 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     </View>
   );
   
-  const renderCurrentFitnessSection = () => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Current Fitness Assessment</Text>
-      <Text style={styles.sectionSubtitle}>Help us understand your starting point</Text>
-      
-      <View style={styles.fitnessGrid}>
+  const renderCurrentFitnessSection = () => {
+    const levelInfo = INTENSITY_OPTIONS.find(opt => opt.value === formData.intensity);
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Current Fitness Assessment</Text>
+        <Text style={styles.sectionSubtitle}>Help us understand your starting point</Text>
+        
+        {/* Intensity Recommendation with Reasoning */}
+        {intensityRecommendation && (
+          <Card style={styles.calculatedLevelCard}>
+            <View style={styles.calculatedLevelContent}>
+              <Text style={styles.calculatedLevelIcon}>{levelInfo?.icon}</Text>
+              <View style={styles.calculatedLevelText}>
+                <Text style={styles.calculatedLevelTitle}>
+                  Recommended Intensity: {intensityRecommendation.level.charAt(0).toUpperCase() + intensityRecommendation.level.slice(1)}
+                </Text>
+                <Text style={styles.calculatedLevelDescription}>
+                  {intensityRecommendation.reasoning}
+                </Text>
+                <Text style={styles.calculatedLevelHint}>
+                  💡 You can change this below if you feel differently
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
+        {/* Recommended Workout Types */}
+        <Card style={styles.recommendedTypesCard}>
+          <View style={styles.recommendedTypesHeader}>
+            <Text style={styles.recommendedTypesIcon}>🎯</Text>
+            <Text style={styles.recommendedTypesTitle}>Recommended Workout Types</Text>
+          </View>
+          <Text style={styles.recommendedTypesDescription}>
+            Based on your goals, fitness level, and available equipment
+          </Text>
+          <View style={styles.recommendedTypesList}>
+            {calculateRecommendedWorkoutTypes().map((typeId) => {
+              const workoutType = WORKOUT_TYPE_OPTIONS.find(opt => opt.value === typeId);
+              return workoutType ? (
+                <View key={typeId} style={styles.recommendedTypeItem}>
+                  <Text style={styles.recommendedTypeIcon}>{workoutType.icon}</Text>
+                  <Text style={styles.recommendedTypeLabel}>{workoutType.label}</Text>
+                </View>
+              ) : null;
+            })}
+          </View>
+        </Card>
+        
+        <View style={styles.fitnessGrid}>
         <View style={styles.fitnessItem}>
           <Text style={styles.fitnessLabel}>Workout Experience</Text>
           <View style={styles.experienceSlider}>
@@ -451,7 +702,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         </View>
       </View>
     </View>
-  );
+    );
+  };
   
   const renderWorkoutPreferencesSection = () => (
     <View style={styles.section}>
@@ -490,17 +742,44 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         </View>
       </View>
       
-      {/* Equipment */}
-      <View style={styles.preferenceField}>
-        <MultiSelect
-          options={EQUIPMENT_OPTIONS}
-          selectedValues={formData.equipment}
-          onSelectionChange={(values) => updateField('equipment', values)}
-          label="Available Equipment"
-          placeholder="Select equipment you have access to"
-          searchable={true}
-        />
-      </View>
+      {/* Equipment - Hidden for gym, shown for home/both */}
+      {formData.location !== 'gym' ? (
+        <View style={styles.preferenceField}>
+          <MultiSelect
+            options={EQUIPMENT_OPTIONS}
+            selectedValues={formData.equipment}
+            onSelectionChange={(values) => updateField('equipment', values)}
+            label="Available Equipment"
+            placeholder="Select equipment you have access to"
+            searchable={true}
+          />
+        </View>
+      ) : (
+        <View style={styles.preferenceField}>
+          <Text style={styles.fieldLabel}>Available Equipment</Text>
+          <Card style={styles.gymEquipmentCard}>
+            <View style={styles.gymEquipmentContent}>
+              <Text style={styles.gymEquipmentIcon}>🏋️</Text>
+              <Text style={styles.gymEquipmentTitle}>Full Gym Access</Text>
+              <Text style={styles.gymEquipmentDescription}>
+                All standard gym equipment is available including dumbbells, barbells, 
+                cardio machines, and more. Equipment selection is automatically configured.
+              </Text>
+              <View style={styles.gymEquipmentList}>
+                {STANDARD_GYM_EQUIPMENT.map((equipmentId, index) => {
+                  const equipment = EQUIPMENT_OPTIONS.find(opt => opt.value === equipmentId);
+                  return equipment ? (
+                    <View key={equipmentId} style={styles.gymEquipmentItem}>
+                      <Text style={styles.gymEquipmentItemIcon}>{equipment.icon}</Text>
+                      <Text style={styles.gymEquipmentItemLabel}>{equipment.label}</Text>
+                    </View>
+                  ) : null;
+                })}
+              </View>
+            </View>
+          </Card>
+        </View>
+      )}
       
       {/* Workout Duration */}
       <View style={styles.preferenceField}>
@@ -528,53 +807,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         </View>
       </View>
       
-      {/* Intensity Level */}
-      <View style={styles.preferenceField}>
-        <Text style={styles.fieldLabel}>Fitness Level</Text>
-        {INTENSITY_OPTIONS.map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            onPress={() => updateField('intensity', option.value as WorkoutPreferencesData['intensity'])}
-          >
-            <Card
-              style={StyleSheet.flatten([
-                styles.intensityCard,
-                formData.intensity === option.value ? styles.intensityCardSelected : null,
-              ])}
-              variant="outlined"
-            >
-              <View style={styles.intensityContent}>
-                <View style={styles.intensityHeader}>
-                  <Text style={styles.intensityIcon}>{option.icon}</Text>
-                  <Text style={StyleSheet.flatten([
-                    styles.intensityTitle,
-                    formData.intensity === option.value ? styles.intensityTitleSelected : null,
-                  ])}>
-                    {option.label}
-                  </Text>
-                </View>
-                <Text style={styles.intensityDescription}>{option.description}</Text>
-              </View>
-            </Card>
-          </TouchableOpacity>
-        ))}
-      </View>
       
-      {/* Workout Types */}
-      <View style={styles.preferenceField}>
-        <MultiSelect
-          options={WORKOUT_TYPE_OPTIONS}
-          selectedValues={formData.workout_types}
-          onSelectionChange={(values) => updateField('workout_types', values)}
-          label="Preferred Workout Types"
-          placeholder="Select your favorite workout types"
-          searchable={true}
-          maxSelections={5}
-        />
-        {hasFieldError('workout types') && (
-          <Text style={styles.errorText}>{getFieldError('workout types')}</Text>
-        )}
-      </View>
       
       {/* Preferred Workout Times */}
       <View style={styles.preferenceField}>
@@ -680,8 +913,13 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weight Goals Summary</Text>
-        <Text style={styles.sectionSubtitle}>Auto-populated from your body analysis</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Weight Goals Summary</Text>
+          <View style={styles.readOnlyBadge}>
+            <Text style={styles.readOnlyText}>📋 READ ONLY - FROM TAB 3</Text>
+          </View>
+        </View>
+        <Text style={styles.sectionSubtitle}>This information was entered in your Body Analysis (Tab 3)</Text>
         
         <Card style={styles.weightGoalsCard}>
           <View style={styles.weightGoalsContent}>
@@ -744,6 +982,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           {renderGoalsAndActivitySection()}
           {renderCurrentFitnessSection()}
           {renderWorkoutPreferencesSection()}
+          {renderWorkoutStyleSection()}
           {renderWeightGoalsSection()}
         </View>
         
@@ -793,12 +1032,30 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             variant="outline"
             style={styles.backButton}
           />
+          {onNavigateToTab && (
+            <Button
+              title="Jump to Review"
+              onPress={() => {
+                // Save current changes before navigating
+                onUpdate(formData);
+                onNavigateToTab(5);
+              }}
+              variant="outline"
+              style={styles.jumpButton}
+            />
+          )}
           <Button
             title="Next: Advanced Review"
-            onPress={onNext}
+            onPress={() => {
+              // Update parent state and pass current form data to validation
+              onUpdate(formData);
+              // Small delay to ensure state is updated before validation
+              setTimeout(() => {
+                onNext(formData);
+              }, 100);
+            }}
             variant="primary"
             style={styles.nextButton}
-            disabled={!validationResult?.is_valid}
             loading={isLoading}
           />
         </View>
@@ -868,6 +1125,26 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  readOnlyBadge: {
+    backgroundColor: `${ResponsiveTheme.colors.warning}20`,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  readOnlyText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.warning,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   sectionSubtitle: {
@@ -1550,8 +1827,176 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  jumpButton: {
+    flex: 1.5,
+  },
+
   nextButton: {
     flex: 2,
+  },
+
+  // Gym Equipment Styles
+  gymEquipmentCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.success}08`,
+    borderColor: `${ResponsiveTheme.colors.success}30`,
+    borderWidth: 1,
+  },
+
+  gymEquipmentContent: {
+    alignItems: 'center',
+  },
+
+  gymEquipmentIcon: {
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  gymEquipmentTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.success,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: 'center',
+  },
+
+  gymEquipmentDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(18),
+  },
+
+  gymEquipmentList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  gymEquipmentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  gymEquipmentItemIcon: {
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  gymEquipmentItemLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Calculated Level Styles
+  calculatedLevelCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.primary}08`,
+    borderColor: `${ResponsiveTheme.colors.primary}30`,
+    borderWidth: 1,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  calculatedLevelContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  calculatedLevelIcon: {
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  calculatedLevelText: {
+    flex: 1,
+  },
+
+  calculatedLevelTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  calculatedLevelDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
+  },
+
+  calculatedLevelHint: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontStyle: 'italic',
+  },
+
+  // Recommended Workout Types Styles
+  recommendedTypesCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.secondary}08`,
+    borderColor: `${ResponsiveTheme.colors.secondary}30`,
+    borderWidth: 1,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  recommendedTypesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  recommendedTypesIcon: {
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  recommendedTypesTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.secondary,
+  },
+
+  recommendedTypesDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(18),
+  },
+
+  recommendedTypesList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  recommendedTypeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  recommendedTypeIcon: {
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  recommendedTypeLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });
 

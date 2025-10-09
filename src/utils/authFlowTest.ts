@@ -279,7 +279,6 @@ export class AuthFlowTester {
         user_id: this.testUserId,
         diet_type: testOnboardingData.dietPreferences.dietType,
         allergies: testOnboardingData.dietPreferences.allergies,
-        cuisine_preferences: testOnboardingData.dietPreferences.cuisinePreferences,
         restrictions: testOnboardingData.dietPreferences.restrictions,
       });
 

@@ -6,6 +6,7 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
   OnboardingProgressData,
+  TabValidationResult,
   ProfilesRow,
   DietPreferencesRow,
   BodyAnalysisRow,
@@ -35,6 +36,7 @@ export class PersonalInfoService {
         region: data.region || null,
         wake_time: data.wake_time,
         sleep_time: data.sleep_time,
+        occupation_type: data.occupation_type,
         updated_at: new Date().toISOString(),
       };
       
@@ -85,9 +87,10 @@ export class PersonalInfoService {
         gender: data.gender || 'male',
         country: data.country || '',
         state: data.state || '',
-        region: data.region || '',
+        region: data.region === null ? undefined : data.region,
         wake_time: data.wake_time || '07:00',
         sleep_time: data.sleep_time || '23:00',
+        occupation_type: data.occupation_type || 'desk_job',
       };
       
       console.log('✅ PersonalInfoService: Personal info loaded successfully');
@@ -134,7 +137,6 @@ export class DietPreferencesService {
         user_id: userId,
         diet_type: data.diet_type,
         allergies: data.allergies,
-        cuisine_preferences: data.cuisine_preferences,
         restrictions: data.restrictions,
         
         // Diet readiness toggles
@@ -155,7 +157,7 @@ export class DietPreferencesService {
         cooking_skill_level: data.cooking_skill_level,
         max_prep_time_minutes: data.max_prep_time_minutes,
         budget_level: data.budget_level,
-        
+
         // Health habits (14 fields)
         drinks_enough_water: data.drinks_enough_water,
         limits_sugary_drinks: data.limits_sugary_drinks,
@@ -218,7 +220,6 @@ export class DietPreferencesService {
       const dietPreferences: DietPreferencesData = {
         diet_type: data.diet_type || 'non-veg',
         allergies: data.allergies || [],
-        cuisine_preferences: data.cuisine_preferences || [],
         restrictions: data.restrictions || [],
         
         // Diet readiness
@@ -239,7 +240,7 @@ export class DietPreferencesService {
         cooking_skill_level: data.cooking_skill_level || 'beginner',
         max_prep_time_minutes: data.max_prep_time_minutes || 30,
         budget_level: data.budget_level || 'medium',
-        
+
         // Health habits
         drinks_enough_water: data.drinks_enough_water || false,
         limits_sugary_drinks: data.limits_sugary_drinks || false,
@@ -305,6 +306,14 @@ export class BodyAnalysisService {
         medications: data.medications || [],
         physical_limitations: data.physical_limitations || [],
         
+        // Pregnancy/Breastfeeding
+        pregnancy_status: data.pregnancy_status || false,
+        pregnancy_trimester: data.pregnancy_trimester || null,
+        breastfeeding_status: data.breastfeeding_status || false,
+        
+        // Stress Level
+        stress_level: data.stress_level || null,
+        
         // Calculated values
         bmi: data.bmi || null,
         bmr: data.bmr || null,
@@ -358,8 +367,8 @@ export class BodyAnalysisService {
       const bodyAnalysis: BodyAnalysisData = {
         height_cm: data.height_cm || 0,
         current_weight_kg: data.current_weight_kg || 0,
-        target_weight_kg: data.target_weight_kg || 0,
-        target_timeline_weeks: data.target_timeline_weeks || 12,
+        target_weight_kg: data.target_weight_kg || undefined,
+        target_timeline_weeks: data.target_timeline_weeks || undefined,
         
         body_fat_percentage: data.body_fat_percentage || undefined,
         waist_cm: data.waist_cm || undefined,
@@ -377,6 +386,12 @@ export class BodyAnalysisService {
         medical_conditions: data.medical_conditions || [],
         medications: data.medications || [],
         physical_limitations: data.physical_limitations || [],
+        
+        pregnancy_status: data.pregnancy_status || false,
+        pregnancy_trimester: data.pregnancy_trimester || undefined,
+        breastfeeding_status: data.breastfeeding_status || false,
+        
+        stress_level: data.stress_level || undefined,
         
         bmi: data.bmi || undefined,
         bmr: data.bmr || undefined,
@@ -718,7 +733,8 @@ export class OnboardingUtils {
           'Valid age (13-120) is required',
           'Gender selection is required',
           'Country is required',
-          'State is required'
+          'State is required',
+          'Occupation type is required'
         ], 
         warnings: [], 
         completion_percentage: 0 
@@ -732,6 +748,7 @@ export class OnboardingUtils {
     if (!data.gender) errors.push('Gender selection is required');
     if (!data.country?.trim()) errors.push('Country is required');
     if (!data.state?.trim()) errors.push('State is required');
+    if (!data.occupation_type) errors.push('Occupation type is required');
     if (!data.wake_time) errors.push('Wake time is required');
     if (!data.sleep_time) errors.push('Sleep time is required');
     
@@ -743,7 +760,7 @@ export class OnboardingUtils {
     }
     
     // Calculate completion percentage
-    const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'country', 'state', 'wake_time', 'sleep_time'];
+    const requiredFields = ['first_name', 'last_name', 'age', 'gender', 'country', 'state', 'occupation_type', 'wake_time', 'sleep_time'];
     const completedFields = requiredFields.filter(field => {
       const value = data[field as keyof PersonalInfoData];
       return value !== null && value !== undefined && value !== '' && value !== 0;
@@ -769,9 +786,6 @@ export class OnboardingUtils {
     
     // Required fields
     if (!data.diet_type) errors.push('Diet type selection is required');
-    if (!data.cuisine_preferences || data.cuisine_preferences.length === 0) {
-      errors.push('At least one cuisine preference is required');
-    }
     
     // Meal preferences validation
     const enabledMeals = [
@@ -803,7 +817,7 @@ export class OnboardingUtils {
     }
     
     // Calculate completion percentage
-    const requiredFields = ['diet_type', 'cuisine_preferences'];
+    const requiredFields = ['diet_type'];
     const optionalFields = [
       'allergies', 'restrictions', 'cooking_skill_level', 'max_prep_time_minutes', 'budget_level',
       // Diet readiness (6 fields)
@@ -845,30 +859,44 @@ export class OnboardingUtils {
   static validateBodyAnalysis(data: BodyAnalysisData | null): TabValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
+
     if (!data) {
-      return { is_valid: false, errors: ['Body analysis data is required'], warnings: [], completion_percentage: 0 };
+      warnings.push('Body analysis skipped - continuing with default recommendations');
+      return { is_valid: true, errors, warnings, completion_percentage: 0 };
+    }
+
+    // Minimum required: height and current weight (to calculate BMI)
+    const hasMinimumData = (data.height_cm && data.height_cm > 0) || (data.current_weight_kg && data.current_weight_kg > 0);
+
+    if (!hasMinimumData) {
+      warnings.push('Body analysis skipped - continuing with default recommendations');
+      return { is_valid: true, errors, warnings, completion_percentage: 0 };
+    }
+
+    // Validate height if provided
+    if (data.height_cm && (data.height_cm < 100 || data.height_cm > 250)) {
+      errors.push('Valid height must be between 100-250 cm');
     }
     
-    // Required fields
-    if (!data.height_cm || data.height_cm < 100 || data.height_cm > 250) {
-      errors.push('Valid height (100-250 cm) is required');
-    }
-    if (!data.current_weight_kg || data.current_weight_kg < 30 || data.current_weight_kg > 300) {
-      errors.push('Valid current weight (30-300 kg) is required');
-    }
-    if (!data.target_weight_kg || data.target_weight_kg < 30 || data.target_weight_kg > 300) {
-      errors.push('Valid target weight (30-300 kg) is required');
-    }
-    if (!data.target_timeline_weeks || data.target_timeline_weeks < 4 || data.target_timeline_weeks > 104) {
-      errors.push('Valid timeline (4-104 weeks) is required');
+    // Validate current weight if provided
+    if (data.current_weight_kg && (data.current_weight_kg < 30 || data.current_weight_kg > 300)) {
+      errors.push('Valid current weight must be between 30-300 kg');
     }
     
+    // Target weight and timeline are optional - only validate if provided
+    if (data.target_weight_kg && (data.target_weight_kg < 30 || data.target_weight_kg > 300)) {
+      warnings.push('Target weight should be between 30-300 kg for accurate recommendations');
+    }
+    
+    if (data.target_timeline_weeks && (data.target_timeline_weeks < 4 || data.target_timeline_weeks > 104)) {
+      warnings.push('Timeline should be between 4-104 weeks for realistic goals');
+    }
+
     // Warnings for realistic goals
     if (data.current_weight_kg && data.target_weight_kg && data.target_timeline_weeks) {
       const weightDifference = Math.abs(data.current_weight_kg - data.target_weight_kg);
       const weeklyRate = weightDifference / data.target_timeline_weeks;
-      
+
       if (weeklyRate > 1) {
         warnings.push('Target weight loss rate may be too aggressive (>1kg/week)');
       }
@@ -876,36 +904,45 @@ export class OnboardingUtils {
         warnings.push('Very slow weight change rate - consider adjusting timeline');
       }
     }
-    
+
     // BMI warnings
     if (data.height_cm && data.current_weight_kg) {
       const bmi = data.current_weight_kg / Math.pow(data.height_cm / 100, 2);
       if (bmi < 18.5) warnings.push('Current BMI indicates underweight');
       if (bmi > 30) warnings.push('Current BMI indicates obesity - consult healthcare provider');
     }
-    
+
     // Medical condition warnings
     if (data.medical_conditions && data.medical_conditions.length > 0) {
       warnings.push('Please consult healthcare provider before starting new fitness program');
     }
-    
-    const requiredFields = ['height_cm', 'current_weight_kg', 'target_weight_kg', 'target_timeline_weeks'];
-    const completedRequired = requiredFields.filter(field => {
-      const value = data[field as keyof BodyAnalysisData];
+
+    // Calculate completion percentage
+    const basicFields: (keyof BodyAnalysisData)[] = ['height_cm', 'current_weight_kg'];
+    const completedBasic = basicFields.filter(field => {
+      const value = data[field];
       return value !== null && value !== undefined && value !== 0;
     }).length;
-    
-    const optionalFields = ['body_fat_percentage', 'waist_cm', 'hip_cm', 'chest_cm', 'front_photo_url', 'medical_conditions'];
-    const completedOptional = optionalFields.filter(field => {
-      const value = data[field as keyof BodyAnalysisData];
-      return Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined && value !== 0;
+
+    const goalFields: (keyof BodyAnalysisData)[] = ['target_weight_kg', 'target_timeline_weeks'];
+    const completedGoals = goalFields.filter(field => {
+      const value = data[field];
+      return value !== null && value !== undefined && value !== 0;
     }).length;
-    
+
+    const optionalFields: (keyof BodyAnalysisData)[] = ['body_fat_percentage', 'waist_cm', 'hip_cm', 'chest_cm', 'front_photo_url', 'medical_conditions'];
+    const completedOptional = optionalFields.filter(field => {
+      const value = data[field];
+      return Array.isArray(value) ? value.length > 0 : (value !== null && value !== undefined && value !== 0);
+    }).length;
+
+    // Basic fields: 40%, Goal fields: 30%, Optional: 30%
     const completionPercentage = Math.round(
-      ((completedRequired / requiredFields.length) * 70) + 
+      ((completedBasic / basicFields.length) * 40) +
+      ((completedGoals / goalFields.length) * 30) +
       ((completedOptional / optionalFields.length) * 30)
     );
-    
+
     return {
       is_valid: errors.length === 0,
       errors,
@@ -926,9 +963,7 @@ export class OnboardingUtils {
     if (!data.location) errors.push('Workout location is required');
     if (!data.intensity) errors.push('Intensity level is required');
     if (!data.activity_level) errors.push('Activity level is required');
-    if (!data.workout_types || data.workout_types.length === 0) {
-      errors.push('At least one workout type is required');
-    }
+    // workout_types is now auto-generated, no longer required
     if (!data.primary_goals || data.primary_goals.length === 0) {
       errors.push('At least one fitness goal is required');
     }
@@ -944,7 +979,7 @@ export class OnboardingUtils {
       warnings.push('Very short workout duration - consider 30+ minutes for better results');
     }
     
-    const requiredFields = ['location', 'intensity', 'activity_level', 'workout_types', 'primary_goals'];
+    const requiredFields = ['location', 'intensity', 'activity_level', 'primary_goals'];
     const completedRequired = requiredFields.filter(field => {
       const value = data[field as keyof WorkoutPreferencesData];
       return Array.isArray(value) ? value.length > 0 : value !== null && value !== undefined && value !== '';

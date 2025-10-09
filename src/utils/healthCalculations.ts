@@ -1,4 +1,4 @@
-// 🧮 COMPREHENSIVE HEALTH CALCULATIONS ENGINE
+  // 🧮 COMPREHENSIVE HEALTH CALCULATIONS ENGINE
 // 50+ Mathematical Formulas for Fitness and Health Metrics
 
 import { 
@@ -30,12 +30,23 @@ export class MetabolicCalculations {
    */
   static calculateBMR(weightKg: number, heightCm: number, age: number, gender: string): number {
     const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-    return gender === 'male' ? base + 5 : base - 161;
+    
+    if (gender === 'male') {
+      return base + 5;
+    } else if (gender === 'female') {
+      return base - 161;
+    } else {
+      // For 'other'/'prefer_not_to_say', use average of male/female formulas
+      // Male: base + 5, Female: base - 161
+      // Average: (base + 5 + base - 161) / 2 = (2*base - 156) / 2 = base - 78
+      return base - 78;
+    }
   }
   
   /**
    * Calculate TDEE (Total Daily Energy Expenditure)
    * Formula: BMR × Activity Factor
+   * NOTE: This is legacy - new approach uses occupation-based calculation
    */
   static calculateTDEE(bmr: number, activityLevel: string): number {
     const activityFactors = {
@@ -50,17 +61,442 @@ export class MetabolicCalculations {
   }
   
   /**
+   * Calculate Base TDEE from Occupation (NEW APPROACH)
+   * This represents daily metabolism from occupation NEAT (without exercise)
+   */
+  static calculateBaseTDEE(bmr: number, occupation: string): number {
+    const BASE_OCCUPATION_MULTIPLIERS: Record<string, number> = {
+      desk_job: 1.25,           // Sitting most of day
+      light_active: 1.35,       // Standing, light movement throughout day
+      moderate_active: 1.45,    // Regular movement, on feet often
+      heavy_labor: 1.60,        // Physical work all day
+      very_active: 1.70         // Constant intense physical activity
+    };
+    
+    const multiplier = BASE_OCCUPATION_MULTIPLIERS[occupation] || 1.25;
+    return bmr * multiplier;
+  }
+  
+  /**
+   * Estimate calories burned in a single workout session using MET values
+   * Formula: MET × weight(kg) × duration(hours)
+   */
+  static estimateSessionCalorieBurn(
+    durationMinutes: number,
+    intensity: string,
+    weight: number,
+    workoutTypes: string[]
+  ): number {
+    
+    // MET values (Metabolic Equivalent of Task) - research-backed
+    const MET_VALUES: Record<string, Record<string, number>> = {
+      beginner: {
+        strength: 3.5,
+        cardio: 5.0,
+        sports: 4.5,
+        yoga: 2.5,
+        hiit: 6.0,
+        pilates: 3.0,
+        flexibility: 2.5,
+        functional: 4.0,
+        mixed: 4.0
+      },
+      intermediate: {
+        strength: 5.0,
+        cardio: 7.0,
+        sports: 6.5,
+        yoga: 3.5,
+        hiit: 8.0,
+        pilates: 4.5,
+        flexibility: 3.0,
+        functional: 6.0,
+        mixed: 6.0
+      },
+      advanced: {
+        strength: 6.5,
+        cardio: 9.0,
+        sports: 8.5,
+        yoga: 4.5,
+        hiit: 10.0,
+        pilates: 6.0,
+        flexibility: 4.0,
+        functional: 7.5,
+        mixed: 7.5
+      }
+    };
+    
+    // Determine workout type (use first in array, or 'mixed')
+    const primaryType = workoutTypes[0]?.toLowerCase() || 'mixed';
+    const met = MET_VALUES[intensity]?.[primaryType] || MET_VALUES[intensity]?.mixed || 5.0;
+    
+    // Formula: Calories = MET × weight(kg) × duration(hours)
+    const hours = durationMinutes / 60;
+    const caloriesBurned = met * weight * hours;
+    
+    return Math.round(caloriesBurned);
+  }
+  
+  /**
+   * Calculate total weekly exercise calorie burn
+   */
+  static calculateWeeklyExerciseBurn(
+    frequency: number,
+    duration: number,
+    intensity: string,
+    weight: number,
+    workoutTypes: string[]
+  ): number {
+    const perSession = this.estimateSessionCalorieBurn(duration, intensity, weight, workoutTypes);
+    return perSession * frequency;
+  }
+  
+  /**
+   * Calculate average daily exercise calorie burn
+   */
+  static calculateDailyExerciseBurn(
+    frequency: number,
+    duration: number,
+    intensity: string,
+    weight: number,
+    workoutTypes: string[]
+  ): number {
+    const weekly = this.calculateWeeklyExerciseBurn(frequency, duration, intensity, weight, workoutTypes);
+    return Math.round(weekly / 7);
+  }
+  
+  /**
+   * Get final body fat percentage using priority logic
+   * Priority: User Input > AI Analysis > BMI Estimation > Default
+   */
+  static getFinalBodyFatPercentage(
+    userInput?: number,
+    aiEstimated?: number,
+    aiConfidence?: number,
+    bmi?: number,
+    gender?: string,
+    age?: number
+  ): {
+    value: number;
+    source: 'user_input' | 'ai_analysis' | 'bmi_estimation' | 'default_estimate';
+    confidence: 'high' | 'medium' | 'low';
+    showWarning: boolean;
+  } {
+    
+    // Priority 1: User manual input (most reliable)
+    if (userInput !== undefined && userInput > 0) {
+      return {
+        value: userInput,
+        source: 'user_input',
+        confidence: 'high',
+        showWarning: false
+      };
+    }
+    
+    // Priority 2: AI estimation (if confidence > 70%)
+    if (aiEstimated && aiConfidence && aiConfidence > 70) {
+      return {
+        value: aiEstimated,
+        source: 'ai_analysis',
+        confidence: 'medium',
+        showWarning: true
+      };
+    }
+    
+    // Priority 3: BMI estimation (rough approximation)
+    if (bmi && gender && age) {
+      const estimated = this.estimateBodyFatFromBMI(bmi, gender, age);
+      return {
+        value: estimated,
+        source: 'bmi_estimation',
+        confidence: 'low',
+        showWarning: true
+      };
+    }
+    
+    // Fallback: Use conservative middle value
+    return {
+      value: gender === 'male' ? 20 : 28,
+      source: 'default_estimate',
+      confidence: 'low',
+      showWarning: true
+    };
+  }
+  
+  /**
+   * Validate that selected activity level matches occupation requirements
+   * Prevents users from selecting activity levels below their occupation's minimum
+   */
+  static validateActivityForOccupation(
+    occupation: string,
+    selectedActivity: string
+  ): { isValid: boolean; minimumRequired?: string; message?: string } {
+    
+    const OCCUPATION_MIN_ACTIVITY: Record<string, string | null> = {
+      desk_job: null,              // No restriction
+      light_active: 'light',       // Must be at least "light"
+      moderate_active: 'moderate', // Must be at least "moderate"
+      heavy_labor: 'active',       // Must be at least "active"
+      very_active: 'extreme'       // Must be "extreme"
+    };
+    
+    const minRequired = OCCUPATION_MIN_ACTIVITY[occupation];
+    if (!minRequired) return { isValid: true };
+    
+    const activityLevels = ['sedentary', 'light', 'moderate', 'active', 'extreme'];
+    const minIndex = activityLevels.indexOf(minRequired);
+    const selectedIndex = activityLevels.indexOf(selectedActivity);
+    
+    if (selectedIndex < minIndex) {
+      return {
+        isValid: false,
+        minimumRequired: minRequired,
+        message: `Your occupation (${occupation.replace('_', ' ')}) requires at least "${minRequired}" activity level. Please adjust.`
+      };
+    }
+    
+    return { isValid: true };
+  }
+  
+  /**
+   * Calculate recommended intensity based on experience and fitness tests
+   * Returns recommendation + reasoning (user can override)
+   */
+  static calculateRecommendedIntensity(
+    workoutExperience: number,
+    canDoPushups: number,
+    canRunMinutes: number,
+    age: number,
+    gender: string
+  ): { recommendedIntensity: 'beginner' | 'intermediate' | 'advanced'; reasoning: string } {
+    
+    // Primary factor: Experience (most reliable)
+    if (workoutExperience >= 3) {
+      return {
+        recommendedIntensity: 'advanced',
+        reasoning: '3+ years training experience indicates advanced level'
+      };
+    }
+    
+    if (workoutExperience < 1) {
+      return {
+        recommendedIntensity: 'beginner',
+        reasoning: 'Less than 1 year experience - starting with beginner intensity for safety'
+      };
+    }
+    
+    // For 1-3 years experience, use fitness assessment
+    const pushupThreshold = gender === 'male' 
+      ? (age < 40 ? 25 : 20) 
+      : (age < 40 ? 15 : 10);
+    
+    const runThreshold = 15;  // 15 minutes continuous run
+    
+    const meetsStrengthStandard = canDoPushups >= pushupThreshold;
+    const meetsCardioStandard = canRunMinutes >= runThreshold;
+    
+    if (meetsStrengthStandard && meetsCardioStandard) {
+      return {
+        recommendedIntensity: 'advanced',
+        reasoning: 'Strong fitness test results indicate advanced level capability'
+      };
+    }
+    
+    if (meetsStrengthStandard || meetsCardioStandard) {
+      return {
+        recommendedIntensity: 'intermediate',
+        reasoning: '1-3 years experience with solid fitness test results'
+      };
+    }
+    
+    return {
+      recommendedIntensity: 'beginner',
+      reasoning: 'Building foundation strength and cardio base recommended'
+    };
+  }
+  
+  /**
+   * Calculate additional calories needed for pregnancy/breastfeeding
+   * Evidence-based adjustments for maternal health and fetal development
+   */
+  static calculatePregnancyCalories(
+    tdee: number,
+    pregnancyStatus: boolean,
+    trimester?: 1 | 2 | 3,
+    breastfeedingStatus?: boolean
+  ): number {
+    
+    // Breastfeeding takes priority (can't be pregnant and breastfeeding simultaneously)
+    if (breastfeedingStatus) {
+      return tdee + 500;  // +500 cal for milk production
+    }
+    
+    if (pregnancyStatus && trimester) {
+      if (trimester === 1) {
+        return tdee;  // No additional calories needed first trimester
+      } else if (trimester === 2) {
+        return tdee + 340;  // +340 cal second trimester (rapid fetal growth)
+      } else if (trimester === 3) {
+        return tdee + 450;  // +450 cal third trimester (maximum growth)
+      }
+    }
+    
+    return tdee;
+  }
+  
+  /**
+   * Calculate diet readiness score from 14 health habits
+   * Returns 0-100 score predicting adherence likelihood
+   */
+  static calculateDietReadinessScore(dietPreferences: any): number {
+    let score = 0;
+    
+    // Positive habits (add points)
+    if (dietPreferences.drinks_enough_water) score += 10;
+    if (dietPreferences.limits_sugary_drinks) score += 15;
+    if (dietPreferences.eats_regular_meals) score += 25;  // Most predictive
+    if (dietPreferences.avoids_late_night_eating) score += 10;
+    if (dietPreferences.controls_portion_sizes) score += 30;  // Highly predictive
+    if (dietPreferences.reads_nutrition_labels) score += 20;
+    if (dietPreferences.eats_5_servings_fruits_veggies) score += 20;
+    if (dietPreferences.limits_refined_sugar) score += 15;
+    if (dietPreferences.includes_healthy_fats) score += 10;
+    
+    // Negative habits (subtract points)
+    if (dietPreferences.eats_processed_foods) score -= 20;
+    if (dietPreferences.drinks_alcohol) score -= 10;
+    if (dietPreferences.smokes_tobacco) score -= 15;
+    
+    // Normalize to 0-100 scale
+    // Max: 155, Min: -45, Range: 200
+    const normalized = Math.round(((score + 45) / 200) * 100);
+    return Math.max(0, Math.min(100, normalized));
+  }
+  
+  /**
+   * Calculate daily water intake recommendation
+   * Formula: 35ml per kg body weight
+   */
+  static calculateWaterIntake(weightKg: number): number {
+    return Math.round(weightKg * 35);  // Returns ml
+  }
+  
+  /**
+   * Calculate daily fiber recommendation
+   * Formula: 14g per 1000 calories
+   */
+  static calculateFiber(dailyCalories: number): number {
+    return Math.round((dailyCalories / 1000) * 14);
+  }
+  
+  /**
+   * Estimate body fat percentage from BMI using Deurenberg formula
+   */
+  static estimateBodyFatFromBMI(bmi: number, gender: string, age: number): number {
+    if (gender === 'male') {
+      return Math.round((1.20 * bmi) + (0.23 * age) - 16.2);
+    } else if (gender === 'female') {
+      return Math.round((1.20 * bmi) + (0.23 * age) - 5.4);
+    } else {
+      // For 'other', use average
+      const maleEst = (1.20 * bmi) + (0.23 * age) - 16.2;
+      const femaleEst = (1.20 * bmi) + (0.23 * age) - 5.4;
+      return Math.round((maleEst + femaleEst) / 2);
+    }
+  }
+  
+  /**
+   * Apply age-based metabolic adjustments to TDEE
+   * Metabolism declines with age - progressive adjustments
+   */
+  static applyAgeModifier(tdee: number, age: number, gender: string): number {
+    let modifier = 1.0;
+    
+    if (age >= 60) {
+      modifier = 0.85;  // -15% metabolism
+    } else if (age >= 50) {
+      modifier = 0.90;  // -10% metabolism
+    } else if (age >= 40) {
+      modifier = 0.95;  // -5% metabolism
+    } else if (age >= 30) {
+      modifier = 0.98;  // -2% metabolism
+    }
+    
+    // Additional adjustment for women in menopause age range
+    if (gender === 'female' && age >= 45 && age <= 55) {
+      modifier = modifier * 0.95;  // Additional -5% for potential menopause
+    }
+    
+    return tdee * modifier;
+  }
+  
+  /**
+   * Apply sleep penalty to timeline
+   * 20% timeline extension per hour of sleep under 7
+   */
+  static applySleepPenalty(timelineWeeks: number, sleepHours: number): number {
+    if (sleepHours >= 7) return timelineWeeks;  // No penalty
+    
+    // 20% penalty for each hour under 7
+    const hoursUnder = 7 - sleepHours;
+    const penaltyPercent = hoursUnder * 0.20;
+    
+    return Math.ceil(timelineWeeks * (1 + penaltyPercent));
+  }
+  
+  /**
    * Calculate Metabolic Age
-   * Compare BMR to average BMR for age group
+   * Compares actual BMR to expected BMR for age/gender
+   * Uses improved age-based reference curves
    */
   static calculateMetabolicAge(bmr: number, chronologicalAge: number, gender: string): number {
-    // Average BMR by age ranges
-    const averageBMR = gender === 'male' 
-      ? 1800 - (chronologicalAge - 25) * 10 // Rough approximation
-      : 1400 - (chronologicalAge - 25) * 8;
+    // Get expected BMR for chronological age
+    // BMR declines non-linearly with age (faster decline in younger years)
+    const expectedBMR = MetabolicCalculations.getExpectedBMRForAge(chronologicalAge, gender);
     
-    const metabolicAgeAdjustment = (averageBMR - bmr) / 50; // 50 cal difference ≈ 1 year
-    return Math.max(18, Math.min(80, chronologicalAge + metabolicAgeAdjustment));
+    // Calculate BMR difference
+    const bmrDifference = expectedBMR - bmr;
+    
+    // Convert BMR difference to age equivalent (approximately 8-10 cal/year decline)
+    // Higher BMR than expected = younger metabolic age
+    // Lower BMR than expected = older metabolic age
+    const calPerYear = gender === 'male' ? 10 : 8;
+    const metabolicAgeAdjustment = bmrDifference / calPerYear;
+    
+    const metabolicAge = chronologicalAge + metabolicAgeAdjustment;
+    
+    // Cap between realistic bounds
+    return Math.max(18, Math.min(85, Math.round(metabolicAge)));
+  }
+  
+  /**
+   * Get expected BMR for a given age and gender
+   * Uses age-adjusted reference values based on population norms
+   */
+  private static getExpectedBMRForAge(age: number, gender: string): number {
+    // Reference BMR values by age ranges (average for 70kg male, 60kg female)
+    const maleReferences = [
+      { ageRange: [18, 24], bmr: 1750 },
+      { ageRange: [25, 34], bmr: 1700 },
+      { ageRange: [35, 44], bmr: 1650 },
+      { ageRange: [45, 54], bmr: 1580 },
+      { ageRange: [55, 64], bmr: 1500 },
+      { ageRange: [65, 120], bmr: 1400 },
+    ];
+    
+    const femaleReferences = [
+      { ageRange: [18, 24], bmr: 1400 },
+      { ageRange: [25, 34], bmr: 1350 },
+      { ageRange: [35, 44], bmr: 1300 },
+      { ageRange: [45, 54], bmr: 1250 },
+      { ageRange: [55, 64], bmr: 1200 },
+      { ageRange: [65, 120], bmr: 1150 },
+    ];
+    
+    const references = gender === 'male' ? maleReferences : femaleReferences;
+    
+    // Find matching age range
+    const match = references.find(ref => age >= ref.ageRange[0] && age <= ref.ageRange[1]);
+    return match ? match.bmr : (gender === 'male' ? 1650 : 1300); // Default mid-range value
   }
 }
 
@@ -124,29 +560,8 @@ export class NutritionalCalculations {
     };
   }
   
-  /**
-   * Calculate daily water needs
-   * Formula: 35ml × body weight(kg) + exercise adjustments
-   */
-  static calculateDailyWaterNeeds(
-    weightKg: number, 
-    workoutMinutes: number = 0, 
-    activityLevel: string = 'sedentary'
-  ): number {
-    const baseWater = weightKg * 35; // ml
-    const exerciseWater = workoutMinutes * 15; // 15ml per minute of exercise
-    const activityBonus = activityLevel === 'active' || activityLevel === 'extreme' ? 500 : 0;
-    
-    return baseWater + exerciseWater + activityBonus;
-  }
-  
-  /**
-   * Calculate daily fiber needs
-   * Formula: 14g per 1000 calories
-   */
-  static calculateDailyFiberNeeds(dailyCalories: number): number {
-    return Math.round((dailyCalories / 1000) * 14);
-  }
+  // Removed: calculateDailyWaterNeeds - replaced by calculateWaterIntake (line 206, matches spec)
+  // Removed: calculateDailyFiberNeeds - replaced by calculateFiber (line 214, cleaner name)
 }
 
 // ============================================================================
@@ -155,25 +570,81 @@ export class NutritionalCalculations {
 
 export class BodyCompositionCalculations {
   /**
-   * Calculate ideal weight range (BMI 18.5-24.9)
+   * Calculate ideal weight range using gender-specific formulas
+   * Uses a combination of BMI and gender-based formulas (Devine, Robinson)
+   * @param heightCm - Height in centimeters
+   * @param gender - Gender ('male', 'female', 'other', 'prefer_not_to_say')
+   * @param age - Age in years (optional, for age-based adjustments)
    */
-  static calculateIdealWeightRange(heightCm: number): { min: number; max: number } {
+  static calculateIdealWeightRange(heightCm: number, gender: string, age?: number): { min: number; max: number } {
     const heightM = heightCm / 100;
+    
+    // For 'other' or 'prefer_not_to_say', use BMI-based calculation
+    if (gender === 'other' || gender === 'prefer_not_to_say') {
+      return {
+        min: Math.round(18.5 * heightM * heightM * 100) / 100,
+        max: Math.round(24.9 * heightM * heightM * 100) / 100,
+      };
+    }
+    
+    // Convert height to inches for Devine/Robinson formulas
+    const heightInches = heightCm / 2.54;
+    const heightOver5Feet = Math.max(0, heightInches - 60); // Inches over 5 feet (60 inches)
+    
+    let idealWeight: number;
+    
+    if (gender === 'male') {
+      // Devine Formula for men: 50 kg + 2.3 kg per inch over 5 feet
+      idealWeight = 50 + (2.3 * heightOver5Feet);
+    } else {
+      // Devine Formula for women: 45.5 kg + 2.3 kg per inch over 5 feet
+      idealWeight = 45.5 + (2.3 * heightOver5Feet);
+    }
+    
+    // Create a range: ±10% from ideal weight (clinically accepted range)
+    const minWeight = idealWeight * 0.90;
+    const maxWeight = idealWeight * 1.10;
+    
     return {
-      min: Math.round(18.5 * heightM * heightM * 100) / 100,
-      max: Math.round(24.9 * heightM * heightM * 100) / 100,
+      min: Math.round(minWeight * 100) / 100,
+      max: Math.round(maxWeight * 100) / 100,
     };
   }
   
   /**
-   * Calculate healthy weight loss rate
-   * Formula: 0.5-1kg per week based on current weight
+   * Calculate healthy weight loss rate based on weight and gender
+   * Research shows men can lose weight faster while preserving lean muscle mass
+   * Women should aim for slightly lower rates to maintain muscle mass
+   * Formula: 0.5-1% of body weight per week, adjusted by gender
+   * 
+   * @param currentWeight - Current weight in kg
+   * @param gender - Gender ('male', 'female', 'other', 'prefer_not_to_say')
+   * @returns Weekly weight loss rate in kg
    */
-  static calculateHealthyWeightLossRate(currentWeight: number): number {
-    // Heavier individuals can safely lose more per week
-    if (currentWeight > 100) return 1.0;
-    if (currentWeight > 80) return 0.8;
-    return 0.5;
+  static calculateHealthyWeightLossRate(currentWeight: number, gender?: string): number {
+    // Calculate as percentage of body weight (0.5-1% per week is safe)
+    let baseRate: number;
+    
+    if (currentWeight > 100) {
+      baseRate = currentWeight * 0.01; // 1% for heavier individuals
+    } else if (currentWeight > 80) {
+      baseRate = currentWeight * 0.008; // 0.8% for moderate weight
+    } else {
+      baseRate = currentWeight * 0.006; // 0.6% for lighter individuals
+    }
+    
+    // Gender-specific adjustments based on research
+    // Women lose more lean muscle mass, so slightly lower rate is healthier
+    if (gender === 'female') {
+      baseRate = baseRate * 0.85; // 15% lower for women to preserve muscle
+    } else if (gender === 'male') {
+      baseRate = baseRate * 1.0; // Full rate for men
+    } else {
+      baseRate = baseRate * 0.925; // Middle ground for other/prefer_not_to_say
+    }
+    
+    // Cap at safe limits (0.3-1.2 kg per week)
+    return Math.max(0.3, Math.min(1.2, baseRate));
   }
   
   /**
@@ -265,14 +736,25 @@ export class CardiovascularCalculations {
   /**
    * Estimate VO2 Max based on fitness assessment
    * Simplified estimation based on running ability and age
+   * Peak VO2 Max typically occurs around age 20-25, then declines
    */
   static estimateVO2Max(canRunMinutes: number, age: number, gender: string): number {
-    // Base VO2 Max by gender and age
-    const baseVO2 = gender === 'male' ? 50 - (age - 20) * 0.5 : 40 - (age - 20) * 0.4;
+    // Base VO2 Max by gender (peak values at age 20)
+    // Male peak: ~50 ml/kg/min, Female peak: ~40 ml/kg/min
+    const peakVO2 = gender === 'male' ? 50 : 40;
     
-    // Adjust based on running ability
-    const runningBonus = canRunMinutes * 0.3; // 0.3 points per minute of running
+    // Age-related decline (0.5 ml/kg/min per year for males, 0.4 for females after age 20)
+    // For ages under 20, assume they're at or near peak
+    const ageAdjustment = age >= 20 
+      ? (age - 20) * (gender === 'male' ? 0.5 : 0.4)
+      : 0; // No penalty for ages under 20
     
+    const baseVO2 = peakVO2 - ageAdjustment;
+    
+    // Adjust based on running ability (0.3 points per minute of running)
+    const runningBonus = canRunMinutes * 0.3;
+    
+    // Cap between realistic bounds (20-80 ml/kg/min)
     return Math.max(20, Math.min(80, baseVO2 + runningBonus));
   }
 }
@@ -392,30 +874,8 @@ export class HealthScoring {
     return Math.max(0, Math.min(100, Math.round(score)));
   }
   
-  /**
-   * Calculate diet readiness score (0-100)
-   */
-  static calculateDietReadinessScore(dietPreferences: DietPreferencesData): number {
-    let score = 50; // Base score
-    
-    // Positive habits
-    if (dietPreferences.drinks_enough_water) score += 10;
-    if (dietPreferences.eats_regular_meals) score += 8;
-    if (dietPreferences.avoids_late_night_eating) score += 8;
-    if (dietPreferences.controls_portion_sizes) score += 10;
-    if (dietPreferences.reads_nutrition_labels) score += 5;
-    if (dietPreferences.eats_5_servings_fruits_veggies) score += 15;
-    if (dietPreferences.limits_refined_sugar) score += 10;
-    if (dietPreferences.includes_healthy_fats) score += 8;
-    
-    // Negative habits
-    if (dietPreferences.eats_processed_foods) score -= 10;
-    if (dietPreferences.smokes_tobacco) score -= 20;
-    if (dietPreferences.drinks_alcohol) score -= 5;
-    if (!dietPreferences.limits_sugary_drinks) score -= 8;
-    
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
+  // Removed: OLD calculateDietReadinessScore - replaced by NEW version (line 177)
+  // NEW version matches VALIDATION_SYSTEM_COMPLETE.md spec exactly with correct weights
   
   /**
    * Calculate fitness readiness score (0-100)
@@ -592,8 +1052,15 @@ export class HealthCalculationEngine {
     const metabolicAge = MetabolicCalculations.calculateMetabolicAge(bmr, personalInfo.age, personalInfo.gender);
     
     // Weight management
-    const idealWeightRange = BodyCompositionCalculations.calculateIdealWeightRange(bodyAnalysis.height_cm);
-    const weeklyWeightLossRate = BodyCompositionCalculations.calculateHealthyWeightLossRate(bodyAnalysis.current_weight_kg);
+    const idealWeightRange = BodyCompositionCalculations.calculateIdealWeightRange(
+      bodyAnalysis.height_cm,
+      personalInfo.gender,
+      personalInfo.age
+    );
+    const weeklyWeightLossRate = BodyCompositionCalculations.calculateHealthyWeightLossRate(
+      bodyAnalysis.current_weight_kg,
+      personalInfo.gender
+    );
     const isWeightLoss = bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg;
     const dailyCalories = NutritionalCalculations.calculateDailyCaloriesForGoal(
       tdee, 

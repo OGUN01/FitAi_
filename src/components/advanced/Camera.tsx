@@ -1,4 +1,4 @@
-import React, { useState, useRef, ErrorInfo } from 'react';
+import React, { useState, useRef, ErrorInfo } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
-} from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Button, THEME } from '../ui';
+  Modal,
+} from "react-native";
+import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { Button, THEME } from "../ui";
 
 // Error Boundary Component
 class CameraErrorBoundary extends React.Component<
@@ -26,7 +27,7 @@ class CameraErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Camera Error:', error, errorInfo);
+    console.error("Camera Error:", error, errorInfo);
     this.props.onError();
   }
 
@@ -35,8 +36,14 @@ class CameraErrorBoundary extends React.Component<
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Camera Error</Text>
-          <Text style={styles.errorSubtext}>Unable to load camera. Please try again.</Text>
-          <Button title="Close" onPress={this.props.onError} variant="outline" />
+          <Text style={styles.errorSubtext}>
+            Unable to load camera. Please try again.
+          </Text>
+          <Button
+            title="Close"
+            onPress={this.props.onError}
+            variant="outline"
+          />
         </View>
       );
     }
@@ -45,30 +52,41 @@ class CameraErrorBoundary extends React.Component<
   }
 }
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 interface CameraProps {
-  mode: 'food' | 'progress' | 'barcode';
+  mode: "food" | "progress" | "barcode";
   onCapture: (uri: string) => void;
   onBarcodeScanned?: (barcode: string, type: string) => void;
   onClose: () => void;
   style?: any;
 }
 
-const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScanned, onClose, style }) => {
+const CameraComponent: React.FC<CameraProps> = ({
+  visible = true,
+  mode,
+  onCapture,
+  onBarcodeScanned,
+  onClose,
+  style,
+}) => {
   const [permission, requestPermission] = useCameraPermissions();
-  const [cameraType, setCameraType] = useState<CameraType>('back');
-  const [flashMode, setFlashMode] = useState<'off' | 'on'>('off');
+  const [cameraType, setCameraType] = useState<CameraType>("back");
+  const [flashMode, setFlashMode] = useState<"off" | "on">("off");
   const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   React.useEffect(() => {
-    if (!permission) {
+    if (!visible) {
+      return;
+    }
+
+    if (!permission || !permission.granted) {
       requestPermission();
     }
-  }, [permission, requestPermission]);
+  }, [visible, permission, requestPermission]);
 
   const takePicture = async () => {
     if (cameraRef.current && !isCapturing && isCameraReady) {
@@ -81,8 +99,8 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
         });
         onCapture(photo.uri);
       } catch (error) {
-        console.error('Camera capture error:', error);
-        Alert.alert('Error', 'Failed to take picture. Please try again.');
+        console.error("Camera capture error:", error);
+        Alert.alert("Error", "Failed to take picture. Please try again.");
       } finally {
         setIsCapturing(false);
       }
@@ -90,19 +108,25 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
   };
 
   const toggleCameraType = () => {
-    setCameraType((current) => (current === 'back' ? 'front' : 'back'));
+    setCameraType((current) => (current === "back" ? "front" : "back"));
   };
 
   const toggleFlash = () => {
-    setFlashMode((current) => (current === 'off' ? 'on' : 'off'));
+    setFlashMode((current) => (current === "off" ? "on" : "off"));
   };
 
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarcodeScanned = ({
+    type,
+    data,
+  }: {
+    type: string;
+    data: string;
+  }) => {
     if (!isScanning && onBarcodeScanned) {
       setIsScanning(true);
-      console.log('Barcode scanned:', { type, data });
+      console.log("Barcode scanned:", { type, data });
       onBarcodeScanned(data, type);
-      
+
       // Reset scanning state after a delay to prevent multiple scans
       setTimeout(() => {
         setIsScanning(false);
@@ -114,7 +138,9 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
     return (
       <View style={styles.permissionContainer}>
         <ActivityIndicator size="large" color={THEME.colors.primary} />
-        <Text style={styles.permissionText}>Requesting camera permission...</Text>
+        <Text style={styles.permissionText}>
+          Requesting camera permission...
+        </Text>
       </View>
     );
   }
@@ -126,34 +152,39 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
         <Text style={styles.permissionSubtext}>
           Please enable camera permissions in your device settings
         </Text>
-        <Button title="Close" onPress={onClose} variant="outline" style={styles.closeButton} />
+        <Button
+          title="Close"
+          onPress={onClose}
+          variant="outline"
+          style={styles.closeButton}
+        />
       </View>
     );
   }
 
   const getModeTitle = () => {
     switch (mode) {
-      case 'food':
-        return 'Scan Food';
-      case 'progress':
-        return 'Progress Photo';
-      case 'barcode':
-        return 'Scan Product';
+      case "food":
+        return "Scan Food";
+      case "progress":
+        return "Progress Photo";
+      case "barcode":
+        return "Scan Product";
       default:
-        return 'Camera';
+        return "Camera";
     }
   };
 
   const getModeInstructions = () => {
     switch (mode) {
-      case 'food':
-        return 'Position your food in the center of the frame for best results';
-      case 'progress':
-        return 'Stand in good lighting and position yourself in the frame';
-      case 'barcode':
-        return 'Point your camera at the barcode or QR code on the product';
+      case "food":
+        return "Position your food in the center of the frame for best results";
+      case "progress":
+        return "Stand in good lighting and position yourself in the frame";
+      case "barcode":
+        return "Point your camera at the barcode or QR code on the product";
       default:
-        return 'Take a photo';
+        return "Take a photo";
     }
   };
 
@@ -166,7 +197,9 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
         </TouchableOpacity>
         <Text style={styles.title}>{getModeTitle()}</Text>
         <TouchableOpacity style={styles.flashButton} onPress={toggleFlash}>
-          <Text style={styles.flashIcon}>{flashMode === 'on' ? '⚡' : '⚡'}</Text>
+          <Text style={styles.flashIcon}>
+            {flashMode === "on" ? "⚡" : "⚡"}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -184,40 +217,48 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
           flash={flashMode}
           onCameraReady={() => setIsCameraReady(true)}
           barcodeScannerSettings={
-            mode === 'barcode'
+            mode === "barcode"
               ? {
                   barcodeTypes: [
-                    'qr',
-                    'ean13',
-                    'ean8', 
-                    'upc_a',
-                    'upc_e',
-                    'code128',
-                    'pdf417'
+                    "qr",
+                    "ean13",
+                    "ean8",
+                    "upc_a",
+                    "upc_e",
+                    "code128",
+                    "pdf417",
                   ],
                 }
               : undefined
           }
-          onBarcodeScanned={mode === 'barcode' ? handleBarcodeScanned : undefined}
+          onBarcodeScanned={
+            mode === "barcode" ? handleBarcodeScanned : undefined
+          }
         >
           {/* Camera Overlay */}
           <View style={styles.overlay}>
-            {mode === 'food' && (
+            {mode === "food" && (
               <View style={styles.foodFrame}>
                 <View style={styles.frameCorner} />
-                <View style={[styles.frameCorner, styles.frameCornerTopRight]} />
-                <View style={[styles.frameCorner, styles.frameCornerBottomLeft]} />
-                <View style={[styles.frameCorner, styles.frameCornerBottomRight]} />
+                <View
+                  style={[styles.frameCorner, styles.frameCornerTopRight]}
+                />
+                <View
+                  style={[styles.frameCorner, styles.frameCornerBottomLeft]}
+                />
+                <View
+                  style={[styles.frameCorner, styles.frameCornerBottomRight]}
+                />
               </View>
             )}
 
-            {mode === 'progress' && (
+            {mode === "progress" && (
               <View style={styles.progressFrame}>
                 <View style={styles.bodyOutline} />
               </View>
             )}
 
-            {mode === 'barcode' && (
+            {mode === "barcode" && (
               <View style={styles.barcodeFrame}>
                 <View style={styles.scanningArea}>
                   <View style={styles.scanningLine} />
@@ -228,9 +269,18 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
                   )}
                 </View>
                 <View style={styles.barcodeCorner} />
-                <View style={[styles.barcodeCorner, styles.barcodeCornerTopRight]} />
-                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]} />
-                <View style={[styles.barcodeCorner, styles.barcodeCornerBottomRight]} />
+                <View
+                  style={[styles.barcodeCorner, styles.barcodeCornerTopRight]}
+                />
+                <View
+                  style={[styles.barcodeCorner, styles.barcodeCornerBottomLeft]}
+                />
+                <View
+                  style={[
+                    styles.barcodeCorner,
+                    styles.barcodeCornerBottomRight,
+                  ]}
+                />
               </View>
             )}
           </View>
@@ -243,9 +293,12 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
           <Text style={styles.flipIcon}>🔄</Text>
         </TouchableOpacity>
 
-        {mode !== 'barcode' ? (
+        {mode !== "barcode" ? (
           <TouchableOpacity
-            style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
+            style={[
+              styles.captureButton,
+              isCapturing && styles.captureButtonDisabled,
+            ]}
             onPress={takePicture}
             disabled={isCapturing}
           >
@@ -254,7 +307,7 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
         ) : (
           <View style={styles.scanningStatus}>
             <Text style={styles.scanningStatusText}>
-              {isScanning ? '📱 Scanning...' : '📱 Ready to Scan'}
+              {isScanning ? "📱 Scanning..." : "📱 Ready to Scan"}
             </Text>
           </View>
         )}
@@ -264,7 +317,7 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
 
       {/* Tips */}
       <View style={styles.tipsContainer}>
-        {mode === 'food' && (
+        {mode === "food" && (
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>💡</Text>
             <Text style={styles.tipText}>
@@ -273,18 +326,21 @@ const CameraComponent: React.FC<CameraProps> = ({ mode, onCapture, onBarcodeScan
           </View>
         )}
 
-        {mode === 'progress' && (
+        {mode === "progress" && (
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>📏</Text>
-            <Text style={styles.tipText}>Stand 3-4 feet away from the camera for best results</Text>
+            <Text style={styles.tipText}>
+              Stand 3-4 feet away from the camera for best results
+            </Text>
           </View>
         )}
 
-        {mode === 'barcode' && (
+        {mode === "barcode" && (
           <View style={styles.tipItem}>
             <Text style={styles.tipIcon}>🔍</Text>
             <Text style={styles.tipText}>
-              Hold the barcode 6-8 inches away and keep it steady for best scanning
+              Hold the barcode 6-8 inches away and keep it steady for best
+              scanning
             </Text>
           </View>
         )}
@@ -301,31 +357,31 @@ const styles = StyleSheet.create({
 
   permissionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: THEME.colors.background,
     paddingHorizontal: THEME.spacing.lg,
   },
 
   permissionText: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.sm,
   },
 
   permissionSubtext: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.lg,
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     paddingTop: THEME.spacing.lg,
@@ -336,8 +392,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   closeIcon: {
@@ -347,7 +403,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
   },
 
@@ -356,8 +412,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   flashIcon: {
@@ -372,14 +428,14 @@ const styles = StyleSheet.create({
   instructionsText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   cameraContainer: {
     flex: 1,
     marginHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   camera: {
@@ -388,18 +444,18 @@ const styles = StyleSheet.create({
 
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   foodFrame: {
     width: 250,
     height: 250,
-    position: 'relative',
+    position: "relative",
   },
 
   frameCorner: {
-    position: 'absolute',
+    position: "absolute",
     width: 30,
     height: 30,
     borderTopWidth: 3,
@@ -415,7 +471,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     top: 0,
     right: 0,
-    left: 'auto',
+    left: "auto",
   },
 
   frameCornerBottomLeft: {
@@ -423,7 +479,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderTopWidth: 0,
     bottom: 0,
-    top: 'auto',
+    top: "auto",
     left: 0,
   },
 
@@ -434,15 +490,15 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     bottom: 0,
     right: 0,
-    top: 'auto',
-    left: 'auto',
+    top: "auto",
+    left: "auto",
   },
 
   progressFrame: {
     width: 200,
     height: 400,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   bodyOutline: {
@@ -451,13 +507,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: THEME.colors.primary,
     borderRadius: 75,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
 
   controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.lg,
   },
@@ -467,8 +523,8 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   flipIcon: {
@@ -480,8 +536,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: THEME.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 4,
     borderColor: THEME.colors.white,
   },
@@ -508,8 +564,8 @@ const styles = StyleSheet.create({
   },
 
   tipItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: THEME.colors.surface,
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
@@ -528,24 +584,24 @@ const styles = StyleSheet.create({
 
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: THEME.colors.background,
     padding: THEME.spacing.xl,
   },
 
   errorText: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   errorSubtext: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.xl,
   },
 
@@ -553,31 +609,31 @@ const styles = StyleSheet.create({
   barcodeFrame: {
     width: 280,
     height: 160,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   scanningArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: THEME.colors.primary,
     borderRadius: THEME.borderRadius.md,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: "rgba(0,0,0,0.1)",
   },
 
   scanningLine: {
-    width: '90%',
+    width: "90%",
     height: 2,
     backgroundColor: THEME.colors.primary,
     opacity: 0.7,
   },
 
   scanningIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: -30,
     backgroundColor: THEME.colors.primary,
     paddingHorizontal: THEME.spacing.sm,
@@ -588,11 +644,11 @@ const styles = StyleSheet.create({
   scanningText: {
     color: THEME.colors.white,
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
   },
 
   barcodeCorner: {
-    position: 'absolute',
+    position: "absolute",
     width: 20,
     height: 20,
     borderTopWidth: 3,
@@ -608,7 +664,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     top: -2,
     right: -2,
-    left: 'auto',
+    left: "auto",
   },
 
   barcodeCornerBottomLeft: {
@@ -616,7 +672,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderTopWidth: 0,
     bottom: -2,
-    top: 'auto',
+    top: "auto",
     left: -2,
   },
 
@@ -627,8 +683,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 0,
     bottom: -2,
     right: -2,
-    top: 'auto',
-    left: 'auto',
+    top: "auto",
+    left: "auto",
   },
 
   scanningStatus: {
@@ -636,8 +692,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: THEME.colors.primary,
   },
@@ -645,16 +701,26 @@ const styles = StyleSheet.create({
   scanningStatusText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium as '500',
-    textAlign: 'center',
+    fontWeight: THEME.fontWeight.medium as "500",
+    textAlign: "center",
   },
 });
 
 // Export Camera component with error boundary
-export const Camera: React.FC<CameraProps> = (props) => {
+export const Camera: React.FC<CameraProps> = ({ visible = true, ...rest }) => {
   return (
-    <CameraErrorBoundary onError={props.onClose}>
-      <CameraComponent {...props} />
-    </CameraErrorBoundary>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={rest.onClose}
+      transparent={false}
+      statusBarTranslucent
+      hardwareAccelerated
+    >
+      <CameraErrorBoundary onError={rest.onClose}>
+        <CameraComponent visible={visible} {...rest} />
+      </CameraErrorBoundary>
+    </Modal>
   );
 };

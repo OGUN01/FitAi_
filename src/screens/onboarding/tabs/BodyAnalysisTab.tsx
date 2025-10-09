@@ -7,8 +7,9 @@ import { Button, Input, Card } from '../../../components/ui';
 import { Camera } from '../../../components/advanced/Camera';
 import { ImagePicker } from '../../../components/advanced/ImagePicker';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
-import { BodyAnalysisData, TabValidationResult } from '../../../types/onboarding';
+import { BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import { useOnboardingState } from '../../../hooks/useOnboardingState';
+import { MetabolicCalculations, BodyCompositionCalculations } from '../../../utils/healthCalculations';
 
 // ============================================================================
 // TYPES
@@ -16,9 +17,12 @@ import { useOnboardingState } from '../../../hooks/useOnboardingState';
 
 interface BodyAnalysisTabProps {
   data: BodyAnalysisData | null;
+  personalInfoData?: PersonalInfoData | null;
   validationResult?: TabValidationResult;
-  onNext: () => void;
+  onNext: (currentData?: BodyAnalysisData) => void;
   onBack: () => void;
+  onUpdate: (data: Partial<BodyAnalysisData>) => void;
+  onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
 }
@@ -53,6 +57,30 @@ const PHYSICAL_LIMITATIONS_OPTIONS = [
   { id: 'mobility-limited', label: 'Limited Mobility', value: 'mobility-limited', icon: '♿' },
 ];
 
+const STRESS_LEVELS = [
+  {
+    level: 'low',
+    title: 'Low Stress',
+    icon: '😌',
+    description: 'Generally relaxed, good work-life balance',
+    impact: 'Optimal conditions for aggressive goals',
+  },
+  {
+    level: 'moderate',
+    title: 'Moderate Stress',
+    icon: '😐',
+    description: 'Normal daily stress, manageable workload',
+    impact: 'Standard approach recommended',
+  },
+  {
+    level: 'high',
+    title: 'High Stress',
+    icon: '😰',
+    description: 'High pressure job, poor sleep, or major life events',
+    impact: 'Conservative approach required for health',
+  },
+];
+
 const PHOTO_TYPES = [
   {
     type: 'front' as const,
@@ -83,13 +111,15 @@ const PHOTO_TYPES = [
 
 const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   data,
+  personalInfoData,
   validationResult,
   onNext,
   onBack,
+  onUpdate,
+  onNavigateToTab,
   isLoading = false,
   isAutoSaving = false,
 }) => {
-  const { updateBodyAnalysis } = useOnboardingState();
   
   // Form state
   const [formData, setFormData] = useState<BodyAnalysisData>({
@@ -120,6 +150,14 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     medications: data?.medications || [],
     physical_limitations: data?.physical_limitations || [],
     
+    // Pregnancy/Breastfeeding
+    pregnancy_status: data?.pregnancy_status || false,
+    pregnancy_trimester: data?.pregnancy_trimester || undefined,
+    breastfeeding_status: data?.breastfeeding_status || false,
+    
+    // Stress Level (optional - can be measured via fitness devices)
+    stress_level: data?.stress_level || undefined,
+    
     // Calculated values
     bmi: data?.bmi || undefined,
     bmr: data?.bmr || undefined,
@@ -135,12 +173,41 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   const [isAnalyzingPhotos, setIsAnalyzingPhotos] = useState(false);
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   
-  // Update parent state when form data changes
+  // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
   useEffect(() => {
-    updateBodyAnalysis(formData);
-  }, [formData, updateBodyAnalysis]);
+    if (data) {
+      setFormData({
+        height_cm: data.height_cm || 0,
+        current_weight_kg: data.current_weight_kg || 0,
+        target_weight_kg: data.target_weight_kg || 0,
+        target_timeline_weeks: data.target_timeline_weeks || 12,
+        body_fat_percentage: data.body_fat_percentage || undefined,
+        waist_cm: data.waist_cm || undefined,
+        hip_cm: data.hip_cm || undefined,
+        chest_cm: data.chest_cm || undefined,
+        front_photo_url: data.front_photo_url || undefined,
+        side_photo_url: data.side_photo_url || undefined,
+        back_photo_url: data.back_photo_url || undefined,
+        ai_estimated_body_fat: data.ai_estimated_body_fat || undefined,
+        ai_body_type: data.ai_body_type || undefined,
+        ai_confidence_score: data.ai_confidence_score || undefined,
+        medical_conditions: data.medical_conditions || [],
+        medications: data.medications || [],
+        physical_limitations: data.physical_limitations || [],
+        pregnancy_status: data.pregnancy_status || false,
+        pregnancy_trimester: data.pregnancy_trimester || undefined,
+        breastfeeding_status: data.breastfeeding_status || false,
+        stress_level: data.stress_level || undefined,
+        bmi: data.bmi || undefined,
+        bmr: data.bmr || undefined,
+        ideal_weight_min: data.ideal_weight_min || undefined,
+        ideal_weight_max: data.ideal_weight_max || undefined,
+        waist_hip_ratio: data.waist_hip_ratio || undefined,
+      });
+    }
+  }, [data]);
   
-  // Calculate BMI when height/weight changes
+  // Calculate BMI, BMR, and ideal weight when height/weight or personalInfo changes
   useEffect(() => {
     if (formData.height_cm > 0 && formData.current_weight_kg > 0) {
       const heightM = formData.height_cm / 100;
@@ -156,7 +223,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         ideal_weight_max: Math.round(idealWeightRange.max * 100) / 100,
       }));
     }
-  }, [formData.height_cm, formData.current_weight_kg]);
+  }, [formData.height_cm, formData.current_weight_kg, personalInfoData?.age, personalInfoData?.gender]);
   
   // Calculate waist-hip ratio when measurements change
   useEffect(() => {
@@ -174,17 +241,38 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   // ============================================================================
   
   const calculateBMR = (weightKg: number, heightCm: number): number => {
-    // Using Mifflin-St Jeor equation (will need gender from personal info)
-    // For now, use average formula
-    return 10 * weightKg + 6.25 * heightCm - 5 * 25; // Assuming average age of 25
+    // Use proper Mifflin-St Jeor equation with gender and age from personalInfo
+    if (!personalInfoData?.age || !personalInfoData?.gender) {
+      // Fallback to basic calculation if personalInfo not available
+      console.warn('⚠️ PersonalInfo not available for BMR calculation, using fallback');
+      return 10 * weightKg + 6.25 * heightCm - 5 * 25; // Assuming average age of 25, male
+    }
+    
+    return MetabolicCalculations.calculateBMR(
+      weightKg,
+      heightCm,
+      personalInfoData.age,
+      personalInfoData.gender
+    );
   };
   
   const calculateIdealWeightRange = (heightCm: number): { min: number; max: number } => {
-    const heightM = heightCm / 100;
-    return {
-      min: 18.5 * heightM * heightM,
-      max: 24.9 * heightM * heightM,
-    };
+    // Use gender-specific formula from utils
+    if (!personalInfoData?.gender) {
+      // Fallback to BMI-based calculation if personalInfo not available
+      console.warn('⚠️ PersonalInfo not available for ideal weight calculation, using BMI fallback');
+      const heightM = heightCm / 100;
+      return {
+        min: 18.5 * heightM * heightM,
+        max: 24.9 * heightM * heightM,
+      };
+    }
+    
+    return BodyCompositionCalculations.calculateIdealWeightRange(
+      heightCm,
+      personalInfoData.gender,
+      personalInfoData.age
+    );
   };
   
   const getBMICategory = (bmi: number): { category: string; color: string; icon: string } => {
@@ -196,8 +284,14 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   
   const getHealthyWeightLossRate = (): number => {
     if (!formData.current_weight_kg || !formData.target_weight_kg) return 0;
+    
+    // Use gender-aware formula from utils
+    const maxWeeklyLoss = BodyCompositionCalculations.calculateHealthyWeightLossRate(
+      formData.current_weight_kg,
+      personalInfoData?.gender
+    );
+    
     const weightDifference = Math.abs(formData.current_weight_kg - formData.target_weight_kg);
-    const maxWeeklyLoss = formData.current_weight_kg > 90 ? 1.0 : 0.5; // kg per week
     return Math.min(maxWeeklyLoss, weightDifference / 4); // Conservative approach
   };
   
@@ -209,7 +303,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     field: K,
     value: BodyAnalysisData[K]
   ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    const updated = { ...formData, [field]: value };
+    setFormData(updated);
+    onUpdate(updated);
   };
   
   const handleNumberInput = (field: keyof BodyAnalysisData, text: string) => {
@@ -317,13 +413,13 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Basic Measurements</Text>
       <Text style={styles.sectionSubtitle}>
-        Essential measurements for calculating your health metrics
+        Provide at least height and current weight to continue. Other fields are optional.
       </Text>
       
       <View style={styles.measurementsGrid}>
         <View style={styles.measurementItem}>
           <Input
-            label="Height (cm)"
+            label="Height (cm) *"
             placeholder="170"
             value={formData.height_cm ? formData.height_cm.toString() : ''}
             onChangeText={(text) => handleNumberInput('height_cm', text)}
@@ -334,7 +430,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         
         <View style={styles.measurementItem}>
           <Input
-            label="Current Weight (kg)"
+            label="Current Weight (kg) *"
             placeholder="70"
             value={formData.current_weight_kg ? formData.current_weight_kg.toString() : ''}
             onChangeText={(text) => handleNumberInput('current_weight_kg', text)}
@@ -345,7 +441,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         
         <View style={styles.measurementItem}>
           <Input
-            label="Target Weight (kg)"
+            label="Target Weight (kg) - Optional"
             placeholder="65"
             value={formData.target_weight_kg ? formData.target_weight_kg.toString() : ''}
             onChangeText={(text) => handleNumberInput('target_weight_kg', text)}
@@ -355,7 +451,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         </View>
         
         <View style={styles.measurementItem}>
-          <Text style={styles.inputLabel}>Target Timeline: {formData.target_timeline_weeks} weeks</Text>
+          <Text style={styles.inputLabel}>Target Timeline (Optional): {formData.target_timeline_weeks} weeks</Text>
           <View style={styles.timelineSlider}>
             {[4, 8, 12, 16, 20, 24, 32, 52].map((weeks) => (
               <TouchableOpacity
@@ -495,16 +591,20 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       </View>
       
       {/* Waist-Hip Ratio Display */}
-      {formData.waist_hip_ratio && (
-        <Card style={styles.ratioCard}>
-          <Text style={styles.ratioTitle}>
-            Waist-Hip Ratio: {formData.waist_hip_ratio}
-          </Text>
-          <Text style={styles.ratioDescription}>
-            {formData.waist_hip_ratio < 0.9 ? '✅ Healthy ratio' : '⚠️ Consider waist reduction'}
-          </Text>
-        </Card>
-      )}
+      {formData.waist_hip_ratio && (() => {
+        const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
+        const isHealthy = formData.waist_hip_ratio! < threshold;
+        return (
+          <Card style={styles.ratioCard}>
+            <Text style={styles.ratioTitle}>
+              Waist-Hip Ratio: {formData.waist_hip_ratio}
+            </Text>
+            <Text style={styles.ratioDescription}>
+              {isHealthy ? '✅ Healthy ratio' : '⚠️ Consider waist reduction'}
+            </Text>
+          </Card>
+        );
+      })()}
     </View>
   );
   
@@ -673,6 +773,127 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         />
       </View>
       
+      {/* Women-specific health status */}
+      {personalInfoData?.gender === 'female' && (
+        <View style={styles.medicalField}>
+          <Text style={styles.fieldLabel}>Pregnancy & Breastfeeding Status</Text>
+          <Text style={styles.fieldHint}>
+            Critical for safe calorie recommendations
+          </Text>
+          
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity
+              style={styles.checkbox}
+              onPress={() => {
+                const newStatus = !formData.pregnancy_status;
+                updateField('pregnancy_status', newStatus);
+                if (!newStatus) updateField('pregnancy_trimester', undefined);
+              }}
+            >
+              <View style={[styles.checkboxBox, formData.pregnancy_status && styles.checkboxBoxChecked]}>
+                {formData.pregnancy_status && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Currently Pregnant</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {formData.pregnancy_status && (
+            <View style={styles.trimesterSelector}>
+              <Text style={styles.inputLabel}>Trimester *</Text>
+              <View style={styles.trimesterButtons}>
+                {[1, 2, 3].map((trimester) => (
+                  <TouchableOpacity
+                    key={trimester}
+                    style={[
+                      styles.trimesterButton,
+                      formData.pregnancy_trimester === trimester && styles.trimesterButtonSelected,
+                    ]}
+                    onPress={() => updateField('pregnancy_trimester', trimester as 1 | 2 | 3)}
+                  >
+                    <Text
+                      style={[
+                        styles.trimesterButtonText,
+                        formData.pregnancy_trimester === trimester && styles.trimesterButtonTextSelected,
+                      ]}
+                    >
+                      {trimester === 1 ? 'First (1-13 weeks)' : 
+                       trimester === 2 ? 'Second (14-26 weeks)' : 
+                       'Third (27-40 weeks)'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+          
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity
+              style={styles.checkbox}
+              onPress={() => updateField('breastfeeding_status', !formData.breastfeeding_status)}
+            >
+              <View style={[styles.checkboxBox, formData.breastfeeding_status && styles.checkboxBoxChecked]}>
+                {formData.breastfeeding_status && <Text style={styles.checkboxCheck}>✓</Text>}
+              </View>
+              <Text style={styles.checkboxLabel}>Currently Breastfeeding</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
+      {/* Stress Level */}
+      <View style={styles.medicalField}>
+        <Text style={styles.fieldLabel}>Current Stress Level (Optional)</Text>
+        <Text style={styles.fieldHint}>
+          Your stress level affects recovery and calorie management. You can also measure this in the main app by connecting your fitness band or smartwatch.
+        </Text>
+        
+        <View style={styles.stressLevelGrid}>
+          {STRESS_LEVELS.map((stress) => (
+            <TouchableOpacity
+              key={stress.level}
+              onPress={() => updateField('stress_level', stress.level as 'low' | 'moderate' | 'high')}
+              style={styles.stressLevelItem}
+            >
+              <Card
+                style={[
+                  styles.stressLevelCard,
+                  formData.stress_level === stress.level && styles.stressLevelCardSelected,
+                  !formData.stress_level && styles.stressLevelCardOptional,
+                ]}
+                variant="outlined"
+              >
+                <View style={styles.stressLevelContent}>
+                  <Text style={styles.stressLevelIcon}>{stress.icon}</Text>
+                  <Text style={[
+                    styles.stressLevelTitle,
+                    formData.stress_level === stress.level && styles.stressLevelTitleSelected,
+                  ]}>
+                    {stress.title}
+                  </Text>
+                  <Text style={styles.stressLevelDescription}>{stress.description}</Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        {!formData.stress_level && (
+          <Card style={styles.infoCard}>
+            <Text style={styles.infoText}>
+              💡 Skip for now? You can connect a fitness band or smartwatch in the main app to automatically track your stress levels.
+            </Text>
+          </Card>
+        )}
+        
+        {formData.stress_level === 'high' && (
+          <Card style={styles.warningCard}>
+            <Text style={styles.warningText}>
+              ⚠️ High stress detected - we'll use conservative calorie targets to protect your health and hormones
+            </Text>
+          </Card>
+        )}
+      </View>
+      
       {/* Medical Warnings */}
       {formData.medical_conditions.length > 0 && (
         <Card style={styles.medicalWarningCard}>
@@ -706,15 +927,19 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           </Card>
         )}
         
-        {formData.waist_hip_ratio && (
-          <Card style={styles.resultCard}>
-            <Text style={styles.resultLabel}>Waist-Hip Ratio</Text>
-            <Text style={styles.resultValue}>{formData.waist_hip_ratio}</Text>
-            <Text style={styles.resultCategory}>
-              {formData.waist_hip_ratio < 0.9 ? 'Healthy' : 'High Risk'}
-            </Text>
-          </Card>
-        )}
+        {formData.waist_hip_ratio && (() => {
+          const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
+          const isHealthy = formData.waist_hip_ratio! < threshold;
+          return (
+            <Card style={styles.resultCard}>
+              <Text style={styles.resultLabel}>Waist-Hip Ratio</Text>
+              <Text style={styles.resultValue}>{formData.waist_hip_ratio}</Text>
+              <Text style={styles.resultCategory}>
+                {isHealthy ? 'Healthy' : 'High Risk'}
+              </Text>
+            </Card>
+          );
+        })()}
         
         {(() => {
           const weeklyRate = getHealthyWeightLossRate();
@@ -810,12 +1035,24 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             variant="outline"
             style={styles.backButton}
           />
+          {onNavigateToTab && (
+            <Button
+              title="Jump to Review"
+              onPress={() => {
+                // Save current changes before navigating
+                onUpdate(formData);
+                onNavigateToTab(5);
+              }}
+              variant="outline"
+              style={styles.jumpButton}
+            />
+          )}
           <Button
             title="Next: Workout Preferences"
-            onPress={onNext}
+            onPress={() => onNext(formData)}
             variant="primary"
             style={styles.nextButton}
-            disabled={!validationResult?.is_valid}
+            disabled={validationResult ? !validationResult.is_valid : false}
             loading={isLoading}
           />
         </View>
@@ -1295,6 +1532,180 @@ const styles = StyleSheet.create({
     lineHeight: rf(18),
   },
 
+  // Pregnancy/Breastfeeding Section
+  fieldLabel: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  fieldHint: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: rf(18),
+  },
+
+  checkboxContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  checkbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  checkboxBox: {
+    width: rf(24),
+    height: rf(24),
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    borderWidth: 2,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  checkboxBoxChecked: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: ResponsiveTheme.colors.primary,
+  },
+
+  checkboxCheck: {
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  checkboxLabel: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  trimesterSelector: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  inputLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  trimesterButtons: {
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  trimesterButton: {
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+  },
+
+  trimesterButtonSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+  },
+
+  trimesterButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  trimesterButtonTextSelected: {
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  // Stress Level Section
+  stressLevelGrid: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  stressLevelItem: {
+    flex: 1,
+  },
+
+  stressLevelCard: {
+    padding: ResponsiveTheme.spacing.md,
+  },
+
+  stressLevelCardSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+
+  stressLevelCardOptional: {
+    borderColor: ResponsiveTheme.colors.border,
+    borderStyle: 'dashed',
+  },
+
+  stressLevelContent: {
+    alignItems: 'center',
+  },
+
+  stressLevelIcon: {
+    fontSize: rf(24),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  stressLevelTitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: 'center',
+  },
+
+  stressLevelTitleSelected: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  stressLevelDescription: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: rf(16),
+  },
+
+  infoCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+    borderColor: ResponsiveTheme.colors.primary,
+    borderWidth: 1,
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  infoText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    lineHeight: rf(18),
+  },
+
+  warningCard: {
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: `${ResponsiveTheme.colors.warning}10`,
+    borderColor: ResponsiveTheme.colors.warning,
+    borderWidth: 1,
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  warningText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.warning,
+    lineHeight: rf(18),
+  },
+
   // Calculated Results Section
   resultsGrid: {
     flexDirection: 'row',
@@ -1407,6 +1818,10 @@ const styles = StyleSheet.create({
 
   backButton: {
     flex: 1,
+  },
+
+  jumpButton: {
+    flex: 1.5,
   },
 
   nextButton: {

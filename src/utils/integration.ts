@@ -205,7 +205,6 @@ export const useOnboardingIntegration = () => {
             user_id: authUser.id,
             diet_type: dietPreferences.dietType,
             allergies: dietPreferences.allergies,
-            cuisine_preferences: dietPreferences.cuisinePreferences,
             restrictions: dietPreferences.restrictions,
           });
 

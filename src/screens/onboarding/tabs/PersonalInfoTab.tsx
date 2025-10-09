@@ -5,7 +5,6 @@ import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Input, Card } from '../../../components/ui';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
-import { useOnboardingState } from '../../../hooks/useOnboardingState';
 import TimePicker from '../../../components/onboarding/TimePicker';
 
 // ============================================================================
@@ -15,8 +14,10 @@ import TimePicker from '../../../components/onboarding/TimePicker';
 interface PersonalInfoTabProps {
   data: PersonalInfoData | null;
   validationResult?: TabValidationResult;
-  onNext: () => void;
+  onNext: (currentData?: PersonalInfoData) => void;
   onBack: () => void;
+  onUpdate: (data: Partial<PersonalInfoData>) => void;
+  onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
 }
@@ -65,6 +66,39 @@ const GENDER_OPTIONS = [
   { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: '🤐' },
 ] as const;
 
+const OCCUPATION_OPTIONS = [
+  { 
+    value: 'desk_job', 
+    label: 'Desk Job', 
+    icon: '💻',
+    description: 'Office worker, programmer, student - mostly sitting'
+  },
+  { 
+    value: 'light_active', 
+    label: 'Light Activity', 
+    icon: '🚶',
+    description: 'Teacher, retail, light housework - some movement'
+  },
+  { 
+    value: 'moderate_active', 
+    label: 'Moderate Activity', 
+    icon: '🏃',
+    description: 'Nurse, server, active parent - regular movement'
+  },
+  { 
+    value: 'heavy_labor', 
+    label: 'Heavy Labor', 
+    icon: '🏗️',
+    description: 'Construction, farming, warehouse - physical work'
+  },
+  { 
+    value: 'very_active', 
+    label: 'Very Active', 
+    icon: '💪',
+    description: 'Athlete, trainer, manual labor - constant activity'
+  }
+] as const;
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
@@ -74,10 +108,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   validationResult,
   onNext,
   onBack,
+  onUpdate,
+  onNavigateToTab,
   isLoading = false,
   isAutoSaving = false,
 }) => {
-  const { updatePersonalInfo, updateValidationStatus } = useOnboardingState();
+  // No longer creating separate state instances - using props from parent
   
   // Form state
   const [formData, setFormData] = useState<PersonalInfoData>({
@@ -90,6 +126,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     region: data?.region || '',
     wake_time: data?.wake_time || '07:00',
     sleep_time: data?.sleep_time || '23:00',
+    occupation_type: data?.occupation_type || 'desk_job',
   });
   
   const [availableStates, setAvailableStates] = useState<string[]>([]);
@@ -99,6 +136,25 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   // Time picker state
   const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
   const [showSleepTimePicker, setShowSleepTimePicker] = useState(false);
+  
+  // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
+  useEffect(() => {
+    if (data) {
+      console.log('🔄 PersonalInfoTab: Syncing form data with prop data:', data);
+      setFormData({
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        age: data.age || 0,
+        gender: data.gender || 'male',
+        country: data.country || '',
+        state: data.state || '',
+        region: data.region || '',
+        wake_time: data.wake_time || '07:00',
+        sleep_time: data.sleep_time || '23:00',
+        occupation_type: data.occupation_type || 'desk_job',
+      });
+    }
+  }, [data]);
   
   // Update available states when country changes
   useEffect(() => {
@@ -115,19 +171,23 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     }
   }, [formData.country]);
   
-  // Update parent state when form data changes (debounced to reduce excessive calls)
+  // Note: We no longer auto-update parent on every formData change to avoid infinite loops
+  // Updates happen via onUpdate in the Next button handler
+  
+  // Validate when formData changes to show real-time validation feedback
   useEffect(() => {
-    const finalData = showCustomCountry && customCountry 
-      ? { ...formData, country: customCountry }
-      : formData;
-    
-    // Debounce the update to avoid excessive calls
-    const timer = setTimeout(() => {
-      updatePersonalInfo(finalData);
-    }, 300); // 300ms debounce
-    
-    return () => clearTimeout(timer);
-  }, [formData, showCustomCountry, customCountry, updatePersonalInfo]);
+    // Only trigger validation if validationResult exists (means we're tracking validation)
+    if (validationResult !== undefined) {
+      // Debounce validation to avoid excessive calls
+      const timer = setTimeout(() => {
+        const finalData = showCustomCountry && customCountry 
+          ? { ...formData, country: customCountry }
+          : formData;
+        onUpdate(finalData);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData, showCustomCountry, customCountry, validationResult, onUpdate]);
   
   // ============================================================================
   // VALIDATION
@@ -154,6 +214,10 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     
     if (!data.state.trim()) {
       errors.push('State is required');
+    }
+    
+    if (!data.occupation_type) {
+      errors.push('Occupation type is required');
     }
     
     return errors;
@@ -427,6 +491,52 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     </View>
   );
   
+  const renderOccupationSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Daily Activity</Text>
+      <Text style={styles.sectionSubtitle}>
+        This helps us understand your daily movement beyond exercise
+      </Text>
+      
+      <View style={styles.occupationContainer}>
+        {OCCUPATION_OPTIONS.map((option) => (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.occupationOption,
+              formData.occupation_type === option.value && styles.occupationOptionSelected,
+            ]}
+            onPress={() => updateField('occupation_type', option.value)}
+          >
+            <Text style={styles.occupationIcon}>{option.icon}</Text>
+            <View style={styles.occupationTextContainer}>
+              <Text
+                style={[
+                  styles.occupationLabel,
+                  formData.occupation_type === option.value && styles.occupationLabelSelected,
+                ]}
+              >
+                {option.label}
+              </Text>
+              <Text
+                style={[
+                  styles.occupationDescription,
+                  formData.occupation_type === option.value && styles.occupationDescriptionSelected,
+                ]}
+              >
+                {option.description}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+      
+      {hasFieldError('occupation') && (
+        <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
+      )}
+    </View>
+  );
+  
   const renderSleepScheduleSection = () => {
     const sleepDuration = calculateSleepDuration();
     const sleepHours = parseFloat(sleepDuration.split('h')[0]) || 0;
@@ -529,6 +639,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           {renderNameSection()}
           {renderDemographicsSection()}
           {renderLocationSection()}
+          {renderOccupationSection()}
           {renderSleepScheduleSection()}
         </View>
         
@@ -558,7 +669,10 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       console.log('🔍 Manual validation trigger');
                       console.log('🔍 Current formData:', formData);
                       // Force update parent state
-                      updatePersonalInfo(formData);
+                      const finalData = showCustomCountry && customCountry 
+                        ? { ...formData, country: customCountry }
+                        : formData;
+                      onUpdate(finalData);
                     }}
                   >
                     <Text style={styles.debugButtonText}>🔄 Force Update</Text>
@@ -601,6 +715,21 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             variant="outline"
             style={styles.backButton}
           />
+          {onNavigateToTab && (
+            <Button
+              title="Jump to Review"
+              onPress={() => {
+                // Save current changes before navigating
+                const finalData = showCustomCountry && customCountry 
+                  ? { ...formData, country: customCountry }
+                  : formData;
+                onUpdate(finalData);
+                onNavigateToTab(5);
+              }}
+              variant="outline"
+              style={styles.jumpButton}
+            />
+          )}
           <Button
             title="Next: Diet Preferences"
             onPress={() => {
@@ -612,12 +741,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 ? { ...formData, country: customCountry }
                 : formData;
               
-              // Update parent state immediately before validation
-              updatePersonalInfo(finalData);
+              // Update parent state for persistence
+              onUpdate(finalData);
               
-              // Let OnboardingContainer handle validation and navigation
-              // The validation will now read the latest state synchronously
-              onNext();
+              // Pass current form data directly to validation to avoid state timing issues
+              // This ensures we validate the actual form data, not potentially stale hook state
+              onNext(finalData);
             }}
             variant="primary"
             style={styles.nextButton}
@@ -849,6 +978,58 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
+  // Occupation Selection
+  occupationContainer: {
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  occupationOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  occupationOptionSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+  },
+
+  occupationIcon: {
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  occupationTextContainer: {
+    flex: 1,
+  },
+
+  occupationLabel: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  occupationLabelSelected: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  occupationDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(18),
+  },
+
+  occupationDescriptionSelected: {
+    color: ResponsiveTheme.colors.primary,
+  },
+
   // Sleep Schedule
   timeSelector: {
     paddingVertical: ResponsiveTheme.spacing.md,
@@ -990,6 +1171,10 @@ const styles = StyleSheet.create({
 
   backButton: {
     flex: 1,
+  },
+
+  jumpButton: {
+    flex: 1.5,
   },
 
   nextButton: {

@@ -57,7 +57,7 @@ interface OnboardingActions {
   updateAdvancedReview: (data: Partial<AdvancedReviewData>) => void;
   
   // Validation
-  validateTab: (tabNumber: number) => TabValidationResult;
+  validateTab: (tabNumber: number, currentData?: any) => TabValidationResult;
   validateAllTabs: () => Record<number, TabValidationResult>;
   
   // Persistence
@@ -265,15 +265,29 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   
   const updateBodyAnalysis = useCallback((data: Partial<BodyAnalysisData>) => {
     setState(prev => {
-      const finalState = {
+      const newBodyAnalysis = prev.bodyAnalysis ? { ...prev.bodyAnalysis, ...data } : data as BodyAnalysisData;
+
+      const updatedState = {
         ...prev,
-        bodyAnalysis: prev.bodyAnalysis ? { ...prev.bodyAnalysis, ...data } : data as BodyAnalysisData,
+        bodyAnalysis: newBodyAnalysis,
         hasUnsavedChanges: true,
       };
-      
-      // Update ref synchronously
+
+      const validationResults = {
+        1: validatePersonalInfo(updatedState.personalInfo),
+        2: validateDietPreferences(updatedState.dietPreferences),
+        3: validateBodyAnalysis(newBodyAnalysis),
+        4: validateWorkoutPreferences(updatedState.workoutPreferences),
+        5: validateAdvancedReview(updatedState.advancedReview),
+      };
+
+      const finalState = {
+        ...updatedState,
+        tabValidationStatus: validationResults,
+      };
+
       stateRef.current = finalState;
-      
+
       return finalState;
     });
   }, []);
@@ -308,7 +322,7 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
     });
   }, []);
   
-  const validateTab = useCallback((tabNumber: number): TabValidationResult => {
+  const validateTab = useCallback((tabNumber: number, currentData?: any): TabValidationResult => {
     console.log(`🔍 validateTab called for tab ${tabNumber}`);
     
     // Read from ref to get the latest state (even if setState updates are pending)
@@ -317,18 +331,24 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
     
     switch (tabNumber) {
       case 1:
-        result = validatePersonalInfo(currentState.personalInfo);
+        // Use provided currentData if available, otherwise fall back to state
+        const personalInfoToValidate = currentData !== undefined ? currentData : currentState.personalInfo;
+        result = validatePersonalInfo(personalInfoToValidate);
         console.log('🔍 Tab 1 validation result:', result);
-        console.log('🔍 Tab 1 data:', currentState.personalInfo);
+        console.log('🔍 Tab 1 data being validated:', personalInfoToValidate);
         return result;
       case 2:
-        return validateDietPreferences(currentState.dietPreferences);
+        const dietPrefsToValidate = currentData !== undefined ? currentData : currentState.dietPreferences;
+        return validateDietPreferences(dietPrefsToValidate);
       case 3:
-        return validateBodyAnalysis(currentState.bodyAnalysis);
+        const bodyAnalysisToValidate = currentData !== undefined ? currentData : currentState.bodyAnalysis;
+        return validateBodyAnalysis(bodyAnalysisToValidate);
       case 4:
-        return validateWorkoutPreferences(currentState.workoutPreferences);
+        const workoutPrefsToValidate = currentData !== undefined ? currentData : currentState.workoutPreferences;
+        return validateWorkoutPreferences(workoutPrefsToValidate);
       case 5:
-        return validateAdvancedReview(currentState.advancedReview);
+        const advancedReviewToValidate = currentData !== undefined ? currentData : currentState.advancedReview;
+        return validateAdvancedReview(advancedReviewToValidate);
       default:
         return { is_valid: false, errors: ['Invalid tab number'], warnings: [], completion_percentage: 0 };
     }
@@ -522,7 +542,7 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
       if (savedData) {
         const parsedData = JSON.parse(savedData);
         setState(prev => {
-          const finalState = {
+          const finalState: OnboardingState = {
             ...prev,
             personalInfo: parsedData.personalInfo,
             dietPreferences: parsedData.dietPreferences,
@@ -530,7 +550,7 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
             workoutPreferences: parsedData.workoutPreferences,
             advancedReview: parsedData.advancedReview,
             currentTab: parsedData.currentTab || 1,
-            completedTabs: new Set(parsedData.completedTabs || []),
+            completedTabs: new Set<number>(parsedData.completedTabs || []),
             lastSavedAt: parsedData.lastSavedAt ? new Date(parsedData.lastSavedAt) : null,
           };
           
@@ -629,8 +649,9 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         overallCompletion: 100,
       }));
       
-      // Clear local storage after successful database save
-      await AsyncStorage.removeItem(STORAGE_KEYS.ONBOARDING_DATA);
+      // Mark onboarding as complete in AsyncStorage (don't remove data)
+      await AsyncStorage.setItem('onboarding_completed', 'true');
+      console.log('✅ Onboarding marked as complete');
     }
     
     return success;

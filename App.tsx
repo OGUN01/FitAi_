@@ -191,31 +191,13 @@ export default function App() {
           }
         }
 
-        // For guest/unauthenticated users, check if onboarding data exists
-        // useOnboardingState hook (used by OnboardingContainer) uses 'onboarding_data' key
-        const onboardingData = await AsyncStorage.getItem('onboarding_data');
-        if (onboardingData) {
-          try {
-            const parsedData = JSON.parse(onboardingData);
-            // Check if all required sections are complete
-            const hasAllSections = parsedData.personalInfo && 
-                                   parsedData.bodyAnalysis && 
-                                   parsedData.dietPreferences && 
-                                   parsedData.workoutPreferences;
-            
-            if (hasAllSections) {
-              console.log('✅ App: Found complete onboarding data');
-              setIsOnboardingComplete(true);
-            } else {
-              console.log('📝 App: Found partial onboarding data - continuing onboarding');
-              setIsOnboardingComplete(false);
-            }
-          } catch (error) {
-            console.error('❌ App: Error parsing onboarding data:', error);
-            setIsOnboardingComplete(false);
-          }
+        // For guest/unauthenticated users, check if onboarding is complete
+        const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
+        if (onboardingCompleted === 'true') {
+          console.log('✅ App: Onboarding already completed');
+          setIsOnboardingComplete(true);
         } else {
-          console.log('📝 App: No onboarding data found - new user');
+          console.log('📝 App: Onboarding not completed - showing onboarding');
           setIsOnboardingComplete(false);
         }
 
@@ -332,6 +314,9 @@ export default function App() {
       const currentGuestId =
         guestId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       await AsyncStorage.setItem(`onboarding_${currentGuestId}`, JSON.stringify(data));
+
+      // Mark onboarding as complete
+      await AsyncStorage.setItem('onboarding_completed', 'true');
 
       // Remove partial data since onboarding is complete
       await AsyncStorage.removeItem(`onboarding_partial_${currentGuestId}`);

@@ -316,7 +316,6 @@ class UserProfileService {
         data: {
           dietType: data.diet_type,
           allergies: data.allergies || [],
-          cuisinePreferences: data.cuisine_preferences || [],
           restrictions: data.restrictions || [],
           // Optional fields with defaults
           cookingSkill: 'intermediate',

@@ -277,7 +277,6 @@ class SyncManager {
         user_id: dataManager['userId'],
         diet_type: localData.dietType,
         allergies: localData.allergies || [],
-        cuisine_preferences: localData.cuisinePreferences || [],
         restrictions: localData.restrictions || [],
         updated_at: new Date().toISOString()
       };

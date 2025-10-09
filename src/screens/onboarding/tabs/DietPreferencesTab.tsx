@@ -7,7 +7,6 @@ import { Button, Card } from '../../../components/ui';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
 import { DietPreferencesData, TabValidationResult, HealthHabits } from '../../../types/onboarding';
-import { useOnboardingState } from '../../../hooks/useOnboardingState';
 
 // ============================================================================
 // TYPES
@@ -16,8 +15,10 @@ import { useOnboardingState } from '../../../hooks/useOnboardingState';
 interface DietPreferencesTabProps {
   data: DietPreferencesData | null;
   validationResult?: TabValidationResult;
-  onNext: () => void;
+  onNext: (currentData?: DietPreferencesData) => void;
   onBack: () => void;
+  onUpdate: (data: Partial<DietPreferencesData>) => void;
+  onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
 }
@@ -119,6 +120,13 @@ const COOKING_SKILL_LEVELS = [
     icon: '👨‍🍳',
     description: 'Complex recipes, professional techniques',
     timeRange: '60+ minutes',
+  },
+  {
+    level: 'not_applicable',
+    title: 'Not Applicable',
+    icon: '🏠',
+    description: 'Made/home food prepared by others',
+    timeRange: 'N/A',
   },
 ];
 
@@ -252,20 +260,6 @@ const ALLERGY_OPTIONS = [
   { id: 'sesame', label: 'Sesame', value: 'sesame', icon: '🌰' },
 ];
 
-const CUISINE_OPTIONS = [
-  // Indian Regional
-  { id: 'north-indian', label: 'North Indian', value: 'north-indian', icon: '🍛', region: 'India' },
-  { id: 'south-indian', label: 'South Indian', value: 'south-indian', icon: '🥥', region: 'India' },
-  { id: 'gujarati', label: 'Gujarati', value: 'gujarati', icon: '🥗', region: 'India' },
-  { id: 'punjabi', label: 'Punjabi', value: 'punjabi', icon: '🫓', region: 'India' },
-  // International
-  { id: 'mediterranean', label: 'Mediterranean', value: 'mediterranean', icon: '🫒', region: 'Mediterranean' },
-  { id: 'italian', label: 'Italian', value: 'italian', icon: '🍝', region: 'Italy' },
-  { id: 'american', label: 'American', value: 'american', icon: '🍔', region: 'USA' },
-  { id: 'japanese', label: 'Japanese', value: 'japanese', icon: '🍣', region: 'Japan' },
-  { id: 'thai', label: 'Thai', value: 'thai', icon: '🍲', region: 'Thailand' },
-  { id: 'mexican', label: 'Mexican', value: 'mexican', icon: '🌮', region: 'Mexico' },
-];
 
 const RESTRICTION_OPTIONS = [
   { id: 'low-sodium', label: 'Low Sodium', value: 'low-sodium', icon: '🧂' },
@@ -285,17 +279,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   validationResult,
   onNext,
   onBack,
+  onUpdate,
+  onNavigateToTab,
   isLoading = false,
   isAutoSaving = false,
 }) => {
-  const { updateDietPreferences } = useOnboardingState();
+  // No longer creating separate state instances - using props from parent
   
   // Form state - initialize with data or defaults
   const [formData, setFormData] = useState<DietPreferencesData>({
     // Existing diet data
     diet_type: data?.diet_type || 'non-veg',
     allergies: data?.allergies || [],
-    cuisine_preferences: data?.cuisine_preferences || [],
     restrictions: data?.restrictions || [],
     
     // NEW: Diet readiness toggles
@@ -314,7 +309,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     
     // NEW: Cooking preferences
     cooking_skill_level: data?.cooking_skill_level || 'beginner',
-    max_prep_time_minutes: data?.max_prep_time_minutes || 30,
+    max_prep_time_minutes: data?.max_prep_time_minutes ?? 30,
     budget_level: data?.budget_level || 'medium',
     
     // NEW: Health habits (14 boolean fields)
@@ -334,10 +329,58 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     takes_supplements: data?.takes_supplements || false,
   });
   
-  // Update parent state when form data changes
+  // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
   useEffect(() => {
-    updateDietPreferences(formData);
-  }, [formData, updateDietPreferences]);
+    if (data) {
+      setFormData({
+        diet_type: data.diet_type || 'non-veg',
+        allergies: data.allergies || [],
+        restrictions: data.restrictions || [],
+        keto_ready: data.keto_ready || false,
+        intermittent_fasting_ready: data.intermittent_fasting_ready || false,
+        paleo_ready: data.paleo_ready || false,
+        mediterranean_ready: data.mediterranean_ready || false,
+        low_carb_ready: data.low_carb_ready || false,
+        high_protein_ready: data.high_protein_ready || false,
+        breakfast_enabled: data.breakfast_enabled ?? true,
+        lunch_enabled: data.lunch_enabled ?? true,
+        dinner_enabled: data.dinner_enabled ?? true,
+        snacks_enabled: data.snacks_enabled ?? true,
+        cooking_skill_level: data.cooking_skill_level || 'beginner',
+        max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
+        budget_level: data.budget_level || 'medium',
+        drinks_enough_water: data.drinks_enough_water || false,
+        limits_sugary_drinks: data.limits_sugary_drinks || false,
+        eats_regular_meals: data.eats_regular_meals || false,
+        avoids_late_night_eating: data.avoids_late_night_eating || false,
+        controls_portion_sizes: data.controls_portion_sizes || false,
+        reads_nutrition_labels: data.reads_nutrition_labels || false,
+        eats_processed_foods: data.eats_processed_foods ?? true,
+        eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies || false,
+        limits_refined_sugar: data.limits_refined_sugar || false,
+        includes_healthy_fats: data.includes_healthy_fats || false,
+        drinks_alcohol: data.drinks_alcohol || false,
+        smokes_tobacco: data.smokes_tobacco || false,
+        drinks_coffee: data.drinks_coffee || false,
+        takes_supplements: data.takes_supplements || false,
+      });
+    }
+  }, [data]);
+  
+  // Note: We no longer auto-update parent on every formData change to avoid infinite loops
+  // Updates happen via onUpdate in the Next button handler
+  
+  // Validate when formData changes to enable/disable Next button
+  useEffect(() => {
+    // Only trigger validation if validationResult exists (means we're tracking validation)
+    if (validationResult !== undefined) {
+      // Debounce validation to avoid excessive calls
+      const timer = setTimeout(() => {
+        onUpdate(formData);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [formData, validationResult, onUpdate]);
   
   // ============================================================================
   // FORM HANDLERS
@@ -615,7 +658,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           {COOKING_SKILL_LEVELS.map((skill) => (
             <TouchableOpacity
               key={skill.level}
-              onPress={() => updateField('cooking_skill_level', skill.level as DietPreferencesData['cooking_skill_level'])}
+              onPress={() => {
+                updateField('cooking_skill_level', skill.level as DietPreferencesData['cooking_skill_level']);
+                // Set max_prep_time_minutes to null if not_applicable is selected
+                if (skill.level === 'not_applicable') {
+                  updateField('max_prep_time_minutes', null);
+                } else if (formData.max_prep_time_minutes === null) {
+                  // Reset to default if switching from not_applicable
+                  updateField('max_prep_time_minutes', 30);
+                }
+              }}
               style={styles.skillLevelItem}
             >
               <Card
@@ -645,29 +697,40 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       {/* Max Prep Time */}
       <View style={styles.cookingField}>
         <Text style={styles.fieldLabel}>
-          Maximum Cooking Time: {formData.max_prep_time_minutes} minutes
+          {formData.cooking_skill_level === 'not_applicable' 
+            ? 'Maximum Cooking Time: Not Applicable'
+            : `Maximum Cooking Time: ${formData.max_prep_time_minutes} minutes`}
         </Text>
-        <View style={styles.prepTimeContainer}>
-          <View style={styles.prepTimeSlider}>
-            {[15, 30, 45, 60, 90, 120].map((time) => (
-              <TouchableOpacity
-                key={time}
-                style={StyleSheet.flatten([
-                  styles.prepTimeOption,
-                  formData.max_prep_time_minutes === time && styles.prepTimeOptionSelected,
-                ])}
-                onPress={() => updateField('max_prep_time_minutes', time)}
-              >
-                <Text style={StyleSheet.flatten([
-                  styles.prepTimeText,
-                  formData.max_prep_time_minutes === time && styles.prepTimeTextSelected,
-                ])}>
-                  {time}m
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {formData.cooking_skill_level === 'not_applicable' ? (
+          <Card style={styles.disabledCard} variant="outlined">
+            <Text style={styles.disabledText}>
+              ℹ️ This field is not applicable since your meals are prepared by others. 
+              We'll suggest meals based on your dietary preferences without cooking time constraints.
+            </Text>
+          </Card>
+        ) : (
+          <View style={styles.prepTimeContainer}>
+            <View style={styles.prepTimeSlider}>
+              {[15, 30, 45, 60, 90, 120].map((time) => (
+                <TouchableOpacity
+                  key={time}
+                  style={StyleSheet.flatten([
+                    styles.prepTimeOption,
+                    formData.max_prep_time_minutes === time && styles.prepTimeOptionSelected,
+                  ])}
+                  onPress={() => updateField('max_prep_time_minutes', time)}
+                >
+                  <Text style={StyleSheet.flatten([
+                    styles.prepTimeText,
+                    formData.max_prep_time_minutes === time && styles.prepTimeTextSelected,
+                  ])}>
+                    {time}m
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
       </View>
       
       {/* Budget Level */}
@@ -792,26 +855,6 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         />
       </View>
       
-      {/* Cuisine Preferences */}
-      <View style={styles.allergyField}>
-        <MultiSelectWithCustom
-          options={CUISINE_OPTIONS}
-          selectedValues={formData.cuisine_preferences}
-          onSelectionChange={(values) => updateField('cuisine_preferences', values)}
-          label="Cuisine Preferences"
-          placeholder="Select your favorite cuisines"
-          searchable={true}
-          maxSelections={8}
-          allowCustom={true}
-          customLabel="Add Custom Cuisine"
-          customPlaceholder="Enter regional cuisine"
-          showRegions={true}
-        />
-        {hasFieldError('cuisine') && (
-          <Text style={styles.errorText}>{getFieldError('cuisine')}</Text>
-        )}
-      </View>
-      
       {/* Dietary Restrictions */}
       <View style={styles.allergyField}>
         <MultiSelectWithCustom
@@ -907,12 +950,30 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             variant="outline"
             style={styles.backButton}
           />
+          {onNavigateToTab && (
+            <Button
+              title="Jump to Review"
+              onPress={() => {
+                // Save current changes before navigating
+                onUpdate(formData);
+                onNavigateToTab(5);
+              }}
+              variant="outline"
+              style={styles.jumpButton}
+            />
+          )}
           <Button
             title="Next: Body Analysis"
-            onPress={onNext}
+            onPress={() => {
+              // Update parent state and pass current form data to validation
+              onUpdate(formData);
+              // Small delay to ensure state is updated before validation
+              setTimeout(() => {
+                onNext(formData);
+              }, 100);
+            }}
             variant="primary"
             style={styles.nextButton}
-            disabled={!validationResult?.is_valid}
             loading={isLoading}
           />
         </View>
@@ -1264,6 +1325,18 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
+  disabledCard: {
+    padding: rp(15),
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E0E0E0',
+    marginTop: rp(10),
+  },
+  disabledText: {
+    fontSize: rf(14),
+    color: '#666666',
+    lineHeight: rp(20),
+    textAlign: 'center',
+  },
 
   // Budget Section
   budgetGrid: {
@@ -1534,6 +1607,10 @@ const styles = StyleSheet.create({
 
   backButton: {
     flex: 1,
+  },
+
+  jumpButton: {
+    flex: 1.5,
   },
 
   nextButton: {
