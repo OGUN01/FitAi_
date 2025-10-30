@@ -779,11 +779,24 @@ export class OnboardingUtils {
   static validateDietPreferences(data: DietPreferencesData | null): TabValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
+
+    // Add debug logging
+    console.log('🔍 validateDietPreferences called with data:', data ? 'Data provided' : 'NULL data');
+
     if (!data) {
-      return { is_valid: false, errors: ['Diet preferences are required'], warnings: [], completion_percentage: 0 };
+      console.log('❌ Validation failed: data is null or undefined');
+      return { is_valid: false, errors: ['Diet preferences data is missing'], warnings: [], completion_percentage: 0 };
     }
-    
+
+    // Log key fields for debugging
+    console.log('🔍 Diet data fields:', {
+      diet_type: data.diet_type,
+      breakfast_enabled: data.breakfast_enabled,
+      lunch_enabled: data.lunch_enabled,
+      dinner_enabled: data.dinner_enabled,
+      snacks_enabled: data.snacks_enabled
+    });
+
     // Required fields
     if (!data.diet_type) errors.push('Diet type selection is required');
     
@@ -954,11 +967,23 @@ export class OnboardingUtils {
   static validateWorkoutPreferences(data: WorkoutPreferencesData | null): TabValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
+
+    // Add debug logging
+    console.log('🔍 validateWorkoutPreferences called with data:', data ? 'Data provided' : 'NULL data');
+
     if (!data) {
-      return { is_valid: false, errors: ['Workout preferences are required'], warnings: [], completion_percentage: 0 };
+      console.log('❌ Validation failed: data is null or undefined');
+      return { is_valid: false, errors: ['Workout preferences data is missing'], warnings: [], completion_percentage: 0 };
     }
-    
+
+    // Log key fields for debugging
+    console.log('🔍 Workout data fields:', {
+      location: data.location,
+      intensity: data.intensity,
+      activity_level: data.activity_level,
+      primary_goals: data.primary_goals,
+    });
+
     // Required fields
     if (!data.location) errors.push('Workout location is required');
     if (!data.intensity) errors.push('Intensity level is required');

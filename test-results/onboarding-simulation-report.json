@@ -1,0 +1,95 @@
+{
+  "timestamp": "2025-10-29T04:42:44.685Z",
+  "testUser": {
+    "name": "Sarah Johnson",
+    "age": 32,
+    "gender": "female",
+    "goal": "Lose 10kg"
+  },
+  "metrics": {
+    "bmi": "27.5",
+    "bmr": 1460,
+    "tdee": 2008,
+    "dailyCalories": 1458,
+    "weeklyWeightChange": "0.50",
+    "dailyDeficit": 550,
+    "dailyProtein": 109,
+    "dailyCarbs": 146,
+    "dailyFat": 49,
+    "hrZones": {
+      "fatBurnMin": 94,
+      "fatBurnMax": 132,
+      "cardioMin": 132,
+      "cardioMax": 160,
+      "peakMin": 160,
+      "peakMax": 179
+    },
+    "leanMass": "51.0",
+    "fatMass": "24.0",
+    "healthScore": 72,
+    "dietReadiness": 68,
+    "fitnessReadiness": 55,
+    "goalRealistic": 90
+  },
+  "validations": {
+    "passed": 10,
+    "total": 10,
+    "details": [
+      {
+        "check": "Age range (13-120)",
+        "value": 32,
+        "valid": true
+      },
+      {
+        "check": "Height range (100-250 cm)",
+        "value": 165,
+        "valid": true
+      },
+      {
+        "check": "Weight range (30-300 kg)",
+        "value": 75,
+        "valid": true
+      },
+      {
+        "check": "Target weight valid",
+        "value": 65,
+        "valid": true
+      },
+      {
+        "check": "Timeline range (4-104 weeks)",
+        "value": 20,
+        "valid": true
+      },
+      {
+        "check": "Safe weight loss rate (≤1 kg/week)",
+        "value": "0.50 kg/week",
+        "valid": true
+      },
+      {
+        "check": "Minimum safe calories (≥1200)",
+        "value": "1458 cal",
+        "valid": true
+      },
+      {
+        "check": "Required fields filled",
+        "value": "All",
+        "valid": true
+      },
+      {
+        "check": "At least 1 fitness goal",
+        "value": 2,
+        "valid": true
+      },
+      {
+        "check": "At least 1 workout type",
+        "value": 3,
+        "valid": true
+      }
+    ]
+  },
+  "summary": {
+    "totalFields": 120,
+    "duration": "0.01s",
+    "status": "PASSED"
+  }
+}

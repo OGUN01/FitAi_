@@ -93,15 +93,34 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
     if (
       isEditMode &&
       editContextData?.currentData &&
-      Object.keys(editContextData.currentData).length > 0 &&
       !isDataPopulated
     ) {
       const data = editContextData.currentData;
-      setDietType(data.dietType || 'non-veg');
-      setAllergies(data.allergies || []);
-      setCuisinePreferences(data.cuisinePreferences || []);
-      setRestrictions(data.restrictions || []);
-      setIsDataPopulated(true);
+
+      // Check if we have actual diet preferences data (not just metadata)
+      const hasActualData = data.dietType || (data.allergies && data.allergies.length > 0) ||
+                           (data.cuisinePreferences && data.cuisinePreferences.length > 0) ||
+                           (data.restrictions && data.restrictions.length > 0);
+
+      console.log('🔄 DietPreferencesScreen: Loading edit data:', {
+        hasData: !!data,
+        hasActualData,
+        dataKeys: Object.keys(data),
+        dietType: data.dietType,
+        allergies: data.allergies,
+        cuisinePreferences: data.cuisinePreferences
+      });
+
+      if (hasActualData) {
+        setDietType(data.dietType || 'non-veg');
+        setAllergies(data.allergies || []);
+        setCuisinePreferences(data.cuisinePreferences || []);
+        setRestrictions(data.restrictions || []);
+        console.log('✅ DietPreferencesScreen: Data loaded successfully');
+        setIsDataPopulated(true);
+      } else {
+        console.warn('⚠️ DietPreferencesScreen: No actual diet preferences data found in currentData');
+      }
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
 

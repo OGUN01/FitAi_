@@ -122,6 +122,46 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               
               if (sectionData) {
                 console.log(`✅ EditContext: Found existing ${section} data:`, sectionData);
+
+                // Special handling for personalInfo: Convert NEW fields to OLD format for display
+                if (section === 'personalInfo' && sectionData) {
+                  const personalData = sectionData as any;
+
+                  console.log('🔍 EditContext: Raw personalInfo data before conversion:', personalData);
+
+                  // Convert first_name/last_name → name
+                  if (!personalData.name && (personalData.first_name || personalData.last_name)) {
+                    const firstName = personalData.first_name || '';
+                    const lastName = personalData.last_name || '';
+                    personalData.name = `${firstName} ${lastName}`.trim();
+                    console.log('📝 EditContext: Computed name from first_name/last_name:', personalData.name);
+                    delete personalData.first_name;
+                    delete personalData.last_name;
+                  }
+
+                  // Convert height_cm (number) → height (string)
+                  if (personalData.height_cm !== undefined && personalData.height_cm !== null) {
+                    personalData.height = String(personalData.height_cm);
+                    console.log(`📝 EditContext: Converted height_cm ${personalData.height_cm} → height "${personalData.height}"`);
+                    delete personalData.height_cm;
+                  }
+
+                  // Convert current_weight_kg (number) → weight (string)
+                  if (personalData.current_weight_kg !== undefined && personalData.current_weight_kg !== null) {
+                    personalData.weight = String(personalData.current_weight_kg);
+                    console.log(`📝 EditContext: Converted current_weight_kg ${personalData.current_weight_kg} → weight "${personalData.weight}"`);
+                    delete personalData.current_weight_kg;
+                  }
+
+                  // Convert age (number) → age (string) if needed
+                  if (typeof personalData.age === 'number') {
+                    personalData.age = String(personalData.age);
+                    console.log(`📝 EditContext: Converted age number → age string "${personalData.age}"`);
+                  }
+
+                  console.log('✅ EditContext: Converted personalInfo data:', personalData);
+                  sectionData = personalData;
+                }
               }
             }
           } catch (error) {
@@ -205,6 +245,12 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         }
 
         // Set up edit state
+        console.log(`📝 EditContext: Setting up edit mode for ${section} with data:`, {
+          hasData: !!sectionData,
+          dataKeys: sectionData ? Object.keys(sectionData) : [],
+          sectionData: sectionData
+        });
+
         setEditSection(section as EditContextData['editSection']);
         setOriginalData(sectionData);
         setCurrentData(sectionData ? { ...sectionData } : {});
@@ -212,6 +258,8 @@ export const EditProvider: React.FC<EditProviderProps> = ({
         setHasChanges(false);
         setValidationErrors([]);
         setShowOverlay(true);
+
+        console.log('✅ EditContext: Edit mode setup complete');
       } catch (error) {
         console.error('Failed to start edit:', error);
         Alert.alert('Error', 'Failed to load data for editing');
@@ -315,7 +363,48 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       switch (editSection) {
         case 'personalInfo':
-          saveResult = await savePersonalInfo(currentData as PersonalInfo);
+          // Convert OLD format back to NEW format before saving
+          const personalInfoToSave = { ...currentData } as any;
+
+          console.log('🔄 EditContext: Converting personalInfo OLD → NEW for saving:', personalInfoToSave);
+
+          // Convert name → first_name/last_name
+          if (personalInfoToSave.name) {
+            const nameParts = personalInfoToSave.name.trim().split(' ');
+            personalInfoToSave.first_name = nameParts[0] || '';
+            personalInfoToSave.last_name = nameParts.slice(1).join(' ') || '';
+            console.log(`📝 EditContext: Split name "${personalInfoToSave.name}" → first_name: "${personalInfoToSave.first_name}", last_name: "${personalInfoToSave.last_name}"`);
+          }
+
+          // Convert height (string) → height_cm (number)
+          if (personalInfoToSave.height) {
+            const heightNum = parseFloat(personalInfoToSave.height);
+            if (!isNaN(heightNum)) {
+              personalInfoToSave.height_cm = heightNum;
+              console.log(`📝 EditContext: Converted height "${personalInfoToSave.height}" → height_cm ${heightNum}`);
+            }
+          }
+
+          // Convert weight (string) → current_weight_kg (number)
+          if (personalInfoToSave.weight) {
+            const weightNum = parseFloat(personalInfoToSave.weight);
+            if (!isNaN(weightNum)) {
+              personalInfoToSave.current_weight_kg = weightNum;
+              console.log(`📝 EditContext: Converted weight "${personalInfoToSave.weight}" → current_weight_kg ${weightNum}`);
+            }
+          }
+
+          // Convert age (string) → age (number) if needed
+          if (typeof personalInfoToSave.age === 'string') {
+            const ageNum = parseInt(personalInfoToSave.age);
+            if (!isNaN(ageNum)) {
+              personalInfoToSave.age = ageNum;
+              console.log(`📝 EditContext: Converted age "${personalInfoToSave.age}" → age number ${ageNum}`);
+            }
+          }
+
+          console.log('✅ EditContext: Final personalInfo to save:', personalInfoToSave);
+          saveResult = await savePersonalInfo(personalInfoToSave as PersonalInfo);
           break;
         case 'fitnessGoals':
           saveResult = await saveFitnessGoals(currentData as FitnessGoals);

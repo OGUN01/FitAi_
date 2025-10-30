@@ -69,6 +69,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   const [calculationError, setCalculationError] = useState<string | null>(null);
   const [showAdjustmentWizard, setShowAdjustmentWizard] = useState(false);
   const [currentError, setCurrentError] = useState<any | null>(null);
+  const [warningsAcknowledged, setWarningsAcknowledged] = useState(false);
   
   // Calculate all metrics when component mounts or data changes
   useEffect(() => {
@@ -76,6 +77,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       performCalculations();
     }
   }, [personalInfo, dietPreferences, bodyAnalysis, workoutPreferences]);
+
+  // Reset acknowledgment when warnings change
+  useEffect(() => {
+    setWarningsAcknowledged(false);
+  }, [validationResults?.warnings]);
   
   // Helper functions for scoring
   const getScoreColor = (score: number) => {
@@ -783,7 +789,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           
           {/* Validation Warnings Section */}
           {validationResults?.hasWarnings && (
-            <WarningCard warnings={validationResults.warnings} />
+            <WarningCard
+              warnings={validationResults.warnings}
+              onAcknowledgmentChange={setWarningsAcknowledged}
+            />
           )}
           
           {/* Existing Sections */}
@@ -830,16 +839,39 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           />
           <Button
             title={
-              validationResults?.hasErrors 
-                ? "⛔ Fix Issues to Continue" 
-                : isComplete 
-                  ? "🚀 Start FitAI Journey" 
+              validationResults?.hasErrors
+                ? "⛔ Fix Issues to Continue"
+                : isComplete
+                  ? "🚀 Start FitAI Journey"
                   : "Complete Setup"
             }
-            onPress={isComplete ? onNext : onComplete}
+            onPress={() => {
+              const buttonTitle = validationResults?.hasErrors
+                ? "Fix Issues"
+                : isComplete
+                  ? "Start Journey"
+                  : "Complete Setup";
+              console.log(`🔘 AdvancedReviewTab: "${buttonTitle}" button clicked`);
+              console.log('🔘 AdvancedReviewTab: isComplete:', isComplete);
+              console.log('🔘 AdvancedReviewTab: Calling handler:', isComplete ? 'onNext' : 'onComplete');
+              console.log('🔘 AdvancedReviewTab: Button disabled:', !calculatedData || isCalculating || !validationResults?.canProceed || (validationResults?.hasWarnings && !warningsAcknowledged));
+
+              if (isComplete) {
+                console.log('✅ AdvancedReviewTab: Calling onNext()...');
+                onNext();
+              } else {
+                console.log('✅ AdvancedReviewTab: Calling onComplete()...');
+                onComplete();
+              }
+            }}
             variant="primary"
             style={styles.completeButton}
-            disabled={!calculatedData || isCalculating || !validationResults?.canProceed}
+            disabled={
+              !calculatedData ||
+              isCalculating ||
+              !validationResults?.canProceed ||
+              (validationResults?.hasWarnings && !warningsAcknowledged)
+            }
             loading={isLoading}
           />
         </View>

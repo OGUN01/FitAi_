@@ -8,6 +8,13 @@ export interface PersonalInfo {
   height: string; // in cm
   weight: string; // in kg
   activityLevel: string;
+  // New fields from comprehensive onboarding
+  country?: string;
+  state?: string;
+  region?: string;
+  wake_time?: string; // HH:MM format
+  sleep_time?: string; // HH:MM format
+  occupation_type?: 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active';
 }
 
 export interface FitnessGoals {

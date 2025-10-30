@@ -57,15 +57,47 @@ export const useOnboardingIntegration = () => {
         // Update local state immediately
         updatePersonalInfo(personalInfo);
 
+        // Handle both OLD and NEW field formats
+        const personalData = personalInfo as any;
+
+        // Split name into first_name and last_name for database storage
+        let firstName = personalData.first_name || '';
+        let lastName = personalData.last_name || '';
+
+        if (!firstName && !lastName && personalData.name) {
+          const nameParts = personalData.name.trim().split(' ');
+          firstName = nameParts[0] || '';
+          lastName = nameParts.slice(1).join(' ') || '';
+        }
+
+        console.log('📝 integration.ts: Processing name for database storage:', {
+          fullName: personalData.name,
+          firstName,
+          lastName
+        });
+
+        // Handle height - accept both formats
+        const heightValue = personalData.height_cm || parseFloat(personalData.height) || undefined;
+        const weightValue = personalData.current_weight_kg || parseFloat(personalData.weight) || undefined;
+        const ageValue = personalData.age;
+
+        console.log('📝 integration.ts: Processed measurements:', {
+          height_cm: heightValue,
+          current_weight_kg: weightValue,
+          age: ageValue
+        });
+
         // Try to update profile first, create if it doesn't exist
         const profileData = {
-          name: personalInfo.name,
-          age: personalInfo.age || undefined,
-          gender: personalInfo.gender as 'male' | 'female' | 'other',
-          height: personalInfo.height || undefined,
-          weight: personalInfo.weight || undefined,
-          activityLevel: personalInfo.activityLevel as any,
-        };
+          name: personalData.name || `${firstName} ${lastName}`.trim(),
+          first_name: firstName,
+          last_name: lastName,
+          age: ageValue || undefined,
+          gender: personalData.gender as 'male' | 'female' | 'other',
+          height_cm: heightValue,
+          current_weight_kg: weightValue,
+          activityLevel: personalData.activityLevel as any,
+        } as any;
 
         // Try update first
         let response = await updateProfile(authUser.id, profileData);
@@ -73,15 +105,17 @@ export const useOnboardingIntegration = () => {
         // If update fails (profile doesn't exist), create it
         if (!response.success) {
           const createData = {
-            name: personalInfo.name,
-            age: personalInfo.age || '',
-            gender: personalInfo.gender as 'male' | 'female' | 'other',
-            height: personalInfo.height || '',
-            weight: personalInfo.weight || '',
-            activityLevel: personalInfo.activityLevel as any,
+            name: personalData.name || `${firstName} ${lastName}`.trim(),
+            first_name: firstName,
+            last_name: lastName,
+            age: ageValue || '',
+            gender: personalData.gender as 'male' | 'female' | 'other',
+            height_cm: heightValue || '',
+            current_weight_kg: weightValue || '',
+            activityLevel: personalData.activityLevel as any,
             id: authUser.id,
             email: authUser.email || '',
-          };
+          } as any;
           response = await createProfile(createData);
         }
 

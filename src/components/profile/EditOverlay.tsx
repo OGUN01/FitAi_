@@ -25,6 +25,7 @@ import { THEME } from '../ui';
 import { PersonalInfoScreen } from '../../screens/onboarding/PersonalInfoScreen';
 import { DietPreferencesScreen } from '../../screens/onboarding/DietPreferencesScreen';
 import { WorkoutPreferencesScreen } from '../../screens/onboarding/WorkoutPreferencesScreen';
+import { FitnessGoalsScreen } from '../../screens/onboarding/FitnessGoalsScreen';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -115,6 +116,8 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
       switch (editSection) {
         case 'personalInfo':
           return <PersonalInfoScreen {...commonProps} />;
+        case 'fitnessGoals':
+          return <FitnessGoalsScreen {...commonProps} />;
         case 'dietPreferences':
           return <DietPreferencesScreen {...commonProps} />;
         case 'workoutPreferences':

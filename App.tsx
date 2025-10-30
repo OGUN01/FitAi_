@@ -72,11 +72,19 @@ export default function App() {
 
   // Helper function to convert OnboardingReviewData to UserProfile
   const convertOnboardingToProfile = (data: OnboardingReviewData): UserProfile => {
+    // fitnessGoals is already a separate field in OnboardingReviewData
+    const fitnessGoals = data.fitnessGoals || {
+      primaryGoals: [],
+      timeCommitment: '30 minutes',
+      experience: 'beginner' as const,
+      experience_level: 'beginner',
+    };
+
     return {
       id: guestId || `guest_${Date.now()}`,
       email: data.personalInfo.email || '',
       personalInfo: data.personalInfo,
-      fitnessGoals: data.fitnessGoals,
+      fitnessGoals: fitnessGoals,
       dietPreferences: data.dietPreferences,
       workoutPreferences: data.workoutPreferences || {
         location: 'home' as const,
@@ -84,15 +92,6 @@ export default function App() {
         timePreference: 30,
         intensity: 'beginner' as const,
         workoutTypes: [],
-        workoutType: 'strength' as const,
-        timeSlots: [],
-        duration: 30,
-        frequency: 3,
-        restDays: [],
-        trainingStyle: 'balanced' as const,
-        goals: [],
-        injuries: [],
-        experience: 'beginner' as const,
       },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -163,8 +162,20 @@ export default function App() {
 
         // If user is authenticated, check if profile exists in store
         if (user && profile) {
-          console.log('✅ App: Found existing user profile');
-          setIsOnboardingComplete(true);
+          console.log('✅ App: Found existing user profile in store');
+
+          // Validate profile has all required fields
+          const { checkProfileComplete } = useUserStore.getState();
+          const isValid = checkProfileComplete(profile);
+
+          if (isValid) {
+            console.log('✅ App: Profile validation passed - showing MainNavigation');
+            setIsOnboardingComplete(true);
+          } else {
+            console.log('⚠️ App: Profile exists but incomplete - showing onboarding');
+            setIsOnboardingComplete(false);
+          }
+
           setIsLoadingOnboarding(false);
           return;
         }
@@ -178,7 +189,19 @@ export default function App() {
             
             if (profileResponse.success && profileResponse.data) {
               console.log('✅ App: Profile loaded from database successfully');
-              setIsOnboardingComplete(true);
+
+              // Validate profile has all required fields
+              const { checkProfileComplete } = useUserStore.getState();
+              const isValid = checkProfileComplete(profileResponse.data);
+
+              if (isValid) {
+                console.log('✅ App: Profile validation passed - showing MainNavigation');
+                setIsOnboardingComplete(true);
+              } else {
+                console.log('⚠️ App: Profile incomplete - showing onboarding');
+                setIsOnboardingComplete(false);
+              }
+
               setIsLoadingOnboarding(false);
               return;
             } else {
@@ -194,8 +217,40 @@ export default function App() {
         // For guest/unauthenticated users, check if onboarding is complete
         const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
         if (onboardingCompleted === 'true') {
-          console.log('✅ App: Onboarding already completed');
-          setIsOnboardingComplete(true);
+          console.log('✅ App: Onboarding marked complete for guest user - validating data...');
+
+          // Load onboarding data from AsyncStorage and convert to profile format
+          try {
+            const onboardingDataStr = await AsyncStorage.getItem('onboarding_data');
+            if (onboardingDataStr) {
+              const onboardingData = JSON.parse(onboardingDataStr);
+              console.log('📦 App: Found onboarding data in AsyncStorage, converting to profile...');
+
+              // Convert to profile format and load into userStore
+              const userProfile = convertOnboardingToProfile(onboardingData);
+              setProfile(userProfile);
+
+              // Validate the profile has all required fields
+              const { checkProfileComplete } = useUserStore.getState();
+              const isValid = checkProfileComplete(userProfile);
+
+              if (isValid) {
+                console.log('✅ App: Guest profile validation passed - showing MainNavigation');
+                setIsOnboardingComplete(true);
+              } else {
+                console.log('⚠️ App: Guest profile incomplete - showing onboarding');
+                setIsOnboardingComplete(false);
+              }
+
+              console.log('✅ App: Guest user profile loaded successfully from AsyncStorage');
+            } else {
+              console.warn('⚠️ App: Onboarding marked complete but no data found - showing onboarding');
+              setIsOnboardingComplete(false);
+            }
+          } catch (error) {
+            console.error('❌ App: Failed to load guest user data - showing onboarding:', error);
+            setIsOnboardingComplete(false);
+          }
         } else {
           console.log('📝 App: Onboarding not completed - showing onboarding');
           setIsOnboardingComplete(false);
@@ -216,7 +271,7 @@ export default function App() {
     };
 
     loadExistingData();
-  }, [isInitialized, user, isGuestMode, guestId, profile]);
+  }, [isInitialized, user, isGuestMode, guestId]); // Removed 'profile' to prevent infinite loop
 
   // Initialize backend on app start
   useEffect(() => {
@@ -308,12 +363,25 @@ export default function App() {
 
       // Convert to profile format and store in userStore for persistence
       const userProfile = convertOnboardingToProfile(data);
+      console.log('💾 App: Setting profile in userStore...');
       setProfile(userProfile);
+
+      // ⚠️ CRITICAL: Wait for Zustand persist middleware to finish async save
+      // Without this delay, MainNavigation renders before persistence completes,
+      // causing ProfileScreen to read from empty userStore
+      console.log('⏳ App: Waiting for persist middleware to complete...');
+      await new Promise(resolve => setTimeout(resolve, 150));
+      console.log('✅ App: Persist middleware should have completed');
 
       // Store complete data in AsyncStorage with guest ID
       const currentGuestId =
         guestId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       await AsyncStorage.setItem(`onboarding_${currentGuestId}`, JSON.stringify(data));
+
+      // Also store in the standard 'onboarding_data' key for consistency
+      // This is what loadExistingData reads from on app restart
+      await AsyncStorage.setItem('onboarding_data', JSON.stringify(data));
+      console.log('✅ App: Onboarding data stored to AsyncStorage');
 
       // Mark onboarding as complete
       await AsyncStorage.setItem('onboarding_completed', 'true');
@@ -321,7 +389,10 @@ export default function App() {
       // Remove partial data since onboarding is complete
       await AsyncStorage.removeItem(`onboarding_partial_${currentGuestId}`);
 
-      console.log('✅ App: Onboarding data stored successfully');
+      console.log('✅ App: All onboarding data stored successfully');
+      console.log('🎉 App: Now setting isOnboardingComplete=true to show MainNavigation');
+
+      // Set complete flag LAST after all async operations finish
       setIsOnboardingComplete(true);
     } catch (error) {
       console.error('❌ App: Failed to store onboarding data:', error);
@@ -352,10 +423,7 @@ export default function App() {
           <MainNavigation />
         ) : (
           <OnboardingContainer
-            onComplete={() => {
-              console.log('🎉 App: Onboarding completed via OnboardingContainer');
-              setIsOnboardingComplete(true);
-            }}
+            onComplete={handleOnboardingComplete}
             showProgressIndicator={true}
           />
         )}

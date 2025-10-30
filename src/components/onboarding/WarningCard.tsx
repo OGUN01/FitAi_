@@ -11,15 +11,22 @@ import { ValidationResult } from '../../services/validationEngine';
 
 interface WarningCardProps {
   warnings: ValidationResult[];
+  onAcknowledgmentChange?: (acknowledged: boolean) => void;
 }
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
-export const WarningCard: React.FC<WarningCardProps> = ({ warnings }) => {
+export const WarningCard: React.FC<WarningCardProps> = ({ warnings, onAcknowledgmentChange }) => {
   const [acknowledged, setAcknowledged] = useState(false);
-  
+
+  const handleAcknowledgmentToggle = () => {
+    const newValue = !acknowledged;
+    setAcknowledged(newValue);
+    onAcknowledgmentChange?.(newValue);
+  };
+
   return (
     <Card style={styles.container}>
       <Text style={styles.header}>
@@ -64,7 +71,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({ warnings }) => {
       {/* Acknowledgment Checkbox */}
       <TouchableOpacity
         style={styles.checkboxContainer}
-        onPress={() => setAcknowledged(!acknowledged)}
+        onPress={handleAcknowledgmentToggle}
       >
         <View style={[styles.checkboxBox, acknowledged && styles.checkboxBoxChecked]}>
           {acknowledged && <Text style={styles.checkboxCheck}>✓</Text>}

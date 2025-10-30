@@ -12,6 +12,7 @@ import AnalyticsScreen from '../../screens/main/AnalyticsScreen';
 import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
 import { MealSession } from '../../screens/session/MealSession';
 import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
+import { OnboardingContainer } from '../../screens/onboarding/OnboardingContainer';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
 import { DayWorkout } from '../../ai/weeklyContentGenerator';
@@ -39,6 +40,15 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
     meal?: DayMeal;
   }>({ isActive: false });
 
+  // NEW: Onboarding edit session state
+  const [onboardingEditSession, setOnboardingEditSession] = useState<{
+    isActive: boolean;
+    editMode?: boolean;
+    initialTab?: number;
+    onEditComplete?: () => void;
+    onEditCancel?: () => void;
+  }>({ isActive: false });
+
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
@@ -60,6 +70,18 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
           meal: params?.meal?.name,
         });
         setCookingSession({ isActive: true, meal: params.meal });
+      } else if (screen === 'OnboardingContainer') {
+        console.log(`🧭 Setting onboarding edit session:`, {
+          editMode: params?.editMode,
+          initialTab: params?.initialTab,
+        });
+        setOnboardingEditSession({
+          isActive: true,
+          editMode: params?.editMode,
+          initialTab: params?.initialTab,
+          onEditComplete: params?.onEditComplete,
+          onEditCancel: params?.onEditCancel,
+        });
       }
     },
     goBack: () => {
@@ -67,6 +89,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       setWorkoutSession({ isActive: false });
       setMealSession({ isActive: false });
       setCookingSession({ isActive: false });
+      setOnboardingEditSession({ isActive: false });
     },
   };
 
@@ -104,6 +127,34 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
   ];
 
   const renderScreen = () => {
+    // If onboarding edit session is active, show OnboardingContainer in edit mode
+    if (onboardingEditSession.isActive) {
+      console.log(`🧭 RENDERING: OnboardingContainer in edit mode with:`, {
+        editMode: onboardingEditSession.editMode,
+        initialTab: onboardingEditSession.initialTab,
+      });
+      return (
+        <OnboardingContainer
+          editMode={onboardingEditSession.editMode}
+          initialTab={onboardingEditSession.initialTab}
+          onEditComplete={() => {
+            console.log('✅ OnboardingContainer: Edit completed');
+            onboardingEditSession.onEditComplete?.();
+            navigation.goBack();
+          }}
+          onEditCancel={() => {
+            console.log('❌ OnboardingContainer: Edit cancelled');
+            onboardingEditSession.onEditCancel?.();
+            navigation.goBack();
+          }}
+          onComplete={() => {
+            // This won't be called in edit mode, but required prop
+            console.log('OnboardingContainer: onComplete called (should not happen in edit mode)');
+          }}
+        />
+      );
+    }
+
     // If workout session is active, show workout session screen
     if (workoutSession.isActive && workoutSession.workout) {
       console.log(`🧭 RENDERING: WorkoutSessionScreen with:`, {
@@ -158,7 +209,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       case 'diet':
         return <DietScreen navigation={navigation} isActive={activeTab === 'diet'} />;
       case 'profile':
-        return <ProfileScreen />;
+        return <ProfileScreen navigation={navigation} />;
       default:
         return <HomeScreen onNavigateToTab={setActiveTab} />;
     }
@@ -169,7 +220,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* Hide tab bar when any session is active */}
-      {!workoutSession.isActive && !mealSession.isActive && !cookingSession.isActive && (
+      {!workoutSession.isActive && !mealSession.isActive && !cookingSession.isActive && !onboardingEditSession.isActive && (
         <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
       )}
     </View>

@@ -22,7 +22,7 @@ import {
 import { GuestSignUpScreen } from './GuestSignUpScreen';
 
 // Internal ProfileScreen component
-const ProfileScreenInternal: React.FC = () => {
+const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
   const { profile, clearProfile } = useUser();
   const userStats = useUserStats();
@@ -141,34 +141,47 @@ const ProfileScreenInternal: React.FC = () => {
   }, [initializeSubscription]);
 
   // Edit Profile items (under pen icon)
+  // Now navigates to comprehensive onboarding tabs with 170+ fields
   const editProfileItems = [
     {
       id: 1,
       title: 'Personal Information',
-      subtitle: 'Update your profile details',
+      subtitle: 'Update your profile details (10 fields)',
       icon: '👤',
       hasArrow: true,
+      tabIndex: 1, // PersonalInfoTab
     },
     {
       id: 2,
-      title: 'Fitness Goals',
-      subtitle: 'Modify your fitness objectives',
-      icon: '🎯',
+      title: 'Diet Preferences',
+      subtitle: 'Dietary preferences and health habits (27 fields)',
+      icon: '🍎',
       hasArrow: true,
+      tabIndex: 2, // DietPreferencesTab
     },
     {
       id: 3,
-      title: 'Workout Preferences',
-      subtitle: 'Customize your training style',
-      icon: '🏋️',
+      title: 'Body Analysis',
+      subtitle: 'Track your body measurements (30 fields)',
+      icon: '📊',
       hasArrow: true,
+      tabIndex: 3, // BodyAnalysisTab
     },
     {
       id: 4,
-      title: 'Nutrition Settings',
-      subtitle: 'Dietary preferences and restrictions',
-      icon: '🍎',
+      title: 'Workout Preferences',
+      subtitle: 'Customize your training style (22 fields)',
+      icon: '🏋️',
       hasArrow: true,
+      tabIndex: 4, // WorkoutPreferencesTab
+    },
+    {
+      id: 5,
+      title: 'Health Metrics',
+      subtitle: 'View calculated health metrics (50+ fields)',
+      icon: '📈',
+      hasArrow: true,
+      tabIndex: 5, // AdvancedReviewTab
     },
   ];
 
@@ -275,19 +288,50 @@ const ProfileScreenInternal: React.FC = () => {
   const handleEditProfileItemPress = async (item: any) => {
     setShowEditProfile(false); // Close the modal first
 
+    console.log('🔍 ProfileScreen: handleEditProfileItemPress called with item:', {
+      id: item.id,
+      title: item.title,
+      tabIndex: item.tabIndex,
+      hasNavigation: !!navigation,
+    });
+
+    // NEW: Navigate to OnboardingContainer in edit mode instead of using EditContext
+    if (navigation && item.tabIndex) {
+      console.log(`🧭 ProfileScreen: Navigating to OnboardingContainer for tab ${item.tabIndex}`);
+      navigation.navigate('OnboardingContainer', {
+        editMode: true,
+        initialTab: item.tabIndex,
+        onEditComplete: () => {
+          console.log('✅ ProfileScreen: Edit completed, refreshing profile');
+          // Profile data will be automatically refreshed by useUser hook
+        },
+        onEditCancel: () => {
+          console.log('❌ ProfileScreen: Edit cancelled');
+        },
+      });
+      return;
+    }
+
+    console.warn('⚠️ ProfileScreen: Falling back to OLD EditContext (navigation or tabIndex missing)');
+
+
+    // FALLBACK: Old EditContext approach (if navigation not available)
     try {
       switch (item.id) {
         case 1: // Personal Information
           await startEdit('personalInfo');
           break;
-        case 2: // Fitness Goals
-          await startEdit('fitnessGoals');
+        case 2: // Diet Preferences
+          await startEdit('dietPreferences');
           break;
-        case 3: // Workout Preferences
+        case 3: // Body Analysis
+          Alert.alert(item.title, 'Please use the new comprehensive edit mode');
+          break;
+        case 4: // Workout Preferences
           await startEdit('workoutPreferences');
           break;
-        case 4: // Nutrition Settings
-          await startEdit('dietPreferences');
+        case 5: // Health Metrics
+          Alert.alert(item.title, 'View-only calculated health metrics');
           break;
         default:
           Alert.alert(item.title, `${item.title} editing feature coming soon!`);
@@ -792,7 +836,7 @@ const ProfileScreenInternal: React.FC = () => {
 };
 
 // Main ProfileScreen component with EditProvider
-export const ProfileScreen: React.FC = () => {
+export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleEditComplete = async () => {
     console.log('✅ Profile edit completed');
 
@@ -826,7 +870,7 @@ export const ProfileScreen: React.FC = () => {
         console.log('❌ Profile edit cancelled');
       }}
     >
-      <ProfileScreenInternal />
+      <ProfileScreenInternal navigation={navigation} />
     </EditProvider>
   );
 };

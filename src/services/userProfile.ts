@@ -400,14 +400,53 @@ class UserProfileService {
    * Map database profile to UserProfile type
    */
   private mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile): UserProfile {
-    const personalInfo: PersonalInfo = {
+    // Log the raw database profile to see exactly what we're getting
+    console.log('🔍 userProfile.ts: Raw database profile:', {
+      id: dbProfile.id,
       name: dbProfile.name,
+      age: dbProfile.age,
+      gender: dbProfile.gender,
+      height_cm: dbProfile.height_cm,
+      weight_kg: dbProfile.weight_kg,
+      activity_level: dbProfile.activity_level,
+      first_name: (dbProfile as any).first_name,
+      last_name: (dbProfile as any).last_name
+    });
+
+    // Handle name field - database has both 'name' and 'first_name'/'last_name'
+    // Prefer 'name' field, but fallback to combining first_name + last_name if needed
+    let fullName = dbProfile.name || '';
+
+    // If name is empty but we have first_name/last_name, combine them
+    if (!fullName && (dbProfile as any).first_name) {
+      const firstName = (dbProfile as any).first_name || '';
+      const lastName = (dbProfile as any).last_name || '';
+      fullName = `${firstName} ${lastName}`.trim();
+      console.log('📝 userProfile.ts: Computed name from first_name/last_name:', fullName);
+    }
+
+    console.log('🔄 userProfile.ts: Mapping database profile:', {
+      hasName: !!dbProfile.name,
+      hasFirstName: !!(dbProfile as any).first_name,
+      hasLastName: !!(dbProfile as any).last_name,
+      finalName: fullName,
+      height_cm: dbProfile.height_cm,
+      weight_kg: dbProfile.weight_kg,
+      heightType: typeof dbProfile.height_cm,
+      weightType: typeof dbProfile.weight_kg
+    });
+
+    const personalInfo: PersonalInfo = {
+      name: fullName,
+      email: dbProfile.email,
       age: dbProfile.age?.toString() || '',
       gender: dbProfile.gender || '',
       height: dbProfile.height_cm?.toString() || '',
       weight: dbProfile.weight_kg?.toString() || '',
       activityLevel: dbProfile.activity_level || '',
     };
+
+    console.log('✅ userProfile.ts: Mapped PersonalInfo:', personalInfo);
 
     return {
       id: dbProfile.id,

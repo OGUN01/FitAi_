@@ -430,7 +430,24 @@ export const useUserStore = create<UserState>()(
 
       // Helper function to check if profile is complete
       checkProfileComplete: (profile: UserProfile): boolean => {
+        // Guard: Check if profile exists
+        if (!profile) {
+          console.log('⚠️ checkProfileComplete: Profile is null/undefined');
+          return false;
+        }
+
         const { personalInfo, fitnessGoals } = profile;
+
+        // Guard: Check if required nested objects exist
+        if (!personalInfo) {
+          console.log('⚠️ checkProfileComplete: personalInfo is missing');
+          return false;
+        }
+
+        if (!fitnessGoals) {
+          console.log('⚠️ checkProfileComplete: fitnessGoals is missing');
+          return false;
+        }
 
         const hasPersonalInfo = !!(
           personalInfo.name &&
@@ -442,12 +459,15 @@ export const useUserStore = create<UserState>()(
         );
 
         const hasFitnessGoals = !!(
-          fitnessGoals.primaryGoals.length > 0 &&
+          fitnessGoals.primaryGoals?.length > 0 &&
           fitnessGoals.timeCommitment &&
           fitnessGoals.experience
         );
 
-        return hasPersonalInfo && hasFitnessGoals;
+        const isComplete = hasPersonalInfo && hasFitnessGoals;
+        console.log(`✅ checkProfileComplete: hasPersonalInfo=${hasPersonalInfo}, hasFitnessGoals=${hasFitnessGoals}, isComplete=${isComplete}`);
+
+        return isComplete;
       },
     }),
     {

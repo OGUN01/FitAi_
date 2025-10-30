@@ -52,7 +52,16 @@
       "Bash(ANDROID_HOME=\"/c/Users/Harsh/AppData/Local/Android/Sdk\")",
       "Bash(JAVA_HOME=\"/c/Program Files/Java/jdk-21\")",
       "mcp__supabase__search_docs",
-      "WebFetch(domain:matinzd.github.io)"
+      "WebFetch(domain:matinzd.github.io)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(node scripts/test-onboarding-e2e-manual.js)",
+      "Bash(node:*)",
+      "Bash(cat:*)",
+      "Bash(npx react-native-devsettings-persistence:*)",
+      "Bash(npx react-native:*)",
+      "Bash(test:*)",
+      "Bash(npx kill-port:*)"
     ],
     "deny": [],
     "ask": [],

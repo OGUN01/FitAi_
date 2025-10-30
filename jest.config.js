@@ -67,6 +67,6 @@ module.exports = {
   
   // Transform ignore patterns
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|expo|@expo|@react-navigation|zustand)/)',
+    'node_modules/(?!(react-native|@react-native|expo|@expo|@react-navigation|zustand|@react-native-google-signin|@supabase)/)',
   ],
 };

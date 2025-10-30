@@ -324,11 +324,12 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   
   const validateTab = useCallback((tabNumber: number, currentData?: any): TabValidationResult => {
     console.log(`🔍 validateTab called for tab ${tabNumber}`);
-    
+    console.log(`🔍 currentData provided:`, currentData !== undefined ? 'YES' : 'NO');
+
     // Read from ref to get the latest state (even if setState updates are pending)
     const currentState = stateRef.current;
     let result: TabValidationResult;
-    
+
     switch (tabNumber) {
       case 1:
         // Use provided currentData if available, otherwise fall back to state
@@ -339,13 +340,21 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
         return result;
       case 2:
         const dietPrefsToValidate = currentData !== undefined ? currentData : currentState.dietPreferences;
-        return validateDietPreferences(dietPrefsToValidate);
+        console.log('🔍 Tab 2 validating with data source:', currentData !== undefined ? 'CURRENT_DATA' : 'STORED_STATE');
+        console.log('🔍 Tab 2 data:', dietPrefsToValidate);
+        result = validateDietPreferences(dietPrefsToValidate);
+        console.log('🔍 Tab 2 validation result:', result);
+        return result;
       case 3:
         const bodyAnalysisToValidate = currentData !== undefined ? currentData : currentState.bodyAnalysis;
         return validateBodyAnalysis(bodyAnalysisToValidate);
       case 4:
         const workoutPrefsToValidate = currentData !== undefined ? currentData : currentState.workoutPreferences;
-        return validateWorkoutPreferences(workoutPrefsToValidate);
+        console.log('🔍 Tab 4 validating with data source:', currentData !== undefined ? 'CURRENT_DATA' : 'STORED_STATE');
+        console.log('🔍 Tab 4 data:', workoutPrefsToValidate);
+        result = validateWorkoutPreferences(workoutPrefsToValidate);
+        console.log('🔍 Tab 4 validation result:', result);
+        return result;
       case 5:
         const advancedReviewToValidate = currentData !== undefined ? currentData : currentState.advancedReview;
         return validateAdvancedReview(advancedReviewToValidate);
@@ -633,29 +642,52 @@ export const useOnboardingState = (): OnboardingState & OnboardingActions => {
   }, [markTabIncomplete]);
   
   const completeOnboarding = useCallback(async (): Promise<boolean> => {
+    console.log('🎯 completeOnboarding called');
+    console.log('👤 User authenticated:', isAuthenticated, 'User ID:', user?.id);
+
     const validationResults = validateAllTabs();
     const allValid = Object.values(validationResults).every(result => result.is_valid);
-    
+
     if (!allValid) {
       console.warn('⚠️ Cannot complete onboarding - validation errors exist');
+      const invalidTabs = Object.entries(validationResults)
+        .filter(([_, result]) => !result.is_valid)
+        .map(([tab, result]) => `Tab ${tab}: ${result.errors.join(', ')}`);
+      console.warn('Invalid tabs:', invalidTabs);
       return false;
     }
-    
-    const success = await saveToDatabase();
-    if (success) {
-      setState(prev => ({
-        ...prev,
-        completedTabs: new Set([1, 2, 3, 4, 5]),
-        overallCompletion: 100,
-      }));
-      
-      // Mark onboarding as complete in AsyncStorage (don't remove data)
-      await AsyncStorage.setItem('onboarding_completed', 'true');
-      console.log('✅ Onboarding marked as complete');
+
+    console.log('✅ All tabs validated successfully');
+
+    // Try to save to database if authenticated
+    if (isAuthenticated && user) {
+      console.log('💾 Attempting to save to database...');
+      const dbSuccess = await saveToDatabase();
+      if (dbSuccess) {
+        console.log('✅ Database save successful');
+      } else {
+        console.warn('⚠️ Database save failed, continuing with local save for guest mode');
+      }
+    } else {
+      console.log('👤 Guest user - skipping database save');
     }
-    
-    return success;
-  }, [validateAllTabs, saveToDatabase]);
+
+    // Always save to local storage for both guest and authenticated users
+    await saveToLocal();
+
+    // Mark onboarding as complete in state and AsyncStorage
+    setState(prev => ({
+      ...prev,
+      completedTabs: new Set([1, 2, 3, 4, 5]),
+      overallCompletion: 100,
+    }));
+
+    await AsyncStorage.setItem('onboarding_completed', 'true');
+    console.log('✅ Onboarding marked as complete in AsyncStorage');
+    console.log('🎉 Onboarding completion successful - returning true');
+
+    return true; // Always return true if validation passed
+  }, [validateAllTabs, saveToDatabase, saveToLocal, isAuthenticated, user]);
   
   const isOnboardingComplete = useCallback((): boolean => {
     return state.completedTabs.size === 5 && state.overallCompletion === 100;
