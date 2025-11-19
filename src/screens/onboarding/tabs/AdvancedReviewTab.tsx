@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, InfoTooltip } from '../../../components/ui';
@@ -23,6 +29,43 @@ import { ErrorCard } from '../../../components/onboarding/ErrorCard';
 import { WarningCard } from '../../../components/onboarding/WarningCard';
 import { AdjustmentWizard, Alternative } from '../../../components/onboarding/AdjustmentWizard';
 import { METRIC_DESCRIPTIONS } from '../../../constants/metricDescriptions';
+
+// ============================================================================
+// ANIMATED NUMBER COMPONENT
+// ============================================================================
+
+// Create AnimatedText component to support animatedProps
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+interface AnimatedNumberProps {
+  value: number;
+  style?: any;
+  decimals?: number;
+  suffix?: string;
+}
+
+const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ value, style, decimals = 0, suffix = '' }) => {
+  const animatedValue = useSharedValue(0);
+
+  useEffect(() => {
+    animatedValue.value = withTiming(value, {
+      duration: 1200,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [value]);
+
+  const animatedProps = useAnimatedProps(() => {
+    const formattedValue = decimals > 0
+      ? animatedValue.value.toFixed(decimals)
+      : Math.round(animatedValue.value).toString();
+
+    return {
+      text: `${formattedValue}${suffix}`,
+    } as any;
+  });
+
+  return <AnimatedText style={style} animatedProps={animatedProps} />;
+};
 
 // ============================================================================
 // TYPES
@@ -383,7 +426,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 animationDuration={1000}
               />
             </View>
-            <Text style={styles.metricValue}>{calculatedData.calculated_bmi}</Text>
+            <AnimatedNumber
+              value={calculatedData.calculated_bmi || 0}
+              style={styles.metricValue}
+              decimals={1}
+            />
             <Text style={styles.metricCategory}>
               {calculatedData.calculated_bmi! < 18.5 ? 'Underweight' :
                calculatedData.calculated_bmi! < 25 ? 'Normal' :
@@ -409,7 +456,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 animationDuration={1000}
               />
             </View>
-            <Text style={styles.metricValue}>{calculatedData.calculated_bmr}</Text>
+            <AnimatedNumber
+              value={calculatedData.calculated_bmr || 0}
+              style={styles.metricValue}
+              decimals={0}
+            />
             <Text style={styles.metricCategory}>cal/day</Text>
           </GlassCard>
 
@@ -431,7 +482,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 animationDuration={1000}
               />
             </View>
-            <Text style={styles.metricValue}>{calculatedData.calculated_tdee}</Text>
+            <AnimatedNumber
+              value={calculatedData.calculated_tdee || 0}
+              style={styles.metricValue}
+              decimals={0}
+            />
             <Text style={styles.metricCategory}>cal/day</Text>
           </GlassCard>
 
@@ -457,7 +512,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 animationDuration={1000}
               />
             </View>
-            <Text style={styles.metricValue}>{calculatedData.metabolic_age}</Text>
+            <AnimatedNumber
+              value={calculatedData.metabolic_age || 0}
+              style={styles.metricValue}
+              decimals={0}
+            />
             <Text style={styles.metricCategory}>years</Text>
           </GlassCard>
         </View>

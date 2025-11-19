@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Card } from '../../../components/ui';
@@ -274,6 +280,107 @@ const RESTRICTION_OPTIONS = [
 ];
 
 // ============================================================================
+// ANIMATED GLOW CARD COMPONENT
+// ============================================================================
+
+interface AnimatedGlowCardProps {
+  isSelected: boolean;
+  children: React.ReactNode;
+}
+
+const AnimatedGlowCard: React.FC<AnimatedGlowCardProps> = ({ isSelected, children }) => {
+  const glowAnimation = useSharedValue(0);
+
+  useEffect(() => {
+    glowAnimation.value = withTiming(isSelected ? 1 : 0, {
+      duration: 300,
+    });
+  }, [isSelected]);
+
+  const animatedGlowStyle = useAnimatedStyle(() => {
+    const shadowOpacity = interpolate(glowAnimation.value, [0, 1], [0, 0.4]);
+    const shadowRadius = interpolate(glowAnimation.value, [0, 1], [0, 12]);
+
+    return {
+      shadowColor: ResponsiveTheme.colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity,
+      shadowRadius,
+      elevation: interpolate(glowAnimation.value, [0, 1], [0, 6]),
+    };
+  });
+
+  return (
+    <Animated.View style={animatedGlowStyle}>
+      {children}
+    </Animated.View>
+  );
+};
+
+// ============================================================================
+// ANIMATED TOGGLE COMPONENT
+// ============================================================================
+
+interface AnimatedToggleProps {
+  isActive: boolean;
+  disabled?: boolean;
+}
+
+const AnimatedToggle: React.FC<AnimatedToggleProps> = ({ isActive, disabled = false }) => {
+  const toggleAnimation = useSharedValue(0);
+
+  useEffect(() => {
+    toggleAnimation.value = withTiming(isActive ? 1 : 0, {
+      duration: 250,
+    });
+  }, [isActive]);
+
+  const animatedSwitchStyle = useAnimatedStyle(() => {
+    // Interpolate background color from gray to primary
+    const backgroundColor = interpolate(
+      toggleAnimation.value,
+      [0, 1],
+      [0, 1]
+    );
+
+    return {
+      backgroundColor: backgroundColor === 1
+        ? ResponsiveTheme.colors.primary
+        : ResponsiveTheme.colors.backgroundTertiary,
+      borderColor: backgroundColor === 1
+        ? ResponsiveTheme.colors.primary
+        : ResponsiveTheme.colors.border,
+    };
+  });
+
+  const animatedThumbStyle = useAnimatedStyle(() => {
+    // Slide the thumb from left to right
+    const translateX = interpolate(
+      toggleAnimation.value,
+      [0, 1],
+      [0, rw(40) - rw(16) - rp(4)] // Full width minus thumb width minus padding
+    );
+
+    return {
+      transform: [{ translateX }],
+    };
+  });
+
+  return (
+    <Animated.View style={[
+      styles.toggleSwitch,
+      animatedSwitchStyle,
+      disabled && styles.toggleSwitchDisabled,
+    ]}>
+      <Animated.View style={[
+        styles.toggleThumb,
+        animatedThumbStyle,
+      ]} />
+    </Animated.View>
+  );
+};
+
+// ============================================================================
 // COMPONENT
 // ============================================================================
 
@@ -469,36 +576,37 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       
       <View style={styles.dietTypeGrid}>
         {DIET_TYPE_OPTIONS.map((option) => (
-          <AnimatedPressable
-            key={option.id}
-            onPress={() => updateField('diet_type', option.id as DietPreferencesData['diet_type'])}
-            style={styles.dietTypeItem}
-            scaleValue={0.95}
-          >
-            <GlassCard
-              elevation={formData.diet_type === option.id ? 3 : 2}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={StyleSheet.flatten([
-                styles.dietTypeCard,
-                ...(formData.diet_type === option.id ? [styles.dietTypeCardSelected] : []),
-              ])}
+          <AnimatedGlowCard key={option.id} isSelected={formData.diet_type === option.id}>
+            <AnimatedPressable
+              onPress={() => updateField('diet_type', option.id as DietPreferencesData['diet_type'])}
+              style={styles.dietTypeItem}
+              scaleValue={0.95}
             >
-              <View style={styles.dietTypeContent}>
-                <Text style={styles.dietTypeIcon}>{option.icon}</Text>
-                <Text
-                  style={[
-                    styles.dietTypeTitle,
-                    formData.diet_type === option.id && styles.dietTypeTitleSelected,
-                  ]}
-                >
-                  {option.title}
-                </Text>
-                <Text style={styles.dietTypeDescription}>{option.description}</Text>
-              </View>
-            </GlassCard>
-          </AnimatedPressable>
+              <GlassCard
+                elevation={formData.diet_type === option.id ? 3 : 2}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={StyleSheet.flatten([
+                  styles.dietTypeCard,
+                  ...(formData.diet_type === option.id ? [styles.dietTypeCardSelected] : []),
+                ])}
+              >
+                <View style={styles.dietTypeContent}>
+                  <Text style={styles.dietTypeIcon}>{option.icon}</Text>
+                  <Text
+                    style={[
+                      styles.dietTypeTitle,
+                      formData.diet_type === option.id && styles.dietTypeTitleSelected,
+                    ]}
+                  >
+                    {option.title}
+                  </Text>
+                  <Text style={styles.dietTypeDescription}>{option.description}</Text>
+                </View>
+              </GlassCard>
+            </AnimatedPressable>
+          </AnimatedGlowCard>
         ))}
       </View>
     </GlassCard>
@@ -554,15 +662,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     </View>
 
                     <View style={styles.dietReadinessToggle}>
-                      <View style={[
-                        styles.toggleSwitch,
-                        isReady && styles.toggleSwitchActive,
-                      ]}>
-                        <View style={[
-                          styles.toggleThumb,
-                          isReady && styles.toggleThumbActive,
-                        ]} />
-                      </View>
+                      <AnimatedToggle isActive={isReady} />
                     </View>
                   </View>
 
@@ -668,16 +768,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     </Text>
 
                     <View style={styles.mealPreferenceToggle}>
-                      <View style={[
-                        styles.toggleSwitch,
-                        isEnabled && styles.toggleSwitchActive,
-                        isLastEnabled && styles.toggleSwitchDisabled,
-                      ]}>
-                        <View style={[
-                          styles.toggleThumb,
-                          isEnabled && styles.toggleThumbActive,
-                        ]} />
-                      </View>
+                      <AnimatedToggle isActive={isEnabled} disabled={isLastEnabled} />
                     </View>
                   </View>
                 </GlassCard>
@@ -891,15 +982,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                       <View style={styles.habitHeader}>
                         <Text style={styles.habitIcon}>{habit.icon}</Text>
                         <View style={styles.habitToggle}>
-                          <View style={StyleSheet.flatten([
-                            styles.toggleSwitch,
-                            isActive && styles.toggleSwitchActive,
-                          ])}>
-                            <View style={StyleSheet.flatten([
-                              styles.toggleThumb,
-                              isActive && styles.toggleThumbActive,
-                            ])} />
-                          </View>
+                          <AnimatedToggle isActive={isActive} />
                         </View>
                       </View>
 

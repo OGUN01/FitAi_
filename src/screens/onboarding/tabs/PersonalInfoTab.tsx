@@ -837,6 +837,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             variant="primary"
             style={styles.nextButton}
             loading={isLoading}
+            pulse={validationResult?.is_valid || false}
           />
         </View>
       </View>
