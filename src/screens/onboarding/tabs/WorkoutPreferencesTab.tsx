@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button } from '../../../components/ui';
+import { Button, Slider } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
@@ -649,132 +649,90 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         
         <View style={styles.fitnessGrid}>
         <View style={styles.fitnessItem}>
-          <Text style={styles.fitnessLabel}>Workout Experience</Text>
-          <View style={styles.experienceSlider}>
-            {[0, 1, 2, 5, 10, 15, 20].map((years) => (
-              <AnimatedPressable
-                key={years}
-                style={StyleSheet.flatten([
-                  styles.experienceOption,
-                  ...(formData.workout_experience_years === years ? [styles.experienceOptionSelected] : []),
-                ])}
-                onPress={() => updateField('workout_experience_years', years)}
-                scaleValue={0.95}
-              >
-                <Text style={[
-                  styles.experienceText,
-                  ...(formData.workout_experience_years === years ? [styles.experienceTextSelected] : []),
-                ]}>
-                  {years === 0 ? 'New' : `${years}y`}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <Slider
+            value={formData.workout_experience_years || 0}
+            onValueChange={(value) => updateField('workout_experience_years', value)}
+            minimumValue={0}
+            maximumValue={20}
+            step={1}
+            label="Workout Experience"
+            showTooltip={true}
+            formatValue={(val) => val === 0 ? 'New' : `${val} year${val > 1 ? 's' : ''}`}
+            style={styles.experienceSlider}
+          />
         </View>
         
         <View style={styles.fitnessItem}>
-          <Text style={styles.fitnessLabel}>Current Workout Frequency</Text>
-          <View style={styles.frequencySlider}>
-            {[0, 1, 2, 3, 4, 5, 6, 7].map((days) => (
-              <AnimatedPressable
-                key={days}
-                style={StyleSheet.flatten([
-                  styles.frequencyOption,
-                  ...(formData.workout_frequency_per_week === days ? [styles.frequencyOptionSelected] : []),
-                ])}
-                onPress={() => updateField('workout_frequency_per_week', days)}
-                scaleValue={0.95}
-              >
-                <Text style={[
-                  styles.frequencyText,
-                  ...(formData.workout_frequency_per_week === days ? [styles.frequencyTextSelected] : []),
-                ]}>
-                  {days === 0 ? 'None' : `${days}x`}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <Slider
+            value={formData.workout_frequency_per_week || 0}
+            onValueChange={(value) => updateField('workout_frequency_per_week', value)}
+            minimumValue={0}
+            maximumValue={7}
+            step={1}
+            label="Current Workout Frequency"
+            showTooltip={true}
+            formatValue={(val) => val === 0 ? 'None' : `${val}x per week`}
+            style={styles.frequencySlider}
+          />
         </View>
         
         <View style={styles.fitnessItem}>
-          <Text style={styles.fitnessLabel}>Max Pushups: {formData.can_do_pushups}</Text>
-          <View style={styles.pushupsSlider}>
-            {[0, 5, 10, 15, 20, 30, 50, 100].map((pushups) => (
-              <AnimatedPressable
-                key={pushups}
-                style={StyleSheet.flatten([
-                  styles.pushupsOption,
-                  ...(formData.can_do_pushups === pushups ? [styles.pushupsOptionSelected] : []),
-                ])}
-                onPress={() => updateField('can_do_pushups', pushups)}
-                scaleValue={0.95}
-              >
-                <Text style={[
-                  styles.pushupsText,
-                  ...(formData.can_do_pushups === pushups ? [styles.pushupsTextSelected] : []),
-                ]}>
-                  {pushups === 0 ? 'None' : pushups}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <Slider
+            value={formData.can_do_pushups || 0}
+            onValueChange={(value) => updateField('can_do_pushups', value)}
+            minimumValue={0}
+            maximumValue={100}
+            step={5}
+            label="Max Pushups"
+            showTooltip={true}
+            formatValue={(val) => val === 0 ? 'None' : `${val} pushups`}
+            style={styles.pushupsSlider}
+          />
         </View>
         
         <View style={styles.fitnessItem}>
-          <Text style={styles.fitnessLabel}>Continuous Running: {formData.can_run_minutes} minutes</Text>
-          <View style={styles.runningSlider}>
-            {[0, 5, 10, 15, 20, 30, 45, 60].map((minutes) => (
-              <AnimatedPressable
-                key={minutes}
-                style={StyleSheet.flatten([
-                  styles.runningOption,
-                  ...(formData.can_run_minutes === minutes ? [styles.runningOptionSelected] : []),
-                ])}
-                onPress={() => updateField('can_run_minutes', minutes)}
-                scaleValue={0.95}
-              >
-                <Text style={[
-                  styles.runningText,
-                  ...(formData.can_run_minutes === minutes ? [styles.runningTextSelected] : []),
-                ]}>
-                  {minutes === 0 ? 'None' : `${minutes}m`}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <Slider
+            value={formData.can_run_minutes || 0}
+            onValueChange={(value) => updateField('can_run_minutes', value)}
+            minimumValue={0}
+            maximumValue={60}
+            step={5}
+            label="Continuous Running"
+            showTooltip={true}
+            formatValue={(val) => val === 0 ? 'None' : `${val} minutes`}
+            style={styles.runningSlider}
+          />
         </View>
         
         <View style={styles.fitnessItem}>
-          <Text style={styles.fitnessLabel}>Flexibility Level</Text>
-          <View style={styles.flexibilityGrid}>
-            {FLEXIBILITY_LEVELS.map((level) => (
-              <AnimatedPressable
-                key={level.value}
-                onPress={() => updateField('flexibility_level', level.value as WorkoutPreferencesData['flexibility_level'])}
-                style={styles.flexibilityItem}
-                scaleValue={0.95}
-              >
-                <GlassCard
-                  elevation={formData.flexibility_level === level.value ? 3 : 1}
-                  blurIntensity="light"
-                  padding="md"
-                  borderRadius="lg"
-                  style={StyleSheet.flatten([
-                    styles.flexibilityCard,
-                    ...(formData.flexibility_level === level.value ? [styles.flexibilityCardSelected] : []),
-                  ])}
-                >
-                  <Text style={styles.flexibilityIcon}>{level.icon}</Text>
-                  <Text style={[
-                    styles.flexibilityTitle,
-                    ...(formData.flexibility_level === level.value ? [styles.flexibilityTitleSelected] : []),
-                  ]}>
-                    {level.label}
-                  </Text>
-                </GlassCard>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <Slider
+            value={
+              formData.flexibility_level === 'poor' ? 2 :
+              formData.flexibility_level === 'fair' ? 5 :
+              formData.flexibility_level === 'good' ? 7 :
+              formData.flexibility_level === 'excellent' ? 10 : 5
+            }
+            onValueChange={(value) => {
+              let level: 'poor' | 'fair' | 'good' | 'excellent' = 'fair';
+              if (value <= 3) level = 'poor';
+              else if (value <= 6) level = 'fair';
+              else if (value <= 8) level = 'good';
+              else level = 'excellent';
+              updateField('flexibility_level', level);
+            }}
+            minimumValue={1}
+            maximumValue={10}
+            step={1}
+            label="Flexibility Level"
+            showTooltip={true}
+            formatValue={(val) => {
+              if (val <= 3) return '🔒 Poor';
+              if (val <= 6) return '📏 Fair';
+              if (val <= 8) return '✅ Good';
+              return '🤸 Excellent';
+            }}
+            style={styles.flexibilitySlider}
+          />
         </View>
       </View>
       </GlassCard>

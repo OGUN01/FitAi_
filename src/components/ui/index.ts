@@ -9,6 +9,7 @@ export { Modal, BottomSheetModal } from './Modal';
 export { LoadingSpinner } from './LoadingSpinner';
 export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './CustomDialog';
 export { InfoTooltip } from './InfoTooltip';
+export { Slider } from './Slider';
 
 // Re-export theme for easy access
 export { THEME } from '../../utils/constants';

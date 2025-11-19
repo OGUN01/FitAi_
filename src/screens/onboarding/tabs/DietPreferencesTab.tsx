@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Card } from '../../../components/ui';
+import { Button, Card, Slider } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, ProgressRing } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
@@ -873,67 +873,39 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             </Text>
           </GlassCard>
         ) : (
-          <View style={styles.prepTimeContainer}>
-            <View style={styles.prepTimeSlider}>
-              {[15, 30, 45, 60, 90, 120].map((time) => (
-                <AnimatedPressable
-                  key={time}
-                  style={StyleSheet.flatten([
-                    styles.prepTimeOption,
-                    ...(formData.max_prep_time_minutes === time ? [styles.prepTimeOptionSelected] : []),
-                  ])}
-                  onPress={() => updateField('max_prep_time_minutes', time)}
-                  scaleValue={0.94}
-                >
-                  <Text style={StyleSheet.flatten([
-                    styles.prepTimeText,
-                    formData.max_prep_time_minutes === time && styles.prepTimeTextSelected,
-                  ])}>
-                    {time}m
-                  </Text>
-                </AnimatedPressable>
-              ))}
-            </View>
-          </View>
+          <Slider
+            value={formData.max_prep_time_minutes || 30}
+            onValueChange={(value) => updateField('max_prep_time_minutes', value)}
+            minimumValue={15}
+            maximumValue={120}
+            step={15}
+            showTooltip={true}
+            formatValue={(val) => `${val} min`}
+            style={styles.prepTimeSlider}
+          />
         )}
       </View>
       
       {/* Budget Level */}
       <View style={styles.cookingField}>
-        <Text style={styles.fieldLabel}>Food Budget</Text>
-        <View style={styles.budgetGrid}>
-          {BUDGET_LEVELS.map((budget) => (
-            <AnimatedPressable
-              key={budget.level}
-              onPress={() => updateField('budget_level', budget.level as DietPreferencesData['budget_level'])}
-              style={styles.budgetItem}
-              scaleValue={0.95}
-            >
-              <GlassCard
-                elevation={formData.budget_level === budget.level ? 3 : 2}
-                blurIntensity="default"
-                padding="md"
-                borderRadius="lg"
-                style={StyleSheet.flatten([
-                  styles.budgetCard,
-                  ...(formData.budget_level === budget.level ? [styles.budgetCardSelected] : []),
-                ])}
-              >
-                <View style={styles.budgetContent}>
-                  <Text style={styles.budgetIcon}>{budget.icon}</Text>
-                  <Text style={StyleSheet.flatten([
-                    styles.budgetTitle,
-                    formData.budget_level === budget.level && styles.budgetTitleSelected,
-                  ])}>
-                    {budget.title}
-                  </Text>
-                  <Text style={styles.budgetDescription}>{budget.description}</Text>
-                  <Text style={styles.budgetRange}>{budget.range}</Text>
-                </View>
-              </GlassCard>
-            </AnimatedPressable>
-          ))}
-        </View>
+        <Slider
+          value={formData.budget_level === 'low' ? 1 : formData.budget_level === 'medium' ? 2 : 3}
+          onValueChange={(value) => {
+            const budgetLevel = value === 1 ? 'low' : value === 2 ? 'medium' : 'high';
+            updateField('budget_level', budgetLevel as DietPreferencesData['budget_level']);
+          }}
+          minimumValue={1}
+          maximumValue={3}
+          step={1}
+          label="Food Budget"
+          showTooltip={true}
+          formatValue={(val) => {
+            if (val === 1) return '💰 Budget ($50-100/wk)';
+            if (val === 2) return '💰💰 Moderate ($100-200/wk)';
+            return '💰💰💰 Premium ($200+/wk)';
+          }}
+          style={styles.budgetSlider}
+        />
       </View>
     </GlassCard>
   );

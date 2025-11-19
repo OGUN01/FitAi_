@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Input } from '../../../components/ui';
+import { Button, Input, Slider } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { Camera } from '../../../components/advanced/Camera';
@@ -919,44 +919,32 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       
       {/* Stress Level */}
       <View style={styles.medicalField}>
-        <Text style={styles.fieldLabel}>Current Stress Level (Optional)</Text>
         <Text style={styles.fieldHint}>
           Your stress level affects recovery and calorie management. You can also measure this in the main app by connecting your fitness band or smartwatch.
         </Text>
-        
-        <View style={styles.stressLevelGrid}>
-          {STRESS_LEVELS.map((stress) => (
-            <AnimatedPressable
-              key={stress.level}
-              onPress={() => updateField('stress_level', stress.level as 'low' | 'moderate' | 'high')}
-              style={styles.stressLevelItem}
-              scaleValue={0.95}
-            >
-              <GlassCard
-                elevation={formData.stress_level === stress.level ? 3 : 1}
-                blurIntensity="light"
-                padding="md"
-                borderRadius="lg"
-                style={[
-                  styles.stressLevelCard,
-                  ...(formData.stress_level === stress.level ? [styles.stressLevelCardSelected] : []),
-                  ...(!formData.stress_level ? [styles.stressLevelCardOptional] : []),
-                ]}
-              >
-                <View style={styles.stressLevelContent}>
-                  <Text style={styles.stressLevelIcon}>{stress.icon}</Text>
-                  <Text style={[
-                    styles.stressLevelTitle,
-                    ...(formData.stress_level === stress.level ? [styles.stressLevelTitleSelected] : []),
-                  ]}>
-                    {stress.title}
-                  </Text>
-                  <Text style={styles.stressLevelDescription}>{stress.description}</Text>
-                </View>
-              </GlassCard>
-            </AnimatedPressable>
-          ))}
-        </View>
+
+        <Slider
+          value={
+            formData.stress_level === 'low' ? 1 :
+            formData.stress_level === 'moderate' ? 2 :
+            formData.stress_level === 'high' ? 3 : 2
+          }
+          onValueChange={(value) => {
+            const stressLevel = value === 1 ? 'low' : value === 2 ? 'moderate' : 'high';
+            updateField('stress_level', stressLevel as 'low' | 'moderate' | 'high');
+          }}
+          minimumValue={1}
+          maximumValue={3}
+          step={1}
+          label="Current Stress Level (Optional)"
+          showTooltip={true}
+          formatValue={(val) => {
+            if (val === 1) return '😌 Low Stress';
+            if (val === 2) return '😐 Moderate Stress';
+            return '😰 High Stress';
+          }}
+          style={styles.stressSlider}
+        />
         
         {!formData.stress_level && (
           <GlassCard
