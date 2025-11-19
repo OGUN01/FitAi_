@@ -7,6 +7,7 @@ import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, InfoTooltip } from '../../../components/ui';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { AnimatedSection } from '../../../components/ui/aurora/AnimatedSection';
 import { HeroSection, ProgressRing } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { 
@@ -903,14 +904,37 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           )}
           
           {/* Existing Sections */}
-          {renderDataSummary()}
-          {renderMetabolicProfile()}
-          {renderNutritionalNeeds()}
-          {renderWeightManagement()}
-          {renderFitnessMetrics()}
-          {renderHealthScores()}
-          {renderSleepAnalysis()}
-          {renderPersonalizationMetrics()}
+          <AnimatedSection delay={0}>
+            {renderDataSummary()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={100}>
+            {renderMetabolicProfile()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={200}>
+            {renderNutritionalNeeds()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={300}>
+            {renderWeightManagement()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={400}>
+            {renderFitnessMetrics()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={500}>
+            {renderHealthScores()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={600}>
+            {renderSleepAnalysis()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={700}>
+            {renderPersonalizationMetrics()}
+          </AnimatedSection>
           
           {/* Completion Status */}
           {calculatedData && (

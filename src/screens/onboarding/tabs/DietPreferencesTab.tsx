@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Card } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, HeroSection, ProgressRing } from '../../../components/ui/aurora';
+import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, ProgressRing } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
@@ -995,12 +995,29 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         
         {/* Form Sections */}
         <View style={styles.content}>
-          {renderCurrentDietSection()}
-          {renderDietReadinessSection()}
-          {renderMealPreferencesSection()}
-          {renderCookingPreferencesSection()}
-          {renderHealthHabitsSection()}
-          {renderAllergiesAndRestrictionsSection()}
+          <AnimatedSection delay={0}>
+            {renderCurrentDietSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={100}>
+            {renderDietReadinessSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={200}>
+            {renderMealPreferencesSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={300}>
+            {renderCookingPreferencesSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={400}>
+            {renderHealthHabitsSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={500}>
+            {renderAllergiesAndRestrictionsSection()}
+          </AnimatedSection>
         </View>
         
         {/* Validation Summary */}

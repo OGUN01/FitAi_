@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, HeroSection } from '../../../components/ui/aurora';
+import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { WorkoutPreferencesData, BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
@@ -1103,11 +1103,25 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         
         {/* Form Sections */}
         <View style={styles.content}>
-          {renderGoalsAndActivitySection()}
-          {renderCurrentFitnessSection()}
-          {renderWorkoutPreferencesSection()}
-          {renderWorkoutStyleSection()}
-          {renderWeightGoalsSection()}
+          <AnimatedSection delay={0}>
+            {renderGoalsAndActivitySection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={100}>
+            {renderCurrentFitnessSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={200}>
+            {renderWorkoutPreferencesSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={300}>
+            {renderWorkoutStyleSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={400}>
+            {renderWeightGoalsSection()}
+          </AnimatedSection>
         </View>
         
         {/* Validation Summary */}

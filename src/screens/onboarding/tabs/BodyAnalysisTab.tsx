@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Input } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, HeroSection } from '../../../components/ui/aurora';
+import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { Camera } from '../../../components/advanced/Camera';
 import { ImagePicker } from '../../../components/advanced/ImagePicker';
@@ -1116,11 +1116,25 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         
         {/* Form Sections */}
         <View style={styles.content}>
-          {renderBasicMeasurementsSection()}
-          {renderBodyCompositionSection()}
-          {renderPhotoAnalysisSection()}
-          {renderMedicalInformationSection()}
-          {renderCalculatedResultsSection()}
+          <AnimatedSection delay={0}>
+            {renderBasicMeasurementsSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={100}>
+            {renderBodyCompositionSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={200}>
+            {renderPhotoAnalysisSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={300}>
+            {renderMedicalInformationSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={400}>
+            {renderCalculatedResultsSection()}
+          </AnimatedSection>
         </View>
         
         {/* Validation Summary */}

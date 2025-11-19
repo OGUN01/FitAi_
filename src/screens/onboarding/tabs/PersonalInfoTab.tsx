@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Input, Card } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, HeroSection, AnimatedIcon } from '../../../components/ui/aurora';
+import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, AnimatedIcon } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import TimePicker from '../../../components/onboarding/TimePicker';
@@ -702,11 +702,25 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         
         {/* Form Sections */}
         <View style={styles.content}>
-          {renderNameSection()}
-          {renderDemographicsSection()}
-          {renderLocationSection()}
-          {renderOccupationSection()}
-          {renderSleepScheduleSection()}
+          <AnimatedSection delay={0}>
+            {renderNameSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={100}>
+            {renderDemographicsSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={200}>
+            {renderLocationSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={300}>
+            {renderOccupationSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={400}>
+            {renderSleepScheduleSection()}
+          </AnimatedSection>
         </View>
         
         {/* Validation Summary */}
