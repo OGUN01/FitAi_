@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Card } from '../../../components/ui';
+import { GlassCard, AnimatedPressable, HeroSection, ProgressRing } from '../../../components/ui/aurora';
+import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
 import { DietPreferencesData, TabValidationResult, HealthHabits } from '../../../types/onboarding';
@@ -454,23 +457,33 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   // ============================================================================
   
   const renderCurrentDietSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Current Diet Type</Text>
       <Text style={styles.sectionSubtitle}>What best describes your current eating habits?</Text>
       
       <View style={styles.dietTypeGrid}>
         {DIET_TYPE_OPTIONS.map((option) => (
-          <TouchableOpacity
+          <AnimatedPressable
             key={option.id}
             onPress={() => updateField('diet_type', option.id as DietPreferencesData['diet_type'])}
             style={styles.dietTypeItem}
+            scaleValue={0.96}
           >
-            <Card
+            <GlassCard
+              elevation={formData.diet_type === option.id ? 3 : 2}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
               style={StyleSheet.flatten([
                 styles.dietTypeCard,
-                formData.diet_type === option.id && styles.dietTypeCardSelected,
+                ...(formData.diet_type === option.id ? [styles.dietTypeCardSelected] : []),
               ])}
-              variant="outlined"
             >
               <View style={styles.dietTypeContent}>
                 <Text style={styles.dietTypeIcon}>{option.icon}</Text>
@@ -484,15 +497,21 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 </Text>
                 <Text style={styles.dietTypeDescription}>{option.description}</Text>
               </View>
-            </Card>
-          </TouchableOpacity>
+            </GlassCard>
+          </AnimatedPressable>
         ))}
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderDietReadinessSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Diet Readiness</Text>
       <Text style={styles.sectionSubtitle}>
         Are you ready to try any of these specialized diets? (Optional)
@@ -503,21 +522,37 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           const isReady = formData[option.key as keyof DietPreferencesData] as boolean;
           
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={option.key}
               onPress={() => toggleDietReadiness(option.key as keyof DietPreferencesData)}
               style={styles.dietReadinessItem}
+              scaleValue={0.98}
             >
-              <Card
+              <GlassCard
+                elevation={isReady ? 3 : 2}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.dietReadinessCard,
-                  isReady && styles.dietReadinessCardSelected,
+                  ...(isReady ? [styles.dietReadinessCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.dietReadinessContent}>
                   <View style={styles.dietReadinessHeader}>
-                    <Text style={styles.dietReadinessIcon}>{option.icon}</Text>
+                    {/* Progress Ring Indicator */}
+                    <View style={styles.dietReadinessProgressContainer}>
+                      <ProgressRing
+                        value={isReady ? 100 : 0}
+                        maxValue={100}
+                        size={rf(60)}
+                        strokeWidth={rf(6)}
+                        gradient={isReady ? ['#4ECDC4', '#44A08D'] : ['#E0E0E0', '#BDBDBD']}
+                        animationDuration={800}
+                      />
+                      <Text style={styles.dietReadinessProgressIcon}>{option.icon}</Text>
+                    </View>
+
                     <View style={styles.dietReadinessToggle}>
                       <View style={[
                         styles.toggleSwitch,
@@ -530,18 +565,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                       </View>
                     </View>
                   </View>
-                  
+
                   <Text style={[
                     styles.dietReadinessTitle,
                     isReady && styles.dietReadinessTitleSelected,
                   ]}>
                     {option.title}
                   </Text>
-                  
+
                   <Text style={styles.dietReadinessDescription}>
                     {option.description}
                   </Text>
-                  
+
                   <View style={styles.dietReadinessBenefits}>
                     {option.benefits.map((benefit, index) => (
                       <Text key={index} style={styles.dietReadinessBenefit}>
@@ -550,30 +585,42 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     ))}
                   </View>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           );
         })}
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderMealPreferencesSection = () => {
     const enabledCount = getEnabledMealsCount();
     
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>Meal Preferences</Text>
         <Text style={styles.sectionSubtitle}>
           Which meals would you like us to plan for you? ({enabledCount}/4 enabled)
         </Text>
         
         {enabledCount === 1 && (
-          <Card style={styles.warningCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="light"
+            padding="md"
+            borderRadius="md"
+            style={styles.warningCard}
+          >
             <Text style={styles.warningText}>
               ⚠️ At least one meal type must remain enabled
             </Text>
-          </Card>
+          </GlassCard>
         )}
         
         <View style={styles.mealPreferencesGrid}>
@@ -587,22 +634,26 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             const isLastEnabled = enabledCount === 1 && isEnabled;
             
             return (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={meal.key}
                 onPress={() => !isLastEnabled && toggleMealPreference(meal.key as keyof DietPreferencesData)}
                 style={[
                   styles.mealPreferenceItem,
-                  isLastEnabled && styles.mealPreferenceItemDisabled,
+                  ...(isLastEnabled ? [styles.mealPreferenceItemDisabled] : []),
                 ]}
                 disabled={isLastEnabled}
+                scaleValue={0.98}
               >
-                <Card
+                <GlassCard
+                  elevation={isEnabled ? 3 : 2}
+                  blurIntensity="default"
+                  padding="md"
+                  borderRadius="lg"
                   style={StyleSheet.flatten([
                     styles.mealPreferenceCard,
-                    isEnabled && styles.mealPreferenceCardSelected,
-                    isLastEnabled && styles.mealPreferenceCardDisabled,
+                    ...(isEnabled ? [styles.mealPreferenceCardSelected] : []),
+                    ...(isLastEnabled ? [styles.mealPreferenceCardDisabled] : []),
                   ])}
-                  variant="outlined"
                 >
                   <View style={styles.mealPreferenceContent}>
                     <Text style={styles.mealPreferenceIcon}>{meal.icon}</Text>
@@ -615,7 +666,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     <Text style={styles.mealPreferenceDescription}>
                       {meal.description}
                     </Text>
-                    
+
                     <View style={styles.mealPreferenceToggle}>
                       <View style={[
                         styles.toggleSwitch,
@@ -629,25 +680,37 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                       </View>
                     </View>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
             );
           })}
         </View>
         
         {!formData.breakfast_enabled && (
-          <Card style={styles.infoCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="light"
+            padding="md"
+            borderRadius="md"
+            style={styles.infoCard}
+          >
             <Text style={styles.infoText}>
               💡 Meal plans will only include lunch and dinner
             </Text>
-          </Card>
+          </GlassCard>
         )}
-      </View>
+      </GlassCard>
     );
   };
-  
+
   const renderCookingPreferencesSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Cooking Preferences</Text>
       <Text style={styles.sectionSubtitle}>Help us suggest recipes that match your cooking style</Text>
       
@@ -656,7 +719,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         <Text style={styles.fieldLabel}>Cooking Skill Level</Text>
         <View style={styles.skillLevelGrid}>
           {COOKING_SKILL_LEVELS.map((skill) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={skill.level}
               onPress={() => {
                 updateField('cooking_skill_level', skill.level as DietPreferencesData['cooking_skill_level']);
@@ -669,13 +732,17 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 }
               }}
               style={styles.skillLevelItem}
+              scaleValue={0.96}
             >
-              <Card
+              <GlassCard
+                elevation={formData.cooking_skill_level === skill.level ? 3 : 2}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.skillLevelCard,
-                  formData.cooking_skill_level === skill.level && styles.skillLevelCardSelected,
+                  ...(formData.cooking_skill_level === skill.level ? [styles.skillLevelCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.skillLevelContent}>
                   <Text style={styles.skillLevelIcon}>{skill.icon}</Text>
@@ -688,8 +755,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   <Text style={styles.skillLevelDescription}>{skill.description}</Text>
                   <Text style={styles.skillLevelTime}>{skill.timeRange}</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
@@ -702,23 +769,30 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             : `Maximum Cooking Time: ${formData.max_prep_time_minutes} minutes`}
         </Text>
         {formData.cooking_skill_level === 'not_applicable' ? (
-          <Card style={styles.disabledCard} variant="outlined">
+          <GlassCard
+            elevation={1}
+            blurIntensity="light"
+            padding="md"
+            borderRadius="md"
+            style={styles.disabledCard}
+          >
             <Text style={styles.disabledText}>
-              ℹ️ This field is not applicable since your meals are prepared by others. 
+              ℹ️ This field is not applicable since your meals are prepared by others.
               We'll suggest meals based on your dietary preferences without cooking time constraints.
             </Text>
-          </Card>
+          </GlassCard>
         ) : (
           <View style={styles.prepTimeContainer}>
             <View style={styles.prepTimeSlider}>
               {[15, 30, 45, 60, 90, 120].map((time) => (
-                <TouchableOpacity
+                <AnimatedPressable
                   key={time}
                   style={StyleSheet.flatten([
                     styles.prepTimeOption,
-                    formData.max_prep_time_minutes === time && styles.prepTimeOptionSelected,
+                    ...(formData.max_prep_time_minutes === time ? [styles.prepTimeOptionSelected] : []),
                   ])}
                   onPress={() => updateField('max_prep_time_minutes', time)}
+                  scaleValue={0.94}
                 >
                   <Text style={StyleSheet.flatten([
                     styles.prepTimeText,
@@ -726,7 +800,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ])}>
                     {time}m
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               ))}
             </View>
           </View>
@@ -738,17 +812,21 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         <Text style={styles.fieldLabel}>Food Budget</Text>
         <View style={styles.budgetGrid}>
           {BUDGET_LEVELS.map((budget) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={budget.level}
               onPress={() => updateField('budget_level', budget.level as DietPreferencesData['budget_level'])}
               style={styles.budgetItem}
+              scaleValue={0.96}
             >
-              <Card
+              <GlassCard
+                elevation={formData.budget_level === budget.level ? 3 : 2}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.budgetCard,
-                  formData.budget_level === budget.level && styles.budgetCardSelected,
+                  ...(formData.budget_level === budget.level ? [styles.budgetCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.budgetContent}>
                   <Text style={styles.budgetIcon}>{budget.icon}</Text>
@@ -761,16 +839,22 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   <Text style={styles.budgetDescription}>{budget.description}</Text>
                   <Text style={styles.budgetRange}>{budget.range}</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderHealthHabitsSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Health Habits</Text>
       <Text style={styles.sectionSubtitle}>
         Tell us about your current habits to personalize your recommendations
@@ -787,17 +871,21 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               const isActive = formData[habit.key as keyof DietPreferencesData] as boolean;
               
               return (
-                <TouchableOpacity
+                <AnimatedPressable
                   key={habit.key}
                   onPress={() => toggleHealthHabit(habit.key as keyof DietPreferencesData)}
                   style={styles.habitItem}
+                  scaleValue={0.98}
                 >
-                  <Card
+                  <GlassCard
+                    elevation={isActive ? 3 : 2}
+                    blurIntensity="default"
+                    padding="md"
+                    borderRadius="lg"
                     style={StyleSheet.flatten([
                       styles.habitCard,
-                      isActive && styles.habitCardSelected,
+                      ...(isActive ? [styles.habitCardSelected] : []),
                     ])}
-                    variant="outlined"
                   >
                     <View style={styles.habitContent}>
                       <View style={styles.habitHeader}>
@@ -814,30 +902,36 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                           </View>
                         </View>
                       </View>
-                      
+
                       <Text style={StyleSheet.flatten([
                         styles.habitTitle,
                         isActive && styles.habitTitleSelected,
                       ])}>
                         {habit.title}
                       </Text>
-                      
+
                       <Text style={styles.habitDescription}>
                         {habit.description}
                       </Text>
                     </View>
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
               );
             })}
           </View>
         </View>
       ))}
-    </View>
+    </GlassCard>
   );
-  
+
   const renderAllergiesAndRestrictionsSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Allergies & Dietary Restrictions</Text>
       
       {/* Allergies */}
@@ -869,9 +963,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           customPlaceholder="Enter your specific dietary need"
         />
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
@@ -879,20 +973,25 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Hero Section with Background Image */}
+        <HeroSection
+          image={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80' }}
+          overlayGradient={gradients.overlay.dark}
+          contentPosition="center"
+          height={rh(200)}
+        >
           <Text style={styles.title}>What are your diet preferences?</Text>
           <Text style={styles.subtitle}>
             Help us personalize your meal recommendations and nutrition plan
           </Text>
-          
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
               <Text style={styles.autoSaveText}>💾 Saving...</Text>
             </View>
           )}
-        </View>
+        </HeroSection>
         
         {/* Form Sections */}
         <View style={styles.content}>
@@ -907,14 +1006,20 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
-            <Card style={styles.validationCard}>
+            <GlassCard
+              elevation={3}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.validationCard}
+            >
               <Text style={styles.validationTitle}>
                 {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
               </Text>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
-              
+
               {validationResult.errors.length > 0 && (
                 <View style={styles.validationErrors}>
                   <Text style={styles.validationErrorTitle}>Required:</Text>
@@ -925,7 +1030,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ))}
                 </View>
               )}
-              
+
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
                   <Text style={styles.validationWarningTitle}>Recommendations:</Text>
@@ -936,7 +1041,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ))}
                 </View>
               )}
-            </Card>
+            </GlassCard>
           </View>
         )}
       </ScrollView>
@@ -989,7 +1094,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent',
   },
 
   scrollView: {
@@ -997,21 +1102,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  headerGradient: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: rf(22),
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -1134,6 +1245,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  dietReadinessProgressContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dietReadinessProgressIcon: {
+    position: 'absolute',
+    fontSize: rf(24),
   },
 
   dietReadinessIcon: {

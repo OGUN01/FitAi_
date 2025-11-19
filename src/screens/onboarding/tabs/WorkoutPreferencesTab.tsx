@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Card } from '../../../components/ui';
+import { Button } from '../../../components/ui';
+import { GlassCard, AnimatedPressable, HeroSection } from '../../../components/ui/aurora';
+import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { WorkoutPreferencesData, BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import { MetabolicCalculations } from '../../../utils/healthCalculations';
@@ -478,9 +481,15 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     const currentActivityLevel = ACTIVITY_LEVELS.find(level => level.value === formData.activity_level);
     const occupationType = personalInfoData?.occupation_type || 'desk_job';
     const occupationLabel = OCCUPATION_OPTIONS.find(opt => opt.value === occupationType)?.label || 'Unknown';
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>Fitness Goals</Text>
         
         {/* Primary Goals */}
@@ -497,30 +506,34 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           
           <View style={styles.goalsGrid}>
             {FITNESS_GOALS.map((goal) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={goal.id}
                 onPress={() => toggleGoal(goal.id)}
                 style={styles.goalItem}
+                scaleValue={0.97}
               >
-                <Card
+                <GlassCard
+                  elevation={formData.primary_goals.includes(goal.id) ? 3 : 1}
+                  blurIntensity="light"
+                  padding="md"
+                  borderRadius="lg"
                   style={StyleSheet.flatten([
                     styles.goalCard,
-                    formData.primary_goals.includes(goal.id) ? styles.goalCardSelected : null,
+                    ...(formData.primary_goals.includes(goal.id) ? [styles.goalCardSelected] : []),
                   ])}
-                  variant="outlined"
                 >
                   <View style={styles.goalContent}>
                     <Text style={styles.goalIcon}>{goal.icon}</Text>
                     <Text style={[
                       styles.goalTitle,
-                      formData.primary_goals.includes(goal.id) ? styles.goalTitleSelected : null,
+                      ...(formData.primary_goals.includes(goal.id) ? [styles.goalTitleSelected] : []),
                     ]}>
                       {goal.title}
                     </Text>
                     <Text style={styles.goalDescription}>{goal.description}</Text>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
             ))}
           </View>
           {hasFieldError('goals') && (
@@ -535,7 +548,13 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             Auto-calculated based on your occupation ({occupationLabel})
           </Text>
           
-          <Card style={styles.calculatedActivityCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.calculatedActivityCard}
+          >
             <View style={styles.calculatedActivityContent}>
               <Text style={styles.calculatedActivityIcon}>{currentActivityLevel?.icon || '🪑'}</Text>
               <View style={styles.calculatedActivityText}>
@@ -548,29 +567,41 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 <View style={styles.calculatedActivityNote}>
                   <Text style={styles.calculatedActivityNoteIcon}>💡</Text>
                   <Text style={styles.calculatedActivityNoteText}>
-                    Activity level is automatically determined by your occupation type from Personal Info (Tab 1). 
+                    Activity level is automatically determined by your occupation type from Personal Info (Tab 1).
                     This represents your daily movement outside of planned workouts.
                   </Text>
                 </View>
               </View>
             </View>
-          </Card>
+          </GlassCard>
         </View>
-      </View>
+      </GlassCard>
     );
   };
   
   const renderCurrentFitnessSection = () => {
     const levelInfo = INTENSITY_OPTIONS.find(opt => opt.value === formData.intensity);
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>Current Fitness Assessment</Text>
         <Text style={styles.sectionSubtitle}>Help us understand your starting point</Text>
         
         {/* Intensity Recommendation with Reasoning */}
         {intensityRecommendation && (
-          <Card style={styles.calculatedLevelCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.calculatedLevelCard}
+          >
             <View style={styles.calculatedLevelContent}>
               <Text style={styles.calculatedLevelIcon}>{levelInfo?.icon}</Text>
               <View style={styles.calculatedLevelText}>
@@ -585,11 +616,17 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 </Text>
               </View>
             </View>
-          </Card>
+          </GlassCard>
         )}
 
         {/* Recommended Workout Types */}
-        <Card style={styles.recommendedTypesCard}>
+        <GlassCard
+          elevation={2}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.recommendedTypesCard}
+        >
           <View style={styles.recommendedTypesHeader}>
             <Text style={styles.recommendedTypesIcon}>🎯</Text>
             <Text style={styles.recommendedTypesTitle}>Recommended Workout Types</Text>
@@ -608,28 +645,29 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               ) : null;
             })}
           </View>
-        </Card>
+        </GlassCard>
         
         <View style={styles.fitnessGrid}>
         <View style={styles.fitnessItem}>
           <Text style={styles.fitnessLabel}>Workout Experience</Text>
           <View style={styles.experienceSlider}>
             {[0, 1, 2, 5, 10, 15, 20].map((years) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={years}
                 style={StyleSheet.flatten([
                   styles.experienceOption,
-                  formData.workout_experience_years === years ? styles.experienceOptionSelected : null,
+                  ...(formData.workout_experience_years === years ? [styles.experienceOptionSelected] : []),
                 ])}
                 onPress={() => updateField('workout_experience_years', years)}
+                scaleValue={0.95}
               >
                 <Text style={[
                   styles.experienceText,
-                  formData.workout_experience_years === years ? styles.experienceTextSelected : null,
+                  ...(formData.workout_experience_years === years ? [styles.experienceTextSelected] : []),
                 ]}>
                   {years === 0 ? 'New' : `${years}y`}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -638,21 +676,22 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           <Text style={styles.fitnessLabel}>Current Workout Frequency</Text>
           <View style={styles.frequencySlider}>
             {[0, 1, 2, 3, 4, 5, 6, 7].map((days) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={days}
                 style={StyleSheet.flatten([
                   styles.frequencyOption,
-                  formData.workout_frequency_per_week === days ? styles.frequencyOptionSelected : null,
+                  ...(formData.workout_frequency_per_week === days ? [styles.frequencyOptionSelected] : []),
                 ])}
                 onPress={() => updateField('workout_frequency_per_week', days)}
+                scaleValue={0.95}
               >
                 <Text style={[
                   styles.frequencyText,
-                  formData.workout_frequency_per_week === days ? styles.frequencyTextSelected : null,
+                  ...(formData.workout_frequency_per_week === days ? [styles.frequencyTextSelected] : []),
                 ]}>
                   {days === 0 ? 'None' : `${days}x`}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -661,21 +700,22 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           <Text style={styles.fitnessLabel}>Max Pushups: {formData.can_do_pushups}</Text>
           <View style={styles.pushupsSlider}>
             {[0, 5, 10, 15, 20, 30, 50, 100].map((pushups) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={pushups}
                 style={StyleSheet.flatten([
                   styles.pushupsOption,
-                  formData.can_do_pushups === pushups ? styles.pushupsOptionSelected : null,
+                  ...(formData.can_do_pushups === pushups ? [styles.pushupsOptionSelected] : []),
                 ])}
                 onPress={() => updateField('can_do_pushups', pushups)}
+                scaleValue={0.95}
               >
                 <Text style={[
                   styles.pushupsText,
-                  formData.can_do_pushups === pushups ? styles.pushupsTextSelected : null,
+                  ...(formData.can_do_pushups === pushups ? [styles.pushupsTextSelected] : []),
                 ]}>
                   {pushups === 0 ? 'None' : pushups}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -684,21 +724,22 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           <Text style={styles.fitnessLabel}>Continuous Running: {formData.can_run_minutes} minutes</Text>
           <View style={styles.runningSlider}>
             {[0, 5, 10, 15, 20, 30, 45, 60].map((minutes) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={minutes}
                 style={StyleSheet.flatten([
                   styles.runningOption,
-                  formData.can_run_minutes === minutes ? styles.runningOptionSelected : null,
+                  ...(formData.can_run_minutes === minutes ? [styles.runningOptionSelected] : []),
                 ])}
                 onPress={() => updateField('can_run_minutes', minutes)}
+                scaleValue={0.95}
               >
                 <Text style={[
                   styles.runningText,
-                  formData.can_run_minutes === minutes ? styles.runningTextSelected : null,
+                  ...(formData.can_run_minutes === minutes ? [styles.runningTextSelected] : []),
                 ]}>
                   {minutes === 0 ? 'None' : `${minutes}m`}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -707,37 +748,47 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           <Text style={styles.fitnessLabel}>Flexibility Level</Text>
           <View style={styles.flexibilityGrid}>
             {FLEXIBILITY_LEVELS.map((level) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={level.value}
                 onPress={() => updateField('flexibility_level', level.value as WorkoutPreferencesData['flexibility_level'])}
                 style={styles.flexibilityItem}
+                scaleValue={0.97}
               >
-                <Card
+                <GlassCard
+                  elevation={formData.flexibility_level === level.value ? 3 : 1}
+                  blurIntensity="light"
+                  padding="md"
+                  borderRadius="lg"
                   style={StyleSheet.flatten([
                     styles.flexibilityCard,
-                    formData.flexibility_level === level.value ? styles.flexibilityCardSelected : null,
+                    ...(formData.flexibility_level === level.value ? [styles.flexibilityCardSelected] : []),
                   ])}
-                  variant="outlined"
                 >
                   <Text style={styles.flexibilityIcon}>{level.icon}</Text>
                   <Text style={[
                     styles.flexibilityTitle,
-                    formData.flexibility_level === level.value ? styles.flexibilityTitleSelected : null,
+                    ...(formData.flexibility_level === level.value ? [styles.flexibilityTitleSelected] : []),
                   ]}>
                     {level.label}
                   </Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
       </View>
-    </View>
+      </GlassCard>
     );
   };
-  
+
   const renderWorkoutPreferencesSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Workout Preferences</Text>
       
       {/* Location */}
@@ -745,30 +796,34 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         <Text style={styles.fieldLabel}>Where do you prefer to workout?</Text>
         <View style={styles.locationGrid}>
           {LOCATION_OPTIONS.map((option) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={option.id}
               onPress={() => updateField('location', option.id as WorkoutPreferencesData['location'])}
               style={styles.locationItem}
+              scaleValue={0.97}
             >
-              <Card
+              <GlassCard
+                elevation={formData.location === option.id ? 3 : 1}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.locationCard,
-                  formData.location === option.id ? styles.locationCardSelected : null,
+                  ...(formData.location === option.id ? [styles.locationCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.locationContent}>
                   <Text style={styles.locationIcon}>{option.icon}</Text>
                   <Text style={[
                     styles.locationTitle,
-                    formData.location === option.id ? styles.locationTitleSelected : null,
+                    ...(formData.location === option.id ? [styles.locationTitleSelected] : []),
                   ]}>
                     {option.title}
                   </Text>
                   <Text style={styles.locationDescription}>{option.description}</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
@@ -788,12 +843,18 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       ) : (
         <View style={styles.preferenceField}>
           <Text style={styles.fieldLabel}>Available Equipment</Text>
-          <Card style={styles.gymEquipmentCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.gymEquipmentCard}
+          >
             <View style={styles.gymEquipmentContent}>
               <Text style={styles.gymEquipmentIcon}>🏋️</Text>
               <Text style={styles.gymEquipmentTitle}>Full Gym Access</Text>
               <Text style={styles.gymEquipmentDescription}>
-                All standard gym equipment is available including dumbbells, barbells, 
+                All standard gym equipment is available including dumbbells, barbells,
                 cardio machines, and more. Equipment selection is automatically configured.
               </Text>
               <View style={styles.gymEquipmentList}>
@@ -808,7 +869,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 })}
               </View>
             </View>
-          </Card>
+          </GlassCard>
         </View>
       )}
       
@@ -819,21 +880,22 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         </Text>
         <View style={styles.durationSlider}>
           {[15, 30, 45, 60, 75, 90, 120].map((minutes) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={minutes}
               style={StyleSheet.flatten([
                 styles.durationOption,
-                formData.time_preference === minutes ? styles.durationOptionSelected : null,
+                ...(formData.time_preference === minutes ? [styles.durationOptionSelected] : []),
               ])}
               onPress={() => updateField('time_preference', minutes)}
+              scaleValue={0.95}
             >
               <Text style={[
                 styles.durationText,
-                formData.time_preference === minutes ? styles.durationTextSelected : null,
+                ...(formData.time_preference === minutes ? [styles.durationTextSelected] : []),
               ]}>
                 {formatTime(minutes)}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
@@ -845,38 +907,48 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         <Text style={styles.fieldLabel}>Preferred Workout Times</Text>
         <View style={styles.workoutTimesGrid}>
           {WORKOUT_TIMES.map((time) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={time.value}
               onPress={() => toggleWorkoutTime(time.value)}
               style={styles.workoutTimeItem}
+              scaleValue={0.97}
             >
-              <Card
+              <GlassCard
+                elevation={formData.preferred_workout_times.includes(time.value) ? 3 : 1}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.workoutTimeCard,
-                  formData.preferred_workout_times.includes(time.value) ? styles.workoutTimeCardSelected : null,
+                  ...(formData.preferred_workout_times.includes(time.value) ? [styles.workoutTimeCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.workoutTimeContent}>
                   <Text style={styles.workoutTimeIcon}>{time.icon}</Text>
                   <Text style={StyleSheet.flatten([
                     styles.workoutTimeTitle,
-                    formData.preferred_workout_times.includes(time.value) ? styles.workoutTimeTitleSelected : null,
+                    ...(formData.preferred_workout_times.includes(time.value) ? [styles.workoutTimeTitleSelected] : []),
                   ])}>
                     {time.label}
                   </Text>
                   <Text style={styles.workoutTimeDescription}>{time.description}</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           ))}
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderWorkoutStyleSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Workout Style Preferences</Text>
       <Text style={styles.sectionSubtitle}>Tell us about your workout preferences</Text>
       
@@ -892,17 +964,21 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           const isActive = formData[preference.key as keyof WorkoutPreferencesData] as boolean;
           
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={preference.key}
               onPress={() => updateField(preference.key as keyof WorkoutPreferencesData, !isActive as any)}
               style={styles.stylePreferenceItem}
+              scaleValue={0.97}
             >
-              <Card
+              <GlassCard
+                elevation={isActive ? 3 : 1}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
                 style={StyleSheet.flatten([
                   styles.stylePreferenceCard,
-                  isActive ? styles.stylePreferenceCardSelected : null,
+                  ...(isActive ? [styles.stylePreferenceCardSelected] : []),
                 ])}
-                variant="outlined"
               >
                 <View style={styles.stylePreferenceContent}>
                   <View style={styles.stylePreferenceHeader}>
@@ -910,40 +986,46 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                     <View style={styles.stylePreferenceToggle}>
                       <View style={StyleSheet.flatten([
                         styles.toggleSwitch,
-                        isActive ? styles.toggleSwitchActive : null,
+                        ...(isActive ? [styles.toggleSwitchActive] : []),
                       ])}>
                         <View style={StyleSheet.flatten([
                           styles.toggleThumb,
-                          isActive ? styles.toggleThumbActive : null,
+                          ...(isActive ? [styles.toggleThumbActive] : []),
                         ])} />
                       </View>
                     </View>
                   </View>
-                  
+
                   <Text style={StyleSheet.flatten([
                     styles.stylePreferenceTitle,
-                    isActive ? styles.stylePreferenceTitleSelected : null,
+                    ...(isActive ? [styles.stylePreferenceTitleSelected] : []),
                   ])}>
                     {preference.title}
                   </Text>
-                  
+
                   <Text style={styles.stylePreferenceDescription}>
                     {preference.description}
                   </Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           );
         })}
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderWeightGoalsSection = () => {
     if (!bodyAnalysisData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Weight Goals Summary</Text>
           <View style={styles.readOnlyBadge}>
@@ -952,28 +1034,34 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         </View>
         <Text style={styles.sectionSubtitle}>This information was entered in your Body Analysis (Tab 3)</Text>
         
-        <Card style={styles.weightGoalsCard}>
+        <GlassCard
+          elevation={2}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.weightGoalsCard}
+        >
           <View style={styles.weightGoalsContent}>
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Current Weight</Text>
               <Text style={styles.weightGoalValue}>{bodyAnalysisData.current_weight_kg}kg</Text>
             </View>
-            
+
             <Text style={styles.weightGoalArrow}>→</Text>
-            
+
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Target Weight</Text>
               <Text style={styles.weightGoalValue}>{bodyAnalysisData.target_weight_kg}kg</Text>
             </View>
-            
+
             <Text style={styles.weightGoalArrow}>⏱️</Text>
-            
+
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Timeline</Text>
               <Text style={styles.weightGoalValue}>{bodyAnalysisData.target_timeline_weeks}w</Text>
             </View>
           </View>
-          
+
           {formData.weekly_weight_loss_goal && (
             <View style={styles.weeklyRateInfo}>
               <Text style={styles.weeklyRateText}>
@@ -981,11 +1069,11 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               </Text>
             </View>
           )}
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
@@ -993,20 +1081,25 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Hero Section with Background Image */}
+        <HeroSection
+          image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
+          overlayGradient={gradients.overlay.dark}
+          contentPosition="center"
+          height={rh(200)}
+        >
           <Text style={styles.title}>Let's create your fitness profile</Text>
           <Text style={styles.subtitle}>
             Tell us about your goals, current fitness level, and workout preferences
           </Text>
-          
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
               <Text style={styles.autoSaveText}>💾 Saving...</Text>
             </View>
           )}
-        </View>
+        </HeroSection>
         
         {/* Form Sections */}
         <View style={styles.content}>
@@ -1020,14 +1113,20 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
-            <Card style={styles.validationCard}>
+            <GlassCard
+              elevation={3}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.validationCard}
+            >
               <Text style={styles.validationTitle}>
                 {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
               </Text>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
-              
+
               {validationResult.errors.length > 0 && (
                 <View style={styles.validationErrors}>
                   <Text style={styles.validationErrorTitle}>Required:</Text>
@@ -1038,7 +1137,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   ))}
                 </View>
               )}
-              
+
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
                   <Text style={styles.validationWarningTitle}>Recommendations:</Text>
@@ -1049,7 +1148,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   ))}
                 </View>
               )}
-            </Card>
+            </GlassCard>
           </View>
         )}
       </ScrollView>
@@ -1102,7 +1201,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent',
   },
 
   scrollView: {
@@ -1110,21 +1209,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  headerGradient: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: rf(22),
     marginBottom: ResponsiveTheme.spacing.md,
   },

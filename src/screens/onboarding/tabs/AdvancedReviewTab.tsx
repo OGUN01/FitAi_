@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Card, InfoTooltip } from '../../../components/ui';
+import { Button, InfoTooltip } from '../../../components/ui';
+import { GlassCard } from '../../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
+import { HeroSection, ProgressRing } from '../../../components/ui/aurora';
+import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { 
   PersonalInfoData, 
   DietPreferencesData, 
@@ -249,13 +254,19 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   // ============================================================================
   
   const renderDataSummary = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>📋 Data Summary</Text>
-      
+
       <View style={styles.summaryGrid}>
         {/* Personal Info Summary */}
-        <TouchableOpacity onPress={() => onNavigateToTab?.(1)}>
-          <Card style={styles.summaryCard}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(1)} scaleValue={0.97}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>👤</Text>
               <View style={styles.summaryContent}>
@@ -269,12 +280,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </View>
               <Text style={styles.editIcon}>✏️</Text>
             </View>
-          </Card>
-        </TouchableOpacity>
-        
+          </GlassCard>
+        </AnimatedPressable>
+
         {/* Diet Summary */}
-        <TouchableOpacity onPress={() => onNavigateToTab?.(2)}>
-          <Card style={styles.summaryCard}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(2)} scaleValue={0.97}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>🍽️</Text>
               <View style={styles.summaryContent}>
@@ -283,19 +294,19 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   {dietPreferences?.diet_type}
                 </Text>
                 <Text style={styles.summaryDetails}>
-                  {dietPreferences?.breakfast_enabled ? '✓' : '✗'} Breakfast, 
-                  {dietPreferences?.lunch_enabled ? '✓' : '✗'} Lunch, 
+                  {dietPreferences?.breakfast_enabled ? '✓' : '✗'} Breakfast,
+                  {dietPreferences?.lunch_enabled ? '✓' : '✗'} Lunch,
                   {dietPreferences?.dinner_enabled ? '✓' : '✗'} Dinner
                 </Text>
               </View>
               <Text style={styles.editIcon}>✏️</Text>
             </View>
-          </Card>
-        </TouchableOpacity>
-        
+          </GlassCard>
+        </AnimatedPressable>
+
         {/* Body Analysis Summary */}
-        <TouchableOpacity onPress={() => onNavigateToTab?.(3)}>
-          <Card style={styles.summaryCard}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(3)} scaleValue={0.97}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>📊</Text>
               <View style={styles.summaryContent}>
@@ -309,12 +320,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </View>
               <Text style={styles.editIcon}>✏️</Text>
             </View>
-          </Card>
-        </TouchableOpacity>
-        
+          </GlassCard>
+        </AnimatedPressable>
+
         {/* Workout Summary */}
-        <TouchableOpacity onPress={() => onNavigateToTab?.(4)}>
-          <Card style={styles.summaryCard}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(4)} scaleValue={0.97}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>💪</Text>
               <View style={styles.summaryContent}>
@@ -328,26 +339,47 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </View>
               <Text style={styles.editIcon}>✏️</Text>
             </View>
-          </Card>
-        </TouchableOpacity>
+          </GlassCard>
+        </AnimatedPressable>
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderMetabolicProfile = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>🔥 Metabolic Profile</Text>
-        
+
         <View style={styles.metricsGrid}>
-          <Card style={styles.metricCard}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>BMI</Text>
-              <InfoTooltip 
+              <InfoTooltip
                 title={METRIC_DESCRIPTIONS.BMI.title}
                 description={METRIC_DESCRIPTIONS.BMI.description}
+              />
+            </View>
+            <View style={styles.metricProgressContainer}>
+              <ProgressRing
+                value={calculatedData.calculated_bmi || 0}
+                maxValue={40}
+                size={rf(100)}
+                strokeWidth={rf(8)}
+                gradient={
+                  calculatedData.calculated_bmi! < 18.5 ? ['#FFC107', '#FF9800'] :
+                  calculatedData.calculated_bmi! < 25 ? ['#4CAF50', '#45A049'] :
+                  calculatedData.calculated_bmi! < 30 ? ['#FF9800', '#FF5722'] :
+                  ['#F44336', '#D32F2F']
+                }
+                animationDuration={1000}
               />
             </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_bmi}</Text>
@@ -356,61 +388,101 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                calculatedData.calculated_bmi! < 25 ? 'Normal' :
                calculatedData.calculated_bmi! < 30 ? 'Overweight' : 'Obese'}
             </Text>
-          </Card>
-          
-          <Card style={styles.metricCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>BMR</Text>
-              <InfoTooltip 
+              <InfoTooltip
                 title={METRIC_DESCRIPTIONS.BMR.title}
                 description={METRIC_DESCRIPTIONS.BMR.description}
               />
             </View>
+            <View style={styles.metricProgressContainer}>
+              <ProgressRing
+                value={((calculatedData.calculated_bmr || 1200) - 1200) / 13}
+                maxValue={100}
+                size={rf(100)}
+                strokeWidth={rf(8)}
+                gradient={['#2196F3', '#1976D2']}
+                animationDuration={1000}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_bmr}</Text>
             <Text style={styles.metricCategory}>cal/day</Text>
-          </Card>
-          
-          <Card style={styles.metricCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>TDEE</Text>
-              <InfoTooltip 
+              <InfoTooltip
                 title={METRIC_DESCRIPTIONS.TDEE.title}
                 description={METRIC_DESCRIPTIONS.TDEE.description}
               />
             </View>
+            <View style={styles.metricProgressContainer}>
+              <ProgressRing
+                value={((calculatedData.calculated_tdee || 1500) - 1500) / 20}
+                maxValue={100}
+                size={rf(100)}
+                strokeWidth={rf(8)}
+                gradient={['#9C27B0', '#7B1FA2']}
+                animationDuration={1000}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.calculated_tdee}</Text>
             <Text style={styles.metricCategory}>cal/day</Text>
-          </Card>
-          
-          <Card style={styles.metricCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
             <View style={styles.metricHeader}>
               <Text style={styles.metricLabel}>Metabolic Age</Text>
-              <InfoTooltip 
+              <InfoTooltip
                 title={METRIC_DESCRIPTIONS.METABOLIC_AGE.title}
                 description={METRIC_DESCRIPTIONS.METABOLIC_AGE.description}
               />
             </View>
+            <View style={styles.metricProgressContainer}>
+              <ProgressRing
+                value={calculatedData.metabolic_age || 25}
+                maxValue={80}
+                size={rf(100)}
+                strokeWidth={rf(8)}
+                gradient={
+                  calculatedData.metabolic_age! < 30 ? ['#4CAF50', '#45A049'] :
+                  calculatedData.metabolic_age! < 50 ? ['#FFC107', '#FF9800'] :
+                  ['#FF5722', '#D32F2F']
+                }
+                animationDuration={1000}
+              />
+            </View>
             <Text style={styles.metricValue}>{calculatedData.metabolic_age}</Text>
             <Text style={styles.metricCategory}>years</Text>
-          </Card>
+          </GlassCard>
         </View>
-      </View>
+      </GlassCard>
     );
   };
-  
+
   const renderNutritionalNeeds = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>🥗 Daily Nutritional Needs</Text>
-        
-        <Card style={styles.nutritionCard}>
+
+        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.nutritionCard}>
           <View style={styles.nutritionHeader}>
             <Text style={styles.nutritionTitle}>Daily Targets</Text>
             <Text style={styles.calorieTarget}>{calculatedData.daily_calories} calories</Text>
           </View>
-          
+
           <View style={styles.macroGrid}>
             <View style={styles.macroItem}>
               <Text style={styles.macroLabel}>Protein</Text>
@@ -419,7 +491,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 {Math.round((calculatedData.daily_protein_g! * 4) / calculatedData.daily_calories! * 100)}%
               </Text>
             </View>
-            
+
             <View style={styles.macroItem}>
               <Text style={styles.macroLabel}>Carbs</Text>
               <Text style={styles.macroValue}>{calculatedData.daily_carbs_g}g</Text>
@@ -427,7 +499,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 {Math.round((calculatedData.daily_carbs_g! * 4) / calculatedData.daily_calories! * 100)}%
               </Text>
             </View>
-            
+
             <View style={styles.macroItem}>
               <Text style={styles.macroLabel}>Fat</Text>
               <Text style={styles.macroValue}>{calculatedData.daily_fat_g}g</Text>
@@ -436,7 +508,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.otherNutrients}>
             <View style={styles.nutrientItem}>
               <Text style={styles.nutrientIcon}>💧</Text>
@@ -447,71 +519,83 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               <Text style={styles.nutrientText}>Fiber: {calculatedData.daily_fiber_g}g</Text>
             </View>
           </View>
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   const renderWeightManagement = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>⚖️ Weight Management Plan</Text>
-        
-        <Card style={styles.weightCard}>
+
+        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.weightCard}>
           <View style={styles.weightHeader}>
             <Text style={styles.weightTitle}>Goal Timeline</Text>
             <Text style={styles.timelineWeeks}>{calculatedData.estimated_timeline_weeks} weeks</Text>
           </View>
-          
+
           <View style={styles.weightProgress}>
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Current</Text>
               <Text style={styles.weightValue}>{bodyAnalysis?.current_weight_kg}kg</Text>
             </View>
-            
+
             <Text style={styles.weightArrow}>→</Text>
-            
+
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Target</Text>
               <Text style={styles.weightValue}>{bodyAnalysis?.target_weight_kg}kg</Text>
             </View>
-            
+
             <Text style={styles.weightArrow}>📈</Text>
-            
+
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Weekly Rate</Text>
               <Text style={styles.weightValue}>{calculatedData.weekly_weight_loss_rate}kg</Text>
             </View>
           </View>
-          
+
           <View style={styles.idealWeightInfo}>
             <Text style={styles.idealWeightTitle}>Ideal Weight Range</Text>
             <Text style={styles.idealWeightRange}>
               {calculatedData.healthy_weight_min}kg - {calculatedData.healthy_weight_max}kg
             </Text>
           </View>
-          
+
           <View style={styles.calorieDeficitInfo}>
             <Text style={styles.deficitTitle}>Weekly Calorie Deficit</Text>
             <Text style={styles.deficitValue}>{calculatedData.total_calorie_deficit} calories</Text>
             <Text style={styles.deficitDaily}>({Math.round(calculatedData.total_calorie_deficit! / 7)} cal/day)</Text>
           </View>
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   const renderFitnessMetrics = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>💓 Fitness & Cardiovascular Metrics</Text>
-        
+
         <View style={styles.fitnessGrid}>
-          <Card style={styles.fitnessCard}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.fitnessCard}>
             <Text style={styles.fitnessCardTitle}>VO₂ Max</Text>
             <Text style={styles.fitnessCardValue}>{calculatedData.estimated_vo2_max}</Text>
             <Text style={styles.fitnessCardUnit}>ml/kg/min</Text>
@@ -520,9 +604,9 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                calculatedData.estimated_vo2_max! > 40 ? 'Good' :
                calculatedData.estimated_vo2_max! > 30 ? 'Fair' : 'Poor'}
             </Text>
-          </Card>
-          
-          <Card style={styles.fitnessCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.fitnessCard}>
             <Text style={styles.fitnessCardTitle}>Heart Rate Zones</Text>
             <View style={styles.heartRateZones}>
               <Text style={styles.heartRateZone}>
@@ -535,10 +619,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 Peak: {calculatedData.target_hr_peak_min}-{calculatedData.target_hr_peak_max} bpm
               </Text>
             </View>
-          </Card>
+          </GlassCard>
         </View>
-        
-        <Card style={styles.recommendationsCard}>
+
+        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.recommendationsCard}>
           <Text style={styles.recommendationsTitle}>🎯 Weekly Workout Recommendations</Text>
           <View style={styles.recommendationsList}>
             <View style={styles.recommendationItem}>
@@ -560,96 +644,108 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </Text>
             </View>
           </View>
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   const renderHealthScores = () => {
     if (!calculatedData) return null;
-    
+
     // Check if all required scores are available
-    const hasAllScores = 
+    const hasAllScores =
       calculatedData.overall_health_score !== undefined &&
       calculatedData.diet_readiness_score !== undefined &&
       calculatedData.fitness_readiness_score !== undefined &&
       calculatedData.goal_realistic_score !== undefined;
-    
+
     if (!hasAllScores) {
       console.warn('⚠️ Health scores not fully calculated');
       return null;
     }
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>📊 Health Assessment Scores</Text>
         <Text style={styles.sectionSubtitle}>
           Your readiness scores based on current health status and goals
         </Text>
-        
+
         <View style={styles.scoresGrid}>
-          <Card style={styles.scoreCard}>
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Overall Health</Text>
             <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score) }]}>
               {calculatedData.overall_health_score}/100
             </Text>
             <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score)}</Text>
             <Text style={styles.scoreDescription}>Combined health assessment</Text>
-          </Card>
-          
-          <Card style={styles.scoreCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Diet Readiness</Text>
             <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.diet_readiness_score) }]}>
               {calculatedData.diet_readiness_score}/100
             </Text>
             <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.diet_readiness_score)}</Text>
             <Text style={styles.scoreDescription}>Nutrition habits & readiness</Text>
-          </Card>
-          
-          <Card style={styles.scoreCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Fitness Readiness</Text>
             <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.fitness_readiness_score) }]}>
               {calculatedData.fitness_readiness_score}/100
             </Text>
             <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.fitness_readiness_score)}</Text>
             <Text style={styles.scoreDescription}>Exercise experience & capacity</Text>
-          </Card>
-          
-          <Card style={styles.scoreCard}>
+          </GlassCard>
+
+          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
             <Text style={styles.scoreTitle}>Goal Realistic</Text>
             <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.goal_realistic_score) }]}>
               {calculatedData.goal_realistic_score}/100
             </Text>
             <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.goal_realistic_score)}</Text>
             <Text style={styles.scoreDescription}>Timeline & target feasibility</Text>
-          </Card>
+          </GlassCard>
         </View>
-      </View>
+      </GlassCard>
     );
   };
-  
+
   const renderSleepAnalysis = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>😴 Sleep Analysis</Text>
-        
-        <Card style={styles.sleepCard}>
+
+        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.sleepCard}>
           <View style={styles.sleepMetrics}>
             <View style={styles.sleepMetric}>
               <Text style={styles.sleepLabel}>Current Sleep</Text>
               <Text style={styles.sleepValue}>{calculatedData.current_sleep_duration}h</Text>
             </View>
-            
+
             <Text style={styles.sleepArrow}>vs</Text>
-            
+
             <View style={styles.sleepMetric}>
               <Text style={styles.sleepLabel}>Recommended</Text>
               <Text style={styles.sleepValue}>{calculatedData.recommended_sleep_hours}h</Text>
             </View>
           </View>
-          
+
           <View style={styles.sleepEfficiency}>
             <Text style={styles.sleepEfficiencyTitle}>Sleep Efficiency Score</Text>
             <Text style={[
@@ -659,7 +755,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               {calculatedData.sleep_efficiency_score}/100
             </Text>
           </View>
-          
+
           <Text style={styles.sleepRecommendation}>
             {calculatedData.current_sleep_duration! >= 7 && calculatedData.current_sleep_duration! <= 9
               ? '✅ Your sleep duration is optimal for fitness goals'
@@ -668,19 +764,25 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 : '⚠️ Very long sleep duration - ensure it\'s quality sleep'
             }
           </Text>
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   const renderPersonalizationMetrics = () => {
     if (!calculatedData) return null;
-    
+
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>🎯 Personalization Summary</Text>
-        
-        <Card style={styles.personalizationCard}>
+
+        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.personalizationCard}>
           <View style={styles.personalizationGrid}>
             <View style={styles.personalizationItem}>
               <Text style={styles.personalizationLabel}>Data Completeness</Text>
@@ -694,7 +796,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 ]} />
               </View>
             </View>
-            
+
             <View style={styles.personalizationItem}>
               <Text style={styles.personalizationLabel}>Reliability Score</Text>
               <Text style={styles.personalizationValue}>
@@ -707,7 +809,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 ]} />
               </View>
             </View>
-            
+
             <View style={styles.personalizationItem}>
               <Text style={styles.personalizationLabel}>Personalization Level</Text>
               <Text style={styles.personalizationValue}>
@@ -721,7 +823,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </View>
             </View>
           </View>
-          
+
           <Text style={styles.personalizationSummary}>
             {calculatedData.data_completeness_percentage! >= 90
               ? '🎉 Excellent! Your profile is comprehensive and ready for highly personalized recommendations.'
@@ -730,11 +832,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 : '📝 Consider completing more sections for enhanced personalization.'
             }
           </Text>
-        </Card>
-      </View>
+        </GlassCard>
+      </GlassCard>
     );
   };
-  
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
@@ -742,36 +844,41 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Hero Section with Background Image */}
+        <HeroSection
+          image={{ uri: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80' }}
+          overlayGradient={gradients.overlay.dark}
+          contentPosition="center"
+          height={rh(220)}
+        >
           <Text style={styles.title}>Advanced Review & Insights</Text>
           <Text style={styles.subtitle}>
             Comprehensive analysis based on your complete profile
           </Text>
-          
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
               <Text style={styles.autoSaveText}>💾 Saving...</Text>
             </View>
           )}
-          
+
           {/* Calculation Status */}
           {isCalculating && (
             <View style={styles.calculatingIndicator}>
               <Text style={styles.calculatingText}>🧮 Calculating health metrics...</Text>
             </View>
           )}
-          
+
           {calculationError && (
             <View style={styles.errorIndicator}>
               <Text style={styles.errorText}>❌ {calculationError}</Text>
-              <TouchableOpacity onPress={performCalculations} style={styles.retryButton}>
+              <AnimatedPressable onPress={performCalculations} style={styles.retryButton} scaleValue={0.95}>
                 <Text style={styles.retryText}>🔄 Retry Calculations</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           )}
-        </View>
+        </HeroSection>
         
         {/* Content */}
         <View style={styles.content}>
@@ -807,10 +914,16 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           
           {/* Completion Status */}
           {calculatedData && (
-            <Card style={[
-              styles.completionCard,
-              isComplete ? styles.completionCardComplete : styles.completionCardIncomplete
-            ] as any}>
+            <GlassCard
+              elevation={3}
+              blurIntensity="light"
+              padding="xl"
+              borderRadius="lg"
+              style={[
+                styles.completionCard,
+                isComplete ? styles.completionCardComplete : styles.completionCardIncomplete
+              ] as any}
+            >
               <Text style={styles.completionIcon}>
                 {isComplete ? '🎉' : '📋'}
               </Text>
@@ -818,12 +931,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 {isComplete ? 'Profile Complete!' : 'Review Complete!'}
               </Text>
               <Text style={styles.completionText}>
-                {isComplete 
+                {isComplete
                   ? 'Your personalized fitness journey is ready to begin with AI-powered recommendations.'
                   : 'All calculations completed. Ready to start your personalized fitness journey!'
                 }
               </Text>
-            </Card>
+            </GlassCard>
           )}
         </View>
       </ScrollView>
@@ -955,7 +1068,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent',
   },
 
   scrollView: {
@@ -963,21 +1076,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  headerGradient: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: rf(22),
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -1117,6 +1236,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  metricProgressContainer: {
+    marginVertical: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   metricLabel: {

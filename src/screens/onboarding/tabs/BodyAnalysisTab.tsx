@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Input, Card } from '../../../components/ui';
+import { Button, Input } from '../../../components/ui';
+import { GlassCard, AnimatedPressable, HeroSection } from '../../../components/ui/aurora';
+import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { Camera } from '../../../components/advanced/Camera';
 import { ImagePicker } from '../../../components/advanced/ImagePicker';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
@@ -410,7 +413,13 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   // ============================================================================
   
   const renderBasicMeasurementsSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Basic Measurements</Text>
       <Text style={styles.sectionSubtitle}>
         Provide at least height and current weight to continue. Other fields are optional.
@@ -454,21 +463,22 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           <Text style={styles.inputLabel}>Target Timeline (Optional): {formData.target_timeline_weeks} weeks</Text>
           <View style={styles.timelineSlider}>
             {[4, 8, 12, 16, 20, 24, 32, 52].map((weeks) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={weeks}
                 style={[
                   styles.timelineOption,
-                  formData.target_timeline_weeks === weeks && styles.timelineOptionSelected,
+                  ...(formData.target_timeline_weeks === weeks ? [styles.timelineOptionSelected] : []),
                 ]}
                 onPress={() => updateField('target_timeline_weeks', weeks)}
+                scaleValue={0.95}
               >
                 <Text style={[
                   styles.timelineText,
-                  formData.target_timeline_weeks === weeks && styles.timelineTextSelected,
+                  ...(formData.target_timeline_weeks === weeks ? [styles.timelineTextSelected] : []),
                 ]}>
                   {weeks}w
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
           {hasFieldError('timeline') && (
@@ -479,7 +489,13 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       
       {/* BMI Display */}
       {formData.bmi && (
-        <Card style={styles.bmiCard}>
+        <GlassCard
+          elevation={3}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.bmiCard}
+        >
           <View style={styles.bmiContent}>
             <Text style={styles.bmiTitle}>Current BMI: {formData.bmi}</Text>
             <View style={styles.bmiCategory}>
@@ -488,20 +504,20 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 {getBMICategory(formData.bmi).category}
               </Text>
             </View>
-            
+
             {formData.ideal_weight_min && formData.ideal_weight_max && (
               <Text style={styles.idealWeightText}>
                 Ideal weight range: {formData.ideal_weight_min}kg - {formData.ideal_weight_max}kg
               </Text>
             )}
-            
+
             {/* Weight Loss Rate Warning */}
             {formData.current_weight_kg && formData.target_weight_kg && formData.target_timeline_weeks && (
               <View style={styles.weightLossInfo}>
                 {(() => {
                   const weeklyRate = Math.abs(formData.current_weight_kg - formData.target_weight_kg) / formData.target_timeline_weeks;
                   const isHealthyRate = weeklyRate <= 1;
-                  
+
                   return (
                     <Text style={[
                       styles.weightLossRate,
@@ -515,29 +531,42 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               </View>
             )}
           </View>
-        </Card>
+        </GlassCard>
       )}
-    </View>
+    </GlassCard>
   );
-  
+
   const renderBodyCompositionSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Body Composition (Optional)</Text>
       <Text style={styles.sectionSubtitle}>
         Additional measurements for more accurate analysis
       </Text>
       
-      <TouchableOpacity
+      <AnimatedPressable
         style={styles.measurementGuideButton}
         onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
+        scaleValue={0.97}
       >
         <Text style={styles.measurementGuideText}>
           📏 How to measure correctly
         </Text>
-      </TouchableOpacity>
+      </AnimatedPressable>
       
       {showMeasurementGuide && (
-        <Card style={styles.measurementGuide}>
+        <GlassCard
+          elevation={2}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.measurementGuide}
+        >
           <Text style={styles.guideTitle}>Measurement Guidelines</Text>
           <Text style={styles.guideText}>
             • <Text style={styles.guideBold}>Waist:</Text> Measure at the narrowest point, usually just above the belly button{'\n'}
@@ -545,7 +574,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             • <Text style={styles.guideBold}>Chest:</Text> Measure around the fullest part of your chest{'\n'}
             • <Text style={styles.guideBold}>Body Fat:</Text> Use a body fat scale or professional measurement
           </Text>
-        </Card>
+        </GlassCard>
       )}
       
       <View style={styles.compositionGrid}>
@@ -595,31 +624,49 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
         const isHealthy = formData.waist_hip_ratio! < threshold;
         return (
-          <Card style={styles.ratioCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.ratioCard}
+          >
             <Text style={styles.ratioTitle}>
               Waist-Hip Ratio: {formData.waist_hip_ratio}
             </Text>
             <Text style={styles.ratioDescription}>
               {isHealthy ? '✅ Healthy ratio' : '⚠️ Consider waist reduction'}
             </Text>
-          </Card>
+          </GlassCard>
         );
       })()}
-    </View>
+    </GlassCard>
   );
-  
+
   const renderPhotoAnalysisSection = () => {
     const photoCount = [formData.front_photo_url, formData.side_photo_url, formData.back_photo_url].filter(Boolean).length;
     
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>Photo Analysis (Optional)</Text>
         <Text style={styles.sectionSubtitle}>
           AI-powered body composition analysis from photos ({photoCount}/3 photos)
         </Text>
         
         {/* Photo Guidelines */}
-        <Card style={styles.instructionCard}>
+        <GlassCard
+          elevation={2}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.instructionCard}
+        >
           <Text style={styles.instructionTitle}>📸 Photo Guidelines</Text>
           <Text style={styles.instructionText}>
             • Wear form-fitting clothes or workout attire{'\n'}
@@ -628,7 +675,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             • Keep arms at your sides{'\n'}
             • Take photos from about 6 feet away
           </Text>
-        </Card>
+        </GlassCard>
         
         {/* Photo Upload Grid */}
         <View style={styles.photoGrid}>
@@ -637,20 +684,28 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             
             return (
               <View key={photoType.type} style={styles.photoItem}>
-                <TouchableOpacity
+                <AnimatedPressable
                   style={styles.photoCard}
                   onPress={() => openPhotoOptions(photoType.type)}
+                  scaleValue={0.98}
                 >
-                  <Card style={styles.photoCardInner} variant="outlined">
+                  <GlassCard
+                    elevation={1}
+                    blurIntensity="light"
+                    padding="none"
+                    borderRadius="lg"
+                    style={styles.photoCardInner}
+                  >
                     {photoUrl ? (
                       <View style={styles.photoPreview}>
                         <Image source={{ uri: photoUrl }} style={styles.photoImage} />
-                        <TouchableOpacity
+                        <AnimatedPressable
                           style={styles.removePhotoButton}
                           onPress={() => removePhoto(photoType.type)}
+                          scaleValue={0.95}
                         >
                           <Text style={styles.removePhotoText}>✕</Text>
-                        </TouchableOpacity>
+                        </AnimatedPressable>
                       </View>
                     ) : (
                       <View style={styles.photoPlaceholder}>
@@ -660,8 +715,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                         <Text style={styles.addPhotoText}>Tap to add</Text>
                       </View>
                     )}
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
                 <Text style={styles.photoInstruction}>{photoType.instruction}</Text>
               </View>
             );
@@ -684,18 +739,24 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         
         {/* AI Analysis Results */}
         {formData.ai_estimated_body_fat && (
-          <Card style={styles.analysisResultsCard}>
+          <GlassCard
+            elevation={3}
+            blurIntensity="default"
+            padding="lg"
+            borderRadius="lg"
+            style={styles.analysisResultsCard}
+          >
             <Text style={styles.analysisResultsTitle}>🎯 AI Analysis Results</Text>
             <Text style={styles.confidenceScore}>
               Confidence: {formData.ai_confidence_score}%
             </Text>
-            
+
             <View style={styles.analysisGrid}>
               <View style={styles.analysisItem}>
                 <Text style={styles.analysisLabel}>Estimated Body Fat</Text>
                 <Text style={styles.analysisValue}>{formData.ai_estimated_body_fat}%</Text>
               </View>
-              
+
               <View style={styles.analysisItem}>
                 <Text style={styles.analysisLabel}>Body Type</Text>
                 <Text style={styles.analysisValue}>
@@ -703,7 +764,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 </Text>
               </View>
             </View>
-            
+
             <View style={styles.bodyTypeInfo}>
               <Text style={styles.bodyTypeDescription}>
                 {formData.ai_body_type === 'ectomorph' && '🌱 Naturally lean, fast metabolism, difficulty gaining weight'}
@@ -711,21 +772,28 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 {formData.ai_body_type === 'endomorph' && '🍎 Broader build, slower metabolism, gains weight easily'}
               </Text>
             </View>
-            
-            <TouchableOpacity
+
+            <AnimatedPressable
               style={styles.reanalyzeButton}
               onPress={analyzePhotos}
+              scaleValue={0.96}
             >
               <Text style={styles.reanalyzeText}>🔄 Re-analyze Photos</Text>
-            </TouchableOpacity>
-          </Card>
+            </AnimatedPressable>
+          </GlassCard>
         )}
-      </View>
+      </GlassCard>
     );
   };
-  
+
   const renderMedicalInformationSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Medical Information</Text>
       <Text style={styles.sectionSubtitle}>
         Help us create safe and effective recommendations
@@ -782,19 +850,23 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           </Text>
           
           <View style={styles.checkboxContainer}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.checkbox}
               onPress={() => {
                 const newStatus = !formData.pregnancy_status;
                 updateField('pregnancy_status', newStatus);
                 if (!newStatus) updateField('pregnancy_trimester', undefined);
               }}
+              scaleValue={0.98}
             >
-              <View style={[styles.checkboxBox, formData.pregnancy_status && styles.checkboxBoxChecked]}>
+              <View style={[
+                styles.checkboxBox,
+                ...(formData.pregnancy_status ? [styles.checkboxBoxChecked] : []),
+              ]}>
                 {formData.pregnancy_status && <Text style={styles.checkboxCheck}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>Currently Pregnant</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
           
           {formData.pregnancy_status && (
@@ -802,40 +874,45 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               <Text style={styles.inputLabel}>Trimester *</Text>
               <View style={styles.trimesterButtons}>
                 {[1, 2, 3].map((trimester) => (
-                  <TouchableOpacity
+                  <AnimatedPressable
                     key={trimester}
                     style={[
                       styles.trimesterButton,
-                      formData.pregnancy_trimester === trimester && styles.trimesterButtonSelected,
+                      ...(formData.pregnancy_trimester === trimester ? [styles.trimesterButtonSelected] : []),
                     ]}
                     onPress={() => updateField('pregnancy_trimester', trimester as 1 | 2 | 3)}
+                    scaleValue={0.97}
                   >
                     <Text
                       style={[
                         styles.trimesterButtonText,
-                        formData.pregnancy_trimester === trimester && styles.trimesterButtonTextSelected,
+                        ...(formData.pregnancy_trimester === trimester ? [styles.trimesterButtonTextSelected] : []),
                       ]}
                     >
-                      {trimester === 1 ? 'First (1-13 weeks)' : 
-                       trimester === 2 ? 'Second (14-26 weeks)' : 
+                      {trimester === 1 ? 'First (1-13 weeks)' :
+                       trimester === 2 ? 'Second (14-26 weeks)' :
                        'Third (27-40 weeks)'}
                     </Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 ))}
               </View>
             </View>
           )}
           
           <View style={styles.checkboxContainer}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.checkbox}
               onPress={() => updateField('breastfeeding_status', !formData.breastfeeding_status)}
+              scaleValue={0.98}
             >
-              <View style={[styles.checkboxBox, formData.breastfeeding_status && styles.checkboxBoxChecked]}>
+              <View style={[
+                styles.checkboxBox,
+                ...(formData.breastfeeding_status ? [styles.checkboxBoxChecked] : []),
+              ]}>
                 {formData.breastfeeding_status && <Text style={styles.checkboxCheck}>✓</Text>}
               </View>
               <Text style={styles.checkboxLabel}>Currently Breastfeeding</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
       )}
@@ -849,95 +926,141 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         
         <View style={styles.stressLevelGrid}>
           {STRESS_LEVELS.map((stress) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={stress.level}
               onPress={() => updateField('stress_level', stress.level as 'low' | 'moderate' | 'high')}
               style={styles.stressLevelItem}
+              scaleValue={0.97}
             >
-              <Card
+              <GlassCard
+                elevation={formData.stress_level === stress.level ? 3 : 1}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
                 style={[
                   styles.stressLevelCard,
-                  formData.stress_level === stress.level && styles.stressLevelCardSelected,
-                  !formData.stress_level && styles.stressLevelCardOptional,
+                  ...(formData.stress_level === stress.level ? [styles.stressLevelCardSelected] : []),
+                  ...(!formData.stress_level ? [styles.stressLevelCardOptional] : []),
                 ]}
-                variant="outlined"
               >
                 <View style={styles.stressLevelContent}>
                   <Text style={styles.stressLevelIcon}>{stress.icon}</Text>
                   <Text style={[
                     styles.stressLevelTitle,
-                    formData.stress_level === stress.level && styles.stressLevelTitleSelected,
+                    ...(formData.stress_level === stress.level ? [styles.stressLevelTitleSelected] : []),
                   ]}>
                     {stress.title}
                   </Text>
                   <Text style={styles.stressLevelDescription}>{stress.description}</Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
+              </GlassCard>
+            </AnimatedPressable>
           ))}
         </View>
         
         {!formData.stress_level && (
-          <Card style={styles.infoCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.infoCard}
+          >
             <Text style={styles.infoText}>
               💡 Skip for now? You can connect a fitness band or smartwatch in the main app to automatically track your stress levels.
             </Text>
-          </Card>
+          </GlassCard>
         )}
         
         {formData.stress_level === 'high' && (
-          <Card style={styles.warningCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.warningCard}
+          >
             <Text style={styles.warningText}>
               ⚠️ High stress detected - we'll use conservative calorie targets to protect your health and hormones
             </Text>
-          </Card>
+          </GlassCard>
         )}
       </View>
       
       {/* Medical Warnings */}
       {formData.medical_conditions.length > 0 && (
-        <Card style={styles.medicalWarningCard}>
+        <GlassCard
+          elevation={3}
+          blurIntensity="default"
+          padding="md"
+          borderRadius="lg"
+          style={styles.medicalWarningCard}
+        >
           <Text style={styles.medicalWarningTitle}>⚠️ Important Medical Notice</Text>
           <Text style={styles.medicalWarningText}>
             Based on your medical conditions, please consult with your healthcare provider before starting any new fitness or diet program.
           </Text>
-        </Card>
+        </GlassCard>
       )}
-    </View>
+    </GlassCard>
   );
-  
+
   const renderCalculatedResultsSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Calculated Health Metrics</Text>
       
       <View style={styles.resultsGrid}>
         {formData.bmi && (
-          <Card style={styles.resultCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.resultCard}
+          >
             <Text style={styles.resultLabel}>BMI</Text>
             <Text style={styles.resultValue}>{formData.bmi}</Text>
             <Text style={styles.resultCategory}>{getBMICategory(formData.bmi).category}</Text>
-          </Card>
+          </GlassCard>
         )}
         
         {formData.bmr && (
-          <Card style={styles.resultCard}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.resultCard}
+          >
             <Text style={styles.resultLabel}>BMR</Text>
             <Text style={styles.resultValue}>{formData.bmr}</Text>
             <Text style={styles.resultCategory}>cal/day</Text>
-          </Card>
+          </GlassCard>
         )}
         
         {formData.waist_hip_ratio && (() => {
           const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
           const isHealthy = formData.waist_hip_ratio! < threshold;
           return (
-            <Card style={styles.resultCard}>
+            <GlassCard
+              elevation={2}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.resultCard}
+            >
               <Text style={styles.resultLabel}>Waist-Hip Ratio</Text>
               <Text style={styles.resultValue}>{formData.waist_hip_ratio}</Text>
               <Text style={styles.resultCategory}>
                 {isHealthy ? 'Healthy' : 'High Risk'}
               </Text>
-            </Card>
+            </GlassCard>
           );
         })()}
         
@@ -945,19 +1068,25 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           const weeklyRate = getHealthyWeightLossRate();
           if (weeklyRate > 0) {
             return (
-              <Card style={styles.resultCard}>
+              <GlassCard
+                elevation={2}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={styles.resultCard}
+              >
                 <Text style={styles.resultLabel}>Safe Weekly Rate</Text>
                 <Text style={styles.resultValue}>{weeklyRate.toFixed(1)}kg</Text>
                 <Text style={styles.resultCategory}>per week</Text>
-              </Card>
+              </GlassCard>
             );
           }
           return null;
         })()}
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
@@ -965,20 +1094,25 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Hero Section with Background Image */}
+        <HeroSection
+          image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
+          overlayGradient={gradients.overlay.dark}
+          contentPosition="center"
+          height={rh(200)}
+        >
           <Text style={styles.title}>Body Analysis & Health Profile</Text>
           <Text style={styles.subtitle}>
             Comprehensive body analysis with reliable AI-powered insights
           </Text>
-          
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
               <Text style={styles.autoSaveText}>💾 Saving...</Text>
             </View>
           )}
-        </View>
+        </HeroSection>
         
         {/* Form Sections */}
         <View style={styles.content}>
@@ -992,14 +1126,20 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
-            <Card style={styles.validationCard}>
+            <GlassCard
+              elevation={3}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.validationCard}
+            >
               <Text style={styles.validationTitle}>
                 {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
               </Text>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
-              
+
               {validationResult.errors.length > 0 && (
                 <View style={styles.validationErrors}>
                   <Text style={styles.validationErrorTitle}>Required:</Text>
@@ -1010,7 +1150,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                   ))}
                 </View>
               )}
-              
+
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
                   <Text style={styles.validationWarningTitle}>Recommendations:</Text>
@@ -1021,7 +1161,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                   ))}
                 </View>
               )}
-            </Card>
+            </GlassCard>
           </View>
         )}
       </ScrollView>
@@ -1088,7 +1228,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent',
   },
 
   scrollView: {
@@ -1096,21 +1236,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  headerGradient: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: rf(22),
     marginBottom: ResponsiveTheme.spacing.md,
   },

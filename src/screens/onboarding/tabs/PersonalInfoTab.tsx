@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { Button, Input, Card } from '../../../components/ui';
+import { GlassCard, AnimatedPressable, HeroSection, AnimatedIcon } from '../../../components/ui/aurora';
+import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import TimePicker from '../../../components/onboarding/TimePicker';
 
@@ -304,7 +308,13 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   // ============================================================================
   
   const renderNameSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Full Name</Text>
       <View style={styles.row}>
         <View style={styles.halfWidth}>
@@ -326,11 +336,17 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           />
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
   
   const renderDemographicsSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Demographics</Text>
       <View style={styles.row}>
         <View style={styles.halfWidth}>
@@ -347,13 +363,14 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <Text style={styles.inputLabel}>Gender *</Text>
           <View style={styles.genderContainer}>
             {GENDER_OPTIONS.map((option) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={option.value}
                 style={[
                   styles.genderOption,
-                  formData.gender === option.value && styles.genderOptionSelected,
+                  ...(formData.gender === option.value ? [styles.genderOptionSelected] : []),
                 ]}
                 onPress={() => updateField('gender', option.value)}
+                scaleValue={0.98}
               >
                 <Text style={styles.genderIcon}>{option.icon}</Text>
                 <Text
@@ -364,7 +381,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 >
                   {option.label}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
           {hasFieldError('gender') && (
@@ -372,11 +389,17 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           )}
         </View>
       </View>
-    </View>
+    </GlassCard>
   );
   
   const renderLocationSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Location</Text>
       
       {/* Country Selection */}
@@ -384,13 +407,14 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         <Text style={styles.inputLabel}>Country *</Text>
         <View style={styles.countryGrid}>
           {COUNTRIES_WITH_STATES.map((country) => (
-            <TouchableOpacity
+            <AnimatedPressable
               key={country.name}
               style={[
                 styles.countryOption,
-                formData.country === country.name && styles.countryOptionSelected,
+                ...(formData.country === country.name ? [styles.countryOptionSelected] : []),
               ]}
               onPress={() => handleCountryChange(country.name)}
+              scaleValue={0.96}
             >
               <Text
                 style={[
@@ -400,14 +424,15 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               >
                 {country.name}
               </Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           ))}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[
               styles.countryOption,
-              formData.country === 'Other' && styles.countryOptionSelected,
+              ...(formData.country === 'Other' ? [styles.countryOptionSelected] : []),
             ]}
             onPress={() => handleCountryChange('Other')}
+            scaleValue={0.96}
           >
             <Text
               style={[
@@ -417,7 +442,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             >
               Other
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
         {hasFieldError('country') && (
           <Text style={styles.errorText}>{getFieldError('country')}</Text>
@@ -442,13 +467,14 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <Text style={styles.inputLabel}>State/Province *</Text>
           <View style={styles.stateGrid}>
             {availableStates.map((state) => (
-              <TouchableOpacity
+              <AnimatedPressable
                 key={state}
                 style={[
                   styles.stateOption,
-                  formData.state === state && styles.stateOptionSelected,
+                  ...(formData.state === state ? [styles.stateOptionSelected] : []),
                 ]}
                 onPress={() => updateField('state', state)}
+                scaleValue={0.96}
               >
                 <Text
                   style={[
@@ -458,7 +484,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 >
                   {state}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
           {hasFieldError('state') && (
@@ -488,11 +514,17 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           onChangeText={(value) => updateField('region', value)}
         />
       </View>
-    </View>
+    </GlassCard>
   );
-  
+
   const renderOccupationSection = () => (
-    <View style={styles.section}>
+    <GlassCard
+      style={styles.section}
+      elevation={2}
+      blurIntensity="medium"
+      padding="lg"
+      borderRadius="lg"
+    >
       <Text style={styles.sectionTitle}>Daily Activity</Text>
       <Text style={styles.sectionSubtitle}>
         This helps us understand your daily movement beyond exercise
@@ -500,13 +532,14 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       
       <View style={styles.occupationContainer}>
         {OCCUPATION_OPTIONS.map((option) => (
-          <TouchableOpacity
+          <AnimatedPressable
             key={option.value}
             style={[
               styles.occupationOption,
-              formData.occupation_type === option.value && styles.occupationOptionSelected,
+              ...(formData.occupation_type === option.value ? [styles.occupationOptionSelected] : []),
             ]}
             onPress={() => updateField('occupation_type', option.value)}
+            scaleValue={0.98}
           >
             <Text style={styles.occupationIcon}>{option.icon}</Text>
             <View style={styles.occupationTextContainer}>
@@ -527,23 +560,29 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 {option.description}
               </Text>
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </View>
-      
+
       {hasFieldError('occupation') && (
         <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
       )}
-    </View>
+    </GlassCard>
   );
-  
+
   const renderSleepScheduleSection = () => {
     const sleepDuration = calculateSleepDuration();
     const sleepHours = parseFloat(sleepDuration.split('h')[0]) || 0;
     const isHealthySleep = sleepHours >= 7 && sleepHours <= 9;
     
     return (
-      <View style={styles.section}>
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
         <Text style={styles.sectionTitle}>Sleep Schedule</Text>
         <Text style={styles.sectionSubtitle}>
           Help us understand your daily routine for personalized recommendations
@@ -577,10 +616,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         
         {/* Sleep Duration Display */}
         {sleepDuration && (
-          <Card style={StyleSheet.flatten([
-            styles.sleepDurationCard,
-            isHealthySleep ? styles.sleepDurationHealthy : styles.sleepDurationWarning
-          ])}>
+          <GlassCard
+            elevation={2}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={StyleSheet.flatten([
+              styles.sleepDurationCard,
+              isHealthySleep ? styles.sleepDurationHealthy : styles.sleepDurationWarning
+            ])}
+          >
             <View style={styles.sleepDurationContent}>
               <Text style={styles.sleepDurationIcon}>
                 {isHealthySleep ? '😴' : '⚠️'}
@@ -590,16 +635,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   Sleep Duration: {sleepDuration}
                 </Text>
                 <Text style={styles.sleepDurationSubtitle}>
-                  {isHealthySleep 
+                  {isHealthySleep
                     ? 'Great! This is within the recommended 7-9 hours.'
-                    : sleepHours < 7 
+                    : sleepHours < 7
                       ? 'Consider getting more sleep for better fitness results.'
                       : 'Very long sleep duration detected.'
                   }
                 </Text>
               </View>
             </View>
-          </Card>
+          </GlassCard>
         )}
         
         {hasFieldError('wake') && (
@@ -608,7 +653,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         {hasFieldError('sleep') && (
           <Text style={styles.errorText}>{getFieldError('sleep')}</Text>
         )}
-      </View>
+      </GlassCard>
     );
   };
   
@@ -619,20 +664,41 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header with Gradient */}
+        {/* Hero Section with Background Image */}
+        <HeroSection
+          image={{ uri: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80' }}
+          overlayGradient={gradients.overlay.dark}
+          contentPosition="center"
+          height={rh(220)}
+        >
+          {/* Animated Avatar Placeholder */}
+          <View style={styles.avatarContainer}>
+            <AnimatedIcon
+              icon={
+                <View style={styles.avatarCircle}>
+                  <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
+                </View>
+              }
+              animationType="pulse"
+              continuous={true}
+              animationDuration={1500}
+              size={rf(80)}
+            />
+          </View>
+
           <Text style={styles.title}>Tell us about yourself</Text>
           <Text style={styles.subtitle}>
             This helps us create a personalized fitness plan just for you
           </Text>
-          
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
               <Text style={styles.autoSaveText}>💾 Saving...</Text>
             </View>
           )}
-        </View>
+        </HeroSection>
         
         {/* Form Sections */}
         <View style={styles.content}>
@@ -646,7 +712,13 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
-            <Card style={styles.validationCard}>
+            <GlassCard
+              elevation={3}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.validationCard}
+            >
               <Text style={styles.validationTitle}>
                 {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
               </Text>
@@ -701,7 +773,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   ))}
                 </View>
               )}
-            </Card>
+            </GlassCard>
           </View>
         )}
       </ScrollView>
@@ -790,7 +862,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent',
   },
 
   scrollView: {
@@ -798,21 +870,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  headerGradient: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.85)',
     lineHeight: rf(22),
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -829,6 +907,21 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  avatarContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  avatarCircle: {
+    width: rf(80),
+    height: rf(80),
+    borderRadius: rf(40),
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
 
   content: {
