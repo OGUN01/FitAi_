@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -8,6 +8,12 @@ import {
   TextStyle,
   TouchableOpacity,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolate,
+} from 'react-native-reanimated';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -48,17 +54,39 @@ export const Input: React.FC<InputProps> = ({
   onRightIconPress,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const focusAnimation = useSharedValue(0);
+
+  // Animate focus glow
+  useEffect(() => {
+    focusAnimation.value = withTiming(isFocused ? 1 : 0, {
+      duration: 200,
+    });
+  }, [isFocused]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const shadowOpacity = interpolate(focusAnimation.value, [0, 1], [0, 0.3]);
+    const shadowRadius = interpolate(focusAnimation.value, [0, 1], [0, 8]);
+
+    return {
+      shadowColor: ResponsiveTheme.colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity,
+      shadowRadius,
+      elevation: interpolate(focusAnimation.value, [0, 1], [0, 4]),
+    };
+  });
 
   return (
     <View style={[styles.container, style]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <View
+      <Animated.View
         style={[
           styles.inputContainer,
           isFocused && styles.inputContainerFocused,
           error && styles.inputContainerError,
           disabled && styles.inputContainerDisabled,
+          animatedStyle,
         ]}
       >
         {leftIcon && <View style={styles.leftIconContainer}>{leftIcon}</View>}
@@ -94,7 +122,7 @@ export const Input: React.FC<InputProps> = ({
             {rightIcon}
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -7,6 +7,13 @@ import {
   TextStyle,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -21,6 +28,7 @@ interface ButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
+  pulse?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -33,7 +41,29 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   fullWidth = false,
+  pulse = false,
 }) => {
+  const pulseAnimation = useSharedValue(1);
+
+  // Continuous pulse animation
+  useEffect(() => {
+    if (pulse && !disabled && !loading) {
+      pulseAnimation.value = withRepeat(
+        withSequence(
+          withTiming(1.05, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
+        -1,
+        false
+      );
+    } else {
+      pulseAnimation.value = withTiming(1, { duration: 200 });
+    }
+  }, [pulse, disabled, loading]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnimation.value }],
+  }));
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
       ...styles.base,
@@ -75,9 +105,11 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
   return (
-    <TouchableOpacity
-      style={[getButtonStyle(), disabled && styles.disabled, style]}
+    <AnimatedTouchable
+      style={[getButtonStyle(), disabled && styles.disabled, style, animatedStyle]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
@@ -92,7 +124,7 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>{title}</Text>
       )}
-    </TouchableOpacity>
+    </AnimatedTouchable>
   );
 };
 
