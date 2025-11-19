@@ -738,41 +738,49 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </Text>
 
         <View style={styles.scoresGrid}>
-          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
-            <Text style={styles.scoreTitle}>Overall Health</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score) }]}>
-              {calculatedData.overall_health_score}/100
-            </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score)}</Text>
-            <Text style={styles.scoreDescription}>Combined health assessment</Text>
-          </GlassCard>
+          <AnimatedSection delay={0} style={styles.scoreCard}>
+            <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+              <Text style={styles.scoreTitle}>Overall Health</Text>
+              <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score) }]}>
+                {calculatedData.overall_health_score}/100
+              </Text>
+              <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score)}</Text>
+              <Text style={styles.scoreDescription}>Combined health assessment</Text>
+            </GlassCard>
+          </AnimatedSection>
 
-          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
-            <Text style={styles.scoreTitle}>Diet Readiness</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.diet_readiness_score) }]}>
-              {calculatedData.diet_readiness_score}/100
-            </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.diet_readiness_score)}</Text>
-            <Text style={styles.scoreDescription}>Nutrition habits & readiness</Text>
-          </GlassCard>
+          <AnimatedSection delay={120} style={styles.scoreCard}>
+            <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+              <Text style={styles.scoreTitle}>Diet Readiness</Text>
+              <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.diet_readiness_score) }]}>
+                {calculatedData.diet_readiness_score}/100
+              </Text>
+              <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.diet_readiness_score)}</Text>
+              <Text style={styles.scoreDescription}>Nutrition habits & readiness</Text>
+            </GlassCard>
+          </AnimatedSection>
 
-          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
-            <Text style={styles.scoreTitle}>Fitness Readiness</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.fitness_readiness_score) }]}>
-              {calculatedData.fitness_readiness_score}/100
-            </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.fitness_readiness_score)}</Text>
-            <Text style={styles.scoreDescription}>Exercise experience & capacity</Text>
-          </GlassCard>
+          <AnimatedSection delay={240} style={styles.scoreCard}>
+            <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+              <Text style={styles.scoreTitle}>Fitness Readiness</Text>
+              <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.fitness_readiness_score) }]}>
+                {calculatedData.fitness_readiness_score}/100
+              </Text>
+              <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.fitness_readiness_score)}</Text>
+              <Text style={styles.scoreDescription}>Exercise experience & capacity</Text>
+            </GlassCard>
+          </AnimatedSection>
 
-          <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.scoreCard}>
-            <Text style={styles.scoreTitle}>Goal Realistic</Text>
-            <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.goal_realistic_score) }]}>
-              {calculatedData.goal_realistic_score}/100
-            </Text>
-            <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.goal_realistic_score)}</Text>
-            <Text style={styles.scoreDescription}>Timeline & target feasibility</Text>
-          </GlassCard>
+          <AnimatedSection delay={360} style={styles.scoreCard}>
+            <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+              <Text style={styles.scoreTitle}>Goal Realistic</Text>
+              <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.goal_realistic_score) }]}>
+                {calculatedData.goal_realistic_score}/100
+              </Text>
+              <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.goal_realistic_score)}</Text>
+              <Text style={styles.scoreDescription}>Timeline & target feasibility</Text>
+            </GlassCard>
+          </AnimatedSection>
         </View>
       </GlassCard>
     );
