@@ -473,7 +473,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             key={option.id}
             onPress={() => updateField('diet_type', option.id as DietPreferencesData['diet_type'])}
             style={styles.dietTypeItem}
-            scaleValue={0.96}
+            scaleValue={0.95}
           >
             <GlassCard
               elevation={formData.diet_type === option.id ? 3 : 2}
@@ -526,7 +526,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               key={option.key}
               onPress={() => toggleDietReadiness(option.key as keyof DietPreferencesData)}
               style={styles.dietReadinessItem}
-              scaleValue={0.98}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={isReady ? 3 : 2}
@@ -642,7 +642,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ...(isLastEnabled ? [styles.mealPreferenceItemDisabled] : []),
                 ]}
                 disabled={isLastEnabled}
-                scaleValue={0.98}
+                scaleValue={0.95}
               >
                 <GlassCard
                   elevation={isEnabled ? 3 : 2}
@@ -732,7 +732,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 }
               }}
               style={styles.skillLevelItem}
-              scaleValue={0.96}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={formData.cooking_skill_level === skill.level ? 3 : 2}
@@ -816,7 +816,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               key={budget.level}
               onPress={() => updateField('budget_level', budget.level as DietPreferencesData['budget_level'])}
               style={styles.budgetItem}
-              scaleValue={0.96}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={formData.budget_level === budget.level ? 3 : 2}
@@ -875,7 +875,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   key={habit.key}
                   onPress={() => toggleHealthHabit(habit.key as keyof DietPreferencesData)}
                   style={styles.habitItem}
-                  scaleValue={0.98}
+                  scaleValue={0.95}
                 >
                   <GlassCard
                     elevation={isActive ? 3 : 2}

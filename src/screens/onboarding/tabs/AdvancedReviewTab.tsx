@@ -265,7 +265,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
 
       <View style={styles.summaryGrid}>
         {/* Personal Info Summary */}
-        <AnimatedPressable onPress={() => onNavigateToTab?.(1)} scaleValue={0.97}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(1)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>👤</Text>
@@ -284,7 +284,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </AnimatedPressable>
 
         {/* Diet Summary */}
-        <AnimatedPressable onPress={() => onNavigateToTab?.(2)} scaleValue={0.97}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(2)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>🍽️</Text>
@@ -305,7 +305,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </AnimatedPressable>
 
         {/* Body Analysis Summary */}
-        <AnimatedPressable onPress={() => onNavigateToTab?.(3)} scaleValue={0.97}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(3)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>📊</Text>
@@ -324,7 +324,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         </AnimatedPressable>
 
         {/* Workout Summary */}
-        <AnimatedPressable onPress={() => onNavigateToTab?.(4)} scaleValue={0.97}>
+        <AnimatedPressable onPress={() => onNavigateToTab?.(4)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <Text style={styles.summaryIcon}>💪</Text>

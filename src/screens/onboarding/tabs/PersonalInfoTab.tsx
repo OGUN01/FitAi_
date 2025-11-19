@@ -370,7 +370,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   ...(formData.gender === option.value ? [styles.genderOptionSelected] : []),
                 ]}
                 onPress={() => updateField('gender', option.value)}
-                scaleValue={0.98}
+                scaleValue={0.95}
               >
                 <Text style={styles.genderIcon}>{option.icon}</Text>
                 <Text
@@ -414,7 +414,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 ...(formData.country === country.name ? [styles.countryOptionSelected] : []),
               ]}
               onPress={() => handleCountryChange(country.name)}
-              scaleValue={0.96}
+              scaleValue={0.95}
             >
               <Text
                 style={[
@@ -432,7 +432,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               ...(formData.country === 'Other' ? [styles.countryOptionSelected] : []),
             ]}
             onPress={() => handleCountryChange('Other')}
-            scaleValue={0.96}
+            scaleValue={0.95}
           >
             <Text
               style={[
@@ -474,7 +474,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   ...(formData.state === state ? [styles.stateOptionSelected] : []),
                 ]}
                 onPress={() => updateField('state', state)}
-                scaleValue={0.96}
+                scaleValue={0.95}
               >
                 <Text
                   style={[
@@ -539,7 +539,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               ...(formData.occupation_type === option.value ? [styles.occupationOptionSelected] : []),
             ]}
             onPress={() => updateField('occupation_type', option.value)}
-            scaleValue={0.98}
+            scaleValue={0.95}
           >
             <Text style={styles.occupationIcon}>{option.icon}</Text>
             <View style={styles.occupationTextContainer}>

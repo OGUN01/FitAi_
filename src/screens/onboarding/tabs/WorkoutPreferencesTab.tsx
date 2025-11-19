@@ -510,7 +510,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 key={goal.id}
                 onPress={() => toggleGoal(goal.id)}
                 style={styles.goalItem}
-                scaleValue={0.97}
+                scaleValue={0.95}
               >
                 <GlassCard
                   elevation={formData.primary_goals.includes(goal.id) ? 3 : 1}
@@ -752,7 +752,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 key={level.value}
                 onPress={() => updateField('flexibility_level', level.value as WorkoutPreferencesData['flexibility_level'])}
                 style={styles.flexibilityItem}
-                scaleValue={0.97}
+                scaleValue={0.95}
               >
                 <GlassCard
                   elevation={formData.flexibility_level === level.value ? 3 : 1}
@@ -800,7 +800,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               key={option.id}
               onPress={() => updateField('location', option.id as WorkoutPreferencesData['location'])}
               style={styles.locationItem}
-              scaleValue={0.97}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={formData.location === option.id ? 3 : 1}
@@ -911,7 +911,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               key={time.value}
               onPress={() => toggleWorkoutTime(time.value)}
               style={styles.workoutTimeItem}
-              scaleValue={0.97}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={formData.preferred_workout_times.includes(time.value) ? 3 : 1}
@@ -968,7 +968,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               key={preference.key}
               onPress={() => updateField(preference.key as keyof WorkoutPreferencesData, !isActive as any)}
               style={styles.stylePreferenceItem}
-              scaleValue={0.97}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={isActive ? 3 : 1}

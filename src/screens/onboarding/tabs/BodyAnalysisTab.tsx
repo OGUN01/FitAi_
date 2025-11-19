@@ -552,7 +552,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       <AnimatedPressable
         style={styles.measurementGuideButton}
         onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
-        scaleValue={0.97}
+        scaleValue={0.95}
       >
         <Text style={styles.measurementGuideText}>
           📏 How to measure correctly
@@ -687,7 +687,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 <AnimatedPressable
                   style={styles.photoCard}
                   onPress={() => openPhotoOptions(photoType.type)}
-                  scaleValue={0.98}
+                  scaleValue={0.95}
                 >
                   <GlassCard
                     elevation={1}
@@ -776,7 +776,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             <AnimatedPressable
               style={styles.reanalyzeButton}
               onPress={analyzePhotos}
-              scaleValue={0.96}
+              scaleValue={0.95}
             >
               <Text style={styles.reanalyzeText}>🔄 Re-analyze Photos</Text>
             </AnimatedPressable>
@@ -857,7 +857,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 updateField('pregnancy_status', newStatus);
                 if (!newStatus) updateField('pregnancy_trimester', undefined);
               }}
-              scaleValue={0.98}
+              scaleValue={0.95}
             >
               <View style={[
                 styles.checkboxBox,
@@ -881,7 +881,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                       ...(formData.pregnancy_trimester === trimester ? [styles.trimesterButtonSelected] : []),
                     ]}
                     onPress={() => updateField('pregnancy_trimester', trimester as 1 | 2 | 3)}
-                    scaleValue={0.97}
+                    scaleValue={0.95}
                   >
                     <Text
                       style={[
@@ -903,7 +903,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             <AnimatedPressable
               style={styles.checkbox}
               onPress={() => updateField('breastfeeding_status', !formData.breastfeeding_status)}
-              scaleValue={0.98}
+              scaleValue={0.95}
             >
               <View style={[
                 styles.checkboxBox,
@@ -930,7 +930,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               key={stress.level}
               onPress={() => updateField('stress_level', stress.level as 'low' | 'moderate' | 'high')}
               style={styles.stressLevelItem}
-              scaleValue={0.97}
+              scaleValue={0.95}
             >
               <GlassCard
                 elevation={formData.stress_level === stress.level ? 3 : 1}
