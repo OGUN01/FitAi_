@@ -3,12 +3,14 @@ module.exports = function (api) {
 
   return {
     presets: [
-      ['babel-preset-expo', { 
+      ['babel-preset-expo', {
         unstable_transformImportMeta: true  // Correct flag for SDK 53 to transform import.meta
       }]
     ],
     plugins: [
-      // Only keep reanimated plugin - must be last
+      // NativeWind plugin for Tailwind CSS support
+      'nativewind/babel',
+      // Reanimated plugin - must be last
       'react-native-reanimated/plugin',
     ],
   };

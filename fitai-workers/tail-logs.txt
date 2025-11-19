@@ -1,0 +1,233 @@
+
+ ⛅️ wrangler 4.48.0 (update available 4.49.0)
+─────────────────────────────────────────────
+Successfully created tail, expires at 2025-11-19T10:08:04Z
+Connected to fitai-workers, waiting for logs...
+POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate - Ok @ 19/11/2025, 9:55:33 am
+  (log) <-- POST /workout/generate
+  (error) [Validation] Zod validation failed: {
+  hasError: true,
+  hasErrors: false,
+  errorsType: 'undefined',
+  fullError: '{"name":"ZodError","message":"[\\n  {\\n    \\"code\\": \\"invalid_value\\",\\n    \\"values\\": [\\n      \\"weight_loss\\",\\n      \\"muscle_gain\\",\\n      \\"maintenance\\",\\n      \\"strength\\",\\n      \\"endurance\\",\\n      \\"flexibility\\",\\n      \\"athletic_performance\\"\\n    ],\\n    \\"path\\": [\\n      \\"profile\\",\\n      \\"fitnessGoal\\"\\n    ],\\n    \\"message\\": \\"Invalid option: expected one of \\\\\\"weight_loss\\\\\\"|\\\\\\"muscle_gain\\\\\\"|\\\\\\"maintenance\\\\\\"|\\\\\\"strength\\\\\\"|\\\\\\"endurance\\\\\\"|\\\\\\"flexibility\\\\\\"|\\\\\\"athletic_performance\\\\\\"\\"\\n  },\\n  {\\n    \\"code\\": \\"invalid_value\\",\\n    \\"values\\": [\\n      \\"body weight\\",\\n      \\"dumbbell\\",\\n      \\"barbell\\",\\n      \\"band\\",\\n      \\"cable\\",\\n      \\"machine\\",\\n      \\"kettlebell\\",\\n      \\"medicine ball\\",\\n      \\"foam roll\\",\\n      \\"ez barbell\\",\\n      \\"trap bar\\",\\n      \\"bosu ball\\",\\n      \\"resistance band\\",\\n      \\"stability ball\\",\\n      \\"olympic barbell\\",\\n      \\"smith machine\\",\\n      \\"assisted\\",\\n      \\"leverage machine\\",\\n      \\"rope\\",\\n      \\"sled machine\\",\\n      \\"skierg machine\\",\\n      \\"stationary bike\\",\\n      \\"upper body ergometer\\",\\n      \\"elliptical machine\\",\\n      \\"stepmill machine\\",\\n      \\"wheel roller\\",\\n      \\"weighted\\",\\n      \\"tire\\",\\n      \\"hammer\\",\\n      \\"roller\\"\\n    ],\\n    \\"path\\": [\\n      \\"profile\\",\\n      \\"availableEquipment\\",\\n      0\\n    ],\\n    \\"message\\": \\"Invalid option: expected one of \\\\\\"body weight\\\\\\"|\\\\\\"dumbbell\\\\\\"|\\\\\\"barbell\\\\\\"|\\\\\\"band\\\\\\"|\\\\\\"cable\\\\\\"|\\\\\\"machine\\\\\\"|\\\\\\"kettlebell\\\\\\"|\\\\\\"medicine ball\\\\\\"|\\\\\\"foam roll\\\\\\"|\\\\\\"ez barbell\\\\\\"|\\\\\\"trap bar\\\\\\"|\\\\\\"bosu ball\\\\\\"|\\\\\\"resistance band\\\\\\"|\\\\\\"stability ball\\\\\\"|\\\\\\"olympic barbell\\\\\\"|\\\\\\"smith machine\\\\\\"|\\\\\\"assisted\\\\\\"|\\\\\\"leverage machine\\\\\\"|\\\\\\"rope\\\\\\"|\\\\\\"sled machine\\\\\\"|\\\\\\"skierg machine\\\\\\"|\\\\\\"stationary bike\\\\\\"|\\\\\\"upper body ergometer\\\\\\"|\\\\\\"elliptical machine\\\\\\"|\\\\\\"stepmill machine\\\\\\"|\\\\\\"wheel roller\\\\\\"|\\\\\\"weighted\\\\\\"|\\\\\\"tire\\\\\\"|\\\\\\"hammer\\\\\\"|\\\\\\"roller\\\\\\"\\"\\n  }\\n]"}'
+}
+  (error) [Validation] Error messages: []
+  (error) [Workout Generation] Error: ValidationError: Validation failed - no error details available
+  (error) [ERROR] {
+  "name": "ValidationError",
+  "message": "Validation failed - no error details available",
+  "stack": "ValidationError: Validation failed - no error details available\n    at validateRequest (index.js:42070:11)\n    at handleWorkoutGeneration (index.js:94948:21)\n    at async dispatch (index.js:3645:17)\n    at async index.js:96209:5\n    at async dispatch (index.js:3645:17)\n    at async authMiddleware (index.js:96111:3)\n    at async dispatch (index.js:3645:17)\n    at async index.js:96323:3\n    at async dispatch (index.js:3645:17)\n    at async loggingMiddleware (index.js:96254:5)",
+  "method": "POST",
+  "path": "/workout/generate",
+  "url": "https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate",
+  "timestamp": "2025-11-19T04:25:35.172Z",
+  "statusCode": 400,
+  "errorCode": "VALIDATION_ERROR",
+  "details": [],
+  "isRetryable": false
+}
+  (log) [API Log] {
+  method: 'POST',
+  path: '/workout/generate',
+  status: 400,
+  time: '1192ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> POST /workout/generate [33m400[0m 1s
+POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate - Ok @ 19/11/2025, 9:57:09 am
+  (log) <-- POST /workout/generate
+  (log) [Workout Generation] Request validated: { workoutType: 'full_body', duration: 20, experienceLevel: 'beginner' }
+  (log) [Workout Generation] Cache MISS - generating fresh workout
+  (log) [Workout Generation] Starting exercise filtering...
+  (log) [Exercise Database] Loaded successfully: { totalExercises: 1500, gifCoverage: '100%', equipmentTypes: 28 }
+  (log) [Filter Layer 1] Equipment: 1500 → 372 exercises
+  (log) [Filter Layer 2] Body parts: 372 → 113 exercises
+  (log) [Filter Layer 3] Experience: 113 → 63 exercises
+  (log) [Exercise Filter] Top 5 exercises:
+  (log)   1. inverted row bent knees (score: 30)
+  (log)      Reasons: Body weight exercise (no equipment needed), Compound movement (works multiple muscle groups), Appropriate for beginner level
+  (log)   2. bodyweight standing one arm row (score: 30)
+  (log)      Reasons: Body weight exercise (no equipment needed), Compound movement (works multiple muscle groups), Appropriate for beginner level
+  (log)   3. one arm towel row (score: 30)
+  (log)      Reasons: Body weight exercise (no equipment needed), Compound movement (works multiple muscle groups), Appropriate for beginner level
+  (log)   4. inverted row (score: 30)
+  (log)      Reasons: Body weight exercise (no equipment needed), Compound movement (works multiple muscle groups), Appropriate for beginner level
+  (log)   5. bodyweight standing row (with towel) (score: 30)
+  (log)      Reasons: Body weight exercise (no equipment needed), Compound movement (works multiple muscle groups), Appropriate for beginner level
+  (log) [Filter Layer 4] Ranking: 63 → 40 exercises
+  (log) [Workout Generation] Filter result type: object
+  (log) [Workout Generation] Filter result keys: [ 'exercises', 'stats' ]
+  (log) [Workout Generation] Filtered exercises type: object
+  (log) [Workout Generation] Is array: true
+  (log) [Workout Generation] Exercise count: 40
+  (log) [Workout Generation] Exercise filtering complete: {
+  total: 1500,
+  afterEquipment: 372,
+  afterBodyParts: 113,
+  afterExperience: 63,
+  final: 40
+}
+  (log) [Workout Generation] Estimated tokens: 800
+  (log) [Workout Generation] Preparing exercises for AI...
+  (log) [Workout Generation] Exercises for AI prepared: 40
+  (log) [Workout Generation] Calling AI model: google/gemini-2.5-flash
+  (log) [Workout Generation] AI generation complete: {
+  generationTime: '20911ms',
+  exerciseCount: 3,
+  warmupCount: 2,
+  cooldownCount: 3
+}
+  (log) [Workout Generation] Enriching workout with exercise data...
+  (log) [Workout Generation] AI response structure: {
+  hasWarmup: true,
+  warmupLength: 2,
+  hasExercises: true,
+  exercisesLength: 3,
+  hasCooldown: true,
+  cooldownLength: 3
+}
+  (log) [Workout Generation] All exercise IDs collected: 8
+  (log) [Workout Generation] Enriched exercises: 8
+  (log) [Workout Generation] Building enriched workout response...
+  (log) [Workout Generation] Enriched workout built successfully
+  (log) [Workout Generation] Cached successfully
+  (log) [API Log] {
+  method: 'POST',
+  path: '/workout/generate',
+  status: 200,
+  time: '22826ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> POST /workout/generate [32m200[0m 23s
+POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate - Ok @ 19/11/2025, 9:57:32 am
+  (log) <-- POST /workout/generate
+  (log) [Workout Generation] Request validated: {
+  workoutType: 'upper_body',
+  duration: 30,
+  experienceLevel: 'intermediate'
+}
+  (log) [Workout Generation] Cache HIT from kv
+  (log) [API Log] {
+  method: 'POST',
+  path: '/workout/generate',
+  status: 200,
+  time: '673ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> POST /workout/generate [32m200[0m 673ms
+POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate - Ok @ 19/11/2025, 9:57:33 am
+  (log) <-- POST /workout/generate
+  (log) [Workout Generation] Request validated: { workoutType: 'full_body', duration: 60, experienceLevel: 'advanced' }
+  (log) [Workout Generation] Cache HIT from kv
+  (log) [API Log] {
+  method: 'POST',
+  path: '/workout/generate',
+  status: 200,
+  time: '681ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> POST /workout/generate [32m200[0m 681ms
+GET https://fitai-workers.sharmaharsh9887.workers.dev/health - Ok @ 19/11/2025, 10:27:01 am
+  (log) <-- GET /health
+  (log) [Supabase] Creating new client instance
+  (log) --> GET /health [32m200[0m 1s
+GET https://fitai-workers.sharmaharsh9887.workers.dev/health - Ok @ 19/11/2025, 10:38:40 am
+  (log) <-- GET /health
+  (log) [Supabase] Creating new client instance
+  (log) --> GET /health [32m200[0m 804ms
+GET https://fitai-workers.sharmaharsh9887.workers.dev/api/analytics/usage - Ok @ 19/11/2025, 10:49:21 am
+  (log) <-- GET /api/analytics/usage
+  (log) [Supabase] Creating new client instance
+  (error) [ERROR] {
+  "name": "UnauthorizedError",
+  "message": "Invalid or expired token",
+  "stack": "UnauthorizedError: Invalid or expired token\n    at verifyToken (index.js:96375:13)\n    at async authMiddleware (index.js:96403:16)\n    at async dispatch (index.js:3645:17)\n    at async index.js:96617:3\n    at async dispatch (index.js:3645:17)\n    at async loggingMiddleware (index.js:96548:5)\n    at async dispatch (index.js:3645:17)\n    at async logger2 (index.js:5223:5)\n    at async dispatch (index.js:3645:17)\n    at async index.js:4493:25",
+  "method": "GET",
+  "path": "/api/analytics/usage",
+  "url": "https://fitai-workers.sharmaharsh9887.workers.dev/api/analytics/usage",
+  "timestamp": "2025-11-19T05:19:22.097Z",
+  "statusCode": 401,
+  "errorCode": "UNAUTHORIZED",
+  "details": {
+    "reason": "invalid JWT: unable to parse or verify signature, token has invalid claims: token is expired"
+  },
+  "isRetryable": false
+}
+  (log) [API Log] {
+  method: 'GET',
+  path: '/api/analytics/usage',
+  status: 401,
+  time: '594ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> GET /api/analytics/usage [33m401[0m 594ms
+GET https://fitai-workers.sharmaharsh9887.workers.dev/api/analytics/usage - Ok @ 19/11/2025, 10:49:37 am
+  (log) <-- GET /api/analytics/usage
+  (error) [ERROR] {
+  "name": "UnauthorizedError",
+  "message": "Missing authorization token",
+  "stack": "UnauthorizedError: Missing authorization token\n    at authMiddleware (index.js:96399:11)\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at index.js:96617:9\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at loggingMiddleware (index.js:96548:11)\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at logger2 (index.js:5223:11)",
+  "method": "GET",
+  "path": "/api/analytics/usage",
+  "url": "https://fitai-workers.sharmaharsh9887.workers.dev/api/analytics/usage",
+  "timestamp": "2025-11-19T05:19:37.298Z",
+  "statusCode": 401,
+  "errorCode": "UNAUTHORIZED",
+  "details": {
+    "hint": "Include Authorization header with Bearer token"
+  },
+  "isRetryable": false
+}
+  (log) [API Log] {
+  method: 'GET',
+  path: '/api/analytics/usage',
+  status: 401,
+  time: '0ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> GET /api/analytics/usage [33m401[0m 0ms
+GET https://fitai-workers.sharmaharsh9887.workers.dev/health - Ok @ 19/11/2025, 10:56:54 am
+  (log) <-- GET /health
+  (log) [Supabase] Creating new client instance
+  (log) --> GET /health [32m200[0m 766ms
+GET https://fitai-workers.sharmaharsh9887.workers.dev/chat/conversations - Ok @ 19/11/2025, 10:56:58 am
+  (log) <-- GET /chat/conversations
+  (error) [ERROR] {
+  "name": "UnauthorizedError",
+  "message": "Missing authorization token",
+  "stack": "UnauthorizedError: Missing authorization token\n    at authMiddleware (index.js:96563:11)\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at index.js:96781:9\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at loggingMiddleware (index.js:96712:11)\n    at dispatch (index.js:3645:23)\n    at index.js:3645:46\n    at logger2 (index.js:5223:11)",
+  "method": "GET",
+  "path": "/chat/conversations",
+  "url": "https://fitai-workers.sharmaharsh9887.workers.dev/chat/conversations",
+  "timestamp": "2025-11-19T05:26:58.242Z",
+  "statusCode": 401,
+  "errorCode": "UNAUTHORIZED",
+  "details": {
+    "hint": "Include Authorization header with Bearer token"
+  },
+  "isRetryable": false
+}
+  (log) [Supabase] Creating new client instance
+  (log) [API Log] {
+  method: 'GET',
+  path: '/chat/conversations',
+  status: 401,
+  time: '0ms',
+  user: 'anonymous',
+  ip: '27.0.217.19'
+}
+  (log) --> GET /chat/conversations [33m401[0m 0ms
+FatalError: Tail disconnected, exiting.
+    at createFatalError (D:\FitAi\FitAI\fitai-workers\node_modules\wrangler\wrangler-dist\cli.js:201:12)
+    at Timeout._onTimeout (D:\FitAi\FitAI\fitai-workers\node_modules\wrangler\wrangler-dist\cli.js:235605:21)
+    at listOnTimeout (node:internal/timers:588:17)
+    at process.processTimers (node:internal/timers:523:7) {
+  telemetryMessage: 'Tail disconnected, exiting.',
+  code: 1
+}

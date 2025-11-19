@@ -1,22 +1,27 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Alert,
   Modal,
   RefreshControl,
-  ActivityIndicator,
   TextInput,
   Animated,
   Platform,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { haptics } from '../../utils/haptics';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
+import { Button, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { aiService } from '../../ai';
 import { useUserStore } from '../../stores/userStore';
@@ -63,6 +68,8 @@ import { barcodeService } from '../../services/barcodeService';
 import type { ScannedProduct } from '../../services/barcodeService';
 import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer';
 import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { LargeProgressRing } from '../../components/ui/aurora/ProgressRing';
 
 interface DietScreenProps {
   navigation?: any; // Navigation prop for routing
@@ -121,6 +128,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   const [showProductModal, setShowProductModal] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
 
+  // Swipe State
+  const [mealSwipePositions, setMealSwipePositions] = useState<Record<string, Animated.Value>>({});
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
+  const [suggestionSwipeStates, setSuggestionSwipeStates] = useState<Record<number, { translateY: Animated.Value; opacity: Animated.Value }>>({});
+
+  // Card Flip State
+  const [cardFlipStates, setCardFlipStates] = useState<Record<number, Animated.Value>>({});
+  const [addedToPlan, setAddedToPlan] = useState<Set<number>>(new Set());
+
   // Use nutrition store for meal plan state
   const {
     weeklyMealPlan,
@@ -144,7 +160,37 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     return todayName;
   });
   const [forceUpdate, setForceUpdate] = useState(0);
-  
+
+  // Animation refs for micro-interactions
+  const calorieRingProgress = useRef(new Animated.Value(0)).current;
+  const proteinCount = useRef(new Animated.Value(0)).current;
+  const carbsCount = useRef(new Animated.Value(0)).current;
+  const fatsCount = useRef(new Animated.Value(0)).current;
+  const mealCard1Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard1TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard2Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard2TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard3Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard3TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard4Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard4TranslateX = useRef(new Animated.Value(-50)).current;
+  const waterWaveOffset = useRef(new Animated.Value(0)).current;
+  const fabScale = useRef(new Animated.Value(1)).current;
+  const fabRotation = useRef(new Animated.Value(0)).current;
+  const waterButton1Ripple = useRef(new Animated.Value(0)).current;
+  const waterButton2Ripple = useRef(new Animated.Value(0)).current;
+  const waterButton3Ripple = useRef(new Animated.Value(0)).current;
+
+  // Ripple effect handler
+  const triggerRipple = (rippleAnim: Animated.Value) => {
+    rippleAnim.setValue(0);
+    Animated.timing(rippleAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  };
+
   // Force re-render when meal progress changes
   const forceRefresh = useCallback(() => {
     console.log('🔄 DietScreen: Force refresh triggered');
@@ -242,6 +288,133 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       refreshMealData();
     }
   }, [isActive, loadData]);
+
+  // Micro-interaction: Calorie ring and macro count-up animation on mount
+  useEffect(() => {
+    // Animate calorie ring progress
+    Animated.timing(calorieRingProgress, {
+      toValue: 1,
+      duration: 1500,
+      useNativeDriver: false,
+    }).start();
+
+    // Animate macro counts with stagger
+    Animated.stagger(150, [
+      Animated.timing(proteinCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+      Animated.timing(carbsCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+      Animated.timing(fatsCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Meal cards staggered slide-in animation
+  useEffect(() => {
+    Animated.stagger(100, [
+      Animated.parallel([
+        Animated.timing(mealCard1Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard1TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard2Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard2TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard3Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard3TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard4Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard4TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Water wave continuous animation
+  useEffect(() => {
+    const waveAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(waterWaveOffset, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waterWaveOffset, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    waveAnimation.start();
+    return () => waveAnimation.stop();
+  }, []);
+
+  // Micro-interaction: FAB scale pulse animation
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabScale, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabScale, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+    return () => pulseAnimation.stop();
+  }, []);
 
   // Load existing meal plan on component mount
   useEffect(() => {
@@ -1005,6 +1178,208 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     return mealsForDay;
   };
 
+  // Get or create swipe position for a meal
+  const getSwipePosition = (mealId: string): Animated.Value => {
+    if (!mealSwipePositions[mealId]) {
+      const newPosition = new Animated.Value(0);
+      setMealSwipePositions(prev => ({ ...prev, [mealId]: newPosition }));
+      return newPosition;
+    }
+    return mealSwipePositions[mealId];
+  };
+
+  // Handle delete meal with swipe animation
+  const handleDeleteMeal = (meal: DayMeal) => {
+    Alert.alert(
+      'Delete Meal',
+      `Are you sure you want to delete "${meal.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            haptics.impact('medium');
+            console.log('🗑️ Deleting meal:', meal.name);
+            // TODO: Implement actual meal deletion from store
+            Alert.alert('Success', 'Meal deleted successfully');
+            // Reset swipe position
+            const swipePos = getSwipePosition(meal.id);
+            Animated.spring(swipePos, { toValue: 0, useNativeDriver: true }).start();
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle edit meal
+  const handleEditMeal = (meal: DayMeal) => {
+    haptics.impact('light');
+    console.log('✏️ Editing meal:', meal.name);
+    Alert.alert('Edit Meal', `Edit functionality for "${meal.name}" coming soon!`);
+    // Reset swipe position
+    const swipePos = getSwipePosition(meal.id);
+    Animated.spring(swipePos, { toValue: 0, useNativeDriver: true }).start();
+  };
+
+  // Get or create flip state for card
+  const getCardFlipState = (cardId: number): Animated.Value => {
+    if (!cardFlipStates[cardId]) {
+      const newFlip = new Animated.Value(0);
+      setCardFlipStates(prev => ({ ...prev, [cardId]: newFlip }));
+      return newFlip;
+    }
+    return cardFlipStates[cardId];
+  };
+
+  // Handle adding meal to plan with flip animation
+  const handleAddToPlan = (suggestionId: number, suggestionName: string) => {
+    const flipValue = getCardFlipState(suggestionId);
+
+    // Flip to back
+    Animated.sequence([
+      Animated.timing(flipValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      // Hold for 1 second
+      Animated.delay(1000),
+      // Flip back to front
+      Animated.timing(flipValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Mark as added
+    setAddedToPlan(prev => new Set(prev).add(suggestionId));
+    haptics.impact('medium');
+
+    // Show success message
+    setTimeout(() => {
+      Alert.alert('Added to Plan', `${suggestionName} has been added to your meal plan`);
+    }, 300);
+  };
+
+  // Get or create swipe state for suggestion card
+  const getSuggestionSwipeState = (suggestionId: number) => {
+    if (!suggestionSwipeStates[suggestionId]) {
+      const newState = {
+        translateY: new Animated.Value(0),
+        opacity: new Animated.Value(1),
+      };
+      setSuggestionSwipeStates(prev => ({ ...prev, [suggestionId]: newState }));
+      return newState;
+    }
+    return suggestionSwipeStates[suggestionId];
+  };
+
+  // Handle dismissing a suggestion card
+  const handleDismissSuggestion = (suggestionId: number) => {
+    const swipeState = getSuggestionSwipeState(suggestionId);
+
+    Animated.parallel([
+      Animated.timing(swipeState.translateY, {
+        toValue: 300,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(swipeState.opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setDismissedSuggestions(prev => new Set(prev).add(suggestionId));
+      haptics.impact('medium');
+    });
+  };
+
+  // Create PanResponder for suggestion card swipe
+  const createSuggestionPanResponder = (suggestionId: number) => {
+    const swipeState = getSuggestionSwipeState(suggestionId);
+    const DISMISS_THRESHOLD = 100; // Swipe down distance to dismiss
+
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to vertical swipes (down)
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow downward swipe
+        if (gestureState.dy > 0) {
+          swipeState.translateY.setValue(gestureState.dy);
+          swipeState.opacity.setValue(1 - gestureState.dy / DISMISS_THRESHOLD / 2);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > DISMISS_THRESHOLD) {
+          // Dismiss the card
+          handleDismissSuggestion(suggestionId);
+        } else {
+          // Snap back
+          Animated.parallel([
+            Animated.spring(swipeState.translateY, {
+              toValue: 0,
+              tension: 100,
+              friction: 10,
+              useNativeDriver: true,
+            }),
+            Animated.timing(swipeState.opacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    });
+  };
+
+  // Create PanResponder for swipe gestures
+  const createMealPanResponder = (mealId: string) => {
+    const swipePosition = getSwipePosition(mealId);
+    const SWIPE_THRESHOLD = -80; // Minimum swipe distance to reveal actions
+
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow left swipe (negative dx)
+        if (gestureState.dx < 0) {
+          swipePosition.setValue(gestureState.dx);
+        } else if (gestureState.dx > 0 && swipePosition._value < 0) {
+          // Allow swiping back to original position
+          swipePosition.setValue(Math.max(SWIPE_THRESHOLD, gestureState.dx));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < SWIPE_THRESHOLD / 2) {
+          // Swipe left - reveal actions
+          Animated.spring(swipePosition, {
+            toValue: SWIPE_THRESHOLD,
+            tension: 100,
+            friction: 10,
+            useNativeDriver: true,
+          }).start();
+          haptics.impact('light');
+        } else {
+          // Snap back to closed
+          Animated.spring(swipePosition, {
+            toValue: 0,
+            tension: 100,
+            friction: 10,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    });
+  };
+
   // Handle meal start (similar to workout start)
   const handleStartMeal = (meal: DayMeal) => {
     console.log('🍽️ handleStartMeal called with meal:', meal.name);
@@ -1414,7 +1789,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -1430,53 +1806,91 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         <View>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Nutrition</Text>
+            <Text style={styles.title}>Nutrition Plan</Text>
+
+            {/* DateSelector (Today + navigation) - Aurora Design */}
+            <View style={styles.dateSelector}>
+              <AnimatedPressable
+                style={styles.dateNavButton}
+                onPress={() => Alert.alert('Previous Day', 'Navigate to previous day')}
+                scaleValue={0.9}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Text style={styles.dateNavIcon}>‹</Text>
+              </AnimatedPressable>
+
+              <GlassCard elevation={1} blurIntensity="light" padding="sm" borderRadius="lg" style={styles.dateBadge}>
+                <Text style={styles.dateText}>Today</Text>
+                <Text style={styles.dateSubtext}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
+              </GlassCard>
+
+              <AnimatedPressable
+                style={styles.dateNavButton}
+                onPress={() => Alert.alert('Next Day', 'Navigate to next day')}
+                scaleValue={0.9}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Text style={styles.dateNavIcon}>›</Text>
+              </AnimatedPressable>
+            </View>
+
             <View style={styles.headerButtons}>
               {/* Track B Status Indicator */}
-              <TouchableOpacity style={styles.statusButton}>
+              <AnimatedPressable style={styles.statusButton} scaleValue={0.97}>
                 <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
                 onPress={generateWeeklyMealPlan}
                 disabled={isGeneratingPlan}
+                scaleValue={0.95}
+                hapticFeedback={true}
+                hapticType="medium"
               >
                 {isGeneratingPlan ? (
-                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                  <AuroraSpinner size="sm" theme="white" />
                 ) : (
                   <Text style={styles.aiButtonText}>🍽️ Week</Text>
                 )}
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
                 onPress={generateDailyMealPlan}
                 disabled={isGeneratingMeal}
+                scaleValue={0.95}
+                hapticFeedback={true}
+                hapticType="medium"
               >
                 {isGeneratingMeal ? (
-                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                  <AuroraSpinner size="sm" theme="white" />
                 ) : (
                   <Text style={styles.aiButtonText}>🤖 Day</Text>
                 )}
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#f59e0b' }]}
                 onPress={() => setShowTestComponent(true)}
+                scaleValue={0.95}
               >
                 <Text style={styles.aiButtonText}>🧪 Test</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#10b981' }]}
                 onPress={runQuickActionsTests}
+                scaleValue={0.95}
               >
                 <Text style={styles.aiButtonText}>✅ Quick</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#8b5cf6' }]}
                 onPress={runFoodRecognitionE2ETests}
+                scaleValue={0.95}
               >
                 <Text style={styles.aiButtonText}>🧪 E2E</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </AnimatedPressable>
+              <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#ef4444' }]}
                 onPress={() => {
                   console.log('🧪 Test button pressed - bypassing profile checks');
@@ -1485,26 +1899,27 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     'This button works! Check console for Generate Weekly Plan button logs.'
                   );
                 }}
+                scaleValue={0.95}
               >
                 <Text style={styles.aiButtonText}>🧪 Test</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.addButton} onPress={handleSearchFood}>
+              </AnimatedPressable>
+              <AnimatedPressable style={styles.addButton} onPress={handleSearchFood} scaleValue={0.95}>
                 <Text style={styles.addIcon}>🤖</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </View>
 
           {/* Loading State */}
           {(foodsLoading || userMealsLoading) && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+              <AuroraSpinner size="lg" theme="primary" />
               <Text style={styles.loadingText}>Loading nutrition data...</Text>
             </View>
           )}
 
           {/* Error State */}
           {(foodsError || userMealsError) && (
-            <Card style={styles.errorCard} variant="outlined">
+            <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
               <Text style={styles.errorText}>⚠️ {foodsError || userMealsError}</Text>
               <Button
                 title="Retry"
@@ -1513,15 +1928,567 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 size="sm"
                 style={styles.retryButton}
               />
-            </Card>
+            </GlassCard>
           )}
 
           {/* No Authentication State */}
           {!canAccessMealFeatures && (
-            <Card style={styles.errorCard} variant="outlined">
+            <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
               <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
-            </Card>
+            </GlassCard>
           )}
+
+          {/* Calorie Overview - Aurora Design */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <View style={styles.calorieOverviewCenter}>
+                <LargeProgressRing
+                  progress={(nutritionTargets.calories.current / nutritionTargets.calories.target) * 100}
+                  size={200}
+                  strokeWidth={12}
+                  gradient={{
+                    colors: ['#FF6B6B', '#FF8E53', '#FFC107'],
+                    start: { x: 0, y: 0 },
+                    end: { x: 1, y: 1 },
+                  }}
+                >
+                  <View style={styles.calorieCenter}>
+                    <Text style={styles.caloriesRemaining}>
+                      {Math.max(0, nutritionTargets.calories.target - nutritionTargets.calories.current)}
+                    </Text>
+                    <Text style={styles.caloriesLabel}>Calories left</Text>
+                    <Text style={styles.caloriesTarget}>of {nutritionTargets.calories.target}</Text>
+                  </View>
+                </LargeProgressRing>
+              </View>
+
+              {/* Macro Breakdown Grid */}
+              <View style={styles.macroGrid}>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.protein.current)}g</Text>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.protein.target}g</Text>
+                </View>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.carbs.current)}g</Text>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.carbs.target}g</Text>
+                </View>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
+                  <Text style={styles.macroLabel}>Fats</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.fat.target}g</Text>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Today's Meals - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's Meals</Text>
+
+            {getTodaysMeals().length > 0 ? (
+              getTodaysMeals().map((meal, index) => {
+                const mealTimes = { breakfast: '8:00 AM', lunch: '1:00 PM', dinner: '7:00 PM', snack: '4:00 PM' };
+                const mealTime = mealTimes[meal.type as keyof typeof mealTimes] || '12:00 PM';
+                const mealEmojis = { breakfast: '🍳', lunch: '🍱', dinner: '🍽️', snack: '🍪' };
+                const mealEmoji = mealEmojis[meal.type as keyof typeof mealEmojis] || '🍽️';
+                const panResponder = createMealPanResponder(meal.id);
+                const swipePosition = getSwipePosition(meal.id);
+
+                return (
+                  <View key={meal.id} style={styles.swipeableContainer}>
+                    {/* Action Buttons (revealed on swipe) */}
+                    <View style={styles.swipeActions}>
+                      <AnimatedPressable
+                        style={styles.swipeActionEdit}
+                        onPress={() => handleEditMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="medium"
+                      >
+                        <Text style={styles.swipeActionIcon}>✏️</Text>
+                        <Text style={styles.swipeActionText}>Edit</Text>
+                      </AnimatedPressable>
+                      <AnimatedPressable
+                        style={styles.swipeActionDelete}
+                        onPress={() => handleDeleteMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="medium"
+                      >
+                        <Text style={styles.swipeActionIcon}>🗑️</Text>
+                        <Text style={styles.swipeActionText}>Delete</Text>
+                      </AnimatedPressable>
+                    </View>
+
+                    {/* Swipeable Card */}
+                    <Animated.View
+                      {...panResponder.panHandlers}
+                      style={[
+                        styles.swipeableCard,
+                        {
+                          transform: [{ translateX: swipePosition }],
+                        },
+                      ]}
+                    >
+                      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.mealTimelineCard}>
+                    {/* Time Badge */}
+                    <View style={styles.timeBadge}>
+                      <Text style={styles.timeBadgeText}>{mealTime}</Text>
+                    </View>
+
+                    <View style={styles.mealTimelineContent}>
+                      {/* Food Image with Gradient Border */}
+                      <View style={styles.mealImageContainer}>
+                        <LinearGradient
+                          {...(toLinearGradientProps(gradients.border.primary) as any)}
+                          style={styles.mealImageGradientBorder}
+                        >
+                          <View style={styles.mealImageInner}>
+                            <Text style={styles.mealImageEmoji}>{mealEmoji}</Text>
+                          </View>
+                        </LinearGradient>
+                      </View>
+
+                      {/* Meal Info */}
+                      <View style={styles.mealTimelineInfo}>
+                        <Text style={styles.mealTimelineName}>{meal.name}</Text>
+                        <Text style={styles.mealTimelineCalories}>
+                          {meal.nutrition?.calories || 0} cal
+                        </Text>
+
+                        {/* Macro Badges */}
+                        <View style={styles.macroBadgesContainer}>
+                          <View style={[styles.macroBadge, { backgroundColor: '#FF6B6B33' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#FF6B6B' }]}>
+                              P: {Math.round(meal.nutrition?.protein || 0)}g
+                            </Text>
+                          </View>
+                          <View style={[styles.macroBadge, { backgroundColor: '#4ECDC433' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#4ECDC4' }]}>
+                              C: {Math.round(meal.nutrition?.carbs || 0)}g
+                            </Text>
+                          </View>
+                          <View style={[styles.macroBadge, { backgroundColor: '#FFC10733' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#FFC107' }]}>
+                              F: {Math.round(meal.nutrition?.fat || 0)}g
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {/* Edit/Delete Icon Button */}
+                      <AnimatedPressable
+                        style={styles.mealActionButton}
+                        onPress={() => handleStartMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="light"
+                      >
+                        <Text style={styles.mealActionIcon}>▶️</Text>
+                      </AnimatedPressable>
+                    </View>
+                      </GlassCard>
+                    </Animated.View>
+                  </View>
+                );
+              })
+            ) : (
+              <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg">
+                <Text style={styles.emptyMealsText}>No meals planned for today</Text>
+                <Text style={styles.emptyMealsSubtext}>Generate a meal plan to get started</Text>
+              </GlassCard>
+            )}
+          </View>
+
+          {/* Meal Suggestions - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Meal Suggestions</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={rw(300) + ResponsiveTheme.spacing.md}
+              decelerationRate="fast"
+              contentContainerStyle={styles.suggestionsScrollContent}
+            >
+              {[
+                {
+                  id: 1,
+                  name: 'Grilled Chicken Salad',
+                  image: '🥗',
+                  cookTime: '15 min',
+                  difficulty: 'Easy',
+                  calories: 320,
+                  protein: 35,
+                  carbs: 20,
+                  fat: 10,
+                },
+                {
+                  id: 2,
+                  name: 'Salmon with Quinoa',
+                  image: '🍣',
+                  cookTime: '25 min',
+                  difficulty: 'Medium',
+                  calories: 450,
+                  protein: 40,
+                  carbs: 35,
+                  fat: 15,
+                },
+                {
+                  id: 3,
+                  name: 'Veggie Buddha Bowl',
+                  image: '🥙',
+                  cookTime: '20 min',
+                  difficulty: 'Easy',
+                  calories: 380,
+                  protein: 18,
+                  carbs: 55,
+                  fat: 12,
+                },
+              ].filter(suggestion => !dismissedSuggestions.has(suggestion.id)).map((suggestion) => {
+                const panResponder = createSuggestionPanResponder(suggestion.id);
+                const swipeState = getSuggestionSwipeState(suggestion.id);
+                const flipValue = getCardFlipState(suggestion.id);
+                const isAdded = addedToPlan.has(suggestion.id);
+
+                const frontInterpolate = flipValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '180deg'],
+                });
+                const backInterpolate = flipValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['180deg', '360deg'],
+                });
+
+                return (
+                  <Animated.View
+                    key={suggestion.id}
+                    {...panResponder.panHandlers}
+                    style={{
+                      transform: [{ translateY: swipeState.translateY }],
+                      opacity: swipeState.opacity,
+                    }}
+                  >
+                    {/* Front of Card */}
+                    <Animated.View
+                      style={[
+                        styles.cardFace,
+                        {
+                          transform: [{ rotateY: frontInterpolate }],
+                        },
+                      ]}
+                    >
+                      <GlassCard
+                        elevation={3}
+                        blurIntensity="medium"
+                        padding="none"
+                        borderRadius="xl"
+                        style={styles.suggestionCard}
+                      >
+                  {/* Hero Image with Gradient Overlay */}
+                  <View style={styles.suggestionImageContainer}>
+                    <LinearGradient
+                      {...(toLinearGradientProps(gradients.overlay.dark) as any)}
+                      style={styles.suggestionGradientOverlay}
+                    >
+                      <Text style={styles.suggestionImageEmoji}>{suggestion.image}</Text>
+                    </LinearGradient>
+                  </View>
+
+                  {/* Content */}
+                  <View style={styles.suggestionContent}>
+                    <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionDetails}>
+                      {suggestion.cookTime} • {suggestion.difficulty}
+                    </Text>
+
+                    {/* Macro Preview */}
+                    <View style={styles.suggestionMacros}>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.calories}</Text>
+                        <Text style={styles.suggestionMacroLabel}>cal</Text>
+                      </View>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.protein}g</Text>
+                        <Text style={styles.suggestionMacroLabel}>protein</Text>
+                      </View>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.carbs}g</Text>
+                        <Text style={styles.suggestionMacroLabel}>carbs</Text>
+                      </View>
+                    </View>
+
+                    {/* Add to Plan Button */}
+                    <AnimatedPressable
+                      style={styles.addToPlanButton}
+                      onPress={() => handleAddToPlan(suggestion.id, suggestion.name)}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="medium"
+                      disabled={isAdded}
+                    >
+                      <LinearGradient
+                        {...(toLinearGradientProps(gradients.button.primary) as any)}
+                        style={styles.addToPlanButtonGradient}
+                      >
+                        <Text style={styles.addToPlanButtonText}>Add to Plan</Text>
+                      </LinearGradient>
+                    </AnimatedPressable>
+                  </View>
+                      </GlassCard>
+                    </Animated.View>
+
+                    {/* Back of Card */}
+                    <Animated.View
+                      style={[
+                        styles.cardFace,
+                        styles.cardFaceBack,
+                        {
+                          transform: [{ rotateY: backInterpolate }],
+                        },
+                      ]}
+                    >
+                      <GlassCard
+                        elevation={3}
+                        blurIntensity="medium"
+                        padding="lg"
+                        borderRadius="xl"
+                        style={[styles.suggestionCard, styles.suggestionCardBack]}
+                      >
+                        <View style={styles.cardBackContent}>
+                          <Text style={styles.cardBackIcon}>✓</Text>
+                          <Text style={styles.cardBackTitle}>Added!</Text>
+                          <Text style={styles.cardBackSubtitle}>Meal added to your plan</Text>
+                        </View>
+                      </GlassCard>
+                    </Animated.View>
+                  </Animated.View>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Water Intake Tracker - Aurora Design */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <Text style={styles.sectionTitle}>Hydration</Text>
+
+              <View style={styles.waterTrackerContainer}>
+                {/* Animated Water Glass with wave effect */}
+                <View style={styles.waterGlassContainer}>
+                  <View style={styles.waterGlass}>
+                    {/* Water fill with gradient and wave animation */}
+                    <Animated.View
+                      style={[
+                        styles.waterFill,
+                        {
+                          height: `${(waterConsumed / waterGoal) * 100}%`,
+                          transform: [
+                            {
+                              translateY: waterWaveOffset.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -5],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={['#4ECDC4', '#44A08D', '#2E7D6E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.waterFillGradient}
+                      />
+                    </Animated.View>
+                    {/* Glass border */}
+                    <View style={styles.glassBorder} />
+                  </View>
+
+                  {/* Water icon/wave */}
+                  <Text style={styles.waterDropIcon}>💧</Text>
+                </View>
+
+                {/* Water Stats and Controls */}
+                <View style={styles.waterStatsContainer}>
+                  <Text style={styles.waterAmountConsumed}>{waterConsumed.toFixed(1)}L</Text>
+                  <Text style={styles.waterTargetAmount}>of {waterGoal}L goal</Text>
+
+                  {/* Quick Add Buttons with Ripple Effect */}
+                  <View style={styles.waterQuickAddButtons}>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton1Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 0.25, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="light"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton1Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton1Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+250ml</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton2Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 0.5, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="light"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton2Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton2Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+500ml</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton3Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 1, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="medium"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton3Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton3Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+1L</Text>
+                    </AnimatedPressable>
+                  </View>
+
+                  {/* Intake Timeline */}
+                  <View style={styles.waterTimeline}>
+                    <Text style={styles.waterTimelineTitle}>Today's Intake</Text>
+                    <View style={styles.waterTimelineBar}>
+                      {[...Array(Math.min(Math.ceil(waterConsumed / 0.25), 16))].map((_, index) => (
+                        <View key={index} style={styles.waterTimelineDot} />
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Weekly Nutrition Trends Chart */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <Text style={styles.sectionTitle}>Weekly Nutrition Trends</Text>
+
+              {/* Chart Legend */}
+              <View style={styles.chartLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FF6B9D' }]} />
+                  <Text style={styles.legendText}>Protein</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
+                  <Text style={styles.legendText}>Carbs</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FFA726' }]} />
+                  <Text style={styles.legendText}>Fats</Text>
+                </View>
+              </View>
+
+              {/* Grouped Bar Chart */}
+              <View style={styles.weeklyNutritionChart}>
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                  // Sample data for each day (protein, carbs, fats as percentages)
+                  const dayData = [
+                    { protein: 85, carbs: 70, fats: 60 },
+                    { protein: 90, carbs: 80, fats: 65 },
+                    { protein: 75, carbs: 65, fats: 70 },
+                    { protein: 95, carbs: 85, fats: 75 },
+                    { protein: 80, carbs: 75, fats: 55 },
+                    { protein: 70, carbs: 60, fats: 50 },
+                    { protein: 88, carbs: 72, fats: 68 },
+                  ][index];
+
+                  return (
+                    <View key={day} style={styles.chartDayColumn}>
+                      {/* Grouped bars */}
+                      <View style={styles.barsGroup}>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.proteinBar, { height: `${dayData.protein}%` }]} />
+                        </View>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.carbsBar, { height: `${dayData.carbs}%` }]} />
+                        </View>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.fatsBar, { height: `${dayData.fats}%` }]} />
+                        </View>
+                      </View>
+                      {/* Day label */}
+                      <Text style={styles.chartDayLabel}>{day}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Average Line Indicator */}
+              <View style={styles.averageLine}>
+                <View style={styles.averageLineDashed} />
+                <Text style={styles.averageLineText}>Target Average</Text>
+              </View>
+            </GlassCard>
+          </View>
 
           {/* Weekly Meal Plan Section */}
           {weeklyMealPlan && (
@@ -1538,10 +2505,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     'saturday',
                     'sunday',
                   ].map((day) => (
-                    <TouchableOpacity
+                    <AnimatedPressable
                       key={day}
                       style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
                       onPress={() => setSelectedDay(day)}
+                      scaleValue={0.95}
                     >
                       <Text
                         style={[
@@ -1551,7 +2519,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       >
                         {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   ))}
                 </ScrollView>
               </View>
@@ -1576,7 +2544,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   );
                 })}
                 {getTodaysMeals().length === 0 && (
-                  <Card style={styles.emptyCard}>
+                  <GlassCard style={styles.emptyCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                     <Text style={styles.emptyText}>No meals planned for {selectedDay}</Text>
                     <Button
                       title="Generate Meals"
@@ -1584,7 +2552,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       variant="outline"
                       size="sm"
                     />
-                  </Card>
+                  </GlassCard>
                 )}
               </View>
             </>
@@ -1592,7 +2560,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
           {/* Generate Weekly Plan Prompt */}
           {!weeklyMealPlan && canAccessMealFeatures && (
-            <Card style={styles.promptCard}>
+            <GlassCard style={styles.promptCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
               <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
               <Text style={styles.promptText}>
                 Get a personalized 7-day meal plan with recipes tailored to your goals and
@@ -1604,13 +2572,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 disabled={isGeneratingPlan}
                 style={styles.promptButton}
               />
-            </Card>
+            </GlassCard>
           )}
 
           {/* AI Meal Generation Panel */}
           {showFoodSearch && (
             <View style={styles.searchSection}>
-              <Card style={styles.aiMealCard} variant="elevated">
+              <GlassCard style={styles.aiMealCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                 <View style={styles.aiMealContent}>
                   <Text style={styles.aiMealIcon}>🤖</Text>
                   <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
@@ -1618,54 +2586,67 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     Create personalized meals based on your dietary preferences and nutrition goals.
                   </Text>
                   <View style={styles.mealTypeButtons}>
-                    <TouchableOpacity
+                    <AnimatedPressable
                       style={styles.mealTypeButton}
                       onPress={() => generateAIMeal('breakfast')}
                       disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
                     >
                       <Text style={styles.mealTypeEmoji}>🥣</Text>
                       <Text style={styles.mealTypeText}>Breakfast</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </AnimatedPressable>
+                    <AnimatedPressable
                       style={styles.mealTypeButton}
                       onPress={() => generateAIMeal('lunch')}
                       disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
                     >
                       <Text style={styles.mealTypeEmoji}>🥗</Text>
                       <Text style={styles.mealTypeText}>Lunch</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </AnimatedPressable>
+                    <AnimatedPressable
                       style={styles.mealTypeButton}
                       onPress={() => generateAIMeal('dinner')}
                       disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
                     >
                       <Text style={styles.mealTypeEmoji}>🍽️</Text>
                       <Text style={styles.mealTypeText}>Dinner</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
+                    </AnimatedPressable>
+                    <AnimatedPressable
                       style={styles.mealTypeButton}
                       onPress={() => generateAIMeal('snack')}
                       disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
                     >
                       <Text style={styles.mealTypeEmoji}>🍎</Text>
                       <Text style={styles.mealTypeText}>Snack</Text>
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   </View>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={styles.closeSearchButton}
                     onPress={() => setShowFoodSearch(false)}
+                    scaleValue={0.95}
                   >
                     <Text style={styles.closeSearchText}>Close</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
-              </Card>
+              </GlassCard>
             </View>
           )}
 
           {/* Daily Overview */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Today's Progress</Text>
-            <Card style={styles.overviewCard} variant="elevated">
+            <GlassCard style={styles.overviewCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
               <View style={styles.caloriesSection}>
                 <View style={styles.caloriesHeader}>
                   <Text style={styles.caloriesConsumed}>{nutritionTargets.calories.current}</Text>
@@ -1717,54 +2698,54 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   <Text style={styles.macroTarget}>of {nutritionTargets.fat.target}g</Text>
                 </View>
               </View>
-            </Card>
+            </GlassCard>
           </View>
 
           {/* Quick Actions */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.actionsGrid}>
-              <TouchableOpacity style={styles.actionItem} onPress={handleScanFood}>
-                <Card style={styles.actionCard} variant="outlined">
+              <AnimatedPressable style={styles.actionItem} onPress={handleScanFood} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <Text style={styles.actionIcon}>📷</Text>
                   <Text style={styles.actionText}>Scan Food</Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
 
-              <TouchableOpacity style={styles.actionItem} onPress={handleSearchFood}>
-                <Card style={styles.actionCard} variant="outlined">
+              <AnimatedPressable style={styles.actionItem} onPress={handleSearchFood} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <Text style={styles.actionIcon}>🤖</Text>
                   <Text style={styles.actionText}>AI Meals</Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
 
-              <TouchableOpacity style={styles.actionItem} onPress={handleCreateRecipe}>
-                <Card style={styles.actionCard} variant="outlined">
+              <AnimatedPressable style={styles.actionItem} onPress={handleCreateRecipe} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <Text style={styles.actionIcon}>📝</Text>
                   <Text style={styles.actionText}>Create Recipe</Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
 
-              <TouchableOpacity style={styles.actionItem} onPress={handleScanProduct}>
-                <Card style={styles.actionCard} variant="outlined">
+              <AnimatedPressable style={styles.actionItem} onPress={handleScanProduct} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <Text style={styles.actionIcon}>📱</Text>
                   <Text style={styles.actionText}>Scan Product</Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
 
-              <TouchableOpacity style={styles.actionItem} onPress={handleLogWater}>
-                <Card style={styles.actionCard} variant="outlined">
+              <AnimatedPressable style={styles.actionItem} onPress={handleLogWater} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <Text style={styles.actionIcon}>💧</Text>
                   <Text style={styles.actionText}>Log Water</Text>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
             </View>
           </View>
 
           {/* Water Intake */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Water Intake</Text>
-            <Card style={styles.waterCard} variant="elevated">
+            <GlassCard style={styles.waterCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
               <View style={styles.waterHeader}>
                 <Text style={styles.waterIcon}>💧</Text>
                 <View style={styles.waterInfo}>
@@ -1824,7 +2805,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   />
                 )}
               </View>
-            </Card>
+            </GlassCard>
           </View>
 
           <View style={styles.bottomSpacing} />
@@ -1855,12 +2836,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         <View style={styles.testContainer}>
           <View style={styles.testHeader}>
             <Text style={styles.testTitle}>🧪 Food Recognition Test</Text>
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={() => setShowTestComponent(false)}
               style={styles.testCloseButton}
+              scaleValue={0.95}
             >
               <Text style={styles.testCloseText}>✕</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
           <FoodRecognitionTest />
         </View>
@@ -1924,10 +2906,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         animationType="fade"
         onRequestClose={closeContextMenu}
       >
-        <TouchableOpacity
+        <AnimatedPressable
           style={styles.contextMenuOverlay}
-          activeOpacity={1}
           onPress={closeContextMenu}
+          scaleValue={1}
         >
           <View
             style={[
@@ -1938,35 +2920,39 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               },
             ]}
           >
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.contextMenuItem}
               onPress={() => handleContextMenuAction('edit')}
+              scaleValue={0.95}
             >
               <Text style={styles.contextMenuText}>✏️ Edit Meal</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.contextMenuItem}
               onPress={() => handleContextMenuAction('duplicate')}
+              scaleValue={0.95}
             >
               <Text style={styles.contextMenuText}>📋 Duplicate</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.contextMenuItem}
               onPress={() => handleContextMenuAction('details')}
+              scaleValue={0.95}
             >
               <Text style={styles.contextMenuText}>📊 Nutrition Details</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.contextMenuItem}
               onPress={() => handleContextMenuAction('delete')}
+              scaleValue={0.95}
             >
               <Text style={styles.contextMenuText}>🗑️ Delete Meal</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </Modal>
 
       {/* Meal Preparation Modal */}
@@ -1982,12 +2968,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               <>
                 <View style={styles.mealModalHeader}>
                   <Text style={styles.mealModalTitle}>🍽️ Ready to Cook?</Text>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     onPress={() => setShowMealPreparationModal(false)}
                     style={styles.mealModalCloseButton}
+                    scaleValue={0.95}
                   >
                     <Text style={styles.mealModalCloseText}>✕</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
 
                 <View style={styles.mealModalContent}>
@@ -2042,28 +3029,75 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 </View>
 
                 <View style={styles.mealModalActions}>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={styles.mealModalCancelButton}
                     onPress={() => setShowMealPreparationModal(false)}
+                    scaleValue={0.95}
                   >
                     <Text style={styles.mealModalCancelText}>Cancel</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
 
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={styles.mealModalStartButton}
                     onPress={() => {
                       startMealPreparation(selectedMealForPreparation);
                       setShowMealPreparationModal(false);
                     }}
+                    scaleValue={0.95}
                   >
                     <Text style={styles.mealModalStartText}>Start Cooking</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
               </>
             )}
           </View>
         </View>
       </Modal>
+
+      {/* Floating Action Button (FAB) - Aurora Design with pulse + rotation */}
+      <Animated.View
+        style={{
+          transform: [
+            { scale: fabScale },
+            {
+              rotate: fabRotation.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0deg', '45deg'],
+              }),
+            },
+          ],
+        }}
+      >
+        <AnimatedPressable
+          style={styles.fab}
+          onPress={() => {
+            // Rotation animation on press
+            Animated.sequence([
+              Animated.timing(fabRotation, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(fabRotation, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+            handleSearchFood();
+          }}
+          scaleValue={0.9}
+          hapticFeedback={true}
+          hapticType="medium"
+        >
+          <LinearGradient
+            {...(toLinearGradientProps(gradients.button.primary) as any)}
+            style={styles.fabGradient}
+          >
+            <Text style={styles.fabIcon}>+</Text>
+          </LinearGradient>
+        </AnimatedPressable>
+      </Animated.View>
 
       {/* Product Details Modal */}
       {scannedProduct && (
@@ -2075,7 +3109,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           onAddToMeal={handleAddProductToMeal}
         />
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
@@ -2142,6 +3177,48 @@ const styles = StyleSheet.create({
     fontSize: rf(24),
     color: ResponsiveTheme.colors.white,
     fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // DateSelector Styles
+  dateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  dateNavButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dateNavIcon: {
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  dateBadge: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    alignItems: 'center',
+  },
+
+  dateText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  dateSubtext: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
   },
 
   section: {
@@ -2941,5 +4018,606 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.surface,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  // Aurora Calorie Overview Styles
+  calorieOverviewCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  calorieCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  caloriesRemaining: {
+    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  caloriesLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  macroGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+    opacity: 0.5,
+  },
+
+  macroStat: {
+    alignItems: 'center',
+  },
+
+  macroTarget: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  // Aurora Meal Timeline Styles
+  mealTimelineCard: {
+    marginBottom: ResponsiveTheme.spacing.md,
+    position: 'relative',
+  },
+
+  // Swipeable Container Styles
+  swipeableContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  swipeableCard: {
+    width: '100%',
+  },
+
+  swipeActions: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingRight: ResponsiveTheme.spacing.md,
+  },
+
+  swipeActionEdit: {
+    width: rw(70),
+    height: '100%',
+    backgroundColor: '#4ECDC4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  swipeActionDelete: {
+    width: rw(70),
+    height: '100%',
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  swipeActionIcon: {
+    fontSize: rf(24),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  swipeActionText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  timeBadge: {
+    position: 'absolute',
+    top: ResponsiveTheme.spacing.sm,
+    right: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    zIndex: 1,
+  },
+
+  timeBadgeText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  mealTimelineContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  mealImageContainer: {
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  mealImageGradientBorder: {
+    width: rw(70),
+    height: rh(70),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: rp(3),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealImageInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealImageEmoji: {
+    fontSize: rf(32),
+  },
+
+  mealTimelineInfo: {
+    flex: 1,
+  },
+
+  mealTimelineName: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  mealTimelineCalories: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  macroBadgesContainer: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
+  macroBadge: {
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+  },
+
+  macroBadgeText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  mealActionButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  mealActionIcon: {
+    fontSize: rf(16),
+  },
+
+  emptyMealsText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  emptyMealsSubtext: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Aurora Meal Suggestions Styles
+  suggestionsScrollContent: {
+    paddingRight: ResponsiveTheme.spacing.lg,
+  },
+
+  suggestionCard: {
+    width: rw(300),
+    marginRight: ResponsiveTheme.spacing.md,
+    overflow: 'hidden',
+  },
+
+  // Card Flip Styles
+  cardFace: {
+    backfaceVisibility: 'hidden',
+    position: 'absolute',
+    width: '100%',
+  },
+
+  cardFaceBack: {
+    position: 'absolute',
+  },
+
+  suggestionCardBack: {
+    height: rh(350),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cardBackContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cardBackIcon: {
+    fontSize: rf(64),
+    color: '#10b981',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  cardBackTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  cardBackSubtitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  suggestionImageContainer: {
+    height: rh(150),
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+
+  suggestionGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  suggestionImageEmoji: {
+    fontSize: rf(64),
+  },
+
+  suggestionContent: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  suggestionName: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  suggestionDetails: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  suggestionMacros: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    opacity: 0.7,
+  },
+
+  suggestionMacroItem: {
+    alignItems: 'center',
+  },
+
+  suggestionMacroValue: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  suggestionMacroLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  addToPlanButton: {
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  addToPlanButtonGradient: {
+    paddingVertical: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  addToPlanButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  // Aurora Water Tracker Styles
+  waterTrackerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  waterGlassContainer: {
+    alignItems: 'center',
+    marginRight: ResponsiveTheme.spacing.xl,
+  },
+
+  waterGlass: {
+    width: rw(100),
+    height: rh(180),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+
+  waterFill: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+
+  waterFillGradient: {
+    width: '100%',
+    height: '100%',
+  },
+
+  glassBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderWidth: rp(3),
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+  },
+
+  waterDropIcon: {
+    fontSize: rf(24),
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  waterStatsContainer: {
+    flex: 1,
+  },
+
+  waterAmountConsumed: {
+    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: '#4ECDC4',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  waterTargetAmount: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  waterQuickAddButtons: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  waterQuickAddButton: {
+    flex: 1,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  rippleCircle: {
+    position: 'absolute',
+    width: rw(30),
+    height: rh(30),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: '#4ECDC4',
+  },
+
+  waterQuickAddButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#4ECDC4',
+    zIndex: 1,
+  },
+
+  waterTimeline: {
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  waterTimelineTitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  waterTimelineBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: rp(4),
+  },
+
+  waterTimelineDot: {
+    width: rw(12),
+    height: rh(12),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: '#4ECDC4',
+  },
+
+  // Weekly Nutrition Trends Chart Styles
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
+  legendDot: {
+    width: rw(12),
+    height: rh(12),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+  },
+
+  legendText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  weeklyNutritionChart: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: rh(200),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  chartDayColumn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+
+  barsGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: rp(2),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  barContainer: {
+    width: rw(8),
+    height: rh(160),
+    justifyContent: 'flex-end',
+  },
+
+  macroBar: {
+    width: '100%',
+    borderRadius: ResponsiveTheme.borderRadius.xs,
+    minHeight: rh(8),
+  },
+
+  proteinBar: {
+    backgroundColor: '#FF6B9D',
+  },
+
+  carbsBar: {
+    backgroundColor: '#4ECDC4',
+  },
+
+  fatsBar: {
+    backgroundColor: '#FFA726',
+  },
+
+  chartDayLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  averageLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  averageLineDashed: {
+    flex: 1,
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  averageLineText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // Floating Action Button (FAB) Styles
+  fab: {
+    position: 'absolute',
+    bottom: ResponsiveTheme.spacing.xl,
+    right: ResponsiveTheme.spacing.lg,
+    width: rw(56),
+    height: rh(56),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+
+  fabGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  fabIcon: {
+    fontSize: rf(32),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 });

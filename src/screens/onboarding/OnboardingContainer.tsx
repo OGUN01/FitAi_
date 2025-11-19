@@ -5,6 +5,7 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { useOnboardingState } from '../../hooks/useOnboardingState';
 import OnboardingTabBar, { ONBOARDING_TABS, TabConfig } from '../../components/onboarding/OnboardingTabBar';
 import OnboardingProgressIndicator from '../../components/onboarding/OnboardingProgressIndicator';
+import { AuroraBackground } from '../../components/ui/aurora';
 
 // Import tab components
 import PersonalInfoTab from './tabs/PersonalInfoTab';
@@ -438,49 +439,51 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   }
   
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Tab Navigation Bar - Hidden in edit mode */}
-      {!editMode && (
-        <OnboardingTabBar
-          activeTab={currentTab}
-          tabs={getTabConfigs()}
-          onTabPress={handleTabPress}
-          completionPercentage={overallCompletion}
-        />
-      )}
+    <AuroraBackground theme="space" animated={true} animationSpeed={1} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
+        {/* Tab Navigation Bar - Hidden in edit mode */}
+        {!editMode && (
+          <OnboardingTabBar
+            activeTab={currentTab}
+            tabs={getTabConfigs()}
+            onTabPress={handleTabPress}
+            completionPercentage={overallCompletion}
+          />
+        )}
 
-      {/* Tab Content */}
-      <View style={styles.contentContainer}>
-        {renderTabContent()}
-      </View>
-
-      {/* Progress Modal Toggle (for debugging/testing) */}
-      {__DEV__ && !editMode && (
-        <View style={styles.debugContainer}>
-          <Text
-            style={styles.debugText}
-            onPress={() => setShowProgressModal(!showProgressModal)}
-          >
-            {showProgressModal ? 'Hide' : 'Show'} Progress
-          </Text>
+        {/* Tab Content */}
+        <View style={styles.contentContainer}>
+          {renderTabContent()}
         </View>
-      )}
 
-      {/* Completion Dialog (Web-Compatible) */}
-      <CustomDialog
-        visible={completionDialog.visible}
-        title={completionDialog.title}
-        message={completionDialog.message}
-        type={completionDialog.type}
-        actions={[
-          {
-            text: completionDialog.type === 'success' ? 'Get Started' : 'OK',
-            onPress: completionDialog.onConfirm || (() => setCompletionDialog(prev => ({ ...prev, visible: false }))),
-            style: 'default',
-          },
-        ]}
-      />
-    </SafeAreaView>
+        {/* Progress Modal Toggle (for debugging/testing) */}
+        {__DEV__ && !editMode && (
+          <View style={styles.debugContainer}>
+            <Text
+              style={styles.debugText}
+              onPress={() => setShowProgressModal(!showProgressModal)}
+            >
+              {showProgressModal ? 'Hide' : 'Show'} Progress
+            </Text>
+          </View>
+        )}
+
+        {/* Completion Dialog (Web-Compatible) */}
+        <CustomDialog
+          visible={completionDialog.visible}
+          title={completionDialog.title}
+          message={completionDialog.message}
+          type={completionDialog.type}
+          actions={[
+            {
+              text: completionDialog.type === 'success' ? 'Get Started' : 'OK',
+              onPress: completionDialog.onConfirm || (() => setCompletionDialog(prev => ({ ...prev, visible: false }))),
+              style: 'default',
+            },
+          ]}
+        />
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
@@ -491,7 +494,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: ResponsiveTheme.colors.background,
+    backgroundColor: 'transparent', // Let Aurora background show through
   },
   
   contentContainer: {

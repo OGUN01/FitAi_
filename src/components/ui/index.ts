@@ -11,5 +11,12 @@ export { CustomDialog, WorkoutStartDialog, WorkoutCompleteDialog } from './Custo
 export { InfoTooltip } from './InfoTooltip';
 export { Slider } from './Slider';
 
+// Phase 3: Advanced Visual Components
+export { CircularClock } from './CircularClock';
+export { ColorCodedZones, HEART_RATE_ZONE_COLORS, calculateHeartRateZones } from './ColorCodedZones';
+export { AnimatedChart } from './AnimatedChart';
+export { SwipeableCardStack, type SwipeableCard } from './SwipeableCardStack';
+export { BodySilhouette } from './BodySilhouette';
+
 // Re-export theme for easy access
 export { THEME } from '../../utils/constants';

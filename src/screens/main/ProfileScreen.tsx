@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Modal, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { haptics } from '../../utils/haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Card, Button, THEME } from '../../components/ui';
+import { Button, THEME } from '../../components/ui';
 import { ResponsiveTheme } from '../../utils/constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { useAuth } from '../../hooks/useAuth';
 import { useUser, useUserStats } from '../../hooks/useUser';
 import { useDashboardIntegration } from '../../utils/integration';
@@ -20,6 +26,7 @@ import {
   AboutFitAIScreen,
 } from '../settings';
 import { GuestSignUpScreen } from './GuestSignUpScreen';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 
 // Internal ProfileScreen component
 const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) => {
@@ -32,6 +39,17 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<string | null>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
+  const [pressedSetting, setPressedSetting] = useState<string | null>(null);
+  const [settingAnimations, setSettingAnimations] = useState<Record<string, { chevron: Animated.Value; slide: Animated.Value }>>({});
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
+
+  // Micro-interaction animation refs
+  const avatarScale = useRef(new Animated.Value(1)).current;
+  const streakFlicker = useRef(new Animated.Value(1)).current;
+  const stat1Count = useRef(new Animated.Value(0)).current;
+  const stat2Count = useRef(new Animated.Value(0)).current;
+  const stat3Count = useRef(new Animated.Value(0)).current;
+  const stat4Count = useRef(new Animated.Value(0)).current;
 
   // Subscription management
   const {
@@ -139,6 +157,50 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   useEffect(() => {
     initializeSubscription();
   }, [initializeSubscription]);
+
+  // Micro-interaction: Stat cards count-up animation on mount
+  useEffect(() => {
+    Animated.stagger(120, [
+      Animated.timing(stat1Count, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(stat2Count, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(stat3Count, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(stat4Count, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Streak badge flame flicker animation
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(streakFlicker, {
+          toValue: 1.2,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(streakFlicker, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   // Edit Profile items (under pen icon)
   // Now navigates to comprehensive onboarding tabs with 170+ fields
@@ -268,17 +330,18 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   };
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: () => {
-          logout();
-          Alert.alert('Signed Out', 'You have been successfully signed out.');
-        },
-      },
-    ]);
+    setShowLogoutConfirmation(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirmation(false);
+    logout();
+    haptics.impact('medium');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirmation(false);
+    haptics.impact('light');
   };
 
   const handleEditProfile = () => {
@@ -342,9 +405,62 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
     }
   };
 
+  // Get or create animation values for a setting row
+  const getSettingAnimation = (id: string) => {
+    if (!settingAnimations[id]) {
+      const newAnims = {
+        chevron: new Animated.Value(0),
+        slide: new Animated.Value(0),
+      };
+      setSettingAnimations(prev => ({ ...prev, [id]: newAnims }));
+      return newAnims;
+    }
+    return settingAnimations[id];
+  };
+
+  // Trigger chevron rotation + slide animation on setting press
+  const triggerSettingAnimation = (id: string) => {
+    const anims = getSettingAnimation(id);
+
+    // Chevron rotation + slide
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(anims.chevron, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anims.chevron, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.sequence([
+        Animated.timing(anims.slide, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anims.slide, {
+          toValue: 0,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  };
+
   // Edit functions are now handled by EditContext
 
   const handleSettingsItemPress = (item: any) => {
+    // Trigger animation
+    if (item.id) {
+      triggerSettingAnimation(item.id);
+    }
+
+    // Original logic
+
     switch (item.id) {
       case 5: // Subscription
         setShowSubscriptionScreen(true);
@@ -428,74 +544,80 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Profile</Text>
-            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-              <Text style={styles.editIcon}>✏️</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Profile Info */}
-          <View style={styles.section}>
-            <Card style={styles.profileCard} variant="elevated">
-              <View style={styles.profileHeader}>
-                <View style={styles.avatarContainer}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {getInitials(profile?.personalInfo?.name || user?.name)}
-                    </Text>
-                  </View>
-                  <View style={styles.statusDot} />
-                </View>
-
-                <View style={styles.profileInfo}>
-                  <Text style={styles.userName}>
-                    {profile?.personalInfo?.name || user?.name || 'Anonymous User'}
-                  </Text>
-                  <Text style={styles.userEmail}>{user?.email || 'No email provided'}</Text>
-                  <Text style={styles.memberSince}>
-                    Member since{' '}
-                    {user?.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          year: 'numeric',
-                        })
-                      : 'Recently'}
-                  </Text>
-                </View>
+          {/* HeroSection - Aurora Design */}
+          <LinearGradient
+            {...(toLinearGradientProps(gradients.background.deepSpace) as any)}
+            style={styles.heroSection}
+          >
+            <View style={styles.heroContent}>
+              {/* Avatar with Edit Button */}
+              <View style={styles.largeAvatarContainer}>
+                <AnimatedPressable
+                  onPress={() => {
+                    // Scale animation on tap
+                    Animated.sequence([
+                      Animated.timing(avatarScale, {
+                        toValue: 0.9,
+                        duration: 100,
+                        useNativeDriver: true,
+                      }),
+                      Animated.spring(avatarScale, {
+                        toValue: 1,
+                        tension: 100,
+                        friction: 5,
+                        useNativeDriver: true,
+                      }),
+                    ]).start();
+                    handleEditProfile();
+                  }}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                >
+                  <Animated.View style={{ transform: [{ scale: avatarScale }] }}>
+                    <View style={styles.largeAvatar}>
+                      <Text style={styles.largeAvatarText}>
+                        {getInitials(profile?.personalInfo?.name || user?.name)}
+                      </Text>
+                    </View>
+                    <View style={styles.editBadge}>
+                      <Text style={styles.editBadgeIcon}>✏️</Text>
+                    </View>
+                  </Animated.View>
+                </AnimatedPressable>
               </View>
 
-              <View style={styles.profileStats}>
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>
-                    {healthMetrics?.weight || profile?.personalInfo?.weight || '-'}
-                  </Text>
-                  <Text style={styles.statLabel}>kg</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>
-                    {healthMetrics?.height || profile?.personalInfo?.height || '-'}
-                  </Text>
-                  <Text style={styles.statLabel}>cm</Text>
-                </View>
-                <View style={styles.statDivider} />
-                <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{healthMetrics?.bmi || '-'}</Text>
-                  <Text style={styles.statLabel}>BMI</Text>
-                </View>
-              </View>
-            </Card>
-          </View>
+              {/* User Info */}
+              <Text style={styles.heroName}>
+                {profile?.personalInfo?.name || user?.name || 'Anonymous User'}
+              </Text>
+              <Text style={styles.heroMemberSince}>
+                Member since{' '}
+                {user?.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      year: 'numeric',
+                    })
+                  : 'Recently'}
+              </Text>
+
+              {/* Streak Badge (Floating) */}
+              <GlassCard elevation={2} blurIntensity="medium" padding="sm" borderRadius="lg" style={styles.streakBadge}>
+                <Text style={styles.streakIcon}>🔥</Text>
+                <Text style={styles.streakNumber}>{userStats?.currentStreak || 0}</Text>
+                <Text style={styles.streakLabel}>Day Streak</Text>
+              </GlassCard>
+            </View>
+          </LinearGradient>
 
           {/* Guest User Sign-up Prompt */}
           {isGuestMode && (
             <View style={styles.section}>
-              <Card style={styles.guestPromptCard} variant="elevated">
+              <GlassCard style={styles.guestPromptCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                 <View style={styles.guestPromptContent}>
                   <Text style={styles.guestPromptIcon}>🔐</Text>
                   <Text style={styles.guestPromptTitle}>Create Your Account</Text>
@@ -510,72 +632,292 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                     style={styles.guestPromptButton}
                   />
                 </View>
-              </Card>
+              </GlassCard>
             </View>
           )}
 
-          {/* Quick Stats */}
+          {/* 2x2 Quick Stats Grid - Aurora Design */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Stats</Text>
             <View style={styles.quickStatsGrid}>
-              {quickStats.map((stat, index) => (
-                <Card key={index} style={styles.quickStatCard} variant="outlined">
-                  <Text style={styles.quickStatIcon}>{stat.icon}</Text>
-                  <Text style={styles.quickStatValue}>{stat.value}</Text>
-                  <Text style={styles.quickStatLabel}>{stat.label}</Text>
-                </Card>
-              ))}
+              <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
+                <Text style={styles.quickStatIcon}>💪</Text>
+                <Text style={styles.quickStatValue}>{userStats?.totalWorkouts || 0}</Text>
+                <Text style={styles.quickStatLabel}>Total Workouts</Text>
+              </GlassCard>
+
+              <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
+                <Text style={styles.quickStatIcon}>⚖️</Text>
+                <Text style={styles.quickStatValue}>-2.5</Text>
+                <Text style={styles.quickStatLabel}>Weight Lost (kg)</Text>
+              </GlassCard>
+
+              <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
+                <Text style={styles.quickStatIcon}>🔥</Text>
+                <Text style={styles.quickStatValue}>{userStats?.currentStreak || 0}</Text>
+                <Text style={styles.quickStatLabel}>Streak Days</Text>
+              </GlassCard>
+
+              <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
+                <Text style={styles.quickStatIcon}>🏆</Text>
+                <Text style={styles.quickStatValue}>12</Text>
+                <Text style={styles.quickStatLabel}>Achievements</Text>
+              </GlassCard>
             </View>
           </View>
 
-          {/* Settings Items */}
+          {/* Account Section - Aurora Design */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Settings</Text>
+            <Text style={styles.sectionTitle}>Account</Text>
+            <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
+              <AnimatedPressable
+                onPress={() => handleSettingsItemPress({ id: 'personal-info' })}
+                onPressIn={() => setPressedSetting('personal-info')}
+                onPressOut={() => setPressedSetting(null)}
+                scaleValue={0.98}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Animated.View
+                  style={[
+                    styles.settingRow,
+                    pressedSetting === 'personal-info' && styles.settingRowPressed,
+                    {
+                      transform: [
+                        {
+                          translateX: settingAnimations['personal-info']?.slide.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 5],
+                          }) || 0,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.settingIcon}>👤</Text>
+                  <Text style={styles.settingLabel}>Personal Information</Text>
+                  <Animated.Text
+                    style={[
+                      styles.settingArrow,
+                      {
+                        transform: [
+                          {
+                            rotate: settingAnimations['personal-info']?.chevron.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ['0deg', '90deg'],
+                            }) || '0deg',
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ›
+                  </Animated.Text>
+                </Animated.View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable
+                onPress={() => handleSettingsItemPress({ id: 'goals' })}
+                onPressIn={() => setPressedSetting('goals')}
+                onPressOut={() => setPressedSetting(null)}
+                scaleValue={0.98}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Animated.View
+                  style={[
+                    styles.settingRow,
+                    pressedSetting === 'goals' && styles.settingRowPressed,
+                    {
+                      transform: [
+                        {
+                          translateX: settingAnimations['goals']?.slide.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 5],
+                          }) || 0,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.settingIcon}>🎯</Text>
+                  <Text style={styles.settingLabel}>Goals & Preferences</Text>
+                  <Animated.Text
+                    style={[
+                      styles.settingArrow,
+                      {
+                        transform: [
+                          {
+                            rotate: settingAnimations['goals']?.chevron.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ['0deg', '90deg'],
+                            }) || '0deg',
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ›
+                  </Animated.Text>
+                </Animated.View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable
+                onPress={() => handleSettingsItemPress({ id: 'measurements' })}
+                onPressIn={() => setPressedSetting('measurements')}
+                onPressOut={() => setPressedSetting(null)}
+                scaleValue={0.98}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Animated.View
+                  style={[
+                    styles.settingRow,
+                    pressedSetting === 'measurements' && styles.settingRowPressed,
+                    {
+                      transform: [
+                        {
+                          translateX: settingAnimations['measurements']?.slide.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 5],
+                          }) || 0,
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Text style={styles.settingIcon}>📏</Text>
+                  <Text style={styles.settingLabel}>Body Measurements</Text>
+                  <Animated.Text
+                    style={[
+                      styles.settingArrow,
+                      {
+                        transform: [
+                          {
+                            rotate: settingAnimations['measurements']?.chevron.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: ['0deg', '90deg'],
+                            }) || '0deg',
+                          },
+                        ],
+                      },
+                    ]}
+                  >
+                    ›
+                  </Animated.Text>
+                </Animated.View>
+              </AnimatedPressable>
+            </GlassCard>
+          </View>
 
-            {settingsItems.map((item) => (
-              <TouchableOpacity key={item.id} onPress={() => handleSettingsItemPress(item)}>
-                <Card style={[
-                  styles.menuCard,
-                  (item as any).isPremium && styles.premiumMenuCard
-                ]} variant="outlined">
-                  <View style={styles.menuContent}>
-                    <View style={[
-                      styles.menuIcon,
-                      (item as any).isPremium && styles.premiumMenuIcon
-                    ]}>
-                      <Text style={styles.menuIconText}>{item.icon}</Text>
-                    </View>
+          {/* Preferences Section - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Preferences</Text>
+            <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
+              <AnimatedPressable onPress={() => setCurrentSettingsScreen('notifications')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🔔</Text>
+                  <Text style={styles.settingLabel}>Notifications</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Theme', 'Theme selection coming soon!')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🎨</Text>
+                  <Text style={styles.settingLabel}>Theme Preference</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Units', 'Units selection coming soon!')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>📐</Text>
+                  <Text style={styles.settingLabel}>Units</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Language', 'Language selection coming soon!')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🌐</Text>
+                  <Text style={styles.settingLabel}>Language</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+            </GlassCard>
+          </View>
 
-                    <View style={styles.menuInfo}>
-                      <Text style={[
-                        styles.menuTitle,
-                        (item as any).isPremium && styles.premiumMenuTitle
-                      ]}>{item.title}</Text>
-                      <Text style={[
-                        styles.menuSubtitle,
-                        (item as any).isPremium && styles.premiumMenuSubtitle
-                      ]}>{item.subtitle}</Text>
-                    </View>
+          {/* App Section - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>App</Text>
+            <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
+              <AnimatedPressable onPress={() => setCurrentSettingsScreen('privacy')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🔒</Text>
+                  <Text style={styles.settingLabel}>Privacy & Security</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => setCurrentSettingsScreen('help')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>❓</Text>
+                  <Text style={styles.settingLabel}>Help & Support</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => setCurrentSettingsScreen('about')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>ℹ️</Text>
+                  <Text style={styles.settingLabel}>About</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Terms & Privacy', 'Opening legal documents...')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>📄</Text>
+                  <Text style={styles.settingLabel}>Terms & Privacy Policy</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+            </GlassCard>
+          </View>
 
-                    {item.hasArrow && <Text style={[
-                      styles.menuArrow,
-                      (item as any).isPremium && styles.premiumMenuArrow
-                    ]}>›</Text>}
-                    
-                    {(item as any).isPremium && (
-                      <View style={styles.premiumBadge}>
-                        <Text style={styles.premiumBadgeText}>PRO</Text>
-                      </View>
-                    )}
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            ))}
+          {/* Data Section - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Data</Text>
+            <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
+              <AnimatedPressable onPress={() => Alert.alert('Export Data', 'Export feature coming soon!')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>📊</Text>
+                  <Text style={styles.settingLabel}>Export Data</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Sync', 'Sync settings coming soon!')} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🔄</Text>
+                  <Text style={styles.settingLabel}>Sync Settings</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+              <View style={styles.settingDivider} />
+              <AnimatedPressable onPress={() => Alert.alert('Clear Cache', 'Are you sure?', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive' }])} scaleValue={0.98}>
+                <View style={styles.settingRow}>
+                  <Text style={styles.settingIcon}>🗑️</Text>
+                  <Text style={styles.settingLabel}>Clear Cache</Text>
+                  <Text style={styles.settingArrow}>›</Text>
+                </View>
+              </AnimatedPressable>
+            </GlassCard>
           </View>
 
           {/* App Info */}
           <View style={styles.section}>
-            <Card style={styles.appInfoCard} variant="outlined">
+            <GlassCard style={styles.appInfoCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
               <View style={styles.appInfoContent}>
                 <View style={styles.appLogo}>
                   <Text style={styles.appLogoText}>FitAI</Text>
@@ -588,20 +930,20 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                   </Text>
                 </View>
               </View>
-            </Card>
+            </GlassCard>
           </View>
 
           {/* Logout Button */}
           {isAuthenticated && (
             <View style={styles.section}>
-              <TouchableOpacity onPress={handleSignOut}>
-                <Card style={styles.logoutCard} variant="outlined">
+              <AnimatedPressable onPress={handleSignOut} scaleValue={0.97}>
+                <GlassCard style={styles.logoutCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <View style={styles.logoutContent}>
                     <Text style={styles.logoutIcon}>🚪</Text>
                     <Text style={styles.logoutText}>Sign Out</Text>
                   </View>
-                </Card>
-              </TouchableOpacity>
+                </GlassCard>
+              </AnimatedPressable>
             </View>
           )}
 
@@ -618,12 +960,13 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.modalCloseButton}
               onPress={() => setShowEditProfile(false)}
+              scaleValue={0.95}
             >
               <Text style={styles.modalCloseText}>✕</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
             <Text style={styles.modalTitle}>Edit Profile</Text>
             <View style={styles.modalHeaderSpacer} />
           </View>
@@ -639,14 +982,15 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                       {getInitials(profile?.personalInfo?.name || user?.name)}
                     </Text>
                   </View>
-                  <TouchableOpacity
+                  <AnimatedPressable
                     style={styles.changePictureButton}
                     onPress={() =>
                       Alert.alert('Change Picture', 'Profile picture editing coming soon!')
                     }
+                    scaleValue={0.95}
                   >
                     <Text style={styles.changePictureText}>Change Picture</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
               </View>
 
@@ -655,8 +999,8 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                 <Text style={styles.modalSectionTitle}>Profile Settings</Text>
 
                 {editProfileItems.map((item) => (
-                  <TouchableOpacity key={item.id} onPress={() => handleEditProfileItemPress(item)}>
-                    <Card style={styles.menuCard} variant="outlined">
+                  <AnimatedPressable key={item.id} onPress={() => handleEditProfileItemPress(item)} scaleValue={0.97}>
+                    <GlassCard style={styles.menuCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                       <View style={styles.menuContent}>
                         <View style={styles.menuIcon}>
                           <Text style={styles.menuIconText}>{item.icon}</Text>
@@ -669,8 +1013,8 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
                         {item.hasArrow && <Text style={styles.menuArrow}>›</Text>}
                       </View>
-                    </Card>
-                  </TouchableOpacity>
+                    </GlassCard>
+                  </AnimatedPressable>
                 ))}
               </View>
 
@@ -678,6 +1022,53 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             </View>
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+
+      {/* Logout Confirmation Blur Dialog */}
+      <Modal
+        visible={showLogoutConfirmation}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={cancelLogout}
+      >
+        <BlurView intensity={80} style={styles.blurContainer}>
+          <View style={styles.confirmationDialog}>
+            <GlassCard elevation={5} blurIntensity="strong" padding="lg" borderRadius="xl">
+              <Text style={styles.confirmationIcon}>🚪</Text>
+              <Text style={styles.confirmationTitle}>Sign Out</Text>
+              <Text style={styles.confirmationMessage}>
+                Are you sure you want to sign out? Your progress will be saved.
+              </Text>
+
+              <View style={styles.confirmationActions}>
+                <AnimatedPressable
+                  style={[styles.confirmationButton, styles.confirmationButtonCancel]}
+                  onPress={cancelLogout}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="light"
+                >
+                  <Text style={styles.confirmationButtonTextCancel}>Cancel</Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={[styles.confirmationButton, styles.confirmationButtonConfirm]}
+                  onPress={confirmLogout}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                >
+                  <LinearGradient
+                    {...toLinearGradientProps(gradients.button.danger)}
+                    style={styles.confirmationButtonGradient}
+                  >
+                    <Text style={styles.confirmationButtonText}>Sign Out</Text>
+                  </LinearGradient>
+                </AnimatedPressable>
+              </View>
+            </GlassCard>
+          </View>
+        </BlurView>
       </Modal>
 
       {/* Subscription Management Modal */}
@@ -689,12 +1080,13 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={styles.modalCloseButton}
               onPress={() => setShowSubscriptionScreen(false)}
+              scaleValue={0.95}
             >
               <Text style={styles.modalCloseText}>✕</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
             <Text style={styles.modalTitle}>Subscription</Text>
             <View style={styles.modalHeaderSpacer} />
           </View>
@@ -704,10 +1096,10 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               {/* Current Subscription Status */}
               <View style={styles.modalSection}>
                 <Text style={styles.modalSectionTitle}>Current Plan</Text>
-                <Card style={[
+                <GlassCard style={[
                   styles.subscriptionStatusCard,
                   subscriptionStatus === 'active' && styles.activeSubscriptionCard
-                ]} variant="elevated">
+                ]} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                   <View style={styles.subscriptionStatusContent}>
                     <View style={styles.subscriptionStatusHeader}>
                       <Text style={styles.subscriptionStatusIcon}>
@@ -740,7 +1132,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                       </View>
                     )}
                   </View>
-                </Card>
+                </GlassCard>
               </View>
 
               {/* Premium Features Preview */}
@@ -749,7 +1141,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                   {subscriptionStatus === 'free' ? 'Premium Features' : 'Your Premium Features'}
                 </Text>
                 {premiumFeaturesList.map((feature, index) => (
-                  <Card key={index} style={styles.featureCard} variant="outlined">
+                  <GlassCard key={index} style={styles.featureCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                     <View style={styles.featureContent}>
                       <Text style={styles.featureIcon}>{feature.icon}</Text>
                       <View style={styles.featureInfo}>
@@ -768,7 +1160,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                         </Text>
                       </View>
                     </View>
-                  </Card>
+                  </GlassCard>
                 ))}
               </View>
 
@@ -831,7 +1223,8 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
       {/* Edit Overlay */}
       <EditOverlay visible={showOverlay} onClose={() => setShowOverlay(false)} />
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
@@ -1454,5 +1847,202 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     borderColor: ResponsiveTheme.colors.error + '40',
+  },
+
+  // Aurora Hero Section Styles
+  heroSection: {
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.xxl,
+    alignItems: 'center',
+  },
+
+  heroContent: {
+    alignItems: 'center',
+  },
+
+  largeAvatarContainer: {
+    position: 'relative',
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  largeAvatar: {
+    width: rw(120),
+    height: rh(120),
+    borderRadius: rs(60),
+    backgroundColor: ResponsiveTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+
+  largeAvatarText: {
+    fontSize: rf(48),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  editBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: rw(36),
+    height: rh(36),
+    borderRadius: rs(18),
+    backgroundColor: ResponsiveTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: ResponsiveTheme.colors.background,
+  },
+
+  editBadgeIcon: {
+    fontSize: rf(16),
+  },
+
+  heroName: {
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  heroMemberSince: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+  },
+
+  streakIcon: {
+    fontSize: rf(20),
+  },
+
+  streakNumber: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  streakLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  // Setting Row Styles (for Account/Preferences/App/Data sections)
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  settingRowPressed: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+
+  settingIcon: {
+    fontSize: rf(24),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  settingLabel: {
+    flex: 1,
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  settingArrow: {
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  settingDivider: {
+    height: 1,
+    backgroundColor: ResponsiveTheme.colors.border,
+    opacity: 0.3,
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  // Logout Confirmation Dialog Styles
+  blurContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  confirmationDialog: {
+    width: '100%',
+    maxWidth: rw(400),
+  },
+
+  confirmationIcon: {
+    fontSize: rf(48),
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  confirmationTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  confirmationMessage: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(22),
+  },
+
+  confirmationActions: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  confirmationButton: {
+    flex: 1,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  confirmationButtonCancel: {
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    padding: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  confirmationButtonConfirm: {
+    overflow: 'hidden',
+  },
+
+  confirmationButtonGradient: {
+    padding: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  confirmationButtonTextCancel: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  confirmationButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
   },
 });

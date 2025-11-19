@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
@@ -9,6 +10,7 @@ import { RegisterCredentials } from '../../types/user';
 import { migrationManager } from '../../services/migrationManager';
 import { dataManager } from '../../services/dataManager';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 
 interface GuestSignUpScreenProps {
   onBack: () => void;
@@ -237,12 +239,13 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <AnimatedPressable style={styles.backButton} onPress={onBack} scaleValue={0.97}>
             <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
           <Text style={styles.title}>Complete Your Account</Text>
           <Text style={styles.subtitle}>
             Sign up to save your progress and sync across devices. Your profile data will be preserved.
@@ -251,18 +254,18 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
         <View style={styles.form}>
           {/* Google Sign-Up as Primary */}
-          <TouchableOpacity
+          <AnimatedPressable
             style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignUp}
             disabled={isLoading}
-            activeOpacity={0.8}
+            scaleValue={0.95}
           >
             <View style={styles.googleButtonContent}>
               <GoogleIcon size={20} style={styles.googleIcon} />
               <Text style={styles.googlePrimaryText}>Continue with Google</Text>
             </View>
             <Text style={styles.googleSubtext}>Fastest • No email verification needed</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
 
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
@@ -311,15 +314,16 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
           <View style={styles.footerContainer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity onPress={onBack}>
+            <AnimatedPressable onPress={onBack} scaleValue={0.97}>
               <Text style={styles.footerLink}>Sign In instead</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </View>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 

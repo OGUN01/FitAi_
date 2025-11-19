@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { GluestackUIProvider } from '@gluestack-ui/themed';
+import { config } from './src/theme/gluestack-ui.config';
 import { OnboardingContainer } from './src/screens/onboarding/OnboardingContainer';
 import { MainNavigation } from './src/components/navigation/MainNavigation';
 import { OnboardingReviewData } from './src/screens/onboarding/ReviewScreen';
@@ -415,20 +417,22 @@ export default function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <View style={styles.container}>
-        <StatusBar style="light" backgroundColor={THEME.colors.background} />
+    <GluestackUIProvider config={config}>
+      <ErrorBoundary>
+        <View style={styles.container}>
+          <StatusBar style="light" backgroundColor={THEME.colors.background} />
 
-        {isOnboardingComplete ? (
-          <MainNavigation />
-        ) : (
-          <OnboardingContainer
-            onComplete={handleOnboardingComplete}
-            showProgressIndicator={true}
-          />
-        )}
-      </View>
-    </ErrorBoundary>
+          {isOnboardingComplete ? (
+            <MainNavigation />
+          ) : (
+            <OnboardingContainer
+              onComplete={handleOnboardingComplete}
+              showProgressIndicator={true}
+            />
+          )}
+        </View>
+      </ErrorBoundary>
+    </GluestackUIProvider>
   );
 }
 

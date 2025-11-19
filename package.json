@@ -49,9 +49,12 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
+    "@gluestack-style/react": "^1.0.57",
+    "@gluestack-ui/themed": "^1.1.73",
     "@google/genai": "^1.13.0",
     "@google/generative-ai": "^0.24.1",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/blur": "^4.4.1",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-navigation/bottom-tabs": "^7.4.2",
@@ -93,7 +96,8 @@
     "react-native-web": "^0.20.0",
     "react-native-webview": "13.13.5",
     "tailwindcss": "^3.4.17",
-    "zustand": "^5.0.6"
+    "zustand": "^5.0.6",
+    "expo-haptics": "~14.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

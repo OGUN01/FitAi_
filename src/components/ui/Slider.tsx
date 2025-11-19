@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -12,6 +12,7 @@ import Animated, {
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
+import { hapticSelection } from '../../utils/haptics';
 
 interface SliderProps {
   value: number;
@@ -45,6 +46,7 @@ export const Slider: React.FC<SliderProps> = ({
   const [sliderWidth, setSliderWidth] = useState(0);
   const translateX = useSharedValue(0);
   const isSliding = useSharedValue(false);
+  const lastHapticValue = useRef(value);
 
   // Calculate initial position based on value
   const getPositionFromValue = useCallback(
@@ -72,6 +74,14 @@ export const Slider: React.FC<SliderProps> = ({
     },
     [sliderWidth, minimumValue, maximumValue, step]
   );
+
+  // Trigger haptic feedback when value changes
+  const triggerHapticIfNeeded = useCallback((newValue: number) => {
+    if (newValue !== lastHapticValue.current) {
+      lastHapticValue.current = newValue;
+      hapticSelection();
+    }
+  }, []);
 
   // Update translateX when value changes externally
   React.useEffect(() => {
@@ -103,6 +113,7 @@ export const Slider: React.FC<SliderProps> = ({
       // Calculate and update value
       const newValue = getValueFromPosition(newPosition);
       runOnJS(onValueChange)(newValue);
+      runOnJS(triggerHapticIfNeeded)(newValue);
     },
     onEnd: () => {
       isSliding.value = false;

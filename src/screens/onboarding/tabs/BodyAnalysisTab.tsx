@@ -699,6 +699,18 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                     {photoUrl ? (
                       <View style={styles.photoPreview}>
                         <Image source={{ uri: photoUrl }} style={styles.photoImage} />
+
+                        {/* AI Badge Overlay */}
+                        <View style={styles.aiBadgeOverlay}>
+                          <LinearGradient
+                            {...toLinearGradientProps(gradients.accent.purpleBlue)}
+                            style={styles.aiBadgeGradient}
+                          >
+                            <Text style={styles.aiBadgeIcon}>🤖</Text>
+                            <Text style={styles.aiBadgeText}>AI Ready</Text>
+                          </LinearGradient>
+                        </View>
+
                         <AnimatedPressable
                           style={styles.removePhotoButton}
                           onPress={() => removePhoto(photoType.type)}
@@ -1533,6 +1545,37 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.white,
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  aiBadgeOverlay: {
+    position: 'absolute',
+    bottom: ResponsiveTheme.spacing.sm,
+    left: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+
+  aiBadgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: rp(8),
+    paddingVertical: rp(4),
+  },
+
+  aiBadgeIcon: {
+    fontSize: rf(14),
+    marginRight: rp(4),
+  },
+
+  aiBadgeText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
   },
 
   photoPlaceholder: {

@@ -1,17 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Animated,
   Alert,
   Modal,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
-import { Button, Card } from '../../components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Button } from '../../components/ui';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { HeroSection } from '../../components/ui/aurora/HeroSection';
+import { MiniProgressRing } from '../../components/ui/aurora/ProgressRing';
+import { haptics } from '../../utils/haptics';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { useDashboardIntegration } from '../../utils/integration';
@@ -25,6 +33,35 @@ import { useHealthDataStore } from '../../stores/healthDataStore';
 import { useAnalyticsStore } from '../../stores/analyticsStore';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { GuestSignUpScreen } from './GuestSignUpScreen';
+
+// Daily motivational quotes
+const DAILY_QUOTES = [
+  "Your body can stand almost anything. It's your mind that you have to convince.",
+  "The only bad workout is the one that didn't happen.",
+  "Fitness is not about being better than someone else. It's about being better than you used to be.",
+  "Success starts with self-discipline.",
+  "Take care of your body. It's the only place you have to live.",
+  "The harder you work for something, the greater you'll feel when you achieve it.",
+  "Your health is an investment, not an expense.",
+  "Don't wish for a good body, work for it.",
+  "Push yourself because no one else is going to do it for you.",
+  "Small progress is still progress.",
+  "Believe in yourself and all that you are.",
+  "The body achieves what the mind believes.",
+  "You don't have to be extreme, just consistent.",
+  "Make yourself proud.",
+  "Every workout counts. Every meal matters.",
+];
+
+// Get daily quote based on day of year
+const getDailyQuote = (): string => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+};
 
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
@@ -97,13 +134,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(30))[0];
 
+  // Micro-interaction animation refs
+  const streakCounterFlip = useRef(new Animated.Value(0)).current;
+  const heroParallax = useRef(new Animated.Value(0)).current;
+  const quickStat1Ring = useRef(new Animated.Value(0)).current;
+  const quickStat2Ring = useRef(new Animated.Value(0)).current;
+  const quickStat3Ring = useRef(new Animated.Value(0)).current;
+  const activity1Opacity = useRef(new Animated.Value(0)).current;
+  const activity1TranslateY = useRef(new Animated.Value(-20)).current;
+  const activity2Opacity = useRef(new Animated.Value(0)).current;
+  const activity2TranslateY = useRef(new Animated.Value(-20)).current;
+  const activity3Opacity = useRef(new Animated.Value(0)).current;
+  const activity3TranslateY = useRef(new Animated.Value(-20)).current;
+
   // State for real data
   const [todaysData, setTodaysData] = useState<any>(null);
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [showHealthSettingsModal, setShowHealthSettingsModal] = useState(false);
-  
+  const [refreshing, setRefreshing] = useState(false);
+
   // Achievement data
   const [recentAchievements, setRecentAchievements] = useState<any[]>([]);
   const [nearlyCompleted, setNearlyCompleted] = useState<any[]>([]);
@@ -195,6 +246,88 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     ]).start();
   }, []);
 
+  // Micro-interaction: Quick stats ring fill animation on mount
+  useEffect(() => {
+    Animated.stagger(150, [
+      Animated.timing(quickStat1Ring, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(quickStat2Ring, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(quickStat3Ring, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Activity feed stagger entrance
+  useEffect(() => {
+    Animated.stagger(120, [
+      Animated.parallel([
+        Animated.timing(activity1Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(activity1TranslateY, {
+          toValue: 0,
+          tension: 60,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(activity2Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(activity2TranslateY, {
+          toValue: 0,
+          tension: 60,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(activity3Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(activity3TranslateY, {
+          toValue: 0,
+          tension: 60,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Streak counter flip animation
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(streakCounterFlip, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(streakCounterFlip, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [realStreak]);
+
   const userStats = getUserStats() || {};
   const dailyCalories = getDailyCalorieNeeds() || 0;
   const aiStatus = aiService.getAIStatus();
@@ -218,6 +351,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     setShowGuestSignUp(false);
   };
 
+  // Handle pull to refresh
+  const handleRefresh = async () => {
+    setRefreshing(true);
+
+    // Reload all data
+    await Promise.all([
+      loadFitnessData(),
+      loadNutritionData(),
+    ]);
+
+    // Trigger haptic feedback
+    haptics.impact('light');
+
+    setRefreshing(false);
+  };
+
   // If guest signup screen is active, render it
   if (showGuestSignUp) {
     return (
@@ -229,47 +378,127 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        }}
-      >
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }}
+        >
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: heroParallax } } }],
+              { useNativeDriver: true }
+            )}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor="#4ECDC4"
+                colors={['#4ECDC4', '#FF6B6B', '#FFC107']}
+                progressBackgroundColor="rgba(255, 255, 255, 0.1)"
+              />
+            }
+          >
           <View>
-            {/* Header */}
+            {/* Header - Aurora Design */}
             <View style={styles.header}>
-              <View>
-                <Text style={styles.greeting}>Good Morning! 👋</Text>
-                <Text style={styles.userName}>
-                  {profile?.personalInfo?.name
-                    ? `${profile.personalInfo.name}, ready for today's workout?`
-                    : "Ready for today's workout?"}
-                </Text>
-                {aiStatus.mode === 'real' && (
-                  <Text style={styles.aiStatus}>🤖 AI-Powered Recommendations Active</Text>
-                )}
-              </View>
-              <TouchableOpacity
-                style={styles.profileButton}
-                onPress={() => onNavigateToTab?.('profile')}
-              >
-                <View style={styles.profileAvatar}>
-                  <Text style={styles.profileInitial}>
-                    {profile?.personalInfo?.name
-                      ? profile.personalInfo.name.charAt(0).toUpperCase()
-                      : 'U'}
+              {/* Left: Avatar + Greeting */}
+              <View style={styles.headerLeft}>
+                <AnimatedPressable
+                  style={styles.avatar}
+                  onPress={() => onNavigateToTab?.('profile')}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="light"
+                >
+                  <View style={styles.profileAvatar}>
+                    <Text style={styles.profileInitial}>
+                      {profile?.personalInfo?.name
+                        ? profile.personalInfo.name.charAt(0).toUpperCase()
+                        : 'U'}
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+                <View style={styles.greetingContainer}>
+                  <Text style={styles.greeting}>
+                    {new Date().getHours() < 12
+                      ? 'Good Morning'
+                      : new Date().getHours() < 18
+                      ? 'Good Afternoon'
+                      : 'Good Evening'}
+                  </Text>
+                  <Text style={styles.userName}>
+                    {profile?.personalInfo?.name || 'User'}
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </View>
+
+              {/* Right: Streak + Notifications */}
+              <View style={styles.headerRight}>
+                <GlassCard
+                  elevation={2}
+                  blurIntensity="light"
+                  padding="sm"
+                  borderRadius="lg"
+                  style={styles.streakBadge}
+                >
+                  <Text style={styles.streakIcon}>🔥</Text>
+                  <Text style={styles.streakNumber}>{realStreak || userStats?.currentStreak || 0}</Text>
+                </GlassCard>
+                <AnimatedPressable
+                  style={styles.notificationButton}
+                  onPress={() => Alert.alert('Notifications', 'No new notifications')}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="light"
+                >
+                  <Text style={styles.notificationIcon}>🔔</Text>
+                  {/* Unread count badge can be added here */}
+                </AnimatedPressable>
+              </View>
+            </View>
+
+            {/* HeroCard - Daily Motivation */}
+            <View style={styles.section}>
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      translateY: heroParallax.interpolate({
+                        inputRange: [0, 200],
+                        outputRange: [0, -50],
+                        extrapolate: 'clamp',
+                      }),
+                    },
+                  ],
+                }}
+              >
+                <HeroSection
+                  image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80' }}
+                  overlayGradient={{
+                    colors: ['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.3)'],
+                    start: { x: 0, y: 1 },
+                    end: { x: 0, y: 0 },
+                  }}
+                  contentPosition="center"
+                  height={200}
+                  parallaxEnabled={false}
+                >
+                  <Text style={styles.heroQuote}>{getDailyQuote()}</Text>
+                </HeroSection>
+              </Animated.View>
             </View>
 
             {/* Guest User Sign-up Prompt */}
             {isGuestMode && (
               <View style={styles.section}>
-                <Card style={styles.guestPromptCard} variant="elevated">
+                <GlassCard elevation={3} blurIntensity="light" padding="md" borderRadius="lg" style={styles.guestPromptCard}>
                   <View style={styles.guestPromptHeader}>
                     <Text style={styles.guestPromptIcon}>💾</Text>
                     <View style={styles.guestPromptText}>
@@ -286,49 +515,164 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.guestPromptButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               </View>
             )}
 
-            {/* Quick Stats */}
+            {/* Today's Focus Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Today's Focus</Text>
+
+              {/* Today's Workout Card */}
+              <GlassCard elevation={3} blurIntensity="light" padding="md" borderRadius="lg" style={styles.workoutCard}>
+                <View style={styles.workoutCardContent}>
+                  <View style={styles.workoutThumbnail}>
+                    <Text style={styles.workoutThumbnailIcon}>💪</Text>
+                  </View>
+                  <View style={styles.workoutInfo}>
+                    <Text style={styles.workoutName}>Full Body Strength</Text>
+                    <Text style={styles.workoutDetails}>45 mins • Intermediate</Text>
+                    <View style={styles.progressBarContainer}>
+                      <View style={styles.progressBar}>
+                        <View style={[styles.progressFill, { width: '0%' }]} />
+                      </View>
+                      <Text style={styles.progressText}>0% Complete</Text>
+                    </View>
+                  </View>
+                </View>
+                <AnimatedPressable
+                  style={styles.startButton}
+                  onPress={() => onNavigateToTab?.('fitness')}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                >
+                  <LinearGradient
+                    {...(toLinearGradientProps(gradients.button.primary) as any)}
+                    style={styles.startButtonGradient}
+                  >
+                    <Text style={styles.startButtonText}>START</Text>
+                  </LinearGradient>
+                </AnimatedPressable>
+              </GlassCard>
+
+              {/* Meal Plan Card */}
+              <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.mealPlanCard}>
+                <Text style={styles.mealPlanTitle}>Today's Meal Plan</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.mealScroll}
+                  contentContainerStyle={styles.mealScrollContent}
+                  snapToInterval={rw(80) + ResponsiveTheme.spacing.md}
+                  decelerationRate="fast"
+                  pagingEnabled={false}
+                >
+                  <View style={styles.mealCard}>
+                    <View style={styles.mealImage}>
+                      <Text style={styles.mealEmoji}>🍳</Text>
+                    </View>
+                    <Text style={styles.mealLabel}>Breakfast</Text>
+                    <Text style={styles.mealCalories}>350 cal</Text>
+                  </View>
+                  <View style={styles.mealCard}>
+                    <View style={styles.mealImage}>
+                      <Text style={styles.mealEmoji}>🥗</Text>
+                    </View>
+                    <Text style={styles.mealLabel}>Lunch</Text>
+                    <Text style={styles.mealCalories}>520 cal</Text>
+                  </View>
+                  <View style={styles.mealCard}>
+                    <View style={styles.mealImage}>
+                      <Text style={styles.mealEmoji}>🍗</Text>
+                    </View>
+                    <Text style={styles.mealLabel}>Dinner</Text>
+                    <Text style={styles.mealCalories}>480 cal</Text>
+                  </View>
+                  <View style={styles.mealCard}>
+                    <View style={styles.mealImage}>
+                      <Text style={styles.mealEmoji}>🍎</Text>
+                    </View>
+                    <Text style={styles.mealLabel}>Snacks</Text>
+                    <Text style={styles.mealCalories}>150 cal</Text>
+                  </View>
+                </ScrollView>
+                <Text style={styles.mealPlanCaption}>Tap to view details</Text>
+              </GlassCard>
+            </View>
+
+            {/* Quick Stats - Aurora Design with ProgressRings */}
             <View style={styles.statsSection}>
-              <Text style={styles.sectionTitle}>Today's Overview</Text>
-              <View style={styles.statsGrid}>
-                <Card style={styles.statCard} variant="elevated">
-                  <Text style={styles.statValue}>
-                    {realCaloriesBurned || userStats?.totalCaloriesBurned || 0}
-                  </Text>
-                  <Text style={styles.statLabel}>Calories Burned</Text>
-                  <Text style={styles.statSubtext}>
-                    🔥 {hasRealData ? 'From workouts' : 'Get started!'}
-                  </Text>
-                </Card>
+              <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.quickStatsCard}>
+                <View style={styles.quickStatsGrid}>
+                  {/* Calories */}
+                  <View style={styles.quickStatItem}>
+                    <MiniProgressRing
+                      progress={(realCaloriesBurned || userStats?.totalCaloriesBurned || 0) / 2000 * 100}
+                      size={70}
+                      strokeWidth={6}
+                      gradient={{
+                        colors: ['#FF6B6B', '#FF8E53'],
+                        start: { x: 0, y: 0 },
+                        end: { x: 1, y: 1 },
+                      }}
+                    >
+                      <Text style={styles.quickStatIcon}>🔥</Text>
+                    </MiniProgressRing>
+                    <Text style={styles.quickStatValue}>
+                      {realCaloriesBurned || userStats?.totalCaloriesBurned || 0}
+                    </Text>
+                    <Text style={styles.quickStatLabel}>Calories</Text>
+                  </View>
 
-                <Card style={styles.statCard} variant="elevated">
-                  <Text style={styles.statValue}>{realStreak || userStats?.currentStreak || 0}</Text>
-                  <Text style={styles.statLabel}>Day Streak</Text>
-                  <Text style={styles.statSubtext}>
-                    ⏱️ {realStreak > 0 ? 'Keep it up!' : 'Start your streak!'}
-                  </Text>
-                </Card>
+                  {/* Steps */}
+                  <View style={styles.quickStatItem}>
+                    <MiniProgressRing
+                      progress={(healthMetrics?.steps || 0) / 10000 * 100}
+                      size={70}
+                      strokeWidth={6}
+                      gradient={{
+                        colors: ['#4CAF50', '#8BC34A'],
+                        start: { x: 0, y: 0 },
+                        end: { x: 1, y: 1 },
+                      }}
+                    >
+                      <Text style={styles.quickStatIcon}>👟</Text>
+                    </MiniProgressRing>
+                    <Text style={styles.quickStatValue}>
+                      {healthMetrics?.steps || 0}
+                    </Text>
+                    <Text style={styles.quickStatLabel}>Steps</Text>
+                  </View>
 
-                <Card style={styles.statCard} variant="elevated">
-                  <Text style={styles.statValue}>{getTotalBadgesEarned() || 0}</Text>
-                  <Text style={styles.statLabel}>Badges Earned</Text>
-                  <Text style={styles.statSubtext}>
-                    🏆 {getTotalBadgesEarned() > 0 ? 'Amazing progress!' : 'Earn your first!'}
-                  </Text>
-                </Card>
-              </View>
+                  {/* Water */}
+                  <View style={styles.quickStatItem}>
+                    <MiniProgressRing
+                      progress={50}
+                      size={70}
+                      strokeWidth={6}
+                      gradient={{
+                        colors: ['#2196F3', '#03A9F4'],
+                        start: { x: 0, y: 0 },
+                        end: { x: 1, y: 1 },
+                      }}
+                    >
+                      <Text style={styles.quickStatIcon}>💧</Text>
+                    </MiniProgressRing>
+                    <Text style={styles.quickStatValue}>1.5L</Text>
+                    <Text style={styles.quickStatLabel}>Water</Text>
+                  </View>
+                </View>
+              </GlassCard>
             </View>
 
             {/* Achievement Highlights */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>🏆 Achievement Highlights</Text>
-                <TouchableOpacity onPress={() => onNavigateToTab?.('analytics')}>
+                <AnimatedPressable onPress={() => onNavigateToTab?.('analytics')} scaleValue={0.95} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>View All</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
 
               {recentAchievements.length > 0 || nearlyCompleted.length > 0 ? (
@@ -337,19 +681,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {recentAchievements.length > 0 && (
                     <View style={styles.achievementGroup}>
                       <Text style={styles.achievementGroupTitle}>🎉 Recently Earned</Text>
-                      <ScrollView 
-                        horizontal 
+                      <ScrollView
+                        horizontal
                         showsHorizontalScrollIndicator={false}
                         style={styles.achievementScroll}
                       >
                         {recentAchievements.map((achievement, index) => (
-                          <Card key={index} style={styles.achievementCard} variant="elevated">
+                          <GlassCard key={index} elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.achievementCard}>
                             <View style={styles.achievementBadge}>
                               <Text style={styles.achievementIcon}>{achievement.icon}</Text>
                             </View>
                             <Text style={styles.achievementTitle}>{achievement.title}</Text>
                             <Text style={styles.achievementCategory}>{achievement.category}</Text>
-                          </Card>
+                          </GlassCard>
                         ))}
                       </ScrollView>
                     </View>
@@ -360,7 +704,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     <View style={styles.achievementGroup}>
                       <Text style={styles.achievementGroupTitle}>🔥 Almost There</Text>
                       {nearlyCompleted.map((achievement, index) => (
-                        <Card key={index} style={styles.progressCard} variant="outlined">
+                        <GlassCard key={index} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.progressCard}>
                           <View style={styles.progressCardContent}>
                             <View style={styles.progressCardHeader}>
                               <View style={styles.progressBadge}>
@@ -383,13 +727,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                               <Text style={styles.progressPercentage}>{achievement.progress}%</Text>
                             </View>
                           </View>
-                        </Card>
+                        </GlassCard>
                       ))}
                     </View>
                   )}
                 </View>
               ) : (
-                <Card style={styles.emptyAchievementCard} variant="outlined">
+                <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.emptyAchievementCard}>
                   <View style={styles.emptyAchievementContent}>
                     <Text style={styles.emptyAchievementIcon}>🏆</Text>
                     <Text style={styles.emptyAchievementTitle}>Start Earning Achievements</Text>
@@ -404,14 +748,101 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.emptyAchievementButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               )}
+            </View>
+
+            {/* Recent Activity Feed */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Activity</Text>
+              <View style={styles.activityFeed}>
+                {/* Yesterday's Workout */}
+                <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
+                  <View style={styles.activityContent}>
+                    <View style={styles.activityIconContainer}>
+                      <Text style={styles.activityIcon}>💪</Text>
+                    </View>
+                    <View style={styles.activityInfo}>
+                      <Text style={styles.activityType}>Full Body Workout</Text>
+                      <Text style={styles.activityDetails}>45 mins • 320 calories</Text>
+                      <Text style={styles.activityTimestamp}>Yesterday, 6:30 PM</Text>
+                    </View>
+                  </View>
+                </GlassCard>
+
+                {/* Meal Logged */}
+                <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
+                  <View style={styles.activityContent}>
+                    <View style={styles.activityIconContainer}>
+                      <Text style={styles.activityIcon}>🥗</Text>
+                    </View>
+                    <View style={styles.activityInfo}>
+                      <Text style={styles.activityType}>Logged Lunch</Text>
+                      <Text style={styles.activityDetails}>Chicken Salad • 450 cal</Text>
+                      <Text style={styles.activityTimestamp}>Today, 1:00 PM</Text>
+                    </View>
+                  </View>
+                </GlassCard>
+
+                {/* Achievement Unlocked */}
+                <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
+                  <View style={styles.activityContent}>
+                    <View style={styles.activityIconContainer}>
+                      <Text style={styles.activityIcon}>🏆</Text>
+                    </View>
+                    <View style={styles.activityInfo}>
+                      <Text style={styles.activityType}>Achievement Unlocked</Text>
+                      <Text style={styles.activityDetails}>7-Day Streak Master</Text>
+                      <Text style={styles.activityTimestamp}>2 days ago</Text>
+                    </View>
+                  </View>
+                </GlassCard>
+              </View>
+            </View>
+
+            {/* Personal Training CTA - Aurora Design */}
+            <View style={styles.section}>
+              <GlassCard elevation={3} blurIntensity="medium" padding="lg" borderRadius="xl" style={styles.personalTrainingCard}>
+                {/* Icon Grid Preview */}
+                <View style={styles.ptIconGrid}>
+                  <View style={styles.ptIconRow}>
+                    <Text style={styles.ptIcon}>🏋️</Text>
+                    <Text style={styles.ptIcon}>🎯</Text>
+                    <Text style={styles.ptIcon}>💪</Text>
+                  </View>
+                  <View style={styles.ptIconRow}>
+                    <Text style={styles.ptIcon}>⚡</Text>
+                    <Text style={styles.ptIcon}>📊</Text>
+                    <Text style={styles.ptIcon}>🏆</Text>
+                  </View>
+                </View>
+
+                {/* Content */}
+                <Text style={styles.ptTitle}>Book Personal Training</Text>
+                <Text style={styles.ptCaption}>50 mins • Goal-based • Expert trainers</Text>
+
+                {/* Book Now Button */}
+                <AnimatedPressable
+                  style={styles.ptBookButton}
+                  onPress={() => Alert.alert('Personal Training', 'Booking feature coming soon!')}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                >
+                  <LinearGradient
+                    {...(toLinearGradientProps(gradients.button.primary) as any)}
+                    style={styles.ptBookButtonGradient}
+                  >
+                    <Text style={styles.ptBookButtonText}>BOOK NOW</Text>
+                  </LinearGradient>
+                </AnimatedPressable>
+              </GlassCard>
             </View>
 
             {/* Premium Achievement Prompt */}
             {!canAccessPremiumAchievements() && getTotalBadgesEarned() >= 5 && (
               <View style={styles.section}>
-                <Card style={styles.premiumPromptCard} variant="elevated">
+                <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.premiumPromptCard}>
                   <View style={styles.premiumPromptContent}>
                     <View style={styles.premiumPromptHeader}>
                       <Text style={styles.premiumPromptIcon}>🏆</Text>
@@ -436,7 +867,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       <Text style={styles.premiumTrialText}>7 days free, then $9.99/month</Text>
                     )}
                   </View>
-                </Card>
+                </GlassCard>
               </View>
             )}
 
@@ -444,20 +875,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>🩺 Health Overview</Text>
-                <TouchableOpacity onPress={() => {
+                <AnimatedPressable onPress={() => {
                   console.log('🔧 STEP 4 TEST: Opening Health Settings Modal');
                   setShowHealthSettingsModal(true);
-                }}>
+                }} scaleValue={0.95} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>Settings</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
 
-              <TouchableOpacity 
+              <AnimatedPressable
                 onPress={() => {
                   console.log('🔧 STEP 4 TEST: Opening Health Settings Modal from section');
                   setShowHealthSettingsModal(true);
                 }}
-                activeOpacity={0.7}
+                scaleValue={0.97}
+                hapticFeedback={true}
+                hapticType="medium"
               >
               {((Platform.OS === 'ios' && isHealthKitAuthorized && healthSettings.healthKitEnabled) || 
                 (Platform.OS === 'android' && isHealthConnectAuthorized && healthSettings.healthConnectEnabled)) ? (
@@ -465,7 +898,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Health Metrics Cards */}
                   <View style={styles.healthMetricsGrid}>
                     {/* Steps */}
-                    <Card style={styles.healthMetricCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                       <View style={styles.healthMetricHeader}>
                         <Text style={styles.healthMetricIcon}>👣</Text>
                         <View style={styles.healthMetricProgress}>
@@ -488,10 +921,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       </Text>
                       <Text style={styles.healthMetricLabel}>Steps</Text>
                       <Text style={styles.healthMetricGoal}>Goal: 10,000</Text>
-                    </Card>
+                    </GlassCard>
 
                     {/* Active Calories */}
-                    <Card style={styles.healthMetricCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                       <View style={styles.healthMetricHeader}>
                         <Text style={styles.healthMetricIcon}>🔥</Text>
                         <View style={styles.healthMetricProgress}>
@@ -515,11 +948,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       </Text>
                       <Text style={styles.healthMetricLabel}>Active Cal</Text>
                       <Text style={styles.healthMetricGoal}>Goal: 500</Text>
-                    </Card>
+                    </GlassCard>
 
                     {/* Sleep Hours */}
                     {healthMetrics.sleepHours && (
-                      <Card style={styles.healthMetricCard} variant="outlined">
+                      <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                         <View style={styles.healthMetricHeader}>
                           <Text style={styles.healthMetricIcon}>😴</Text>
                           <View style={styles.healthMetricProgress}>
@@ -543,12 +976,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         </Text>
                         <Text style={styles.healthMetricLabel}>Sleep</Text>
                         <Text style={styles.healthMetricGoal}>Goal: 8h</Text>
-                      </Card>
+                      </GlassCard>
                     )}
 
                     {/* Heart Rate */}
                     {healthMetrics.heartRate && (
-                      <Card style={styles.healthMetricCard} variant="outlined">
+                      <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                         <View style={styles.healthMetricHeader}>
                           <Text style={styles.healthMetricIcon}>❤️</Text>
                           <Text style={styles.healthHeartRateStatus}>
@@ -565,19 +998,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                             minute: '2-digit'
                           })}
                         </Text>
-                      </Card>
+                      </GlassCard>
                     )}
                   </View>
 
                   {/* Health Insight */}
                   {healthTipOfDay && (
-                    <Card style={styles.healthInsightCard} variant="elevated">
+                    <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthInsightCard}>
                       <View style={styles.healthInsightHeader}>
                         <Text style={styles.healthInsightIcon}>💡</Text>
                         <Text style={styles.healthInsightTitle}>Health Insight</Text>
                       </View>
                       <Text style={styles.healthInsightText}>{healthTipOfDay}</Text>
-                    </Card>
+                    </GlassCard>
                   )}
 
                   {/* Sync Status */}
@@ -596,17 +1029,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       </Text>
                     </View>
                     {syncStatus === 'error' && (
-                      <TouchableOpacity 
+                      <AnimatedPressable
+                        scaleValue={0.95}
                         style={styles.healthRetryButton}
                         onPress={() => syncHealthData(true)}
                       >
                         <Text style={styles.healthRetryText}>Retry</Text>
-                      </TouchableOpacity>
+                      </AnimatedPressable>
                     )}
                   </View>
                 </View>
               ) : (
-                <Card style={styles.healthSetupCard} variant="outlined">
+                <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthSetupCard}>
                   <View style={styles.healthSetupContent}>
                     <Text style={styles.healthSetupIcon}>🩺</Text>
                     <Text style={styles.healthSetupTitle}>Connect Health Data</Text>
@@ -627,24 +1061,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.healthSetupButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               )}
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
 
             {/* Analytics Insights */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>📊 Performance Insights</Text>
-                <TouchableOpacity onPress={() => onNavigateToTab?.('analytics')}>
+                <AnimatedPressable scaleValue={0.97} onPress={() => onNavigateToTab?.('analytics')} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>Full Report</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
 
               {currentAnalytics && analyticsInitialized ? (
                 <View style={styles.analyticsContainer}>
                   {/* Overall Performance Score */}
-                  <Card style={styles.performanceScoreCard} variant="elevated">
+                  <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.performanceScoreCard}>
                     <View style={styles.performanceHeader}>
                       <View style={styles.performanceScoreSection}>
                         <Text style={styles.performanceScoreValue}>{currentAnalytics.overallScore}</Text>
@@ -671,27 +1105,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         </View>
                       </View>
                     </View>
-                  </Card>
+                  </GlassCard>
 
                   {/* Quick Stats Grid */}
                   <View style={styles.analyticsStatsGrid}>
-                    <Card style={styles.analyticsStatCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
                       <Text style={styles.analyticsStatIcon}>🔥</Text>
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.currentStreak}</Text>
                       <Text style={styles.analyticsStatLabel}>Day Streak</Text>
-                    </Card>
+                    </GlassCard>
 
-                    <Card style={styles.analyticsStatCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
                       <Text style={styles.analyticsStatIcon}>⭐</Text>
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.averageScore}</Text>
                       <Text style={styles.analyticsStatLabel}>Avg Score</Text>
-                    </Card>
+                    </GlassCard>
 
-                    <Card style={styles.analyticsStatCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
                       <Text style={styles.analyticsStatIcon}>💪</Text>
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.totalWorkouts}</Text>
                       <Text style={styles.analyticsStatLabel}>Workouts</Text>
-                    </Card>
+                    </GlassCard>
                   </View>
 
                   {/* Top Insights */}
@@ -699,16 +1133,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     <View style={styles.insightsSection}>
                       <Text style={styles.insightsSectionTitle}>✨ Key Insights</Text>
                       {getTopInsights().slice(0, 2).map((insight, index) => (
-                        <Card key={index} style={styles.insightCard} variant="outlined">
+                        <GlassCard key={index} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.insightCard}>
                           <Text style={styles.insightText}>{insight}</Text>
-                        </Card>
+                        </GlassCard>
                       ))}
                     </View>
                   )}
 
                   {/* Positive Trends */}
                   {getPositiveTrends().length > 0 && (
-                    <Card style={styles.trendsCard} variant="elevated">
+                    <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.trendsCard}>
                       <View style={styles.trendsHeader}>
                         <Text style={styles.trendsIcon}>📈</Text>
                         <Text style={styles.trendsTitle}>Positive Trends</Text>
@@ -718,12 +1152,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                           <Text key={index} style={styles.trendItem}>• {trend}</Text>
                         ))}
                       </View>
-                    </Card>
+                    </GlassCard>
                   )}
 
                   {/* Improvement Areas */}
                   {getImprovementAreas().length > 0 && (
-                    <Card style={styles.improvementCard} variant="outlined">
+                    <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.improvementCard}>
                       <View style={styles.improvementHeader}>
                         <Text style={styles.improvementIcon}>🎯</Text>
                         <Text style={styles.improvementTitle}>Focus Areas</Text>
@@ -731,18 +1165,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       <Text style={styles.improvementText}>
                         {getImprovementAreas()[0]}
                       </Text>
-                      <TouchableOpacity
+                      <AnimatedPressable
+                        scaleValue={0.95}
                         style={styles.improvementButton}
                         onPress={() => onNavigateToTab?.('analytics')}
                       >
                         <Text style={styles.improvementButtonText}>View Recommendations</Text>
-                      </TouchableOpacity>
-                    </Card>
+                      </AnimatedPressable>
+                    </GlassCard>
                   )}
 
                   {/* Predictive Insights */}
                   {getPredictiveInsights() && (
-                    <Card style={styles.predictiveCard} variant="elevated">
+                    <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.predictiveCard}>
                       <View style={styles.predictiveHeader}>
                         <Text style={styles.predictiveIcon}>🔮</Text>
                         <Text style={styles.predictiveTitle}>Forecast</Text>
@@ -757,11 +1192,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                           ⚠️ Plateau risk detected - consider varying your routine
                         </Text>
                       )}
-                    </Card>
+                    </GlassCard>
                   )}
                 </View>
               ) : (
-                <Card style={styles.analyticsEmptyCard} variant="outlined">
+                <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.analyticsEmptyCard}>
                   <View style={styles.analyticsEmptyContent}>
                     <Text style={styles.analyticsEmptyIcon}>📊</Text>
                     <Text style={styles.analyticsEmptyTitle}>Start Building Your Analytics</Text>
@@ -776,14 +1211,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.analyticsEmptyButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               )}
             </View>
 
             {/* Premium Analytics Upgrade */}
             {!canAccessAdvancedAnalytics() && currentAnalytics && analyticsSummary.totalWorkouts >= 10 && (
               <View style={styles.section}>
-                <Card style={styles.premiumAnalyticsCard} variant="elevated">
+                <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.premiumAnalyticsCard}>
                   <View style={styles.premiumAnalyticsContent}>
                     <View style={styles.premiumAnalyticsHeader}>
                       <Text style={styles.premiumAnalyticsIcon}>📈</Text>
@@ -833,14 +1268,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.premiumAnalyticsButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               </View>
             )}
 
             {/* AI Usage Limit Prompt */}
             {!canUseUnlimitedAI() && hasRealData && (
               <View style={styles.section}>
-                <Card style={styles.aiLimitCard} variant="outlined">
+                <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.aiLimitCard}>
                   <View style={styles.aiLimitContent}>
                     <View style={styles.aiLimitHeader}>
                       <Text style={styles.aiLimitIcon}>🤖</Text>
@@ -848,12 +1283,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         <Text style={styles.aiLimitTitle}>AI Usage Limit</Text>
                         <Text style={styles.aiLimitSubtitle}>2 of 3 daily AI generations used</Text>
                       </View>
-                      <TouchableOpacity
+                      <AnimatedPressable
+                        scaleValue={0.95}
                         style={styles.aiLimitUpgrade}
                         onPress={() => showPaywallModal('unlimited_ai')}
                       >
                         <Text style={styles.aiLimitUpgradeText}>Unlimited</Text>
-                      </TouchableOpacity>
+                      </AnimatedPressable>
                     </View>
                     <View style={styles.aiLimitProgress}>
                       <View style={styles.aiLimitProgressBar}>
@@ -861,7 +1297,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       </View>
                     </View>
                   </View>
-                </Card>
+                </GlassCard>
               </View>
             )}
 
@@ -869,12 +1305,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's Workout</Text>
-                <TouchableOpacity onPress={() => onNavigateToTab?.('fitness')}>
+                <AnimatedPressable scaleValue={0.97} onPress={() => onNavigateToTab?.('fitness')} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
 
-              <Card style={styles.workoutCard} variant="elevated">
+              <AnimatedPressable
+                onPress={() => onNavigateToTab?.('fitness')}
+                scaleValue={0.98}
+                hapticFeedback={true}
+                hapticType="medium"
+                style={{ elevation: 3, shadowOpacity: 0.1 }}
+                onPressIn={() => {
+                  // Lift elevation effect handled by scaleValue
+                }}
+              >
+                <GlassCard elevation={5} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.workoutCard}>
                 <View style={styles.workoutHeader}>
                   <View>
                     <Text style={styles.workoutTitle}>
@@ -962,18 +1408,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   variant={todaysWorkoutInfo.isRestDay ? 'outline' : 'primary'}
                   style={styles.workoutButton}
                 />
-              </Card>
+              </GlassCard>
+              </AnimatedPressable>
             </View>
 
             {/* Quick Actions */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.actionsGrid}>
-                <TouchableOpacity
+                <AnimatedPressable
+                  scaleValue={0.95}
                   style={styles.actionItem}
                   onPress={() => onNavigateToTab?.('fitness')}
+                  hapticFeedback={true}
+                  hapticType="medium"
                 >
-                  <Card style={styles.actionCard} variant="outlined">
+                  <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
                     <Text style={styles.actionIcon}>
                       {todaysWorkoutInfo.isRestDay ? '😴' : '🏋️'}
                     </Text>
@@ -984,40 +1434,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                           ? 'Continue Workout'
                           : 'Start Workout'}
                     </Text>
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
+                  scaleValue={0.95}
                   style={styles.actionItem}
                   onPress={() => onNavigateToTab?.('diet')}
+                  hapticFeedback={true}
+                  hapticType="medium"
                 >
-                  <Card style={styles.actionCard} variant="outlined">
+                  <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
                     <Text style={styles.actionIcon}>🍎</Text>
                     <Text style={styles.actionText}>
                       {todaysData?.meals.length > 0 ? 'View Meals' : 'Plan Meals'}
                     </Text>
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
+                  scaleValue={0.95}
                   style={styles.actionItem}
                   onPress={() => onNavigateToTab?.('progress')}
+                  hapticFeedback={true}
+                  hapticType="medium"
                 >
-                  <Card style={styles.actionCard} variant="outlined">
+                  <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
                     <Text style={styles.actionIcon}>📊</Text>
                     <Text style={styles.actionText}>View Progress</Text>
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
 
-                <TouchableOpacity
+                <AnimatedPressable
+                  scaleValue={0.95}
                   style={styles.actionItem}
                   onPress={() => onNavigateToTab?.('profile')}
+                  hapticFeedback={true}
+                  hapticType="medium"
                 >
-                  <Card style={styles.actionCard} variant="outlined">
+                  <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
                     <Text style={styles.actionIcon}>⚙️</Text>
                     <Text style={styles.actionText}>Settings</Text>
-                  </Card>
-                </TouchableOpacity>
+                  </GlassCard>
+                </AnimatedPressable>
               </View>
             </View>
 
@@ -1027,7 +1486,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               {recentActivities.length > 0 ? (
                 recentActivities.map((activity) => (
-                  <Card key={activity.id} style={styles.activityCard} variant="outlined">
+                  <GlassCard key={activity.id} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
                     <View style={styles.activityItem}>
                       <View style={styles.activityIcon}>
                         <Text style={styles.activityEmoji}>
@@ -1046,10 +1505,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         {new Date(activity.completedAt).toLocaleDateString()}
                       </Text>
                     </View>
-                  </Card>
+                  </GlassCard>
                 ))
               ) : (
-                <Card style={styles.emptyActivityCard} variant="outlined">
+                <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.emptyActivityCard}>
                   <View style={styles.emptyActivityContent}>
                     <Text style={styles.emptyActivityIcon}>📈</Text>
                     <Text style={styles.emptyActivityTitle}>
@@ -1070,7 +1529,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       style={styles.emptyActivityButton}
                     />
                   </View>
-                </Card>
+                </GlassCard>
               )}
             </View>
 
@@ -1090,16 +1549,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>🩺 Health Integration Settings</Text>
-            <TouchableOpacity
+            <AnimatedPressable
+              scaleValue={0.95}
               onPress={() => setShowHealthSettingsModal(false)}
               style={styles.modalCloseButton}
             >
               <Text style={styles.modalCloseText}>✕</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
           
           <ScrollView style={styles.modalContent}>
-            <Card style={styles.healthSettingCard} variant="outlined">
+            <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthSettingCard}>
               <View style={styles.healthSettingHeader}>
                 <Text style={styles.healthSettingIcon}>
                   {Platform.OS === 'ios' ? '🍎' : '🔗'}
@@ -1254,11 +1714,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   </View>
                 </View>
               )}
-            </Card>
-            
+            </GlassCard>
+
             {/* Migration Information Card for Android */}
             {Platform.OS === 'android' && (
-              <Card style={styles.migrationInfoCard} variant="outlined">
+              <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.migrationInfoCard}>
                 <View style={styles.migrationHeader}>
                   <Text style={styles.migrationIcon}>🔄</Text>
                   <Text style={styles.migrationTitle}>Google Fit → Health Connect Migration</Text>
@@ -1277,7 +1737,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     Health Connect requires Android 8.0+ and the Health Connect app to be installed.
                   </Text>
                 </View>
-              </Card>
+              </GlassCard>
             )}
             
             <Text style={styles.modalFooter}>
@@ -1287,6 +1747,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
@@ -1345,6 +1806,274 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
+  },
+
+  // Aurora Header Styles
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.md,
+    flex: 1,
+  },
+
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  avatar: {
+    // Avatar wrapper
+  },
+
+  greetingContainer: {
+    flex: 1,
+  },
+
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+  },
+
+  streakIcon: {
+    fontSize: rf(18),
+  },
+
+  streakNumber: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  notificationButton: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  notificationIcon: {
+    fontSize: rf(20),
+  },
+
+  // HeroCard Styles
+  heroQuote: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    textAlign: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    lineHeight: ResponsiveTheme.fontSize.xl * 1.4,
+  },
+
+  // Today's Focus - Workout Card
+  workoutCard: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  workoutCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  workoutThumbnail: {
+    width: rw(80),
+    height: rw(80),
+    borderRadius: rw(12),
+    backgroundColor: ResponsiveTheme.colors.primaryLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  workoutThumbnailIcon: {
+    fontSize: rf(40),
+  },
+
+  workoutInfo: {
+    flex: 1,
+  },
+
+  workoutName: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  workoutDetails: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  progressText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  startButton: {
+    borderRadius: rw(12),
+    overflow: 'hidden',
+  },
+
+  startButtonGradient: {
+    paddingVertical: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  startButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  // Today's Focus - Meal Plan
+  mealPlanCard: {
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  mealPlanTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  mealScroll: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  mealScrollContent: {
+    gap: ResponsiveTheme.spacing.md,
+    paddingRight: ResponsiveTheme.spacing.md,
+  },
+
+  mealCard: {
+    alignItems: 'center',
+  },
+
+  mealImage: {
+    width: rw(80),
+    height: rw(80),
+    borderRadius: rw(12),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  mealEmoji: {
+    fontSize: rf(40),
+  },
+
+  mealLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xxs,
+  },
+
+  mealCalories: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  mealPlanCaption: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+
+  // Quick Stats with ProgressRings
+  quickStatsCard: {
+    // Card styling handled by GlassCard
+  },
+
+  quickStatsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+
+  quickStatItem: {
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  quickStatIcon: {
+    fontSize: rf(24),
+  },
+
+  quickStatValue: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  quickStatLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  // Recent Activity Feed
+  activityFeed: {
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  activityCard: {
+    // Card styling handled by GlassCard
+  },
+
+  activityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  activityIconContainer: {
+    width: rw(50),
+    height: rw(50),
+    borderRadius: rw(25),
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  activityIcon: {
+    fontSize: rf(24),
+  },
+
+  activityInfo: {
+    flex: 1,
+  },
+
+  activityType: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xxs,
+  },
+
+  activityDetails: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xxs,
+  },
+
+  activityTimestamp: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontStyle: 'italic',
   },
 
   section: {
@@ -2665,5 +3394,58 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: ResponsiveTheme.spacing.sm,
     lineHeight: rf(16),
+  },
+
+  // Personal Training CTA Styles
+  personalTrainingCard: {
+    alignItems: 'center',
+  },
+
+  ptIconGrid: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  ptIconRow: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  ptIcon: {
+    fontSize: rf(32),
+  },
+
+  ptTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: 'center',
+  },
+
+  ptCaption: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    textAlign: 'center',
+  },
+
+  ptBookButton: {
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    overflow: 'hidden',
+    width: '100%',
+  },
+
+  ptBookButtonGradient: {
+    paddingVertical: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  ptBookButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    letterSpacing: 1,
   },
 });

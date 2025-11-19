@@ -4,18 +4,22 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   RefreshControl,
   Alert,
   Animated,
-  ActivityIndicator,
   FlatList,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
-import { Card, Button, THEME } from '../../components/ui';
+import { Button, THEME } from '../../components/ui';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { haptics } from '../../utils/haptics';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { useAuth } from '../../hooks/useAuth';
 import { useProgressData } from '../../hooks/useProgressData';
 import { ProgressAnalytics } from '../../components/progress/ProgressAnalytics';
@@ -23,6 +27,7 @@ import DataRetrievalService from '../../services/dataRetrieval';
 import { useFitnessStore } from '../../stores/fitnessStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
 import { completionTrackingService } from '../../services/completionTracking';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 
 export const ProgressScreen: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
@@ -400,7 +405,8 @@ export const ProgressScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
       <Animated.View
         style={{
           flex: 1,
@@ -428,35 +434,36 @@ export const ProgressScreen: React.FC = () => {
               <Text style={styles.title}>Progress</Text>
               <View style={styles.headerButtons}>
                 {/* Track B Status Indicator */}
-                <TouchableOpacity style={styles.statusButton}>
+                <AnimatedPressable style={styles.statusButton} scaleValue={0.95}>
                   <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                </AnimatedPressable>
+                <AnimatedPressable
                   style={[styles.analyticsButton, showAnalytics && styles.analyticsButtonActive]}
                   onPress={() => setShowAnalytics(!showAnalytics)}
+                  scaleValue={0.95}
                 >
                   <Text style={styles.analyticsIcon}>📊</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.addButton} onPress={handleAddProgressEntry}>
+                </AnimatedPressable>
+                <AnimatedPressable style={styles.addButton} onPress={handleAddProgressEntry} scaleValue={0.95} hapticFeedback={true} hapticType="medium">
                   <Text style={styles.addIcon}>➕</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.shareButton}>
+                </AnimatedPressable>
+                <AnimatedPressable style={styles.shareButton} scaleValue={0.95}>
                   <Text style={styles.shareIcon}>📤</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
 
             {/* Loading State */}
             {(progressLoading || statsLoading) && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={ResponsiveTheme.colors.primary} />
+                <AuroraSpinner size="lg" theme="primary" />
                 <Text style={styles.loadingText}>Loading progress data...</Text>
               </View>
             )}
 
             {/* Error State */}
             {progressError && (
-              <Card style={styles.errorCard} variant="outlined">
+              <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                 <Text style={styles.errorText}>⚠️ {progressError}</Text>
                 <Button
                   title="Retry"
@@ -465,19 +472,19 @@ export const ProgressScreen: React.FC = () => {
                   size="sm"
                   style={styles.retryButton}
                 />
-              </Card>
+              </GlassCard>
             )}
 
             {/* No Authentication State */}
             {!isAuthenticated && (
-              <Card style={styles.errorCard} variant="outlined">
+              <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                 <Text style={styles.errorText}>🔐 Please sign in to track your progress</Text>
-              </Card>
+              </GlassCard>
             )}
 
             {/* No Data State */}
             {isAuthenticated && progressEntries.length === 0 && !progressLoading && (
-              <Card style={styles.errorCard} variant="outlined">
+              <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                 <Text style={styles.errorText}>📊 No progress data yet</Text>
                 <Text style={styles.errorSubtext}>
                   Add your first measurement to start tracking!
@@ -489,14 +496,14 @@ export const ProgressScreen: React.FC = () => {
                   size="sm"
                   style={styles.retryButton}
                 />
-              </Card>
+              </GlassCard>
             )}
 
             {/* Today's Progress */}
             {isAuthenticated && todaysData && !showAnalytics && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Today's Progress</Text>
-                <Card style={styles.todaysCard} variant="elevated">
+                <GlassCard style={styles.todaysCard} elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
                   <View style={styles.todaysHeader}>
                     <Text style={styles.todaysDate}>
                       {new Date().toLocaleDateString('en-US', {
@@ -544,7 +551,7 @@ export const ProgressScreen: React.FC = () => {
                       </View>
                     </View>
                   </View>
-                </Card>
+                </GlassCard>
               </View>
             )}
 
@@ -556,13 +563,16 @@ export const ProgressScreen: React.FC = () => {
               <View style={styles.section}>
                 <View style={styles.periodSelector}>
                   {periods.map((period) => (
-                    <TouchableOpacity
+                    <AnimatedPressable
                       key={period.id}
                       onPress={() => setSelectedPeriod(period.id)}
                       style={[
                         styles.periodButton,
                         selectedPeriod === period.id && styles.periodButtonActive,
                       ]}
+                      scaleValue={0.97}
+                      hapticFeedback={true}
+                      hapticType="selection"
                     >
                       <Text
                         style={[
@@ -572,7 +582,7 @@ export const ProgressScreen: React.FC = () => {
                       >
                         {period.label}
                       </Text>
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   ))}
                 </View>
               </View>
@@ -582,7 +592,7 @@ export const ProgressScreen: React.FC = () => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Body Metrics</Text>
               <View style={styles.statsGrid}>
-                <Card style={styles.statCard} variant="elevated">
+                <GlassCard style={styles.statCard} elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
                   <View style={styles.statHeader}>
                     <Text style={styles.statValue}>{stats.weight.current}</Text>
                     <Text style={styles.statUnit}>{stats.weight.unit}</Text>
@@ -625,9 +635,9 @@ export const ProgressScreen: React.FC = () => {
                       />
                     </View>
                   </View>
-                </Card>
+                </GlassCard>
 
-                <Card style={styles.statCard} variant="elevated">
+                <GlassCard style={styles.statCard} elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
                   <Text style={styles.statValue}>{stats.bodyFat.current}</Text>
                   <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
                   <Text style={styles.statLabel}>Body Fat</Text>
@@ -643,11 +653,11 @@ export const ProgressScreen: React.FC = () => {
                     {stats.bodyFat.change}
                     {stats.bodyFat.unit}
                   </Text>
-                </Card>
+                </GlassCard>
               </View>
 
               <View style={styles.statsGrid}>
-                <Card style={styles.statCard} variant="elevated">
+                <GlassCard style={styles.statCard} elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
                   <Text style={styles.statValue}>{stats.muscle.current}</Text>
                   <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
                   <Text style={styles.statLabel}>Muscle Mass</Text>
@@ -662,9 +672,9 @@ export const ProgressScreen: React.FC = () => {
                     {stats.muscle.change > 0 ? '+' : ''}
                     {stats.muscle.change} {stats.muscle.unit}
                   </Text>
-                </Card>
+                </GlassCard>
 
-                <Card style={styles.statCard} variant="elevated">
+                <GlassCard style={styles.statCard} elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
                   <Text style={styles.statValue}>{stats.bmi.current}</Text>
                   <Text style={styles.statUnit}>BMI</Text>
                   <Text style={styles.statLabel}>Body Mass Index</Text>
@@ -677,14 +687,14 @@ export const ProgressScreen: React.FC = () => {
                     {stats.bmi.change > 0 ? '+' : ''}
                     {stats.bmi.change}
                   </Text>
-                </Card>
+                </GlassCard>
               </View>
             </View>
 
             {/* Weekly Activity */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>This Week's Activity</Text>
-              <Card style={styles.chartCard} variant="elevated">
+              <GlassCard style={styles.chartCard} elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Activity & Nutrition</Text>
                   <Text style={styles.chartSubtitle}>Last 7 days</Text>
@@ -741,7 +751,7 @@ export const ProgressScreen: React.FC = () => {
                     <Text style={styles.legendText}>Calories</Text>
                   </View>
                 </View>
-              </Card>
+              </GlassCard>
             </View>
 
             {/* Recent Activities */}
@@ -749,14 +759,15 @@ export const ProgressScreen: React.FC = () => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent Activities</Text>
                 {recentActivities.length > 3 && (
-                  <TouchableOpacity
+                  <AnimatedPressable
                     onPress={() => {
                       loadAllActivities();
                       setShowAllActivities(true);
                     }}
+                    scaleValue={0.97}
                   >
                     <Text style={styles.viewAllText}>View All</Text>
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 )}
               </View>
 
@@ -771,7 +782,7 @@ export const ProgressScreen: React.FC = () => {
                   }
 
                   return (
-                    <Card key={activity.id} style={styles.activityCard} variant="outlined">
+                    <GlassCard key={activity.id} style={styles.activityCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                       <View style={styles.activityContent}>
                         <View style={styles.activityIcon}>
                           <Text style={styles.activityEmoji}>
@@ -793,16 +804,16 @@ export const ProgressScreen: React.FC = () => {
                           <Text style={styles.activityBadgeText}>✓</Text>
                         </View>
                       </View>
-                    </Card>
+                    </GlassCard>
                   );
                 })
               ) : (
-                <Card style={styles.emptyCard} variant="outlined">
+                <GlassCard style={styles.emptyCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                   <Text style={styles.emptyText}>No recent activities yet</Text>
                   <Text style={styles.emptySubtext}>
                     Complete workouts and meals to see them here
                   </Text>
-                </Card>
+                </GlassCard>
               )}
             </View>
 
@@ -811,7 +822,7 @@ export const ProgressScreen: React.FC = () => {
               <Text style={styles.sectionTitle}>Achievements</Text>
 
               {achievements.map((achievement) => (
-                <Card key={achievement.id} style={styles.achievementCard} variant="outlined">
+                <GlassCard key={achievement.id} style={styles.achievementCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                   <View style={styles.achievementContent}>
                     <View
                       style={[
@@ -873,14 +884,14 @@ export const ProgressScreen: React.FC = () => {
                       {achievement.date}
                     </Text>
                   </View>
-                </Card>
+                </GlassCard>
               ))}
             </View>
 
             {/* Summary Stats */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Overall Summary</Text>
-              <Card style={styles.summaryCard} variant="elevated">
+              <GlassCard style={styles.summaryCard} elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
                 <View style={styles.summaryGrid}>
                   <View style={styles.summaryItem}>
                     <Text style={styles.summaryValue}>
@@ -916,7 +927,7 @@ export const ProgressScreen: React.FC = () => {
                     <Text style={styles.summaryLabel}>Day Streak</Text>
                   </View>
                 </View>
-              </Card>
+              </GlassCard>
             </View>
 
             <View style={styles.bottomSpacing} />
@@ -929,12 +940,13 @@ export const ProgressScreen: React.FC = () => {
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>All Activities</Text>
-            <TouchableOpacity
+            <AnimatedPressable
               onPress={() => setShowAllActivities(false)}
               style={styles.modalCloseButton}
+              scaleValue={0.95}
             >
               <Text style={styles.modalCloseText}>✕</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           <FlatList
@@ -952,7 +964,7 @@ export const ProgressScreen: React.FC = () => {
               }
 
               return (
-                <Card style={styles.modalActivityCard} variant="outlined">
+                <GlassCard style={styles.modalActivityCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                   <View style={styles.activityContent}>
                     <View style={styles.activityIcon}>
                       <Text style={styles.activityEmoji}>
@@ -974,7 +986,7 @@ export const ProgressScreen: React.FC = () => {
                       <Text style={styles.activityBadgeText}>✓</Text>
                     </View>
                   </View>
-                </Card>
+                </GlassCard>
               );
             }}
             onEndReached={loadMoreActivities}
@@ -982,7 +994,7 @@ export const ProgressScreen: React.FC = () => {
             ListFooterComponent={() =>
               loadingMoreActivities ? (
                 <View style={styles.loadingFooter}>
-                  <ActivityIndicator size="small" color={ResponsiveTheme.colors.primary} />
+                  <AuroraSpinner size="sm" theme="primary" />
                   <Text style={styles.loadingText}>Loading more activities...</Text>
                 </View>
               ) : !hasMoreActivities && allActivities.length > 0 ? (
@@ -1002,7 +1014,8 @@ export const ProgressScreen: React.FC = () => {
           />
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
