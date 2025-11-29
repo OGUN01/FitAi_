@@ -1,7 +1,17 @@
 
 {
   "mcpServers": {
-    "supabase": {
+     "browsermcp": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "@browsermcp/mcp@latest"
+      ],
+      "autoapprove": [
+        "*"
+      ]},
+      "supabase": {
       "command": "cmd",
       "args": [
         "/c",

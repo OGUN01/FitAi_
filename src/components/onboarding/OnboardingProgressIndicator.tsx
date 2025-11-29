@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { OnboardingProgressData, TabValidationResult } from '../../types/onboarding';
@@ -100,7 +101,7 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
       {/* Step Circle */}
       <View style={[styles.stepCircle, stepStyles.circle]}>
         {isCompleted ? (
-          <Text style={styles.stepCheckmark}>✓</Text>
+          <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />
         ) : (
           <Text style={[styles.stepNumber, stepStyles.number]}>
             {stepNumber}

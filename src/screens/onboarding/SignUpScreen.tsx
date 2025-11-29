@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Input, PasswordInput, THEME } from '../../components/ui';
@@ -172,15 +173,15 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
 
           <View style={styles.benefitsContainer}>
             <View style={styles.benefitRow}>
-              <Text style={styles.checkmark}>✓</Text>
+              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
               <Text style={styles.benefitText}>One-click sign up</Text>
             </View>
             <View style={styles.benefitRow}>
-              <Text style={styles.checkmark}>✓</Text>
+              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
               <Text style={styles.benefitText}>No password to remember</Text>
             </View>
             <View style={styles.benefitRow}>
-              <Text style={styles.checkmark}>✓</Text>
+              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
               <Text style={styles.benefitText}>Start immediately</Text>
             </View>
           </View>

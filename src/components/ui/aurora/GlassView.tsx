@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
-import { BlurView } from '@react-native-community/blur';
+import { BlurView } from 'expo-blur';
 import { colors, glassSurface } from '../../../theme/aurora-tokens';
 
 type BlurType = 'light' | 'dark' | 'default';
@@ -132,9 +132,8 @@ export const GlassView: React.FC<GlassViewProps> = ({
         },
         style,
       ]}
-      blurType={blurType as any}
-      blurAmount={blurIntensity}
-      reducedTransparencyFallbackColor={overlayColor}
+      tint={blurType}
+      intensity={blurIntensity}
     >
       <View
         style={[

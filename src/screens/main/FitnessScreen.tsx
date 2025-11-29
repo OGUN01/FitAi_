@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Alert, ActivityIndicator, Animated, PanResponder } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, THEME } from '../../components/ui';
@@ -49,7 +50,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     const today = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayName = dayNames[today.getDay()];
-    console.log(`🔍 Today is: ${todayName} (day ${today.getDay()})`);
+    console.log(`[FITNESS] Today is: ${todayName} (day ${today.getDay()})`);
     return todayName;
   });
   const [weekOffset, setWeekOffset] = useState(0);
@@ -283,7 +284,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const scheduleWorkoutRemindersFromPlan = async (plan: WeeklyWorkoutPlan) => {
     try {
       if (!workoutReminders?.config?.enabled) {
-        console.log('⏰ Workout reminders are disabled, skipping scheduling');
+        console.log('[REMINDERS] Workout reminders are disabled, skipping scheduling');
         return;
       }
 
@@ -300,11 +301,11 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       }
 
       console.log(
-        `✅ Scheduled workout reminders for ${workoutTimes.length} workouts:`,
+        `[REMINDERS] Scheduled workout reminders for ${workoutTimes.length} workouts:`,
         workoutTimes
       );
     } catch (error) {
-      console.error('❌ Failed to schedule workout reminders:', error);
+      console.error('[REMINDERS] Failed to schedule workout reminders:', error);
       // Don't block the main workflow if reminder scheduling fails
     }
   };
@@ -367,7 +368,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     setGeneratingPlan(true);
 
     try {
-      console.log('🏋️ Generating weekly workout plan...');
+      console.log('[WORKOUT] Generating weekly workout plan...');
 
       const response = await aiService.generateWeeklyWorkoutPlan(
         profile.personalInfo,
@@ -376,17 +377,17 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       );
 
       if (response.success && response.data) {
-        console.log(`✅ Generated weekly plan: ${response.data.planTitle}`);
-        console.log(`🔍 Weekly plan data:`, JSON.stringify(response.data, null, 2));
-        console.log(`🔍 Workouts count: ${response.data.workouts?.length || 0}`);
-        console.log(`🔍 Rest days: ${response.data.restDays?.join(', ') || 'none'}`);
+        console.log(`[WORKOUT] Generated weekly plan: ${response.data.planTitle}`);
+        console.log(`[WORKOUT] Weekly plan data:`, JSON.stringify(response.data, null, 2));
+        console.log(`[WORKOUT] Workouts count: ${response.data.workouts?.length || 0}`);
+        console.log(`[WORKOUT] Rest days: ${response.data.restDays?.join(', ') || 'none'}`);
 
-        // 🔍 Debug: Check data structure before saving
-        console.log('🔍 Debug - Data structure validation:');
-        console.log('  - planTitle:', response.data.planTitle ? '✅' : '❌');
-        console.log('  - workouts array:', Array.isArray(response.data.workouts) ? '✅' : '❌');
+        // Debug: Check data structure before saving
+        console.log('[WORKOUT] Debug - Data structure validation:');
+        console.log('  - planTitle:', response.data.planTitle ? 'YES' : 'NO');
+        console.log('  - workouts array:', Array.isArray(response.data.workouts) ? 'YES' : 'NO');
         console.log('  - workouts length:', response.data.workouts?.length || 0);
-        console.log('  - first workout:', response.data.workouts?.[0] ? '✅' : '❌');
+        console.log('  - first workout:', response.data.workouts?.[0] ? 'YES' : 'NO');
         if (response.data.workouts?.[0]) {
           console.log('  - first workout dayOfWeek:', response.data.workouts[0].dayOfWeek);
           console.log(
@@ -395,43 +396,43 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           );
         }
 
-        // ✅ CRITICAL FIX: Set state immediately and verify it takes effect
-        console.log('🔍 Debug - Setting workout plan state immediately...');
+        // CRITICAL FIX: Set state immediately and verify it takes effect
+        console.log('[WORKOUT] Debug - Setting workout plan state immediately...');
         setWeeklyWorkoutPlan(response.data);
 
         // Force immediate re-render to ensure UI updates
         setForceUpdate((prev) => prev + 1);
 
         // Verify state was set correctly
-        console.log('🔍 Debug - State set, verifying...', {
+        console.log('[WORKOUT] Debug - State set, verifying...', {
           planTitle: response.data.planTitle,
           workoutsCount: response.data.workouts?.length,
           firstWorkout: response.data.workouts?.[0]?.title,
         });
 
         // Save to store and database (async, don't block UI)
-        console.log('🔍 Debug - Saving to store/database...');
+        console.log('[WORKOUT] Debug - Saving to store/database...');
         try {
           await saveWeeklyWorkoutPlan(response.data);
-          console.log('✅ Debug - Save completed successfully');
+          console.log('[WORKOUT] Debug - Save completed successfully');
 
           // Schedule workout reminders automatically
           await scheduleWorkoutRemindersFromPlan(response.data);
         } catch (saveError) {
-          console.error('❌ Debug - Save failed (but UI state is set):', saveError);
+          console.error('[WORKOUT] Debug - Save failed (but UI state is set):', saveError);
         }
 
         // Final verification with timeout to check React state update
         setTimeout(() => {
           const currentState = useFitnessStore.getState().weeklyWorkoutPlan;
-          console.log('🔍 Final State Check:', {
+          console.log('[WORKOUT] Final State Check:', {
             reactState: weeklyPlan ? 'Present' : 'Null',
             zustandState: currentState ? 'Present' : 'Null',
             workoutsInState: weeklyPlan?.workouts?.length || 0,
           });
         }, 200);
 
-        console.log(`🔍 Workout plan saved to store and database`);
+        console.log(`[WORKOUT] Workout plan saved to store and database`);
 
         // Also save individual workouts to legacy system for compatibility
         if (user?.id) {
@@ -455,7 +456,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               : '2 weeks';
 
         Alert.alert(
-          '🎉 Weekly Plan Generated!',
+          'Weekly Plan Generated!',
           `Your personalized ${planDuration} workout plan "${response.data.planTitle}" is ready! ${response.data.workouts.length} workouts scheduled across the week.`,
           [{ text: "Let's Start!" }]
         );
@@ -475,7 +476,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   // Handle starting a workout
   const handleStartWorkout = async (workout: DayWorkout) => {
-    console.log('🚨 DEBUG: handleStartWorkout called with:', {
+    console.log('[WORKOUT] DEBUG: handleStartWorkout called with:', {
       workoutTitle: workout?.title,
       workoutId: workout?.id,
       hasWorkout: !!workout,
@@ -487,13 +488,13 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
     // Allow both authenticated users and guest users to start workouts
     if (!user?.id && !isGuestMode) {
-      console.log('🚫 Blocking workout - no user and not guest mode');
+      console.log('[WORKOUT] Blocking workout - no user and not guest mode');
       Alert.alert('Authentication Required', 'Please sign in to start workouts.');
       return;
     }
 
-    console.log('✅ Authentication check passed - proceeding with workout start');
-    console.log('🏋️ Starting workout session for:', {
+    console.log('[WORKOUT] Authentication check passed - proceeding with workout start');
+    console.log('[WORKOUT] Starting workout session for:', {
       workoutTitle: workout.title,
       userType: user?.id ? 'authenticated' : 'guest',
       exerciseCount: workout.exercises?.length || 0,
@@ -506,12 +507,12 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       // 1. Try to start workout session using store (primary)
       try {
         sessionId = await startStoreWorkoutSession(workout);
-        console.log('✅ Store workout session started:', sessionId);
+        console.log('[WORKOUT] Store workout session started:', sessionId);
       } catch (storeError) {
-        console.warn('⚠️ Store workout session failed:', storeError);
+        console.warn('[WORKOUT] Store workout session failed:', storeError);
         // Generate fallback session ID
         sessionId = `fallback_session_${workout.id}_${Date.now()}`;
-        console.log('🔄 Using fallback session ID:', sessionId);
+        console.log('[WORKOUT] Using fallback session ID:', sessionId);
       }
 
       // 2. Try to start legacy workout session (secondary, for compatibility)
@@ -528,15 +529,15 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           })),
         };
         legacySessionSuccess = await startWorkoutSession(workoutData);
-        console.log('✅ Legacy workout session started:', legacySessionSuccess);
+        console.log('[WORKOUT] Legacy workout session started:', legacySessionSuccess);
       } catch (legacyError) {
-        console.warn('⚠️ Legacy workout session failed:', legacyError);
+        console.warn('[WORKOUT] Legacy workout session failed:', legacyError);
         // Continue anyway - not critical for workout to start
       }
 
       // 3. Always show the workout dialog, even if background services failed
       const workoutWithSession = { ...workout, sessionId };
-      console.log('🧭 Showing workout start dialog:', {
+      console.log('[WORKOUT] Showing workout start dialog:', {
         sessionId,
         workout: workout.title,
         exercises: workout.exercises?.length || 0,
@@ -544,41 +545,41 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         legacySessionWorked: legacySessionSuccess,
       });
 
-      console.log('🚨 DEBUG: Setting selectedWorkout and showing dialog:', {
+      console.log('[WORKOUT] DEBUG: Setting selectedWorkout and showing dialog:', {
         selectedWorkout: !!workoutWithSession,
         dialogVisible: true,
         workoutTitle: workoutWithSession?.title,
       });
-      
+
       setSelectedWorkout(workoutWithSession);
       setShowWorkoutStartDialog(true);
-      
+
       // Force a small delay to ensure state updates
       setTimeout(() => {
-        console.log('🚨 DEBUG: Dialog state after timeout:', {
+        console.log('[WORKOUT] DEBUG: Dialog state after timeout:', {
           showWorkoutStartDialog,
           selectedWorkout: !!selectedWorkout,
         });
       }, 100);
 
     } catch (error) {
-      console.error('❌ Critical error in handleStartWorkout:', error);
-      
+      console.error('[WORKOUT] Critical error in handleStartWorkout:', error);
+
       // Even if everything fails, still try to show the workout
       try {
         const fallbackSessionId = `emergency_session_${workout.id}_${Date.now()}`;
         const workoutWithSession = { ...workout, sessionId: fallbackSessionId };
-        
-        console.log('🚨 Using emergency fallback for workout session');
-        console.log('🚨 DEBUG: Emergency fallback - setting dialog:', {
+
+        console.log('[WORKOUT] Using emergency fallback for workout session');
+        console.log('[WORKOUT] DEBUG: Emergency fallback - setting dialog:', {
           workoutTitle: workoutWithSession?.title,
           sessionId: fallbackSessionId,
         });
-        
+
         setSelectedWorkout(workoutWithSession);
         setShowWorkoutStartDialog(true);
       } catch (fallbackError) {
-        console.error('💀 Complete failure - cannot start workout:', fallbackError);
+        console.error('[WORKOUT] Complete failure - cannot start workout:', fallbackError);
         Alert.alert('Error', 'Failed to start workout. Please try restarting the app.');
       }
     }
@@ -590,7 +591,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       setShowWorkoutStartDialog(false);
 
       // Debug: Log the workout data being passed
-      console.log('🧭 NAVIGATION: Navigating to WorkoutSession', {
+      console.log('[NAVIGATION] Navigating to WorkoutSession', {
         params: {
           workout: selectedWorkout,
           sessionId: (selectedWorkout as any).sessionId,
@@ -601,9 +602,9 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
       // Log the exercises array for debugging
       if (selectedWorkout.exercises) {
-        console.log('📋 Exercises being passed:', selectedWorkout.exercises);
+        console.log('[NAVIGATION] Exercises being passed:', selectedWorkout.exercises);
       } else {
-        console.error('❌ No exercises in selectedWorkout!');
+        console.error('[NAVIGATION] No exercises in selectedWorkout!');
       }
 
       // Ensure exercises are included in the workout object
@@ -741,25 +742,25 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             <FeatureGrid
               features={[
                 {
-                  icon: '⏱️',
+                  icon: <Ionicons name="timer-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />,
                   title: '50 mins dedicated',
                   description: 'Focused workout sessions',
                   onPress: () => {},
                 },
                 {
-                  icon: '🎯',
+                  icon: <Ionicons name="target-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />,
                   title: 'Goal-based workouts',
                   description: 'Tailored to your targets',
                   onPress: () => {},
                 },
                 {
-                  icon: '⚡',
+                  icon: <Ionicons name="flash-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />,
                   title: 'Faster results',
                   description: 'Science-backed training',
                   onPress: () => {},
                 },
                 {
-                  icon: '🛡️',
+                  icon: <Ionicons name="shield-checkmark-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />,
                   title: 'Reduced injury risk',
                   description: 'Safe progression',
                   onPress: () => {},
@@ -832,9 +833,11 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                       <View key={index} style={styles.exerciseRow}>
                         {/* Exercise Thumbnail */}
                         <View style={styles.exerciseThumbnail}>
-                          <Text style={styles.exerciseThumbnailIcon}>
-                            {['💪', '🏃', '🧘', '🏋️', '🤸'][index % 5]}
-                          </Text>
+                          <Ionicons
+                            name={['barbell-outline', 'walk-outline', 'body-outline', 'fitness-outline', 'accessibility-outline'][index % 5] as any}
+                            size={rf(24)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
                         </View>
 
                         {/* Exercise Info */}
@@ -851,7 +854,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                           onPress={() => Alert.alert('Exercise Info', `Details for ${exercise.name}`)}
                           scaleValue={0.9}
                         >
-                          <Text style={styles.exerciseInfoIcon}>ℹ️</Text>
+                          <Ionicons name="information-circle-outline" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
                         </AnimatedPressable>
                       </View>
                     ))}
@@ -926,7 +929,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                       hapticFeedback={true}
                       hapticType="medium"
                     >
-                      <Text style={styles.historySwipeActionIcon}>🔄</Text>
+                      <Ionicons name="repeat-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
                       <Text style={styles.historySwipeActionText}>Repeat</Text>
                     </AnimatedPressable>
                     <AnimatedPressable
@@ -939,7 +942,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                       hapticFeedback={true}
                       hapticType="medium"
                     >
-                      <Text style={styles.historySwipeActionIcon}>🗑️</Text>
+                      <Ionicons name="trash-outline" size={rf(24)} color={ResponsiveTheme.colors.white} />
                       <Text style={styles.historySwipeActionText}>Delete</Text>
                     </AnimatedPressable>
                   </View>
@@ -970,12 +973,19 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                       {workout.duration} • {workout.calories} calories
                     </Text>
                     <View style={styles.historyStatus}>
-                      <Text style={[
-                        styles.historyStatusText,
-                        workout.completed ? styles.historyStatusCompleted : styles.historyStatusIncomplete
-                      ]}>
-                        {workout.completed ? '✓ Completed' : '○ Incomplete'}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rp(4) }}>
+                        <Ionicons
+                          name={workout.completed ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={rf(16)}
+                          color={workout.completed ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.textSecondary}
+                        />
+                        <Text style={[
+                          styles.historyStatusText,
+                          workout.completed ? styles.historyStatusCompleted : styles.historyStatusIncomplete
+                        ]}>
+                          {workout.completed ? 'Completed' : 'Incomplete'}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
@@ -998,7 +1008,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 {
                   id: 1,
                   name: 'HIIT Cardio',
-                  emoji: '🏃',
+                  iconName: 'walk-outline',
                   duration: '30 mins',
                   difficulty: 'Advanced',
                   calories: '350 cal',
@@ -1007,7 +1017,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 {
                   id: 2,
                   name: 'Strength Training',
-                  emoji: '🏋️',
+                  iconName: 'barbell-outline',
                   duration: '45 mins',
                   difficulty: 'Intermediate',
                   calories: '280 cal',
@@ -1016,7 +1026,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 {
                   id: 3,
                   name: 'Yoga Flow',
-                  emoji: '🧘',
+                  iconName: 'body-outline',
                   duration: '40 mins',
                   difficulty: 'Beginner',
                   calories: '150 cal',
@@ -1039,7 +1049,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                       end={{ x: 1, y: 1 }}
                       style={styles.suggestedIconGradient}
                     >
-                      <Text style={styles.suggestedEmoji}>{workout.emoji}</Text>
+                      <Ionicons name={workout.iconName as any} size={rf(40)} color={ResponsiveTheme.colors.white} />
                     </LinearGradient>
                   </View>
 
@@ -1106,7 +1116,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               />
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateEmoji}>📅</Text>
+                <Ionicons name="calendar-outline" size={rf(64)} color={ResponsiveTheme.colors.textSecondary} style={{ marginBottom: ResponsiveTheme.spacing.lg }} />
                 <Text style={styles.emptyStateTitle}>No Weekly Plan</Text>
                 <Text style={styles.emptyStateSubtitle}>
                   Generate your personalized weekly workout plan to get started with day-by-day fitness guidance.

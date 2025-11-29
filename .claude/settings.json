@@ -1,36 +1,9 @@
 {
   "hooks": {
-    "user_prompt_submit": {
-      "enabled": true,
-      "permissions": {
-        "codebaseAccess": true,
-        "fileSystemAccess": true,
-        "networkAccess": false
-      }
-    },
-    "pre_tool_use": {
-      "enabled": true,
-      "permissions": {
-        "codebaseAccess": true,
-        "fileSystemAccess": true,
-        "networkAccess": false
-      }
-    },
-    "post_tool_use": {
-      "enabled": true,
-      "permissions": {
-        "codebaseAccess": true,
-        "fileSystemAccess": true,
-        "networkAccess": false
-      }
-    },
-    "session_start": {
-      "enabled": true,
-      "permissions": {
-        "codebaseAccess": true,
-        "fileSystemAccess": true
-      }
-    }
+    "UserPromptSubmit": [],
+    "PreToolUse": [],
+    "PostToolUse": [],
+    "SessionStart": []
   },
   "react_native": {
     "strict_mode": true,

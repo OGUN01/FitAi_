@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -40,25 +41,25 @@ const DIET_TYPE_OPTIONS = [
   {
     id: 'non-veg',
     title: 'Non-Vegetarian',
-    icon: '🍖',
+    iconName: 'nutrition-outline',
     description: 'Includes all types of meat and fish',
   },
   {
     id: 'vegetarian',
     title: 'Vegetarian',
-    icon: '🥬',
+    iconName: 'leaf-outline',
     description: 'No meat or fish, includes dairy and eggs',
   },
   {
     id: 'vegan',
     title: 'Vegan',
-    icon: '🌱',
+    iconName: 'flower-outline',
     description: 'No animal products whatsoever',
   },
   {
     id: 'pescatarian',
     title: 'Pescatarian',
-    icon: '🐟',
+    iconName: 'fish-outline',
     description: 'Vegetarian diet that includes fish',
   },
 ];
@@ -67,42 +68,42 @@ const DIET_READINESS_OPTIONS = [
   {
     key: 'keto_ready',
     title: 'Ketogenic Diet',
-    icon: '🥑',
+    iconName: 'leaf-outline',
     description: 'High fat, very low carb diet (5% carbs, 70% fat, 25% protein)',
     benefits: ['Rapid weight loss', 'Mental clarity', 'Reduced appetite'],
   },
   {
     key: 'intermittent_fasting_ready',
     title: 'Intermittent Fasting',
-    icon: '⏰',
+    iconName: 'time-outline',
     description: 'Time-restricted eating patterns (16:8, 18:6, etc.)',
     benefits: ['Improved metabolism', 'Weight management', 'Cellular repair'],
   },
   {
     key: 'paleo_ready',
     title: 'Paleo Diet',
-    icon: '🦴',
+    iconName: 'flame-outline',
     description: 'Whole foods based on paleolithic era eating',
     benefits: ['Natural nutrition', 'Reduced inflammation', 'Better digestion'],
   },
   {
     key: 'mediterranean_ready',
     title: 'Mediterranean Diet',
-    icon: '🫒',
+    iconName: 'heart-outline',
     description: 'Rich in olive oil, fish, vegetables, and whole grains',
     benefits: ['Heart health', 'Brain function', 'Longevity'],
   },
   {
     key: 'low_carb_ready',
     title: 'Low Carb Diet',
-    icon: '🥖',
+    iconName: 'restaurant-outline',
     description: 'Reduced carbohydrate intake (under 100g daily)',
     benefits: ['Blood sugar control', 'Weight loss', 'Energy stability'],
   },
   {
     key: 'high_protein_ready',
     title: 'High Protein Diet',
-    icon: '💪',
+    iconName: 'barbell-outline',
     description: 'Increased protein intake for muscle building',
     benefits: ['Muscle growth', 'Satiety', 'Recovery'],
   },
@@ -112,28 +113,28 @@ const COOKING_SKILL_LEVELS = [
   {
     level: 'beginner',
     title: 'Beginner',
-    icon: '🍳',
+    iconName: 'restaurant-outline',
     description: 'Simple recipes, basic cooking skills',
     timeRange: '15-30 minutes',
   },
   {
     level: 'intermediate',
     title: 'Intermediate',
-    icon: '👨‍🍳',
+    iconName: 'pizza-outline',
     description: 'Comfortable with various techniques',
     timeRange: '30-60 minutes',
   },
   {
     level: 'advanced',
     title: 'Advanced',
-    icon: '👨‍🍳',
+    iconName: 'flame-outline',
     description: 'Complex recipes, professional techniques',
     timeRange: '60+ minutes',
   },
   {
     level: 'not_applicable',
     title: 'Not Applicable',
-    icon: '🏠',
+    iconName: 'home-outline',
     description: 'Made/home food prepared by others',
     timeRange: 'N/A',
   },
@@ -143,21 +144,21 @@ const BUDGET_LEVELS = [
   {
     level: 'low',
     title: 'Budget-Friendly',
-    icon: '💰',
+    iconName: 'cash-outline',
     description: 'Cost-effective ingredients and meals',
     range: '$50-100/week',
   },
   {
     level: 'medium',
     title: 'Moderate',
-    icon: '💰💰',
+    iconName: 'wallet-outline',
     description: 'Balance of quality and affordability',
     range: '$100-200/week',
   },
   {
     level: 'high',
     title: 'Premium',
-    icon: '💰💰💰',
+    iconName: 'diamond-outline',
     description: 'High-quality, organic ingredients',
     range: '$200+/week',
   },
@@ -168,13 +169,13 @@ const HEALTH_HABITS = {
     {
       key: 'drinks_enough_water',
       title: 'Drinks 3-4L Water Daily',
-      icon: '💧',
+      iconName: 'water-outline',
       description: 'Maintains proper hydration levels',
     },
     {
       key: 'limits_sugary_drinks',
       title: 'Limits Sugary Drinks',
-      icon: '🥤',
+      iconName: 'warning-outline',
       description: 'Avoids sodas, juices with added sugar',
     },
   ],
@@ -182,25 +183,25 @@ const HEALTH_HABITS = {
     {
       key: 'eats_regular_meals',
       title: 'Eats Regular Meals',
-      icon: '🍽️',
+      iconName: 'fast-food-outline',
       description: 'Consistent meal timing throughout day',
     },
     {
       key: 'avoids_late_night_eating',
       title: 'Avoids Late Night Eating',
-      icon: '🌙',
+      iconName: 'moon-outline',
       description: 'No eating 3 hours before bedtime',
     },
     {
       key: 'controls_portion_sizes',
       title: 'Controls Portion Sizes',
-      icon: '⚖️',
+      iconName: 'scale-outline',
       description: 'Mindful of serving sizes',
     },
     {
       key: 'reads_nutrition_labels',
       title: 'Reads Nutrition Labels',
-      icon: '🏷️',
+      iconName: 'document-text-outline',
       description: 'Checks food labels before purchasing',
     },
   ],
@@ -208,25 +209,25 @@ const HEALTH_HABITS = {
     {
       key: 'eats_processed_foods',
       title: 'Eats Processed Foods',
-      icon: '📦',
+      iconName: 'cube-outline',
       description: 'Regularly consumes packaged/processed foods',
     },
     {
       key: 'eats_5_servings_fruits_veggies',
       title: 'Eats 5+ Servings Fruits/Vegetables',
-      icon: '🥕',
+      iconName: 'nutrition-outline',
       description: 'Daily fruit and vegetable intake',
     },
     {
       key: 'limits_refined_sugar',
       title: 'Limits Refined Sugar',
-      icon: '🍯',
+      iconName: 'close-circle-outline',
       description: 'Reduces added sugars in diet',
     },
     {
       key: 'includes_healthy_fats',
       title: 'Includes Healthy Fats',
-      icon: '🥑',
+      iconName: 'leaf-outline',
       description: 'Nuts, avocado, olive oil, etc.',
     },
   ],
@@ -234,49 +235,49 @@ const HEALTH_HABITS = {
     {
       key: 'drinks_alcohol',
       title: 'Drinks Alcohol',
-      icon: '🍷',
+      iconName: 'wine-outline',
       description: 'Regular alcohol consumption',
     },
     {
       key: 'smokes_tobacco',
       title: 'Smokes Tobacco',
-      icon: '🚬',
+      iconName: 'ban-outline',
       description: 'Tobacco use (any form)',
     },
     {
       key: 'drinks_coffee',
       title: 'Drinks Coffee',
-      icon: '☕',
+      iconName: 'cafe-outline',
       description: 'Daily caffeine intake',
     },
     {
       key: 'takes_supplements',
       title: 'Takes Supplements',
-      icon: '💊',
+      iconName: 'medkit-outline',
       description: 'Vitamins, protein powder, etc.',
     },
   ],
 };
 
 const ALLERGY_OPTIONS = [
-  { id: 'nuts', label: 'Nuts', value: 'nuts', icon: '🥜' },
-  { id: 'dairy', label: 'Dairy', value: 'dairy', icon: '🥛' },
-  { id: 'eggs', label: 'Eggs', value: 'eggs', icon: '🥚' },
-  { id: 'gluten', label: 'Gluten', value: 'gluten', icon: '🌾' },
-  { id: 'soy', label: 'Soy', value: 'soy', icon: '🫘' },
-  { id: 'shellfish', label: 'Shellfish', value: 'shellfish', icon: '🦐' },
-  { id: 'fish', label: 'Fish', value: 'fish', icon: '🐟' },
-  { id: 'sesame', label: 'Sesame', value: 'sesame', icon: '🌰' },
+  { id: 'nuts', label: 'Nuts', value: 'nuts', iconName: 'warning-outline' },
+  { id: 'dairy', label: 'Dairy', value: 'dairy', iconName: 'warning-outline' },
+  { id: 'eggs', label: 'Eggs', value: 'eggs', iconName: 'warning-outline' },
+  { id: 'gluten', label: 'Gluten', value: 'gluten', iconName: 'warning-outline' },
+  { id: 'soy', label: 'Soy', value: 'soy', iconName: 'warning-outline' },
+  { id: 'shellfish', label: 'Shellfish', value: 'shellfish', iconName: 'warning-outline' },
+  { id: 'fish', label: 'Fish', value: 'fish', iconName: 'warning-outline' },
+  { id: 'sesame', label: 'Sesame', value: 'sesame', iconName: 'warning-outline' },
 ];
 
 
 const RESTRICTION_OPTIONS = [
-  { id: 'low-sodium', label: 'Low Sodium', value: 'low-sodium', icon: '🧂' },
-  { id: 'low-sugar', label: 'Low Sugar', value: 'low-sugar', icon: '🍯' },
-  { id: 'low-carb', label: 'Low Carb', value: 'low-carb', icon: '🥖' },
-  { id: 'high-protein', label: 'High Protein', value: 'high-protein', icon: '💪' },
-  { id: 'diabetic-friendly', label: 'Diabetic Friendly', value: 'diabetic-friendly', icon: '📊' },
-  { id: 'heart-healthy', label: 'Heart Healthy', value: 'heart-healthy', icon: '❤️' },
+  { id: 'low-sodium', label: 'Low Sodium', value: 'low-sodium', iconName: 'remove-circle-outline' },
+  { id: 'low-sugar', label: 'Low Sugar', value: 'low-sugar', iconName: 'close-circle-outline' },
+  { id: 'low-carb', label: 'Low Carb', value: 'low-carb', iconName: 'restaurant-outline' },
+  { id: 'high-protein', label: 'High Protein', value: 'high-protein', iconName: 'barbell-outline' },
+  { id: 'diabetic-friendly', label: 'Diabetic Friendly', value: 'diabetic-friendly', iconName: 'pulse-outline' },
+  { id: 'heart-healthy', label: 'Heart Healthy', value: 'heart-healthy', iconName: 'heart-outline' },
 ];
 
 // ============================================================================
@@ -593,7 +594,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.dietTypeContent}>
-                  <Text style={styles.dietTypeIcon}>{option.icon}</Text>
+                  <Ionicons name={option.iconName as any} size={rf(32)} color={formData.diet_type === option.id ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                   <Text
                     style={[
                       styles.dietTypeTitle,
@@ -651,14 +652,17 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     {/* Progress Ring Indicator */}
                     <View style={styles.dietReadinessProgressContainer}>
                       <ProgressRing
-                        value={isReady ? 100 : 0}
-                        maxValue={100}
+                        progress={isReady ? 100 : 0}
                         size={rf(60)}
                         strokeWidth={rf(6)}
-                        gradient={isReady ? ['#4ECDC4', '#44A08D'] : ['#E0E0E0', '#BDBDBD']}
-                        animationDuration={800}
+                        gradient={true}
+                        gradientColors={isReady ? ['#4ECDC4', '#44A08D'] : ['#E0E0E0', '#BDBDBD']}
+                        duration={800}
+                        showText={false}
                       />
-                      <Text style={styles.dietReadinessProgressIcon}>{option.icon}</Text>
+                      <View style={styles.dietReadinessProgressIconContainer}>
+                        <Ionicons name={option.iconName as any} size={rf(24)} color={isReady ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                      </View>
                     </View>
 
                     <View style={styles.dietReadinessToggle}>
@@ -717,18 +721,21 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             borderRadius="md"
             style={styles.warningCard}
           >
-            <Text style={styles.warningText}>
-              ⚠️ At least one meal type must remain enabled
-            </Text>
+            <View style={styles.warningContent}>
+              <Ionicons name="alert-circle-outline" size={rf(18)} color={ResponsiveTheme.colors.warning} />
+              <Text style={styles.warningText}>
+                At least one meal type must remain enabled
+              </Text>
+            </View>
           </GlassCard>
         )}
         
         <View style={styles.mealPreferencesGrid}>
           {[
-            { key: 'breakfast_enabled', title: 'Breakfast', icon: '🌅', description: 'Start your day right' },
-            { key: 'lunch_enabled', title: 'Lunch', icon: '☀️', description: 'Midday fuel' },
-            { key: 'dinner_enabled', title: 'Dinner', icon: '🌆', description: 'Evening nourishment' },
-            { key: 'snacks_enabled', title: 'Snacks', icon: '🍎', description: 'Healthy snacking' },
+            { key: 'breakfast_enabled', title: 'Breakfast', iconName: 'sunny-outline', description: 'Start your day right' },
+            { key: 'lunch_enabled', title: 'Lunch', iconName: 'partly-sunny-outline', description: 'Midday fuel' },
+            { key: 'dinner_enabled', title: 'Dinner', iconName: 'moon-outline', description: 'Evening nourishment' },
+            { key: 'snacks_enabled', title: 'Snacks', iconName: 'fast-food-outline', description: 'Healthy snacking' },
           ].map((meal) => {
             const isEnabled = formData[meal.key as keyof DietPreferencesData] as boolean;
             const isLastEnabled = enabledCount === 1 && isEnabled;
@@ -756,7 +763,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ])}
                 >
                   <View style={styles.mealPreferenceContent}>
-                    <Text style={styles.mealPreferenceIcon}>{meal.icon}</Text>
+                    <Ionicons name={meal.iconName as any} size={rf(24)} color={isEnabled ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                     <Text style={[
                       styles.mealPreferenceTitle,
                       isEnabled && styles.mealPreferenceTitleSelected,
@@ -785,9 +792,12 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             borderRadius="md"
             style={styles.infoCard}
           >
-            <Text style={styles.infoText}>
-              💡 Meal plans will only include lunch and dinner
-            </Text>
+            <View style={styles.infoContent}>
+              <Ionicons name="bulb-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.infoText}>
+                Meal plans will only include lunch and dinner
+              </Text>
+            </View>
           </GlassCard>
         )}
       </GlassCard>
@@ -836,7 +846,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.skillLevelContent}>
-                  <Text style={styles.skillLevelIcon}>{skill.icon}</Text>
+                  <Ionicons name={skill.iconName as any} size={rf(20)} color={formData.cooking_skill_level === skill.level ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                   <Text style={[
                     styles.skillLevelTitle,
                     formData.cooking_skill_level === skill.level && styles.skillLevelTitleSelected,
@@ -867,10 +877,13 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             borderRadius="md"
             style={styles.disabledCard}
           >
-            <Text style={styles.disabledText}>
-              ℹ️ This field is not applicable since your meals are prepared by others.
-              We'll suggest meals based on your dietary preferences without cooking time constraints.
-            </Text>
+            <View style={styles.disabledContent}>
+              <Ionicons name="information-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.disabledText}>
+                This field is not applicable since your meals are prepared by others.
+                We'll suggest meals based on your dietary preferences without cooking time constraints.
+              </Text>
+            </View>
           </GlassCard>
         ) : (
           <Slider
@@ -900,9 +913,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           label="Food Budget"
           showTooltip={true}
           formatValue={(val) => {
-            if (val === 1) return '💰 Budget ($50-100/wk)';
-            if (val === 2) return '💰💰 Moderate ($100-200/wk)';
-            return '💰💰💰 Premium ($200+/wk)';
+            if (val === 1) return 'Budget ($50-100/wk)';
+            if (val === 2) return 'Moderate ($100-200/wk)';
+            return 'Premium ($200+/wk)';
           }}
           style={styles.budgetSlider}
         />
@@ -952,7 +965,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   >
                     <View style={styles.habitContent}>
                       <View style={styles.habitHeader}>
-                        <Text style={styles.habitIcon}>{habit.icon}</Text>
+                        <Ionicons name={habit.iconName as any} size={rf(20)} color={isActive ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                         <View style={styles.habitToggle}>
                           <AnimatedToggle isActive={isActive} />
                         </View>
@@ -1043,7 +1056,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Text style={styles.autoSaveText}>💾 Saving...</Text>
+              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
         </HeroSection>
@@ -1085,9 +1099,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               borderRadius="lg"
               style={styles.validationCard}
             >
-              <Text style={styles.validationTitle}>
-                {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
-              </Text>
+              <View style={styles.validationTitleContainer}>
+                <Ionicons
+                  name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
+                  size={rf(20)}
+                  color={validationResult.is_valid ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                />
+                <Text style={styles.validationTitle}>
+                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                </Text>
+              </View>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
@@ -1186,20 +1207,26 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
+    fontSize: rf(32),
+    fontWeight: '700' as const,
     color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
+    letterSpacing: -0.5,
+    textAlign: 'center' as const,
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(16),
     color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(22),
+    lineHeight: rf(24),
     marginBottom: ResponsiveTheme.spacing.md,
+    textAlign: 'center' as const,
   },
 
   autoSaveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -1222,17 +1249,18 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: rf(20),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
+    letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    lineHeight: rf(20),
   },
 
   fieldLabel: {
@@ -1325,9 +1353,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  dietReadinessProgressIcon: {
+  dietReadinessProgressIconContainer: {
     position: 'absolute',
-    fontSize: rf(24),
   },
 
   dietReadinessIcon: {
@@ -1525,11 +1552,16 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     marginTop: rp(10),
   },
+  disabledContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ResponsiveTheme.spacing.xs,
+  },
   disabledText: {
+    flex: 1,
     fontSize: rf(14),
     color: '#666666',
     lineHeight: rp(20),
-    textAlign: 'center',
   },
 
   // Budget Section
@@ -1699,11 +1731,17 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
+  warningContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    justifyContent: 'center',
+  },
+
   warningText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.warning,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
   },
 
   infoCard: {
@@ -1714,11 +1752,17 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
   },
 
+  infoContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    justifyContent: 'center',
+  },
+
   infoText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
   },
 
   // Validation Section
@@ -1731,11 +1775,17 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
   },
 
+  validationTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
   validationTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   validationPercentage: {

@@ -109,13 +109,22 @@ class SubscriptionService {
   private purchaseErrorSubscription: any = null;
 
   constructor() {
-    this.initializeService();
+    // 🚧 IAP DISABLED - Backend validation should be used instead
+    // Client-side IAP is insecure and can be bypassed
+    // Backend URL: https://fitai-workers.sharmaharsh9887.workers.dev
+    console.log('ℹ️ Client-side IAP is disabled. Use backend validation for subscriptions.');
+    // this.initializeService(); // DISABLED
   }
 
   /**
    * Initialize the subscription service
    */
   async initialize(): Promise<boolean> {
+    // 🚧 DISABLED - Use backend validation
+    console.log('ℹ️ Subscription service is disabled. Use Cloudflare Workers backend.');
+    return false;
+
+    /* DISABLED - Use Cloudflare Workers backend instead
     if (this.isInitialized) return true;
 
     try {
@@ -145,13 +154,15 @@ class SubscriptionService {
       console.error('❌ Failed to initialize subscription service:', error);
       return false;
     }
+    */
   }
 
   /**
    * Initialize service on construction
    */
   private async initializeService(): Promise<void> {
-    await this.initialize();
+    // DISABLED
+    // await this.initialize();
   }
 
   /**

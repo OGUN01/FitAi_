@@ -6,6 +6,7 @@ import {
   ViewStyle,
   TextStyle,
   ActivityIndicator,
+  View,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,6 +15,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -107,6 +109,38 @@ export const Button: React.FC<ButtonProps> = ({
 
   const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
+  const buttonContent = loading ? (
+    <ActivityIndicator
+      color={
+        variant === 'outline' || variant === 'ghost' ? THEME.colors.primary : THEME.colors.white
+      }
+      size="small"
+    />
+  ) : (
+    <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>{title}</Text>
+  );
+
+  // Use gradient for primary variant
+  if (variant === 'primary' && !disabled) {
+    return (
+      <AnimatedTouchable
+        style={[styles.base, styles[size], fullWidth && styles.fullWidth, disabled && styles.disabled, style, animatedStyle]}
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#6366F1', '#8B5CF6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.gradientContainer, styles[size]]}
+        >
+          {buttonContent}
+        </LinearGradient>
+      </AnimatedTouchable>
+    );
+  }
+
   return (
     <AnimatedTouchable
       style={[getButtonStyle(), disabled && styles.disabled, style, animatedStyle]}
@@ -114,16 +148,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       activeOpacity={0.8}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={
-            variant === 'outline' || variant === 'ghost' ? THEME.colors.primary : THEME.colors.white
-          }
-          size="small"
-        />
-      ) : (
-        <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>{title}</Text>
-      )}
+      {buttonContent}
     </AnimatedTouchable>
   );
 };
@@ -134,6 +159,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    overflow: 'hidden',
+  },
+
+  gradientContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   // Sizes

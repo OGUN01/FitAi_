@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { rf } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Card } from '../ui';
@@ -74,7 +75,7 @@ export const WarningCard: React.FC<WarningCardProps> = ({ warnings, onAcknowledg
         onPress={handleAcknowledgmentToggle}
       >
         <View style={[styles.checkboxBox, acknowledged && styles.checkboxBoxChecked]}>
-          {acknowledged && <Text style={styles.checkboxCheck}>✓</Text>}
+          {acknowledged && <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />}
         </View>
         <Text style={styles.checkboxLabel}>
           I understand these considerations and want to proceed

@@ -100,7 +100,7 @@ export const Input: React.FC<InputProps> = ({
             inputStyle,
           ]}
           placeholder={placeholder}
-          placeholderTextColor={THEME.colors.textMuted}
+          placeholderTextColor={THEME.colors.textSecondary}
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
@@ -135,8 +135,8 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: rf(14),
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -146,14 +146,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderWidth: 1.5,
+    borderColor: ResponsiveTheme.colors.borderLight,
     minHeight: rh(48),
   },
 
   inputContainerFocused: {
     borderColor: ResponsiveTheme.colors.primary,
-    ...THEME.shadows.sm,
+    borderWidth: 2,
+    backgroundColor: `${ResponsiveTheme.colors.primary}08`,
   },
 
   inputContainerError: {

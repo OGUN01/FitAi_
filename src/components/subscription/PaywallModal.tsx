@@ -13,7 +13,7 @@ import {
   Dimensions 
 } from 'react-native';
 import { useSubscriptionStore, subscriptionHelpers } from '../../stores/subscriptionStore';
-import { SubscriptionPlan } from '../../services/subscriptionService';
+import { SubscriptionPlan } from '../../services/SubscriptionService';
 
 interface PaywallModalProps {
   visible: boolean;

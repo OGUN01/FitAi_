@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  useAnimatedProps,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, InfoTooltip } from '../../../components/ui';
+import { Button, InfoTooltip, CircularClock, ColorCodedZones, calculateHeartRateZones, AnimatedNumber, GradientBarChart, WeightProjectionChart, LargeProgressRing, type BarData } from '../../../components/ui';
 import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { AnimatedSection } from '../../../components/ui/aurora/AnimatedSection';
@@ -29,43 +23,6 @@ import { ErrorCard } from '../../../components/onboarding/ErrorCard';
 import { WarningCard } from '../../../components/onboarding/WarningCard';
 import { AdjustmentWizard, Alternative } from '../../../components/onboarding/AdjustmentWizard';
 import { METRIC_DESCRIPTIONS } from '../../../constants/metricDescriptions';
-
-// ============================================================================
-// ANIMATED NUMBER COMPONENT
-// ============================================================================
-
-// Create AnimatedText component to support animatedProps
-const AnimatedText = Animated.createAnimatedComponent(Text);
-
-interface AnimatedNumberProps {
-  value: number;
-  style?: any;
-  decimals?: number;
-  suffix?: string;
-}
-
-const AnimatedNumber: React.FC<AnimatedNumberProps> = ({ value, style, decimals = 0, suffix = '' }) => {
-  const animatedValue = useSharedValue(0);
-
-  useEffect(() => {
-    animatedValue.value = withTiming(value, {
-      duration: 1200,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [value]);
-
-  const animatedProps = useAnimatedProps(() => {
-    const formattedValue = decimals > 0
-      ? animatedValue.value.toFixed(decimals)
-      : Math.round(animatedValue.value).toString();
-
-    return {
-      text: `${formattedValue}${suffix}`,
-    } as any;
-  });
-
-  return <AnimatedText style={style} animatedProps={animatedProps} />;
-};
 
 // ============================================================================
 // TYPES
@@ -157,7 +114,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     setCalculationError(null);
     
     try {
-      console.log('🧮 AdvancedReviewTab: Running validation and calculations...');
+      console.log('[CALC] AdvancedReviewTab: Running validation and calculations...');
       
       // Use ValidationEngine for comprehensive validation
       const validationResults = ValidationEngine.validateUserPlan(
@@ -211,12 +168,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       setCalculatedData(finalCalculations);
       onUpdate(finalCalculations);
       
-      console.log('✅ AdvancedReviewTab: Validation and calculations completed');
+      console.log('[SUCCESS] AdvancedReviewTab: Validation and calculations completed');
       console.log('  - Can Proceed:', validationResults.canProceed);
       console.log('  - Errors:', validationResults.errors.length);
       console.log('  - Warnings:', validationResults.warnings.length);
     } catch (error) {
-      console.error('❌ AdvancedReviewTab: Calculation error:', error);
+      console.error('[ERROR] AdvancedReviewTab: Calculation error:', error);
       setCalculationError('Failed to calculate health metrics. Please try again.');
     } finally {
       setIsCalculating(false);
@@ -305,14 +262,17 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       padding="lg"
       borderRadius="lg"
     >
-      <Text style={styles.sectionTitle}>📋 Data Summary</Text>
+      <View style={styles.sectionTitleContainer}>
+        <Ionicons name="document-text-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+        <Text style={styles.sectionTitle}>Data Summary</Text>
+      </View>
 
       <View style={styles.summaryGrid}>
         {/* Personal Info Summary */}
         <AnimatedPressable onPress={() => onNavigateToTab?.(1)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryIcon}>👤</Text>
+              <Ionicons name="person-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.summaryIconSpacing} />
               <View style={styles.summaryContent}>
                 <Text style={styles.summaryTitle}>Personal Info</Text>
                 <Text style={styles.summaryDetails}>
@@ -322,7 +282,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   {personalInfo?.country}, {personalInfo?.state}
                 </Text>
               </View>
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
             </View>
           </GlassCard>
         </AnimatedPressable>
@@ -331,19 +291,40 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         <AnimatedPressable onPress={() => onNavigateToTab?.(2)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryIcon}>🍽️</Text>
+              <Ionicons name="restaurant-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.summaryIconSpacing} />
               <View style={styles.summaryContent}>
                 <Text style={styles.summaryTitle}>Diet Preferences</Text>
                 <Text style={styles.summaryDetails}>
                   {dietPreferences?.diet_type}
                 </Text>
-                <Text style={styles.summaryDetails}>
-                  {dietPreferences?.breakfast_enabled ? '✓' : '✗'} Breakfast,
-                  {dietPreferences?.lunch_enabled ? '✓' : '✗'} Lunch,
-                  {dietPreferences?.dinner_enabled ? '✓' : '✗'} Dinner
-                </Text>
+                <View style={styles.mealStatusContainer}>
+                  <View style={styles.mealStatus}>
+                    <Ionicons
+                      name={dietPreferences?.breakfast_enabled ? "checkmark-circle" : "close-circle"}
+                      size={rf(12)}
+                      color={dietPreferences?.breakfast_enabled ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.textMuted}
+                    />
+                    <Text style={styles.summaryDetailsMeal}>Breakfast</Text>
+                  </View>
+                  <View style={styles.mealStatus}>
+                    <Ionicons
+                      name={dietPreferences?.lunch_enabled ? "checkmark-circle" : "close-circle"}
+                      size={rf(12)}
+                      color={dietPreferences?.lunch_enabled ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.textMuted}
+                    />
+                    <Text style={styles.summaryDetailsMeal}>Lunch</Text>
+                  </View>
+                  <View style={styles.mealStatus}>
+                    <Ionicons
+                      name={dietPreferences?.dinner_enabled ? "checkmark-circle" : "close-circle"}
+                      size={rf(12)}
+                      color={dietPreferences?.dinner_enabled ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.textMuted}
+                    />
+                    <Text style={styles.summaryDetailsMeal}>Dinner</Text>
+                  </View>
+                </View>
               </View>
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
             </View>
           </GlassCard>
         </AnimatedPressable>
@@ -352,7 +333,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         <AnimatedPressable onPress={() => onNavigateToTab?.(3)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryIcon}>📊</Text>
+              <Ionicons name="bar-chart-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.summaryIconSpacing} />
               <View style={styles.summaryContent}>
                 <Text style={styles.summaryTitle}>Body Analysis</Text>
                 <Text style={styles.summaryDetails}>
@@ -362,7 +343,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   BMI: {calculatedData?.calculated_bmi}, {bodyAnalysis?.ai_body_type || 'Not analyzed'}
                 </Text>
               </View>
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
             </View>
           </GlassCard>
         </AnimatedPressable>
@@ -371,7 +352,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         <AnimatedPressable onPress={() => onNavigateToTab?.(4)} scaleValue={0.95}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
-              <Text style={styles.summaryIcon}>💪</Text>
+              <Ionicons name="barbell-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.summaryIconSpacing} />
               <View style={styles.summaryContent}>
                 <Text style={styles.summaryTitle}>Workout Preferences</Text>
                 <Text style={styles.summaryDetails}>
@@ -381,7 +362,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   {workoutPreferences?.primary_goals?.length || 0} goals, {workoutPreferences?.workout_types?.length || 0} types
                 </Text>
               </View>
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
             </View>
           </GlassCard>
         </AnimatedPressable>
@@ -400,7 +381,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>🔥 Metabolic Profile</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="flame-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Metabolic Profile</Text>
+        </View>
 
         <View style={styles.metricsGrid}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
@@ -413,17 +397,18 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </View>
             <View style={styles.metricProgressContainer}>
               <ProgressRing
-                value={calculatedData.calculated_bmi || 0}
-                maxValue={40}
+                progress={((calculatedData.calculated_bmi || 0) / 40) * 100}
                 size={rf(100)}
                 strokeWidth={rf(8)}
-                gradient={
+                gradient={true}
+                gradientColors={
                   calculatedData.calculated_bmi! < 18.5 ? ['#FFC107', '#FF9800'] :
                   calculatedData.calculated_bmi! < 25 ? ['#4CAF50', '#45A049'] :
                   calculatedData.calculated_bmi! < 30 ? ['#FF9800', '#FF5722'] :
                   ['#F44336', '#D32F2F']
                 }
-                animationDuration={1000}
+                duration={1000}
+                showText={false}
               />
             </View>
             <AnimatedNumber
@@ -448,12 +433,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </View>
             <View style={styles.metricProgressContainer}>
               <ProgressRing
-                value={((calculatedData.calculated_bmr || 1200) - 1200) / 13}
-                maxValue={100}
+                progress={((calculatedData.calculated_bmr || 1200) - 1200) / 13}
                 size={rf(100)}
                 strokeWidth={rf(8)}
-                gradient={['#2196F3', '#1976D2']}
-                animationDuration={1000}
+                gradient={true}
+                gradientColors={['#2196F3', '#1976D2']}
+                duration={1000}
+                showText={false}
               />
             </View>
             <AnimatedNumber
@@ -474,12 +460,13 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </View>
             <View style={styles.metricProgressContainer}>
               <ProgressRing
-                value={((calculatedData.calculated_tdee || 1500) - 1500) / 20}
-                maxValue={100}
+                progress={((calculatedData.calculated_tdee || 1500) - 1500) / 20}
                 size={rf(100)}
                 strokeWidth={rf(8)}
-                gradient={['#9C27B0', '#7B1FA2']}
-                animationDuration={1000}
+                gradient={true}
+                gradientColors={['#9C27B0', '#7B1FA2']}
+                duration={1000}
+                showText={false}
               />
             </View>
             <AnimatedNumber
@@ -500,16 +487,17 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </View>
             <View style={styles.metricProgressContainer}>
               <ProgressRing
-                value={calculatedData.metabolic_age || 25}
-                maxValue={80}
+                progress={((calculatedData.metabolic_age || 25) / 80) * 100}
                 size={rf(100)}
                 strokeWidth={rf(8)}
-                gradient={
+                gradient={true}
+                gradientColors={
                   calculatedData.metabolic_age! < 30 ? ['#4CAF50', '#45A049'] :
                   calculatedData.metabolic_age! < 50 ? ['#FFC107', '#FF9800'] :
                   ['#FF5722', '#D32F2F']
                 }
-                animationDuration={1000}
+                duration={1000}
+                showText={false}
               />
             </View>
             <AnimatedNumber
@@ -535,7 +523,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>🥗 Daily Nutritional Needs</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="nutrition-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Daily Nutritional Needs</Text>
+        </View>
 
         <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.nutritionCard}>
           <View style={styles.nutritionHeader}>
@@ -543,39 +534,43 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Text style={styles.calorieTarget}>{calculatedData.daily_calories} calories</Text>
           </View>
 
-          <View style={styles.macroGrid}>
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Protein</Text>
-              <Text style={styles.macroValue}>{calculatedData.daily_protein_g}g</Text>
-              <Text style={styles.macroPercentage}>
-                {Math.round((calculatedData.daily_protein_g! * 4) / calculatedData.daily_calories! * 100)}%
-              </Text>
-            </View>
-
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Carbs</Text>
-              <Text style={styles.macroValue}>{calculatedData.daily_carbs_g}g</Text>
-              <Text style={styles.macroPercentage}>
-                {Math.round((calculatedData.daily_carbs_g! * 4) / calculatedData.daily_calories! * 100)}%
-              </Text>
-            </View>
-
-            <View style={styles.macroItem}>
-              <Text style={styles.macroLabel}>Fat</Text>
-              <Text style={styles.macroValue}>{calculatedData.daily_fat_g}g</Text>
-              <Text style={styles.macroPercentage}>
-                {Math.round((calculatedData.daily_fat_g! * 9) / calculatedData.daily_calories! * 100)}%
-              </Text>
-            </View>
-          </View>
+          <GradientBarChart
+            data={[
+              {
+                label: 'Protein',
+                value: calculatedData.daily_protein_g || 0,
+                maxValue: 300,
+                gradient: ['#FF6B35', '#FF8A5C'],
+                unit: 'g',
+              },
+              {
+                label: 'Carbs',
+                value: calculatedData.daily_carbs_g || 0,
+                maxValue: 400,
+                gradient: ['#4CAF50', '#45A049'],
+                unit: 'g',
+              },
+              {
+                label: 'Fats',
+                value: calculatedData.daily_fat_g || 0,
+                maxValue: 150,
+                gradient: ['#2196F3', '#1976D2'],
+                unit: 'g',
+              },
+            ]}
+            height={rh(180)}
+            animated={true}
+            showValues={true}
+            style={styles.macroChart}
+          />
 
           <View style={styles.otherNutrients}>
             <View style={styles.nutrientItem}>
-              <Text style={styles.nutrientIcon}>💧</Text>
+              <Ionicons name="water-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} style={styles.nutrientIconSpacing} />
               <Text style={styles.nutrientText}>Water: {(calculatedData.daily_water_ml! / 1000).toFixed(1)}L</Text>
             </View>
             <View style={styles.nutrientItem}>
-              <Text style={styles.nutrientIcon}>🌾</Text>
+              <Ionicons name="leaf-outline" size={rf(16)} color={ResponsiveTheme.colors.success} style={styles.nutrientIconSpacing} />
               <Text style={styles.nutrientText}>Fiber: {calculatedData.daily_fiber_g}g</Text>
             </View>
           </View>
@@ -595,7 +590,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>⚖️ Weight Management Plan</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="scale-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Weight Management Plan</Text>
+        </View>
 
         <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.weightCard}>
           <View style={styles.weightHeader}>
@@ -603,20 +601,34 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <Text style={styles.timelineWeeks}>{calculatedData.estimated_timeline_weeks} weeks</Text>
           </View>
 
+          {/* Weight Projection Chart */}
+          {bodyAnalysis?.current_weight_kg && bodyAnalysis?.target_weight_kg && (
+            <View style={styles.chartContainer}>
+              <WeightProjectionChart
+                currentWeight={bodyAnalysis.current_weight_kg}
+                targetWeight={bodyAnalysis.target_weight_kg}
+                weeks={calculatedData.estimated_timeline_weeks || 12}
+                milestones={[4, 8, 12]}
+                width={rw(90)}
+                height={rh(220)}
+              />
+            </View>
+          )}
+
           <View style={styles.weightProgress}>
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Current</Text>
               <Text style={styles.weightValue}>{bodyAnalysis?.current_weight_kg}kg</Text>
             </View>
 
-            <Text style={styles.weightArrow}>→</Text>
+            <Ionicons name="arrow-forward" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
 
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Target</Text>
               <Text style={styles.weightValue}>{bodyAnalysis?.target_weight_kg}kg</Text>
             </View>
 
-            <Text style={styles.weightArrow}>📈</Text>
+            <Ionicons name="trending-up-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
 
             <View style={styles.weightItem}>
               <Text style={styles.weightLabel}>Weekly Rate</Text>
@@ -652,7 +664,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>💓 Fitness & Cardiovascular Metrics</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="heart-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Fitness & Cardiovascular Metrics</Text>
+        </View>
 
         <View style={styles.fitnessGrid}>
           <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.fitnessCard}>
@@ -682,23 +697,39 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           </GlassCard>
         </View>
 
+        {/* Heart Rate Zones Visualization */}
+        <View style={styles.heartRateZonesVisualization}>
+          <Text style={styles.zoneVisualizationTitle}>Heart Rate Training Zones</Text>
+          <ColorCodedZones
+            maxHeartRate={calculatedData.max_heart_rate || 180}
+            restingHeartRate={personalInfo?.age ? 60 : undefined}
+            showLabels={true}
+            animated={true}
+            height={rh(220)}
+            style={styles.colorCodedZones}
+          />
+        </View>
+
         <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.recommendationsCard}>
-          <Text style={styles.recommendationsTitle}>🎯 Weekly Workout Recommendations</Text>
+          <View style={styles.recommendationsTitleContainer}>
+            <Ionicons name="target-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+            <Text style={styles.recommendationsTitle}>Weekly Workout Recommendations</Text>
+          </View>
           <View style={styles.recommendationsList}>
             <View style={styles.recommendationItem}>
-              <Text style={styles.recommendationIcon}>🏋️</Text>
+              <Ionicons name="barbell-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} style={styles.recommendationIconSpacing} />
               <Text style={styles.recommendationText}>
                 Workout Frequency: {calculatedData.recommended_workout_frequency} sessions/week
               </Text>
             </View>
             <View style={styles.recommendationItem}>
-              <Text style={styles.recommendationIcon}>❤️</Text>
+              <Ionicons name="heart-outline" size={rf(16)} color={ResponsiveTheme.colors.error} style={styles.recommendationIconSpacing} />
               <Text style={styles.recommendationText}>
                 Cardio: {calculatedData.recommended_cardio_minutes} minutes/week
               </Text>
             </View>
             <View style={styles.recommendationItem}>
-              <Text style={styles.recommendationIcon}>💪</Text>
+              <Ionicons name="fitness-outline" size={rf(16)} color={ResponsiveTheme.colors.success} style={styles.recommendationIconSpacing} />
               <Text style={styles.recommendationText}>
                 Strength Training: {calculatedData.recommended_strength_sessions} sessions/week
               </Text>
@@ -720,7 +751,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       calculatedData.goal_realistic_score !== undefined;
 
     if (!hasAllScores) {
-      console.warn('⚠️ Health scores not fully calculated');
+      console.warn('[WARNING] Health scores not fully calculated');
       return null;
     }
 
@@ -732,22 +763,43 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>📊 Health Assessment Scores</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="stats-chart-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Health Assessment Scores</Text>
+        </View>
         <Text style={styles.sectionSubtitle}>
           Your readiness scores based on current health status and goals
         </Text>
 
+        {/* Large Overall Health Score */}
+        <View style={styles.largeScoreContainer}>
+          <Text style={styles.largeScoreTitle}>Overall Health Score</Text>
+          <LargeProgressRing
+            value={calculatedData.overall_health_score || 0}
+            maxValue={100}
+            size={rf(220)}
+            strokeWidth={rf(18)}
+            gradient={
+              calculatedData.overall_health_score! >= 80 ? ['#4CAF50', '#45A049'] :
+              calculatedData.overall_health_score! >= 60 ? ['#FF9800', '#FF5722'] :
+              ['#F44336', '#D32F2F']
+            }
+            showGlow={true}
+            showValue={true}
+            label="/100"
+            style={styles.largeProgressRing}
+          />
+          <Text style={styles.largeScoreCategory}>
+            {getScoreCategory(calculatedData.overall_health_score)}
+          </Text>
+          <Text style={styles.largeScoreDescription}>
+            Combined assessment of your health metrics, readiness, and goal feasibility
+          </Text>
+        </View>
+
+        {/* Sub-scores Grid */}
+        <Text style={styles.subScoresTitle}>Detailed Breakdown</Text>
         <View style={styles.scoresGrid}>
-          <AnimatedSection delay={0} style={styles.scoreCard}>
-            <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
-              <Text style={styles.scoreTitle}>Overall Health</Text>
-              <Text style={[styles.scoreValue, { color: getScoreColor(calculatedData.overall_health_score) }]}>
-                {calculatedData.overall_health_score}/100
-              </Text>
-              <Text style={styles.scoreCategory}>{getScoreCategory(calculatedData.overall_health_score)}</Text>
-              <Text style={styles.scoreDescription}>Combined health assessment</Text>
-            </GlassCard>
-          </AnimatedSection>
 
           <AnimatedSection delay={120} style={styles.scoreCard}>
             <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
@@ -797,7 +849,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>😴 Sleep Analysis</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="moon-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Sleep Analysis</Text>
+        </View>
 
         <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.sleepCard}>
           <View style={styles.sleepMetrics}>
@@ -824,15 +879,39 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </Text>
           </View>
 
-          <Text style={styles.sleepRecommendation}>
-            {calculatedData.current_sleep_duration! >= 7 && calculatedData.current_sleep_duration! <= 9
-              ? '✅ Your sleep duration is optimal for fitness goals'
-              : calculatedData.current_sleep_duration! < 7
-                ? '⚠️ Consider getting more sleep for better recovery and results'
-                : '⚠️ Very long sleep duration - ensure it\'s quality sleep'
-            }
-          </Text>
+          <View style={styles.sleepRecommendationContainer}>
+            {calculatedData.current_sleep_duration! >= 7 && calculatedData.current_sleep_duration! <= 9 ? (
+              <>
+                <Ionicons name="checkmark-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.success} style={styles.sleepRecommendationIcon} />
+                <Text style={styles.sleepRecommendation}>Your sleep duration is optimal for fitness goals</Text>
+              </>
+            ) : calculatedData.current_sleep_duration! < 7 ? (
+              <>
+                <Ionicons name="warning-outline" size={rf(16)} color={ResponsiveTheme.colors.warning} style={styles.sleepRecommendationIcon} />
+                <Text style={styles.sleepRecommendation}>Consider getting more sleep for better recovery and results</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="warning-outline" size={rf(16)} color={ResponsiveTheme.colors.warning} style={styles.sleepRecommendationIcon} />
+                <Text style={styles.sleepRecommendation}>Very long sleep duration - ensure it's quality sleep</Text>
+              </>
+            )}
+          </View>
         </GlassCard>
+
+        {/* Sleep Schedule Visualization */}
+        {personalInfo?.wake_time && personalInfo?.sleep_time && (
+          <View style={styles.sleepScheduleVisualization}>
+            <Text style={styles.sleepScheduleTitle}>Your Sleep Schedule</Text>
+            <CircularClock
+              sleepTime={personalInfo.sleep_time}
+              wakeTime={personalInfo.wake_time}
+              size={rh(280)}
+              showLabels={true}
+              style={styles.circularClock}
+            />
+          </View>
+        )}
       </GlassCard>
     );
   };
@@ -848,7 +927,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
         padding="lg"
         borderRadius="lg"
       >
-        <Text style={styles.sectionTitle}>🎯 Personalization Summary</Text>
+        <View style={styles.sectionTitleContainer}>
+          <Ionicons name="analytics-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={styles.sectionTitleIcon} />
+          <Text style={styles.sectionTitle}>Personalization Summary</Text>
+        </View>
 
         <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.personalizationCard}>
           <View style={styles.personalizationGrid}>
@@ -892,14 +974,24 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             </View>
           </View>
 
-          <Text style={styles.personalizationSummary}>
-            {calculatedData.data_completeness_percentage! >= 90
-              ? '🎉 Excellent! Your profile is comprehensive and ready for highly personalized recommendations.'
-              : calculatedData.data_completeness_percentage! >= 70
-                ? '👍 Good profile completeness. Consider adding more details for better personalization.'
-                : '📝 Consider completing more sections for enhanced personalization.'
-            }
-          </Text>
+          <View style={styles.personalizationSummaryContainer}>
+            {calculatedData.data_completeness_percentage! >= 90 ? (
+              <>
+                <Ionicons name="trophy-outline" size={rf(18)} color={ResponsiveTheme.colors.success} style={styles.personalizationSummaryIcon} />
+                <Text style={styles.personalizationSummary}>Excellent! Your profile is comprehensive and ready for highly personalized recommendations.</Text>
+              </>
+            ) : calculatedData.data_completeness_percentage! >= 70 ? (
+              <>
+                <Ionicons name="thumbs-up-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} style={styles.personalizationSummaryIcon} />
+                <Text style={styles.personalizationSummary}>Good profile completeness. Consider adding more details for better personalization.</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="create-outline" size={rf(18)} color={ResponsiveTheme.colors.warning} style={styles.personalizationSummaryIcon} />
+                <Text style={styles.personalizationSummary}>Consider completing more sections for enhanced personalization.</Text>
+              </>
+            )}
+          </View>
         </GlassCard>
       </GlassCard>
     );
@@ -927,22 +1019,28 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Text style={styles.autoSaveText}>💾 Saving...</Text>
+              <Ionicons name="save-outline" size={rf(14)} color={ResponsiveTheme.colors.success} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+              <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
 
           {/* Calculation Status */}
           {isCalculating && (
             <View style={styles.calculatingIndicator}>
-              <Text style={styles.calculatingText}>🧮 Calculating health metrics...</Text>
+              <Ionicons name="calculator-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+              <Text style={styles.calculatingText}>Calculating health metrics...</Text>
             </View>
           )}
 
           {calculationError && (
             <View style={styles.errorIndicator}>
-              <Text style={styles.errorText}>❌ {calculationError}</Text>
+              <View style={styles.errorTextContainer}>
+                <Ionicons name="close-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.error} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+                <Text style={styles.errorText}>{calculationError}</Text>
+              </View>
               <AnimatedPressable onPress={performCalculations} style={styles.retryButton} scaleValue={0.95}>
-                <Text style={styles.retryText}>🔄 Retry Calculations</Text>
+                <Ionicons name="refresh-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+                <Text style={styles.retryText}>Retry Calculations</Text>
               </AnimatedPressable>
             </View>
           )}
@@ -955,7 +1053,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <ErrorCard 
               errors={validationResults.errors}
               onAdjust={(error) => {
-                console.log('🔧 Opening adjustment wizard for error:', error);
+                console.log('[ADJUSTMENT] Opening adjustment wizard for error:', error);
                 setCurrentError(validationResults.errors[0]); // Use first error
                 setShowAdjustmentWizard(true);
               }}
@@ -1015,9 +1113,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 isComplete ? styles.completionCardComplete : styles.completionCardIncomplete
               ] as any}
             >
-              <Text style={styles.completionIcon}>
-                {isComplete ? '🎉' : '📋'}
-              </Text>
+              <Ionicons
+                name={isComplete ? "trophy-outline" : "document-text-outline"}
+                size={rf(48)}
+                color={isComplete ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.primary}
+                style={{ marginBottom: ResponsiveTheme.spacing.md }}
+              />
               <Text style={styles.completionTitle}>
                 {isComplete ? 'Profile Complete!' : 'Review Complete!'}
               </Text>
@@ -1044,9 +1145,9 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           <Button
             title={
               validationResults?.hasErrors
-                ? "⛔ Fix Issues to Continue"
+                ? "Fix Issues to Continue"
                 : isComplete
-                  ? "🚀 Start FitAI Journey"
+                  ? "Start FitAI Journey"
                   : "Complete Setup"
             }
             onPress={() => {
@@ -1055,16 +1156,16 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 : isComplete
                   ? "Start Journey"
                   : "Complete Setup";
-              console.log(`🔘 AdvancedReviewTab: "${buttonTitle}" button clicked`);
-              console.log('🔘 AdvancedReviewTab: isComplete:', isComplete);
-              console.log('🔘 AdvancedReviewTab: Calling handler:', isComplete ? 'onNext' : 'onComplete');
-              console.log('🔘 AdvancedReviewTab: Button disabled:', !calculatedData || isCalculating || !validationResults?.canProceed || (validationResults?.hasWarnings && !warningsAcknowledged));
+              console.log(`[BUTTON] AdvancedReviewTab: "${buttonTitle}" button clicked`);
+              console.log('[BUTTON] AdvancedReviewTab: isComplete:', isComplete);
+              console.log('[BUTTON] AdvancedReviewTab: Calling handler:', isComplete ? 'onNext' : 'onComplete');
+              console.log('[BUTTON] AdvancedReviewTab: Button disabled:', !calculatedData || isCalculating || !validationResults?.canProceed || (validationResults?.hasWarnings && !warningsAcknowledged));
 
               if (isComplete) {
-                console.log('✅ AdvancedReviewTab: Calling onNext()...');
+                console.log('[SUCCESS] AdvancedReviewTab: Calling onNext()...');
                 onNext();
               } else {
-                console.log('✅ AdvancedReviewTab: Calling onComplete()...');
+                console.log('[SUCCESS] AdvancedReviewTab: Calling onComplete()...');
                 onComplete();
               }
             }}
@@ -1095,7 +1196,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             currentFrequency: workoutPreferences?.workout_frequency_per_week || 0,
           }}
           onSelectAlternative={(alternative: Alternative) => {
-            console.log('✅ Alternative selected:', alternative);
+            console.log('[SUCCESS] Alternative selected:', alternative);
             
             // Determine which tab to navigate to based on what changed
             let targetTab: number | null = null;
@@ -1106,12 +1207,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               
               if (alternative.newTimeline !== undefined) {
                 updates.target_timeline_weeks = alternative.newTimeline;
-                console.log(`📅 Updating timeline: ${bodyAnalysis?.target_timeline_weeks} → ${alternative.newTimeline} weeks`);
+                console.log(`[UPDATE] Updating timeline: ${bodyAnalysis?.target_timeline_weeks} → ${alternative.newTimeline} weeks`);
               }
               
               if (alternative.newTargetWeight !== undefined) {
                 updates.target_weight_kg = alternative.newTargetWeight;
-                console.log(`🎯 Updating target weight: ${bodyAnalysis?.target_weight_kg} → ${alternative.newTargetWeight} kg`);
+                console.log(`[UPDATE] Updating target weight: ${bodyAnalysis?.target_weight_kg} → ${alternative.newTargetWeight} kg`);
               }
               
               onUpdateBodyAnalysis?.(updates);
@@ -1123,7 +1224,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               onUpdateWorkoutPreferences?.({
                 workout_frequency_per_week: alternative.newWorkoutFrequency
               });
-              console.log(`🏋️ Updating workout frequency: ${workoutPreferences?.workout_frequency_per_week} → ${alternative.newWorkoutFrequency}/week`);
+              console.log(`[UPDATE] Updating workout frequency: ${workoutPreferences?.workout_frequency_per_week} → ${alternative.newWorkoutFrequency}/week`);
               
               // If only frequency changed (not timeline), navigate to Workout tab
               if (targetTab === null) {
@@ -1138,7 +1239,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             if (targetTab !== null && onNavigateToTab) {
               setTimeout(() => {
                 onNavigateToTab(targetTab!);
-                console.log(`🧭 Navigated to tab ${targetTab} to review changes`);
+                console.log(`[NAV] Navigated to tab ${targetTab} to review changes`);
               }, 300);
             } else {
               // If no navigation, just re-calculate on current tab
@@ -1193,6 +1294,8 @@ const styles = StyleSheet.create({
   },
 
   autoSaveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -1207,6 +1310,8 @@ const styles = StyleSheet.create({
   },
 
   calculatingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -1228,13 +1333,21 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.sm,
   },
 
-  errorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.error,
+  errorTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
+  errorText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.error,
+    flex: 1,
+  },
+
   retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
   },
 
@@ -1253,18 +1366,28 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xl,
   },
 
-  sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
+  sectionTitleIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  sectionTitle: {
+    fontSize: rf(20),
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    letterSpacing: -0.3,
+  },
+
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    lineHeight: rf(20),
   },
 
   // Data Summary Section
@@ -1282,8 +1405,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  summaryIcon: {
-    fontSize: rf(24),
+  summaryIconSpacing: {
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1304,10 +1426,24 @@ const styles = StyleSheet.create({
     lineHeight: rf(16),
   },
 
-  editIcon: {
-    fontSize: rf(18),
-    color: ResponsiveTheme.colors.primary,
+  mealStatusContainer: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.xs,
+    flexWrap: 'wrap',
   },
+
+  mealStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xxs,
+  },
+
+  summaryDetailsMeal: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
 
   // Metrics Grid
   metricsGrid: {
@@ -1404,6 +1540,55 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
   },
 
+  macroChart: {
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
+  chartContainer: {
+    alignItems: 'center',
+    marginVertical: ResponsiveTheme.spacing.lg,
+  },
+
+  largeScoreContainer: {
+    alignItems: 'center',
+    marginVertical: ResponsiveTheme.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.lg,
+  },
+
+  largeScoreTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  largeProgressRing: {
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
+  largeScoreCategory: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  largeScoreDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  subScoresTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+    marginTop: ResponsiveTheme.spacing.lg,
+  },
+
   otherNutrients: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -1417,8 +1602,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  nutrientIcon: {
-    fontSize: rf(16),
+  nutrientIconSpacing: {
     marginRight: ResponsiveTheme.spacing.sm,
   },
 
@@ -1474,10 +1658,6 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
 
-  weightArrow: {
-    fontSize: rf(20),
-    color: ResponsiveTheme.colors.textSecondary,
-  },
 
   idealWeightInfo: {
     alignItems: 'center',
@@ -1572,12 +1752,17 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
   },
 
+  recommendationsTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
   recommendationsTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
-    textAlign: 'center',
   },
 
   recommendationsList: {
@@ -1589,8 +1774,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  recommendationIcon: {
-    fontSize: rf(16),
+  recommendationIconSpacing: {
     marginRight: ResponsiveTheme.spacing.sm,
   },
 
@@ -1691,11 +1875,60 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
+  sleepRecommendationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  sleepRecommendationIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
   sleepRecommendation: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
+    flex: 1,
     textAlign: 'center',
     lineHeight: rf(18),
+  },
+
+  sleepScheduleVisualization: {
+    alignItems: 'center',
+    marginTop: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: `${ResponsiveTheme.colors.border}40`,
+  },
+
+  sleepScheduleTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  circularClock: {
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
+  heartRateZonesVisualization: {
+    marginTop: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: `${ResponsiveTheme.colors.border}40`,
+  },
+
+  zoneVisualizationTitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+    textAlign: 'center',
+  },
+
+  colorCodedZones: {
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   // Personalization Section
@@ -1739,9 +1972,20 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
 
+  personalizationSummaryContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  personalizationSummaryIcon: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
   personalizationSummary: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.text,
+    flex: 1,
     textAlign: 'center',
     lineHeight: rf(20),
   },
@@ -1763,11 +2007,6 @@ const styles = StyleSheet.create({
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
     borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 2,
-  },
-
-  completionIcon: {
-    fontSize: rf(48),
-    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   completionTitle: {

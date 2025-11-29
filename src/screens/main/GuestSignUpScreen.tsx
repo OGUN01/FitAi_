@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -69,16 +70,16 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
     setIsLoading(true);
 
     try {
-      console.log('🚀 GuestSignUp: Starting Google sign up with data migration...');
+      console.log('[ROCKET] GuestSignUp: Starting Google sign up with data migration...');
       
       // Check for guest data that needs migration
       const hasGuestData = await dataManager.hasGuestDataForMigration();
-      console.log('🔍 GuestSignUp: Guest data check result:', hasGuestData);
+      console.log('[SEARCH] GuestSignUp: Guest data check result:', hasGuestData);
 
       const response = await signInWithGoogle();
 
       if (response.success && response.user) {
-        console.log('✅ GuestSignUp: Google authentication successful');
+        console.log('[CHECK] GuestSignUp: Google authentication successful');
         
         if (hasGuestData) {
           Alert.alert(
@@ -90,25 +91,25 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                 onPress: async () => {
                   try {
                     // First, migrate guest data to user-specific keys
-                    console.log('🔄 GuestSignUp: Starting guest data key migration...');
+                    console.log('[REFRESH] GuestSignUp: Starting guest data key migration...');
                     const keyMigrationResult = await dataManager.migrateGuestDataToUser(
                       response.user.id
                     );
                     
                     if (keyMigrationResult.success) {
-                      console.log('✅ GuestSignUp: Guest data key migration successful:', keyMigrationResult.migratedKeys);
+                      console.log('[CHECK] GuestSignUp: Guest data key migration successful:', keyMigrationResult.migratedKeys);
                     } else {
-                      console.warn('⚠️ GuestSignUp: Guest data key migration had issues:', keyMigrationResult.errors);
+                      console.warn('[WARNING] GuestSignUp: Guest data key migration had issues:', keyMigrationResult.errors);
                     }
                     
                     // Now start profile migration to remote storage
-                    console.log('🔄 GuestSignUp: Starting remote profile migration...');
+                    console.log('[REFRESH] GuestSignUp: Starting remote profile migration...');
                     const migrationResult = await migrationManager.startProfileMigration(
                       response.user.id
                     );
 
                     if (migrationResult.success) {
-                      console.log('✅ GuestSignUp: Complete migration successful');
+                      console.log('[CHECK] GuestSignUp: Complete migration successful');
                       Alert.alert(
                         'Welcome to FitAI!',
                         'Your profile data has been synced successfully to your Google account.',
@@ -116,14 +117,14 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                           {
                             text: 'Continue',
                             onPress: () => {
-                              console.log('🎉 GuestSignUp: Calling onSignUpSuccess after migration');
+                              console.log('[PARTY] GuestSignUp: Calling onSignUpSuccess after migration');
                               onSignUpSuccess();
                             },
                           },
                         ]
                       );
                     } else {
-                      console.warn('⚠️ GuestSignUp: Migration had issues, but continuing');
+                      console.warn('[WARNING] GuestSignUp: Migration had issues, but continuing');
                       Alert.alert(
                         'Welcome to FitAI!',
                         'Your account has been created successfully. Some data may sync in the background.',
@@ -131,7 +132,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                           {
                             text: 'Continue',
                             onPress: () => {
-                              console.log('🎉 GuestSignUp: Calling onSignUpSuccess despite migration issues');
+                              console.log('[PARTY] GuestSignUp: Calling onSignUpSuccess despite migration issues');
                               onSignUpSuccess();
                             },
                           },
@@ -139,7 +140,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                       );
                     }
                   } catch (migrationError) {
-                    console.error('❌ GuestSignUp: Migration error:', migrationError);
+                    console.error('[ERROR] GuestSignUp: Migration error:', migrationError);
                     Alert.alert(
                       'Welcome to FitAI!',
                       'Your account has been created successfully. Your data will be synced shortly.',
@@ -147,7 +148,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                         {
                           text: 'Continue',
                           onPress: () => {
-                            console.log('🎉 GuestSignUp: Calling onSignUpSuccess after migration error');
+                            console.log('[PARTY] GuestSignUp: Calling onSignUpSuccess after migration error');
                             onSignUpSuccess();
                           },
                         },
@@ -167,7 +168,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
               {
                 text: 'Continue',
                 onPress: () => {
-                  console.log('🎉 GuestSignUp: Calling onSignUpSuccess (no migration needed)');
+                  console.log('[PARTY] GuestSignUp: Calling onSignUpSuccess (no migration needed)');
                   onSignUpSuccess();
                 },
               },
@@ -190,11 +191,11 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
     setIsLoading(true);
     try {
-      console.log('🚀 GuestSignUp: Starting email sign up with data migration...');
+      console.log('[ROCKET] GuestSignUp: Starting email sign up with data migration...');
       
       // Check if there's guest data before registering
       const hasGuestData = await dataManager.hasGuestDataForMigration();
-      console.log('🔍 GuestSignUp: Guest data check result:', hasGuestData);
+      console.log('[SEARCH] GuestSignUp: Guest data check result:', hasGuestData);
 
       // Ensure we trim and normalize the credentials before sending
       const trimmedCredentials = {
@@ -203,7 +204,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
         confirmPassword: formData.confirmPassword.trim(),
       };
       
-      console.log('🔐 GuestSignUp: Creating account for:', { email: trimmedCredentials.email });
+      console.log('[LOCK] GuestSignUp: Creating account for:', { email: trimmedCredentials.email });
       const result = await register(trimmedCredentials);
 
       if (result.success) {
@@ -213,8 +214,8 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
         // If there's guest data, mention it will be preserved and synced
         if (hasGuestData) {
-          alertMessage += '\n\n✨ Your profile data will be automatically synced when you log in after email verification.';
-          console.log('✅ GuestSignUp: User has guest data - will trigger migration on login');
+          alertMessage += '\n\n[SPARKLE] Your profile data will be automatically synced when you log in after email verification.';
+          console.log('[CHECK] GuestSignUp: User has guest data - will trigger migration on login');
         }
 
         Alert.alert(alertTitle, alertMessage, [
@@ -222,7 +223,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
             text: 'OK',
             onPress: () => {
               // Navigate back to profile screen - user will login after email verification
-              console.log('📧 GuestSignUp: Email signup successful, user needs to verify email');
+              console.log('[EMAIL] GuestSignUp: Email signup successful, user needs to verify email');
               onBack();
             },
           },

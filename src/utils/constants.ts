@@ -13,15 +13,15 @@ export const APP_CONFIG = {
 // Export with explicit type for better Metro bundler compatibility
 export const THEME = {
   colors: {
-    // Primary Colors
-    primary: '#ff6b35', // Orange/Gold accent
-    primaryDark: '#e55a2b',
-    primaryLight: '#ff8c5a',
+    // Primary Colors - Premium Purple (Cult.fit inspired)
+    primary: '#6366F1', // Vibrant Indigo
+    primaryDark: '#4F46E5',
+    primaryLight: '#818CF8',
 
-    // Secondary Colors
-    secondary: '#00d4ff', // Electric blue
-    secondaryDark: '#00b8e6',
-    secondaryLight: '#33ddff',
+    // Secondary Colors - Energetic Green (Nike inspired)
+    secondary: '#10B981', // Emerald Green
+    secondaryDark: '#059669',
+    secondaryLight: '#34D399',
 
     // Background Colors
     background: '#0a0f1c', // Deep dark blue
@@ -64,6 +64,7 @@ export const THEME = {
     lg: 24,
     xl: 32,
     xxl: 48,
+    xxxl: 64,
   },
 
   borderRadius: {
@@ -76,13 +77,14 @@ export const THEME = {
   },
 
   fontSize: {
-    xs: 12,
-    sm: 14,
-    md: 16,
-    lg: 18,
-    xl: 20,
-    xxl: 24,
-    xxxl: 32,
+    micro: 12,   // Labels, metadata
+    xs: 13,      // Small labels
+    sm: 14,      // Caption text
+    md: 16,      // Body text
+    lg: 20,      // H3 - Subsection headings
+    xl: 24,      // H2 - Section headings
+    xxl: 32,     // H1 - Primary headings
+    display: 48, // Display - Hero headings
   },
 
   fontWeight: {
@@ -129,6 +131,7 @@ export const createResponsiveTheme = () => {
       lg: rp(THEME.spacing.lg),
       xl: rp(THEME.spacing.xl),
       xxl: rp(THEME.spacing.xxl),
+      xxxl: rp(THEME.spacing.xxxl),
     },
 
     borderRadius: {
@@ -141,13 +144,14 @@ export const createResponsiveTheme = () => {
     },
 
     fontSize: {
+      micro: rf(THEME.fontSize.micro),
       xs: rf(THEME.fontSize.xs),
       sm: rf(THEME.fontSize.sm),
       md: rf(THEME.fontSize.md),
       lg: rf(THEME.fontSize.lg),
       xl: rf(THEME.fontSize.xl),
       xxl: rf(THEME.fontSize.xxl),
-      xxxl: rf(THEME.fontSize.xxxl),
+      display: rf(THEME.fontSize.display),
     },
   };
 };

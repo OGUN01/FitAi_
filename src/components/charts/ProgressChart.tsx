@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { THEME } from '../../utils/constants';
+import { ChartTooltip } from '../ui/ChartTooltip';
+import { hapticSelection } from '../../utils/haptics';
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -29,6 +31,19 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   style,
 }) => {
   const [selectedPeriod, setSelectedPeriod] = React.useState<'week' | 'month' | 'year'>('month');
+  const [tooltipData, setTooltipData] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    value: number;
+    label: string;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    value: 0,
+    label: '',
+  });
 
   // Filter data based on selected period
   const getFilteredData = () => {
@@ -118,8 +133,38 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
 
   const trend = getTrend();
 
+  // Handle data point click
+  const handleDataPointClick = (data: any) => {
+    const { value, index, x, y } = data;
+
+    hapticSelection();
+
+    setTooltipData({
+      visible: true,
+      x: x - 50, // Center the tooltip
+      y: y - 60, // Position above the point
+      value: value,
+      label: chartData.labels[index] || '',
+    });
+
+    // Hide tooltip after 2 seconds
+    setTimeout(() => {
+      setTooltipData((prev) => ({ ...prev, visible: false }));
+    }, 2000);
+  };
+
   return (
     <View style={[styles.container, style]}>
+      {/* Chart Tooltip */}
+      <ChartTooltip
+        visible={tooltipData.visible}
+        x={tooltipData.x}
+        y={tooltipData.y}
+        value={tooltipData.value}
+        label={tooltipData.label}
+        formatValue={(val) => `${typeof val === 'number' ? val.toFixed(1) : val} ${unit}`}
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -180,6 +225,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
             withHorizontalLines={true}
             withDots={true}
             withShadow={false}
+            onDataPointClick={handleDataPointClick}
           />
         </ScrollView>
       ) : (

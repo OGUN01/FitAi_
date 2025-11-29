@@ -89,51 +89,27 @@ const GEMINI_KEYS = [
 const GEMINI_API_KEY = GEMINI_KEYS[0] || '';
 const MODEL_NAME = 'gemini-2.5-flash'; // Latest Gemini 2.5 Flash model
 
-console.log(`🚀 Production API Keys Loaded: ${GEMINI_KEYS.length}/23 keys (Capacity: ${GEMINI_KEYS.length * 1500} requests/day)`);
-
-// 🎯 PRODUCTION VALIDATION SUITE - Critical for debugging production APK issues
-console.log('🔑 Gemini API Key Status:');
-console.log(`  - Primary key: ${GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 20)}...` : 'NOT SET'}`);
-console.log(`  - Total keys available: ${GEMINI_KEYS.length}`);
-console.log(`  - Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'unknown'}`);
-console.log(`  - AI Mode: ${process.env.EXPO_PUBLIC_AI_MODE || 'unknown'}`);
-console.log(`  - Development mode: ${__DEV__ ? 'true' : 'false'}`);
-console.log('🤖 Using Latest Model:', MODEL_NAME);
-
-// 🎯 PRODUCTION ENVIRONMENT VALIDATION
-console.log('🎯 Production Environment Validation:');
-console.log(`  - process.env available: ${typeof process !== 'undefined' && !!process.env}`);
-console.log(`  - EXPO_PUBLIC vars count: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).length}`);
-console.log(`  - All EXPO_PUBLIC vars: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).join(', ')}`);
-console.log(`  - Direct API key access: ${!!process.env.EXPO_PUBLIC_GEMINI_API_KEY}`);
-console.log(`  - Network environment: ${typeof fetch !== 'undefined' ? 'Available' : 'Not Available'}`);
-console.log(`  - Platform detection: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}`);
-
-// 🎯 GOOGLE AI SDK VALIDATION  
-console.log('🎯 Google AI SDK Validation:');
-console.log(`  - GoogleGenerativeAI class: ${typeof GoogleGenerativeAI !== 'undefined' ? 'Available' : 'Not Available'}`);
-console.log(`  - SDK version: ${typeof GoogleGenerativeAI !== 'undefined' ? 'Loaded' : 'Failed to load'}`);
-console.log(`  - SDK initialization: ${typeof GoogleGenerativeAI !== 'undefined' ? 'Success' : 'Failed'}`);
-console.log(`  - Model placeholder: Available (dynamically created)`);
+// 🚧 CLIENT-SIDE AI DISABLED - All logs suppressed
+// Use Cloudflare Workers backend: https://fitai-workers.sharmaharsh9887.workers.dev
 
 // Initialize Gemini AI
 let genAI: GoogleGenerativeAI | null = null;
 let model: any | null = null;
 
-// Enhanced production error handling for missing API key
-if (!GEMINI_API_KEY) {
-  console.error('🚨 CRITICAL: EXPO_PUBLIC_GEMINI_API_KEY is not set!');
-  console.error('Production Build Debugging:');
-  console.error(`  - Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'unknown'}`);
-  console.error(`  - Build type: ${__DEV__ ? 'development' : 'production'}`);
-  console.error(`  - Available env vars: ${Object.keys(process.env).filter(key => key.startsWith('EXPO_PUBLIC')).join(', ')}`);
-  console.error('Solution:');
-  console.error('  - For production builds: Check EAS environment configuration');
-  console.error('  - For development: Check .env.local file with EXPO_PUBLIC_GEMINI_API_KEY');
-  console.error('  - App will fall back to demo mode');
-}
-
 const initializeGemini = () => {
+  // 🚧 CLIENT-SIDE AI DISABLED
+  // Gemini AI calls should go through Cloudflare Workers backend for security
+  // Backend URL: https://fitai-workers.sharmaharsh9887.workers.dev
+  //
+  // To re-enable client-side AI:
+  // 1. Uncomment the initialization code below
+  // 2. Set EXPO_PUBLIC_GEMINI_API_KEY in .env.local
+  // 3. Note: This exposes API keys in the client bundle (security risk)
+
+  console.log('ℹ️ Client-side AI is disabled. Use Cloudflare Workers backend for AI features.');
+  return false;
+
+  /* DISABLED - Use Cloudflare Workers backend instead
   if (!GEMINI_API_KEY) {
     console.warn('❌ Gemini API key not found. AI features will be disabled.');
     console.warn(`  - Production build environment: ${!__DEV__ ? 'YES' : 'NO'}`);
@@ -164,6 +140,7 @@ const initializeGemini = () => {
     console.error('  - App will fall back to demo mode');
     return false;
   }
+  */
 };
 
 // ============================================================================

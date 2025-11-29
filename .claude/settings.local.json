@@ -81,7 +81,8 @@
       "Bash(do curl -s https://fitai-workers.sharmaharsh9887.workers.dev/test/rate-limit)",
       "Bash(done)",
       "mcp__supabase__get_logs",
-      "mcp__supabase__get_advisors"
+      "mcp__supabase__get_advisors",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],

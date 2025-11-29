@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, THEME } from '../../components/ui';
@@ -110,11 +111,11 @@ export const ProgressScreen: React.FC = () => {
 
     // Subscribe to completion events for real-time updates
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log('📊 Progress Tab - Received completion event:', event);
+      console.log('[PROGRESS] Progress Tab - Received completion event:', event);
 
       // Refresh progress data when meals or workouts are completed
       if (event.type === 'meal' || event.type === 'workout') {
-        console.log('📊 Progress Tab - Refreshing data due to completion event');
+        console.log('[PROGRESS] Progress Tab - Refreshing data due to completion event');
         refreshProgressData();
       }
     });
@@ -158,7 +159,7 @@ export const ProgressScreen: React.FC = () => {
       }
     });
 
-    console.log('📊 Generated weekly chart data with meals:', weekData);
+    console.log('[PROGRESS] Generated weekly chart data with meals:', weekData);
     return weekData;
   };
 
@@ -238,7 +239,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'first-workout',
       title: 'First Workout',
       description: 'Complete your first workout',
-      icon: '🏋️',
+      iconName: 'barbell-outline',
       date: weeklyProgress?.workoutsCompleted > 0 ? 'Completed' : 'Not yet',
       completed: weeklyProgress?.workoutsCompleted > 0,
       category: 'Milestone',
@@ -249,7 +250,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'first-meal',
       title: 'First Meal',
       description: 'Complete your first meal',
-      icon: '🍽️',
+      iconName: 'restaurant-outline',
       date: weeklyProgress?.mealsCompleted > 0 ? 'Completed' : 'Not yet',
       completed: weeklyProgress?.mealsCompleted > 0,
       category: 'Nutrition',
@@ -260,7 +261,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'meal-streak',
       title: 'Meal Master',
       description: 'Complete 5 meals in a row',
-      icon: '🥗',
+      iconName: 'nutrition-outline',
       date: weeklyProgress?.mealsCompleted >= 5 ? 'Completed' : 'Not yet',
       completed: weeklyProgress?.mealsCompleted >= 5,
       category: 'Nutrition',
@@ -273,7 +274,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'nutrition-week',
       title: 'Nutrition Week',
       description: 'Complete 21 meals (full week)',
-      icon: '🌟',
+      iconName: 'star-outline',
       date: weeklyProgress?.mealsCompleted >= 21 ? 'Completed' : 'Not yet',
       completed: weeklyProgress?.mealsCompleted >= 21,
       category: 'Nutrition',
@@ -286,7 +287,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'week-streak',
       title: 'Week Warrior',
       description: 'Maintain a 7-day streak',
-      icon: '🔥',
+      iconName: 'flame-outline',
       date: weeklyProgress?.streak >= 7 ? 'Completed' : 'Not yet',
       completed: weeklyProgress?.streak >= 7,
       category: 'Consistency',
@@ -299,7 +300,7 @@ export const ProgressScreen: React.FC = () => {
       id: 'calorie-crusher',
       title: 'Calorie Crusher',
       description: 'Burn 1000+ calories in workouts',
-      icon: '🔥',
+      iconName: 'flame-outline',
       date: DataRetrievalService.getTotalCaloriesBurned() >= 1000 ? 'Completed' : 'Not yet',
       completed: DataRetrievalService.getTotalCaloriesBurned() >= 1000,
       category: 'Fitness',
@@ -435,20 +436,20 @@ export const ProgressScreen: React.FC = () => {
               <View style={styles.headerButtons}>
                 {/* Track B Status Indicator */}
                 <AnimatedPressable style={styles.statusButton} scaleValue={0.95}>
-                  <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
+                  <Ionicons name={trackBStatus.isConnected ? 'checkmark-circle' : 'close-circle'} size={rf(16)} color={trackBStatus.isConnected ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error} />
                 </AnimatedPressable>
                 <AnimatedPressable
                   style={[styles.analyticsButton, showAnalytics && styles.analyticsButtonActive]}
                   onPress={() => setShowAnalytics(!showAnalytics)}
                   scaleValue={0.95}
                 >
-                  <Text style={styles.analyticsIcon}>📊</Text>
+                  <Ionicons name="stats-chart-outline" size={rf(16)} color={showAnalytics ? ResponsiveTheme.colors.white : ResponsiveTheme.colors.text} />
                 </AnimatedPressable>
                 <AnimatedPressable style={styles.addButton} onPress={handleAddProgressEntry} scaleValue={0.95} hapticFeedback={true} hapticType="medium">
-                  <Text style={styles.addIcon}>➕</Text>
+                  <Ionicons name="add" size={rf(16)} color={ResponsiveTheme.colors.white} />
                 </AnimatedPressable>
                 <AnimatedPressable style={styles.shareButton} scaleValue={0.95}>
-                  <Text style={styles.shareIcon}>📤</Text>
+                  <Ionicons name="share-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
                 </AnimatedPressable>
               </View>
             </View>
@@ -464,7 +465,10 @@ export const ProgressScreen: React.FC = () => {
             {/* Error State */}
             {progressError && (
               <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
-                <Text style={styles.errorText}>⚠️ {progressError}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rp(8), marginBottom: ResponsiveTheme.spacing.md }}>
+                  <Ionicons name="warning-outline" size={rf(24)} color={ResponsiveTheme.colors.error} />
+                  <Text style={styles.errorText}>{progressError}</Text>
+                </View>
                 <Button
                   title="Retry"
                   onPress={refreshAll}
@@ -478,14 +482,20 @@ export const ProgressScreen: React.FC = () => {
             {/* No Authentication State */}
             {!isAuthenticated && (
               <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
-                <Text style={styles.errorText}>🔐 Please sign in to track your progress</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rp(8) }}>
+                  <Ionicons name="lock-closed-outline" size={rf(24)} color={ResponsiveTheme.colors.error} />
+                  <Text style={styles.errorText}>Please sign in to track your progress</Text>
+                </View>
               </GlassCard>
             )}
 
             {/* No Data State */}
             {isAuthenticated && progressEntries.length === 0 && !progressLoading && (
               <GlassCard style={styles.errorCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
-                <Text style={styles.errorText}>📊 No progress data yet</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rp(8), marginBottom: ResponsiveTheme.spacing.md }}>
+                  <Ionicons name="stats-chart-outline" size={rf(24)} color={ResponsiveTheme.colors.textSecondary} />
+                  <Text style={styles.errorText}>No progress data yet</Text>
+                </View>
                 <Text style={styles.errorSubtext}>
                   Add your first measurement to start tracking!
                 </Text>
@@ -517,7 +527,7 @@ export const ProgressScreen: React.FC = () => {
                   <View style={styles.todaysStats}>
                     {/* Workout Progress */}
                     <View style={styles.todaysStat}>
-                      <Text style={styles.todaysStatIcon}>🏋️</Text>
+                      <Ionicons name="barbell-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
                       <View style={styles.todaysStatContent}>
                         <Text style={styles.todaysStatLabel}>Workout</Text>
                         <Text style={styles.todaysStatValue}>
@@ -530,7 +540,7 @@ export const ProgressScreen: React.FC = () => {
 
                     {/* Meals Progress */}
                     <View style={styles.todaysStat}>
-                      <Text style={styles.todaysStatIcon}>🍽️</Text>
+                      <Ionicons name="restaurant-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
                       <View style={styles.todaysStatContent}>
                         <Text style={styles.todaysStatLabel}>Meals</Text>
                         <Text style={styles.todaysStatValue}>
@@ -541,7 +551,7 @@ export const ProgressScreen: React.FC = () => {
 
                     {/* Calories Progress */}
                     <View style={styles.todaysStat}>
-                      <Text style={styles.todaysStatIcon}>🔥</Text>
+                      <Ionicons name="flame-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
                       <View style={styles.todaysStatContent}>
                         <Text style={styles.todaysStatLabel}>Calories</Text>
                         <Text style={styles.todaysStatValue}>
@@ -596,9 +606,11 @@ export const ProgressScreen: React.FC = () => {
                   <View style={styles.statHeader}>
                     <Text style={styles.statValue}>{stats.weight.current}</Text>
                     <Text style={styles.statUnit}>{stats.weight.unit}</Text>
-                    <Text style={styles.trendIcon}>
-                      {stats.weight.trend === 'decreasing' ? '📉' : '📈'}
-                    </Text>
+                    <Ionicons
+                      name={stats.weight.trend === 'decreasing' ? 'trending-down-outline' : 'trending-up-outline'}
+                      size={rf(16)}
+                      color={stats.weight.trend === 'decreasing' ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error}
+                    />
                   </View>
                   <Text style={styles.statLabel}>Weight</Text>
                   <Text
@@ -785,9 +797,11 @@ export const ProgressScreen: React.FC = () => {
                     <GlassCard key={activity.id} style={styles.activityCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                       <View style={styles.activityContent}>
                         <View style={styles.activityIcon}>
-                          <Text style={styles.activityEmoji}>
-                            {activity.type === 'workout' ? '🏋️‍♂️' : '🍽️'}
-                          </Text>
+                          <Ionicons
+                            name={activity.type === 'workout' ? 'barbell-outline' : 'restaurant-outline'}
+                            size={rf(20)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
                         </View>
                         <View style={styles.activityInfo}>
                           <Text style={styles.activityName}>{activityName}</Text>
@@ -801,7 +815,7 @@ export const ProgressScreen: React.FC = () => {
                           </Text>
                         </View>
                         <View style={styles.activityBadge}>
-                          <Text style={styles.activityBadgeText}>✓</Text>
+                          <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
                         </View>
                       </View>
                     </GlassCard>
@@ -830,7 +844,7 @@ export const ProgressScreen: React.FC = () => {
                         achievement.completed && styles.achievementIconCompleted,
                       ]}
                     >
-                      <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+                      <Ionicons name={(achievement as any).iconName} size={rf(24)} color={achievement.completed ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                     </View>
 
                     <View style={styles.achievementInfo}>
@@ -945,7 +959,7 @@ export const ProgressScreen: React.FC = () => {
               style={styles.modalCloseButton}
               scaleValue={0.95}
             >
-              <Text style={styles.modalCloseText}>✕</Text>
+              <Ionicons name="close" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
             </AnimatedPressable>
           </View>
 
@@ -967,9 +981,11 @@ export const ProgressScreen: React.FC = () => {
                 <GlassCard style={styles.modalActivityCard} elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
                   <View style={styles.activityContent}>
                     <View style={styles.activityIcon}>
-                      <Text style={styles.activityEmoji}>
-                        {activity.type === 'workout' ? '🏋️‍♂️' : '🍽️'}
-                      </Text>
+                      <Ionicons
+                        name={activity.type === 'workout' ? 'barbell-outline' : 'restaurant-outline'}
+                        size={rf(20)}
+                        color={ResponsiveTheme.colors.primary}
+                      />
                     </View>
                     <View style={styles.activityInfo}>
                       <Text style={styles.activityName}>{activityName}</Text>
@@ -983,7 +999,7 @@ export const ProgressScreen: React.FC = () => {
                       </Text>
                     </View>
                     <View style={styles.activityBadge}>
-                      <Text style={styles.activityBadgeText}>✓</Text>
+                      <Ionicons name="checkmark" size={rf(14)} color={ResponsiveTheme.colors.white} />
                     </View>
                   </View>
                 </GlassCard>

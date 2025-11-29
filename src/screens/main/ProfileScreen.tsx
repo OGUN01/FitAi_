@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Modal, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
@@ -67,49 +68,49 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   // Premium features display list (derived from subscription store)
   const premiumFeaturesList = [
     {
-      icon: '🤖',
+      icon: 'robot-outline',
       name: 'Unlimited AI Generations',
       description: 'Generate unlimited workouts and meal plans with AI',
       enabled: premiumFeatures?.unlimitedAI || false
     },
     {
-      icon: '📊',
+      icon: 'stats-chart-outline',
       name: 'Advanced Analytics',
       description: 'Detailed progress tracking and insights',
       enabled: premiumFeatures?.advancedAnalytics || false
     },
     {
-      icon: '🎨',
+      icon: 'color-palette-outline',
       name: 'Custom Themes',
       description: 'Personalize your app appearance',
       enabled: premiumFeatures?.customThemes || false
     },
     {
-      icon: '📤',
+      icon: 'share-outline',
       name: 'Export Data',
       description: 'Export your fitness data and reports',
       enabled: premiumFeatures?.exportData || false
     },
     {
-      icon: '🏆',
+      icon: 'trophy-outline',
       name: 'Premium Achievements',
       description: 'Unlock exclusive badges and rewards',
       enabled: premiumFeatures?.premiumAchievements || false
     },
     {
-      icon: '🚫',
+      icon: 'close-circle-outline',
       name: 'Ad-Free Experience',
       description: 'Enjoy FitAI without interruptions',
       enabled: premiumFeatures?.removeAds || false
     },
     {
-      icon: '💪',
+      icon: 'barbell-outline',
       name: 'Advanced Workouts',
       description: 'Access to premium workout templates',
       enabled: premiumFeatures?.advancedWorkouts || false
     },
     {
-      icon: '🔄',
+      icon: 'sync-outline',
       name: 'Multi-Device Sync',
       description: 'Sync your data across all devices',
       enabled: premiumFeatures?.multiDeviceSync || false
@@ -127,7 +128,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
           const isRecent = Date.now() - intent.timestamp < 5 * 60 * 1000;
 
           if (isRecent && intent.section) {
-            console.log('🎯 ProfileScreen: Found edit intent:', intent);
+            console.log('[ProfileScreen] Found edit intent:', intent);
             // Clear the intent
             await AsyncStorage.removeItem('profileEditIntent');
 
@@ -209,7 +210,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 1,
       title: 'Personal Information',
       subtitle: 'Update your profile details (10 fields)',
-      icon: '👤',
+      icon: 'person-outline',
       hasArrow: true,
       tabIndex: 1, // PersonalInfoTab
     },
@@ -217,7 +218,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 2,
       title: 'Diet Preferences',
       subtitle: 'Dietary preferences and health habits (27 fields)',
-      icon: '🍎',
+      icon: 'nutrition-outline',
       hasArrow: true,
       tabIndex: 2, // DietPreferencesTab
     },
@@ -225,7 +226,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 3,
       title: 'Body Analysis',
       subtitle: 'Track your body measurements (30 fields)',
-      icon: '📊',
+      icon: 'stats-chart-outline',
       hasArrow: true,
       tabIndex: 3, // BodyAnalysisTab
     },
@@ -233,7 +234,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 4,
       title: 'Workout Preferences',
       subtitle: 'Customize your training style (22 fields)',
-      icon: '🏋️',
+      icon: 'barbell-outline',
       hasArrow: true,
       tabIndex: 4, // WorkoutPreferencesTab
     },
@@ -241,7 +242,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 5,
       title: 'Health Metrics',
       subtitle: 'View calculated health metrics (50+ fields)',
-      icon: '📈',
+      icon: 'trending-up-outline',
       hasArrow: true,
       tabIndex: 5, // AdvancedReviewTab
     },
@@ -252,12 +253,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
     {
       id: 5,
       title: 'Subscription',
-      subtitle: subscriptionStatus === 'active' 
+      subtitle: subscriptionStatus === 'active'
         ? 'Manage your premium subscription'
         : subscriptionStatus === 'trialing'
         ? `${Math.ceil((trialInfo?.daysRemaining || 0))} days left in trial`
         : 'Upgrade to Premium',
-      icon: subscriptionStatus === 'active' ? '👑' : subscriptionStatus === 'trialing' ? '⏰' : '💎',
+      icon: subscriptionStatus === 'active' ? 'crown-outline' : subscriptionStatus === 'trialing' ? 'time-outline' : 'diamond-outline',
       hasArrow: true,
       isPremium: subscriptionStatus === 'active' || subscriptionStatus === 'trialing',
     },
@@ -265,28 +266,28 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       id: 6,
       title: 'Notifications',
       subtitle: 'Manage your alerts and reminders',
-      icon: '🔔',
+      icon: 'notifications-outline',
       hasArrow: true,
     },
     {
       id: 7,
       title: 'Privacy & Security',
       subtitle: 'Control your data and privacy',
-      icon: '🔒',
+      icon: 'lock-closed-outline',
       hasArrow: true,
     },
     {
       id: 8,
       title: 'Help & Support',
       subtitle: 'Get help and contact support',
-      icon: '❓',
+      icon: 'help-circle-outline',
       hasArrow: true,
     },
     {
       id: 9,
       title: 'About FitAI',
       subtitle: 'App version and information',
-      icon: 'ℹ️',
+      icon: 'information-circle-outline',
       hasArrow: true,
     },
   ];
@@ -296,12 +297,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
     {
       label: 'Workouts',
       value: userStats.totalWorkouts.toString(),
-      icon: '🏋️',
+      icon: 'barbell-outline',
     },
     {
       label: 'Streak',
       value: userStats.currentStreak.toString(),
-      icon: '🔥',
+      icon: 'flame-outline',
     },
     {
       label: 'Calories',
@@ -309,12 +310,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
         userStats.totalCaloriesBurned > 1000
           ? `${(userStats.totalCaloriesBurned / 1000).toFixed(1)}k`
           : userStats.totalCaloriesBurned.toString(),
-      icon: '⚡',
+      icon: 'flash-outline',
     },
     {
       label: 'Longest',
       value: userStats.longestStreak.toString(),
-      icon: '⏱️',
+      icon: 'timer-outline',
     },
   ];
 
@@ -351,7 +352,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   const handleEditProfileItemPress = async (item: any) => {
     setShowEditProfile(false); // Close the modal first
 
-    console.log('🔍 ProfileScreen: handleEditProfileItemPress called with item:', {
+    console.log('[DEBUG] ProfileScreen: handleEditProfileItemPress called with item:', {
       id: item.id,
       title: item.title,
       tabIndex: item.tabIndex,
@@ -365,17 +366,17 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
         editMode: true,
         initialTab: item.tabIndex,
         onEditComplete: () => {
-          console.log('✅ ProfileScreen: Edit completed, refreshing profile');
+          console.log('[SUCCESS] ProfileScreen: Edit completed, refreshing profile');
           // Profile data will be automatically refreshed by useUser hook
         },
         onEditCancel: () => {
-          console.log('❌ ProfileScreen: Edit cancelled');
+          console.log('[ERROR] ProfileScreen: Edit cancelled');
         },
       });
       return;
     }
 
-    console.warn('⚠️ ProfileScreen: Falling back to OLD EditContext (navigation or tabIndex missing)');
+    console.warn('[ProfileScreen] WARNING: Falling back to OLD EditContext (navigation or tabIndex missing)');
 
 
     // FALLBACK: Old EditContext approach (if navigation not available)
@@ -489,27 +490,27 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   // Handle sign up redirect to guest signup screen
   const handleSignUpRedirect = async () => {
     try {
-      console.log('🔄 ProfileScreen: Opening guest signup screen...');
+      console.log('[ProfileScreen] Opening guest signup screen...');
       
       // Show the guest signup screen instead of clearing data
       setShowGuestSignUp(true);
       
     } catch (error) {
-      console.error('❌ ProfileScreen: Failed to open signup screen:', error);
+      console.error('[ERROR] ProfileScreen: Failed to open signup screen:', error);
       Alert.alert('Error', 'Unable to open sign up. Please try again.');
     }
   };
 
   // Handle successful signup from guest signup screen
   const handleGuestSignUpSuccess = () => {
-    console.log('✅ ProfileScreen: Guest signup completed successfully');
+    console.log('[SUCCESS] ProfileScreen: Guest signup completed successfully');
     setShowGuestSignUp(false);
     // The app will automatically detect the new authenticated state
   };
 
   // Handle back from guest signup screen
   const handleGuestSignUpBack = () => {
-    console.log('🔙 ProfileScreen: User went back from guest signup');
+    console.log('[NAV] ProfileScreen: User went back from guest signup');
     setShowGuestSignUp(false);
   };
 
@@ -585,7 +586,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                       </Text>
                     </View>
                     <View style={styles.editBadge}>
-                      <Text style={styles.editBadgeIcon}>✏️</Text>
+                      <Ionicons name="create-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
                     </View>
                   </Animated.View>
                 </AnimatedPressable>
@@ -607,7 +608,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
               {/* Streak Badge (Floating) */}
               <GlassCard elevation={2} blurIntensity="medium" padding="sm" borderRadius="lg" style={styles.streakBadge}>
-                <Text style={styles.streakIcon}>🔥</Text>
+                <Ionicons name="flame-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
                 <Text style={styles.streakNumber}>{userStats?.currentStreak || 0}</Text>
                 <Text style={styles.streakLabel}>Day Streak</Text>
               </GlassCard>
@@ -619,7 +620,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             <View style={styles.section}>
               <GlassCard style={styles.guestPromptCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                 <View style={styles.guestPromptContent}>
-                  <Text style={styles.guestPromptIcon}>🔐</Text>
+                  <Ionicons name="lock-closed-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.guestPromptIcon} />
                   <Text style={styles.guestPromptTitle}>Create Your Account</Text>
                   <Text style={styles.guestPromptSubtitle}>
                     Save your progress and sync across devices by creating a free account
@@ -640,25 +641,25 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
           <View style={styles.section}>
             <View style={styles.quickStatsGrid}>
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
-                <Text style={styles.quickStatIcon}>💪</Text>
+                <Ionicons name="barbell-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
                 <Text style={styles.quickStatValue}>{userStats?.totalWorkouts || 0}</Text>
                 <Text style={styles.quickStatLabel}>Total Workouts</Text>
               </GlassCard>
 
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
-                <Text style={styles.quickStatIcon}>⚖️</Text>
+                <Ionicons name="scale-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
                 <Text style={styles.quickStatValue}>-2.5</Text>
                 <Text style={styles.quickStatLabel}>Weight Lost (kg)</Text>
               </GlassCard>
 
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
-                <Text style={styles.quickStatIcon}>🔥</Text>
+                <Ionicons name="flame-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
                 <Text style={styles.quickStatValue}>{userStats?.currentStreak || 0}</Text>
                 <Text style={styles.quickStatLabel}>Streak Days</Text>
               </GlassCard>
 
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
-                <Text style={styles.quickStatIcon}>🏆</Text>
+                <Ionicons name="trophy-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
                 <Text style={styles.quickStatValue}>12</Text>
                 <Text style={styles.quickStatLabel}>Achievements</Text>
               </GlassCard>
@@ -693,7 +694,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                     },
                   ]}
                 >
-                  <Text style={styles.settingIcon}>👤</Text>
+                  <Ionicons name="person-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Personal Information</Text>
                   <Animated.Text
                     style={[
@@ -739,7 +740,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                     },
                   ]}
                 >
-                  <Text style={styles.settingIcon}>🎯</Text>
+                  <Ionicons name="target-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Goals & Preferences</Text>
                   <Animated.Text
                     style={[
@@ -785,7 +786,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                     },
                   ]}
                 >
-                  <Text style={styles.settingIcon}>📏</Text>
+                  <Ionicons name="ruler-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Body Measurements</Text>
                   <Animated.Text
                     style={[
@@ -815,7 +816,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
               <AnimatedPressable onPress={() => setCurrentSettingsScreen('notifications')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🔔</Text>
+                  <Ionicons name="notifications-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Notifications</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -823,7 +824,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Theme', 'Theme selection coming soon!')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🎨</Text>
+                  <Ionicons name="color-palette-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Theme Preference</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -831,7 +832,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Units', 'Units selection coming soon!')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>📐</Text>
+                  <Ionicons name="speedometer-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Units</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -839,7 +840,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Language', 'Language selection coming soon!')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🌐</Text>
+                  <Ionicons name="globe-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Language</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -853,7 +854,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
               <AnimatedPressable onPress={() => setCurrentSettingsScreen('privacy')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🔒</Text>
+                  <Ionicons name="lock-closed-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Privacy & Security</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -861,7 +862,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => setCurrentSettingsScreen('help')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>❓</Text>
+                  <Ionicons name="help-circle-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Help & Support</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -869,7 +870,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => setCurrentSettingsScreen('about')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>ℹ️</Text>
+                  <Ionicons name="information-circle-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>About</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -877,7 +878,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Terms & Privacy', 'Opening legal documents...')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>📄</Text>
+                  <Ionicons name="document-text-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Terms & Privacy Policy</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -891,7 +892,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             <GlassCard elevation={1} padding="none" blurIntensity="light" borderRadius="lg">
               <AnimatedPressable onPress={() => Alert.alert('Export Data', 'Export feature coming soon!')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>📊</Text>
+                  <Ionicons name="stats-chart-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Export Data</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -899,7 +900,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Sync', 'Sync settings coming soon!')} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🔄</Text>
+                  <Ionicons name="sync-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Sync Settings</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -907,7 +908,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <View style={styles.settingDivider} />
               <AnimatedPressable onPress={() => Alert.alert('Clear Cache', 'Are you sure?', [{ text: 'Cancel' }, { text: 'Clear', style: 'destructive' }])} scaleValue={0.98}>
                 <View style={styles.settingRow}>
-                  <Text style={styles.settingIcon}>🗑️</Text>
+                  <Ionicons name="trash-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.settingIcon} />
                   <Text style={styles.settingLabel}>Clear Cache</Text>
                   <Text style={styles.settingArrow}>›</Text>
                 </View>
@@ -939,7 +940,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               <AnimatedPressable onPress={handleSignOut} scaleValue={0.97}>
                 <GlassCard style={styles.logoutCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                   <View style={styles.logoutContent}>
-                    <Text style={styles.logoutIcon}>🚪</Text>
+                    <Ionicons name="log-out-outline" size={rf(20)} color={ResponsiveTheme.colors.error} style={styles.logoutIcon} />
                     <Text style={styles.logoutText}>Sign Out</Text>
                   </View>
                 </GlassCard>
@@ -965,7 +966,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               onPress={() => setShowEditProfile(false)}
               scaleValue={0.95}
             >
-              <Text style={styles.modalCloseText}>✕</Text>
+              <Ionicons name="close" size={rf(24)} color={ResponsiveTheme.colors.text} />
             </AnimatedPressable>
             <Text style={styles.modalTitle}>Edit Profile</Text>
             <View style={styles.modalHeaderSpacer} />
@@ -1003,7 +1004,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                     <GlassCard style={styles.menuCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                       <View style={styles.menuContent}>
                         <View style={styles.menuIcon}>
-                          <Text style={styles.menuIconText}>{item.icon}</Text>
+                          <Ionicons name={item.icon as any} size={rf(20)} color={ResponsiveTheme.colors.primary} />
                         </View>
 
                         <View style={styles.menuInfo}>
@@ -1034,7 +1035,9 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
         <BlurView intensity={80} style={styles.blurContainer}>
           <View style={styles.confirmationDialog}>
             <GlassCard elevation={5} blurIntensity="strong" padding="lg" borderRadius="xl">
-              <Text style={styles.confirmationIcon}>🚪</Text>
+              <View style={styles.confirmationIconContainer}>
+                <Ionicons name="log-out-outline" size={rf(48)} color={ResponsiveTheme.colors.error} />
+              </View>
               <Text style={styles.confirmationTitle}>Sign Out</Text>
               <Text style={styles.confirmationMessage}>
                 Are you sure you want to sign out? Your progress will be saved.
@@ -1085,7 +1088,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               onPress={() => setShowSubscriptionScreen(false)}
               scaleValue={0.95}
             >
-              <Text style={styles.modalCloseText}>✕</Text>
+              <Ionicons name="close" size={rf(24)} color={ResponsiveTheme.colors.text} />
             </AnimatedPressable>
             <Text style={styles.modalTitle}>Subscription</Text>
             <View style={styles.modalHeaderSpacer} />
@@ -1102,10 +1105,13 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                 ]} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                   <View style={styles.subscriptionStatusContent}>
                     <View style={styles.subscriptionStatusHeader}>
-                      <Text style={styles.subscriptionStatusIcon}>
-                        {subscriptionStatus === 'active' ? '👑' : 
-                         subscriptionStatus === 'trialing' ? '⏰' : '💎'}
-                      </Text>
+                      <Ionicons
+                        name={subscriptionStatus === 'active' ? 'crown-outline' :
+                              subscriptionStatus === 'trialing' ? 'time-outline' : 'diamond-outline'}
+                        size={rf(32)}
+                        color={ResponsiveTheme.colors.primary}
+                        style={styles.subscriptionStatusIcon}
+                      />
                       <View style={styles.subscriptionStatusInfo}>
                         <Text style={styles.subscriptionStatusTitle}>
                           {subscriptionStatus === 'active' ? 'FitAI Premium' :
@@ -1114,7 +1120,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                         </Text>
                         <Text style={styles.subscriptionStatusSubtitle}>
                           {subscriptionStatus === 'active' ? 'Active subscription' :
-                           subscriptionStatus === 'trialing' 
+                           subscriptionStatus === 'trialing'
                              ? `${Math.ceil(trialInfo?.daysRemaining || 0)} days remaining`
                              : 'Limited features'}
                         </Text>
@@ -1143,7 +1149,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                 {premiumFeaturesList.map((feature, index) => (
                   <GlassCard key={index} style={styles.featureCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
                     <View style={styles.featureContent}>
-                      <Text style={styles.featureIcon}>{feature.icon}</Text>
+                      <Ionicons name={feature.icon as any} size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.featureIcon} />
                       <View style={styles.featureInfo}>
                         <Text style={styles.featureTitle}>{feature.name}</Text>
                         <Text style={styles.featureDescription}>{feature.description}</Text>
@@ -1152,12 +1158,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
                         styles.featureStatus,
                         feature.enabled && styles.featureActiveStatus
                       ]}>
-                        <Text style={[
-                          styles.featureStatusText,
-                          feature.enabled && styles.featureActiveStatusText
-                        ]}>
-                          {feature.enabled ? '✓' : '🔒'}
-                        </Text>
+                        <Ionicons
+                          name={feature.enabled ? 'checkmark' : 'lock-closed-outline'}
+                          size={rf(12)}
+                          color={feature.enabled ? ResponsiveTheme.colors.white : ResponsiveTheme.colors.textMuted}
+                        />
                       </View>
                     </View>
                   </GlassCard>
@@ -1231,7 +1236,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 // Main ProfileScreen component with EditProvider
 export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const handleEditComplete = async () => {
-    console.log('✅ Profile edit completed');
+    console.log('[SUCCESS] Profile edit completed');
 
     // Check if we should navigate back to a specific tab
     try {
@@ -1239,7 +1244,7 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
       if (intentData) {
         const intent = JSON.parse(intentData);
         if (intent.fromScreen === 'Diet') {
-          console.log('🔄 ProfileScreen: Navigating back to Diet tab after edit completion');
+          console.log('[ProfileScreen] Navigating back to Diet tab after edit completion');
           // We need to access the main navigation to switch tabs
           // For now, we'll show a success message and let the user manually go back
           Alert.alert(
@@ -1260,7 +1265,7 @@ export const ProfileScreen: React.FC<{ navigation?: any }> = ({ navigation }) =>
     <EditProvider
       onEditComplete={handleEditComplete}
       onEditCancel={() => {
-        console.log('❌ Profile edit cancelled');
+        console.log('[ERROR] Profile edit cancelled');
       }}
     >
       <ProfileScreenInternal navigation={navigation} />
@@ -1426,7 +1431,6 @@ const styles = StyleSheet.create({
   },
 
   quickStatIcon: {
-    fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -1462,9 +1466,6 @@ const styles = StyleSheet.create({
     marginRight: ResponsiveTheme.spacing.md,
   },
 
-  menuIconText: {
-    fontSize: rf(20),
-  },
 
   menuInfo: {
     flex: 1,
@@ -1547,7 +1548,6 @@ const styles = StyleSheet.create({
   },
 
   logoutIcon: {
-    fontSize: rf(20),
     marginRight: ResponsiveTheme.spacing.sm,
   },
 
@@ -1573,7 +1573,6 @@ const styles = StyleSheet.create({
   },
 
   guestPromptIcon: {
-    fontSize: rf(32),
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -1736,7 +1735,6 @@ const styles = StyleSheet.create({
   },
 
   subscriptionStatusIcon: {
-    fontSize: rf(32),
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1788,7 +1786,6 @@ const styles = StyleSheet.create({
   },
 
   featureIcon: {
-    fontSize: rf(24),
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1822,15 +1819,6 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.success,
   },
 
-  featureStatusText: {
-    fontSize: rf(12),
-    color: ResponsiveTheme.colors.textMuted,
-  },
-
-  featureActiveStatusText: {
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-  },
 
   // Action buttons styles
   upgradeButton: {
@@ -1896,9 +1884,6 @@ const styles = StyleSheet.create({
     borderColor: ResponsiveTheme.colors.background,
   },
 
-  editBadgeIcon: {
-    fontSize: rf(16),
-  },
 
   heroName: {
     fontSize: ResponsiveTheme.fontSize.xxl,
@@ -1921,9 +1906,6 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.sm,
   },
 
-  streakIcon: {
-    fontSize: rf(20),
-  },
 
   streakNumber: {
     fontSize: ResponsiveTheme.fontSize.lg,
@@ -1949,7 +1931,6 @@ const styles = StyleSheet.create({
   },
 
   settingIcon: {
-    fontSize: rf(24),
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1984,9 +1965,8 @@ const styles = StyleSheet.create({
     maxWidth: rw(400),
   },
 
-  confirmationIcon: {
-    fontSize: rf(48),
-    textAlign: 'center',
+  confirmationIconContainer: {
+    alignItems: 'center',
     marginBottom: ResponsiveTheme.spacing.md,
   },
 

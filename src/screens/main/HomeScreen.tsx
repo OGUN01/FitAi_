@@ -11,6 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button } from '../../components/ui';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -189,40 +190,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         if (Platform.OS === 'ios') {
           // iOS - HealthKit integration
           if (isHealthKitAuthorized) {
-            console.log('🍎 Syncing health data on home screen load...');
+            console.log('[HEALTH] Syncing health data on home screen load...');
             syncHealthData();
           } else if (healthSettings.healthKitEnabled) {
-            console.log('🍎 Initializing HealthKit...');
+            console.log('[HEALTH] Initializing HealthKit...');
             initializeHealthKit();
           }
         } else if (Platform.OS === 'android') {
           // Android - Health Connect integration (preferred) or Google Fit fallback
           if (healthSettings.healthConnectEnabled && healthSettings.preferredProvider === 'healthconnect') {
             if (isHealthConnectAuthorized) {
-              console.log('🔗 Syncing Health Connect data on home screen load...');
+              console.log('[HEALTH] Syncing Health Connect data on home screen load...');
               syncFromHealthConnect(7);
             } else {
-              console.log('🔗 Initializing Health Connect...');
+              console.log('[HEALTH] Initializing Health Connect...');
               initializeHealthConnect();
             }
           } else if (healthSettings.preferredProvider === 'googlefit') {
             // Fallback to Google Fit if user prefers it
-            console.log('🤖 Initializing Google Fit as fallback...');
+            console.log('[HEALTH] Initializing Google Fit as fallback...');
             initializeGoogleFit();
           }
         }
-        
+
         // Initialize analytics if not already done
         if (!analyticsInitialized) {
-          console.log('📊 Initializing analytics...');
+          console.log('[ANALYTICS] Initializing analytics...');
           initializeAnalytics();
         } else {
-          console.log('📊 Refreshing analytics...');
+          console.log('[ANALYTICS] Refreshing analytics...');
           refreshAnalytics();
         }
-        
+
         // Initialize subscription system
-        console.log('💳 Initializing subscription system...');
+        console.log('[SUBSCRIPTION] Initializing subscription system...');
         initializeSubscription();
       } catch (error) {
         console.error('Failed to load home data:', error);
@@ -340,14 +341,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
   // Handle successful signup from guest signup screen
   const handleGuestSignUpSuccess = () => {
-    console.log('✅ HomeScreen: Guest signup completed successfully');
+    console.log('[SUCCESS] HomeScreen: Guest signup completed successfully');
     setShowGuestSignUp(false);
     // The app will automatically detect the new authenticated state
   };
 
   // Handle back from guest signup screen
   const handleGuestSignUpBack = () => {
-    console.log('🔙 HomeScreen: User went back from guest signup');
+    console.log('[BACK] HomeScreen: User went back from guest signup');
     setShowGuestSignUp(false);
   };
 
@@ -448,7 +449,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   borderRadius="lg"
                   style={styles.streakBadge}
                 >
-                  <Text style={styles.streakIcon}>🔥</Text>
+                  <View style={styles.streakIconContainer}>
+                    <Ionicons name="flame-outline" size={rf(18)} color={ResponsiveTheme.colors.warning} />
+                  </View>
                   <Text style={styles.streakNumber}>{realStreak || userStats?.currentStreak || 0}</Text>
                 </GlassCard>
                 <AnimatedPressable
@@ -458,7 +461,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   hapticFeedback={true}
                   hapticType="light"
                 >
-                  <Text style={styles.notificationIcon}>🔔</Text>
+                  <Ionicons name="notifications-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
                   {/* Unread count badge can be added here */}
                 </AnimatedPressable>
               </View>
@@ -500,7 +503,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <View style={styles.section}>
                 <GlassCard elevation={3} blurIntensity="light" padding="md" borderRadius="lg" style={styles.guestPromptCard}>
                   <View style={styles.guestPromptHeader}>
-                    <Text style={styles.guestPromptIcon}>💾</Text>
+                    <View style={styles.guestPromptIconContainer}>
+                      <Ionicons name="save-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
+                    </View>
                     <View style={styles.guestPromptText}>
                       <Text style={styles.guestPromptTitle}>Save Your Progress</Text>
                       <Text style={styles.guestPromptSubtitle}>
@@ -527,7 +532,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <GlassCard elevation={3} blurIntensity="light" padding="md" borderRadius="lg" style={styles.workoutCard}>
                 <View style={styles.workoutCardContent}>
                   <View style={styles.workoutThumbnail}>
-                    <Text style={styles.workoutThumbnailIcon}>💪</Text>
+                    <Ionicons name="barbell-outline" size={rf(40)} color={ResponsiveTheme.colors.primary} />
                   </View>
                   <View style={styles.workoutInfo}>
                     <Text style={styles.workoutName}>Full Body Strength</Text>
@@ -570,28 +575,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 >
                   <View style={styles.mealCard}>
                     <View style={styles.mealImage}>
-                      <Text style={styles.mealEmoji}>🍳</Text>
+                      <Ionicons name="sunny-outline" size={rf(40)} color={ResponsiveTheme.colors.warning} />
                     </View>
                     <Text style={styles.mealLabel}>Breakfast</Text>
                     <Text style={styles.mealCalories}>350 cal</Text>
                   </View>
                   <View style={styles.mealCard}>
                     <View style={styles.mealImage}>
-                      <Text style={styles.mealEmoji}>🥗</Text>
+                      <Ionicons name="leaf-outline" size={rf(40)} color={ResponsiveTheme.colors.success} />
                     </View>
                     <Text style={styles.mealLabel}>Lunch</Text>
                     <Text style={styles.mealCalories}>520 cal</Text>
                   </View>
                   <View style={styles.mealCard}>
                     <View style={styles.mealImage}>
-                      <Text style={styles.mealEmoji}>🍗</Text>
+                      <Ionicons name="restaurant-outline" size={rf(40)} color={ResponsiveTheme.colors.primary} />
                     </View>
                     <Text style={styles.mealLabel}>Dinner</Text>
                     <Text style={styles.mealCalories}>480 cal</Text>
                   </View>
                   <View style={styles.mealCard}>
                     <View style={styles.mealImage}>
-                      <Text style={styles.mealEmoji}>🍎</Text>
+                      <Ionicons name="nutrition-outline" size={rf(40)} color={ResponsiveTheme.colors.error} />
                     </View>
                     <Text style={styles.mealLabel}>Snacks</Text>
                     <Text style={styles.mealCalories}>150 cal</Text>
@@ -617,7 +622,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         end: { x: 1, y: 1 },
                       }}
                     >
-                      <Text style={styles.quickStatIcon}>🔥</Text>
+                      <Ionicons name="flame-outline" size={rf(24)} color="#FF6B6B" />
                     </MiniProgressRing>
                     <Text style={styles.quickStatValue}>
                       {realCaloriesBurned || userStats?.totalCaloriesBurned || 0}
@@ -637,7 +642,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         end: { x: 1, y: 1 },
                       }}
                     >
-                      <Text style={styles.quickStatIcon}>👟</Text>
+                      <Ionicons name="walk-outline" size={rf(24)} color="#4CAF50" />
                     </MiniProgressRing>
                     <Text style={styles.quickStatValue}>
                       {healthMetrics?.steps || 0}
@@ -657,7 +662,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                         end: { x: 1, y: 1 },
                       }}
                     >
-                      <Text style={styles.quickStatIcon}>💧</Text>
+                      <Ionicons name="water-outline" size={rf(24)} color="#2196F3" />
                     </MiniProgressRing>
                     <Text style={styles.quickStatValue}>1.5L</Text>
                     <Text style={styles.quickStatLabel}>Water</Text>
@@ -669,7 +674,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             {/* Achievement Highlights */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🏆 Achievement Highlights</Text>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="trophy-outline" size={rf(20)} color={ResponsiveTheme.colors.warning} />
+                  <Text style={styles.sectionTitle}> Achievement Highlights</Text>
+                </View>
                 <AnimatedPressable onPress={() => onNavigateToTab?.('analytics')} scaleValue={0.95} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>View All</Text>
                 </AnimatedPressable>
@@ -680,7 +688,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Recent Achievements */}
                   {recentAchievements.length > 0 && (
                     <View style={styles.achievementGroup}>
-                      <Text style={styles.achievementGroupTitle}>🎉 Recently Earned</Text>
+                      <View style={styles.achievementGroupTitleRow}>
+                        <Ionicons name="sparkles-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+                        <Text style={styles.achievementGroupTitle}> Recently Earned</Text>
+                      </View>
                       <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -702,7 +713,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Nearly Completed */}
                   {nearlyCompleted.length > 0 && (
                     <View style={styles.achievementGroup}>
-                      <Text style={styles.achievementGroupTitle}>🔥 Almost There</Text>
+                      <View style={styles.achievementGroupTitleRow}>
+                        <Ionicons name="flame-outline" size={rf(16)} color={ResponsiveTheme.colors.warning} />
+                        <Text style={styles.achievementGroupTitle}> Almost There</Text>
+                      </View>
                       {nearlyCompleted.map((achievement, index) => (
                         <GlassCard key={index} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.progressCard}>
                           <View style={styles.progressCardContent}>
@@ -735,7 +749,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               ) : (
                 <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.emptyAchievementCard}>
                   <View style={styles.emptyAchievementContent}>
-                    <Text style={styles.emptyAchievementIcon}>🏆</Text>
+                    <View style={styles.emptyAchievementIconContainer}>
+                      <Ionicons name="trophy-outline" size={rf(48)} color={ResponsiveTheme.colors.warning} />
+                    </View>
                     <Text style={styles.emptyAchievementTitle}>Start Earning Achievements</Text>
                     <Text style={styles.emptyAchievementText}>
                       Complete workouts, hit goals, and maintain streaks to unlock 131 unique achievements!
@@ -760,7 +776,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
                   <View style={styles.activityContent}>
                     <View style={styles.activityIconContainer}>
-                      <Text style={styles.activityIcon}>💪</Text>
+                      <Ionicons name="barbell-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
                     </View>
                     <View style={styles.activityInfo}>
                       <Text style={styles.activityType}>Full Body Workout</Text>
@@ -774,7 +790,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
                   <View style={styles.activityContent}>
                     <View style={styles.activityIconContainer}>
-                      <Text style={styles.activityIcon}>🥗</Text>
+                      <Ionicons name="leaf-outline" size={rf(24)} color={ResponsiveTheme.colors.success} />
                     </View>
                     <View style={styles.activityInfo}>
                       <Text style={styles.activityType}>Logged Lunch</Text>
@@ -788,7 +804,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
                   <View style={styles.activityContent}>
                     <View style={styles.activityIconContainer}>
-                      <Text style={styles.activityIcon}>🏆</Text>
+                      <Ionicons name="trophy-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
                     </View>
                     <View style={styles.activityInfo}>
                       <Text style={styles.activityType}>Achievement Unlocked</Text>
@@ -806,14 +822,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 {/* Icon Grid Preview */}
                 <View style={styles.ptIconGrid}>
                   <View style={styles.ptIconRow}>
-                    <Text style={styles.ptIcon}>🏋️</Text>
-                    <Text style={styles.ptIcon}>🎯</Text>
-                    <Text style={styles.ptIcon}>💪</Text>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="fitness-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
+                    </View>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="locate-outline" size={rf(24)} color={ResponsiveTheme.colors.error} />
+                    </View>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="barbell-outline" size={rf(24)} color={ResponsiveTheme.colors.success} />
+                    </View>
                   </View>
                   <View style={styles.ptIconRow}>
-                    <Text style={styles.ptIcon}>⚡</Text>
-                    <Text style={styles.ptIcon}>📊</Text>
-                    <Text style={styles.ptIcon}>🏆</Text>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="flash-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
+                    </View>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="stats-chart-outline" size={rf(24)} color={ResponsiveTheme.colors.info} />
+                    </View>
+                    <View style={styles.ptIconContainer}>
+                      <Ionicons name="trophy-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
+                    </View>
                   </View>
                 </View>
 
@@ -845,7 +873,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.premiumPromptCard}>
                   <View style={styles.premiumPromptContent}>
                     <View style={styles.premiumPromptHeader}>
-                      <Text style={styles.premiumPromptIcon}>🏆</Text>
+                      <View style={styles.premiumPromptIconContainer}>
+                        <Ionicons name="trophy-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
+                      </View>
                       <Text style={styles.premiumPromptBadge}>PREMIUM</Text>
                     </View>
                     <Text style={styles.premiumPromptTitle}>Unlock Premium Achievements</Text>
@@ -853,9 +883,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       You've earned {getTotalBadgesEarned()} badges! Unlock 50+ exclusive premium achievements, advanced progress tracking, and achievement analytics.
                     </Text>
                     <View style={styles.premiumPromptFeatures}>
-                      <Text style={styles.premiumFeatureItem}>✨ Exclusive premium badges</Text>
-                      <Text style={styles.premiumFeatureItem}>📊 Achievement analytics</Text>
-                      <Text style={styles.premiumFeatureItem}>🎯 Advanced goal tracking</Text>
+                      <View style={styles.premiumFeatureRow}>
+                        <Ionicons name="sparkles-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumFeatureItem}> Exclusive premium badges</Text>
+                      </View>
+                      <View style={styles.premiumFeatureRow}>
+                        <Ionicons name="stats-chart-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumFeatureItem}> Achievement analytics</Text>
+                      </View>
+                      <View style={styles.premiumFeatureRow}>
+                        <Ionicons name="locate-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumFeatureItem}> Advanced goal tracking</Text>
+                      </View>
                     </View>
                     <Button
                       title={trialInfo.isEligible ? 'Start Free Trial' : 'Upgrade to Premium'}
@@ -874,9 +913,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             {/* Health Overview */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🩺 Health Overview</Text>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="medical-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
+                  <Text style={styles.sectionTitle}> Health Overview</Text>
+                </View>
                 <AnimatedPressable onPress={() => {
-                  console.log('🔧 STEP 4 TEST: Opening Health Settings Modal');
+                  console.log('[UI] STEP 4 TEST: Opening Health Settings Modal');
                   setShowHealthSettingsModal(true);
                 }} scaleValue={0.95} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>Settings</Text>
@@ -885,7 +927,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               <AnimatedPressable
                 onPress={() => {
-                  console.log('🔧 STEP 4 TEST: Opening Health Settings Modal from section');
+                  console.log('[UI] STEP 4 TEST: Opening Health Settings Modal from section');
                   setShowHealthSettingsModal(true);
                 }}
                 scaleValue={0.97}
@@ -900,7 +942,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     {/* Steps */}
                     <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                       <View style={styles.healthMetricHeader}>
-                        <Text style={styles.healthMetricIcon}>👣</Text>
+                        <Ionicons name="footsteps-outline" size={rf(24)} color={ResponsiveTheme.colors.success} />
                         <View style={styles.healthMetricProgress}>
                           <View style={styles.healthProgressRing}>
                             <View 
@@ -926,7 +968,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     {/* Active Calories */}
                     <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                       <View style={styles.healthMetricHeader}>
-                        <Text style={styles.healthMetricIcon}>🔥</Text>
+                        <Ionicons name="flame-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
                         <View style={styles.healthMetricProgress}>
                           <View style={styles.healthProgressRing}>
                             <View 
@@ -954,7 +996,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     {healthMetrics.sleepHours && (
                       <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                         <View style={styles.healthMetricHeader}>
-                          <Text style={styles.healthMetricIcon}>😴</Text>
+                          <Ionicons name="moon-outline" size={rf(24)} color={ResponsiveTheme.colors.info} />
                           <View style={styles.healthMetricProgress}>
                             <View style={styles.healthProgressRing}>
                               <View 
@@ -983,7 +1025,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     {healthMetrics.heartRate && (
                       <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.healthMetricCard}>
                         <View style={styles.healthMetricHeader}>
-                          <Text style={styles.healthMetricIcon}>❤️</Text>
+                          <Ionicons name="heart-outline" size={rf(24)} color={ResponsiveTheme.colors.error} />
                           <Text style={styles.healthHeartRateStatus}>
                             {healthMetrics.heartRate > 100 ? 'Active' : 'Resting'}
                           </Text>
@@ -1006,7 +1048,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {healthTipOfDay && (
                     <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthInsightCard}>
                       <View style={styles.healthInsightHeader}>
-                        <Text style={styles.healthInsightIcon}>💡</Text>
+                        <Ionicons name="bulb-outline" size={rf(20)} color={ResponsiveTheme.colors.warning} />
                         <Text style={styles.healthInsightTitle}>Health Insight</Text>
                       </View>
                       <Text style={styles.healthInsightText}>{healthTipOfDay}</Text>
@@ -1016,11 +1058,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Sync Status */}
                   <View style={styles.healthSyncStatus}>
                     <View style={styles.healthSyncIndicator}>
-                      <Text style={styles.healthSyncIcon}>
-                        {syncStatus === 'syncing' ? '🔄' : 
-                         syncStatus === 'success' ? '✅' : 
-                         syncStatus === 'error' ? '❌' : '⏸️'}
-                      </Text>
+                      <View style={styles.healthSyncIconContainer}>
+                        {syncStatus === 'syncing' ? (
+                          <Ionicons name="sync-outline" size={rf(16)} color={ResponsiveTheme.colors.info} />
+                        ) : syncStatus === 'success' ? (
+                          <Ionicons name="checkmark-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+                        ) : syncStatus === 'error' ? (
+                          <Ionicons name="close-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.error} />
+                        ) : (
+                          <Ionicons name="pause-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
+                        )}
+                      </View>
                       <Text style={styles.healthSyncText}>
                         {syncStatus === 'syncing' ? 'Syncing health data...' :
                          syncStatus === 'success' ? 'Health data synced' :
@@ -1042,7 +1090,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               ) : (
                 <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthSetupCard}>
                   <View style={styles.healthSetupContent}>
-                    <Text style={styles.healthSetupIcon}>🩺</Text>
+                    <View style={styles.healthSetupIconContainer}>
+                      <Ionicons name="medical-outline" size={rf(48)} color={ResponsiveTheme.colors.success} />
+                    </View>
                     <Text style={styles.healthSetupTitle}>Connect Health Data</Text>
                     <Text style={styles.healthSetupText}>
                       Sync with Apple Health or Google Fit to track steps, heart rate, sleep, and more for personalized workout recommendations.
@@ -1069,7 +1119,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             {/* Analytics Insights */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>📊 Performance Insights</Text>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons name="stats-chart-outline" size={rf(20)} color={ResponsiveTheme.colors.info} />
+                  <Text style={styles.sectionTitle}> Performance Insights</Text>
+                </View>
                 <AnimatedPressable scaleValue={0.97} onPress={() => onNavigateToTab?.('analytics')} hapticFeedback={true} hapticType="light">
                   <Text style={styles.seeAllText}>Full Report</Text>
                 </AnimatedPressable>
@@ -1086,13 +1139,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       </View>
                       <View style={styles.performanceDetailsSection}>
                         <Text style={styles.performanceTitle}>Overall Performance</Text>
-                        <Text style={styles.performanceSubtitle}>
-                          {currentAnalytics.overallScore >= 90 ? '🏆 Exceptional' :
-                           currentAnalytics.overallScore >= 80 ? '🌟 Excellent' :
-                           currentAnalytics.overallScore >= 70 ? '💪 Good' :
-                           currentAnalytics.overallScore >= 60 ? '📈 Improving' :
-                           '🎯 Getting Started'}
-                        </Text>
+                        <View style={styles.performanceSubtitleRow}>
+                          {currentAnalytics.overallScore >= 90 ? (
+                            <>
+                              <Ionicons name="trophy-outline" size={rf(14)} color={ResponsiveTheme.colors.warning} />
+                              <Text style={styles.performanceSubtitle}> Exceptional</Text>
+                            </>
+                          ) : currentAnalytics.overallScore >= 80 ? (
+                            <>
+                              <Ionicons name="star-outline" size={rf(14)} color={ResponsiveTheme.colors.warning} />
+                              <Text style={styles.performanceSubtitle}> Excellent</Text>
+                            </>
+                          ) : currentAnalytics.overallScore >= 70 ? (
+                            <>
+                              <Ionicons name="barbell-outline" size={rf(14)} color={ResponsiveTheme.colors.success} />
+                              <Text style={styles.performanceSubtitle}> Good</Text>
+                            </>
+                          ) : currentAnalytics.overallScore >= 60 ? (
+                            <>
+                              <Ionicons name="trending-up-outline" size={rf(14)} color={ResponsiveTheme.colors.info} />
+                              <Text style={styles.performanceSubtitle}> Improving</Text>
+                            </>
+                          ) : (
+                            <>
+                              <Ionicons name="locate-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                              <Text style={styles.performanceSubtitle}> Getting Started</Text>
+                            </>
+                          )}
+                        </View>
                         <View style={styles.performanceProgress}>
                           <View style={styles.performanceProgressBar}>
                             <View 
@@ -1110,19 +1184,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Quick Stats Grid */}
                   <View style={styles.analyticsStatsGrid}>
                     <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
-                      <Text style={styles.analyticsStatIcon}>🔥</Text>
+                      <Ionicons name="flame-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.currentStreak}</Text>
                       <Text style={styles.analyticsStatLabel}>Day Streak</Text>
                     </GlassCard>
 
                     <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
-                      <Text style={styles.analyticsStatIcon}>⭐</Text>
+                      <Ionicons name="star-outline" size={rf(24)} color={ResponsiveTheme.colors.warning} />
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.averageScore}</Text>
                       <Text style={styles.analyticsStatLabel}>Avg Score</Text>
                     </GlassCard>
 
                     <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.analyticsStatCard}>
-                      <Text style={styles.analyticsStatIcon}>💪</Text>
+                      <Ionicons name="barbell-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
                       <Text style={styles.analyticsStatValue}>{analyticsSummary.totalWorkouts}</Text>
                       <Text style={styles.analyticsStatLabel}>Workouts</Text>
                     </GlassCard>
@@ -1131,7 +1205,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {/* Top Insights */}
                   {getTopInsights().length > 0 && (
                     <View style={styles.insightsSection}>
-                      <Text style={styles.insightsSectionTitle}>✨ Key Insights</Text>
+                      <View style={styles.insightsSectionTitleRow}>
+                        <Ionicons name="sparkles-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.insightsSectionTitle}> Key Insights</Text>
+                      </View>
                       {getTopInsights().slice(0, 2).map((insight, index) => (
                         <GlassCard key={index} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.insightCard}>
                           <Text style={styles.insightText}>{insight}</Text>
@@ -1144,7 +1221,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {getPositiveTrends().length > 0 && (
                     <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.trendsCard}>
                       <View style={styles.trendsHeader}>
-                        <Text style={styles.trendsIcon}>📈</Text>
+                        <Ionicons name="trending-up-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
                         <Text style={styles.trendsTitle}>Positive Trends</Text>
                       </View>
                       <View style={styles.trendsList}>
@@ -1159,7 +1236,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {getImprovementAreas().length > 0 && (
                     <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.improvementCard}>
                       <View style={styles.improvementHeader}>
-                        <Text style={styles.improvementIcon}>🎯</Text>
+                        <Ionicons name="locate-outline" size={rf(20)} color={ResponsiveTheme.colors.error} />
                         <Text style={styles.improvementTitle}>Focus Areas</Text>
                       </View>
                       <Text style={styles.improvementText}>
@@ -1179,18 +1256,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   {getPredictiveInsights() && (
                     <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.predictiveCard}>
                       <View style={styles.predictiveHeader}>
-                        <Text style={styles.predictiveIcon}>🔮</Text>
+                        <Ionicons name="eye-outline" size={rf(20)} color={ResponsiveTheme.colors.info} />
                         <Text style={styles.predictiveTitle}>Forecast</Text>
                       </View>
                       <Text style={styles.predictiveText}>
-                        {getPredictiveInsights()?.goalAchievementProbability 
+                        {getPredictiveInsights()?.goalAchievementProbability
                           ? `${Math.round(getPredictiveInsights()!.goalAchievementProbability * 100)}% chance to reach your goals this month`
                           : 'Keep tracking to see predictive insights'}
                       </Text>
                       {getPredictiveInsights()?.plateauRisk && (
-                        <Text style={styles.predictiveWarning}>
-                          ⚠️ Plateau risk detected - consider varying your routine
-                        </Text>
+                        <View style={styles.predictiveWarningRow}>
+                          <Ionicons name="warning-outline" size={rf(14)} color={ResponsiveTheme.colors.warning} />
+                          <Text style={styles.predictiveWarning}> Plateau risk detected - consider varying your routine</Text>
+                        </View>
                       )}
                     </GlassCard>
                   )}
@@ -1198,7 +1276,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               ) : (
                 <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.analyticsEmptyCard}>
                   <View style={styles.analyticsEmptyContent}>
-                    <Text style={styles.analyticsEmptyIcon}>📊</Text>
+                    <View style={styles.analyticsEmptyIconContainer}>
+                      <Ionicons name="stats-chart-outline" size={rf(48)} color={ResponsiveTheme.colors.info} />
+                    </View>
                     <Text style={styles.analyticsEmptyTitle}>Start Building Your Analytics</Text>
                     <Text style={styles.analyticsEmptyText}>
                       Complete workouts, log meals, and track progress to unlock powerful insights and personalized recommendations.
@@ -1221,7 +1301,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.premiumAnalyticsCard}>
                   <View style={styles.premiumAnalyticsContent}>
                     <View style={styles.premiumAnalyticsHeader}>
-                      <Text style={styles.premiumAnalyticsIcon}>📈</Text>
+                      <Ionicons name="trending-up-outline" size={rf(24)} color={ResponsiveTheme.colors.success} />
                       <View style={styles.premiumAnalyticsTextSection}>
                         <Text style={styles.premiumAnalyticsTitle}>Unlock Advanced Analytics</Text>
                         <Text style={styles.premiumAnalyticsBadge}>PREMIUM FEATURE</Text>
@@ -1230,31 +1310,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     <Text style={styles.premiumAnalyticsSubtitle}>
                       You've completed {analyticsSummary.totalWorkouts} workouts! Get deeper insights with premium analytics.
                     </Text>
-                    
+
                     <View style={styles.premiumAnalyticsFeatures}>
                       <View style={styles.premiumAnalyticsRow}>
-                        <Text style={styles.premiumAnalyticsFeature}>🔮 Predictive body transformation forecasts</Text>
+                        <Ionicons name="eye-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumAnalyticsFeature}> Predictive body transformation forecasts</Text>
                       </View>
                       <View style={styles.premiumAnalyticsRow}>
-                        <Text style={styles.premiumAnalyticsFeature}>⚡ Plateau detection & prevention</Text>
+                        <Ionicons name="flash-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumAnalyticsFeature}> Plateau detection & prevention</Text>
                       </View>
                       <View style={styles.premiumAnalyticsRow}>
-                        <Text style={styles.premiumAnalyticsFeature}>📊 Detailed performance benchmarking</Text>
+                        <Ionicons name="stats-chart-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumAnalyticsFeature}> Detailed performance benchmarking</Text>
                       </View>
                       <View style={styles.premiumAnalyticsRow}>
-                        <Text style={styles.premiumAnalyticsFeature}>📈 Exportable progress reports</Text>
+                        <Ionicons name="trending-up-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                        <Text style={styles.premiumAnalyticsFeature}> Exportable progress reports</Text>
                       </View>
                     </View>
 
                     <View style={styles.premiumAnalyticsPreview}>
                       <Text style={styles.premiumAnalyticsPreviewTitle}>Preview: Your Potential Forecast</Text>
                       <View style={styles.premiumAnalyticsPreviewContent}>
-                        <Text style={styles.premiumAnalyticsPreviewText}>
-                          🎯 85% chance to reach your goals this month
-                        </Text>
-                        <Text style={styles.premiumAnalyticsPreviewText}>
-                          💪 Predicted 3.2kg muscle gain in 6 months
-                        </Text>
+                        <View style={styles.premiumAnalyticsPreviewRow}>
+                          <Ionicons name="locate-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                          <Text style={styles.premiumAnalyticsPreviewText}> 85% chance to reach your goals this month</Text>
+                        </View>
+                        <View style={styles.premiumAnalyticsPreviewRow}>
+                          <Ionicons name="barbell-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                          <Text style={styles.premiumAnalyticsPreviewText}> Predicted 3.2kg muscle gain in 6 months</Text>
+                        </View>
                         <View style={styles.premiumAnalyticsBlur}>
                           <Text style={styles.premiumAnalyticsBlurText}>Unlock to see more</Text>
                         </View>
@@ -1278,7 +1364,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.aiLimitCard}>
                   <View style={styles.aiLimitContent}>
                     <View style={styles.aiLimitHeader}>
-                      <Text style={styles.aiLimitIcon}>🤖</Text>
+                      <Ionicons name="hardware-chip-outline" size={rf(24)} color={ResponsiveTheme.colors.info} />
                       <View style={styles.aiLimitInfo}>
                         <Text style={styles.aiLimitTitle}>AI Usage Limit</Text>
                         <Text style={styles.aiLimitSubtitle}>2 of 3 daily AI generations used</Text>
@@ -1327,9 +1413,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                       {!todaysWorkoutInfo.hasWeeklyPlan
                         ? 'Start Your First Workout'
                         : todaysWorkoutInfo.isRestDay
-                          ? '😴 Rest Day'
+                          ? 'Rest Day'
                           : todaysWorkoutInfo.isCompleted
-                            ? '✅ Workout Complete!'
+                            ? 'Workout Complete!'
                             : todaysWorkoutInfo.workout?.title || todaysWorkoutInfo.dayStatus}
                     </Text>
                     <Text style={styles.workoutSubtitle}>
@@ -1343,23 +1429,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     </Text>
                   </View>
                   <View style={styles.workoutIcon}>
-                    <Text style={styles.workoutEmoji}>
-                      {!todaysWorkoutInfo.hasWeeklyPlan
-                        ? '🏋️'
-                        : todaysWorkoutInfo.isRestDay
-                          ? '😴'
-                          : todaysWorkoutInfo.isCompleted
-                            ? '✅'
-                            : todaysWorkoutInfo.workoutType === 'strength'
-                              ? '💪'
-                              : todaysWorkoutInfo.workoutType === 'cardio'
-                                ? '🏃'
-                                : todaysWorkoutInfo.workoutType === 'flexibility'
-                                  ? '🧘'
-                                  : todaysWorkoutInfo.workoutType === 'hiit'
-                                    ? '⚡'
-                                    : '🏋️'}
-                    </Text>
+                    {!todaysWorkoutInfo.hasWeeklyPlan ? (
+                      <Ionicons name="fitness-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} />
+                    ) : todaysWorkoutInfo.isRestDay ? (
+                      <Ionicons name="moon-outline" size={rf(32)} color={ResponsiveTheme.colors.info} />
+                    ) : todaysWorkoutInfo.isCompleted ? (
+                      <Ionicons name="checkmark-circle-outline" size={rf(32)} color={ResponsiveTheme.colors.success} />
+                    ) : todaysWorkoutInfo.workoutType === 'strength' ? (
+                      <Ionicons name="barbell-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} />
+                    ) : todaysWorkoutInfo.workoutType === 'cardio' ? (
+                      <Ionicons name="walk-outline" size={rf(32)} color={ResponsiveTheme.colors.error} />
+                    ) : todaysWorkoutInfo.workoutType === 'flexibility' ? (
+                      <Ionicons name="body-outline" size={rf(32)} color={ResponsiveTheme.colors.success} />
+                    ) : todaysWorkoutInfo.workoutType === 'hiit' ? (
+                      <Ionicons name="flash-outline" size={rf(32)} color={ResponsiveTheme.colors.warning} />
+                    ) : (
+                      <Ionicons name="fitness-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} />
+                    )}
                   </View>
                 </View>
 
@@ -1424,9 +1510,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   hapticType="medium"
                 >
                   <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
-                    <Text style={styles.actionIcon}>
-                      {todaysWorkoutInfo.isRestDay ? '😴' : '🏋️'}
-                    </Text>
+                    <View style={styles.actionIconContainer}>
+                      {todaysWorkoutInfo.isRestDay ? (
+                        <Ionicons name="moon-outline" size={rf(28)} color={ResponsiveTheme.colors.info} />
+                      ) : (
+                        <Ionicons name="fitness-outline" size={rf(28)} color={ResponsiveTheme.colors.primary} />
+                      )}
+                    </View>
                     <Text style={styles.actionText}>
                       {todaysWorkoutInfo.isRestDay
                         ? 'Rest Day'
@@ -1445,7 +1535,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   hapticType="medium"
                 >
                   <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
-                    <Text style={styles.actionIcon}>🍎</Text>
+                    <View style={styles.actionIconContainer}>
+                      <Ionicons name="nutrition-outline" size={rf(28)} color={ResponsiveTheme.colors.error} />
+                    </View>
                     <Text style={styles.actionText}>
                       {todaysData?.meals.length > 0 ? 'View Meals' : 'Plan Meals'}
                     </Text>
@@ -1460,7 +1552,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   hapticType="medium"
                 >
                   <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
-                    <Text style={styles.actionIcon}>📊</Text>
+                    <View style={styles.actionIconContainer}>
+                      <Ionicons name="stats-chart-outline" size={rf(28)} color={ResponsiveTheme.colors.info} />
+                    </View>
                     <Text style={styles.actionText}>View Progress</Text>
                   </GlassCard>
                 </AnimatedPressable>
@@ -1473,7 +1567,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   hapticType="medium"
                 >
                   <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.actionCard}>
-                    <Text style={styles.actionIcon}>⚙️</Text>
+                    <View style={styles.actionIconContainer}>
+                      <Ionicons name="settings-outline" size={rf(28)} color={ResponsiveTheme.colors.textSecondary} />
+                    </View>
                     <Text style={styles.actionText}>Settings</Text>
                   </GlassCard>
                 </AnimatedPressable>
@@ -1489,9 +1585,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   <GlassCard key={activity.id} elevation={1} blurIntensity="light" padding="md" borderRadius="lg" style={styles.activityCard}>
                     <View style={styles.activityItem}>
                       <View style={styles.activityIcon}>
-                        <Text style={styles.activityEmoji}>
-                          {activity.type === 'workout' ? '🏋️' : '🍎'}
-                        </Text>
+                        {activity.type === 'workout' ? (
+                          <Ionicons name="fitness-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
+                        ) : (
+                          <Ionicons name="nutrition-outline" size={rf(24)} color={ResponsiveTheme.colors.error} />
+                        )}
                       </View>
                       <View style={styles.activityContent}>
                         <Text style={styles.activityTitle}>{activity.name}</Text>
@@ -1510,7 +1608,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               ) : (
                 <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.emptyActivityCard}>
                   <View style={styles.emptyActivityContent}>
-                    <Text style={styles.emptyActivityIcon}>📈</Text>
+                    <View style={styles.emptyActivityIconContainer}>
+                      <Ionicons name="trending-up-outline" size={rf(48)} color={ResponsiveTheme.colors.success} />
+                    </View>
                     <Text style={styles.emptyActivityTitle}>
                       {hasRealData
                         ? 'Complete Activities to See History'
@@ -1548,22 +1648,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>🩺 Health Integration Settings</Text>
+            <View style={styles.modalTitleRow}>
+              <Ionicons name="medical-outline" size={rf(20)} color={ResponsiveTheme.colors.success} />
+              <Text style={styles.modalTitle}> Health Integration Settings</Text>
+            </View>
             <AnimatedPressable
               scaleValue={0.95}
               onPress={() => setShowHealthSettingsModal(false)}
               style={styles.modalCloseButton}
             >
-              <Text style={styles.modalCloseText}>✕</Text>
+              <Ionicons name="close-outline" size={rf(24)} color={ResponsiveTheme.colors.text} />
             </AnimatedPressable>
           </View>
           
           <ScrollView style={styles.modalContent}>
             <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.healthSettingCard}>
               <View style={styles.healthSettingHeader}>
-                <Text style={styles.healthSettingIcon}>
-                  {Platform.OS === 'ios' ? '🍎' : '🔗'}
-                </Text>
+                <View style={styles.healthSettingIconContainer}>
+                  {Platform.OS === 'ios' ? (
+                    <Ionicons name="logo-apple" size={rf(24)} color={ResponsiveTheme.colors.text} />
+                  ) : (
+                    <Ionicons name="link-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} />
+                  )}
+                </View>
                 <View style={styles.healthSettingInfo}>
                   <Text style={styles.healthSettingTitle}>
                     {Platform.OS === 'ios' ? 'Apple HealthKit' : 'Health Connect'}
@@ -1581,13 +1688,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                 <Button
                   title={(Platform.OS === 'ios' ? isHealthKitAuthorized : isHealthConnectAuthorized) ? 'Reconnect' : 'Connect'}
                   onPress={async () => {
-                    console.log('🔧 Connecting to health platform...');
+                    console.log('[HEALTH] Connecting to health platform...');
                     if (Platform.OS === 'ios') {
                       // iOS HealthKit
                       initializeHealthKit();
                     } else {
                       // Android Health Connect
-                      console.log('🔗 Attempting to initialize Health Connect...');
+                      console.log('[HEALTH] Attempting to initialize Health Connect...');
                       try {
                         // Step 1: Initialize Health Connect
                         console.log('Step 1: Initializing Health Connect...');
@@ -1598,38 +1705,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                           console.log('Step 2: Requesting Health Connect permissions...');
                           
                           // Show user what's happening
-                          alert('📱 Health Connect will now request permissions for:\\n\\n• Steps\\n• Heart Rate\\n• Active Calories\\n• Distance\\n• Weight\\n• Sleep Data\\n\\nPlease grant these permissions to enable health tracking.');
+                          alert('Health Connect will now request permissions for:\\n\\n- Steps\\n- Heart Rate\\n- Active Calories\\n- Distance\\n- Weight\\n- Sleep Data\\n\\nPlease grant these permissions to enable health tracking.');
                           
                           const permissionGranted = await requestHealthConnectPermissions();
                           
                           if (permissionGranted) {
-                            alert('✅ Health Connect connected successfully!\\n\\nYour health data will now sync automatically.');
-                            console.log('✅ Health Connect permissions granted');
+                            alert('Health Connect connected successfully!\\n\\nYour health data will now sync automatically.');
+                            console.log('[SUCCESS] Health Connect permissions granted');
                             
                             // Step 3: Perform initial data sync
                             console.log('Step 3: Performing initial health data sync...');
                             const syncResult = await syncFromHealthConnect(7);
                             
                             if (syncResult.success) {
-                              console.log('✅ Initial health data sync completed');
+                              console.log('[SUCCESS] Initial health data sync completed');
                               console.log('Synced data:', syncResult.data);
                             } else {
-                              console.warn('⚠️ Initial sync failed:', syncResult.error);
+                              console.warn('[WARNING] Initial sync failed:', syncResult.error);
                             }
                           } else {
-                            alert('❌ Health Connect permissions were denied.\\n\\nTo enable health tracking:\\n1. Go to Health Connect settings\\n2. Grant permissions for FitAI\\n3. Try connecting again');
+                            alert('Health Connect permissions were denied.\\n\\nTo enable health tracking:\\n1. Go to Health Connect settings\\n2. Grant permissions for FitAI\\n3. Try connecting again');
                             
                             // Optionally open Health Connect settings for user
                             const { healthConnectService } = await import('../../services/healthConnect');
                             await healthConnectService.openSettings();
                           }
                         } else {
-                          alert('✅ Health Connect is already connected!\\n\\nYour health data is syncing automatically.');
-                          console.log('✅ Health Connect already connected');
+                          alert('Health Connect is already connected!\\n\\nYour health data is syncing automatically.');
+                          console.log('[SUCCESS] Health Connect already connected');
                         }
                       } catch (error) {
-                        console.error('❌ Health Connect connection error:', error);
-                        alert(`❌ Error connecting to Health Connect:\\n\\n${error.message}\\n\\nPlease ensure Health Connect is installed and try again.`);
+                        console.error('[ERROR] Health Connect connection error:', error);
+                        alert(`Error connecting to Health Connect:\\n\\n${error.message}\\n\\nPlease ensure Health Connect is installed and try again.`);
                       }
                     }
                   }}
@@ -1641,41 +1748,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   <Button
                     title="Sync Now"
                     onPress={async () => {
-                      console.log('🔧 STEP 6 TEST: Manual sync triggered');
-                      console.log('🔄 Manual health data sync triggered');
-                      
+                      console.log('[UI] STEP 6 TEST: Manual sync triggered');
+                      console.log('[SYNC] Manual health data sync triggered');
+
                       try {
                         // Show loading state to user
-                        alert('🔄 Syncing health data...\\n\\nThis may take a few moments.');
+                        alert('Syncing health data...\\n\\nThis may take a few moments.');
                         
                         if (Platform.OS === 'ios') {
                           syncHealthData(true);
                         } else {
                           // Sync from Health Connect for Android
-                          console.log('🔗 Attempting to sync from Health Connect...');
+                          console.log('[HEALTH] Attempting to sync from Health Connect...');
                           const result = await syncFromHealthConnect(7);
-                          
+
                           if (result.success) {
                             const data = result.data;
-                            let syncSummary = '✅ Health data synced successfully!\\n\\n';
-                            
+                            let syncSummary = 'Health data synced successfully!\\n\\n';
+
                             // Show user what data was synced
-                            if (data?.steps) syncSummary += `📊 Steps: ${data.steps.toLocaleString()}\\n`;
-                            if (data?.heartRate) syncSummary += `💓 Heart Rate: ${data.heartRate} bpm\\n`;
-                            if (data?.activeCalories) syncSummary += `🔥 Active Calories: ${Math.round(data.activeCalories)}\\n`;
-                            if (data?.distance) syncSummary += `🏃 Distance: ${(data.distance / 1000).toFixed(2)} km\\n`;
-                            if (data?.weight) syncSummary += `⚖️ Weight: ${data.weight.toFixed(1)} kg\\n`;
-                            
+                            if (data?.steps) syncSummary += `Steps: ${data.steps.toLocaleString()}\\n`;
+                            if (data?.heartRate) syncSummary += `Heart Rate: ${data.heartRate} bpm\\n`;
+                            if (data?.activeCalories) syncSummary += `Active Calories: ${Math.round(data.activeCalories)}\\n`;
+                            if (data?.distance) syncSummary += `Distance: ${(data.distance / 1000).toFixed(2)} km\\n`;
+                            if (data?.weight) syncSummary += `Weight: ${data.weight.toFixed(1)} kg\\n`;
+
                             alert(syncSummary);
-                            console.log('✅ Manual Health Connect sync successful:', data);
+                            console.log('[SUCCESS] Manual Health Connect sync successful:', data);
                           } else {
-                            alert(`❌ Failed to sync health data:\\n\\n${result.error}\\n\\nPlease check your Health Connect permissions and try again.`);
-                            console.error('❌ Manual sync failed:', result.error);
+                            alert(`Failed to sync health data:\\n\\n${result.error}\\n\\nPlease check your Health Connect permissions and try again.`);
+                            console.error('[ERROR] Manual sync failed:', result.error);
                           }
                         }
                       } catch (error) {
-                        console.error('❌ Health data sync error:', error);
-                        alert(`❌ Error syncing health data:\\n\\n${error.message}`);
+                        console.error('[ERROR] Health data sync error:', error);
+                        alert(`Error syncing health data:\\n\\n${error.message}`);
                       }
                     }}
                     variant="outline"
@@ -1691,7 +1798,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   styles.healthStatusValue,
                   { color: (Platform.OS === 'ios' ? isHealthKitAuthorized : isHealthConnectAuthorized) ? '#4CAF50' : '#FF9800' }
                 ]}>
-                  {(Platform.OS === 'ios' ? isHealthKitAuthorized : isHealthConnectAuthorized) ? '✅ Connected' : '⚠️ Not Connected'}
+                  {(Platform.OS === 'ios' ? isHealthKitAuthorized : isHealthConnectAuthorized) ? 'Connected' : 'Not Connected'}
                 </Text>
               </View>
               
@@ -1720,18 +1827,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             {Platform.OS === 'android' && (
               <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.migrationInfoCard}>
                 <View style={styles.migrationHeader}>
-                  <Text style={styles.migrationIcon}>🔄</Text>
-                  <Text style={styles.migrationTitle}>Google Fit → Health Connect Migration</Text>
+                  <Ionicons name="sync-outline" size={rf(20)} color={ResponsiveTheme.colors.info} />
+                  <Text style={styles.migrationTitle}>Google Fit to Health Connect Migration</Text>
                 </View>
                 <View style={styles.migrationContent}>
                   <Text style={styles.migrationDescription}>
                     Google is deprecating Google Fit APIs by June 2026. Health Connect is Google's official modern replacement offering:
                   </Text>
                   <View style={styles.migrationBenefits}>
-                    <Text style={styles.migrationBenefit}>• 🔒 Enhanced privacy - data stays on your device</Text>
-                    <Text style={styles.migrationBenefit}>• ⚡ Better performance and reliability</Text>
-                    <Text style={styles.migrationBenefit}>• 🔄 Compatible with more health apps</Text>
-                    <Text style={styles.migrationBenefit}>• 🛡️ Future-proof solution from Google</Text>
+                    <View style={styles.migrationBenefitRow}>
+                      <Ionicons name="lock-closed-outline" size={rf(14)} color={ResponsiveTheme.colors.success} />
+                      <Text style={styles.migrationBenefit}> Enhanced privacy - data stays on your device</Text>
+                    </View>
+                    <View style={styles.migrationBenefitRow}>
+                      <Ionicons name="flash-outline" size={rf(14)} color={ResponsiveTheme.colors.warning} />
+                      <Text style={styles.migrationBenefit}> Better performance and reliability</Text>
+                    </View>
+                    <View style={styles.migrationBenefitRow}>
+                      <Ionicons name="sync-outline" size={rf(14)} color={ResponsiveTheme.colors.info} />
+                      <Text style={styles.migrationBenefit}> Compatible with more health apps</Text>
+                    </View>
+                    <View style={styles.migrationBenefitRow}>
+                      <Ionicons name="shield-checkmark-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                      <Text style={styles.migrationBenefit}> Future-proof solution from Google</Text>
+                    </View>
                   </View>
                   <Text style={styles.migrationNote}>
                     Health Connect requires Android 8.0+ and the Health Connect app to be installed.
@@ -3447,5 +3566,101 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
     letterSpacing: 1,
+  },
+
+  // Icon container styles for Ionicons replacements
+  streakIconContainer: {
+    // Container for streak icon
+  },
+
+  guestPromptIconContainer: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  achievementGroupTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  emptyAchievementIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  premiumPromptIconContainer: {
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  premiumFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  healthSyncIconContainer: {
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  healthSetupIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  performanceSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  insightsSectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  predictiveWarningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  analyticsEmptyIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  premiumAnalyticsPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  actionIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  emptyActivityIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  healthSettingIconContainer: {
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  migrationBenefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  ptIconContainer: {
+    // Container for PT icons
   },
 });

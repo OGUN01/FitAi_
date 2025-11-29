@@ -117,6 +117,16 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const handleCreateRecipe = async () => {
     if (!validateInputs()) return;
 
+    // Check if AI service is available
+    if (!geminiService.isAvailable()) {
+      Alert.alert(
+        'Feature Not Available',
+        'AI recipe generation is currently disabled. This feature will be available when the backend integration is complete.\n\n🔧 Using Cloudflare Workers backend for AI features.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
     setIsGenerating(true);
 
     try {

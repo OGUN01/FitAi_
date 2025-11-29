@@ -227,12 +227,12 @@ export const shadows = {
 // Glass Surface Specifications
 export const glassSurface = {
   blur: {
-    default: 20,
-    light: 10,
-    heavy: 30,
+    default: 25,
+    light: 15,
+    heavy: 40,
   },
-  background: 'rgba(255, 255, 255, 0.1)',
-  border: 'rgba(255, 255, 255, 0.18)',
+  background: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.25)',
   borderWidth: 1,
 } as const;
 

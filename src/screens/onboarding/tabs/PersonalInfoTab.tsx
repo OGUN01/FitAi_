@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Input, Card } from '../../../components/ui';
+import { Button, Input, Card, SegmentedControl, FeatureGrid, type SegmentOption, type FeatureItem } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, AnimatedIcon } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
@@ -64,41 +64,46 @@ const COUNTRIES_WITH_STATES: CountryState[] = [
 ];
 
 const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male', icon: '👨' },
-  { value: 'female', label: 'Female', icon: '👩' },
-  { value: 'other', label: 'Other', icon: '👤' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say', icon: '🤐' },
+  { value: 'male', label: 'Male', iconName: 'man-outline' },
+  { value: 'female', label: 'Female', iconName: 'woman-outline' },
+  { value: 'other', label: 'Other', iconName: 'people-outline' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say', iconName: 'lock-closed-outline' },
 ] as const;
 
 const OCCUPATION_OPTIONS = [
-  { 
-    value: 'desk_job', 
-    label: 'Desk Job', 
-    icon: '💻',
+  {
+    value: 'desk_job',
+    label: 'Desk Job',
+    iconName: 'laptop-outline',
+    gradient: ['#6366F1', '#8B5CF6'],
     description: 'Office worker, programmer, student - mostly sitting'
   },
-  { 
-    value: 'light_active', 
-    label: 'Light Activity', 
-    icon: '🚶',
+  {
+    value: 'light_active',
+    label: 'Light Activity',
+    iconName: 'walk-outline',
+    gradient: ['#3B82F6', '#06B6D4'],
     description: 'Teacher, retail, light housework - some movement'
   },
-  { 
-    value: 'moderate_active', 
-    label: 'Moderate Activity', 
-    icon: '🏃',
+  {
+    value: 'moderate_active',
+    label: 'Moderate Activity',
+    iconName: 'fitness-outline',
+    gradient: ['#10B981', '#14B8A6'],
     description: 'Nurse, server, active parent - regular movement'
   },
-  { 
-    value: 'heavy_labor', 
-    label: 'Heavy Labor', 
-    icon: '🏗️',
+  {
+    value: 'heavy_labor',
+    label: 'Heavy Labor',
+    iconName: 'construct-outline',
+    gradient: ['#F59E0B', '#EF4444'],
     description: 'Construction, farming, warehouse - physical work'
   },
-  { 
-    value: 'very_active', 
-    label: 'Very Active', 
-    icon: '💪',
+  {
+    value: 'very_active',
+    label: 'Very Active',
+    iconName: 'barbell-outline',
+    gradient: ['#EF4444', '#DC2626'],
     description: 'Athlete, trainer, manual labor - constant activity'
   }
 ] as const;
@@ -144,7 +149,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
   useEffect(() => {
     if (data) {
-      console.log('🔄 PersonalInfoTab: Syncing form data with prop data:', data);
+      console.log('[SYNC] PersonalInfoTab: Syncing form data with prop data:', data);
       setFormData({
         first_name: data.first_name || '',
         last_name: data.last_name || '',
@@ -361,29 +366,17 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </View>
         <View style={styles.halfWidth}>
           <Text style={styles.inputLabel}>Gender *</Text>
-          <View style={styles.genderContainer}>
-            {GENDER_OPTIONS.map((option) => (
-              <AnimatedPressable
-                key={option.value}
-                style={[
-                  styles.genderOption,
-                  ...(formData.gender === option.value ? [styles.genderOptionSelected] : []),
-                ]}
-                onPress={() => updateField('gender', option.value)}
-                scaleValue={0.95}
-              >
-                <Text style={styles.genderIcon}>{option.icon}</Text>
-                <Text
-                  style={[
-                    styles.genderOptionText,
-                    formData.gender === option.value && styles.genderOptionTextSelected,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </AnimatedPressable>
-            ))}
-          </View>
+          <SegmentedControl
+            options={GENDER_OPTIONS.map(opt => ({
+              id: opt.value,
+              label: opt.label,
+              value: opt.value
+            }))}
+            selectedId={formData.gender}
+            onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
+            gradient={['#6366F1', '#8B5CF6']}
+            style={styles.genderSegmentedControl}
+          />
           {hasFieldError('gender') && (
             <Text style={styles.errorText}>{getFieldError('gender')}</Text>
           )}
@@ -517,58 +510,48 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     </GlassCard>
   );
 
-  const renderOccupationSection = () => (
-    <GlassCard
-      style={styles.section}
-      elevation={2}
-      blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
-    >
-      <Text style={styles.sectionTitle}>Daily Activity</Text>
-      <Text style={styles.sectionSubtitle}>
-        This helps us understand your daily movement beyond exercise
-      </Text>
-      
-      <View style={styles.occupationContainer}>
-        {OCCUPATION_OPTIONS.map((option) => (
-          <AnimatedPressable
-            key={option.value}
-            style={[
-              styles.occupationOption,
-              ...(formData.occupation_type === option.value ? [styles.occupationOptionSelected] : []),
-            ]}
-            onPress={() => updateField('occupation_type', option.value)}
-            scaleValue={0.95}
-          >
-            <Text style={styles.occupationIcon}>{option.icon}</Text>
-            <View style={styles.occupationTextContainer}>
-              <Text
-                style={[
-                  styles.occupationLabel,
-                  formData.occupation_type === option.value && styles.occupationLabelSelected,
-                ]}
-              >
-                {option.label}
-              </Text>
-              <Text
-                style={[
-                  styles.occupationDescription,
-                  formData.occupation_type === option.value && styles.occupationDescriptionSelected,
-                ]}
-              >
-                {option.description}
-              </Text>
-            </View>
-          </AnimatedPressable>
-        ))}
-      </View>
+  const renderOccupationSection = () => {
+    const featureItems: FeatureItem[] = OCCUPATION_OPTIONS.map(option => ({
+      id: option.value,
+      label: option.label,
+      selected: formData.occupation_type === option.value,
+      icon: (
+        <Ionicons
+          name={option.iconName as any}
+          size={rf(32)}
+          color="#FFFFFF"
+        />
+      ),
+    }));
 
-      {hasFieldError('occupation') && (
-        <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
-      )}
-    </GlassCard>
-  );
+    return (
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
+        <Text style={styles.sectionTitle}>Daily Activity</Text>
+        <Text style={styles.sectionSubtitle}>
+          This helps us understand your daily movement beyond exercise
+        </Text>
+
+        <FeatureGrid
+          items={featureItems}
+          onItemPress={(id) => updateField('occupation_type', id as PersonalInfoData['occupation_type'])}
+          columns={2}
+          animated={true}
+          selectable={true}
+          style={styles.occupationGrid}
+        />
+
+        {hasFieldError('occupation') && (
+          <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
+        )}
+      </GlassCard>
+    );
+  };
 
   const renderSleepScheduleSection = () => {
     const sleepDuration = calculateSleepDuration();
@@ -595,21 +578,27 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               style={styles.timeSelector}
               onPress={() => setShowWakeTimePicker(true)}
             >
-              <Text style={styles.timeText}>
-                🌅 {formatTimeForDisplay(formData.wake_time)}
-              </Text>
+              <View style={styles.timeIconContainer}>
+                <Ionicons name="sunny-outline" size={rf(20)} color="#F59E0B" />
+                <Text style={styles.timeText}>
+                  {formatTimeForDisplay(formData.wake_time)}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.halfWidth}>
             <Text style={styles.inputLabel}>Sleep Time *</Text>
             <TouchableOpacity
               style={styles.timeSelector}
               onPress={() => setShowSleepTimePicker(true)}
             >
-              <Text style={styles.timeText}>
-                🌙 {formatTimeForDisplay(formData.sleep_time)}
-              </Text>
+              <View style={styles.timeIconContainer}>
+                <Ionicons name="moon-outline" size={rf(20)} color="#6366F1" />
+                <Text style={styles.timeText}>
+                  {formatTimeForDisplay(formData.sleep_time)}
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
         </View>
@@ -627,9 +616,13 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             ])}
           >
             <View style={styles.sleepDurationContent}>
-              <Text style={styles.sleepDurationIcon}>
-                {isHealthySleep ? '😴' : '⚠️'}
-              </Text>
+              <View style={styles.sleepDurationIconContainer}>
+                <Ionicons
+                  name={isHealthySleep ? 'checkmark-circle' : 'alert-circle'}
+                  size={rf(24)}
+                  color={isHealthySleep ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                />
+              </View>
               <View style={styles.sleepDurationText}>
                 <Text style={styles.sleepDurationTitle}>
                   Sleep Duration: {sleepDuration}
@@ -695,7 +688,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Text style={styles.autoSaveText}>💾 Saving...</Text>
+              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
         </HeroSection>
@@ -733,9 +727,19 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               borderRadius="lg"
               style={styles.validationCard}
             >
-              <Text style={styles.validationTitle}>
-                {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
-              </Text>
+              <View style={styles.validationTitleRow}>
+                <Ionicons
+                  name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
+                  size={rf(20)}
+                  color={validationResult.is_valid ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
+                />
+                <Text style={[
+                  styles.validationTitle,
+                  validationResult.is_valid && styles.validationTitleSuccess
+                ]}>
+                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                </Text>
+              </View>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
@@ -743,7 +747,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               {/* DEBUG: Show current form data */}
               {__DEV__ && (
                 <View style={styles.debugInfo}>
-                  <Text style={styles.debugTitle}>🐛 Debug Info:</Text>
+                  <Text style={styles.debugTitle}>Debug Info:</Text>
                   <Text style={styles.debugText}>Name: {formData.first_name} {formData.last_name}</Text>
                   <Text style={styles.debugText}>Age: {formData.age}</Text>
                   <Text style={styles.debugText}>Country: {formData.country}</Text>
@@ -752,8 +756,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   <TouchableOpacity 
                     style={styles.debugButton}
                     onPress={() => {
-                      console.log('🔍 Manual validation trigger');
-                      console.log('🔍 Current formData:', formData);
+                      console.log('[DEBUG] Manual validation trigger');
+                      console.log('[DEBUG] Current formData:', formData);
                       // Force update parent state
                       const finalData = showCustomCountry && customCountry 
                         ? { ...formData, country: customCountry }
@@ -761,7 +765,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                       onUpdate(finalData);
                     }}
                   >
-                    <Text style={styles.debugButtonText}>🔄 Force Update</Text>
+                    <Text style={styles.debugButtonText}>Force Update</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -819,8 +823,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           <Button
             title="Next: Diet Preferences"
             onPress={() => {
-              console.log('🔍 PersonalInfoTab: Next button pressed');
-              console.log('🔍 Current form data:', formData);
+              console.log('[NEXT] PersonalInfoTab: Next button pressed');
+              console.log('[NEXT] Current form data:', formData);
               
               // Prepare final data including custom country if selected
               const finalData = showCustomCountry && customCountry 
@@ -897,20 +901,26 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: rf(32),
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(22),
+    fontSize: rf(16),
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: rf(24),
     marginBottom: ResponsiveTheme.spacing.md,
+    textAlign: 'center',
   },
 
   autoSaveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -948,17 +958,18 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: rf(20),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
+    letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    lineHeight: rf(20),
   },
 
   row: {
@@ -971,13 +982,17 @@ const styles = StyleSheet.create({
   },
 
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: rf(14),
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
-  // Gender Selection
+  // Gender Selection - SegmentedControl
+  genderSegmentedControl: {
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
   genderContainer: {
     gap: ResponsiveTheme.spacing.sm,
   },
@@ -1086,7 +1101,11 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
-  // Occupation Selection
+  // Occupation Selection - FeatureGrid
+  occupationGrid: {
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
   occupationContainer: {
     gap: ResponsiveTheme.spacing.sm,
   },
@@ -1108,13 +1127,27 @@ const styles = StyleSheet.create({
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
   },
 
-  occupationIcon: {
-    fontSize: rf(24),
+  occupationIconContainer: {
+    width: rf(56),
+    height: rf(56),
+    borderRadius: rf(28),
+    overflow: 'hidden',
     marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  occupationIconGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   occupationTextContainer: {
     flex: 1,
+  },
+
+  occupationCheckmark: {
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 
   occupationLabel: {
@@ -1149,6 +1182,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  timeIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
   timeText: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.text,
@@ -1177,8 +1216,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  sleepDurationIcon: {
-    fontSize: rf(24),
+  sleepDurationIconContainer: {
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1209,17 +1247,27 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
   },
 
-  validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+  validationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
+  validationTitle: {
+    fontSize: rf(16),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  validationTitleSuccess: {
+    color: ResponsiveTheme.colors.secondary,
+  },
+
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(20),
     color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 

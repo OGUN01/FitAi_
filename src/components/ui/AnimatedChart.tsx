@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -7,9 +7,12 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Svg, { Line, Circle, Path, G, Text as SvgText } from 'react-native-svg';
 import { rf, rp, rw, rh } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
+import { ChartTooltip } from './ChartTooltip';
+import { hapticSelection } from '../../utils/haptics';
 
 interface DataPoint {
   label: string;
@@ -42,6 +45,19 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   style,
 }) => {
   const progress = useSharedValue(0);
+  const [tooltipData, setTooltipData] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    value: number;
+    label: string;
+  }>({
+    visible: false,
+    x: 0,
+    y: 0,
+    value: 0,
+    label: '',
+  });
 
   useEffect(() => {
     progress.value = withSpring(1, {
@@ -104,6 +120,61 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
   const linePath = createLinePath();
 
+  // Touch gesture handler
+  const tapGesture = Gesture.Tap()
+    .onBegin((event) => {
+      const touchX = event.x;
+      const touchY = event.y;
+
+      // Check if touch is within chart bounds
+      if (
+        touchX >= padding &&
+        touchX <= padding + chartWidth &&
+        touchY >= padding &&
+        touchY <= padding + chartHeight
+      ) {
+        // Find nearest milestone
+        let nearestMilestone = milestones[0];
+        let minDistance = Infinity;
+
+        milestones.forEach((milestone, index) => {
+          const milestoneX = padding + (chartWidth / (milestones.length - 1)) * index;
+          const milestoneY = valueToY(milestone.value);
+          const distance = Math.sqrt(
+            Math.pow(touchX - milestoneX, 2) + Math.pow(touchY - milestoneY, 2)
+          );
+
+          if (distance < minDistance) {
+            minDistance = distance;
+            nearestMilestone = milestone;
+          }
+        });
+
+        // Show tooltip if touch is close enough (within 30px)
+        if (minDistance < 30) {
+          const milestoneIndex = milestones.indexOf(nearestMilestone);
+          const milestoneX = padding + (chartWidth / (milestones.length - 1)) * milestoneIndex;
+          const milestoneY = valueToY(nearestMilestone.value);
+
+          hapticSelection();
+
+          setTooltipData({
+            visible: true,
+            x: milestoneX - 50, // Center the tooltip
+            y: milestoneY - 60, // Position above the point
+            value: nearestMilestone.value,
+            label: nearestMilestone.label,
+          });
+        }
+      }
+    })
+    .onEnd(() => {
+      // Hide tooltip after a delay
+      setTimeout(() => {
+        setTooltipData((prev) => ({ ...prev, visible: false }));
+      }, 2000);
+    });
+
   // Animated progress indicator
   const animatedProgressStyle = useAnimatedStyle(() => {
     const translateX = interpolate(
@@ -153,8 +224,18 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         </View>
       </View>
 
-      {/* Chart */}
-      <Svg width={width} height={height}>
+      {/* Chart with touch interaction */}
+      <GestureDetector gesture={tapGesture}>
+        <View>
+          <ChartTooltip
+            visible={tooltipData.visible}
+            x={tooltipData.x}
+            y={tooltipData.y}
+            value={tooltipData.value}
+            label={tooltipData.label}
+            formatValue={(val) => `${typeof val === 'number' ? val.toFixed(1) : val} ${unit}`}
+          />
+          <Svg width={width} height={height}>
         {/* Y-axis grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((fraction, index) => {
           const y = padding + chartHeight * (1 - fraction);
@@ -250,7 +331,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             </G>
           );
         })}
-      </Svg>
+          </Svg>
+        </View>
+      </GestureDetector>
 
       {/* Timeline info */}
       {showProgress && (

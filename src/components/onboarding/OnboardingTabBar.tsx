@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,7 +22,7 @@ import { animations } from '../../theme/animations';
 export interface TabConfig {
   id: number;
   title: string;
-  icon: string;
+  iconName: string;
   isCompleted: boolean;
   isAccessible: boolean;
   validationResult?: TabValidationResult;
@@ -42,27 +43,27 @@ export const ONBOARDING_TABS: Omit<TabConfig, 'isCompleted' | 'isAccessible' | '
   {
     id: 1,
     title: 'Personal Info',
-    icon: '👤',
+    iconName: 'person-outline',
   },
   {
     id: 2,
     title: 'Diet Preferences',
-    icon: '🍽️',
+    iconName: 'restaurant-outline',
   },
   {
     id: 3,
     title: 'Body Analysis',
-    icon: '📊',
+    iconName: 'bar-chart-outline',
   },
   {
     id: 4,
     title: 'Workout Preferences',
-    icon: '💪',
+    iconName: 'barbell-outline',
   },
   {
     id: 5,
     title: 'Advanced Review',
-    icon: '📋',
+    iconName: 'document-text-outline',
   },
 ];
 
@@ -98,7 +99,7 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({
   const scale = useSharedValue(1);
 
   useEffect(() => {
-    scale.value = withSpring(isActive ? 1.08 : 1, animations.springConfig.smooth);
+    scale.value = withSpring(isActive ? 1.08 : 1, animations.spring.smooth);
   }, [isActive]);
 
   const animatedTabStyle = useAnimatedStyle(() => ({
@@ -116,9 +117,11 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({
         >
           {/* Tab Icon */}
           <View style={styles.tabIconContainer}>
-            <Text style={[styles.tabIcon, tabStyles.icon]}>
-              {tab.icon}
-            </Text>
+            <Ionicons
+              name={tab.iconName as any}
+              size={rf(20)}
+              color={tabStyles.icon?.color || ResponsiveTheme.colors.textMuted}
+            />
             {renderValidationIndicator(tab)}
           </View>
 
@@ -176,7 +179,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
 
   // Animate active tab indicator on tab change
   useEffect(() => {
-    activeTabIndex.value = withSpring(activeTab - 1, animations.springConfig.smooth);
+    activeTabIndex.value = withSpring(activeTab - 1, animations.spring.smooth);
   }, [activeTab]);
 
   const animatedProgressStyle = useAnimatedStyle(() => ({
@@ -237,7 +240,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
     
     if (tab.isCompleted && is_valid) {
       return <View style={styles.validationSuccess}>
-        <Text style={styles.validationIcon}>✓</Text>
+        <Ionicons name="checkmark" size={rf(10)} color={ResponsiveTheme.colors.success} />
       </View>;
     }
     
@@ -524,11 +527,11 @@ const styles = StyleSheet.create({
   // Validation Indicators
   validationSuccess: {
     position: 'absolute',
-    top: -rh(2),
-    right: -rw(2),
-    width: rw(16),
-    height: rw(16),
-    borderRadius: rw(8),
+    top: -rf(4),
+    right: -rf(4),
+    width: rf(16),
+    height: rf(16),
+    borderRadius: rf(8),
     backgroundColor: ResponsiveTheme.colors.success,
     justifyContent: 'center',
     alignItems: 'center',
@@ -536,11 +539,11 @@ const styles = StyleSheet.create({
 
   validationError: {
     position: 'absolute',
-    top: -rh(2),
-    right: -rw(2),
-    width: rw(16),
-    height: rw(16),
-    borderRadius: rw(8),
+    top: -rf(4),
+    right: -rf(4),
+    width: rf(16),
+    height: rf(16),
+    borderRadius: rf(8),
     backgroundColor: ResponsiveTheme.colors.error,
     justifyContent: 'center',
     alignItems: 'center',
@@ -548,11 +551,11 @@ const styles = StyleSheet.create({
 
   validationWarning: {
     position: 'absolute',
-    top: -rh(2),
-    right: -rw(2),
-    width: rw(16),
-    height: rw(16),
-    borderRadius: rw(8),
+    top: -rf(4),
+    right: -rf(4),
+    width: rf(16),
+    height: rf(16),
+    borderRadius: rf(8),
     backgroundColor: ResponsiveTheme.colors.warning,
     justifyContent: 'center',
     alignItems: 'center',

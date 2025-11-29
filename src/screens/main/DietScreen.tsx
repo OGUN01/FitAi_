@@ -13,6 +13,7 @@ import {
   PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { GlassCard } from '../../components/ui/aurora/GlassCard';
@@ -156,7 +157,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     const today = new Date();
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const todayName = dayNames[today.getDay()] || 'monday'; // fallback to monday if undefined
-    console.log(`🔍 Today is: ${todayName} (day ${today.getDay()})`);
+    console.log(`[DEBUG] Today is: ${todayName} (day ${today.getDay()})`);
     return todayName;
   });
   const [forceUpdate, setForceUpdate] = useState(0);
@@ -193,14 +194,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Force re-render when meal progress changes
   const forceRefresh = useCallback(() => {
-    console.log('🔄 DietScreen: Force refresh triggered');
+    console.log('[REFRESH] DietScreen: Force refresh triggered');
     setForceUpdate(prev => prev + 1);
   }, []);
 
   // Debug: Monitor weeklyMealPlan changes
   useEffect(() => {
     console.log(
-      `🔍 weeklyMealPlan changed:`,
+      `[DEBUG] weeklyMealPlan changed:`,
       weeklyMealPlan
         ? `Plan: ${weeklyMealPlan.planTitle}, meals: ${weeklyMealPlan.meals?.length}`
         : 'null'
@@ -209,7 +210,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Monitor meal progress changes and force refresh
   useEffect(() => {
-    console.log('🔍 mealProgress changed:', mealProgress);
+    console.log('[DEBUG] mealProgress changed:', mealProgress);
     // Force a small delay to ensure state is fully updated
     const timeout = setTimeout(() => {
       forceRefresh();
@@ -220,24 +221,24 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Subscribe to completion events for real-time updates
   useEffect(() => {
-    console.log('🔔 DietScreen: Setting up completion event listener');
-    
+    console.log('[EVENT] DietScreen: Setting up completion event listener');
+
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log('🔔 DietScreen: Received completion event:', event);
-      
+      console.log('[EVENT] DietScreen: Received completion event:', event);
+
       if (event.type === 'meal') {
-        console.log('🍽️ DietScreen: Meal completion event received for:', event.itemId);
-        
+        console.log('[MEAL] DietScreen: Meal completion event received for:', event.itemId);
+
         // Force refresh the UI to show updated completion status
         setTimeout(() => {
-          console.log('🔄 DietScreen: Triggering refresh due to meal completion event');
+          console.log('[REFRESH] DietScreen: Triggering refresh due to meal completion event');
           forceRefresh();
         }, 100);
       }
     });
 
     return () => {
-      console.log('🔔 DietScreen: Cleaning up completion event listener');
+      console.log('[EVENT] DietScreen: Cleaning up completion event listener');
       unsubscribe();
     };
   }, [forceRefresh]);
@@ -245,7 +246,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Handle navigation parameters when returning from cooking session
   useEffect(() => {
     if (route?.params?.mealCompleted) {
-      console.log('🔙 DietScreen: Returned from cooking session with completion:', {
+      console.log('[NAV] DietScreen: Returned from cooking session with completion:', {
         completedMealId: route.params.completedMealId,
         timestamp: route.params.timestamp
       });
@@ -267,21 +268,21 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Custom focus effect - refresh data when screen becomes active
   useEffect(() => {
     if (isActive) {
-      console.log('🔄 DietScreen became active - refreshing meal data...');
-      console.log('🔄 DietScreen: Current meal progress before refresh:', mealProgress);
+      console.log('[REFRESH] DietScreen became active - refreshing meal data...');
+      console.log('[REFRESH] DietScreen: Current meal progress before refresh:', mealProgress);
       
       const refreshMealData = async () => {
         try {
           await loadData(); // Refresh nutrition store data
-          console.log('✅ Meal data refreshed on focus');
+          console.log('[SUCCESS] Meal data refreshed on focus');
           
           // Log meal progress after refresh
           setTimeout(() => {
             const currentProgress = useNutritionStore.getState().mealProgress;
-            console.log('🔄 DietScreen: Meal progress after refresh:', currentProgress);
+            console.log('[REFRESH] DietScreen: Meal progress after refresh:', currentProgress);
           }, 100);
         } catch (error) {
-          console.error('❌ Error refreshing meal data on focus:', error);
+          console.error('[ERROR] Error refreshing meal data on focus:', error);
         }
       };
 
@@ -420,16 +421,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   useEffect(() => {
     const loadExistingMealPlan = async () => {
       try {
-        console.log('🔍 Loading existing meal plan from store...');
+        console.log('[DEBUG] Loading existing meal plan from store...');
         await loadData(); // Load all nutrition data
 
         const existingPlan = await loadWeeklyMealPlan();
         if (existingPlan) {
-          console.log('✅ Found existing meal plan:', existingPlan.planTitle);
+          console.log('[SUCCESS] Found existing meal plan:', existingPlan.planTitle);
           setWeeklyMealPlan(existingPlan);
 
           // Comprehensive retrieval test
-          console.log('🧪 COMPREHENSIVE RETRIEVAL TEST:');
+          console.log('[TEST] COMPREHENSIVE RETRIEVAL TEST:');
           const allDays = [
             'monday',
             'tuesday',
@@ -447,18 +448,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               mealTypes: mealsForDay.map((m) => m.type),
             };
           });
-          console.log('📊 Meal availability by day:', mealAvailability);
+          console.log('[ANALYTICS] Meal availability by day:', mealAvailability);
 
           const totalMeals = existingPlan.meals.length;
           const expectedMeals = 21; // 7 days × 3 meals
           console.log(
-            `📈 Total meals: ${totalMeals}/${expectedMeals} (${Math.round((totalMeals / expectedMeals) * 100)}% complete)`
+            `[ANALYTICS] Total meals: ${totalMeals}/${expectedMeals} (${Math.round((totalMeals / expectedMeals) * 100)}% complete)`
           );
         } else {
-          console.log('📭 No existing meal plan found');
+          console.log('[DEBUG] No existing meal plan found');
         }
       } catch (error) {
-        console.error('❌ Error loading meal plan:', error);
+        console.error('[ERROR] Error loading meal plan:', error);
       }
     };
 
@@ -481,7 +482,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           })
         );
 
-        console.log('🎯 DietScreen: Stored edit intent and navigating to Profile');
+        console.log('[NAV] DietScreen: Stored edit intent and navigating to Profile');
         navigation.navigate('Profile');
       } catch (error) {
         console.log('Navigation not available, showing alternative');
@@ -550,9 +551,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   }, []);
 
   const handleCameraCapture = async (imageUri: string) => {
-    console.log('🍽️ NEW Food Recognition System - Image captured:', imageUri);
-    console.log('🔑 Selected meal type:', selectedMealType);
-    console.log('👤 Profile available:', !!profile);
+    console.log('[CAMERA] NEW Food Recognition System - Image captured:', imageUri);
+    console.log('[MEAL] Selected meal type:', selectedMealType);
+    console.log('[PROFILE] Profile available:', !!profile);
 
     setShowCamera(false);
 
@@ -568,7 +569,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
       // Show processing alert
       Alert.alert(
-        '🔍 Revolutionary AI Food Recognition',
+        'Revolutionary AI Food Recognition',
         `Our advanced AI is analyzing your ${selectedMealType} with 90%+ accuracy using Indian cuisine specialization...`,
         [{ text: 'Processing...', style: 'cancel' }]
       );
@@ -580,8 +581,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       if (!hasApiKey) {
         // Demo mode without API keys
         Alert.alert(
-          '🧪 Demo Mode - Food Recognition',
-          'API keys not configured. This is a demo of what the food recognition would show:\n\n• Detected: Rice Bowl with Curry (345 cal)\n• Detected: Mixed Vegetables (120 cal)\n• Total: 465 calories\n• Accuracy: 92%\n\nTo enable real recognition, add your Gemini API key to environment variables.',
+          'Demo Mode - Food Recognition',
+          'API keys not configured. This is a demo of what the food recognition would show:\n\n- Detected: Rice Bowl with Curry (345 cal)\n- Detected: Mixed Vegetables (120 cal)\n- Total: 465 calories\n- Accuracy: 92%\n\nTo enable real recognition, add your Gemini API key to environment variables.',
           [
             { text: 'OK' },
             {
@@ -599,7 +600,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       }
 
       // Analyze food with the selected meal type
-      console.log('🔍 Calling food recognition service...');
+      console.log('[DEBUG] Calling food recognition service...');
       const result = await foodRecognitionService.recognizeFood(
         imageUri,
         selectedMealType,
@@ -607,7 +608,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           ? { personalInfo: profile.personalInfo, fitnessGoals: profile.fitnessGoals }
           : undefined
       );
-      console.log('📊 Food recognition result:', result);
+      console.log('[ANALYTICS] Food recognition result:', result);
 
       if (result.success && result.data) {
         const recognizedFoods = result.data;
@@ -618,7 +619,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
         // Show success result with feedback option
         Alert.alert(
-          '✅ Food Recognition Complete!',
+          'Food Recognition Complete!',
           `Recognized ${recognizedFoods.length} food item(s):\n\n` +
             `${recognizedFoods.map((food) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
             `Total: ${Math.round(totalCalories)} calories\n` +
@@ -650,7 +651,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               text: 'Log Meal',
               onPress: async () => {
                 try {
-                  console.log('🍽️ Starting meal logging process...');
+                  console.log('[MEAL] Starting meal logging process...');
 
                   // Use the recognized food logger service
                   const logResult = await recognizedFoodLogger.logRecognizedFoods(
@@ -662,16 +663,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   if (logResult.success) {
                     // Show success with detailed information
                     Alert.alert(
-                      '🎉 Meal Logged Successfully!',
-                      `✅ ${recognizedFoods.length} food item${recognizedFoods.length !== 1 ? 's' : ''} logged\n` +
-                        `📊 Total: ${logResult.totalCalories} calories\n` +
-                        `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
-                        `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                      'Meal Logged Successfully!',
+                      `${recognizedFoods.length} food item${recognizedFoods.length !== 1 ? 's' : ''} logged\n` +
+                        `Total: ${logResult.totalCalories} calories\n` +
+                        `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                        `Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
                         `Your nutrition tracking has been updated!`,
                       [{ text: 'Awesome!' }]
                     );
 
-                    console.log('✅ Meal logged successfully:', {
+                    console.log('[SUCCESS] Meal logged successfully:', {
                       mealId: logResult.mealId,
                       totalCalories: logResult.totalCalories,
                       foodCount: recognizedFoods.length,
@@ -691,12 +692,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     throw new Error(logResult.error || 'Failed to log meal');
                   }
                 } catch (logError) {
-                  console.error('❌ Failed to log meal:', logError);
+                  console.error('[ERROR] Failed to log meal:', logError);
 
                   const errorMessage =
                     logError instanceof Error ? logError.message : 'Unknown error occurred';
                   Alert.alert(
-                    '❌ Meal Logging Failed',
+                    'Meal Logging Failed',
                     `Error: ${errorMessage}\n\nThe food was recognized successfully, but we couldn't save it to your meal log. Please try again or check your connection.`,
                     [
                       { text: 'OK' },
@@ -712,17 +713,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                             );
 
                             if (retryResult.success) {
-                              Alert.alert('✅ Success!', 'Meal logged successfully on retry!');
+                              Alert.alert('Success!', 'Meal logged successfully on retry!');
                               await loadDailyNutrition();
                               await refreshAll();
                             } else {
                               Alert.alert(
-                                '❌ Still Failed',
+                                'Still Failed',
                                 'Please try again later or contact support.'
                               );
                             }
                           } catch (retryError) {
-                            Alert.alert('❌ Retry Failed', 'Please try again later.');
+                            Alert.alert('Retry Failed', 'Please try again later.');
                           }
                         },
                       },
@@ -737,8 +738,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         throw new Error(result.error || 'Food recognition failed');
       }
     } catch (error) {
-      console.error('❌ Food recognition failed:', error);
-      console.error('📊 Error details:', {
+      console.error('[ERROR] Food recognition failed:', error);
+      console.error('[ERROR] Error details:', {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : undefined,
@@ -750,7 +751,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('API key') || errorMessage.includes('key')) {
         Alert.alert(
-          '🔑 API Key Required',
+          'API Key Required',
           'The food recognition system needs a Gemini API key to work. Please add your API key to the environment variables.\n\nFor now, you can test the UI components without API calls.',
           [
             { text: 'OK' },
@@ -767,8 +768,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         );
       } else {
         Alert.alert(
-          '❌ Recognition Failed',
-          `Error: ${errorMessage}\n\nThis could be due to:\n• Missing API keys\n• Network issues\n• Invalid image format\n\nCheck the console for detailed error information.`,
+          'Recognition Failed',
+          `Error: ${errorMessage}\n\nThis could be due to:\n- Missing API keys\n- Network issues\n- Invalid image format\n\nCheck the console for detailed error information.`,
           [{ text: 'OK' }, { text: 'Try Again', onPress: () => setShowCamera(true) }]
         );
       }
@@ -779,14 +780,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Barcode scanning handlers
   const handleBarcodeScanned = async (barcode: string, type: string) => {
-    console.log('🔍 Barcode scanned:', { barcode, type });
+    console.log('[DEBUG] Barcode scanned:', { barcode, type });
     setIsProcessingBarcode(true);
     setShowCamera(false);
 
     try {
       // Show processing alert
       Alert.alert(
-        '📱 Scanning Product',
+        'Scanning Product',
         'Analyzing product information and health assessment...',
         [{ text: 'Processing...', style: 'cancel' }]
       );
@@ -796,7 +797,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
       if (!lookupResult.success || !lookupResult.product) {
         Alert.alert(
-          '❌ Product Not Found',
+          'Product Not Found',
           lookupResult.error || 'This product is not in our database. Try scanning a different barcode or add the product manually.',
           [{ text: 'OK' }]
         );
@@ -804,7 +805,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       }
 
       const product = lookupResult.product;
-      console.log('✅ Product found:', product.name);
+      console.log('[SUCCESS] Product found:', product.name);
 
       // Generate health assessment
       const healthAssessment = await nutritionAnalyzer.assessProductHealth({
@@ -814,7 +815,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         category: product.category
       });
 
-      console.log('✅ Health assessment completed:', {
+      console.log('[SUCCESS] Health assessment completed:', {
         score: healthAssessment.overallScore,
         category: healthAssessment.category
       });
@@ -826,15 +827,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
       // Success alert
       Alert.alert(
-        '✅ Product Scanned Successfully!',
+        'Product Scanned Successfully!',
         `Found: ${product.name}\nHealth Score: ${healthAssessment.overallScore}/100 (${healthAssessment.category})`,
         [{ text: 'View Details', onPress: () => setShowProductModal(true) }]
       );
 
     } catch (error) {
-      console.error('❌ Barcode scanning error:', error);
+      console.error('[ERROR] Barcode scanning error:', error);
       Alert.alert(
-        '❌ Scanning Error',
+        'Scanning Error',
         `Failed to process barcode: ${error}`,
         [{ text: 'OK' }]
       );
@@ -862,7 +863,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               // Here you would integrate with the existing meal logging system
               // For now, show success message
               Alert.alert(
-                '✅ Added to Meal',
+                'Added to Meal',
                 `${product.name} has been added to your ${selectedMealType}.`
               );
               
@@ -970,7 +971,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           }
         }
 
-        Alert.alert('Meal Generated! 🍽️', `Your personalized ${mealType} is ready!`, [
+        Alert.alert('Meal Generated!', `Your personalized ${mealType} is ready!`, [
           { text: 'Great!' },
         ]);
       } else {
@@ -1018,7 +1019,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       if (response.success && response.data) {
         setAiMeals((prev) => [...response.data!.meals, ...prev]);
         Alert.alert(
-          'Daily Meal Plan Generated! 🗓️',
+          'Daily Meal Plan Generated!',
           `Your complete meal plan for today is ready!`,
           [{ text: 'Awesome!' }]
         );
@@ -1037,8 +1038,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Generate Weekly Meal Plan (similar to workout generation)
   const generateWeeklyMealPlan = async () => {
-    console.log('🍽️ Generate Weekly Plan button pressed!');
-    console.log('🔍 Profile check:', {
+    console.log('[MEAL] Generate Weekly Plan button pressed!');
+    console.log('[DEBUG] Profile check:', {
       personalInfo: !!profile?.personalInfo,
       fitnessGoals: !!profile?.fitnessGoals,
       dietPreferences: !!profile?.dietPreferences || !!dietPreferences,
@@ -1052,7 +1053,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     if (missingItems.length > 0) {
       const primaryMissing = missingItems[0];
-      console.log('❌ Profile incomplete:', missingItems);
+      console.log('[ERROR] Profile incomplete:', missingItems);
       Alert.alert(
         'Profile Incomplete',
         `Please complete the following to generate your meal plan:\n\n• ${missingItems.join('\n• ')}\n\nWould you like to complete your profile now?`,
@@ -1071,10 +1072,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     setAiError(null);
 
     try {
-      console.log('🍽️ Generating weekly meal plan...');
-      console.log('🔍 Profile data:', JSON.stringify(profile, null, 2));
-      console.log('🔑 API Key available:', !!process.env.EXPO_PUBLIC_GEMINI_API_KEY);
-      console.log('🤖 weeklyMealContentGenerator available:', !!weeklyMealContentGenerator);
+      console.log('[MEAL] Generating weekly meal plan...');
+      console.log('[DEBUG] Profile data:', JSON.stringify(profile, null, 2));
+      console.log('[API] API Key available:', !!process.env.EXPO_PUBLIC_GEMINI_API_KEY);
+      console.log('[AI] weeklyMealContentGenerator available:', !!weeklyMealContentGenerator);
 
       // Use diet preferences from profile or from nutrition data service
       const userDietPreferences = profile.dietPreferences || {
@@ -1087,8 +1088,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         dislikes: dietPreferences?.dislikes || [],
       };
 
-      console.log('🔍 Calling weeklyMealContentGenerator.generateWeeklyMealPlan...');
-      console.log('🔍 Parameters:', {
+      console.log('[DEBUG] Calling weeklyMealContentGenerator.generateWeeklyMealPlan...');
+      console.log('[DEBUG] Parameters:', {
         personalInfo: profile.personalInfo,
         fitnessGoals: profile.fitnessGoals,
         userDietPreferences,
@@ -1100,10 +1101,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         userDietPreferences
       );
 
-      console.log('🔍 Response from generator:', response);
+      console.log('[DEBUG] Response from generator:', response);
 
       if (response.success && response.data) {
-        console.log('✅ Weekly meal plan generated successfully');
+        console.log('[SUCCESS] Weekly meal plan generated successfully');
         // Save to store and database
         await saveWeeklyMealPlan(response.data);
 
@@ -1111,10 +1112,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         setWeeklyMealPlan(response.data);
 
         setForceUpdate((prev) => prev + 1); // Force re-render
-        console.log(`🔍 Meal plan saved to store and database`);
+        console.log(`[DEBUG] Meal plan saved to store and database`);
 
         // COMPREHENSIVE GENERATION TEST
-        console.log('🧪 COMPREHENSIVE GENERATION TEST:');
+        console.log('[TEST] COMPREHENSIVE GENERATION TEST:');
         const allDays = [
           'monday',
           'tuesday',
@@ -1132,22 +1133,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             mealTypes: mealsForDay.map((m) => m.type),
           };
         });
-        console.log('📊 Generated meals by day:', generatedMealsByDay);
+        console.log('[ANALYTICS] Generated meals by day:', generatedMealsByDay);
 
         const totalGenerated = response.data.meals.length;
         const expectedTotal = 21; // 7 days × 3 meals
         console.log(
-          `📈 Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`
+          `[ANALYTICS] Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`
         );
 
         if (totalGenerated === expectedTotal) {
-          console.log('✅ FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!');
+          console.log('[SUCCESS] FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!');
         } else {
-          console.warn(`⚠️ Incomplete meal plan: Missing ${expectedTotal - totalGenerated} meals`);
+          console.warn(`[WARNING] Incomplete meal plan: Missing ${expectedTotal - totalGenerated} meals`);
         }
 
         Alert.alert(
-          '🎉 Meal Plan Generated!',
+          'Meal Plan Generated!',
           `Your personalized 7-day meal plan "${response.data.planTitle}" is ready!`,
           [{ text: 'View Plan', onPress: () => {} }]
         );
@@ -1166,11 +1167,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Get meals for selected day
   const getTodaysMeals = (): DayMeal[] => {
     if (!weeklyMealPlan || !weeklyMealPlan.meals || !Array.isArray(weeklyMealPlan.meals)) {
-      console.log('🔍 getTodaysMeals: No weekly meal plan or meals available');
+      console.log('[DEBUG] getTodaysMeals: No weekly meal plan or meals available');
       return [];
     }
     const mealsForDay = weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
-    console.log(`🔍 getTodaysMeals for ${selectedDay}:`, {
+    console.log(`[DEBUG] getTodaysMeals for ${selectedDay}:`, {
       mealsFound: mealsForDay.length,
       mealTypes: mealsForDay.map((m) => m.type),
       mealNames: mealsForDay.map((m) => m.name),
@@ -1200,7 +1201,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           style: 'destructive',
           onPress: () => {
             haptics.impact('medium');
-            console.log('🗑️ Deleting meal:', meal.name);
+            console.log('[DELETE] Deleting meal:', meal.name);
             // TODO: Implement actual meal deletion from store
             Alert.alert('Success', 'Meal deleted successfully');
             // Reset swipe position
@@ -1215,7 +1216,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Handle edit meal
   const handleEditMeal = (meal: DayMeal) => {
     haptics.impact('light');
-    console.log('✏️ Editing meal:', meal.name);
+    console.log('[EDIT] Editing meal:', meal.name);
     Alert.alert('Edit Meal', `Edit functionality for "${meal.name}" coming soon!`);
     // Reset swipe position
     const swipePos = getSwipePosition(meal.id);
@@ -1382,18 +1383,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Handle meal start (similar to workout start)
   const handleStartMeal = (meal: DayMeal) => {
-    console.log('🍽️ handleStartMeal called with meal:', meal.name);
-    console.log('🍽️ Navigation available:', !!navigation);
+    console.log('[MEAL] handleStartMeal called with meal:', meal.name);
+    console.log('[MEAL] Navigation available:', !!navigation);
 
     if (!navigation) {
-      console.error('❌ Navigation not available for meal start');
+      console.error('[ERROR] Navigation not available for meal start');
       Alert.alert('Error', 'Navigation not available');
       return;
     }
 
     // For web platform, use modal instead of Alert.alert
     if (Platform.OS === 'web') {
-      console.log('🌐 Web platform detected - showing meal preparation modal');
+      console.log('[WEB] Web platform detected - showing meal preparation modal');
       setSelectedMealForPreparation(meal);
       setShowMealPreparationModal(true);
       return;
@@ -1410,15 +1411,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     const dynamicMessage = mealMotivationService.getMealStartMessage(meal, motivationConfig);
     const preparationTips = mealMotivationService.getPreparationTips(meal);
     
-    const fullMessage = `${dynamicMessage}\n\n📋 Quick Tips:\n${preparationTips.slice(0, 2).map(tip => `• ${tip}`).join('\n')}`;
-    
+    const fullMessage = `${dynamicMessage}\n\nQuick Tips:\n${preparationTips.slice(0, 2).map(tip => `- ${tip}`).join('\n')}`;
+
     Alert.alert(
-      '🍽️ Ready to Cook?',
+      'Ready to Cook?',
       fullMessage,
       [
         { text: 'Maybe Later', style: 'cancel' },
         {
-          text: 'Let\'s Cook! 👨‍🍳',
+          text: "Let's Cook!",
           onPress: () => startMealPreparation(meal),
         },
       ]
@@ -1427,7 +1428,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Separate function for meal preparation logic
   const startMealPreparation = async (meal: DayMeal) => {
-    console.log('🍽️ Starting meal preparation:', meal.name);
+    console.log('[MEAL] Starting meal preparation:', meal.name);
 
     // Initialize progress using completion tracking service
     completionTrackingService.updateMealProgress(meal.id, 0, {
@@ -1437,7 +1438,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     // Check if meal has cooking instructions
     if (!meal.cookingInstructions || meal.cookingInstructions.length === 0) {
-      console.log('⚠️ Meal has no cooking instructions, generating basic ones...');
+      console.log('[WARNING] Meal has no cooking instructions, generating basic ones...');
       // Add basic cooking instructions if none exist
       meal.cookingInstructions = [
         { step: 1, instruction: 'Gather all ingredients and prepare your workspace' },
@@ -1449,13 +1450,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     }
 
     // Navigate to CookingSessionScreen
-    console.log('🍽️ Navigating to CookingSessionScreen');
+    console.log('[NAV] Navigating to CookingSessionScreen');
     navigation.navigate('CookingSession', { meal });
   };
 
   // Separate function for meal completion logic
   const completeMealPreparation = async (meal: DayMeal) => {
-    console.log('🍽️ Marking meal as complete:', meal.name);
+    console.log('[MEAL] Marking meal as complete:', meal.name);
 
     try {
       // Use completion tracking service for proper event emission
@@ -1472,19 +1473,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
         // Refresh nutrition data to update calorie display
         try {
           await loadDailyNutrition();
-          console.log('✅ Daily nutrition data refreshed after meal completion');
+          console.log('[SUCCESS] Daily nutrition data refreshed after meal completion');
         } catch (refreshError) {
-          console.warn('⚠️ Failed to refresh nutrition data:', refreshError);
+          console.warn('[WARNING] Failed to refresh nutrition data:', refreshError);
         }
 
         if (Platform.OS === 'web') {
           setShowMealPreparationModal(false);
           setSelectedMealForPreparation(null);
           // You could show a success toast here for web
-          console.log(`🎉 Meal completed: ${meal.name}`);
+          console.log(`[SUCCESS] Meal completed: ${meal.name}`);
         } else {
           Alert.alert(
-            '🎉 Meal Complete!',
+            'Meal Complete!',
             `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`
           );
         }
@@ -1519,7 +1520,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     if (waterConsumed >= waterGoal) {
       Alert.alert(
-        '🎉 Daily Goal Achieved!',
+        'Daily Goal Achieved!',
         `You've already reached your daily water goal of ${waterGoal}L! Great job staying hydrated!`,
         [{ text: 'Awesome!' }]
       );
@@ -1533,7 +1534,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     if (newAmount >= waterGoal && waterConsumed < waterGoal) {
       setTimeout(() => {
         Alert.alert(
-          '🏆 Hydration Goal Achieved!',
+          'Hydration Goal Achieved!',
           `Congratulations! You've reached your daily water goal of ${waterGoal}L!`,
           [
             { text: 'Keep it up!', style: 'default' },
@@ -1557,7 +1558,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       // Show encouraging message
       const remaining = Math.max(waterGoal - newAmount, 0);
       Alert.alert(
-        '💧 Water Added!',
+        'Water Added!',
         `Great job! ${remaining.toFixed(1)}L more to reach your goal.`
       );
     }
@@ -1571,7 +1572,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   };
 
   const handleLogWater = () => {
-    Alert.alert('💧 Log Water Intake', 'Choose how to log your water consumption:', [
+    Alert.alert('Log Water Intake', 'Choose how to log your water consumption:', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Add 250ml',
@@ -1636,13 +1637,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       );
 
       if (result.success) {
-        console.log('✅ Feedback submitted successfully:', result.feedbackId);
+        console.log('[SUCCESS] Feedback submitted successfully:', result.feedbackId);
       } else {
-        console.error('❌ Failed to submit feedback:', result.error);
+        console.error('[ERROR] Failed to submit feedback:', result.error);
         Alert.alert('Error', 'Failed to submit feedback. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Error submitting feedback:', error);
+      console.error('[ERROR] Error submitting feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
     }
   };
@@ -1660,9 +1661,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     ).length;
 
     Alert.alert(
-      '✅ Portions Updated!',
+      'Portions Updated!',
       `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? 's' : ''}!\n\n` : ''}` +
-        `${adjustedFoods.map((food) => `• ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
+        `${adjustedFoods.map((food) => `- ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
         `Total: ${Math.round(totalCalories)} calories`,
       [
         { text: 'Cancel', style: 'cancel' },
@@ -1681,7 +1682,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           text: 'Log Meal',
           onPress: async () => {
             try {
-              console.log('🍽️ Starting meal logging process with adjusted portions...');
+              console.log('[MEAL] Starting meal logging process with adjusted portions...');
 
               const logResult = await recognizedFoodLogger.logRecognizedFoods(
                 user?.id || 'dev-user-001',
@@ -1691,11 +1692,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
               if (logResult.success) {
                 Alert.alert(
-                  '🎉 Meal Logged Successfully!',
-                  `✅ ${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? 's' : ''} logged\n` +
-                    `📊 Total: ${logResult.totalCalories} calories\n` +
-                    `🍽️ Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
-                    `📱 Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                  'Meal Logged Successfully!',
+                  `${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? 's' : ''} logged\n` +
+                    `Total: ${logResult.totalCalories} calories\n` +
+                    `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                    `Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
                     `Your nutrition tracking has been updated!`,
                   [{ text: 'Awesome!' }]
                 );
@@ -1706,7 +1707,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 throw new Error(logResult.error || 'Failed to log meal');
               }
             } catch (error) {
-              console.error('❌ Failed to log adjusted meal:', error);
+              console.error('[ERROR] Failed to log adjusted meal:', error);
               Alert.alert('Error', 'Failed to log meal. Please try again.');
             }
           },
@@ -1839,7 +1840,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             <View style={styles.headerButtons}>
               {/* Track B Status Indicator */}
               <AnimatedPressable style={styles.statusButton} scaleValue={0.97}>
-                <Text style={styles.statusIcon}>{trackBStatus.isConnected ? '🟢' : '🔴'}</Text>
+                <Ionicons
+                  name={trackBStatus.isConnected ? 'checkmark-circle' : 'close-circle'}
+                  size={rf(16)}
+                  color={trackBStatus.isConnected ? '#10b981' : '#ef4444'}
+                />
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
@@ -1852,7 +1857,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 {isGeneratingPlan ? (
                   <AuroraSpinner size="sm" theme="white" />
                 ) : (
-                  <Text style={styles.aiButtonText}>🍽️ Week</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="restaurant-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                    <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Week</Text>
+                  </View>
                 )}
               </AnimatedPressable>
               <AnimatedPressable
@@ -1866,7 +1874,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 {isGeneratingMeal ? (
                   <AuroraSpinner size="sm" theme="white" />
                 ) : (
-                  <Text style={styles.aiButtonText}>🤖 Day</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="sparkles-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                    <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Day</Text>
+                  </View>
                 )}
               </AnimatedPressable>
               <AnimatedPressable
@@ -1874,26 +1885,35 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 onPress={() => setShowTestComponent(true)}
                 scaleValue={0.95}
               >
-                <Text style={styles.aiButtonText}>🧪 Test</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Test</Text>
+                </View>
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#10b981' }]}
                 onPress={runQuickActionsTests}
                 scaleValue={0.95}
               >
-                <Text style={styles.aiButtonText}>✅ Quick</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="checkmark-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Quick</Text>
+                </View>
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#8b5cf6' }]}
                 onPress={runFoodRecognitionE2ETests}
                 scaleValue={0.95}
               >
-                <Text style={styles.aiButtonText}>🧪 E2E</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>E2E</Text>
+                </View>
               </AnimatedPressable>
               <AnimatedPressable
                 style={[styles.aiButton, { backgroundColor: '#ef4444' }]}
                 onPress={() => {
-                  console.log('🧪 Test button pressed - bypassing profile checks');
+                  console.log('[TEST] Test button pressed - bypassing profile checks');
                   Alert.alert(
                     'Test Button',
                     'This button works! Check console for Generate Weekly Plan button logs.'
@@ -1901,10 +1921,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 }}
                 scaleValue={0.95}
               >
-                <Text style={styles.aiButtonText}>🧪 Test</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Test</Text>
+                </View>
               </AnimatedPressable>
               <AnimatedPressable style={styles.addButton} onPress={handleSearchFood} scaleValue={0.95}>
-                <Text style={styles.addIcon}>🤖</Text>
+                <Ionicons name="sparkles-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
               </AnimatedPressable>
             </View>
           </View>
@@ -1920,7 +1943,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           {/* Error State */}
           {(foodsError || userMealsError) && (
             <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-              <Text style={styles.errorText}>⚠️ {foodsError || userMealsError}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="warning-outline" size={rf(16)} color={ResponsiveTheme.colors.error || '#ef4444'} />
+                <Text style={[styles.errorText, { marginLeft: 8 }]}>{foodsError || userMealsError}</Text>
+              </View>
               <Button
                 title="Retry"
                 onPress={refreshAll}
@@ -1934,7 +1960,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           {/* No Authentication State */}
           {!canAccessMealFeatures && (
             <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-              <Text style={styles.errorText}>🔐 Please sign in to track your nutrition</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="lock-closed-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
+                <Text style={[styles.errorText, { marginLeft: 8 }]}>Please sign in to track your nutrition</Text>
+              </View>
             </GlassCard>
           )}
 
@@ -1991,8 +2020,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               getTodaysMeals().map((meal, index) => {
                 const mealTimes = { breakfast: '8:00 AM', lunch: '1:00 PM', dinner: '7:00 PM', snack: '4:00 PM' };
                 const mealTime = mealTimes[meal.type as keyof typeof mealTimes] || '12:00 PM';
-                const mealEmojis = { breakfast: '🍳', lunch: '🍱', dinner: '🍽️', snack: '🍪' };
-                const mealEmoji = mealEmojis[meal.type as keyof typeof mealEmojis] || '🍽️';
+                const mealIcons = { breakfast: 'sunny-outline', lunch: 'restaurant-outline', dinner: 'moon-outline', snack: 'nutrition-outline' };
+                const mealIcon = mealIcons[meal.type as keyof typeof mealIcons] || 'restaurant-outline';
                 const panResponder = createMealPanResponder(meal.id);
                 const swipePosition = getSwipePosition(meal.id);
 
@@ -2007,7 +2036,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                         hapticFeedback={true}
                         hapticType="medium"
                       >
-                        <Text style={styles.swipeActionIcon}>✏️</Text>
+                        <Ionicons name="pencil-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
                         <Text style={styles.swipeActionText}>Edit</Text>
                       </AnimatedPressable>
                       <AnimatedPressable
@@ -2017,7 +2046,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                         hapticFeedback={true}
                         hapticType="medium"
                       >
-                        <Text style={styles.swipeActionIcon}>🗑️</Text>
+                        <Ionicons name="trash-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
                         <Text style={styles.swipeActionText}>Delete</Text>
                       </AnimatedPressable>
                     </View>
@@ -2046,7 +2075,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                           style={styles.mealImageGradientBorder}
                         >
                           <View style={styles.mealImageInner}>
-                            <Text style={styles.mealImageEmoji}>{mealEmoji}</Text>
+                            <Ionicons name={mealIcon as any} size={rf(24)} color={ResponsiveTheme.colors.primary} />
                           </View>
                         </LinearGradient>
                       </View>
@@ -2086,7 +2115,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                         hapticFeedback={true}
                         hapticType="light"
                       >
-                        <Text style={styles.mealActionIcon}>▶️</Text>
+                        <Ionicons name="play" size={rf(16)} color={ResponsiveTheme.colors.primary} />
                       </AnimatedPressable>
                     </View>
                       </GlassCard>
@@ -2116,7 +2145,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 {
                   id: 1,
                   name: 'Grilled Chicken Salad',
-                  image: '🥗',
+                  icon: 'restaurant-outline',
                   cookTime: '15 min',
                   difficulty: 'Easy',
                   calories: 320,
@@ -2127,7 +2156,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 {
                   id: 2,
                   name: 'Salmon with Quinoa',
-                  image: '🍣',
+                  icon: 'fish-outline',
                   cookTime: '25 min',
                   difficulty: 'Medium',
                   calories: 450,
@@ -2138,7 +2167,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 {
                   id: 3,
                   name: 'Veggie Buddha Bowl',
-                  image: '🥙',
+                  icon: 'leaf-outline',
                   cookTime: '20 min',
                   difficulty: 'Easy',
                   calories: 380,
@@ -2192,7 +2221,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       {...(toLinearGradientProps(gradients.overlay.dark) as any)}
                       style={styles.suggestionGradientOverlay}
                     >
-                      <Text style={styles.suggestionImageEmoji}>{suggestion.image}</Text>
+                      <Ionicons name={suggestion.icon as any} size={rf(40)} color={ResponsiveTheme.colors.white} />
                     </LinearGradient>
                   </View>
 
@@ -2257,7 +2286,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                         style={[styles.suggestionCard, styles.suggestionCardBack]}
                       >
                         <View style={styles.cardBackContent}>
-                          <Text style={styles.cardBackIcon}>✓</Text>
+                          <Ionicons name="checkmark" size={rf(32)} color={ResponsiveTheme.colors.success || '#10b981'} />
                           <Text style={styles.cardBackTitle}>Added!</Text>
                           <Text style={styles.cardBackSubtitle}>Meal added to your plan</Text>
                         </View>
@@ -2307,7 +2336,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   </View>
 
                   {/* Water icon/wave */}
-                  <Text style={styles.waterDropIcon}>💧</Text>
+                  <Ionicons name="water-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.waterDropIcon} />
                 </View>
 
                 {/* Water Stats and Controls */}
@@ -2533,7 +2562,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 </Text>
                 {getTodaysMeals().map((meal) => {
                   const progress = getMealProgress(meal.id);
-                  console.log(`🍽️ DietScreen: Rendering meal "${meal.name}" (${meal.id}) with progress:`, progress);
+                  console.log(`[MEAL] DietScreen: Rendering meal "${meal.name}" (${meal.id}) with progress:`, progress);
                   return (
                     <MealCard
                       key={meal.id}
@@ -2561,7 +2590,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           {/* Generate Weekly Plan Prompt */}
           {!weeklyMealPlan && canAccessMealFeatures && (
             <GlassCard style={styles.promptCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-              <Text style={styles.promptTitle}>🍽️ Weekly Meal Planning</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ResponsiveTheme.spacing.sm }}>
+                <Ionicons name="restaurant-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.promptTitle, { marginLeft: 8, marginBottom: 0 }]}>Weekly Meal Planning</Text>
+              </View>
               <Text style={styles.promptText}>
                 Get a personalized 7-day meal plan with recipes tailored to your goals and
                 preferences.
@@ -2580,7 +2612,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             <View style={styles.searchSection}>
               <GlassCard style={styles.aiMealCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
                 <View style={styles.aiMealContent}>
-                  <Text style={styles.aiMealIcon}>🤖</Text>
+                  <Ionicons name="sparkles-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.aiMealIcon} />
                   <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
                   <Text style={styles.aiMealText}>
                     Create personalized meals based on your dietary preferences and nutrition goals.
@@ -2594,7 +2626,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       hapticFeedback={true}
                       hapticType="selection"
                     >
-                      <Text style={styles.mealTypeEmoji}>🥣</Text>
+                      <Ionicons name="sunny-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
                       <Text style={styles.mealTypeText}>Breakfast</Text>
                     </AnimatedPressable>
                     <AnimatedPressable
@@ -2605,7 +2637,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       hapticFeedback={true}
                       hapticType="selection"
                     >
-                      <Text style={styles.mealTypeEmoji}>🥗</Text>
+                      <Ionicons name="restaurant-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
                       <Text style={styles.mealTypeText}>Lunch</Text>
                     </AnimatedPressable>
                     <AnimatedPressable
@@ -2616,7 +2648,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       hapticFeedback={true}
                       hapticType="selection"
                     >
-                      <Text style={styles.mealTypeEmoji}>🍽️</Text>
+                      <Ionicons name="moon-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
                       <Text style={styles.mealTypeText}>Dinner</Text>
                     </AnimatedPressable>
                     <AnimatedPressable
@@ -2627,7 +2659,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       hapticFeedback={true}
                       hapticType="selection"
                     >
-                      <Text style={styles.mealTypeEmoji}>🍎</Text>
+                      <Ionicons name="nutrition-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
                       <Text style={styles.mealTypeText}>Snack</Text>
                     </AnimatedPressable>
                   </View>
@@ -2707,35 +2739,35 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             <View style={styles.actionsGrid}>
               <AnimatedPressable style={styles.actionItem} onPress={handleScanFood} scaleValue={0.95}>
                 <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Text style={styles.actionIcon}>📷</Text>
+                  <Ionicons name="camera-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
                   <Text style={styles.actionText}>Scan Food</Text>
                 </GlassCard>
               </AnimatedPressable>
 
               <AnimatedPressable style={styles.actionItem} onPress={handleSearchFood} scaleValue={0.95}>
                 <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Text style={styles.actionIcon}>🤖</Text>
+                  <Ionicons name="sparkles-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
                   <Text style={styles.actionText}>AI Meals</Text>
                 </GlassCard>
               </AnimatedPressable>
 
               <AnimatedPressable style={styles.actionItem} onPress={handleCreateRecipe} scaleValue={0.95}>
                 <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Text style={styles.actionIcon}>📝</Text>
+                  <Ionicons name="create-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
                   <Text style={styles.actionText}>Create Recipe</Text>
                 </GlassCard>
               </AnimatedPressable>
 
               <AnimatedPressable style={styles.actionItem} onPress={handleScanProduct} scaleValue={0.95}>
                 <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Text style={styles.actionIcon}>📱</Text>
+                  <Ionicons name="barcode-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
                   <Text style={styles.actionText}>Scan Product</Text>
                 </GlassCard>
               </AnimatedPressable>
 
               <AnimatedPressable style={styles.actionItem} onPress={handleLogWater} scaleValue={0.95}>
                 <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Text style={styles.actionIcon}>💧</Text>
+                  <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
                   <Text style={styles.actionText}>Log Water</Text>
                 </GlassCard>
               </AnimatedPressable>
@@ -2747,7 +2779,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             <Text style={styles.sectionTitle}>Water Intake</Text>
             <GlassCard style={styles.waterCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
               <View style={styles.waterHeader}>
-                <Text style={styles.waterIcon}>💧</Text>
+                <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.waterIcon} />
                 <View style={styles.waterInfo}>
                   <Text style={styles.waterAmount}>
                     {waterConsumed}L / {waterGoal}L
@@ -2756,7 +2788,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     {waterConsumed === 0
                       ? 'Start tracking your hydration!'
                       : waterConsumed >= waterGoal
-                        ? '🎉 Daily goal achieved!'
+                        ? 'Daily goal achieved!'
                         : `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
                   </Text>
                 </View>
@@ -2835,7 +2867,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       >
         <View style={styles.testContainer}>
           <View style={styles.testHeader}>
-            <Text style={styles.testTitle}>🧪 Food Recognition Test</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="flask-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+              <Text style={[styles.testTitle, { marginLeft: 8 }]}>Food Recognition Test</Text>
+            </View>
             <AnimatedPressable
               onPress={() => setShowTestComponent(false)}
               style={styles.testCloseButton}
@@ -2925,7 +2960,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               onPress={() => handleContextMenuAction('edit')}
               scaleValue={0.95}
             >
-              <Text style={styles.contextMenuText}>✏️ Edit Meal</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="pencil-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Edit Meal</Text>
+              </View>
             </AnimatedPressable>
 
             <AnimatedPressable
@@ -2933,7 +2971,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               onPress={() => handleContextMenuAction('duplicate')}
               scaleValue={0.95}
             >
-              <Text style={styles.contextMenuText}>📋 Duplicate</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="copy-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Duplicate</Text>
+              </View>
             </AnimatedPressable>
 
             <AnimatedPressable
@@ -2941,7 +2982,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               onPress={() => handleContextMenuAction('details')}
               scaleValue={0.95}
             >
-              <Text style={styles.contextMenuText}>📊 Nutrition Details</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="stats-chart-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Nutrition Details</Text>
+              </View>
             </AnimatedPressable>
 
             <AnimatedPressable
@@ -2949,7 +2993,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               onPress={() => handleContextMenuAction('delete')}
               scaleValue={0.95}
             >
-              <Text style={styles.contextMenuText}>🗑️ Delete Meal</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="trash-outline" size={rf(16)} color={ResponsiveTheme.colors.error || '#ef4444'} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Delete Meal</Text>
+              </View>
             </AnimatedPressable>
           </View>
         </AnimatedPressable>
@@ -2967,7 +3014,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             {selectedMealForPreparation && (
               <>
                 <View style={styles.mealModalHeader}>
-                  <Text style={styles.mealModalTitle}>🍽️ Ready to Cook?</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="restaurant-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+                    <Text style={[styles.mealModalTitle, { marginLeft: 8 }]}>Ready to Cook?</Text>
+                  </View>
                   <AnimatedPressable
                     onPress={() => setShowMealPreparationModal(false)}
                     style={styles.mealModalCloseButton}
@@ -3002,21 +3052,30 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
                   <View style={styles.mealModalDetails}>
                     <View style={styles.mealModalDetailItem}>
-                      <Text style={styles.mealModalDetailLabel}>⏱️ Estimated Time:</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="time-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Estimated Time:</Text>
+                      </View>
                       <Text style={styles.mealModalDetailValue}>
                         {selectedMealForPreparation.preparationTime} minutes
                       </Text>
                     </View>
 
                     <View style={styles.mealModalDetailItem}>
-                      <Text style={styles.mealModalDetailLabel}>🥘 Difficulty:</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="flame-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Difficulty:</Text>
+                      </View>
                       <Text style={styles.mealModalDetailValue}>
                         {selectedMealForPreparation.difficulty}
                       </Text>
                     </View>
 
                     <View style={styles.mealModalDetailItem}>
-                      <Text style={styles.mealModalDetailLabel}>🛒 Ingredients:</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="cart-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Ingredients:</Text>
+                      </View>
                       <Text style={styles.mealModalDetailValue}>
                         {selectedMealForPreparation.items?.length ?? 0} items
                       </Text>

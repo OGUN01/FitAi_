@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { subscriptionService, SubscriptionPlan, SubscriptionStatus } from '../services/subscriptionService';
+import { subscriptionService, SubscriptionPlan, SubscriptionStatus } from '../services/SubscriptionService';
 
 // Helper functions
 const calculatePremiumFeatures = (status: SubscriptionStatus) => {

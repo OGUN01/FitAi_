@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { GlassCard } from '../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -245,10 +246,10 @@ const AnalyticsScreen: React.FC = () => {
   ] as const;
 
   const tabs = [
-    { key: 'overview', label: 'Overview', icon: '📊' },
-    { key: 'workout', label: 'Workout', icon: '💪' },
-    { key: 'nutrition', label: 'Nutrition', icon: '🥗' },
-    { key: 'wellness', label: 'Wellness', icon: '😌' },
+    { key: 'overview', label: 'Overview', iconName: 'stats-chart-outline' },
+    { key: 'workout', label: 'Workout', iconName: 'barbell-outline' },
+    { key: 'nutrition', label: 'Nutrition', iconName: 'nutrition-outline' },
+    { key: 'wellness', label: 'Wellness', iconName: 'happy-outline' },
   ] as const;
 
   if (isLoading && !currentAnalytics) {
@@ -270,7 +271,7 @@ const AnalyticsScreen: React.FC = () => {
           title="Overall Score"
           value={currentAnalytics?.overallScore || analyticsSummary.averageScore}
           subtitle="out of 100"
-          icon="⭐"
+          iconName="star-outline"
           color="purple"
           size="medium"
         />
@@ -279,7 +280,7 @@ const AnalyticsScreen: React.FC = () => {
           title="Current Streak"
           value={analyticsSummary.currentStreak}
           subtitle="days active"
-          icon="🔥"
+          iconName="flame-outline"
           color="orange"
           size="medium"
           trend={analyticsSummary.currentStreak > 7 ? 'up' : analyticsSummary.currentStreak > 3 ? 'stable' : 'down'}
@@ -290,7 +291,7 @@ const AnalyticsScreen: React.FC = () => {
           title="Total Workouts"
           value={currentAnalytics?.workout.totalWorkouts || analyticsSummary.totalWorkouts}
           subtitle={`${selectedPeriod} period`}
-          icon="🏋️‍♂️"
+          iconName="barbell-outline"
           color="blue"
           size="medium"
         />
@@ -299,8 +300,8 @@ const AnalyticsScreen: React.FC = () => {
           title="Trend"
           value={analyticsSummary.recentTrend}
           subtitle="recent performance"
-          icon={analyticsSummary.recentTrend === 'Improving' ? '📈' : 
-                analyticsSummary.recentTrend === 'Declining' ? '📉' : '➡️'}
+          iconName={analyticsSummary.recentTrend === 'Improving' ? 'trending-up-outline' :
+                analyticsSummary.recentTrend === 'Declining' ? 'trending-down-outline' : 'arrow-forward-outline'}
           color={analyticsSummary.recentTrend === 'Improving' ? 'green' : 
                  analyticsSummary.recentTrend === 'Declining' ? 'red' : 'gray'}
           size="medium"
@@ -327,7 +328,7 @@ const AnalyticsScreen: React.FC = () => {
       {/* Top Insights */}
       <View>
         <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-          💡 Key Insights
+          Key Insights
         </Text>
         
         <View className="space-y-3">
@@ -360,7 +361,7 @@ const AnalyticsScreen: React.FC = () => {
       {getAchievements().length > 0 && (
         <View>
           <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            🏆 Recent Achievements
+            Recent Achievements
           </Text>
           
           <View className="space-y-3">
@@ -402,7 +403,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Weekly Average"
             value={currentAnalytics?.workout.averageWorkoutsPerWeek.toFixed(1) || '0'}
             subtitle="workouts"
-            icon="📅"
+            iconName="calendar-outline"
             color="blue"
           />
           
@@ -410,7 +411,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Avg Duration"
             value={currentAnalytics?.workout.averageWorkoutDuration.toFixed(0) || '0'}
             subtitle="minutes"
-            icon="⏱️"
+            iconName="timer-outline"
             color="green"
           />
           
@@ -418,7 +419,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Consistency"
             value={currentAnalytics?.workout.consistencyScore || 0}
             subtitle="out of 100"
-            icon="🎯"
+            iconName="target-outline"
             color="purple"
           />
           
@@ -426,7 +427,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Calories Burned"
             value={currentAnalytics?.workout.caloriesBurnedTotal.toLocaleString() || '0'}
             subtitle="total"
-            icon="🔥"
+            iconName="flame-outline"
             color="orange"
           />
         </View>
@@ -495,7 +496,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Nutrition Score"
             value={currentAnalytics?.nutrition.nutritionScore || 75}
             subtitle="out of 100"
-            icon="🥗"
+            iconName="nutrition-outline"
             color="green"
           />
           
@@ -503,7 +504,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Water Intake"
             value={currentAnalytics?.nutrition.waterIntakeAverage.toFixed(1) || '2.5'}
             subtitle="liters/day"
-            icon="💧"
+            iconName="water-outline"
             color="blue"
           />
           
@@ -511,7 +512,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Meal Consistency"
             value={currentAnalytics?.nutrition.mealLoggingConsistency || 85}
             subtitle="% logged"
-            icon="📝"
+            iconName="document-text-outline"
             color="purple"
           />
           
@@ -519,7 +520,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Variety Score"
             value={currentAnalytics?.nutrition.varietyScore || 85}
             subtitle="out of 100"
-            icon="🌈"
+            icon="color-palette-outline"
             color="orange"
           />
         </View>
@@ -597,7 +598,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Avg Sleep"
             value={currentAnalytics?.sleepWellness.averageSleepHours.toFixed(1) || '8.0'}
             subtitle="hours/night"
-            icon="😴"
+            iconName="moon-outline"
             color="purple"
           />
           
@@ -605,7 +606,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Recovery Score"
             value={currentAnalytics?.sleepWellness.recoveryScore || 75}
             subtitle="out of 100"
-            icon="⚡"
+            iconName="flash-outline"
             color="green"
           />
           
@@ -613,7 +614,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Sleep Consistency"
             value={currentAnalytics?.sleepWellness.sleepConsistency || 80}
             subtitle="out of 100"
-            icon="🎯"
+            iconName="target-outline"
             color="blue"
           />
           
@@ -621,7 +622,7 @@ const AnalyticsScreen: React.FC = () => {
             title="Sleep Debt"
             value={currentAnalytics?.sleepWellness.sleepDebt.toFixed(1) || '0.0'}
             subtitle="hours"
-            icon="⏰"
+            iconName="alarm-outline"
             color={currentAnalytics?.sleepWellness.sleepDebt && currentAnalytics.sleepWellness.sleepDebt > 5 ? 'red' : 'gray'}
           />
         </View>
@@ -645,7 +646,7 @@ const AnalyticsScreen: React.FC = () => {
           <View className="space-y-4">
             <View className="flex-row items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <View className="flex-row items-center">
-                <Text className="text-2xl mr-3">🛏️</Text>
+                <Ionicons name="bed-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginRight: rp(12) }} />
                 <View>
                   <Text className="font-medium text-blue-800 dark:text-blue-200">
                     Optimal Bedtime
@@ -659,7 +660,7 @@ const AnalyticsScreen: React.FC = () => {
             
             <View className="flex-row items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <View className="flex-row items-center">
-                <Text className="text-2xl mr-3">📈</Text>
+                <Ionicons name="trending-up-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginRight: rp(12) }} />
                 <View>
                   <Text className="font-medium text-green-800 dark:text-green-200">
                     Sleep Quality Trend
@@ -917,10 +918,10 @@ const AnalyticsScreen: React.FC = () => {
               contentContainerStyle={styles.achievementsScrollContent}
             >
               {[
-                { id: 1, emoji: '🔥', title: '7-Day Streak', subtitle: 'Keep going!', animation: achievementScale1 },
-                { id: 2, emoji: '🏃', title: 'First 5K', subtitle: 'Completed', animation: achievementScale2 },
-                { id: 3, emoji: '⚖️', title: 'Weight Goal', subtitle: '-5kg reached', animation: achievementScale3 },
-                { id: 4, emoji: '💪', title: '50 Workouts', subtitle: 'Milestone', animation: achievementScale1 },
+                { id: 1, iconName: 'flame-outline', title: '7-Day Streak', subtitle: 'Keep going!', animation: achievementScale1 },
+                { id: 2, iconName: 'walk-outline', title: 'First 5K', subtitle: 'Completed', animation: achievementScale2 },
+                { id: 3, iconName: 'scale-outline', title: 'Weight Goal', subtitle: '-5kg reached', animation: achievementScale3 },
+                { id: 4, iconName: 'barbell-outline', title: '50 Workouts', subtitle: 'Milestone', animation: achievementScale1 },
               ].map((achievement) => (
                 <Animated.View
                   key={achievement.id}
@@ -969,7 +970,7 @@ const AnalyticsScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  📊
+                  Analytics
                 </Animated.Text>
                 <Text style={styles.exportButtonText}>Export Progress</Text>
               </View>

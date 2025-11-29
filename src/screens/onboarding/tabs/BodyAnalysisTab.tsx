@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Input, Slider } from '../../../components/ui';
+import { Button, Input, Slider, BodySilhouette, AnimatedChart } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { Camera } from '../../../components/advanced/Camera';
@@ -35,50 +36,53 @@ interface BodyAnalysisTabProps {
 // ============================================================================
 
 const MEDICAL_CONDITIONS_OPTIONS = [
-  { id: 'diabetes-type1', label: 'Diabetes Type 1', value: 'diabetes-type1', icon: '💉' },
-  { id: 'diabetes-type2', label: 'Diabetes Type 2', value: 'diabetes-type2', icon: '🩺' },
-  { id: 'hypertension', label: 'High Blood Pressure', value: 'hypertension', icon: '❤️' },
-  { id: 'heart-disease', label: 'Heart Disease', value: 'heart-disease', icon: '💔' },
-  { id: 'thyroid', label: 'Thyroid Disorders', value: 'thyroid', icon: '🦋' },
-  { id: 'pcos', label: 'PCOS', value: 'pcos', icon: '🌸' },
-  { id: 'arthritis', label: 'Arthritis', value: 'arthritis', icon: '🦴' },
-  { id: 'asthma', label: 'Asthma', value: 'asthma', icon: '🫁' },
-  { id: 'depression', label: 'Depression', value: 'depression', icon: '🧠' },
-  { id: 'anxiety', label: 'Anxiety', value: 'anxiety', icon: '😰' },
-  { id: 'sleep-apnea', label: 'Sleep Apnea', value: 'sleep-apnea', icon: '😴' },
-  { id: 'high-cholesterol', label: 'High Cholesterol', value: 'high-cholesterol', icon: '🧪' },
+  { id: 'diabetes-type1', label: 'Diabetes Type 1', value: 'diabetes-type1' },
+  { id: 'diabetes-type2', label: 'Diabetes Type 2', value: 'diabetes-type2' },
+  { id: 'hypertension', label: 'High Blood Pressure', value: 'hypertension' },
+  { id: 'heart-disease', label: 'Heart Disease', value: 'heart-disease' },
+  { id: 'thyroid', label: 'Thyroid Disorders', value: 'thyroid' },
+  { id: 'pcos', label: 'PCOS', value: 'pcos' },
+  { id: 'arthritis', label: 'Arthritis', value: 'arthritis' },
+  { id: 'asthma', label: 'Asthma', value: 'asthma' },
+  { id: 'depression', label: 'Depression', value: 'depression' },
+  { id: 'anxiety', label: 'Anxiety', value: 'anxiety' },
+  { id: 'sleep-apnea', label: 'Sleep Apnea', value: 'sleep-apnea' },
+  { id: 'high-cholesterol', label: 'High Cholesterol', value: 'high-cholesterol' },
 ];
 
 const PHYSICAL_LIMITATIONS_OPTIONS = [
-  { id: 'back-pain', label: 'Back Pain/Issues', value: 'back-pain', icon: '🔙' },
-  { id: 'knee-problems', label: 'Knee Problems', value: 'knee-problems', icon: '🦵' },
-  { id: 'shoulder-issues', label: 'Shoulder Issues', value: 'shoulder-issues', icon: '💪' },
-  { id: 'neck-problems', label: 'Neck Problems', value: 'neck-problems', icon: '🤷' },
-  { id: 'ankle-issues', label: 'Ankle/Foot Issues', value: 'ankle-issues', icon: '🦶' },
-  { id: 'wrist-problems', label: 'Wrist Problems', value: 'wrist-problems', icon: '✋' },
-  { id: 'balance-issues', label: 'Balance Issues', value: 'balance-issues', icon: '⚖️' },
-  { id: 'mobility-limited', label: 'Limited Mobility', value: 'mobility-limited', icon: '♿' },
+  { id: 'back-pain', label: 'Back Pain/Issues', value: 'back-pain' },
+  { id: 'knee-problems', label: 'Knee Problems', value: 'knee-problems' },
+  { id: 'shoulder-issues', label: 'Shoulder Issues', value: 'shoulder-issues' },
+  { id: 'neck-problems', label: 'Neck Problems', value: 'neck-problems' },
+  { id: 'ankle-issues', label: 'Ankle/Foot Issues', value: 'ankle-issues' },
+  { id: 'wrist-problems', label: 'Wrist Problems', value: 'wrist-problems' },
+  { id: 'balance-issues', label: 'Balance Issues', value: 'balance-issues' },
+  { id: 'mobility-limited', label: 'Limited Mobility', value: 'mobility-limited' },
 ];
 
 const STRESS_LEVELS = [
   {
     level: 'low',
     title: 'Low Stress',
-    icon: '😌',
+    iconName: 'happy-outline',
+    gradient: ['#10B981', '#34D399'],
     description: 'Generally relaxed, good work-life balance',
     impact: 'Optimal conditions for aggressive goals',
   },
   {
     level: 'moderate',
     title: 'Moderate Stress',
-    icon: '😐',
+    iconName: 'remove-circle-outline',
+    gradient: ['#F59E0B', '#FBBF24'],
     description: 'Normal daily stress, manageable workload',
     impact: 'Standard approach recommended',
   },
   {
     level: 'high',
     title: 'High Stress',
-    icon: '😰',
+    iconName: 'alert-circle-outline',
+    gradient: ['#EF4444', '#F87171'],
     description: 'High pressure job, poor sleep, or major life events',
     impact: 'Conservative approach required for health',
   },
@@ -88,21 +92,21 @@ const PHOTO_TYPES = [
   {
     type: 'front' as const,
     title: 'Front View',
-    icon: '👤',
+    iconName: 'person-outline',
     description: 'Stand facing the camera',
     instruction: 'Stand straight, arms at your sides, facing the camera',
   },
   {
     type: 'side' as const,
     title: 'Side View',
-    icon: '↔️',
+    iconName: 'git-compare-outline',
     description: 'Turn sideways to camera',
     instruction: 'Turn to your side, arms at your sides, profile view',
   },
   {
     type: 'back' as const,
     title: 'Back View',
-    icon: '🔄',
+    iconName: 'return-up-back-outline',
     description: 'Turn around, back to camera',
     instruction: 'Turn around, arms at your sides, back facing the camera',
   },
@@ -278,11 +282,11 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     );
   };
   
-  const getBMICategory = (bmi: number): { category: string; color: string; icon: string } => {
-    if (bmi < 18.5) return { category: 'Underweight', color: ResponsiveTheme.colors.warning, icon: '⚠️' };
-    if (bmi < 25) return { category: 'Normal', color: ResponsiveTheme.colors.success, icon: '✅' };
-    if (bmi < 30) return { category: 'Overweight', color: ResponsiveTheme.colors.warning, icon: '⚠️' };
-    return { category: 'Obese', color: ResponsiveTheme.colors.error, icon: '🚨' };
+  const getBMICategory = (bmi: number): { category: string; color: string; iconName: string } => {
+    if (bmi < 18.5) return { category: 'Underweight', color: ResponsiveTheme.colors.warning, iconName: 'alert-circle' };
+    if (bmi < 25) return { category: 'Normal', color: ResponsiveTheme.colors.success, iconName: 'checkmark-circle' };
+    if (bmi < 30) return { category: 'Overweight', color: ResponsiveTheme.colors.warning, iconName: 'alert-circle' };
+    return { category: 'Obese', color: ResponsiveTheme.colors.error, iconName: 'alert-circle' };
   };
   
   const getHealthyWeightLossRate = (): number => {
@@ -382,7 +386,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       }));
       
       Alert.alert(
-        'Analysis Complete! 🎯',
+        'Analysis Complete!',
         `Body analysis completed with ${mockAnalysis.confidenceScore}% confidence. Review the results below.`,
         [{ text: 'Great!' }]
       );
@@ -499,7 +503,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           <View style={styles.bmiContent}>
             <Text style={styles.bmiTitle}>Current BMI: {formData.bmi}</Text>
             <View style={styles.bmiCategory}>
-              <Text style={styles.bmiIcon}>{getBMICategory(formData.bmi).icon}</Text>
+              <Ionicons name={getBMICategory(formData.bmi).iconName as any} size={rf(24)} color={getBMICategory(formData.bmi).color} />
               <Text style={[styles.bmiCategoryText, { color: getBMICategory(formData.bmi).color }]}>
                 {getBMICategory(formData.bmi).category}
               </Text>
@@ -519,13 +523,20 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                   const isHealthyRate = weeklyRate <= 1;
 
                   return (
-                    <Text style={[
-                      styles.weightLossRate,
-                      { color: isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning }
-                    ]}>
-                      {isHealthyRate ? '✅' : '⚠️'} Weekly rate: {weeklyRate.toFixed(2)}kg/week
-                      {!isHealthyRate && ' (Consider slower pace)'}
-                    </Text>
+                    <View style={styles.weightLossRateRow}>
+                      <Ionicons
+                        name={isHealthyRate ? 'checkmark-circle' : 'alert-circle'}
+                        size={rf(16)}
+                        color={isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                      />
+                      <Text style={[
+                        styles.weightLossRate,
+                        { color: isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning }
+                      ]}>
+                        Weekly rate: {weeklyRate.toFixed(2)}kg/week
+                        {!isHealthyRate && ' (Consider slower pace)'}
+                      </Text>
+                    </View>
                   );
                 })()}
               </View>
@@ -535,6 +546,40 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       )}
     </GlassCard>
   );
+
+  const renderGoalVisualizationSection = () => {
+    const hasWeightGoal = formData.current_weight_kg && formData.target_weight_kg;
+
+    if (!hasWeightGoal) return null;
+
+    return (
+      <GlassCard
+        style={styles.section}
+        elevation={2}
+        blurIntensity="medium"
+        padding="lg"
+        borderRadius="lg"
+      >
+        <Text style={styles.sectionTitle}>Your Transformation Goal</Text>
+        <Text style={styles.sectionSubtitle}>
+          Visualize your weight journey from current to target
+        </Text>
+
+        <AnimatedChart
+          currentValue={formData.current_weight_kg!}
+          targetValue={formData.target_weight_kg!}
+          currentLabel="Current"
+          targetLabel="Target"
+          unit="kg"
+          showProgress={true}
+          progressWeeks={formData.target_timeline_weeks || 12}
+          width={rw(90)}
+          height={rh(240)}
+          style={styles.goalChart}
+        />
+      </GlassCard>
+    );
+  };
 
   const renderBodyCompositionSection = () => (
     <GlassCard
@@ -554,9 +599,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
         scaleValue={0.95}
       >
-        <Text style={styles.measurementGuideText}>
-          📏 How to measure correctly
-        </Text>
+        <View style={styles.measurementGuideContent}>
+          <Ionicons name="resize-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+          <Text style={styles.measurementGuideText}>
+            How to measure correctly
+          </Text>
+        </View>
       </AnimatedPressable>
       
       {showMeasurementGuide && (
@@ -634,9 +682,16 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             <Text style={styles.ratioTitle}>
               Waist-Hip Ratio: {formData.waist_hip_ratio}
             </Text>
-            <Text style={styles.ratioDescription}>
-              {isHealthy ? '✅ Healthy ratio' : '⚠️ Consider waist reduction'}
-            </Text>
+            <View style={styles.ratioStatusRow}>
+              <Ionicons
+                name={isHealthy ? 'checkmark-circle' : 'alert-circle'}
+                size={rf(16)}
+                color={isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
+              />
+              <Text style={[styles.ratioDescription, { color: isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning }]}>
+                {isHealthy ? 'Healthy ratio' : 'Consider waist reduction'}
+              </Text>
+            </View>
           </GlassCard>
         );
       })()}
@@ -667,7 +722,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           borderRadius="lg"
           style={styles.instructionCard}
         >
-          <Text style={styles.instructionTitle}>📸 Photo Guidelines</Text>
+          <View style={styles.instructionTitleContainer}>
+            <Ionicons name="camera-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.instructionTitle}>Photo Guidelines</Text>
+          </View>
           <Text style={styles.instructionText}>
             • Wear form-fitting clothes or workout attire{'\n'}
             • Ensure good lighting{'\n'}
@@ -758,7 +816,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             borderRadius="lg"
             style={styles.analysisResultsCard}
           >
-            <Text style={styles.analysisResultsTitle}>🎯 AI Analysis Results</Text>
+            <View style={styles.analysisResultsTitleContainer}>
+              <Ionicons name="analytics-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.analysisResultsTitle}>AI Analysis Results</Text>
+            </View>
             <Text style={styles.confidenceScore}>
               Confidence: {formData.ai_confidence_score}%
             </Text>
@@ -779,9 +840,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 
             <View style={styles.bodyTypeInfo}>
               <Text style={styles.bodyTypeDescription}>
-                {formData.ai_body_type === 'ectomorph' && '🌱 Naturally lean, fast metabolism, difficulty gaining weight'}
-                {formData.ai_body_type === 'mesomorph' && '💪 Athletic build, gains muscle easily, balanced metabolism'}
-                {formData.ai_body_type === 'endomorph' && '🍎 Broader build, slower metabolism, gains weight easily'}
+                {formData.ai_body_type === 'ectomorph' && 'Naturally lean, fast metabolism, difficulty gaining weight'}
+                {formData.ai_body_type === 'mesomorph' && 'Athletic build, gains muscle easily, balanced metabolism'}
+                {formData.ai_body_type === 'endomorph' && 'Broader build, slower metabolism, gains weight easily'}
               </Text>
             </View>
 
@@ -790,7 +851,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               onPress={analyzePhotos}
               scaleValue={0.95}
             >
-              <Text style={styles.reanalyzeText}>🔄 Re-analyze Photos</Text>
+              <Ionicons name="refresh-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.reanalyzeText}>Re-analyze Photos</Text>
             </AnimatedPressable>
           </GlassCard>
         )}
@@ -875,7 +937,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 styles.checkboxBox,
                 ...(formData.pregnancy_status ? [styles.checkboxBoxChecked] : []),
               ]}>
-                {formData.pregnancy_status && <Text style={styles.checkboxCheck}>✓</Text>}
+                {formData.pregnancy_status && <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />}
               </View>
               <Text style={styles.checkboxLabel}>Currently Pregnant</Text>
             </AnimatedPressable>
@@ -921,7 +983,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 styles.checkboxBox,
                 ...(formData.breastfeeding_status ? [styles.checkboxBoxChecked] : []),
               ]}>
-                {formData.breastfeeding_status && <Text style={styles.checkboxCheck}>✓</Text>}
+                {formData.breastfeeding_status && <Ionicons name="checkmark" size={rf(16)} color="#FFFFFF" />}
               </View>
               <Text style={styles.checkboxLabel}>Currently Breastfeeding</Text>
             </AnimatedPressable>
@@ -951,9 +1013,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           label="Current Stress Level (Optional)"
           showTooltip={true}
           formatValue={(val) => {
-            if (val === 1) return '😌 Low Stress';
-            if (val === 2) return '😐 Moderate Stress';
-            return '😰 High Stress';
+            if (val === 1) return 'Low Stress';
+            if (val === 2) return 'Moderate Stress';
+            return 'High Stress';
           }}
           style={styles.stressSlider}
         />
@@ -966,9 +1028,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             borderRadius="lg"
             style={styles.infoCard}
           >
-            <Text style={styles.infoText}>
-              💡 Skip for now? You can connect a fitness band or smartwatch in the main app to automatically track your stress levels.
-            </Text>
+            <View style={styles.infoContent}>
+              <Ionicons name="bulb-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.infoText}>
+                Skip for now? You can connect a fitness band or smartwatch in the main app to automatically track your stress levels.
+              </Text>
+            </View>
           </GlassCard>
         )}
         
@@ -980,9 +1045,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
             borderRadius="lg"
             style={styles.warningCard}
           >
-            <Text style={styles.warningText}>
-              ⚠️ High stress detected - we'll use conservative calorie targets to protect your health and hormones
-            </Text>
+            <View style={styles.warningRow}>
+              <Ionicons name="alert-circle" size={rf(18)} color={ResponsiveTheme.colors.warning} />
+              <Text style={styles.warningText}>
+                High stress detected - we'll use conservative calorie targets to protect your health and hormones
+              </Text>
+            </View>
           </GlassCard>
         )}
       </View>
@@ -996,7 +1064,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           borderRadius="lg"
           style={styles.medicalWarningCard}
         >
-          <Text style={styles.medicalWarningTitle}>⚠️ Important Medical Notice</Text>
+          <View style={styles.medicalWarningTitleRow}>
+            <Ionicons name="alert-circle" size={rf(20)} color={ResponsiveTheme.colors.warning} />
+            <Text style={styles.medicalWarningTitle}>Important Medical Notice</Text>
+          </View>
           <Text style={styles.medicalWarningText}>
             Based on your medical conditions, please consult with your healthcare provider before starting any new fitness or diet program.
           </Text>
@@ -1094,22 +1165,38 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Background Image */}
+        {/* Hero Section with Body Silhouette */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(200)}
+          height={rh(420)}
         >
           <Text style={styles.title}>Body Analysis & Health Profile</Text>
           <Text style={styles.subtitle}>
             Comprehensive body analysis with reliable AI-powered insights
           </Text>
 
+          {/* Body Silhouette with Measurement Points */}
+          <View style={styles.silhouetteContainer}>
+            <BodySilhouette
+              gender={personalInfoData?.gender || 'male'}
+              measurements={{
+                height: formData.height_cm,
+                chest: formData.chest_cm,
+                waist: formData.waist_cm,
+                hips: formData.hip_cm,
+              }}
+              showAnimations={true}
+              size={rh(280)}
+            />
+          </View>
+
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Text style={styles.autoSaveText}>💾 Saving...</Text>
+              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
         </HeroSection>
@@ -1118,6 +1205,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         <View style={styles.content}>
           <AnimatedSection delay={0}>
             {renderBasicMeasurementsSection()}
+          </AnimatedSection>
+
+          <AnimatedSection delay={50}>
+            {renderGoalVisualizationSection()}
           </AnimatedSection>
 
           <AnimatedSection delay={100}>
@@ -1147,9 +1238,16 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               borderRadius="lg"
               style={styles.validationCard}
             >
-              <Text style={styles.validationTitle}>
-                {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
-              </Text>
+              <View style={styles.validationTitleRow}>
+                <Ionicons
+                  name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
+                  size={rf(20)}
+                  color={validationResult.is_valid ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
+                />
+                <Text style={[styles.validationTitle, validationResult.is_valid && styles.validationTitleSuccess]}>
+                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                </Text>
+              </View>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
@@ -1275,7 +1373,20 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
+  silhouetteContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: ResponsiveTheme.spacing.lg,
+  },
+
+  goalChart: {
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
   autoSaveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -1409,13 +1520,25 @@ const styles = StyleSheet.create({
   weightLossRate: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
+  },
+
+  weightLossRateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   // Body Composition Section
   measurementGuideButton: {
     alignSelf: 'flex-start',
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  measurementGuideContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   measurementGuideText: {
@@ -1479,6 +1602,13 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
 
+  ratioStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
   // Photo Analysis Section
   instructionCard: {
     padding: ResponsiveTheme.spacing.md,
@@ -1488,11 +1618,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 
+  instructionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
   instructionTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.secondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   instructionText: {
@@ -1635,12 +1771,18 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
   },
 
+  analysisResultsTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
   analysisResultsTitle: {
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.success,
-    textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   confidenceScore: {
@@ -1684,6 +1826,9 @@ const styles = StyleSheet.create({
   },
 
   reanalyzeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
     alignSelf: 'center',
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -1711,16 +1856,22 @@ const styles = StyleSheet.create({
   },
 
   medicalWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    fontSize: rf(16),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   medicalWarningText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(18),
+  },
+
+  medicalWarningTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   // Pregnancy/Breastfeeding Section
@@ -1778,13 +1929,6 @@ const styles = StyleSheet.create({
 
   trimesterSelector: {
     marginBottom: ResponsiveTheme.spacing.md,
-  },
-
-  inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   trimesterButtons: {
@@ -1877,7 +2021,14 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
   },
 
+  infoContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
   infoText: {
+    flex: 1,
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.primary,
     lineHeight: rf(18),
@@ -1895,6 +2046,13 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.warning,
     lineHeight: rf(18),
+    flex: 1,
+  },
+
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   // Calculated Results Section
@@ -1939,17 +2097,27 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
   },
 
-  validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+  validationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
+  validationTitle: {
+    fontSize: rf(16),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  validationTitleSuccess: {
+    color: ResponsiveTheme.colors.secondary,
+  },
+
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(20),
     color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 

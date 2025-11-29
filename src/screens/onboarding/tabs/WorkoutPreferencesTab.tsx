@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
 import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Slider } from '../../../components/ui';
+import { Button, Slider, SwipeableCardStack, type SwipeableCard } from '../../../components/ui';
 import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection } from '../../../components/ui/aurora';
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
@@ -33,39 +34,39 @@ interface WorkoutPreferencesTabProps {
 // ============================================================================
 
 const FITNESS_GOALS = [
-  { id: 'weight-loss', title: 'Weight Loss', icon: '🔥', description: 'Burn fat and lose weight' },
-  { id: 'weight-gain', title: 'Weight Gain', icon: '📈', description: 'Gain healthy weight (muscle and mass)' },
-  { id: 'muscle-gain', title: 'Muscle Gain', icon: '💪', description: 'Build lean muscle mass' },
-  { id: 'strength', title: 'Strength', icon: '🏋️', description: 'Increase overall strength' },
-  { id: 'endurance', title: 'Endurance', icon: '🏃', description: 'Improve cardiovascular fitness' },
-  { id: 'flexibility', title: 'Flexibility', icon: '🧘', description: 'Enhance mobility and flexibility' },
-  { id: 'general_fitness', title: 'General Fitness', icon: '⚡', description: 'Overall health and wellness' },
+  { id: 'weight-loss', title: 'Weight Loss', iconName: 'flame-outline', description: 'Burn fat and lose weight' },
+  { id: 'weight-gain', title: 'Weight Gain', iconName: 'trending-up-outline', description: 'Gain healthy weight (muscle and mass)' },
+  { id: 'muscle-gain', title: 'Muscle Gain', iconName: 'barbell-outline', description: 'Build lean muscle mass' },
+  { id: 'strength', title: 'Strength', iconName: 'fitness-outline', description: 'Increase overall strength' },
+  { id: 'endurance', title: 'Endurance', iconName: 'speedometer-outline', description: 'Improve cardiovascular fitness' },
+  { id: 'flexibility', title: 'Flexibility', iconName: 'body-outline', description: 'Enhance mobility and flexibility' },
+  { id: 'general_fitness', title: 'General Fitness', iconName: 'flash-outline', description: 'Overall health and wellness' },
 ];
 
 const ACTIVITY_LEVELS = [
-  { value: 'sedentary', label: 'Sedentary', description: 'Little to no exercise', icon: '🪑' },
-  { value: 'light', label: 'Lightly Active', description: 'Light exercise 1-3 days/week', icon: '🚶' },
-  { value: 'moderate', label: 'Moderately Active', description: 'Moderate exercise 3-5 days/week', icon: '🏃‍♂️' },
-  { value: 'active', label: 'Very Active', description: 'Hard exercise 6-7 days/week', icon: '🏋️‍♂️' },
-  { value: 'extreme', label: 'Extremely Active', description: 'Very hard exercise, physical job', icon: '🔥' },
+  { value: 'sedentary', label: 'Sedentary', description: 'Little to no exercise', iconName: 'bed-outline' },
+  { value: 'light', label: 'Lightly Active', description: 'Light exercise 1-3 days/week', iconName: 'walk-outline' },
+  { value: 'moderate', label: 'Moderately Active', description: 'Moderate exercise 3-5 days/week', iconName: 'walk-outline' },
+  { value: 'active', label: 'Very Active', description: 'Hard exercise 6-7 days/week', iconName: 'barbell-outline' },
+  { value: 'extreme', label: 'Extremely Active', description: 'Very hard exercise, physical job', iconName: 'flame-outline' },
 ];
 
 const LOCATION_OPTIONS = [
-  { id: 'home', title: 'Home', icon: '🏠', description: 'Workout from the comfort of your home' },
-  { id: 'gym', title: 'Gym', icon: '🏋️', description: 'Access to full gym equipment' },
-  { id: 'both', title: 'Both', icon: '🔄', description: 'Flexible workouts anywhere' },
+  { id: 'home', title: 'Home', iconName: 'home-outline', description: 'Workout from the comfort of your home' },
+  { id: 'gym', title: 'Gym', iconName: 'fitness-outline', description: 'Access to full gym equipment' },
+  { id: 'both', title: 'Both', iconName: 'repeat-outline', description: 'Flexible workouts anywhere' },
 ];
 
 const EQUIPMENT_OPTIONS = [
-  { id: 'bodyweight', label: 'Bodyweight', value: 'bodyweight', icon: '🤸' },
-  { id: 'dumbbells', label: 'Dumbbells', value: 'dumbbells', icon: '🏋️' },
-  { id: 'resistance-bands', label: 'Resistance Bands', value: 'resistance-bands', icon: '🎗️' },
-  { id: 'kettlebells', label: 'Kettlebells', value: 'kettlebells', icon: '⚖️' },
-  { id: 'barbell', label: 'Barbell', value: 'barbell', icon: '🏋️‍♂️' },
-  { id: 'pull-up-bar', label: 'Pull-up Bar', value: 'pull-up-bar', icon: '🏗️' },
-  { id: 'yoga-mat', label: 'Yoga Mat', value: 'yoga-mat', icon: '🧘' },
-  { id: 'treadmill', label: 'Treadmill', value: 'treadmill', icon: '🏃' },
-  { id: 'stationary-bike', label: 'Stationary Bike', value: 'stationary-bike', icon: '🚴' },
+  { id: 'bodyweight', label: 'Bodyweight', value: 'bodyweight', iconName: 'body-outline' },
+  { id: 'dumbbells', label: 'Dumbbells', value: 'dumbbells', iconName: 'barbell-outline' },
+  { id: 'resistance-bands', label: 'Resistance Bands', value: 'resistance-bands', iconName: 'resize-outline' },
+  { id: 'kettlebells', label: 'Kettlebells', value: 'kettlebells', iconName: 'barbell-outline' },
+  { id: 'barbell', label: 'Barbell', value: 'barbell', iconName: 'barbell-outline' },
+  { id: 'pull-up-bar', label: 'Pull-up Bar', value: 'pull-up-bar', iconName: 'remove-outline' },
+  { id: 'yoga-mat', label: 'Yoga Mat', value: 'yoga-mat', iconName: 'body-outline' },
+  { id: 'treadmill', label: 'Treadmill', value: 'treadmill', iconName: 'speedometer-outline' },
+  { id: 'stationary-bike', label: 'Stationary Bike', value: 'stationary-bike', iconName: 'bicycle-outline' },
 ];
 
 // Standard gym equipment - auto-populated when gym is selected
@@ -81,33 +82,33 @@ const STANDARD_GYM_EQUIPMENT = [
 ];
 
 const INTENSITY_OPTIONS = [
-  { value: 'beginner', label: 'Beginner', description: 'New to fitness or returning after a break', icon: '🌱' },
-  { value: 'intermediate', label: 'Intermediate', description: 'Some experience with regular exercise', icon: '💪' },
-  { value: 'advanced', label: 'Advanced', description: 'Experienced with consistent training', icon: '🔥' },
+  { value: 'beginner', label: 'Beginner', description: 'New to fitness or returning after a break', iconName: 'leaf-outline' },
+  { value: 'intermediate', label: 'Intermediate', description: 'Some experience with regular exercise', iconName: 'barbell-outline' },
+  { value: 'advanced', label: 'Advanced', description: 'Experienced with consistent training', iconName: 'flame-outline' },
 ];
 
 const WORKOUT_TYPE_OPTIONS = [
-  { id: 'strength', label: 'Strength Training', value: 'strength', icon: '💪' },
-  { id: 'cardio', label: 'Cardio', value: 'cardio', icon: '❤️' },
-  { id: 'hiit', label: 'HIIT', value: 'hiit', icon: '⚡' },
-  { id: 'yoga', label: 'Yoga', value: 'yoga', icon: '🧘' },
-  { id: 'pilates', label: 'Pilates', value: 'pilates', icon: '🤸‍♀️' },
-  { id: 'flexibility', label: 'Flexibility', value: 'flexibility', icon: '🤸' },
-  { id: 'functional', label: 'Functional Training', value: 'functional', icon: '🏃‍♂️' },
-  { id: 'sports', label: 'Sports Training', value: 'sports', icon: '⚽' },
+  { id: 'strength', label: 'Strength Training', value: 'strength', iconName: 'barbell-outline' },
+  { id: 'cardio', label: 'Cardio', value: 'cardio', iconName: 'heart-outline' },
+  { id: 'hiit', label: 'HIIT', value: 'hiit', iconName: 'flash-outline' },
+  { id: 'yoga', label: 'Yoga', value: 'yoga', iconName: 'body-outline' },
+  { id: 'pilates', label: 'Pilates', value: 'pilates', iconName: 'body-outline' },
+  { id: 'flexibility', label: 'Flexibility', value: 'flexibility', iconName: 'body-outline' },
+  { id: 'functional', label: 'Functional Training', value: 'functional', iconName: 'walk-outline' },
+  { id: 'sports', label: 'Sports Training', value: 'sports', iconName: 'football-outline' },
 ];
 
 const FLEXIBILITY_LEVELS = [
-  { value: 'poor', label: 'Poor', description: 'Limited range of motion', icon: '🔒' },
-  { value: 'fair', label: 'Fair', description: 'Average flexibility', icon: '📏' },
-  { value: 'good', label: 'Good', description: 'Above average flexibility', icon: '✅' },
-  { value: 'excellent', label: 'Excellent', description: 'Very flexible', icon: '🤸' },
+  { value: 'poor', label: 'Poor', description: 'Limited range of motion', iconName: 'lock-closed-outline' },
+  { value: 'fair', label: 'Fair', description: 'Average flexibility', iconName: 'resize-outline' },
+  { value: 'good', label: 'Good', description: 'Above average flexibility', iconName: 'checkmark-circle-outline' },
+  { value: 'excellent', label: 'Excellent', description: 'Very flexible', iconName: 'body-outline' },
 ];
 
 const WORKOUT_TIMES = [
-  { value: 'morning', label: 'Morning', icon: '🌅', description: '6AM - 10AM' },
-  { value: 'afternoon', label: 'Afternoon', icon: '☀️', description: '12PM - 4PM' },
-  { value: 'evening', label: 'Evening', icon: '🌆', description: '6PM - 9PM' },
+  { value: 'morning', label: 'Morning', iconName: 'sunny-outline', description: '6AM - 10AM' },
+  { value: 'afternoon', label: 'Afternoon', iconName: 'sunny-outline', description: '12PM - 4PM' },
+  { value: 'evening', label: 'Evening', iconName: 'moon-outline', description: '6PM - 9PM' },
 ];
 
 const OCCUPATION_OPTIONS = [
@@ -496,12 +497,15 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         <View style={styles.goalField}>
           <Text style={styles.fieldLabel}>What are your fitness goals? (Select all that apply)</Text>
           {bodyAnalysisData?.ai_body_type && (
-            <Text style={styles.autoSuggestText}>
-              💡 Based on your {bodyAnalysisData.ai_body_type} body type, we suggest focusing on{' '}
-              {bodyAnalysisData.ai_body_type === 'ectomorph' ? 'muscle gain and strength' :
-               bodyAnalysisData.ai_body_type === 'endomorph' ? 'weight loss and endurance' :
-               'strength and muscle gain'}
-            </Text>
+            <View style={styles.autoSuggestText}>
+              <Ionicons name="bulb-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+              <Text style={styles.autoSuggestTextContent}>
+                Based on your {bodyAnalysisData.ai_body_type} body type, we suggest focusing on{' '}
+                {bodyAnalysisData.ai_body_type === 'ectomorph' ? 'muscle gain and strength' :
+                 bodyAnalysisData.ai_body_type === 'endomorph' ? 'weight loss and endurance' :
+                 'strength and muscle gain'}
+              </Text>
+            </View>
           )}
           
           <View style={styles.goalsGrid}>
@@ -523,7 +527,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   ])}
                 >
                   <View style={styles.goalContent}>
-                    <Text style={styles.goalIcon}>{goal.icon}</Text>
+                    <Ionicons
+                      name={goal.iconName as any}
+                      size={rf(32)}
+                      color={formData.primary_goals.includes(goal.id) ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                      style={{ marginBottom: ResponsiveTheme.spacing.sm }}
+                    />
                     <Text style={[
                       styles.goalTitle,
                       ...(formData.primary_goals.includes(goal.id) ? [styles.goalTitleSelected] : []),
@@ -556,7 +565,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             style={styles.calculatedActivityCard}
           >
             <View style={styles.calculatedActivityContent}>
-              <Text style={styles.calculatedActivityIcon}>{currentActivityLevel?.icon || '🪑'}</Text>
+              <Ionicons
+                name={(currentActivityLevel?.iconName as any) || 'bed-outline'}
+                size={rf(32)}
+                color={ResponsiveTheme.colors.textSecondary}
+                style={{ marginRight: ResponsiveTheme.spacing.md }}
+              />
               <View style={styles.calculatedActivityText}>
                 <Text style={styles.calculatedActivityTitle}>
                   {currentActivityLevel?.label || 'Sedentary'}
@@ -565,7 +579,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   {currentActivityLevel?.description || 'Little to no exercise'}
                 </Text>
                 <View style={styles.calculatedActivityNote}>
-                  <Text style={styles.calculatedActivityNoteIcon}>💡</Text>
+                  <Ionicons name="bulb-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
                   <Text style={styles.calculatedActivityNoteText}>
                     Activity level is automatically determined by your occupation type from Personal Info (Tab 1).
                     This represents your daily movement outside of planned workouts.
@@ -603,7 +617,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             style={styles.calculatedLevelCard}
           >
             <View style={styles.calculatedLevelContent}>
-              <Text style={styles.calculatedLevelIcon}>{levelInfo?.icon}</Text>
+              <Ionicons
+                name={(levelInfo?.iconName as any) || 'leaf-outline'}
+                size={rf(24)}
+                color={ResponsiveTheme.colors.primary}
+                style={{ marginRight: ResponsiveTheme.spacing.sm }}
+              />
               <View style={styles.calculatedLevelText}>
                 <Text style={styles.calculatedLevelTitle}>
                   Recommended Intensity: {intensityRecommendation.level.charAt(0).toUpperCase() + intensityRecommendation.level.slice(1)}
@@ -611,9 +630,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 <Text style={styles.calculatedLevelDescription}>
                   {intensityRecommendation.reasoning}
                 </Text>
-                <Text style={styles.calculatedLevelHint}>
-                  💡 You can change this below if you feel differently
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: ResponsiveTheme.spacing.xs }}>
+                  <Ionicons name="bulb-outline" size={rf(12)} color={ResponsiveTheme.colors.primary} style={{ marginRight: 4 }} />
+                  <Text style={styles.calculatedLevelHint}>
+                    You can change this below if you feel differently
+                  </Text>
+                </View>
               </View>
             </View>
           </GlassCard>
@@ -628,7 +650,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           style={styles.recommendedTypesCard}
         >
           <View style={styles.recommendedTypesHeader}>
-            <Text style={styles.recommendedTypesIcon}>🎯</Text>
+            <Ionicons name="target-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
             <Text style={styles.recommendedTypesTitle}>Recommended Workout Types</Text>
           </View>
           <Text style={styles.recommendedTypesDescription}>
@@ -639,14 +661,75 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               const workoutType = WORKOUT_TYPE_OPTIONS.find(opt => opt.value === typeId);
               return workoutType ? (
                 <View key={typeId} style={styles.recommendedTypeItem}>
-                  <Text style={styles.recommendedTypeIcon}>{workoutType.icon}</Text>
+                  <Ionicons name={workoutType.iconName as any} size={rf(16)} color={ResponsiveTheme.colors.text} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
                   <Text style={styles.recommendedTypeLabel}>{workoutType.label}</Text>
                 </View>
               ) : null;
             })}
           </View>
         </GlassCard>
-        
+
+        {/* Interactive Workout Type Explorer */}
+        <GlassCard
+          elevation={2}
+          blurIntensity="medium"
+          padding="lg"
+          borderRadius="lg"
+          style={styles.workoutExplorerCard}
+        >
+          <Text style={styles.sectionTitle}>Explore Workout Styles</Text>
+          <Text style={styles.sectionSubtitle}>
+            Swipe right to add, swipe left to skip
+          </Text>
+
+          <SwipeableCardStack
+            cards={WORKOUT_TYPE_OPTIONS.map((type): SwipeableCard => ({
+              id: type.id,
+              title: type.label,
+              description: `Swipe right to add ${type.label} to your routine`,
+              iconName: type.iconName,
+            }))}
+            onSwipeRight={(cardId) => {
+              const currentTypes = formData.workout_types || [];
+              if (!currentTypes.includes(cardId)) {
+                updateField('workout_types', [...currentTypes, cardId]);
+              }
+            }}
+            onSwipeLeft={(cardId) => {
+              // Just skip - do nothing
+              console.log(`Skipped ${cardId}`);
+            }}
+            style={styles.swipeableCards}
+          />
+
+          {/* Selected Workout Types */}
+          {formData.workout_types && formData.workout_types.length > 0 && (
+            <View style={styles.selectedTypesContainer}>
+              <Text style={styles.selectedTypesTitle}>Your Selected Workouts:</Text>
+              <View style={styles.selectedTypesList}>
+                {formData.workout_types.map((typeId) => {
+                  const type = WORKOUT_TYPE_OPTIONS.find(opt => opt.value === typeId);
+                  return type ? (
+                    <AnimatedPressable
+                      key={typeId}
+                      style={styles.selectedTypeChip}
+                      onPress={() => {
+                        const newTypes = formData.workout_types.filter(t => t !== typeId);
+                        updateField('workout_types', newTypes);
+                      }}
+                      scaleValue={0.95}
+                    >
+                      <Ionicons name={type.iconName as any} size={rf(16)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
+                      <Text style={styles.selectedTypeLabel}>{type.label}</Text>
+                      <Ionicons name="close-outline" size={rf(16)} color={ResponsiveTheme.colors.error} />
+                    </AnimatedPressable>
+                  ) : null;
+                })}
+              </View>
+            </View>
+          )}
+        </GlassCard>
+
         <View style={styles.fitnessGrid}>
         <View style={styles.fitnessItem}>
           <Slider
@@ -726,10 +809,10 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             label="Flexibility Level"
             showTooltip={true}
             formatValue={(val) => {
-              if (val <= 3) return '🔒 Poor';
-              if (val <= 6) return '📏 Fair';
-              if (val <= 8) return '✅ Good';
-              return '🤸 Excellent';
+              if (val <= 3) return 'Poor';
+              if (val <= 6) return 'Fair';
+              if (val <= 8) return 'Good';
+              return 'Excellent';
             }}
             style={styles.flexibilitySlider}
           />
@@ -771,7 +854,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.locationContent}>
-                  <Text style={styles.locationIcon}>{option.icon}</Text>
+                  <Ionicons
+                    name={option.iconName as any}
+                    size={rf(24)}
+                    color={formData.location === option.id ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                    style={{ marginBottom: ResponsiveTheme.spacing.sm }}
+                  />
                   <Text style={[
                     styles.locationTitle,
                     ...(formData.location === option.id ? [styles.locationTitleSelected] : []),
@@ -809,7 +897,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
             style={styles.gymEquipmentCard}
           >
             <View style={styles.gymEquipmentContent}>
-              <Text style={styles.gymEquipmentIcon}>🏋️</Text>
+              <Ionicons name="fitness-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginBottom: ResponsiveTheme.spacing.sm }} />
               <Text style={styles.gymEquipmentTitle}>Full Gym Access</Text>
               <Text style={styles.gymEquipmentDescription}>
                 All standard gym equipment is available including dumbbells, barbells,
@@ -820,7 +908,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   const equipment = EQUIPMENT_OPTIONS.find(opt => opt.value === equipmentId);
                   return equipment ? (
                     <View key={equipmentId} style={styles.gymEquipmentItem}>
-                      <Text style={styles.gymEquipmentItemIcon}>{equipment.icon}</Text>
+                      <Ionicons name={equipment.iconName as any} size={rf(16)} color={ResponsiveTheme.colors.text} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
                       <Text style={styles.gymEquipmentItemLabel}>{equipment.label}</Text>
                     </View>
                   ) : null;
@@ -882,7 +970,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.workoutTimeContent}>
-                  <Text style={styles.workoutTimeIcon}>{time.icon}</Text>
+                  <Ionicons
+                    name={time.iconName as any}
+                    size={rf(20)}
+                    color={formData.preferred_workout_times.includes(time.value) ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                    style={{ marginBottom: ResponsiveTheme.spacing.sm }}
+                  />
                   <Text style={StyleSheet.flatten([
                     styles.workoutTimeTitle,
                     ...(formData.preferred_workout_times.includes(time.value) ? [styles.workoutTimeTitleSelected] : []),
@@ -912,12 +1005,12 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       
       <View style={styles.stylePreferencesGrid}>
         {[
-          { key: 'enjoys_cardio', title: 'Enjoys Cardio', icon: '❤️', description: 'Running, cycling, aerobic exercises' },
-          { key: 'enjoys_strength_training', title: 'Enjoys Strength Training', icon: '💪', description: 'Weight lifting, resistance exercises' },
-          { key: 'enjoys_group_classes', title: 'Enjoys Group Classes', icon: '👥', description: 'Fitness classes, group workouts' },
-          { key: 'prefers_outdoor_activities', title: 'Prefers Outdoor Activities', icon: '🌳', description: 'Hiking, outdoor sports, fresh air' },
-          { key: 'needs_motivation', title: 'Needs External Motivation', icon: '📢', description: 'Coaching, accountability, encouragement' },
-          { key: 'prefers_variety', title: 'Prefers Workout Variety', icon: '🔄', description: 'Different exercises, avoiding routine' },
+          { key: 'enjoys_cardio', title: 'Enjoys Cardio', iconName: 'heart-outline', description: 'Running, cycling, aerobic exercises' },
+          { key: 'enjoys_strength_training', title: 'Enjoys Strength Training', iconName: 'barbell-outline', description: 'Weight lifting, resistance exercises' },
+          { key: 'enjoys_group_classes', title: 'Enjoys Group Classes', iconName: 'people-outline', description: 'Fitness classes, group workouts' },
+          { key: 'prefers_outdoor_activities', title: 'Prefers Outdoor Activities', iconName: 'leaf-outline', description: 'Hiking, outdoor sports, fresh air' },
+          { key: 'needs_motivation', title: 'Needs External Motivation', iconName: 'megaphone-outline', description: 'Coaching, accountability, encouragement' },
+          { key: 'prefers_variety', title: 'Prefers Workout Variety', iconName: 'shuffle-outline', description: 'Different exercises, avoiding routine' },
         ].map((preference) => {
           const isActive = formData[preference.key as keyof WorkoutPreferencesData] as boolean;
           
@@ -940,7 +1033,11 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               >
                 <View style={styles.stylePreferenceContent}>
                   <View style={styles.stylePreferenceHeader}>
-                    <Text style={styles.stylePreferenceIcon}>{preference.icon}</Text>
+                    <Ionicons
+                      name={preference.iconName as any}
+                      size={rf(20)}
+                      color={isActive ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                    />
                     <View style={styles.stylePreferenceToggle}>
                       <View style={StyleSheet.flatten([
                         styles.toggleSwitch,
@@ -987,7 +1084,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Weight Goals Summary</Text>
           <View style={styles.readOnlyBadge}>
-            <Text style={styles.readOnlyText}>📋 READ ONLY - FROM TAB 3</Text>
+            <Ionicons name="document-text-outline" size={rf(12)} color={ResponsiveTheme.colors.warning} style={{ marginRight: 4 }} />
+            <Text style={styles.readOnlyText}>READ ONLY - FROM TAB 3</Text>
           </View>
         </View>
         <Text style={styles.sectionSubtitle}>This information was entered in your Body Analysis (Tab 3)</Text>
@@ -1005,14 +1103,14 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               <Text style={styles.weightGoalValue}>{bodyAnalysisData.current_weight_kg}kg</Text>
             </View>
 
-            <Text style={styles.weightGoalArrow}>→</Text>
+            <Ionicons name="arrow-forward-outline" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
 
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Target Weight</Text>
               <Text style={styles.weightGoalValue}>{bodyAnalysisData.target_weight_kg}kg</Text>
             </View>
 
-            <Text style={styles.weightGoalArrow}>⏱️</Text>
+            <Ionicons name="time-outline" size={rf(20)} color={ResponsiveTheme.colors.textSecondary} />
 
             <View style={styles.weightGoalItem}>
               <Text style={styles.weightGoalLabel}>Timeline</Text>
@@ -1054,7 +1152,8 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Text style={styles.autoSaveText}>💾 Saving...</Text>
+              <Ionicons name="save-outline" size={rf(16)} color={ResponsiveTheme.colors.success} style={{ marginRight: 4 }} />
+              <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
         </HeroSection>
@@ -1092,9 +1191,17 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               borderRadius="lg"
               style={styles.validationCard}
             >
-              <Text style={styles.validationTitle}>
-                {validationResult.is_valid ? '✅ Ready to Continue' : '⚠️ Please Complete'}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ResponsiveTheme.spacing.xs }}>
+                <Ionicons
+                  name={validationResult.is_valid ? 'checkmark-circle-outline' : 'warning-outline'}
+                  size={rf(20)}
+                  color={validationResult.is_valid ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                  style={{ marginRight: ResponsiveTheme.spacing.xs }}
+                />
+                <Text style={styles.validationTitle}>
+                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                </Text>
+              </View>
               <Text style={styles.validationPercentage}>
                 {validationResult.completion_percentage}% Complete
               </Text>
@@ -1193,20 +1300,25 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: rf(32),
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(16),
     color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(22),
+    lineHeight: rf(24),
     marginBottom: ResponsiveTheme.spacing.md,
+    textAlign: 'center',
   },
 
   autoSaveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -1229,10 +1341,11 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: rf(20),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
+    letterSpacing: -0.3,
   },
 
   sectionHeader: {
@@ -1243,6 +1356,8 @@ const styles = StyleSheet.create({
   },
 
   readOnlyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: `${ResponsiveTheme.colors.warning}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -1256,10 +1371,10 @@ const styles = StyleSheet.create({
   },
 
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    lineHeight: rf(20),
   },
 
   fieldLabel: {
@@ -1281,12 +1396,18 @@ const styles = StyleSheet.create({
   },
 
   autoSuggestText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
     padding: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  autoSuggestTextContent: {
+    flex: 1,
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
     lineHeight: rf(18),
   },
 
@@ -2105,6 +2226,65 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Workout Explorer Styles (SwipeableCardStack)
+  workoutExplorerCard: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  swipeableCards: {
+    marginVertical: ResponsiveTheme.spacing.md,
+    height: rh(320),
+  },
+
+  selectedTypesContainer: {
+    marginTop: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: `${ResponsiveTheme.colors.border}40`,
+  },
+
+  selectedTypesTitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  selectedTypesList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  selectedTypeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: `${ResponsiveTheme.colors.primary}40`,
+  },
+
+  selectedTypeIcon: {
+    fontSize: rf(16),
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  selectedTypeLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    marginRight: ResponsiveTheme.spacing.xs,
+  },
+
+  selectedTypeRemove: {
+    fontSize: rf(14),
+    color: ResponsiveTheme.colors.error,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   // Calculated Activity Level Styles (Read-only display)
