@@ -248,7 +248,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          const response = await authService.restoreSession();
+          // Add timeout wrapper to prevent hanging (3 seconds max)
+          const restorePromise = authService.restoreSession();
+          const timeoutPromise = new Promise<AuthResponse>((resolve) => 
+            setTimeout(() => {
+              console.warn('⚠️ AuthStore: Session restore timed out');
+              resolve({ success: false, error: 'Session restore timeout' });
+            }, 3000)
+          );
+          
+          const response = await Promise.race([restorePromise, timeoutPromise]);
 
           if (response.success && response.user) {
             console.log(

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent, ViewStyle, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,8 +8,10 @@ import Animated, {
   Extrapolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rw } from '../../utils/responsive';
+import { rf, rp, rw, rh } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export interface SegmentOption {
   id: string;
@@ -117,17 +119,18 @@ const styles = StyleSheet.create({
     position: 'relative',
     flexDirection: 'row',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
-    padding: rp(4),
+    borderRadius: rw(20),
+    padding: rw(3),
     overflow: 'hidden',
+    width: '100%',
   },
 
   indicator: {
     position: 'absolute',
-    top: rp(4),
-    bottom: rp(4),
-    left: rp(4),
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    top: rw(3),
+    bottom: rw(3),
+    left: rw(3),
+    borderRadius: rw(18),
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -149,14 +152,15 @@ const styles = StyleSheet.create({
 
   segment: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: rp(9),
+    paddingHorizontal: rw(6),
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: rw(45),
   },
 
   segmentText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',

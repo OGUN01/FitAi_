@@ -13,6 +13,7 @@ import Animated, {
   Extrapolate,
 } from 'react-native-reanimated';
 import { GradientConfig, toLinearGradientProps, gradients } from '../../../theme/gradients';
+import { rw, rh } from '../../../utils/responsive';
 
 const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
 
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: rw(20),
     alignItems: 'center',
   },
 });

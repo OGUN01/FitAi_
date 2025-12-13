@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -7,13 +7,17 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  interpolate,
+  Extrapolate,
 } from 'react-native-reanimated';
-import { rf, rp, rh, rw } from '../../utils/responsive';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { TabValidationResult } from '../../types/onboarding';
 import { colors } from '../../theme/aurora-tokens';
 import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { animations } from '../../theme/animations';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -22,6 +26,7 @@ import { animations } from '../../theme/animations';
 export interface TabConfig {
   id: number;
   title: string;
+  shortTitle: string; // Short title for compact display
   iconName: string;
   isCompleted: boolean;
   isAccessible: boolean;
@@ -43,120 +48,226 @@ export const ONBOARDING_TABS: Omit<TabConfig, 'isCompleted' | 'isAccessible' | '
   {
     id: 1,
     title: 'Personal Info',
+    shortTitle: 'Profile',
     iconName: 'person-outline',
   },
   {
     id: 2,
     title: 'Diet Preferences',
+    shortTitle: 'Diet',
     iconName: 'restaurant-outline',
   },
   {
     id: 3,
     title: 'Body Analysis',
-    iconName: 'bar-chart-outline',
+    shortTitle: 'Body',
+    iconName: 'body-outline',
   },
   {
     id: 4,
     title: 'Workout Preferences',
+    shortTitle: 'Fitness',
     iconName: 'barbell-outline',
   },
   {
     id: 5,
-    title: 'Advanced Review',
-    iconName: 'document-text-outline',
+    title: 'Review',
+    shortTitle: 'Done',
+    iconName: 'checkmark-circle-outline',
   },
 ];
 
 // ============================================================================
-// ANIMATED TAB COMPONENT
+// ANIMATED TAB COMPONENT - Modern Minimal Design
 // ============================================================================
 
 interface AnimatedTabProps {
   tab: TabConfig;
   index: number;
+  totalTabs: number;
   isActive: boolean;
   isDisabled: boolean;
-  tabStyles: {
-    container: any;
-    text: any;
-    icon: any;
-  };
   onPress: () => void;
-  renderValidationIndicator: (tab: TabConfig) => React.ReactNode;
   isLastTab: boolean;
 }
 
 const AnimatedTab: React.FC<AnimatedTabProps> = ({
   tab,
   index,
+  totalTabs,
   isActive,
   isDisabled,
-  tabStyles,
   onPress,
-  renderValidationIndicator,
   isLastTab,
 }) => {
   const scale = useSharedValue(1);
+  const opacity = useSharedValue(isDisabled ? 0.4 : 1);
 
   useEffect(() => {
-    scale.value = withSpring(isActive ? 1.08 : 1, animations.spring.smooth);
-  }, [isActive]);
+    scale.value = withSpring(isActive ? 1 : 0.95, { damping: 15, stiffness: 150 });
+    opacity.value = withTiming(isDisabled ? 0.4 : 1, { duration: 200 });
+  }, [isActive, isDisabled]);
 
-  const animatedTabStyle = useAnimatedStyle(() => ({
+  const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+    opacity: opacity.value,
   }));
 
+  // Determine status for styling
+  const getStatus = () => {
+    if (tab.isCompleted) return 'completed';
+    if (isActive) return 'active';
+    if (tab.isAccessible) return 'accessible';
+    return 'disabled';
+  };
+
+  const status = getStatus();
+
+  // Get colors based on status
+  const getColors = () => {
+    switch (status) {
+      case 'completed':
+        return {
+          bg: 'rgba(16, 185, 129, 0.15)',
+          border: '#10B981',
+          icon: '#10B981',
+          text: '#10B981',
+          number: '#10B981',
+          numberBg: 'rgba(16, 185, 129, 0.2)',
+        };
+      case 'active':
+        return {
+          bg: 'rgba(139, 92, 246, 0.15)',
+          border: '#8B5CF6',
+          icon: '#8B5CF6',
+          text: '#FFFFFF',
+          number: '#FFFFFF',
+          numberBg: '#8B5CF6',
+        };
+      case 'accessible':
+        return {
+          bg: 'rgba(255, 255, 255, 0.05)',
+          border: 'rgba(255, 255, 255, 0.2)',
+          icon: 'rgba(255, 255, 255, 0.7)',
+          text: 'rgba(255, 255, 255, 0.7)',
+          number: 'rgba(255, 255, 255, 0.7)',
+          numberBg: 'rgba(255, 255, 255, 0.1)',
+        };
+      default:
+        return {
+          bg: 'rgba(255, 255, 255, 0.03)',
+          border: 'rgba(255, 255, 255, 0.1)',
+          icon: 'rgba(255, 255, 255, 0.3)',
+          text: 'rgba(255, 255, 255, 0.3)',
+          number: 'rgba(255, 255, 255, 0.3)',
+          numberBg: 'rgba(255, 255, 255, 0.05)',
+        };
+    }
+  };
+
+  const colors = getColors();
+
+  // Render validation badge
+  const renderValidationBadge = () => {
+    if (!tab.validationResult) return null;
+    const { is_valid, errors, warnings } = tab.validationResult;
+
+    if (tab.isCompleted && is_valid) {
+      return (
+        <View style={[styles.validationBadge, { backgroundColor: '#10B981' }]}>
+          <Ionicons name="checkmark" size={8} color="#FFFFFF" />
+        </View>
+      );
+    }
+
+    if (errors && errors.length > 0) {
+      return (
+        <View style={[styles.validationBadge, { backgroundColor: '#EF4444' }]}>
+          <Text style={styles.validationBadgeText}>!</Text>
+        </View>
+      );
+    }
+
+    if (warnings && warnings.length > 0) {
+      return (
+        <View style={[styles.validationBadge, { backgroundColor: '#F59E0B' }]}>
+          <Text style={styles.validationBadgeText}>!</Text>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   return (
-    <View key={tab.id} style={styles.tabWrapper}>
-      <Animated.View style={animatedTabStyle}>
+    <View style={styles.tabItemWrapper}>
+      <Animated.View style={animatedStyle}>
         <TouchableOpacity
-          style={[styles.tab, tabStyles.container]}
+          style={[
+            styles.tabItem,
+            {
+              backgroundColor: colors.bg,
+              borderColor: colors.border,
+              borderWidth: isActive ? 2 : 1,
+            },
+          ]}
           onPress={onPress}
           disabled={isDisabled}
           activeOpacity={0.7}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: isActive, disabled: isDisabled }}
+          accessibilityLabel={`${tab.title}, Step ${tab.id} of ${totalTabs}`}
         >
-          {/* Tab Icon */}
-          <View style={styles.tabIconContainer}>
+          {/* Step Number Badge */}
+          <View style={[styles.stepBadge, { backgroundColor: colors.numberBg }]}>
+            {tab.isCompleted ? (
+              <Ionicons name="checkmark" size={10} color={colors.number} />
+            ) : (
+              <Text style={[styles.stepNumber, { color: colors.number }]}>{tab.id}</Text>
+            )}
+          </View>
+
+          {/* Icon */}
+          <View style={styles.iconWrapper}>
             <Ionicons
               name={tab.iconName as any}
-              size={rf(20)}
-              color={tabStyles.icon?.color || ResponsiveTheme.colors.textMuted}
+              size={rs(18)}
+              color={colors.icon}
             />
-            {renderValidationIndicator(tab)}
+            {renderValidationBadge()}
           </View>
 
-          {/* Tab Title */}
+          {/* Short Title */}
           <Text
-            style={[styles.tabText, tabStyles.text]}
-            numberOfLines={2}
+            style={[styles.tabLabel, { color: colors.text }]}
+            numberOfLines={1}
           >
-            {tab.title}
+            {tab.shortTitle || tab.title}
           </Text>
-
-          {/* Tab Number */}
-          <View style={[styles.tabNumber, tabStyles.container]}>
-            <Text style={[styles.tabNumberText, tabStyles.text]}>
-              {tab.id}
-            </Text>
-          </View>
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Connection Line to Next Tab */}
+      {/* Connection Line */}
       {!isLastTab && (
-        <View
-          style={[
-            styles.connectionLine,
-            tab.isCompleted ? styles.connectionLineCompleted : styles.connectionLineDefault
-          ]}
-        />
+        <View style={styles.connectionLineWrapper}>
+          <View
+            style={[
+              styles.connectionLine,
+              {
+                backgroundColor: tab.isCompleted
+                  ? '#10B981'
+                  : 'rgba(255, 255, 255, 0.15)',
+              },
+            ]}
+          />
+        </View>
       )}
     </View>
   );
 };
 
 // ============================================================================
-// MAIN COMPONENT
+// MAIN COMPONENT - Modern Fitness App Style
 // ============================================================================
 
 export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
@@ -167,122 +278,60 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
 }) => {
   // Animated values for smooth transitions
   const progressWidth = useSharedValue(0);
-  const activeTabIndex = useSharedValue(activeTab - 1);
 
   // Animate progress bar on completion percentage change
   useEffect(() => {
     progressWidth.value = withTiming(completionPercentage, {
-      duration: animations.duration.verySlow,
-      easing: animations.easing.easeOutCubic,
+      duration: 600,
     });
   }, [completionPercentage]);
-
-  // Animate active tab indicator on tab change
-  useEffect(() => {
-    activeTabIndex.value = withSpring(activeTab - 1, animations.spring.smooth);
-  }, [activeTab]);
 
   const animatedProgressStyle = useAnimatedStyle(() => ({
     width: `${progressWidth.value}%`,
   }));
 
-  // Animated indicator that slides beneath active tab
-  const animatedIndicatorStyle = useAnimatedStyle(() => {
-    const tabWidth = 100 / tabs.length; // Percentage width of each tab
-    const translateX = activeTabIndex.value * tabWidth;
-
-    return {
-      transform: [{ translateX: `${translateX}%` }],
-      width: `${tabWidth}%`,
-    };
-  });
-
-  const getTabStatus = (tab: TabConfig) => {
-    if (tab.isCompleted) return 'completed';
-    if (tab.id === activeTab) return 'active';
-    if (tab.isAccessible) return 'accessible';
-    return 'disabled';
-  };
-
-  const getTabStyles = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return {
-          container: styles.tabCompleted,
-          text: styles.tabTextCompleted,
-          icon: styles.tabIconCompleted,
-        };
-      case 'active':
-        return {
-          container: styles.tabActive,
-          text: styles.tabTextActive,
-          icon: styles.tabIconActive,
-        };
-      case 'accessible':
-        return {
-          container: styles.tabAccessible,
-          text: styles.tabTextAccessible,
-          icon: styles.tabIconAccessible,
-        };
-      default:
-        return {
-          container: styles.tabDisabled,
-          text: styles.tabTextDisabled,
-          icon: styles.tabIconDisabled,
-        };
-    }
-  };
-
-  const renderValidationIndicator = (tab: TabConfig) => {
-    if (!tab.validationResult) return null;
-
-    const { is_valid, errors, warnings } = tab.validationResult;
-    
-    if (tab.isCompleted && is_valid) {
-      return <View style={styles.validationSuccess}>
-        <Ionicons name="checkmark" size={rf(10)} color={ResponsiveTheme.colors.success} />
-      </View>;
-    }
-    
-    if (errors.length > 0) {
-      return <View style={styles.validationError}>
-        <Text style={styles.validationIcon}>!</Text>
-      </View>;
-    }
-    
-    if (warnings.length > 0) {
-      return <View style={styles.validationWarning}>
-        <Text style={styles.validationIcon}>⚠</Text>
-      </View>;
-    }
-    
-    return null;
-  };
+  const activeTabData = tabs.find(tab => tab.id === activeTab);
 
   return (
     <View style={styles.container}>
-      {/* Overall Progress Bar with Gradient */}
-      <View style={styles.progressSection}>
-        <View style={styles.progressBar}>
-          <Animated.View style={[styles.progressFillContainer, animatedProgressStyle]}>
-            <LinearGradient
-              {...toLinearGradientProps(gradients.primary)}
-              style={styles.progressGradient}
-            />
-          </Animated.View>
+      {/* Header Section with Progress */}
+      <View style={styles.headerSection}>
+        <View style={styles.headerTop}>
+          <View style={styles.stepIndicator}>
+            <Text style={styles.stepText}>Step {activeTab}</Text>
+            <Text style={styles.stepDivider}>/</Text>
+            <Text style={styles.totalSteps}>{tabs.length}</Text>
+          </View>
+          <View style={styles.percentageContainer}>
+            <Text style={styles.percentageText}>{Math.round(completionPercentage)}%</Text>
+          </View>
         </View>
-        <Text style={styles.progressText}>
-          {Math.round(completionPercentage)}% Complete
+
+        {/* Progress Bar */}
+        <View style={styles.progressBarContainer}>
+          <View style={styles.progressBarBg}>
+            <Animated.View style={[styles.progressBarFill, animatedProgressStyle]}>
+              <LinearGradient
+                colors={['#8B5CF6', '#A78BFA', '#C4B5FD']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.progressGradient}
+              />
+            </Animated.View>
+          </View>
+        </View>
+
+        {/* Active Tab Title */}
+        <Text style={styles.activeTabTitle}>
+          {activeTabData?.title || ''}
         </Text>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
+      {/* Tab Navigation - Horizontal Scroll */}
+      <View style={styles.tabsContainer}>
         {tabs.map((tab, index) => {
-          const status = getTabStatus(tab);
-          const tabStyles = getTabStyles(status);
-          const isDisabled = status === 'disabled';
           const isActive = tab.id === activeTab;
+          const isDisabled = !tab.isAccessible && !tab.isCompleted && !isActive;
           const isLastTab = index === tabs.length - 1;
 
           return (
@@ -290,300 +339,210 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
               key={tab.id}
               tab={tab}
               index={index}
+              totalTabs={tabs.length}
               isActive={isActive}
               isDisabled={isDisabled}
-              tabStyles={tabStyles}
               onPress={() => !isDisabled && onTabPress(tab.id)}
-              renderValidationIndicator={renderValidationIndicator}
               isLastTab={isLastTab}
             />
           );
         })}
-      </View>
-
-      {/* Sliding Active Tab Indicator */}
-      <View style={styles.indicatorContainer}>
-        <Animated.View style={[styles.indicatorWrapper, animatedIndicatorStyle]}>
-          <LinearGradient
-            {...toLinearGradientProps(gradients.primary)}
-            style={styles.indicator}
-          />
-        </Animated.View>
-      </View>
-
-      {/* Active Tab Indicator */}
-      <View style={styles.activeTabSection}>
-        <Text style={styles.activeTabText}>
-          Step {activeTab} of {tabs.length}
-        </Text>
-        <Text style={styles.activeTabTitle}>
-          {tabs.find(tab => tab.id === activeTab)?.title || ''}
-        </Text>
       </View>
     </View>
   );
 };
 
 // ============================================================================
-// STYLES
+// STYLES - Modern Fitness App Design (Mobile-First Responsive)
 // ============================================================================
+
+// Helper to clamp values between min and max
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+// Get responsive values that work on both mobile and desktop
+const getResponsiveSize = (mobile: number, desktop: number) => {
+  const width = SCREEN_WIDTH;
+  if (width < 500) return mobile;
+  if (width > 900) return desktop;
+  // Linear interpolation between mobile and desktop
+  return mobile + ((desktop - mobile) * (width - 500)) / 400;
+};
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    backgroundColor: '#0F0F1A',
+    paddingTop: rh(8),
+    paddingBottom: rh(10),
     borderBottomWidth: 1,
-    borderBottomColor: ResponsiveTheme.colors.border,
+    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
   },
 
-  // Progress Section
-  progressSection: {
-    marginBottom: ResponsiveTheme.spacing.md,
+  // Header Section
+  headerSection: {
+    paddingHorizontal: rw(12),
+    marginBottom: rh(8),
+  },
+
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: rh(8),
   },
 
-  progressBar: {
-    width: '100%',
-    height: rh(6),
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+
+  stepText: {
+    fontSize: rf(20),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+
+  stepDivider: {
+    fontSize: rf(14),
+    fontWeight: '400',
+    color: 'rgba(255, 255, 255, 0.4)',
+    marginHorizontal: rw(3),
+  },
+
+  totalSteps: {
+    fontSize: rf(14),
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+
+  percentageContainer: {
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    paddingHorizontal: rw(10),
+    paddingVertical: rh(4),
+    borderRadius: rw(16),
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+
+  percentageText: {
+    fontSize: rf(12),
+    fontWeight: '600',
+    color: '#A78BFA',
+  },
+
+  // Progress Bar
+  progressBarContainer: {
+    marginBottom: rh(6),
+  },
+
+  progressBarBg: {
+    height: rh(4),
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: rw(2),
     overflow: 'hidden',
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
-  progressFillContainer: {
+  progressBarFill: {
     height: '100%',
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    borderRadius: rw(2),
     overflow: 'hidden',
   },
 
   progressGradient: {
-    width: '100%',
-    height: '100%',
-  },
-
-  progressText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-  },
-
-  // Tab Container
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-  },
-
-  tabWrapper: {
     flex: 1,
-    alignItems: 'center',
-    position: 'relative',
-  },
-
-  tab: {
-    alignItems: 'center',
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    minWidth: rw(60),
-    position: 'relative',
-  },
-
-  // Tab States
-  tabCompleted: {
-    backgroundColor: `${ResponsiveTheme.colors.success}15`,
-    borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.success,
-  },
-
-  tabActive: {
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.primary,
-  },
-
-  tabAccessible: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-  },
-
-  tabDisabled: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    opacity: 0.5,
-  },
-
-  // Tab Icon
-  tabIconContainer: {
-    position: 'relative',
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-
-  tabIcon: {
-    fontSize: rf(20),
-  },
-
-  tabIconCompleted: {
-    fontSize: rf(20),
-  },
-
-  tabIconActive: {
-    fontSize: rf(22),
-  },
-
-  tabIconAccessible: {
-    fontSize: rf(18),
-  },
-
-  tabIconDisabled: {
-    fontSize: rf(16),
-  },
-
-  // Tab Text
-  tabText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
-    lineHeight: rf(14),
-  },
-
-  tabTextCompleted: {
-    color: ResponsiveTheme.colors.success,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-  },
-
-  tabTextActive: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-  },
-
-  tabTextAccessible: {
-    color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
-  },
-
-  tabTextDisabled: {
-    color: ResponsiveTheme.colors.textMuted,
-    fontWeight: ResponsiveTheme.fontWeight.normal,
-  },
-
-  // Tab Number
-  tabNumber: {
-    width: rw(20),
-    height: rw(20),
-    borderRadius: rw(10),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-
-  tabNumberText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-  },
-
-  // Connection Lines
-  connectionLine: {
-    position: 'absolute',
-    top: '50%',
-    right: -rw(15),
-    width: rw(30),
-    height: 2,
-    marginTop: -1,
-  },
-
-  connectionLineDefault: {
-    backgroundColor: ResponsiveTheme.colors.border,
-  },
-
-  connectionLineCompleted: {
-    backgroundColor: ResponsiveTheme.colors.success,
-  },
-
-  // Sliding Active Tab Indicator
-  indicatorContainer: {
-    width: '100%',
-    height: rh(4),
-    marginTop: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    overflow: 'hidden',
-  },
-
-  indicatorWrapper: {
-    height: '100%',
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-  },
-
-  indicator: {
-    height: '100%',
-    borderRadius: ResponsiveTheme.borderRadius.full,
-  },
-
-  // Validation Indicators
-  validationSuccess: {
-    position: 'absolute',
-    top: -rf(4),
-    right: -rf(4),
-    width: rf(16),
-    height: rf(16),
-    borderRadius: rf(8),
-    backgroundColor: ResponsiveTheme.colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  validationError: {
-    position: 'absolute',
-    top: -rf(4),
-    right: -rf(4),
-    width: rf(16),
-    height: rf(16),
-    borderRadius: rf(8),
-    backgroundColor: ResponsiveTheme.colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  validationWarning: {
-    position: 'absolute',
-    top: -rf(4),
-    right: -rf(4),
-    width: rf(16),
-    height: rf(16),
-    borderRadius: rf(8),
-    backgroundColor: ResponsiveTheme.colors.warning,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  validationIcon: {
-    fontSize: rf(10),
-    color: ResponsiveTheme.colors.white,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-  },
-
-  // Active Tab Section
-  activeTabSection: {
-    marginTop: ResponsiveTheme.spacing.md,
-    alignItems: 'center',
-  },
-
-  activeTabText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   activeTabTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: rf(14),
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.7)',
+    letterSpacing: 0.2,
+  },
+
+  // Tabs Container
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: rw(4),
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+
+  // Tab Item
+  tabItemWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  tabItem: {
+    alignItems: 'center',
+    paddingVertical: rh(6),
+    paddingHorizontal: rw(2),
+    borderRadius: rw(10),
+    width: '100%',
+    minWidth: rw(52),
+  },
+
+  stepBadge: {
+    width: rw(18),
+    height: rw(18),
+    borderRadius: rw(9),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: rh(3),
+  },
+
+  stepNumber: {
+    fontSize: rf(9),
+    fontWeight: '700',
+  },
+
+  iconWrapper: {
+    position: 'relative',
+    marginBottom: rh(2),
+  },
+
+  tabLabel: {
+    fontSize: rf(9),
+    fontWeight: '600',
+    textAlign: 'center',
+    letterSpacing: 0,
+    width: '100%',
+  },
+
+  // Connection Line
+  connectionLineWrapper: {
+    width: rw(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+
+  connectionLine: {
+    height: rh(2),
+    width: '100%',
+    borderRadius: rw(1),
+  },
+
+  // Validation Badge
+  validationBadge: {
+    position: 'absolute',
+    top: -rh(3),
+    right: -rw(4),
+    width: rw(14),
+    height: rw(14),
+    borderRadius: rw(7),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#0F0F1A',
+  },
+
+  validationBadgeText: {
+    fontSize: rf(8),
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 

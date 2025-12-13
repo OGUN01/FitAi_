@@ -17,6 +17,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { googleAuthService } from './src/services/googleAuth';
 import { validateProductionEnvironment } from './src/ai/gemini';
+import { useFonts } from 'expo-font';
+import { Ionicons } from '@expo/vector-icons';
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
 const isExpoGo = (() => {
@@ -58,6 +60,29 @@ if (!isExpoGo) {
 }
 
 export default function App() {
+  // Load fonts - critical for icons to display properly on web
+  // Use try-catch to prevent font loading from blocking the app
+  const [fontsLoaded, fontError] = useFonts({
+    ...Ionicons.font,
+  });
+
+  // If font loading fails or takes too long, continue anyway
+  const [fontTimeout, setFontTimeout] = useState(false);
+  
+  useEffect(() => {
+    // Set a timeout to continue even if fonts don't load
+    const timer = setTimeout(() => {
+      if (!fontsLoaded) {
+        console.warn('⚠️ Font loading timeout - continuing without custom fonts');
+        setFontTimeout(true);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded]);
+
+  // Consider fonts ready if loaded, timed out, or errored
+  const fontsReady = fontsLoaded || fontTimeout || fontError;
+
   // Default to false - user must complete onboarding unless we find completed data
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
@@ -280,47 +305,77 @@ export default function App() {
     const initializeApp = async () => {
       try {
         console.log('🚀 FitAI: Starting app initialization...');
-        await initializeBackend();
-        console.log('✅ FitAI: Backend initialization completed');
-
-        // Initialize Google Sign-In
+        
+        // Add timeout wrapper for backend initialization (5 seconds max)
+        const backendInitPromise = initializeBackend();
+        const backendTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Backend init timeout')), 5000)
+        );
+        
         try {
-          console.log('📱 FitAI: Initializing Google Sign-In...');
-          await googleAuthService.configure();
-          console.log('✅ FitAI: Google Sign-In initialization completed');
-        } catch (error) {
-          console.error('❌ FitAI: Google Sign-In initialization failed:', error);
+          await Promise.race([backendInitPromise, backendTimeoutPromise]);
+          console.log('✅ FitAI: Backend initialization completed');
+        } catch (backendError) {
+          console.warn('⚠️ FitAI: Backend initialization timed out or failed, continuing...', backendError);
         }
 
-        // 🎯 PRODUCTION VALIDATION - Run comprehensive tests
-        if (!__DEV__ || process.env.EXPO_PUBLIC_ENVIRONMENT === 'production') {
+        // Initialize Google Sign-In with timeout (3 seconds max)
+        try {
+          console.log('📱 FitAI: Initializing Google Sign-In...');
+          const googleInitPromise = googleAuthService.configure();
+          const googleTimeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Google init timeout')), 3000)
+          );
+          await Promise.race([googleInitPromise, googleTimeoutPromise]);
+          console.log('✅ FitAI: Google Sign-In initialization completed');
+        } catch (error) {
+          console.warn('⚠️ FitAI: Google Sign-In initialization failed or timed out:', error);
+        }
+
+        // Skip production validation in web/canvas environment to prevent timeout
+        // Production validation makes network calls that can hang
+        const isWebEnvironment = typeof window !== 'undefined' && window.location?.hostname?.includes('canvases.tempo.build');
+        if (!isWebEnvironment && (!__DEV__ || process.env.EXPO_PUBLIC_ENVIRONMENT === 'production')) {
           console.log('🎯 FitAI: Running production environment validation...');
           try {
-            const isProductionReady = await validateProductionEnvironment();
+            const validationPromise = validateProductionEnvironment();
+            const validationTimeoutPromise = new Promise<boolean>((resolve) => 
+              setTimeout(() => {
+                console.warn('⚠️ FitAI: Production validation timed out');
+                resolve(false);
+              }, 5000)
+            );
+            const isProductionReady = await Promise.race([validationPromise, validationTimeoutPromise]);
             if (isProductionReady) {
               console.log('🎉 FitAI: Production validation PASSED - AI features should work!');
             } else {
-              console.error('❌ FitAI: Production validation FAILED - AI features may not work!');
-              console.error('⚠️ FitAI: Check the logs above for specific issues');
+              console.warn('⚠️ FitAI: Production validation FAILED or timed out - AI features may not work!');
             }
           } catch (validationError) {
-            console.error('❌ FitAI: Production validation error:', validationError);
+            console.warn('⚠️ FitAI: Production validation error:', validationError);
           }
         } else {
-          console.log('🔧 FitAI: Development mode - skipping production validation');
+          console.log('🔧 FitAI: Skipping production validation (dev mode or web environment)');
         }
 
         // Initialize notifications only if not in Expo Go
         if (!isExpoGo && initializeNotifications && !areNotificationsInitialized) {
           console.log('📱 FitAI: Initializing notifications...');
-          await initializeNotifications();
-          console.log('✅ FitAI: Notifications initialization completed');
+          try {
+            const notifPromise = initializeNotifications();
+            const notifTimeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Notification init timeout')), 3000)
+            );
+            await Promise.race([notifPromise, notifTimeoutPromise]);
+            console.log('✅ FitAI: Notifications initialization completed');
+          } catch (notifError) {
+            console.warn('⚠️ FitAI: Notifications initialization failed or timed out:', notifError);
+          }
         } else if (isExpoGo) {
           console.log('⚠️ FitAI: Running in Expo Go - notifications disabled');
-          console.log('ℹ️ FitAI: Build a development build to enable notifications');
         }
       } catch (error) {
-        console.error('❌ FitAI: Backend initialization failed:', error);
+        console.error('❌ FitAI: App initialization failed:', error);
         // Don't throw here, let the app continue with limited functionality
       }
     };
@@ -404,13 +459,13 @@ export default function App() {
   };
 
   // Show loading while authentication is initializing or loading onboarding data
-  if (!isInitialized || isLoading || isLoadingOnboarding) {
+  if (!isInitialized || isLoading || isLoadingOnboarding || !fontsReady) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" backgroundColor={THEME.colors.background} />
         <ActivityIndicator size="large" color={THEME.colors.primary} />
         <Text style={styles.loadingText}>
-          {!isInitialized || isLoading ? 'Initializing FitAI...' : 'Loading your profile...'}
+          {!fontsReady ? 'Loading fonts...' : !isInitialized || isLoading ? 'Initializing FitAI...' : 'Loading your profile...'}
         </Text>
       </View>
     );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,8 @@ import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectW
 import { BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import { useOnboardingState } from '../../../hooks/useOnboardingState';
 import { MetabolicCalculations, BodyCompositionCalculations } from '../../../utils/healthCalculations';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -1165,37 +1167,22 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Body Silhouette */}
+        {/* Hero Section - Simplified Modern Design */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(420)}
+          height={160}
         >
-          <Text style={styles.title}>Body Analysis & Health Profile</Text>
+          <Text style={styles.title}>Body Analysis</Text>
           <Text style={styles.subtitle}>
-            Comprehensive body analysis with reliable AI-powered insights
+            Track your measurements and health profile
           </Text>
-
-          {/* Body Silhouette with Measurement Points */}
-          <View style={styles.silhouetteContainer}>
-            <BodySilhouette
-              gender={personalInfoData?.gender || 'male'}
-              measurements={{
-                height: formData.height_cm,
-                chest: formData.chest_cm,
-                waist: formData.waist_cm,
-                hips: formData.hip_cm,
-              }}
-              showAnimations={true}
-              size={rh(280)}
-            />
-          </View>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons name="cloud-upload-outline" size={rf(14)} color={ResponsiveTheme.colors.success} />
               <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
@@ -1348,107 +1335,113 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   headerGradient: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.xl,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
+    paddingHorizontal: rw(16),
+    paddingTop: rh(20),
+    paddingBottom: rh(16),
+    borderBottomLeftRadius: rw(24),
+    borderBottomRightRadius: rw(24),
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(24),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: rh(4),
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: rf(18),
+    textAlign: 'center',
   },
 
   silhouetteContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: ResponsiveTheme.spacing.lg,
+    marginVertical: rh(16),
   },
 
   goalChart: {
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: rh(12),
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    gap: rw(4),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(4),
+    borderRadius: rw(16),
+    marginTop: rh(8),
   },
 
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    width: '100%',
   },
 
   section: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: rh(12),
+    letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: rh(12),
     lineHeight: rf(18),
   },
 
   inputLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   // Basic Measurements Section
   measurementsGrid: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: 12,
   },
 
   measurementItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   timelineSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
-    marginTop: ResponsiveTheme.spacing.sm,
+    gap: 6,
+    marginTop: 8,
   },
 
   timelineOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1460,7 +1453,7 @@ const styles = StyleSheet.create({
   },
 
   timelineText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1472,8 +1465,8 @@ const styles = StyleSheet.create({
 
   // BMI Card
   bmiCard: {
-    padding: ResponsiveTheme.spacing.md,
-    marginTop: ResponsiveTheme.spacing.md,
+    padding: 12,
+    marginTop: 12,
     backgroundColor: `${ResponsiveTheme.colors.primary}05`,
     borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 1,
@@ -1484,25 +1477,25 @@ const styles = StyleSheet.create({
   },
 
   bmiTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: 16,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   bmiCategory: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   bmiIcon: {
-    fontSize: rf(20),
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: 18,
+    marginRight: 8,
   },
 
   bmiCategoryText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
@@ -2156,35 +2149,35 @@ const styles = StyleSheet.create({
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
+    fontSize: rf(13),
+    color: '#EF4444',
     marginTop: ResponsiveTheme.spacing.xs,
   },
 
   // Footer
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   backButton: {
-    flex: 1,
+    flex: 0.8,
   },
 
   jumpButton: {
-    flex: 1.5,
+    flex: 1,
   },
 
   nextButton: {
-    flex: 2,
+    flex: 1.5,
   },
 });
 
