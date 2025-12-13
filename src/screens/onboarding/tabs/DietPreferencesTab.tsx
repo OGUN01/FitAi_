@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,8 @@ import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
 import { DietPreferencesData, TabValidationResult, HealthHabits } from '../../../types/onboarding';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -594,7 +596,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.dietTypeContent}>
-                  <Ionicons name={option.iconName as any} size={rf(32)} color={formData.diet_type === option.id ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                  <Ionicons name={option.iconName as any} size={24} color={formData.diet_type === option.id ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                   <Text
                     style={[
                       styles.dietTypeTitle,
@@ -653,15 +655,15 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                     <View style={styles.dietReadinessProgressContainer}>
                       <ProgressRing
                         progress={isReady ? 100 : 0}
-                        size={rf(60)}
-                        strokeWidth={rf(6)}
+                        size={48}
+                        strokeWidth={5}
                         gradient={true}
                         gradientColors={isReady ? ['#4ECDC4', '#44A08D'] : ['#E0E0E0', '#BDBDBD']}
                         duration={800}
                         showText={false}
                       />
                       <View style={styles.dietReadinessProgressIconContainer}>
-                        <Ionicons name={option.iconName as any} size={rf(24)} color={isReady ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                        <Ionicons name={option.iconName as any} size={20} color={isReady ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                       </View>
                     </View>
 
@@ -722,7 +724,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             style={styles.warningCard}
           >
             <View style={styles.warningContent}>
-              <Ionicons name="alert-circle-outline" size={rf(18)} color={ResponsiveTheme.colors.warning} />
+              <Ionicons name="alert-circle-outline" size={16} color={ResponsiveTheme.colors.warning} />
               <Text style={styles.warningText}>
                 At least one meal type must remain enabled
               </Text>
@@ -763,7 +765,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   ])}
                 >
                   <View style={styles.mealPreferenceContent}>
-                    <Ionicons name={meal.iconName as any} size={rf(24)} color={isEnabled ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                    <Ionicons name={meal.iconName as any} size={20} color={isEnabled ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                     <Text style={[
                       styles.mealPreferenceTitle,
                       isEnabled && styles.mealPreferenceTitleSelected,
@@ -793,7 +795,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             style={styles.infoCard}
           >
             <View style={styles.infoContent}>
-              <Ionicons name="bulb-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons name="bulb-outline" size={16} color={ResponsiveTheme.colors.primary} />
               <Text style={styles.infoText}>
                 Meal plans will only include lunch and dinner
               </Text>
@@ -846,7 +848,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                 ])}
               >
                 <View style={styles.skillLevelContent}>
-                  <Ionicons name={skill.iconName as any} size={rf(20)} color={formData.cooking_skill_level === skill.level ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                  <Ionicons name={skill.iconName as any} size={18} color={formData.cooking_skill_level === skill.level ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                   <Text style={[
                     styles.skillLevelTitle,
                     formData.cooking_skill_level === skill.level && styles.skillLevelTitleSelected,
@@ -878,7 +880,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             style={styles.disabledCard}
           >
             <View style={styles.disabledContent}>
-              <Ionicons name="information-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
+              <Ionicons name="information-circle-outline" size={14} color={ResponsiveTheme.colors.textSecondary} />
               <Text style={styles.disabledText}>
                 This field is not applicable since your meals are prepared by others.
                 We'll suggest meals based on your dietary preferences without cooking time constraints.
@@ -965,7 +967,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                   >
                     <View style={styles.habitContent}>
                       <View style={styles.habitHeader}>
-                        <Ionicons name={habit.iconName as any} size={rf(20)} color={isActive ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                        <Ionicons name={habit.iconName as any} size={18} color={isActive ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
                         <View style={styles.habitToggle}>
                           <AnimatedToggle isActive={isActive} />
                         </View>
@@ -1041,22 +1043,22 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Background Image */}
+        {/* Hero Section - Simplified Modern Design */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(200)}
+          height={160}
         >
-          <Text style={styles.title}>What are your diet preferences?</Text>
+          <Text style={styles.title}>Diet Preferences</Text>
           <Text style={styles.subtitle}>
-            Help us personalize your meal recommendations and nutrition plan
+            Customize your nutrition plan
           </Text>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons name="cloud-upload-outline" size={12} color={ResponsiveTheme.colors.success} />
               <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
@@ -1102,7 +1104,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               <View style={styles.validationTitleContainer}>
                 <Ionicons
                   name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
-                  size={rf(20)}
+                  size={18}
                   color={validationResult.is_valid ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
                 />
                 <Text style={styles.validationTitle}>
@@ -1199,82 +1201,84 @@ const styles = StyleSheet.create({
   },
 
   headerGradient: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.xl,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
+    paddingHorizontal: rw(16),
+    paddingTop: rh(20),
+    paddingBottom: rh(16),
+    borderBottomLeftRadius: rw(24),
+    borderBottomRightRadius: rw(24),
   },
 
   title: {
-    fontSize: rf(32),
+    fontSize: rf(24),
     fontWeight: '700' as const,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    color: '#FFFFFF',
+    marginBottom: rh(4),
     letterSpacing: -0.5,
     textAlign: 'center' as const,
   },
 
   subtitle: {
-    fontSize: rf(16),
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(24),
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: rf(18),
     textAlign: 'center' as const,
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    gap: rw(4),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(4),
+    borderRadius: rw(16),
+    marginTop: rh(8),
   },
 
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    width: '100%',
   },
 
   section: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   sectionTitle: {
-    fontSize: rf(20),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: rh(12),
     letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(20),
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: rh(12),
+    lineHeight: rf(18),
   },
 
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   // Diet Type Section
   dietTypeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   dietTypeItem: {
@@ -1282,7 +1286,7 @@ const styles = StyleSheet.create({
   },
 
   dietTypeCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   dietTypeCardSelected: {
@@ -1292,20 +1296,20 @@ const styles = StyleSheet.create({
 
   dietTypeContent: {
     alignItems: 'center',
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   dietTypeIcon: {
-    fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: 24,
+    marginBottom: 8,
   },
 
   dietTypeTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   dietTypeTitleSelected: {
@@ -1313,22 +1317,22 @@ const styles = StyleSheet.create({
   },
 
   dietTypeDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   // Diet Readiness Section
   dietReadinessGrid: {
-    gap: ResponsiveTheme.spacing.md,
+    gap: 12,
   },
 
   dietReadinessItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   dietReadinessCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   dietReadinessCardSelected: {
@@ -1344,7 +1348,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   dietReadinessProgressContainer: {
@@ -1358,18 +1362,18 @@ const styles = StyleSheet.create({
   },
 
   dietReadinessIcon: {
-    fontSize: rf(24),
+    fontSize: 20,
   },
 
   dietReadinessToggle: {
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: 12,
   },
 
   dietReadinessTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   dietReadinessTitleSelected: {
@@ -1377,27 +1381,27 @@ const styles = StyleSheet.create({
   },
 
   dietReadinessDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    lineHeight: rf(18),
+    marginBottom: 8,
+    lineHeight: 16,
   },
 
   dietReadinessBenefits: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: 4,
   },
 
   dietReadinessBenefit: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.textMuted,
-    lineHeight: rf(16),
+    lineHeight: 14,
   },
 
   // Meal Preferences Section
   mealPreferencesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   mealPreferenceItem: {
@@ -1409,7 +1413,7 @@ const styles = StyleSheet.create({
   },
 
   mealPreferenceCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   mealPreferenceCardSelected: {
@@ -1427,15 +1431,15 @@ const styles = StyleSheet.create({
   },
 
   mealPreferenceIcon: {
-    fontSize: rf(24),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: 18,
+    marginBottom: 6,
   },
 
   mealPreferenceTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   mealPreferenceTitleSelected: {
@@ -1443,24 +1447,24 @@ const styles = StyleSheet.create({
   },
 
   mealPreferenceDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   mealPreferenceToggle: {
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: 4,
   },
 
   // Cooking Preferences Section
   cookingField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: 16,
   },
 
   skillLevelGrid: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   skillLevelItem: {
@@ -1468,7 +1472,7 @@ const styles = StyleSheet.create({
   },
 
   skillLevelCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 10,
   },
 
   skillLevelCardSelected: {
@@ -1481,15 +1485,15 @@ const styles = StyleSheet.create({
   },
 
   skillLevelIcon: {
-    fontSize: rf(20),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: 16,
+    marginBottom: 4,
   },
 
   skillLevelTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   skillLevelTitleSelected: {
@@ -1497,34 +1501,34 @@ const styles = StyleSheet.create({
   },
 
   skillLevelDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 10,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   skillLevelTime: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 10,
     color: ResponsiveTheme.colors.textMuted,
     fontStyle: 'italic',
   },
 
   // Prep Time Section
   prepTimeContainer: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: 8,
   },
 
   prepTimeSlider: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 4,
   },
 
   prepTimeOption: {
     flex: 1,
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1537,7 +1541,7 @@ const styles = StyleSheet.create({
   },
 
   prepTimeText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 11,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1547,27 +1551,27 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
   disabledCard: {
-    padding: rp(15),
+    padding: 12,
     backgroundColor: '#F5F5F5',
     borderColor: '#E0E0E0',
-    marginTop: rp(10),
+    marginTop: 8,
   },
   disabledContent: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 4,
   },
   disabledText: {
     flex: 1,
-    fontSize: rf(14),
+    fontSize: 12,
     color: '#666666',
-    lineHeight: rp(20),
+    lineHeight: 18,
   },
 
   // Budget Section
   budgetGrid: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   budgetItem: {
@@ -1575,7 +1579,7 @@ const styles = StyleSheet.create({
   },
 
   budgetCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 10,
   },
 
   budgetCardSelected: {
@@ -1588,15 +1592,15 @@ const styles = StyleSheet.create({
   },
 
   budgetIcon: {
-    fontSize: rf(20),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: 16,
+    marginBottom: 4,
   },
 
   budgetTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   budgetTitleSelected: {
@@ -1604,41 +1608,41 @@ const styles = StyleSheet.create({
   },
 
   budgetDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 10,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   budgetRange: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 10,
     color: ResponsiveTheme.colors.textMuted,
     fontStyle: 'italic',
   },
 
   // Health Habits Section
   habitCategory: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: 16,
   },
 
   habitCategoryTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
     textTransform: 'capitalize',
   },
 
   habitsList: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   habitItem: {
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   habitCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   habitCardSelected: {
@@ -1654,22 +1658,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   habitIcon: {
-    fontSize: rf(20),
+    fontSize: 16,
   },
 
   habitToggle: {
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: 12,
   },
 
   habitTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   habitTitleSelected: {
@@ -1677,21 +1681,21 @@ const styles = StyleSheet.create({
   },
 
   habitDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(16),
+    lineHeight: 15,
   },
 
   // Toggle Switch Styles
   toggleSwitch: {
-    width: rw(40),
-    height: rh(20),
-    borderRadius: rh(10),
+    width: 40,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     justifyContent: 'center',
-    paddingHorizontal: rp(2),
+    paddingHorizontal: 2,
   },
 
   toggleSwitchActive: {
@@ -1706,9 +1710,9 @@ const styles = StyleSheet.create({
   },
 
   toggleThumb: {
-    width: rw(16),
-    height: rh(16),
-    borderRadius: rh(8),
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: ResponsiveTheme.colors.white,
     alignSelf: 'flex-start',
   },
@@ -1719,146 +1723,146 @@ const styles = StyleSheet.create({
 
   // Allergies Section
   allergyField: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   // Warning and Info Cards
   warningCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
     backgroundColor: `${ResponsiveTheme.colors.warning}10`,
     borderColor: ResponsiveTheme.colors.warning,
     borderWidth: 1,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   warningContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 4,
     justifyContent: 'center',
   },
 
   warningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.warning,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   infoCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
     borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 1,
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: 12,
   },
 
   infoContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 4,
     justifyContent: 'center',
   },
 
   infoText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Validation Section
   validationSummary: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
 
   validationCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   validationTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: 4,
+    marginBottom: 4,
   },
 
   validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
 
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationErrors: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationErrorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   validationErrorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.error,
-    lineHeight: rf(18),
+    lineHeight: 16,
   },
 
   validationWarnings: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   validationWarningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.warning,
-    lineHeight: rf(18),
+    lineHeight: 16,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: rf(12),
+    color: '#EF4444',
+    marginTop: rh(4),
   },
 
   // Footer
   footer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    paddingVertical: rh(12),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: rw(8),
   },
 
   backButton: {
-    flex: 1,
+    flex: 0.8,
   },
 
   jumpButton: {
-    flex: 1.5,
+    flex: 1,
   },
 
   nextButton: {
-    flex: 2,
+    flex: 1.5,
   },
 });
 

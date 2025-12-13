@@ -7,6 +7,7 @@ import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { GlassView } from './GlassView';
 import { spacing, shadows, borderRadius as br } from '../../../theme/aurora-tokens';
+import { rw, rp } from '../../../utils/responsive';
 
 type ElevationLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 type PaddingSize = 'none' | 'sm' | 'md' | 'lg' | 'xl';
@@ -81,32 +82,32 @@ const getPaddingValue = (size: PaddingSize): number => {
     case 'none':
       return 0;
     case 'sm':
-      return spacing.sm;
+      return rp(spacing.sm);
     case 'md':
-      return spacing.md;
+      return rp(spacing.md);
     case 'lg':
-      return spacing.lg;
+      return rp(spacing.lg);
     case 'xl':
-      return spacing.xl;
+      return rp(spacing.xl);
     default:
-      return spacing.md;
+      return rp(spacing.md);
   }
 };
 
 const getBorderRadiusValue = (size: BorderRadiusSize): number => {
   switch (size) {
     case 'sm':
-      return br.sm;
+      return rw(br.sm);
     case 'md':
-      return br.md;
+      return rw(br.md);
     case 'lg':
-      return br.lg;
+      return rw(br.lg);
     case 'xl':
-      return br.xl;
+      return rw(br.xl);
     case 'xxl':
-      return br.xxl;
+      return rw(br.xxl);
     default:
-      return br.lg;
+      return rw(br.lg);
   }
 };
 

@@ -519,16 +519,18 @@ const styles = StyleSheet.create({
   // Debug styles
   debugContainer: {
     position: 'absolute',
-    top: rh(50),
-    right: ResponsiveTheme.spacing.md,
+    top: 8,
+    right: 8,
     backgroundColor: ResponsiveTheme.colors.primary,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    zIndex: 100,
   },
   
   debugText: {
     color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 11,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

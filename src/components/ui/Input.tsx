@@ -131,24 +131,27 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
+    width: '100%',
   },
 
   label: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(6),
   },
 
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: rw(12),
     borderWidth: 1.5,
     borderColor: ResponsiveTheme.colors.borderLight,
     minHeight: rh(48),
+    width: '100%',
+    overflow: 'hidden',
   },
 
   inputContainerFocused: {
@@ -168,18 +171,19 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.text,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(12),
+    width: '100%',
   },
 
   inputWithLeftIcon: {
-    paddingLeft: ResponsiveTheme.spacing.sm,
+    paddingLeft: rw(8),
   },
 
   inputWithRightIcon: {
-    paddingRight: ResponsiveTheme.spacing.sm,
+    paddingRight: rw(8),
   },
 
   inputMultiline: {
@@ -188,19 +192,19 @@ const styles = StyleSheet.create({
   },
 
   leftIconContainer: {
-    paddingLeft: ResponsiveTheme.spacing.md,
-    paddingRight: ResponsiveTheme.spacing.sm,
+    paddingLeft: rw(12),
+    paddingRight: rw(8),
   },
 
   rightIconContainer: {
-    paddingRight: ResponsiveTheme.spacing.md,
-    paddingLeft: ResponsiveTheme.spacing.sm,
+    paddingRight: rw(12),
+    paddingLeft: rw(8),
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.xs,
-    marginLeft: ResponsiveTheme.spacing.xs,
+    marginTop: rh(4),
+    marginLeft: rw(4),
   },
 });

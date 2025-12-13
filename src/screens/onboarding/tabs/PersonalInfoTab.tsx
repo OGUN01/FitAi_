@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,8 @@ import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, AnimatedIco
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import TimePicker from '../../../components/onboarding/TimePicker';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -67,7 +69,7 @@ const GENDER_OPTIONS = [
   { value: 'male', label: 'Male', iconName: 'man-outline' },
   { value: 'female', label: 'Female', iconName: 'woman-outline' },
   { value: 'other', label: 'Other', iconName: 'people-outline' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say', iconName: 'lock-closed-outline' },
+  { value: 'prefer_not_to_say', label: 'Private', iconName: 'lock-closed-outline' },
 ] as const;
 
 const OCCUPATION_OPTIONS = [
@@ -353,34 +355,36 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       borderRadius="lg"
     >
       <Text style={styles.sectionTitle}>Demographics</Text>
-      <View style={styles.row}>
-        <View style={styles.halfWidth}>
-          <Input
-            label="Age"
-            placeholder="25"
-            value={formData.age > 0 ? formData.age.toString() : ''}
-            onChangeText={handleAgeChange}
-            keyboardType="numeric"
-            error={hasFieldError('age') ? getFieldError('age') : undefined}
-          />
-        </View>
-        <View style={styles.halfWidth}>
-          <Text style={styles.inputLabel}>Gender *</Text>
-          <SegmentedControl
-            options={GENDER_OPTIONS.map(opt => ({
-              id: opt.value,
-              label: opt.label,
-              value: opt.value
-            }))}
-            selectedId={formData.gender}
-            onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
-            gradient={['#6366F1', '#8B5CF6']}
-            style={styles.genderSegmentedControl}
-          />
-          {hasFieldError('gender') && (
-            <Text style={styles.errorText}>{getFieldError('gender')}</Text>
-          )}
-        </View>
+      
+      {/* Age Input - Full Width */}
+      <View style={styles.fieldContainer}>
+        <Input
+          label="Age"
+          placeholder="Enter your age (e.g., 25)"
+          value={formData.age > 0 ? formData.age.toString() : ''}
+          onChangeText={handleAgeChange}
+          keyboardType="numeric"
+          error={hasFieldError('age') ? getFieldError('age') : undefined}
+        />
+      </View>
+      
+      {/* Gender Selection - Full Width */}
+      <View style={styles.fieldContainer}>
+        <Text style={styles.inputLabel}>Gender *</Text>
+        <SegmentedControl
+          options={GENDER_OPTIONS.map(opt => ({
+            id: opt.value,
+            label: opt.label,
+            value: opt.value
+          }))}
+          selectedId={formData.gender}
+          onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
+          gradient={['#6366F1', '#8B5CF6']}
+          style={styles.genderSegmentedControl}
+        />
+        {hasFieldError('gender') && (
+          <Text style={styles.errorText}>{getFieldError('gender')}</Text>
+        )}
       </View>
     </GlassCard>
   );
@@ -518,7 +522,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       icon: (
         <Ionicons
           name={option.iconName as any}
-          size={rf(32)}
+          size={24}
           color="#FFFFFF"
         />
       ),
@@ -579,7 +583,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               onPress={() => setShowWakeTimePicker(true)}
             >
               <View style={styles.timeIconContainer}>
-                <Ionicons name="sunny-outline" size={rf(20)} color="#F59E0B" />
+                <Ionicons name="sunny-outline" size={18} color="#F59E0B" />
                 <Text style={styles.timeText}>
                   {formatTimeForDisplay(formData.wake_time)}
                 </Text>
@@ -594,7 +598,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               onPress={() => setShowSleepTimePicker(true)}
             >
               <View style={styles.timeIconContainer}>
-                <Ionicons name="moon-outline" size={rf(20)} color="#6366F1" />
+                <Ionicons name="moon-outline" size={18} color="#6366F1" />
                 <Text style={styles.timeText}>
                   {formatTimeForDisplay(formData.sleep_time)}
                 </Text>
@@ -619,7 +623,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               <View style={styles.sleepDurationIconContainer}>
                 <Ionicons
                   name={isHealthySleep ? 'checkmark-circle' : 'alert-circle'}
-                  size={rf(24)}
+                  size={20}
                   color={isHealthySleep ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
                 />
               </View>
@@ -658,37 +662,22 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header with Gradient */}
-        {/* Hero Section with Background Image */}
+        {/* Hero Section - Simplified Modern Design */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(220)}
+          height={160}
         >
-          {/* Animated Avatar Placeholder */}
-          <View style={styles.avatarContainer}>
-            <AnimatedIcon
-              icon={
-                <View style={styles.avatarCircle}>
-                  <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
-                </View>
-              }
-              animationType="pulse"
-              continuous={true}
-              animationDuration={1500}
-              size={rf(80)}
-            />
-          </View>
-
-          <Text style={styles.title}>Tell us about yourself</Text>
+          <Text style={styles.title}>Personal Info</Text>
           <Text style={styles.subtitle}>
-            This helps us create a personalized fitness plan just for you
+            Help us personalize your fitness journey
           </Text>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons name="cloud-upload-outline" size={12} color={ResponsiveTheme.colors.success} />
               <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
@@ -730,7 +719,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               <View style={styles.validationTitleRow}>
                 <Ionicons
                   name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
-                  size={rf(20)}
+                  size={18}
                   color={validationResult.is_valid ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
                 />
                 <Text style={[
@@ -889,59 +878,59 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   headerGradient: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.xl,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
+    paddingHorizontal: rw(16),
+    paddingTop: rh(24),
+    paddingBottom: rh(16),
+    borderBottomLeftRadius: rw(24),
+    borderBottomRightRadius: rw(24),
   },
 
   title: {
-    fontSize: rf(32),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(24),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: rh(4),
     textAlign: 'center',
     letterSpacing: -0.5,
   },
 
   subtitle: {
-    fontSize: rf(16),
-    color: 'rgba(255, 255, 255, 0.9)',
-    lineHeight: rf(24),
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: rf(18),
     textAlign: 'center',
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    gap: rw(4),
+    alignSelf: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(4),
+    borderRadius: rw(16),
+    marginTop: rh(8),
   },
 
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   avatarContainer: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   avatarCircle: {
-    width: rf(80),
-    height: rf(80),
-    borderRadius: rf(40),
+    width: rw(64),
+    height: rw(64),
+    borderRadius: rw(32),
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -950,63 +939,72 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    width: '100%',
   },
 
   section: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   sectionTitle: {
-    fontSize: rf(20),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: rh(12),
     letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(20),
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: rh(12),
+    lineHeight: rf(18),
   },
 
   row: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: rw(12),
+    width: '100%',
   },
 
   halfWidth: {
     flex: 1,
+    minWidth: 0,
+  },
+
+  fieldContainer: {
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   inputLabel: {
-    fontSize: rf(14),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: rh(8),
   },
 
   // Gender Selection - SegmentedControl
   genderSegmentedControl: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: rh(8),
   },
 
   genderContainer: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rh(8),
   },
 
   genderOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: rh(10),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(10),
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   genderOptionSelected: {
@@ -1015,12 +1013,12 @@ const styles = StyleSheet.create({
   },
 
   genderIcon: {
-    fontSize: rf(18),
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: rf(16),
+    marginRight: rw(8),
   },
 
   genderOptionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     flex: 1,
@@ -1033,93 +1031,99 @@ const styles = StyleSheet.create({
 
   // Location Selection
   locationField: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   countryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
+    marginTop: rh(4),
+    width: '100%',
   },
 
   countryOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: rh(10),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(10),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    minWidth: rw(100),
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    minWidth: rw(85),
+    maxWidth: rw(110),
+    alignItems: 'center',
   },
 
   countryOptionSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: '#8B5CF6',
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
   },
 
   countryOptionText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: rf(11),
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
     textAlign: 'center',
   },
 
   countryOptionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#A78BFA',
+    fontWeight: '600',
   },
 
   stateGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: rw(8),
+    marginTop: rh(4),
+    width: '100%',
   },
 
   stateOption: {
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
+    paddingVertical: rh(8),
+    paddingHorizontal: rw(10),
+    borderRadius: rw(8),
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
 
   stateOptionSelected: {
-    borderColor: ResponsiveTheme.colors.primary,
-    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderColor: '#8B5CF6',
+    backgroundColor: 'rgba(139, 92, 246, 0.12)',
   },
 
   stateOptionText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textSecondary,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontSize: rf(11),
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontWeight: '500',
   },
 
   stateOptionTextSelected: {
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#A78BFA',
+    fontWeight: '600',
   },
 
   // Occupation Selection - FeatureGrid
   occupationGrid: {
-    marginVertical: ResponsiveTheme.spacing.md,
+    marginVertical: rh(12),
   },
 
   occupationContainer: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rh(8),
   },
 
   occupationOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: rh(12),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(12),
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   occupationOptionSelected: {
@@ -1128,11 +1132,11 @@ const styles = StyleSheet.create({
   },
 
   occupationIconContainer: {
-    width: rf(56),
-    height: rf(56),
-    borderRadius: rf(28),
+    width: rw(44),
+    height: rw(44),
+    borderRadius: rw(22),
     overflow: 'hidden',
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: rw(12),
   },
 
   occupationIconGradient: {
@@ -1144,17 +1148,18 @@ const styles = StyleSheet.create({
 
   occupationTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
 
   occupationCheckmark: {
-    marginLeft: ResponsiveTheme.spacing.sm,
+    marginLeft: rw(8),
   },
 
   occupationLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(2),
   },
 
   occupationLabelSelected: {
@@ -1162,9 +1167,9 @@ const styles = StyleSheet.create({
   },
 
   occupationDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(18),
+    lineHeight: rf(15),
   },
 
   occupationDescriptionSelected: {
@@ -1173,9 +1178,9 @@ const styles = StyleSheet.create({
 
   // Sleep Schedule
   timeSelector: {
-    paddingVertical: ResponsiveTheme.spacing.md,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: rh(12),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(12),
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1185,18 +1190,18 @@ const styles = StyleSheet.create({
   timeIconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   timeText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   sleepDurationCard: {
-    marginTop: ResponsiveTheme.spacing.md,
-    padding: ResponsiveTheme.spacing.md,
+    marginTop: rh(12),
+    padding: rw(12),
   },
 
   sleepDurationHealthy: {
@@ -1217,45 +1222,46 @@ const styles = StyleSheet.create({
   },
 
   sleepDurationIconContainer: {
-    marginRight: ResponsiveTheme.spacing.md,
+    marginRight: rw(12),
   },
 
   sleepDurationText: {
     flex: 1,
+    minWidth: 0,
   },
 
   sleepDurationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   sleepDurationSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
   },
 
   // Validation
   validationSummary: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    marginBottom: rh(16),
   },
 
   validationCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   validationTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.sm,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    gap: rw(8),
+    marginBottom: rh(4),
   },
 
   validationTitle: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
@@ -1265,110 +1271,110 @@ const styles = StyleSheet.create({
   },
 
   validationPercentage: {
-    fontSize: rf(20),
+    fontSize: rf(18),
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   validationErrors: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   validationErrorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   validationErrorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.error,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
   },
 
   validationWarnings: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   validationWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   validationWarningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.warning,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: rf(12),
+    color: '#EF4444',
+    marginTop: rh(4),
   },
 
   // Footer
   footer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    paddingVertical: rh(12),
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: rw(8),
   },
 
   backButton: {
-    flex: 1,
+    flex: 0.8,
   },
 
   jumpButton: {
-    flex: 1.5,
+    flex: 1,
   },
 
   nextButton: {
-    flex: 2,
+    flex: 1.5,
   },
 
   // Debug styles
   debugInfo: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginTop: ResponsiveTheme.spacing.md,
+    padding: rw(8),
+    borderRadius: rw(8),
+    marginTop: rh(12),
   },
 
   debugTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   debugText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
     fontFamily: 'monospace',
   },
 
   debugButton: {
     backgroundColor: ResponsiveTheme.colors.primary,
-    padding: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-    marginTop: ResponsiveTheme.spacing.sm,
+    padding: rw(4),
+    borderRadius: rw(4),
+    marginTop: rh(8),
     alignSelf: 'center',
   },
 
   debugButtonText: {
     color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 });

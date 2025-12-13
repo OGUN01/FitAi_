@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../../utils/responsive';
@@ -23,6 +23,8 @@ import { ErrorCard } from '../../../components/onboarding/ErrorCard';
 import { WarningCard } from '../../../components/onboarding/WarningCard';
 import { AdjustmentWizard, Alternative } from '../../../components/onboarding/AdjustmentWizard';
 import { METRIC_DESCRIPTIONS } from '../../../constants/metricDescriptions';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -1004,16 +1006,16 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Background Image */}
+        {/* Hero Section - Simplified Modern Design */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(220)}
+          height={160}
         >
-          <Text style={styles.title}>Advanced Review & Insights</Text>
+          <Text style={styles.title}>Review & Complete</Text>
           <Text style={styles.subtitle}>
-            Comprehensive analysis based on your complete profile
+            Your personalized fitness profile
           </Text>
 
           {/* Auto-save Indicator */}
@@ -1028,7 +1030,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
           {isCalculating && (
             <View style={styles.calculatingIndicator}>
               <Ionicons name="calculator-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
-              <Text style={styles.calculatingText}>Calculating health metrics...</Text>
+              <Text style={styles.calculatingText}>Calculating...</Text>
             </View>
           )}
 
@@ -1040,7 +1042,7 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
               </View>
               <AnimatedPressable onPress={performCalculations} style={styles.retryButton} scaleValue={0.95}>
                 <Ionicons name="refresh-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} style={{ marginRight: ResponsiveTheme.spacing.xs }} />
-                <Text style={styles.retryText}>Retry Calculations</Text>
+                <Text style={styles.retryText}>Retry</Text>
               </AnimatedPressable>
             </View>
           )}
@@ -1280,27 +1282,30 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: Math.min(rf(28), 26),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: ResponsiveTheme.spacing.xs,
+    letterSpacing: -0.5,
+    textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(22),
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: Math.min(rf(15), 14),
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: Math.min(rf(22), 20),
+    textAlign: 'center',
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderRadius: rf(20),
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   autoSaveText: {
@@ -1377,17 +1382,17 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: rf(20),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
+    fontSize: Math.min(rf(18), 17),
+    fontWeight: '600',
+    color: '#FFFFFF',
     letterSpacing: -0.3,
   },
 
   sectionSubtitle: {
-    fontSize: rf(14),
-    color: ResponsiveTheme.colors.textSecondary,
+    fontSize: Math.min(rf(13), 13),
+    color: 'rgba(255, 255, 255, 0.6)',
     marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(20),
+    lineHeight: Math.min(rf(18), 18),
   },
 
   // Data Summary Section
@@ -2027,23 +2032,23 @@ const styles = StyleSheet.create({
   // Footer
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   backButton: {
-    flex: 1,
+    flex: 0.8,
   },
 
   completeButton: {
-    flex: 2,
+    flex: 1.5,
   },
 });
 

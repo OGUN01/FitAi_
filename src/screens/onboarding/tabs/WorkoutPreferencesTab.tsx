@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { MultiSelect } from '../../../components/advanced/MultiSelect';
 import { WorkoutPreferencesData, BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import { MetabolicCalculations } from '../../../utils/healthCalculations';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -1137,22 +1139,22 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section with Background Image */}
+        {/* Hero Section - Simplified Modern Design */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={rh(200)}
+          height={160}
         >
-          <Text style={styles.title}>Let's create your fitness profile</Text>
+          <Text style={styles.title}>Workout Preferences</Text>
           <Text style={styles.subtitle}>
-            Tell us about your goals, current fitness level, and workout preferences
+            Customize your fitness routine
           </Text>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="save-outline" size={rf(16)} color={ResponsiveTheme.colors.success} style={{ marginRight: 4 }} />
+              <Ionicons name="save-outline" size={rf(14)} color={ResponsiveTheme.colors.success} style={{ marginRight: 4 }} />
               <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
@@ -1288,63 +1290,65 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   headerGradient: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.xl,
-    paddingBottom: ResponsiveTheme.spacing.lg,
-    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
-    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
+    paddingHorizontal: rw(16),
+    paddingTop: rh(20),
+    paddingBottom: rh(16),
+    borderBottomLeftRadius: rw(24),
+    borderBottomRightRadius: rw(24),
   },
 
   title: {
-    fontSize: rf(32),
-    fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.white,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(24),
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: rh(4),
     letterSpacing: -0.5,
     textAlign: 'center',
   },
 
   subtitle: {
-    fontSize: rf(16),
-    color: 'rgba(255, 255, 255, 0.85)',
-    lineHeight: rf(24),
-    marginBottom: ResponsiveTheme.spacing.md,
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: rf(18),
     textAlign: 'center',
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: `${ResponsiveTheme.colors.success}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: rw(12),
+    paddingVertical: rh(4),
+    borderRadius: rw(16),
+    marginTop: rh(8),
   },
 
   autoSaveText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   content: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(16),
+    width: '100%',
   },
 
   section: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: rh(16),
+    width: '100%',
   },
 
   sectionTitle: {
-    fontSize: rf(20),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: rh(12),
     letterSpacing: -0.3,
   },
 
@@ -1352,77 +1356,78 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   readOnlyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: `${ResponsiveTheme.colors.warning}20`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: rw(8),
+    paddingVertical: rh(4),
+    borderRadius: rw(6),
   },
 
   readOnlyText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.warning,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   sectionSubtitle: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(20),
+    marginBottom: rh(12),
+    lineHeight: rf(18),
   },
 
   fieldLabel: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(14),
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   fieldSubtitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   // Goals Section
   goalField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: 16,
   },
 
   autoSuggestText: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
-    padding: ResponsiveTheme.spacing.sm,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.md,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
   },
 
   autoSuggestTextContent: {
     flex: 1,
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.primary,
-    lineHeight: rf(18),
+    lineHeight: 16,
   },
 
   goalsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   goalItem: {
     width: '48%',
+    minWidth: 0,
   },
 
   goalCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   goalCardSelected: {
@@ -1432,20 +1437,20 @@ const styles = StyleSheet.create({
 
   goalContent: {
     alignItems: 'center',
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   goalIcon: {
-    fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(26),
+    marginBottom: rh(8),
   },
 
   goalTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   goalTitleSelected: {
@@ -1453,18 +1458,18 @@ const styles = StyleSheet.create({
   },
 
   goalDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   // Activity Level Section
   activityField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: rh(16),
   },
 
   activityCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: rh(8),
   },
 
   activityCardSelected: {
@@ -1475,23 +1480,24 @@ const styles = StyleSheet.create({
   activityContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   activityIcon: {
-    fontSize: rf(24),
-    marginRight: ResponsiveTheme.spacing.md,
+    fontSize: rf(21),
+    marginRight: rw(12),
   },
 
   activityText: {
     flex: 1,
+    minWidth: 0,
   },
 
   activityTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   activityTitleSelected: {
@@ -1499,37 +1505,37 @@ const styles = StyleSheet.create({
   },
 
   activityDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
   },
 
   // Fitness Assessment Section
   fitnessGrid: {
-    gap: ResponsiveTheme.spacing.lg,
+    gap: rh(16),
   },
 
   fitnessItem: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   fitnessLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   // Sliders
   experienceSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 6,
   },
 
   experienceOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1541,7 +1547,7 @@ const styles = StyleSheet.create({
   },
 
   experienceText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1554,13 +1560,13 @@ const styles = StyleSheet.create({
   frequencySlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 6,
   },
 
   frequencyOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1572,7 +1578,7 @@ const styles = StyleSheet.create({
   },
 
   frequencyText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1585,13 +1591,13 @@ const styles = StyleSheet.create({
   pushupsSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 6,
   },
 
   pushupsOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1603,7 +1609,7 @@ const styles = StyleSheet.create({
   },
 
   pushupsText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1616,13 +1622,13 @@ const styles = StyleSheet.create({
   runningSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: 6,
   },
 
   runningOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1634,7 +1640,7 @@ const styles = StyleSheet.create({
   },
 
   runningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1646,7 +1652,7 @@ const styles = StyleSheet.create({
 
   flexibilityGrid: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   flexibilityItem: {
@@ -1654,7 +1660,7 @@ const styles = StyleSheet.create({
   },
 
   flexibilityCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
     alignItems: 'center',
   },
 
@@ -1664,12 +1670,12 @@ const styles = StyleSheet.create({
   },
 
   flexibilityIcon: {
-    fontSize: rf(20),
-    marginBottom: ResponsiveTheme.spacing.xs,
+    fontSize: 18,
+    marginBottom: 4,
   },
 
   flexibilityTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
   },
@@ -1680,12 +1686,12 @@ const styles = StyleSheet.create({
 
   // Workout Preferences Section
   preferenceField: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: 16,
   },
 
   locationGrid: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   locationItem: {
@@ -1693,7 +1699,7 @@ const styles = StyleSheet.create({
   },
 
   locationCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   locationCardSelected: {
@@ -1706,15 +1712,15 @@ const styles = StyleSheet.create({
   },
 
   locationIcon: {
-    fontSize: rf(24),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(21),
+    marginBottom: rh(8),
   },
 
   locationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   locationTitleSelected: {
@@ -1722,7 +1728,7 @@ const styles = StyleSheet.create({
   },
 
   locationDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
@@ -1730,13 +1736,13 @@ const styles = StyleSheet.create({
   durationSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: rw(6),
   },
 
   durationOption: {
-    paddingVertical: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: rh(8),
+    paddingHorizontal: rw(12),
+    borderRadius: rw(8),
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
@@ -1748,7 +1754,7 @@ const styles = StyleSheet.create({
   },
 
   durationText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1759,7 +1765,7 @@ const styles = StyleSheet.create({
   },
 
   intensityCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   intensityCardSelected: {
@@ -1768,22 +1774,22 @@ const styles = StyleSheet.create({
   },
 
   intensityContent: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   intensityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   intensityIcon: {
-    fontSize: rf(24),
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: rf(21),
+    marginRight: rw(8),
   },
 
   intensityTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
   },
@@ -1793,22 +1799,23 @@ const styles = StyleSheet.create({
   },
 
   intensityDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
   },
 
   // Workout Times Section
   workoutTimesGrid: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   workoutTimeItem: {
     flex: 1,
+    minWidth: 0,
   },
 
   workoutTimeCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
   },
 
   workoutTimeCardSelected: {
@@ -1821,15 +1828,15 @@ const styles = StyleSheet.create({
   },
 
   workoutTimeIcon: {
-    fontSize: rf(20),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(18),
+    marginBottom: rh(8),
   },
 
   workoutTimeTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   workoutTimeTitleSelected: {
@@ -1837,22 +1844,22 @@ const styles = StyleSheet.create({
   },
 
   workoutTimeDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 10,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
   },
 
   // Style Preferences Section
   stylePreferencesGrid: {
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   stylePreferenceItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   stylePreferenceCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   stylePreferenceCardSelected: {
@@ -1868,22 +1875,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   stylePreferenceIcon: {
-    fontSize: rf(20),
+    fontSize: 18,
   },
 
   stylePreferenceToggle: {
-    marginLeft: ResponsiveTheme.spacing.md,
+    marginLeft: 12,
   },
 
   stylePreferenceTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   stylePreferenceTitleSelected: {
@@ -1891,21 +1898,21 @@ const styles = StyleSheet.create({
   },
 
   stylePreferenceDescription: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(16),
+    lineHeight: 16,
   },
 
   // Toggle Switch Styles
   toggleSwitch: {
-    width: rw(40),
-    height: rh(20),
-    borderRadius: rh(10),
+    width: 40,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     justifyContent: 'center',
-    paddingHorizontal: rp(2),
+    paddingHorizontal: 2,
   },
 
   toggleSwitchActive: {
@@ -1914,9 +1921,9 @@ const styles = StyleSheet.create({
   },
 
   toggleThumb: {
-    width: rw(16),
-    height: rh(16),
-    borderRadius: rh(8),
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: ResponsiveTheme.colors.white,
     alignSelf: 'flex-start',
   },
@@ -1927,7 +1934,7 @@ const styles = StyleSheet.create({
 
   // Weight Goals Section
   weightGoalsCard: {
-    padding: ResponsiveTheme.spacing.lg,
+    padding: 16,
     backgroundColor: `${ResponsiveTheme.colors.secondary}10`,
     borderColor: ResponsiveTheme.colors.secondary,
     borderWidth: 1,
@@ -1937,7 +1944,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   weightGoalItem: {
@@ -1945,128 +1952,128 @@ const styles = StyleSheet.create({
   },
 
   weightGoalLabel: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   weightGoalValue: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: 16,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.secondary,
   },
 
   weightGoalArrow: {
-    fontSize: rf(20),
+    fontSize: 18,
     color: ResponsiveTheme.colors.textSecondary,
   },
 
   weeklyRateInfo: {
     alignItems: 'center',
-    paddingTop: ResponsiveTheme.spacing.md,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
   },
 
   weeklyRateText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Validation Section
   validationSummary: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
 
   validationCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
   },
 
   validationTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: 14,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   validationPercentage: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationErrors: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationErrorTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.error,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   validationErrorText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.error,
-    lineHeight: rf(18),
+    lineHeight: 16,
   },
 
   validationWarnings: {
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: 12,
   },
 
   validationWarningTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.warning,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: 4,
   },
 
   validationWarningText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 12,
     color: ResponsiveTheme.colors.warning,
-    lineHeight: rf(18),
+    lineHeight: 16,
   },
 
   errorText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.error,
-    marginTop: ResponsiveTheme.spacing.xs,
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
   },
 
   // Footer
   footer: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: ResponsiveTheme.colors.border,
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(15, 15, 26, 0.95)',
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.md,
+    gap: 8,
   },
 
   backButton: {
-    flex: 1,
+    flex: 0.8,
   },
 
   jumpButton: {
-    flex: 1.5,
+    flex: 1,
   },
 
   nextButton: {
-    flex: 2,
+    flex: 1.5,
   },
 
   // Gym Equipment Styles
   gymEquipmentCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
     backgroundColor: `${ResponsiveTheme.colors.success}08`,
     borderColor: `${ResponsiveTheme.colors.success}30`,
     borderWidth: 1,
@@ -2077,61 +2084,61 @@ const styles = StyleSheet.create({
   },
 
   gymEquipmentIcon: {
-    fontSize: rf(32),
-    marginBottom: ResponsiveTheme.spacing.sm,
+    fontSize: rf(26),
+    marginBottom: rh(8),
   },
 
   gymEquipmentTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.success,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
     textAlign: 'center',
   },
 
   gymEquipmentDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    marginBottom: rh(12),
+    lineHeight: rf(16),
   },
 
   gymEquipmentList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   gymEquipmentItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: rw(8),
+    paddingVertical: rh(4),
+    borderRadius: rw(6),
+    marginBottom: rh(4),
   },
 
   gymEquipmentItemIcon: {
-    fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
+    fontSize: rf(14),
+    marginRight: rw(4),
   },
 
   gymEquipmentItemLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(11),
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Calculated Level Styles
   calculatedLevelCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
     backgroundColor: `${ResponsiveTheme.colors.primary}08`,
     borderColor: `${ResponsiveTheme.colors.primary}30`,
     borderWidth: 1,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   calculatedLevelContent: {
@@ -2140,160 +2147,161 @@ const styles = StyleSheet.create({
   },
 
   calculatedLevelIcon: {
-    fontSize: rf(24),
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: rf(21),
+    marginRight: rw(8),
   },
 
   calculatedLevelText: {
     flex: 1,
+    minWidth: 0,
   },
 
   calculatedLevelTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.primary,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   calculatedLevelDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(18),
+    lineHeight: rf(16),
   },
 
   calculatedLevelHint: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(10),
     color: ResponsiveTheme.colors.primary,
-    marginTop: ResponsiveTheme.spacing.xs,
+    marginTop: rh(4),
     fontStyle: 'italic',
   },
 
   // Recommended Workout Types Styles
   recommendedTypesCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: rw(12),
     backgroundColor: `${ResponsiveTheme.colors.secondary}08`,
     borderColor: `${ResponsiveTheme.colors.secondary}30`,
     borderWidth: 1,
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: rh(12),
   },
 
   recommendedTypesHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.xs,
+    marginBottom: rh(4),
   },
 
   recommendedTypesIcon: {
-    fontSize: rf(20),
-    marginRight: ResponsiveTheme.spacing.xs,
+    fontSize: rf(18),
+    marginRight: rw(4),
   },
 
   recommendedTypesTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.secondary,
   },
 
   recommendedTypesDescription: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.md,
-    lineHeight: rf(18),
+    marginBottom: rh(12),
+    lineHeight: rf(16),
   },
 
   recommendedTypesList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: rw(8),
   },
 
   recommendedTypeItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.md,
-    marginBottom: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 4,
   },
 
   recommendedTypeIcon: {
-    fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
+    fontSize: 14,
+    marginRight: 4,
   },
 
   recommendedTypeLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Workout Explorer Styles (SwipeableCardStack)
   workoutExplorerCard: {
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: 16,
   },
 
   swipeableCards: {
-    marginVertical: ResponsiveTheme.spacing.md,
-    height: rh(320),
+    marginVertical: 12,
+    height: Math.min(rh(320), 280),
   },
 
   selectedTypesContainer: {
-    marginTop: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.md,
+    marginTop: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: `${ResponsiveTheme.colors.border}40`,
   },
 
   selectedTypesTitle: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: 13,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: 8,
   },
 
   selectedTypesList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ResponsiveTheme.spacing.sm,
+    gap: 8,
   },
 
   selectedTypeChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    paddingHorizontal: ResponsiveTheme.spacing.sm,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: `${ResponsiveTheme.colors.primary}40`,
   },
 
   selectedTypeIcon: {
-    fontSize: rf(16),
-    marginRight: ResponsiveTheme.spacing.xs,
+    fontSize: 14,
+    marginRight: 4,
   },
 
   selectedTypeLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: 11,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    marginRight: ResponsiveTheme.spacing.xs,
+    marginRight: 4,
   },
 
   selectedTypeRemove: {
-    fontSize: rf(14),
+    fontSize: 12,
     color: ResponsiveTheme.colors.error,
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 
   // Calculated Activity Level Styles (Read-only display)
   calculatedActivityCard: {
-    padding: ResponsiveTheme.spacing.md,
+    padding: 12,
     backgroundColor: `${ResponsiveTheme.colors.info}08`,
     borderColor: `${ResponsiveTheme.colors.info || ResponsiveTheme.colors.primary}30`,
     borderWidth: 1,
-    marginTop: ResponsiveTheme.spacing.md,
+    marginTop: 12,
   },
 
   calculatedActivityContent: {

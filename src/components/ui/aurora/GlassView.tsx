@@ -97,11 +97,12 @@ export const GlassView: React.FC<GlassViewProps> = ({
 }) => {
   const blurIntensity = getBlurAmount(blurAmount);
 
-  // On Android, use a semi-transparent background as fallback
+  // On Android or Web, use a semi-transparent background as fallback
   // BlurView performance can be inconsistent on older Android devices
-  const androidFallback = Platform.OS === 'android' && optimizeForAndroid;
+  // and may have issues on web platforms
+  const useFallback = (Platform.OS === 'android' && optimizeForAndroid) || Platform.OS === 'web';
 
-  if (androidFallback) {
+  if (useFallback) {
     return (
       <View
         style={[

@@ -155,7 +155,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: rw(12),
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -166,23 +166,23 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderRadius: rw(12),
   },
 
   // Sizes
   sm: {
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: rw(16),
+    paddingVertical: rh(8),
     minHeight: rh(36),
   },
   md: {
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: rw(24),
+    paddingVertical: rh(12),
     minHeight: rh(48),
   },
   lg: {
-    paddingHorizontal: ResponsiveTheme.spacing.xl,
-    paddingVertical: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: rw(32),
+    paddingVertical: rh(16),
     minHeight: rh(56),
   },
 
@@ -210,13 +210,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   smText: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(14),
   },
   mdText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: rf(16),
   },
   lgText: {
-    fontSize: ResponsiveTheme.fontSize.lg,
+    fontSize: rf(18),
   },
 
   // Text variants
