@@ -82,7 +82,9 @@
       "Bash(done)",
       "mcp__supabase__get_logs",
       "mcp__supabase__get_advisors",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": [],
