@@ -42,6 +42,7 @@ export const THEME = {
     warning: '#ff9800',
     error: '#f44336',
     info: '#2196f3',
+    accent: '#818CF8', // Accent color (same as primaryLight)
 
     // Utility Colors
     white: '#ffffff',

@@ -127,8 +127,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     return (
       <View style={styles.alertsContainer}>
         <Text style={styles.sectionTitle}>⚠️ Health Alerts</Text>
-        {healthAssessment.alerts.map((alert, index) => (
-          <View key={index} style={styles.alertItem}>
+        {healthAssessment.alerts.map((alert) => (
+          <View key={alert} style={styles.alertItem}>
             <Text style={styles.alertText}>{alert}</Text>
           </View>
         ))}
@@ -142,8 +142,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     return (
       <View style={styles.recommendationsContainer}>
         <Text style={styles.sectionTitle}>💡 Recommendations</Text>
-        {healthAssessment.recommendations.map((recommendation, index) => (
-          <View key={index} style={styles.recommendationItem}>
+        {healthAssessment.recommendations.map((recommendation) => (
+          <View key={recommendation} style={styles.recommendationItem}>
             <Text style={styles.recommendationText}>• {recommendation}</Text>
           </View>
         ))}
@@ -157,8 +157,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     return (
       <View style={styles.alternativesContainer}>
         <Text style={styles.sectionTitle}>🔄 Healthier Alternatives</Text>
-        {healthAssessment.alternatives.map((alternative, index) => (
-          <View key={index} style={styles.alternativeItem}>
+        {healthAssessment.alternatives.map((alternative) => (
+          <View key={alternative} style={styles.alternativeItem}>
             <Text style={styles.alternativeText}>• {alternative}</Text>
           </View>
         ))}
@@ -225,8 +225,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {healthAssessment?.healthBenefits && healthAssessment.healthBenefits.length > 0 && (
           <View style={styles.benefitsContainer}>
             <Text style={styles.sectionTitle}>✅ Health Benefits</Text>
-            {healthAssessment.healthBenefits.map((benefit, index) => (
-              <View key={index} style={styles.benefitItem}>
+            {healthAssessment.healthBenefits.map((benefit) => (
+              <View key={benefit} style={styles.benefitItem}>
                 <Text style={styles.benefitText}>• {benefit}</Text>
               </View>
             ))}
@@ -237,8 +237,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {healthAssessment?.concerns && healthAssessment.concerns.length > 0 && (
           <View style={styles.concernsContainer}>
             <Text style={styles.sectionTitle}>⚠️ Concerns</Text>
-            {healthAssessment.concerns.map((concern, index) => (
-              <View key={index} style={styles.concernItem}>
+            {healthAssessment.concerns.map((concern) => (
+              <View key={concern} style={styles.concernItem}>
                 <Text style={styles.concernText}>• {concern}</Text>
               </View>
             ))}

@@ -450,17 +450,17 @@ export const useUserStore = create<UserState>()(
         }
 
         const hasPersonalInfo = !!(
-          personalInfo.name &&
+          (personalInfo.name || (personalInfo.first_name && personalInfo.last_name)) &&
           personalInfo.age &&
           personalInfo.gender &&
-          personalInfo.height &&
-          personalInfo.weight &&
-          personalInfo.activityLevel
+          personalInfo.occupation_type
         );
 
+        const primaryGoals = fitnessGoals.primary_goals || fitnessGoals.primaryGoals;
+        const timeCommitment = fitnessGoals.time_commitment || fitnessGoals.timeCommitment;
         const hasFitnessGoals = !!(
-          fitnessGoals.primaryGoals?.length > 0 &&
-          fitnessGoals.timeCommitment &&
+          primaryGoals?.length > 0 &&
+          timeCommitment &&
           fitnessGoals.experience
         );
 

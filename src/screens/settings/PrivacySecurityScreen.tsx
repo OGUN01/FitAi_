@@ -1,19 +1,159 @@
-import React, { useState } from 'react';
+/**
+ * PrivacySecurityScreen - Privacy & Security Settings
+ * 
+ * Redesigned following UI/UX Methodology:
+ * - GlassCard for all cards
+ * - Ionicons instead of emojis
+ * - AnimatedPressable with haptics
+ * - ResponsiveTheme for spacing/colors
+ * - FadeInDown entry animations
+ */
+
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  TouchableOpacity,
   Switch,
   Alert,
 } from 'react-native';
-import { Card, Button, THEME } from '../../components/ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// UI Components
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+
+// Theme & Utils
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rw, rh } from '../../utils/responsive';
+import { haptics } from '../../utils/haptics';
 
 interface PrivacySecurityScreenProps {
   onBack?: () => void;
 }
+
+interface PrivacyToggleProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+  description: string;
+  value: boolean;
+  onToggle: () => void;
+  animationDelay: number;
+}
+
+const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
+  icon,
+  iconColor,
+  title,
+  description,
+  value,
+  onToggle,
+  animationDelay,
+}) => {
+  return (
+    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+      <GlassCard 
+        elevation={1} 
+        padding="md" 
+        blurIntensity="light" 
+        borderRadius="lg"
+        style={styles.toggleCard}
+      >
+        <View style={styles.toggleContent}>
+          <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+            <Ionicons name={icon} size={rf(18)} color={iconColor} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.toggleTitle}>{title}</Text>
+            <Text style={styles.toggleDescription} numberOfLines={2}>
+              {description}
+            </Text>
+          </View>
+          <Switch
+            value={value}
+            onValueChange={() => {
+              haptics.light();
+              onToggle();
+            }}
+            trackColor={{
+              false: 'rgba(255, 255, 255, 0.1)',
+              true: `${ResponsiveTheme.colors.primary}50`,
+            }}
+            thumbColor={value ? ResponsiveTheme.colors.primary : 'rgba(255, 255, 255, 0.4)'}
+            ios_backgroundColor="rgba(255, 255, 255, 0.1)"
+          />
+        </View>
+      </GlassCard>
+    </Animated.View>
+  );
+};
+
+interface ActionItemProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+  description: string;
+  onPress: () => void;
+  isDanger?: boolean;
+  animationDelay: number;
+}
+
+const ActionItem: React.FC<ActionItemProps> = ({
+  icon,
+  iconColor,
+  title,
+  description,
+  onPress,
+  isDanger = false,
+  animationDelay,
+}) => {
+  return (
+    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+      <AnimatedPressable
+        onPress={() => {
+          haptics.light();
+          onPress();
+        }}
+        scaleValue={0.98}
+        hapticFeedback={false}
+      >
+        <GlassCard 
+          elevation={1} 
+          padding="md" 
+          blurIntensity="light" 
+          borderRadius="lg"
+          style={[styles.actionCard, isDanger && styles.dangerCard]}
+        >
+          <View style={styles.actionContent}>
+            <View style={[
+              styles.iconContainer, 
+              { backgroundColor: isDanger ? 'rgba(244, 67, 54, 0.15)' : `${iconColor}15` }
+            ]}>
+              <Ionicons name={icon} size={rf(18)} color={isDanger ? '#F44336' : iconColor} />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={[styles.actionTitle, isDanger && styles.dangerTitle]}>
+                {title}
+              </Text>
+              <Text style={styles.actionDescription}>{description}</Text>
+            </View>
+            <Ionicons 
+              name="chevron-forward" 
+              size={rf(18)} 
+              color={ResponsiveTheme.colors.textMuted} 
+            />
+          </View>
+        </GlassCard>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+};
 
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ onBack }) => {
   const [settings, setSettings] = useState({
@@ -23,20 +163,19 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
     locationTracking: false,
     biometricAuth: false,
     autoLock: true,
-    profileVisibility: 'private',
   });
 
   const [hasChanges, setHasChanges] = useState(false);
 
-  const toggleSetting = (key: string) => {
+  const toggleSetting = useCallback((key: keyof typeof settings) => {
     setSettings((prev) => ({
       ...prev,
-      [key]: !prev[key as keyof typeof prev],
+      [key]: !prev[key],
     }));
     setHasChanges(true);
-  };
+  }, []);
 
-  const handleDataExport = () => {
+  const handleDataExport = useCallback(() => {
     Alert.alert(
       'Export Data',
       'Your data export will be prepared and sent to your email address. This may take a few minutes.',
@@ -45,6 +184,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         {
           text: 'Export',
           onPress: () => {
+            haptics.success();
             Alert.alert(
               'Export Started',
               "Your data export has been initiated. You will receive an email when it's ready."
@@ -53,9 +193,9 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         },
       ]
     );
-  };
+  }, []);
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = useCallback(() => {
     Alert.alert(
       'Delete Account',
       'This action cannot be undone. All your data will be permanently deleted.',
@@ -74,7 +214,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
                   text: 'Delete Forever',
                   style: 'destructive',
                   onPress: () => {
-                    // TODO: Implement account deletion
+                    haptics.medium();
                     Alert.alert(
                       'Account Deletion',
                       'Account deletion process will be implemented here.'
@@ -87,426 +227,345 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({ on
         },
       ]
     );
-  };
+  }, []);
 
-  const saveSettings = async () => {
+  const saveSettings = useCallback(async () => {
     try {
-      console.log('Saving privacy settings:', settings);
-
-      // Simulate API call
+      haptics.success();
       await new Promise((resolve) => setTimeout(resolve, 500));
-
       setHasChanges(false);
       Alert.alert('Success', 'Privacy settings saved successfully!');
     } catch (error) {
       console.error('Failed to save privacy settings:', error);
       Alert.alert('Error', 'Failed to save settings. Please try again.');
     }
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backIcon}>‹</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Privacy & Security</Text>
+        <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+          <AnimatedPressable
+            onPress={() => {
+              haptics.light();
+              onBack?.();
+            }}
+            scaleValue={0.9}
+            hapticFeedback={false}
+          >
+            <View style={styles.backButton}>
+              <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
+            </View>
+          </AnimatedPressable>
+          <View style={styles.headerCenter}>
+            <Ionicons name="shield-checkmark-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.headerTitle}>Privacy & Security</Text>
+          </View>
           <View style={styles.headerSpacer} />
-        </View>
+        </Animated.View>
 
-        {/* Data Privacy Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Privacy</Text>
-
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>📊</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Data Sharing</Text>
-                  <Text style={styles.settingDescription}>
-                    Allow sharing anonymous usage data to improve the app
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.dataSharing}
-                onValueChange={() => toggleSetting('dataSharing')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.dataSharing ? THEME.colors.primary : THEME.colors.textMuted}
-              />
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Section: Data Privacy */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="eye-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Data Privacy</Text>
             </View>
-          </Card>
 
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>📈</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Analytics</Text>
-                  <Text style={styles.settingDescription}>
-                    Help us improve by sharing app usage analytics
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.analytics}
-                onValueChange={() => toggleSetting('analytics')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.analytics ? THEME.colors.primary : THEME.colors.textMuted}
-              />
-            </View>
-          </Card>
+            <PrivacyToggle
+              icon="share-social-outline"
+              iconColor="#667eea"
+              title="Data Sharing"
+              description="Allow sharing anonymous usage data to improve the app"
+              value={settings.dataSharing}
+              onToggle={() => toggleSetting('dataSharing')}
+              animationDelay={100}
+            />
 
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>🐛</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Crash Reports</Text>
-                  <Text style={styles.settingDescription}>
-                    Automatically send crash reports to help fix issues
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.crashReports}
-                onValueChange={() => toggleSetting('crashReports')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.crashReports ? THEME.colors.primary : THEME.colors.textMuted}
-              />
-            </View>
-          </Card>
+            <PrivacyToggle
+              icon="analytics-outline"
+              iconColor="#4CAF50"
+              title="Analytics"
+              description="Help us improve by sharing app usage analytics"
+              value={settings.analytics}
+              onToggle={() => toggleSetting('analytics')}
+              animationDelay={150}
+            />
 
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>📍</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Location Tracking</Text>
-                  <Text style={styles.settingDescription}>
-                    Allow location access for workout tracking and nearby features
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.locationTracking}
-                onValueChange={() => toggleSetting('locationTracking')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={
-                  settings.locationTracking ? THEME.colors.primary : THEME.colors.textMuted
-                }
-              />
-            </View>
-          </Card>
-        </View>
+            <PrivacyToggle
+              icon="bug-outline"
+              iconColor="#FF9800"
+              title="Crash Reports"
+              description="Automatically send crash reports to help fix issues"
+              value={settings.crashReports}
+              onToggle={() => toggleSetting('crashReports')}
+              animationDelay={200}
+            />
 
-        {/* Security Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security</Text>
-
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>🔐</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Biometric Authentication</Text>
-                  <Text style={styles.settingDescription}>
-                    Use fingerprint or face recognition to secure your app
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.biometricAuth}
-                onValueChange={() => toggleSetting('biometricAuth')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.biometricAuth ? THEME.colors.primary : THEME.colors.textMuted}
-              />
-            </View>
-          </Card>
-
-          <Card style={styles.settingCard} variant="outlined">
-            <View style={styles.settingContent}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingIcon}>🔒</Text>
-                <View style={styles.settingTexts}>
-                  <Text style={styles.settingTitle}>Auto-Lock</Text>
-                  <Text style={styles.settingDescription}>
-                    Automatically lock the app when it goes to background
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={settings.autoLock}
-                onValueChange={() => toggleSetting('autoLock')}
-                trackColor={{ false: THEME.colors.border, true: THEME.colors.primary + '50' }}
-                thumbColor={settings.autoLock ? THEME.colors.primary : THEME.colors.textMuted}
-              />
-            </View>
-          </Card>
-        </View>
-
-        {/* Data Management Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Management</Text>
-
-          <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity onPress={handleDataExport}>
-              <View style={styles.actionContent}>
-                <Text style={styles.actionIcon}>📤</Text>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Export My Data</Text>
-                  <Text style={styles.actionDescription}>
-                    Download a copy of all your personal data
-                  </Text>
-                </View>
-                <Text style={styles.actionArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-
-          <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('Privacy Policy', 'Privacy policy will be displayed here.')
-              }
-            >
-              <View style={styles.actionContent}>
-                <Text style={styles.actionIcon}>📄</Text>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Privacy Policy</Text>
-                  <Text style={styles.actionDescription}>Read our complete privacy policy</Text>
-                </View>
-                <Text style={styles.actionArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-
-          <Card style={styles.actionCard} variant="outlined">
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('Terms of Service', 'Terms of service will be displayed here.')
-              }
-            >
-              <View style={styles.actionContent}>
-                <Text style={styles.actionIcon}>📋</Text>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.actionTitle}>Terms of Service</Text>
-                  <Text style={styles.actionDescription}>Review our terms and conditions</Text>
-                </View>
-                <Text style={styles.actionArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-        </View>
-
-        {/* Danger Zone */}
-        <View style={styles.section}>
-          <Text style={styles.dangerTitle}>Danger Zone</Text>
-
-          <Card style={[styles.actionCard, styles.dangerCard]} variant="outlined">
-            <TouchableOpacity onPress={handleDeleteAccount}>
-              <View style={styles.actionContent}>
-                <Text style={styles.dangerIcon}>⚠️</Text>
-                <View style={styles.actionInfo}>
-                  <Text style={styles.dangerActionTitle}>Delete Account</Text>
-                  <Text style={styles.actionDescription}>
-                    Permanently delete your account and all data
-                  </Text>
-                </View>
-                <Text style={styles.actionArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-        </View>
-
-        {/* Save Button */}
-        {hasChanges && (
-          <View style={styles.saveSection}>
-            <Button
-              title="Save Changes"
-              onPress={saveSettings}
-              variant="primary"
-              size="lg"
-              style={styles.saveButton}
+            <PrivacyToggle
+              icon="location-outline"
+              iconColor="#2196F3"
+              title="Location Tracking"
+              description="Allow location access for workout tracking"
+              value={settings.locationTracking}
+              onToggle={() => toggleSetting('locationTracking')}
+              animationDelay={250}
             />
           </View>
-        )}
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Section: Security */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="lock-closed-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Security</Text>
+            </View>
+
+            <PrivacyToggle
+              icon="finger-print-outline"
+              iconColor="#9C27B0"
+              title="Biometric Authentication"
+              description="Use fingerprint or face recognition to secure your app"
+              value={settings.biometricAuth}
+              onToggle={() => toggleSetting('biometricAuth')}
+              animationDelay={300}
+            />
+
+            <PrivacyToggle
+              icon="lock-open-outline"
+              iconColor="#607D8B"
+              title="Auto-Lock"
+              description="Automatically lock the app when it goes to background"
+              value={settings.autoLock}
+              onToggle={() => toggleSetting('autoLock')}
+              animationDelay={350}
+            />
+          </View>
+
+          {/* Section: Data Management */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="folder-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Data Management</Text>
+            </View>
+
+            <ActionItem
+              icon="cloud-download-outline"
+              iconColor="#4CAF50"
+              title="Export My Data"
+              description="Download a copy of all your personal data"
+              onPress={handleDataExport}
+              animationDelay={400}
+            />
+
+            <ActionItem
+              icon="document-text-outline"
+              iconColor="#2196F3"
+              title="Privacy Policy"
+              description="Read our complete privacy policy"
+              onPress={() => Alert.alert('Privacy Policy', 'Privacy policy will be displayed here.')}
+              animationDelay={450}
+            />
+
+            <ActionItem
+              icon="clipboard-outline"
+              iconColor="#FF9800"
+              title="Terms of Service"
+              description="Review our terms and conditions"
+              onPress={() => Alert.alert('Terms of Service', 'Terms of service will be displayed here.')}
+              animationDelay={500}
+            />
+          </View>
+
+          {/* Section: Danger Zone */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="warning-outline" size={rf(14)} color="#F44336" />
+              <Text style={[styles.sectionTitle, styles.dangerSectionTitle]}>Danger Zone</Text>
+            </View>
+
+            <ActionItem
+              icon="trash-outline"
+              iconColor="#F44336"
+              title="Delete Account"
+              description="Permanently delete your account and all data"
+              onPress={handleDeleteAccount}
+              isDanger={true}
+              animationDelay={550}
+            />
+          </View>
+
+          {/* Save Button */}
+          {hasChanges && (
+            <Animated.View 
+              entering={FadeInDown.delay(100).duration(400)}
+              style={styles.saveContainer}
+            >
+              <AnimatedPressable
+                onPress={saveSettings}
+                scaleValue={0.97}
+                hapticFeedback={false}
+              >
+                <LinearGradient
+                  colors={['#FF6B6B', '#FF8E53']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.saveButton}
+                >
+                  <Ionicons name="checkmark-circle" size={rf(18)} color="#fff" />
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </LinearGradient>
+              </AnimatedPressable>
+            </Animated.View>
+          )}
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
   },
-
-  scrollView: {
-    flex: 1,
-  },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
-
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  backIcon: {
-    fontSize: 24,
-    color: THEME.colors.text,
-    fontWeight: 'bold',
-  },
-
-  title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-  },
-
-  headerSpacer: {
-    width: 40,
-  },
-
-  section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
-  },
-
-  sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
-  },
-
-  dangerTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.error,
-    marginBottom: THEME.spacing.md,
-  },
-
-  settingCard: {
-    marginBottom: THEME.spacing.sm,
-  },
-
-  settingContent: {
+  headerCenter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: THEME.spacing.lg,
+    gap: ResponsiveTheme.spacing.sm,
   },
-
-  settingInfo: {
+  headerTitle: {
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: '#fff',
+  },
+  headerSpacer: {
+    width: rw(40),
+  },
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.sm,
+  },
+  section: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    marginLeft: ResponsiveTheme.spacing.xs,
   },
-
-  settingIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.md,
-    marginTop: 2,
+  sectionTitle: {
+    fontSize: rf(12),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-
-  settingTexts: {
+  dangerSectionTitle: {
+    color: '#F44336',
+  },
+  toggleCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  toggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+  textContainer: {
     flex: 1,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
-
-  settingTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+  toggleTitle: {
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
   },
-
-  settingDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 18,
+  toggleDescription: {
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(16),
   },
-
   actionCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
-
   dangerCard: {
-    borderColor: THEME.colors.error + '50',
-    backgroundColor: THEME.colors.error + '05',
+    backgroundColor: 'rgba(244, 67, 54, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 67, 54, 0.2)',
   },
-
   actionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: THEME.spacing.lg,
   },
-
-  actionIcon: {
-    fontSize: 20,
-    marginRight: THEME.spacing.md,
-  },
-
-  dangerIcon: {
-    fontSize: 20,
-    marginRight: THEME.spacing.md,
-  },
-
-  actionInfo: {
-    flex: 1,
-  },
-
   actionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
   },
-
-  dangerActionTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.error,
+  dangerTitle: {
+    color: '#F44336',
   },
-
   actionDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
   },
-
-  actionArrow: {
-    fontSize: 20,
-    color: THEME.colors.textMuted,
-    fontWeight: THEME.fontWeight.bold,
+  saveContainer: {
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
-
-  saveSection: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
-  },
-
   saveButton: {
-    marginTop: THEME.spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
-
+  saveButtonText: {
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#fff',
+  },
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: rh(80),
   },
 });
+
+export default PrivacySecurityScreen;

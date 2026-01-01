@@ -1,0 +1,73 @@
+{
+  "extends": [
+    "expo",
+    "prettier"
+  ],
+  "plugins": [
+    "react",
+    "react-hooks",
+    "@typescript-eslint"
+  ],
+  "rules": {
+    // Prevent key={index} anti-pattern
+    "react/jsx-key": ["error", {
+      "checkFragmentShorthand": true,
+      "warnOnDuplicates": true
+    }],
+
+    // Enforce proper React Hooks dependencies
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
+
+    // Prevent console.log in production
+    "no-console": ["warn", {
+      "allow": ["warn", "error"]
+    }],
+
+    // Prevent unhandled promises
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+
+    // Prevent unused variables
+    "@typescript-eslint/no-unused-vars": ["warn", {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }],
+
+    // Prevent any type usage
+    "@typescript-eslint/no-explicit-any": "warn",
+
+    // Prevent dangerous code patterns
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-func": "error",
+
+    // React Native specific
+    "react-native/no-inline-styles": "off",
+    "react-native/no-color-literals": "off",
+
+    // Performance
+    "react/jsx-no-bind": ["warn", {
+      "allowArrowFunctions": false,
+      "allowBind": false,
+      "allowFunctions": false
+    }]
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.json"
+  },
+  "env": {
+    "react-native/react-native": true,
+    "es2021": true
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 // Migration Manager for Track B Infrastructure
 // Coordinates migration process with UI updates and user interaction
 
-import { migrationEngine, MigrationProgress, MigrationResult } from './migration';
+import { migrationEngine, MigrationProgress } from './migration';
 import { enhancedLocalStorage } from './localStorage';
 import { dataManager } from './dataManager';
 import { syncManager } from './syncManager';
@@ -13,6 +13,7 @@ import {
   DietPreferences,
   WorkoutPreferences,
   SyncConflict,
+  MigrationResult,
 } from '../types/profileData';
 
 // ============================================================================
@@ -139,6 +140,7 @@ export class MigrationManager {
       // Update state
       await this.checkMigrationStatus();
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       const errorResult: MigrationResult = {
         success: false,
         migrationId: `failed_${Date.now()}`,
@@ -151,12 +153,12 @@ export class MigrationManager {
           percentage: 0,
           startTime: new Date(),
           endTime: new Date(),
-          message: `Migration failed: ${error.message}`,
+          message: `Migration failed: ${errorMessage}`,
           errors: [
             {
               step: 'unknown',
               code: 'MIGRATION_START_FAILED',
-              message: error.message,
+              message: errorMessage,
               timestamp: new Date(),
               retryCount: 0,
               recoverable: true,
@@ -175,7 +177,7 @@ export class MigrationManager {
           {
             step: 'unknown',
             code: 'MIGRATION_START_FAILED',
-            message: error.message,
+            message: errorMessage,
             timestamp: new Date(),
             retryCount: 0,
             recoverable: true,
@@ -318,14 +320,14 @@ export class MigrationManager {
       const hasUserData = localData.user && Object.keys(localData.user).length > 0;
       const hasFitnessData =
         localData.fitness &&
-        (localData.fitness.workouts?.length > 0 || localData.fitness.sessions?.length > 0);
+        ((localData.fitness.workouts?.length || 0) > 0 || (localData.fitness.sessions?.length || 0) > 0);
       const hasNutritionData =
         localData.nutrition &&
-        (localData.nutrition.meals?.length > 0 || localData.nutrition.logs?.length > 0);
+        ((localData.nutrition.meals?.length || 0) > 0 || (localData.nutrition.logs?.length || 0) > 0);
       const hasProgressData =
         localData.progress &&
-        (localData.progress.measurements?.length > 0 ||
-          localData.progress.achievements?.length > 0);
+        ((localData.progress.measurements?.length || 0) > 0 ||
+          (localData.progress.achievements?.length || 0) > 0);
 
       return hasUserData || hasFitnessData || hasNutritionData || hasProgressData;
     } catch (error) {
@@ -494,11 +496,40 @@ export class MigrationManager {
       console.error('❌ Profile migration error:', error);
 
       const errorMessage = error instanceof Error ? error.message : 'Unknown migration error';
+      const errorObj = {
+        step: 'profile_migration',
+        code: 'PROFILE_MIGRATION_FAILED',
+        message: errorMessage,
+        timestamp: new Date(),
+        retryCount: 0,
+        recoverable: true,
+      };
+
       return {
         success: false,
-        migratedData: {},
-        conflicts: [],
-        errors: [errorMessage],
+        migrationId: `profile_error_${Date.now()}`,
+        progress: {
+          migrationId: `profile_error_${Date.now()}`,
+          status: 'failed',
+          currentStep: 'profile_migration',
+          currentStepIndex: 0,
+          totalSteps: 1,
+          percentage: 0,
+          startTime: new Date(),
+          endTime: new Date(),
+          message: errorMessage,
+          errors: [errorObj],
+          warnings: [],
+        },
+        migratedDataCount: {
+          userProfiles: 0,
+          workoutSessions: 0,
+          mealLogs: 0,
+          bodyMeasurements: 0,
+          achievements: 0,
+        },
+        errors: [errorObj],
+        warnings: [],
         duration: 0,
       };
     }
@@ -644,3 +675,4 @@ export class MigrationManager {
 
 export const migrationManager = new MigrationManager();
 export default migrationManager;
+export { MigrationProgress, MigrationStatus } from '../types/profileData';

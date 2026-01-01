@@ -13,7 +13,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
-import { DayWorkout } from '../../ai/weeklyContentGenerator';
+// REMOVED: import { DayWorkout } from '../../ai/weeklyContentGenerator' - moved to Cloudflare Workers
+import { DayWorkout } from '../../types/ai';
 import { WorkoutTimer } from '../../components/fitness/WorkoutTimer';
 import { ExerciseGifPlayer } from '../../components/fitness/ExerciseGifPlayer';
 import { ExerciseInstructionModal } from '../../components/fitness/ExerciseInstructionModal';

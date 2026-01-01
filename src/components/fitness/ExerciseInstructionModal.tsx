@@ -101,7 +101,7 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
       <View style={styles.instructionsContainer}>
         <Text style={styles.sectionTitle}>Step-by-Step Instructions</Text>
         {exercise.instructions.map((instruction, index) => (
-          <View key={index} style={styles.instructionItem}>
+          <View key={`step-${index}-${instruction.substring(0, 20)}`} style={styles.instructionItem}>
             <View style={styles.stepNumber}>
               <Text style={styles.stepNumberText}>{index + 1}</Text>
             </View>
@@ -129,8 +129,8 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
           <View style={styles.detailSection}>
             <Text style={styles.detailSectionTitle}>🎯 Primary Muscles</Text>
             <View style={styles.chipContainer}>
-              {exercise.targetMuscles.map((muscle, index) => (
-                <View key={index} style={[styles.chip, styles.primaryChip]}>
+              {exercise.targetMuscles.map((muscle) => (
+                <View key={`primary-${muscle}`} style={[styles.chip, styles.primaryChip]}>
                   <Text style={styles.primaryChipText}>{muscle}</Text>
                 </View>
               ))}
@@ -143,8 +143,8 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
           <View style={styles.detailSection}>
             <Text style={styles.detailSectionTitle}>💪 Secondary Muscles</Text>
             <View style={styles.chipContainer}>
-              {exercise.secondaryMuscles.map((muscle, index) => (
-                <View key={index} style={[styles.chip, styles.secondaryChip]}>
+              {exercise.secondaryMuscles.map((muscle) => (
+                <View key={`secondary-${muscle}`} style={[styles.chip, styles.secondaryChip]}>
                   <Text style={styles.secondaryChipText}>{muscle}</Text>
                 </View>
               ))}
@@ -157,8 +157,8 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
           <View style={styles.detailSection}>
             <Text style={styles.detailSectionTitle}>🏋️ Equipment Needed</Text>
             <View style={styles.chipContainer}>
-              {exercise.equipments.map((equipment, index) => (
-                <View key={index} style={[styles.chip, styles.equipmentChip]}>
+              {exercise.equipments.map((equipment) => (
+                <View key={`equipment-${equipment}`} style={[styles.chip, styles.equipmentChip]}>
                   <Text style={styles.equipmentChipText}>{equipment}</Text>
                 </View>
               ))}
@@ -171,8 +171,8 @@ export const ExerciseInstructionModal: React.FC<ExerciseInstructionModalProps> =
           <View style={styles.detailSection}>
             <Text style={styles.detailSectionTitle}>🦴 Body Parts</Text>
             <View style={styles.chipContainer}>
-              {exercise.bodyParts.map((bodyPart, index) => (
-                <View key={index} style={[styles.chip, styles.bodyPartChip]}>
+              {exercise.bodyParts.map((bodyPart) => (
+                <View key={`bodypart-${bodyPart}`} style={[styles.chip, styles.bodyPartChip]}>
                   <Text style={styles.bodyPartChipText}>{bodyPart}</Text>
                 </View>
               ))}

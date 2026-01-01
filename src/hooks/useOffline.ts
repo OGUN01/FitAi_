@@ -51,7 +51,9 @@ export const useOffline = (): UseOfflineReturn => {
       updateSyncStatus();
     }, 5000); // Update every 5 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [initialize, updateSyncStatus]);
 
   return {

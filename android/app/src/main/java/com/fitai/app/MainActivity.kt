@@ -17,8 +17,8 @@ class MainActivity : ReactActivity() {
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
-    super.onCreate(null)
-    
+    super.onCreate(savedInstanceState)
+
     // Set Health Connect permission delegate - Critical for permission handling
     HealthConnectPermissionDelegate.setPermissionDelegate(this)
   }

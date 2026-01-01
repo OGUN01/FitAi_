@@ -311,16 +311,49 @@ class UserProfileService {
         };
       }
 
+      // Map all 27 fields from database to DietPreferences interface
       return {
         success: true,
         data: {
-          dietType: data.diet_type,
+          // Basic diet info
+          diet_type: data.diet_type || 'non-veg',
           allergies: data.allergies || [],
           restrictions: data.restrictions || [],
-          // Optional fields with defaults
-          cookingSkill: 'intermediate',
-          mealPrepTime: 'moderate',
-          dislikes: []
+
+          // Diet readiness toggles (6 specialized diets)
+          keto_ready: data.keto_ready || false,
+          intermittent_fasting_ready: data.intermittent_fasting_ready || false,
+          paleo_ready: data.paleo_ready || false,
+          mediterranean_ready: data.mediterranean_ready || false,
+          low_carb_ready: data.low_carb_ready || false,
+          high_protein_ready: data.high_protein_ready || false,
+
+          // Meal preferences (at least 1 required)
+          breakfast_enabled: data.breakfast_enabled !== false,
+          lunch_enabled: data.lunch_enabled !== false,
+          dinner_enabled: data.dinner_enabled !== false,
+          snacks_enabled: data.snacks_enabled !== false,
+
+          // Cooking preferences
+          cooking_skill_level: data.cooking_skill_level || 'beginner',
+          max_prep_time_minutes: data.max_prep_time_minutes || null,
+          budget_level: data.budget_level || 'medium',
+
+          // Health habits (14 boolean fields)
+          drinks_enough_water: data.drinks_enough_water || false,
+          limits_sugary_drinks: data.limits_sugary_drinks || false,
+          eats_regular_meals: data.eats_regular_meals || false,
+          avoids_late_night_eating: data.avoids_late_night_eating || false,
+          controls_portion_sizes: data.controls_portion_sizes || false,
+          reads_nutrition_labels: data.reads_nutrition_labels || false,
+          eats_processed_foods: data.eats_processed_foods !== false,
+          eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies || false,
+          limits_refined_sugar: data.limits_refined_sugar || false,
+          includes_healthy_fats: data.includes_healthy_fats || false,
+          drinks_alcohol: data.drinks_alcohol || false,
+          smokes_tobacco: data.smokes_tobacco || false,
+          drinks_coffee: data.drinks_coffee || false,
+          takes_supplements: data.takes_supplements || false,
         },
       };
     } catch (error) {
@@ -400,71 +433,62 @@ class UserProfileService {
    * Map database profile to UserProfile type
    */
   private mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile): UserProfile {
-    // Log the raw database profile to see exactly what we're getting
+    // Cast to any to access new fields that might not be in generated types yet
+    const profile = dbProfile as any;
+
+    // Log the raw database profile
     console.log('🔍 userProfile.ts: Raw database profile:', {
-      id: dbProfile.id,
-      name: dbProfile.name,
-      age: dbProfile.age,
-      gender: dbProfile.gender,
-      height_cm: dbProfile.height_cm,
-      weight_kg: dbProfile.weight_kg,
-      activity_level: dbProfile.activity_level,
-      first_name: (dbProfile as any).first_name,
-      last_name: (dbProfile as any).last_name
+      id: profile.id,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      age: profile.age,
+      gender: profile.gender,
+      country: profile.country,
+      state: profile.state,
     });
 
-    // Handle name field - database has both 'name' and 'first_name'/'last_name'
-    // Prefer 'name' field, but fallback to combining first_name + last_name if needed
-    let fullName = dbProfile.name || '';
+    // Compute full name from first_name + last_name
+    const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
 
-    // If name is empty but we have first_name/last_name, combine them
-    if (!fullName && (dbProfile as any).first_name) {
-      const firstName = (dbProfile as any).first_name || '';
-      const lastName = (dbProfile as any).last_name || '';
-      fullName = `${firstName} ${lastName}`.trim();
-      console.log('📝 userProfile.ts: Computed name from first_name/last_name:', fullName);
-    }
-
-    console.log('🔄 userProfile.ts: Mapping database profile:', {
-      hasName: !!dbProfile.name,
-      hasFirstName: !!(dbProfile as any).first_name,
-      hasLastName: !!(dbProfile as any).last_name,
-      finalName: fullName,
-      height_cm: dbProfile.height_cm,
-      weight_kg: dbProfile.weight_kg,
-      heightType: typeof dbProfile.height_cm,
-      weightType: typeof dbProfile.weight_kg
-    });
-
+    // Map to PersonalInfo interface (matches profiles table - NO activityLevel)
     const personalInfo: PersonalInfo = {
+      first_name: profile.first_name || '',
+      last_name: profile.last_name || '',
       name: fullName,
-      email: dbProfile.email,
-      age: dbProfile.age?.toString() || '',
-      gender: dbProfile.gender || '',
-      height: dbProfile.height_cm?.toString() || '',
-      weight: dbProfile.weight_kg?.toString() || '',
-      activityLevel: dbProfile.activity_level || '',
+      email: profile.email || undefined,
+      age: profile.age || 0,
+      gender: (profile.gender as 'male' | 'female' | 'other' | 'prefer_not_to_say') || 'prefer_not_to_say',
+      country: profile.country || '',
+      state: profile.state || '',
+      region: profile.region || undefined,
+      wake_time: profile.wake_time || '',
+      sleep_time: profile.sleep_time || '',
+      occupation_type: (profile.occupation_type as 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active') || 'desk_job',
+      profile_picture: profile.profile_picture || undefined,
+      dark_mode: profile.dark_mode || false,
+      units: (profile.units as 'metric' | 'imperial') || 'metric',
+      notifications_enabled: profile.notifications_enabled !== false,
     };
 
-    console.log('✅ userProfile.ts: Mapped PersonalInfo:', personalInfo);
+    console.log('✅ userProfile.ts: Mapped PersonalInfo (NO activityLevel):', personalInfo);
 
     return {
       id: dbProfile.id,
-      email: dbProfile.email,
+      email: dbProfile.email || '',
       personalInfo,
       fitnessGoals: {
-        primaryGoals: [],
-        timeCommitment: '',
+        primary_goals: [],
+        time_commitment: '',
         experience: '',
         experience_level: '',
       },
-      createdAt: dbProfile.created_at,
-      updatedAt: dbProfile.updated_at,
+      createdAt: dbProfile.created_at || '',
+      updatedAt: dbProfile.updated_at || '',
       profilePicture: dbProfile.profile_picture || undefined,
       preferences: {
-        units: dbProfile.units,
-        notifications: dbProfile.notifications_enabled,
-        darkMode: dbProfile.dark_mode,
+        units: (dbProfile.units as 'metric' | 'imperial') || 'metric',
+        notifications: dbProfile.notifications_enabled !== false,
+        darkMode: dbProfile.dark_mode || false,
       },
       stats: {
         totalWorkouts: 0,
@@ -480,10 +504,10 @@ class UserProfileService {
    */
   private mapDatabaseGoalsToFitnessGoals(dbGoals: DatabaseFitnessGoals): FitnessGoals {
     return {
-      primaryGoals: dbGoals.primary_goals,
-      timeCommitment: dbGoals.time_commitment || '',
-      experience: dbGoals.experience_level || '',
-      experience_level: dbGoals.experience_level || '',
+      primary_goals: dbGoals.primary_goals,
+      time_commitment: (dbGoals as any).time_commitment || dbGoals.preferred_workout_duration?.toString() || '',
+      experience: dbGoals.fitness_level || '',
+      experience_level: dbGoals.fitness_level || '',
     };
   }
 }

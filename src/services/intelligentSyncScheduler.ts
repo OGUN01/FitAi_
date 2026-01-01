@@ -172,6 +172,10 @@ export class IntelligentSyncScheduler {
       await this.loadStats();
 
       // Start monitoring device conditions
+      if (this.schedulingTimer) {
+        clearInterval(this.schedulingTimer);
+      }
+
       this.schedulingTimer = setInterval(() => {
         this.evaluateConditions();
       }, 30000); // Every 30 seconds

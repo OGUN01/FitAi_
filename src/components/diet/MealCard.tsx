@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Card, THEME } from '../ui';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../types/ai';
 
 interface MealCardProps {
   meal: DayMeal;
@@ -65,7 +65,7 @@ export const MealCard: React.FC<MealCardProps> = ({
   const isInProgress = progress > 0 && progress < 100;
 
   return (
-    <Card style={[styles.card, style]} variant="elevated">
+    <Card style={StyleSheet.flatten([styles.card, style])} variant="elevated">
       {/* Progress Bar */}
       {progress > 0 && (
         <View style={styles.progressContainer}>

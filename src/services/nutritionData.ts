@@ -68,6 +68,17 @@ export interface NutritionGoals {
   protein_grams: number;
   carb_grams: number;
   fat_grams: number;
+  // Alternative field names used by some screens
+  daily_protein?: number;
+  daily_carbs?: number;
+  daily_fat?: number;
+  daily_water_ml?: number;
+  macroTargets?: {
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+    fiber?: number;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -270,9 +281,58 @@ class NutritionDataService {
 
   /**
    * Get user's nutrition goals
+   * 
+   * PRIORITY: First reads from advanced_review (onboarding calculations),
+   * then falls back to nutrition_goals table for backward compatibility.
+   * 
+   * CRITICAL: Does NOT create default goals - if no data exists, returns null.
+   * This makes data flow issues immediately visible instead of masking them.
    */
   async getUserNutritionGoals(userId: string): Promise<NutritionDataResponse<NutritionGoals>> {
     try {
+      console.log('📊 [NutritionData] getUserNutritionGoals - Loading for user:', userId);
+      
+      // STEP 1: Try to load from advanced_review (onboarding calculated values)
+      // This is the SOURCE OF TRUTH for nutrition targets
+      const { data: advancedReview, error: advancedError } = await supabase
+        .from('advanced_review')
+        .select('daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g, daily_water_ml')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (advancedReview && !advancedError) {
+        console.log('✅ [NutritionData] Found goals in advanced_review (onboarding):', advancedReview);
+        
+        // Map advanced_review fields to NutritionGoals format
+        const goalsFromOnboarding: NutritionGoals = {
+          id: `onboarding_${userId}`,
+          user_id: userId,
+          daily_calories: advancedReview.daily_calories,
+          protein_grams: advancedReview.daily_protein_g,
+          carb_grams: advancedReview.daily_carbs_g,
+          fat_grams: advancedReview.daily_fat_g,
+          // Also include macro targets in the expected format
+          macroTargets: {
+            protein: advancedReview.daily_protein_g,
+            carbohydrates: advancedReview.daily_carbs_g,
+            fat: advancedReview.daily_fat_g,
+          },
+          // Include daily_protein/carbs/fat for screens that use that naming
+          daily_protein: advancedReview.daily_protein_g,
+          daily_carbs: advancedReview.daily_carbs_g,
+          daily_fat: advancedReview.daily_fat_g,
+          daily_water_ml: advancedReview.daily_water_ml,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        return {
+          success: true,
+          data: goalsFromOnboarding,
+        };
+      }
+      
+      // STEP 2: Fallback to nutrition_goals table (for backward compatibility)
       const { data, error } = await supabase
         .from('nutrition_goals')
         .select('*')
@@ -280,28 +340,31 @@ class NutritionDataService {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching nutrition goals:', error);
+        console.error('❌ [NutritionData] Error fetching nutrition goals:', error);
         return {
           success: false,
           error: error.message,
         };
       }
 
-      // If no goals exist, create default goals
+      // CRITICAL: NO DEFAULT CREATION
+      // If no goals exist anywhere, return null to make the issue visible
       if (!data) {
-        const defaultGoals = await this.createDefaultNutritionGoals(userId);
+        console.warn('⚠️ [NutritionData] No nutrition goals found for user:', userId);
+        console.warn('⚠️ [NutritionData] User needs to complete onboarding to calculate nutrition targets');
         return {
-          success: true,
-          data: defaultGoals,
+          success: false,
+          error: 'No nutrition goals found. Please complete onboarding to calculate your personalized targets.',
         };
       }
 
+      console.log('✅ [NutritionData] Found goals in nutrition_goals table:', data);
       return {
         success: true,
         data,
       };
     } catch (error) {
-      console.error('Error in getUserNutritionGoals:', error);
+      console.error('❌ [NutritionData] Error in getUserNutritionGoals:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch nutrition goals',
@@ -309,46 +372,9 @@ class NutritionDataService {
     }
   }
 
-  /**
-   * Create default nutrition goals for a user
-   */
-  private async createDefaultNutritionGoals(userId: string): Promise<NutritionGoals> {
-    const defaultGoals: Omit<NutritionGoals, 'id'> = {
-      user_id: userId,
-      daily_calories: 2000,
-      protein_grams: 150,
-      carb_grams: 250,
-      fat_grams: 65,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    try {
-      const { data, error } = await supabase
-        .from('nutrition_goals')
-        .insert(defaultGoals)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating default nutrition goals:', error);
-        // Return a complete NutritionGoals object with generated ID
-        return {
-          id: `local_${Date.now()}`,
-          ...defaultGoals,
-        };
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error creating default nutrition goals:', error);
-      // Return a complete NutritionGoals object with generated ID
-      return {
-        id: `local_${Date.now()}`,
-        ...defaultGoals,
-      };
-    }
-  }
+  // REMOVED: createDefaultNutritionGoals
+  // Defaults should NEVER be created silently - they mask data flow issues.
+  // All nutrition targets must come from onboarding calculations.
 
   /**
    * Log a meal using Track B's data layer

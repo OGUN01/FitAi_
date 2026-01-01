@@ -2,6 +2,7 @@
 // This file exports all workout-related screens for easy importing
 
 export { WorkoutSessionScreen } from './WorkoutSessionScreen';
-export { WorkoutDetailsScreen } from './WorkoutDetailsScreen';
-export { ExerciseScreen } from './ExerciseScreen';
-export { WorkoutHistoryScreen } from './WorkoutHistoryScreen';
+// REMOVED: These screens no longer exist
+// export { WorkoutDetailsScreen } from './WorkoutDetailsScreen';
+// export { ExerciseScreen } from './ExerciseScreen';
+// export { WorkoutHistoryScreen } from './WorkoutHistoryScreen';

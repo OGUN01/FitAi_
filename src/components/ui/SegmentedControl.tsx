@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent, ViewStyle, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,10 +8,8 @@ import Animated, {
   Extrapolate,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rw, rh } from '../../utils/responsive';
+import { rf, rp, rw } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export interface SegmentOption {
   id: string;
@@ -104,6 +102,8 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
                 styles.segmentText,
                 selectedId === option.id && styles.segmentTextSelected,
               ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
             >
               {option.label}
             </Text>
@@ -119,25 +119,24 @@ const styles = StyleSheet.create({
     position: 'relative',
     flexDirection: 'row',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: rw(20),
-    padding: rw(3),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    padding: 4,
     overflow: 'hidden',
-    width: '100%',
   },
 
   indicator: {
     position: 'absolute',
-    top: rw(3),
-    bottom: rw(3),
-    left: rw(3),
-    borderRadius: rw(18),
+    top: 4,
+    bottom: 4,
+    left: 4,
+    borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: 'hidden',
+    zIndex: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-    zIndex: 1,
   },
 
   indicatorGradient: {
@@ -152,18 +151,19 @@ const styles = StyleSheet.create({
 
   segment: {
     flex: 1,
-    paddingVertical: rp(9),
-    paddingHorizontal: rw(6),
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.xs,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: rw(45),
+    minWidth: 0,
   },
 
   segmentText: {
-    fontSize: rf(11),
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
+    flexShrink: 1,
   },
 
   segmentTextSelected: {

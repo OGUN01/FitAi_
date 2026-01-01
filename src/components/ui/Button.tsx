@@ -155,7 +155,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: rw(12),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -166,24 +166,24 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: rw(12),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   // Sizes
   sm: {
-    paddingHorizontal: rw(16),
-    paddingVertical: rh(8),
-    minHeight: rh(36),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    minHeight: 36,
   },
   md: {
-    paddingHorizontal: rw(24),
-    paddingVertical: rh(12),
-    minHeight: rh(48),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    minHeight: 48,
   },
   lg: {
-    paddingHorizontal: rw(32),
-    paddingVertical: rh(16),
-    minHeight: rh(56),
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+    paddingVertical: ResponsiveTheme.spacing.lg,
+    minHeight: 56,
   },
 
   // Variants
@@ -196,8 +196,8 @@ const styles = StyleSheet.create({
     ...THEME.shadows.md,
   },
   outline: {
-    backgroundColor: ResponsiveTheme.colors.transparent,
-    borderWidth: 2,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
+    borderWidth: 1.5,
     borderColor: ResponsiveTheme.colors.primary,
   },
   ghost: {
@@ -210,13 +210,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   smText: {
-    fontSize: rf(14),
+    fontSize: ResponsiveTheme.fontSize.sm,
   },
   mdText: {
-    fontSize: rf(16),
+    fontSize: ResponsiveTheme.fontSize.md,
   },
   lgText: {
-    fontSize: rf(18),
+    fontSize: ResponsiveTheme.fontSize.lg,
   },
 
   // Text variants

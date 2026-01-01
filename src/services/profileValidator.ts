@@ -35,7 +35,7 @@ class ProfileValidator implements DataValidationSchema {
     if (!data.age) {
       errors.push('Age is required');
     } else {
-      const age = parseInt(data.age);
+      const age = parseInt(String((data as any).age), 10);
       if (isNaN(age) || age < 13 || age > 120) {
         errors.push('Age must be between 13 and 120');
       } else if (age < 18) {
@@ -49,28 +49,28 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Gender must be male, female, or other');
     }
 
-    if (!data.height) {
+    if (!(data as any).height) {
       errors.push('Height is required');
     } else {
-      const height = parseFloat(data.height);
+      const height = parseFloat((data as any).height);
       if (isNaN(height) || height < 100 || height > 250) {
         errors.push('Height must be between 100cm and 250cm');
       }
     }
 
-    if (!data.weight) {
+    if (!(data as any).weight) {
       errors.push('Weight is required');
     } else {
-      const weight = parseFloat(data.weight);
+      const weight = parseFloat((data as any).weight);
       if (isNaN(weight) || weight < 30 || weight > 300) {
         errors.push('Weight must be between 30kg and 300kg');
       }
     }
 
-    if (!data.activityLevel) {
+    if (!(data as any).activityLevel) {
       errors.push('Activity level is required');
     } else if (
-      !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes(data.activityLevel)
+      !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes((data as any).activityLevel)
     ) {
       errors.push('Invalid activity level');
     }
@@ -80,7 +80,7 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Invalid email format');
     }
 
-    if (data.phoneNumber && !this.isValidPhoneNumber(data.phoneNumber)) {
+    if ((data as any).phoneNumber && !this.isValidPhoneNumber((data as any).phoneNumber)) {
       warnings.push('Phone number format may be invalid');
     }
 
@@ -117,14 +117,14 @@ class ProfileValidator implements DataValidationSchema {
     }
 
     // Optional fields validation
-    if (data.targetWeight) {
-      const weight = parseFloat(data.targetWeight);
+    if ((data as any).targetWeight) {
+      const weight = parseFloat((data as any).targetWeight);
       if (isNaN(weight) || weight < 30 || weight > 300) {
         errors.push('Target weight must be between 30kg and 300kg');
       }
     }
 
-    if (data.timeframe && !this.isValidTimeframe(data.timeframe)) {
+    if ((data as any).timeframe && !this.isValidTimeframe((data as any).timeframe)) {
       warnings.push('Timeframe may be unrealistic');
     }
 
@@ -144,23 +144,23 @@ class ProfileValidator implements DataValidationSchema {
     const warnings: string[] = [];
 
     // Required fields validation
-    if (!data.dietType) {
+    if (!data.diet_type) {
       errors.push('Diet type is required');
     } else if (
       !['vegetarian', 'vegan', 'non-veg', 'pescatarian', 'keto', 'paleo', 'mediterranean'].includes(
-        data.dietType
+        data.diet_type
       )
     ) {
       errors.push('Invalid diet type');
     }
 
     // Optional fields validation - cookingSkill
-    if (data.cookingSkill && !['beginner', 'intermediate', 'advanced'].includes(data.cookingSkill)) {
+    if ((data as any).cookingSkill && !['beginner', 'intermediate', 'advanced'].includes((data as any).cookingSkill)) {
       errors.push('Invalid cooking skill level');
     }
 
     // Optional fields validation - mealPrepTime
-    if (data.mealPrepTime && !['quick', 'moderate', 'extended'].includes(data.mealPrepTime)) {
+    if ((data as any).mealPrepTime && !['quick', 'moderate', 'extended'].includes((data as any).mealPrepTime)) {
       errors.push('Invalid meal preparation time preference');
     }
 
@@ -169,7 +169,7 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Allergies must be an array');
     }
 
-    if (data.cuisinePreferences && !Array.isArray(data.cuisinePreferences)) {
+    if ((data as any).cuisinePreferences && !Array.isArray((data as any).cuisinePreferences)) {
       errors.push('Cuisine preferences must be an array');
     }
 
@@ -177,12 +177,12 @@ class ProfileValidator implements DataValidationSchema {
       errors.push('Dietary restrictions must be an array');
     }
 
-    if (data.dislikes && !Array.isArray(data.dislikes)) {
+    if ((data as any).dislikes && !Array.isArray((data as any).dislikes)) {
       errors.push('Dislikes must be an array');
     }
 
     // Logical validation
-    if (data.dietType === 'vegan' && data.allergies?.includes('dairy')) {
+    if (data.diet_type === 'vegan' && data.allergies?.includes('dairy')) {
       warnings.push('Vegan diet already excludes dairy');
     }
 
@@ -227,10 +227,10 @@ class ProfileValidator implements DataValidationSchema {
     }
 
     // Frequency validation
-    if (data.frequency !== undefined) {
-      if (data.frequency < 1 || data.frequency > 7) {
+    if ((data as any).frequency !== undefined) {
+      if ((data as any).frequency < 1 || (data as any).frequency > 7) {
         errors.push('Workout frequency must be between 1 and 7 days per week');
-      } else if (data.frequency > 6) {
+      } else if ((data as any).frequency > 6) {
         warnings.push('Training 7 days a week may lead to overtraining');
       }
     }

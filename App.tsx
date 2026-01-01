@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from './src/theme/gluestack-ui.config';
 import { OnboardingContainer } from './src/screens/onboarding/OnboardingContainer';
@@ -16,9 +18,7 @@ import { UserProfile } from './src/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { googleAuthService } from './src/services/googleAuth';
-import { validateProductionEnvironment } from './src/ai/gemini';
-import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
+// validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
 const isExpoGo = (() => {
@@ -60,28 +60,7 @@ if (!isExpoGo) {
 }
 
 export default function App() {
-  // Load fonts - critical for icons to display properly on web
-  // Use try-catch to prevent font loading from blocking the app
-  const [fontsLoaded, fontError] = useFonts({
-    ...Ionicons.font,
-  });
-
-  // If font loading fails or takes too long, continue anyway
-  const [fontTimeout, setFontTimeout] = useState(false);
-  
-  useEffect(() => {
-    // Set a timeout to continue even if fonts don't load
-    const timer = setTimeout(() => {
-      if (!fontsLoaded) {
-        console.warn('⚠️ Font loading timeout - continuing without custom fonts');
-        setFontTimeout(true);
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [fontsLoaded]);
-
-  // Consider fonts ready if loaded, timed out, or errored
-  const fontsReady = fontsLoaded || fontTimeout || fontError;
+  console.log('🎬 App: Component rendering...');
 
   // Default to false - user must complete onboarding unless we find completed data
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
@@ -89,8 +68,34 @@ export default function App() {
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
+
+  console.log('🔍 App: Auth state -', { isInitialized, isLoading, isLoadingOnboarding, user: !!user });
   const { setProfile, profile } = useUserStore();
   const { setGuestMode: setGuestModeInStore } = useAuthStore();
+
+  // Safety timeout: Force loading to complete after 5 seconds
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoadingOnboarding) {
+        console.warn('⚠️ App: Onboarding loading timeout - forcing completion');
+        setIsLoadingOnboarding(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [isLoadingOnboarding]);
+
+  // Safety timeout for auth initialization
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isInitialized) {
+        console.error('❌ App: Auth never initialized after 10 seconds - this is a critical bug!');
+        console.error('❌ App: Check authStore.initialize() for issues');
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [isInitialized]);
 
   // Only use notification store if not in Expo Go
   const notificationStore = useNotificationStore ? useNotificationStore() : null;
@@ -101,8 +106,8 @@ export default function App() {
   const convertOnboardingToProfile = (data: OnboardingReviewData): UserProfile => {
     // fitnessGoals is already a separate field in OnboardingReviewData
     const fitnessGoals = data.fitnessGoals || {
-      primaryGoals: [],
-      timeCommitment: '30 minutes',
+      primary_goals: [],
+      time_commitment: '30 minutes',
       experience: 'beginner' as const,
       experience_level: 'beginner',
     };
@@ -112,14 +117,87 @@ export default function App() {
       email: data.personalInfo.email || '',
       personalInfo: data.personalInfo,
       fitnessGoals: fitnessGoals,
-      dietPreferences: data.dietPreferences,
-      workoutPreferences: data.workoutPreferences || {
-        location: 'home' as const,
-        equipment: [],
-        timePreference: 30,
-        intensity: 'beginner' as const,
-        workoutTypes: [],
-      },
+      dietPreferences: data.dietPreferences ? {
+        // Basic diet info
+        diet_type: (data.dietPreferences as any).diet_type || (data.dietPreferences as any).dietType || 'non-veg',
+        allergies: data.dietPreferences.allergies || [],
+        restrictions: data.dietPreferences.restrictions || [],
+
+        // Diet readiness toggles (6) - defaults for backward compatibility
+        keto_ready: (data.dietPreferences as any).keto_ready || false,
+        intermittent_fasting_ready: (data.dietPreferences as any).intermittent_fasting_ready || false,
+        paleo_ready: (data.dietPreferences as any).paleo_ready || false,
+        mediterranean_ready: (data.dietPreferences as any).mediterranean_ready || false,
+        low_carb_ready: (data.dietPreferences as any).low_carb_ready || false,
+        high_protein_ready: (data.dietPreferences as any).high_protein_ready || false,
+
+        // Meal preferences (4)
+        breakfast_enabled: (data.dietPreferences as any).breakfast_enabled !== false,
+        lunch_enabled: (data.dietPreferences as any).lunch_enabled !== false,
+        dinner_enabled: (data.dietPreferences as any).dinner_enabled !== false,
+        snacks_enabled: (data.dietPreferences as any).snacks_enabled !== false,
+
+        // Cooking preferences (3)
+        cooking_skill_level: (data.dietPreferences as any).cooking_skill_level || (data.dietPreferences as any).cookingSkill || 'beginner',
+        max_prep_time_minutes: (data.dietPreferences as any).max_prep_time_minutes || null,
+        budget_level: (data.dietPreferences as any).budget_level || 'medium',
+
+        // Health habits (14)
+        drinks_enough_water: (data.dietPreferences as any).drinks_enough_water || false,
+        limits_sugary_drinks: (data.dietPreferences as any).limits_sugary_drinks || false,
+        eats_regular_meals: (data.dietPreferences as any).eats_regular_meals || false,
+        avoids_late_night_eating: (data.dietPreferences as any).avoids_late_night_eating || false,
+        controls_portion_sizes: (data.dietPreferences as any).controls_portion_sizes || false,
+        reads_nutrition_labels: (data.dietPreferences as any).reads_nutrition_labels || false,
+        eats_processed_foods: (data.dietPreferences as any).eats_processed_foods !== false,
+        eats_5_servings_fruits_veggies: (data.dietPreferences as any).eats_5_servings_fruits_veggies || false,
+        limits_refined_sugar: (data.dietPreferences as any).limits_refined_sugar || false,
+        includes_healthy_fats: (data.dietPreferences as any).includes_healthy_fats || false,
+        drinks_alcohol: (data.dietPreferences as any).drinks_alcohol || false,
+        smokes_tobacco: (data.dietPreferences as any).smokes_tobacco || false,
+        drinks_coffee: (data.dietPreferences as any).drinks_coffee || false,
+        takes_supplements: (data.dietPreferences as any).takes_supplements || false,
+      } : undefined,
+      workoutPreferences: (() => {
+        const wp = data.workoutPreferences;
+        return wp ? {
+          location: wp.location || 'home',
+          equipment: wp.equipment || [],
+          time_preference: wp.time_preference || wp.timePreference || 30,
+          intensity: wp.intensity || 'beginner',
+          workout_types: wp.workout_types || wp.workoutTypes || [],
+          primary_goals: wp.primary_goals || wp.primaryGoals || [],
+          activity_level: wp.activity_level || wp.activityLevel || 'moderate',
+        } : {
+          location: 'home' as const,
+          equipment: [],
+          time_preference: 30,
+          intensity: 'beginner' as const,
+          workout_types: [],
+          primary_goals: [],
+          activity_level: 'moderate',
+        };
+      })(),
+      // ✅ FIX: Map bodyAnalysis from onboarding to bodyMetrics in UserProfile
+      bodyMetrics: data.bodyAnalysis ? {
+        height_cm: (data.bodyAnalysis as any).height_cm || 0,
+        current_weight_kg: (data.bodyAnalysis as any).current_weight_kg || 0,
+        target_weight_kg: (data.bodyAnalysis as any).target_weight_kg,
+        target_timeline_weeks: (data.bodyAnalysis as any).target_timeline_weeks,
+        body_fat_percentage: (data.bodyAnalysis as any).body_fat_percentage,
+        waist_cm: (data.bodyAnalysis as any).waist_cm,
+        hip_cm: (data.bodyAnalysis as any).hip_cm,
+        chest_cm: (data.bodyAnalysis as any).chest_cm,
+        front_photo_url: (data.bodyAnalysis as any).front_photo_url,
+        side_photo_url: (data.bodyAnalysis as any).side_photo_url,
+        back_photo_url: (data.bodyAnalysis as any).back_photo_url,
+        // Medical fields from onboarding
+        medical_conditions: (data.bodyAnalysis as any).medical_conditions || [],
+        medications: (data.bodyAnalysis as any).medications || [],
+        physical_limitations: (data.bodyAnalysis as any).physical_limitations || [],
+        pregnancy_status: (data.bodyAnalysis as any).pregnancy_status || false,
+        breastfeeding_status: (data.bodyAnalysis as any).breastfeeding_status || false,
+      } : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       preferences: {
@@ -179,6 +257,8 @@ export default function App() {
 
   // Load existing onboarding data on app startup
   useEffect(() => {
+    let mounted = true;
+
     const loadExistingData = async () => {
       if (!isInitialized) return;
 
@@ -189,6 +269,8 @@ export default function App() {
 
         // If user is authenticated, check if profile exists in store
         if (user && profile) {
+          if (!mounted) return;
+
           console.log('✅ App: Found existing user profile in store');
 
           // Validate profile has all required fields
@@ -213,7 +295,9 @@ export default function App() {
           try {
             const { getProfile } = useUserStore.getState();
             const profileResponse = await getProfile(user.id);
-            
+
+            if (!mounted) return;
+
             if (profileResponse.success && profileResponse.data) {
               console.log('✅ App: Profile loaded from database successfully');
 
@@ -236,6 +320,7 @@ export default function App() {
               setIsOnboardingComplete(false);
             }
           } catch (error) {
+            if (!mounted) return;
             console.error('❌ App: Failed to load profile from database:', error);
             setIsOnboardingComplete(false);
           }
@@ -243,12 +328,18 @@ export default function App() {
 
         // For guest/unauthenticated users, check if onboarding is complete
         const onboardingCompleted = await AsyncStorage.getItem('onboarding_completed');
+
+        if (!mounted) return;
+
         if (onboardingCompleted === 'true') {
           console.log('✅ App: Onboarding marked complete for guest user - validating data...');
 
           // Load onboarding data from AsyncStorage and convert to profile format
           try {
             const onboardingDataStr = await AsyncStorage.getItem('onboarding_data');
+
+            if (!mounted) return;
+
             if (onboardingDataStr) {
               const onboardingData = JSON.parse(onboardingDataStr);
               console.log('📦 App: Found onboarding data in AsyncStorage, converting to profile...');
@@ -275,6 +366,7 @@ export default function App() {
               setIsOnboardingComplete(false);
             }
           } catch (error) {
+            if (!mounted) return;
             console.error('❌ App: Failed to load guest user data - showing onboarding:', error);
             setIsOnboardingComplete(false);
           }
@@ -289,98 +381,83 @@ export default function App() {
           setGuestModeInStore(true);
         }
       } catch (error) {
+        if (!mounted) return;
         console.error('❌ App: Failed to load onboarding data:', error);
         setIsOnboardingComplete(false);
       } finally {
+        if (!mounted) return;
         setIsLoadingOnboarding(false);
         console.log(`🏁 App: Loading complete. Onboarding status: ${isOnboardingComplete ? 'COMPLETE' : 'INCOMPLETE'}`);
       }
     };
 
-    loadExistingData();
+    loadExistingData().catch(error => {
+      console.error('[App] Unhandled load error:', error);
+    });
+
+    return () => { mounted = false; };
   }, [isInitialized, user, isGuestMode, guestId]); // Removed 'profile' to prevent infinite loop
 
   // Initialize backend on app start
   useEffect(() => {
+    let mounted = true;
+
     const initializeApp = async () => {
       try {
         console.log('🚀 FitAI: Starting app initialization...');
-        
-        // Add timeout wrapper for backend initialization (5 seconds max)
-        const backendInitPromise = initializeBackend();
-        const backendTimeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Backend init timeout')), 5000)
-        );
-        
-        try {
-          await Promise.race([backendInitPromise, backendTimeoutPromise]);
-          console.log('✅ FitAI: Backend initialization completed');
-        } catch (backendError) {
-          console.warn('⚠️ FitAI: Backend initialization timed out or failed, continuing...', backendError);
-        }
+        await initializeBackend();
 
-        // Initialize Google Sign-In with timeout (3 seconds max)
+        if (!mounted) return;
+
+        console.log('✅ FitAI: Backend initialization completed');
+
+        // Initialize Google Sign-In
         try {
           console.log('📱 FitAI: Initializing Google Sign-In...');
-          const googleInitPromise = googleAuthService.configure();
-          const googleTimeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Google init timeout')), 3000)
-          );
-          await Promise.race([googleInitPromise, googleTimeoutPromise]);
+          await googleAuthService.configure();
+
+          if (!mounted) return;
+
           console.log('✅ FitAI: Google Sign-In initialization completed');
         } catch (error) {
-          console.warn('⚠️ FitAI: Google Sign-In initialization failed or timed out:', error);
+          if (!mounted) return;
+          console.error('❌ FitAI: Google Sign-In initialization failed:', error);
         }
 
-        // Skip production validation in web/canvas environment to prevent timeout
-        // Production validation makes network calls that can hang
-        const isWebEnvironment = typeof window !== 'undefined' && window.location?.hostname?.includes('canvases.tempo.build');
-        if (!isWebEnvironment && (!__DEV__ || process.env.EXPO_PUBLIC_ENVIRONMENT === 'production')) {
-          console.log('🎯 FitAI: Running production environment validation...');
-          try {
-            const validationPromise = validateProductionEnvironment();
-            const validationTimeoutPromise = new Promise<boolean>((resolve) => 
-              setTimeout(() => {
-                console.warn('⚠️ FitAI: Production validation timed out');
-                resolve(false);
-              }, 5000)
-            );
-            const isProductionReady = await Promise.race([validationPromise, validationTimeoutPromise]);
-            if (isProductionReady) {
-              console.log('🎉 FitAI: Production validation PASSED - AI features should work!');
-            } else {
-              console.warn('⚠️ FitAI: Production validation FAILED or timed out - AI features may not work!');
-            }
-          } catch (validationError) {
-            console.warn('⚠️ FitAI: Production validation error:', validationError);
-          }
-        } else {
-          console.log('🔧 FitAI: Skipping production validation (dev mode or web environment)');
-        }
+        // 🎯 AI BACKEND STATUS - Cloudflare Workers
+        console.log('🔧 FitAI: AI generation handled by Cloudflare Workers backend');
+        console.log('📡 Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev');
+        console.log('⚠️  Client-side AI has been disabled - all generation happens server-side');
 
         // Initialize notifications only if not in Expo Go
         if (!isExpoGo && initializeNotifications && !areNotificationsInitialized) {
           console.log('📱 FitAI: Initializing notifications...');
           try {
-            const notifPromise = initializeNotifications();
-            const notifTimeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Notification init timeout')), 3000)
-            );
-            await Promise.race([notifPromise, notifTimeoutPromise]);
+            await initializeNotifications();
+
+            if (!mounted) return;
+
             console.log('✅ FitAI: Notifications initialization completed');
           } catch (notifError) {
-            console.warn('⚠️ FitAI: Notifications initialization failed or timed out:', notifError);
+            if (!mounted) return;
+            console.error('❌ FitAI: Notifications initialization failed:', notifError);
           }
         } else if (isExpoGo) {
           console.log('⚠️ FitAI: Running in Expo Go - notifications disabled');
+          console.log('ℹ️ FitAI: Build a development build to enable notifications');
         }
       } catch (error) {
-        console.error('❌ FitAI: App initialization failed:', error);
+        if (!mounted) return;
+        console.error('❌ FitAI: Backend initialization failed:', error);
         // Don't throw here, let the app continue with limited functionality
       }
     };
 
-    initializeApp();
+    initializeApp().catch(error => {
+      console.error('[App] Unhandled initialization error:', error);
+    });
+
+    return () => { mounted = false; };
   }, []);
 
   // This effect is now handled by the loadExistingData effect above
@@ -459,35 +536,38 @@ export default function App() {
   };
 
   // Show loading while authentication is initializing or loading onboarding data
-  if (!isInitialized || isLoading || isLoadingOnboarding || !fontsReady) {
+  // Only show loading if we're actually waiting for something (with timeout protection)
+  if (isLoadingOnboarding) {
     return (
       <View style={styles.loadingContainer}>
         <StatusBar style="light" backgroundColor={THEME.colors.background} />
         <ActivityIndicator size="large" color={THEME.colors.primary} />
-        <Text style={styles.loadingText}>
-          {!fontsReady ? 'Loading fonts...' : !isInitialized || isLoading ? 'Initializing FitAI...' : 'Loading your profile...'}
-        </Text>
+        <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
     );
   }
 
   return (
-    <GluestackUIProvider config={config}>
-      <ErrorBoundary>
-        <View style={styles.container}>
-          <StatusBar style="light" backgroundColor={THEME.colors.background} />
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaProvider>
+        <GluestackUIProvider config={config}>
+          <ErrorBoundary>
+            <View style={styles.container}>
+              <StatusBar style="light" backgroundColor={THEME.colors.background} />
 
-          {isOnboardingComplete ? (
-            <MainNavigation />
-          ) : (
-            <OnboardingContainer
-              onComplete={handleOnboardingComplete}
-              showProgressIndicator={true}
-            />
-          )}
-        </View>
-      </ErrorBoundary>
-    </GluestackUIProvider>
+              {isOnboardingComplete ? (
+                <MainNavigation />
+              ) : (
+                <OnboardingContainer
+                  onComplete={handleOnboardingComplete}
+                  showProgressIndicator={true}
+                />
+              )}
+            </View>
+          </ErrorBoundary>
+        </GluestackUIProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

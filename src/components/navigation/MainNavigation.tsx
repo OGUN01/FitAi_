@@ -15,8 +15,7 @@ import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
 import { OnboardingContainer } from '../../screens/onboarding/OnboardingContainer';
 import { THEME } from '../../utils/constants';
 import { ResponsiveTheme } from '../../utils/constants';
-import { DayWorkout } from '../../ai/weeklyContentGenerator';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayWorkout, DayMeal } from '../../types/ai';
 
 interface MainNavigationProps {
   initialTab?: string;

@@ -17,8 +17,17 @@ export class MetabolicCalculations {
   /**
    * Calculate BMI (Body Mass Index)
    * Formula: weight(kg) / height(m)²
+   * VALIDATION: Throws error if weight or height is missing
    */
   static calculateBMI(weightKg: number, heightCm: number): number {
+    // CRITICAL VALIDATION: No fallbacks allowed
+    if (!weightKg || weightKg === 0) {
+      throw new Error('Weight is required for BMI calculation. Please complete your profile.');
+    }
+    if (!heightCm || heightCm === 0) {
+      throw new Error('Height is required for BMI calculation. Please complete your profile.');
+    }
+
     const heightM = heightCm / 100;
     return weightKg / (heightM * heightM);
   }
@@ -27,10 +36,25 @@ export class MetabolicCalculations {
    * Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
    * Men: 10 × weight(kg) + 6.25 × height(cm) - 5 × age + 5
    * Women: 10 × weight(kg) + 6.25 × height(cm) - 5 × age - 161
+   * VALIDATION: Throws error if any critical parameter is missing
    */
   static calculateBMR(weightKg: number, heightCm: number, age: number, gender: string): number {
+    // CRITICAL VALIDATION: No fallbacks allowed
+    if (!weightKg || weightKg === 0) {
+      throw new Error('Weight is required for BMR calculation. Please complete your profile.');
+    }
+    if (!heightCm || heightCm === 0) {
+      throw new Error('Height is required for BMR calculation. Please complete your profile.');
+    }
+    if (!age || age === 0) {
+      throw new Error('Age is required for BMR calculation. Please complete your profile.');
+    }
+    if (!gender || gender === '') {
+      throw new Error('Gender is required for accurate BMR calculation. Please complete your profile.');
+    }
+
     const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-    
+
     if (gender === 'male') {
       return base + 5;
     } else if (gender === 'female') {
@@ -1192,3 +1216,30 @@ export class HealthCalculationEngine {
 // Export all calculation classes
 // Note: All classes are already exported with their class declarations above
 // No need for duplicate export statements
+
+// ============================================================================
+// RE-EXPORTS FROM UNIVERSAL HEALTH CALCULATION SYSTEM
+// ============================================================================
+// Re-export key functions from the modular health calculations system
+// This ensures backward compatibility when importing from 'utils/healthCalculations'
+
+export {
+  // Auto-detection functions
+  detectClimate,
+  detectEthnicity,
+  detectBestBMRFormula,
+  
+  // Calculators
+  waterCalculator,
+  tdeeCalculator,
+  macroCalculator,
+  
+  // Calculator classes
+  ClimateAdaptiveWaterCalculator,
+  ClimateAdaptiveTDEECalculator,
+  
+  // Types
+  type ActivityLevel,
+  type ClimateType,
+  type ClimateDetectionResult,
+} from './healthCalculations/index';

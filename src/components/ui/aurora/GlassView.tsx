@@ -33,7 +33,7 @@ interface GlassViewProps {
 
   /**
    * Show border
-   * @default true
+   * @default false
    */
   showBorder?: boolean;
 
@@ -87,7 +87,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
   blurType = 'dark',
   blurAmount = 'default',
   overlayColor = colors.glass.background,
-  showBorder = true,
+  showBorder = false,
   borderColor = colors.glass.border,
   borderWidth = 1,
   borderRadius = 12,

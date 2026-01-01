@@ -13,7 +13,7 @@ export {
 
 // Workout domain
 export { Workout, WorkoutPlan, WorkoutSession } from './workout';
-export type { WorkoutPreferences as ApiWorkoutPreferences } from './api';
+export type { WorkoutGenerationApiPreferences as ApiWorkoutPreferences } from './api';
 
 // Diet domain
 export { DailyMealPlan, Meal, MealItem, Macronutrients, ShoppingListItem } from './diet';

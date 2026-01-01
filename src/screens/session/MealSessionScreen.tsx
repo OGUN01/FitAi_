@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../types/ai';
 import completionTrackingService from '../../services/completionTracking';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';

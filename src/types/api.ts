@@ -465,7 +465,7 @@ export interface AchievementProgress {
 
 export interface GenerateWorkoutRequest {
   userProfile: UserProfileSummary;
-  preferences: WorkoutPreferences;
+  preferences: WorkoutGenerationApiPreferences;
   goals: string[];
   equipment: string[];
   duration: number;
@@ -482,7 +482,9 @@ export interface UserProfileSummary {
   restrictions: string[];
 }
 
-export interface WorkoutPreferences {
+// NOTE: Renamed to avoid conflict with WorkoutPreferences from user.ts (database type)
+// This type is for AI API workout generation requests only
+export interface WorkoutGenerationApiPreferences {
   types: string[];
   intensity: string;
   focusAreas: string[];
@@ -511,6 +513,10 @@ export interface NutritionGoals {
   macroTargets: MacronutrientDetails;
   dietaryRestrictions: string[];
   allergens: string[];
+  // Additional properties used in DietScreen
+  daily_protein?: number;
+  daily_carbs?: number;
+  daily_fat?: number;
 }
 
 export interface MealPreferences {

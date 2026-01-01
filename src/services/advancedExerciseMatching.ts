@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import exerciseVisualService, { ExerciseData, ExerciseMatchResult } from './exerciseVisualService';
-import { geminiService } from '../ai/gemini';
+// REMOVED: import { geminiService } from '../ai/MIGRATION_STUB' - no longer needed
 
 // Enhanced matching types
 export interface AdvancedMatchResult extends ExerciseMatchResult {

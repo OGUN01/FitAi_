@@ -94,9 +94,9 @@ const SubscriptionScreen: React.FC = () => {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-white dark:bg-gray-900 items-center justify-center">
+      <View>
         <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-600 dark:text-gray-400 mt-4">
+        <Text>
           Loading subscription details...
         </Text>
       </View>
@@ -104,36 +104,36 @@ const SubscriptionScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-gray-900">
+    <ScrollView>
       {/* Header */}
-      <View className="p-6 bg-gradient-to-r from-blue-500 to-purple-600">
-        <View className="flex-row items-center justify-between">
+      <View>
+        <View>
           <View>
-            <Text className="text-white text-2xl font-bold">
+            <Text>
               FitAI Premium
             </Text>
-            <Text className="text-white/90 text-base mt-1">
+            <Text>
               Your subscription status
             </Text>
           </View>
           
-          <View className="items-end">
+          <View>
             <PremiumBadge size="large" variant="badge" />
           </View>
         </View>
       </View>
 
       {/* Current Status */}
-      <View className="p-6">
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-          <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <View>
+        <View>
+          <Text>
             Current Status
           </Text>
           
-          <View className="space-y-3">
-            <View className="flex-row justify-between">
-              <Text className="text-gray-600 dark:text-gray-400">Plan</Text>
-              <Text className="text-gray-900 dark:text-white font-medium capitalize">
+          <View>
+            <View>
+              <Text>Plan</Text>
+              <Text>
                 {subscriptionStatus.plan === 'free' ? 'Free Tier' : subscriptionStatus.plan}
               </Text>
             </View>
@@ -141,26 +141,26 @@ const SubscriptionScreen: React.FC = () => {
             {subscriptionStatus.isPremium && (
               <>
                 {subscriptionStatus.purchaseDate && (
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600 dark:text-gray-400">Started</Text>
-                    <Text className="text-gray-900 dark:text-white font-medium">
+                  <View>
+                    <Text>Started</Text>
+                    <Text>
                       {new Date(subscriptionStatus.purchaseDate).toLocaleDateString()}
                     </Text>
                   </View>
                 )}
                 
                 {subscriptionStatus.expiryDate && subscriptionStatus.plan !== 'lifetime' && (
-                  <View className="flex-row justify-between">
-                    <Text className="text-gray-600 dark:text-gray-400">Expires</Text>
-                    <Text className="text-gray-900 dark:text-white font-medium">
+                  <View>
+                    <Text>Expires</Text>
+                    <Text>
                       {new Date(subscriptionStatus.expiryDate).toLocaleDateString()}
                     </Text>
                   </View>
                 )}
                 
-                <View className="flex-row justify-between">
-                  <Text className="text-gray-600 dark:text-gray-400">Auto-Renew</Text>
-                  <Text className="text-gray-900 dark:text-white font-medium">
+                <View>
+                  <Text>Auto-Renew</Text>
+                  <Text>
                     {subscriptionStatus.autoRenewing ? 'Enabled' : 'Disabled'}
                   </Text>
                 </View>
@@ -168,9 +168,9 @@ const SubscriptionScreen: React.FC = () => {
             )}
             
             {trialInfo.daysRemaining > 0 && (
-              <View className="flex-row justify-between">
-                <Text className="text-gray-600 dark:text-gray-400">Trial Days Left</Text>
-                <Text className="text-blue-600 dark:text-blue-400 font-bold">
+              <View>
+                <Text>Trial Days Left</Text>
+                <Text>
                   {trialInfo.daysRemaining} days
                 </Text>
               </View>
@@ -181,27 +181,27 @@ const SubscriptionScreen: React.FC = () => {
 
       {/* Analytics */}
       {analytics && subscriptionStatus.isPremium && (
-        <View className="px-6 pb-6">
-          <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-            <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <View>
+          <View>
+            <Text>
               Your Stats
             </Text>
             
-            <View className="grid grid-cols-2 gap-4">
-              <View className="bg-white dark:bg-gray-700 rounded-lg p-4">
-                <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <View>
+              <View>
+                <Text>
                   {analytics.daysSinceSubscribed}
                 </Text>
-                <Text className="text-gray-600 dark:text-gray-400 text-sm">
+                <Text>
                   Days as Premium
                 </Text>
               </View>
               
-              <View className="bg-white dark:bg-gray-700 rounded-lg p-4">
-                <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <View>
+                <Text>
                   ${analytics.totalSpent.toFixed(2)}
                 </Text>
-                <Text className="text-gray-600 dark:text-gray-400 text-sm">
+                <Text>
                   Total Invested
                 </Text>
               </View>
@@ -211,14 +211,14 @@ const SubscriptionScreen: React.FC = () => {
       )}
 
       {/* Actions */}
-      <View className="px-6 pb-6">
-        <View className="space-y-4">
+      <View>
+        <View>
           {!subscriptionStatus.isPremium && (
             <Pressable
               onPress={showPaywallModal}
-              className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl py-4 px-6 items-center"
+             
             >
-              <Text className="text-white font-bold text-lg">
+              <Text>
                 ⭐ Upgrade to Premium
               </Text>
             </Pressable>
@@ -227,9 +227,9 @@ const SubscriptionScreen: React.FC = () => {
           {subscriptionStatus.isPremium && subscriptionStatus.plan !== 'lifetime' && (
             <Pressable
               onPress={handleManageSubscription}
-              className="bg-blue-500 rounded-xl py-4 px-6 items-center"
+             
             >
-              <Text className="text-white font-bold">
+              <Text>
                 Manage Subscription
               </Text>
             </Pressable>
@@ -237,9 +237,9 @@ const SubscriptionScreen: React.FC = () => {
           
           <Pressable
             onPress={handleRestorePurchases}
-            className="bg-gray-200 dark:bg-gray-700 rounded-xl py-4 px-6 items-center"
+           
           >
-            <Text className="text-gray-800 dark:text-white font-medium">
+            <Text>
               Restore Purchases
             </Text>
           </Pressable>
@@ -247,16 +247,16 @@ const SubscriptionScreen: React.FC = () => {
       </View>
 
       {/* Premium Features List */}
-      <View className="px-6 pb-8">
-        <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+      <View>
+        <Text>
           Premium Features
         </Text>
         
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
-          <View className="space-y-4">
+        <View>
+          <View>
             {getPremiumFeatures().map((feature, index) => (
-              <View key={index} className="flex-row items-center">
-                <Text className="text-2xl mr-3">{feature.icon}</Text>
+              <View key={index}>
+                <Text>{feature.icon}</Text>
                 <Text className={`flex-1 ${
                   subscriptionStatus.isPremium 
                     ? 'text-gray-900 dark:text-white' 
@@ -265,7 +265,7 @@ const SubscriptionScreen: React.FC = () => {
                   {feature.text}
                 </Text>
                 {subscriptionStatus.isPremium && (
-                  <Text className="text-green-500 text-lg">✓</Text>
+                  <Text>✓</Text>
                 )}
               </View>
             ))}
@@ -275,19 +275,19 @@ const SubscriptionScreen: React.FC = () => {
 
       {/* Trial Banner */}
       {trialInfo.isEligible && !subscriptionStatus.isPremium && (
-        <View className="px-6 pb-6">
-          <View className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-6">
-            <Text className="text-white font-bold text-lg mb-2">
+        <View>
+          <View>
+            <Text>
               🎁 Start Your Free Trial
             </Text>
-            <Text className="text-white/90 mb-4">
+            <Text>
               Try all premium features free for 7-14 days. Cancel anytime.
             </Text>
             <Pressable
               onPress={showPaywallModal}
-              className="bg-white rounded-lg py-3 px-6 self-start"
+             
             >
-              <Text className="text-blue-600 font-bold">
+              <Text>
                 Start Free Trial
               </Text>
             </Pressable>
@@ -296,13 +296,13 @@ const SubscriptionScreen: React.FC = () => {
       )}
 
       {/* Legal Links */}
-      <View className="px-6 pb-8">
-        <View className="flex-row justify-center space-x-6">
+      <View>
+        <View>
           <Pressable onPress={() => {}}>
-            <Text className="text-blue-500 text-sm">Terms of Service</Text>
+            <Text>Terms of Service</Text>
           </Pressable>
           <Pressable onPress={() => {}}>
-            <Text className="text-blue-500 text-sm">Privacy Policy</Text>
+            <Text>Privacy Policy</Text>
           </Pressable>
         </View>
       </View>

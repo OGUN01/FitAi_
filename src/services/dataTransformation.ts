@@ -50,17 +50,22 @@ export class DataTransformationService {
 
     return {
       id: userId,
-      email,
-      name: personalInfo.name,
-      age: parseInt(personalInfo.age) || null,
+      email: email || personalInfo.email || '',
+      name: personalInfo.name || `${personalInfo.first_name} ${personalInfo.last_name}`.trim(),
+      first_name: personalInfo.first_name,
+      last_name: personalInfo.last_name,
+      age: personalInfo.age || null,
       gender: this.normalizeGender(personalInfo.gender),
-      height_cm: parseFloat(personalInfo.height) || null,
-      weight_kg: parseFloat(personalInfo.weight) || null,
-      activity_level: this.normalizeActivityLevel(personalInfo.activityLevel),
-      profile_picture: null,
-      units: 'metric',
-      notifications_enabled: true,
-      dark_mode: true,
+      country: personalInfo.country,
+      state: personalInfo.state,
+      region: personalInfo.region || null,
+      wake_time: personalInfo.wake_time,
+      sleep_time: personalInfo.sleep_time,
+      occupation_type: personalInfo.occupation_type,
+      profile_picture: personalInfo.profile_picture || null,
+      units: personalInfo.units || 'metric',
+      notifications_enabled: personalInfo.notifications_enabled !== false,
+      dark_mode: personalInfo.dark_mode || false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -200,13 +205,7 @@ export class DataTransformationService {
       bodyFat: supabaseEntry.body_fat_percentage,
       muscleMass: supabaseEntry.muscle_mass_kg,
       notes: supabaseEntry.notes || '',
-      syncStatus: SyncStatus.SYNCED,
-      syncMetadata: {
-        lastSyncedAt: new Date().toISOString(),
-        lastModifiedAt: new Date().toISOString(),
-        syncVersion: 1,
-        deviceId: 'local',
-      },
+      syncStatus: 'synced',
     };
   }
 

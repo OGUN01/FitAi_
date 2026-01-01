@@ -21,6 +21,7 @@ interface AuthState {
   logout: () => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<AuthResponse>;
   resendEmailVerification: (email: string) => Promise<AuthResponse>;
+  checkEmailVerification: (email: string) => Promise<{ isVerified: boolean; error?: string }>;
   signInWithGoogle: () => Promise<any>;
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;

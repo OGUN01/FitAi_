@@ -109,7 +109,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
               setShowProgress(false);
             }, 2000);
           }
-        } else if (migration.result.conflicts.length > 0) {
+        } else if (migration.result.conflicts?.length > 0) {
           console.log('⚖️ Migration conflicts detected');
           setConflicts(migration.result.conflicts);
           setShowProgress(false);

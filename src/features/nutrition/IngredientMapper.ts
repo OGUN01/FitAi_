@@ -1,6 +1,5 @@
 import { FOOD_ALIASES, normalizeName } from './foodAliases';
-import { searchFoods, getFoodsByCategory, getFoodById } from '../../data/foods';
-import { freeNutritionAPIs } from '../../services/freeNutritionAPIs';
+import { FreeNutritionAPIs } from '../../services/freeNutritionAPIs';
 
 export interface MappedFood {
   id?: string; // id when mapped to FOODS
@@ -26,62 +25,10 @@ export class IngredientMapper {
     const cacheKey = JSON.stringify({ normalized, constraints });
     if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
-    // 1) local search
-    const localCandidates = searchFoods(normalized);
-    const bestLocal = localCandidates?.[0];
-    if (bestLocal) {
-      const mapped: MappedFood = {
-        id: bestLocal.id,
-        name: bestLocal.name,
-        source: 'local',
-        servingSize: bestLocal.servingSize,
-        caloriesPer100g: bestLocal.calories,
-        macrosPer100g: bestLocal.macros,
-        confidence: 0.9,
-      };
-      cache.set(cacheKey, mapped);
-      return mapped;
-    }
-
-    // 2) category inference (very simple heuristic)
-    const categoryHints: Record<string, string> = {
-      chicken: 'protein',
-      tofu: 'protein',
-      paneer: 'protein',
-      lentil: 'protein',
-      bean: 'protein',
-      rice: 'grains',
-      bread: 'grains',
-      oats: 'grains',
-      spinach: 'vegetables',
-      broccoli: 'vegetables',
-      lettuce: 'vegetables',
-      tomato: 'vegetables',
-      avocado: 'fats',
-      almond: 'fats',
-    };
-    const hintKey = Object.keys(categoryHints).find((k) => normalized.includes(k));
-    if (hintKey) {
-      const cat = categoryHints[hintKey];
-      const list = getFoodsByCategory(cat);
-      if (list.length) {
-        const f = list[0];
-        const mapped: MappedFood = {
-          id: f.id,
-          name: f.name,
-          source: 'local',
-          servingSize: f.servingSize,
-          caloriesPer100g: f.calories,
-          macrosPer100g: f.macros,
-          confidence: 0.7,
-        };
-        cache.set(cacheKey, mapped);
-        return mapped;
-      }
-    }
-
-    // 3) external enrichment as last resort
+    // Use external APIs for nutrition data enrichment
+    // (AI will handle meal generation with full knowledge)
     try {
+      const freeNutritionAPIs = new FreeNutritionAPIs();
       const enriched = await freeNutritionAPIs.enhanceNutritionData(normalized);
       if (enriched) {
         const mapped: MappedFood = {

@@ -67,7 +67,7 @@ export const WorkoutCard: React.FC<WorkoutCardProps> = ({
   };
 
   const cardContent = (
-    <Card style={[styles.card, style]} variant="elevated">
+    <Card style={StyleSheet.flatten([styles.card, style])} variant="elevated">
       {/* Progress Bar */}
       {progress > 0 && (
         <View style={styles.progressContainer}>

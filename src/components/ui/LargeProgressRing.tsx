@@ -26,22 +26,30 @@ interface LargeProgressRingProps {
 }
 
 export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
-  value,
-  maxValue = 100,
-  size = 200,
-  strokeWidth = 16,
+  value: rawValue,
+  maxValue: rawMaxValue = 100,
+  size: rawSize = 200,
+  strokeWidth: rawStrokeWidth = 16,
   gradient = ['#4CAF50', '#45A049'],
   showGlow = true,
   showValue = true,
   label,
   style,
 }) => {
+  // Sanitize and round all numeric props to avoid NaN and precision errors on Android native
+  const value = Number.isFinite(rawValue) ? Math.round(rawValue) : 0;
+  const maxValue = Number.isFinite(rawMaxValue) && rawMaxValue > 0 ? Math.round(rawMaxValue) : 100;
+  const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 200;
+  const strokeWidth = Number.isFinite(rawStrokeWidth) ? Math.round(rawStrokeWidth) : 16;
+  
   const progress = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
 
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const percentage = Math.min((value / maxValue) * 100, 100);
+  // Calculate with already-rounded values
+  const radius = Math.round((size - strokeWidth) / 2);
+  const circumference = Math.round(2 * Math.PI * radius);
+  const center = Math.round(size / 2);
+  const percentage = Math.round(Math.min((value / maxValue) * 100, 100));
 
   useEffect(() => {
     progress.value = withTiming(percentage, {
@@ -58,7 +66,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
   }, [value, maxValue]);
 
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = circumference - (circumference * progress.value) / 100;
+    const strokeDashoffset = Math.round(circumference - (circumference * progress.value) / 100);
     return {
       strokeDashoffset,
     };
@@ -80,8 +88,8 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
 
         {/* Background circle */}
         <Circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={center}
+          cy={center}
           r={radius}
           stroke={ResponsiveTheme.colors.backgroundTertiary}
           strokeWidth={strokeWidth}
@@ -91,8 +99,8 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
         {/* Glow effect */}
         {showGlow && (
           <AnimatedCircle
-            cx={size / 2}
-            cy={size / 2}
+            cx={center}
+            cy={center}
             r={radius}
             stroke="url(#gradient)"
             strokeWidth={strokeWidth + 4}
@@ -107,8 +115,8 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
 
         {/* Progress circle */}
         <AnimatedCircle
-          cx={size / 2}
-          cy={size / 2}
+          cx={center}
+          cy={center}
           r={radius}
           stroke="url(#gradient)"
           strokeWidth={strokeWidth}
@@ -117,7 +125,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
           strokeLinecap="round"
           animatedProps={animatedProps}
           rotation="-90"
-          origin={`${size / 2}, ${size / 2}`}
+          origin={`${center}, ${center}`}
         />
       </Svg>
 

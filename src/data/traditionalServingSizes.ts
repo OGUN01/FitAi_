@@ -180,7 +180,6 @@ export const TRADITIONAL_SERVING_SIZES = {
     solkadhi: 150,
     'kokum drink': 180,
     jaljeera: 200,
-    'aam panna': 180,
   },
 };
 

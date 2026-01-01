@@ -7,16 +7,13 @@ export { authService } from './auth';
 export { userProfileService } from './userProfile';
 export { supabase } from './supabase';
 
-// API Response types
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
+// Import API types from types module (canonical source)
+export type { ApiResponse } from '../types/api';
+export type { ApiError } from '../types/api';
 
-// Error handling utility
-export class ApiError extends Error {
+// Local error handling utility class (internal use only)
+// NOTE: This is kept internally to avoid conflicts with the ApiError interface from types/api
+export class ApiErrorClass extends Error {
   public statusCode: number;
   public code?: string;
 

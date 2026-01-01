@@ -1,11 +1,23 @@
 import { supabase } from './supabase';
 import { AuthResponse } from './auth';
 import { AuthUser } from '../types/user';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
 import Constants from 'expo-constants';
+
+// Conditionally import Google Sign-in only if not in Expo Go
+let GoogleSignin: any = null;
+let statusCodes: any = null;
+
+try {
+  // This will fail in Expo Go but succeed in dev/production builds
+  const googleSigninModule = require('@react-native-google-signin/google-signin');
+  GoogleSignin = googleSigninModule.GoogleSignin;
+  statusCodes = googleSigninModule.statusCodes;
+} catch (error) {
+  console.warn('⚠️ Google Sign-in not available (running in Expo Go)');
+}
 
 /**
  * Google Authentication Service
@@ -38,6 +50,13 @@ class GoogleAuthService {
    */
   async configure(): Promise<void> {
     if (this.isConfigured) return;
+
+    // Skip configuration if GoogleSignin is not available (Expo Go)
+    if (!GoogleSignin) {
+      console.warn('⚠️ Google Sign-in not configured - module not available');
+      this.isConfigured = true;
+      return;
+    }
 
     try {
       if (Platform.OS !== 'web') {
@@ -137,6 +156,14 @@ class GoogleAuthService {
    * Native Google Sign-In for iOS/Android
    */
   private async signInWithGoogleNative(): Promise<GoogleSignInResult> {
+    // Return error if GoogleSignin is not available
+    if (!GoogleSignin) {
+      return {
+        success: false,
+        error: 'Google Sign-in is not available in Expo Go. Please use email authentication or build a development build.',
+      };
+    }
+
     try {
       // Check if device supports Google Play services
       await GoogleSignin.hasPlayServices();

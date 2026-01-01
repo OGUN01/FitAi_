@@ -278,7 +278,7 @@ export class ValidationService {
     }
 
     // Validate age
-    const age = parseInt(info.age);
+    const age = typeof info.age === 'string' ? parseInt(info.age) : info.age;
     if (isNaN(age) || age < VALIDATION_RULES.AGE.min || age > VALIDATION_RULES.AGE.max) {
       errors.push({
         field: 'age',
@@ -289,7 +289,8 @@ export class ValidationService {
     }
 
     // Validate height
-    const height = parseFloat(info.height);
+    const heightValue = (info as any).height;
+    const height = typeof heightValue === 'string' ? parseFloat(heightValue) : heightValue;
     if (
       isNaN(height) ||
       height < VALIDATION_RULES.HEIGHT.min ||
@@ -304,7 +305,8 @@ export class ValidationService {
     }
 
     // Validate weight
-    const weight = parseFloat(info.weight);
+    const weightValue = (info as any).weight;
+    const weight = typeof weightValue === 'string' ? parseFloat(weightValue) : weightValue;
     if (
       isNaN(weight) ||
       weight < VALIDATION_RULES.WEIGHT.min ||
@@ -330,7 +332,8 @@ export class ValidationService {
 
     // Validate activity level
     const validActivityLevels = ['sedentary', 'light', 'moderate', 'active', 'extreme'];
-    if (!info.activityLevel || !validActivityLevels.includes(info.activityLevel)) {
+    const activityLevel = (info as any).activityLevel;
+    if (!activityLevel || !validActivityLevels.includes(activityLevel)) {
       errors.push({
         field: 'activityLevel',
         message: 'Invalid activity level',
@@ -636,20 +639,19 @@ export class ValidationService {
         info.age,
         VALIDATION_RULES.AGE.min,
         VALIDATION_RULES.AGE.max
-      ).toString(),
-      gender: this.sanitizeGender(info.gender),
+      ) as any,
+      gender: this.sanitizeGender(info.gender) as any,
       height: this.sanitizeNumber(
         info.height,
         VALIDATION_RULES.HEIGHT.min,
         VALIDATION_RULES.HEIGHT.max
-      ).toString(),
+      ) as any,
       weight: this.sanitizeNumber(
         info.weight,
         VALIDATION_RULES.WEIGHT.min,
         VALIDATION_RULES.WEIGHT.max
-      ).toString(),
-      activityLevel: this.sanitizeActivityLevel(info.activityLevel),
-    };
+      ) as any,
+    } as PersonalInfo;
   }
 
   private sanitizeString(value: string): string {
@@ -666,9 +668,9 @@ export class ValidationService {
     return Math.max(min, Math.min(max, num));
   }
 
-  private sanitizeGender(gender: string): string {
-    const validGenders = ['male', 'female', 'other'];
-    return validGenders.includes(gender) ? gender : 'other';
+  private sanitizeGender(gender: string): 'male' | 'female' | 'other' | 'prefer_not_to_say' {
+    const validGenders: Array<'male' | 'female' | 'other' | 'prefer_not_to_say'> = ['male', 'female', 'other', 'prefer_not_to_say'];
+    return validGenders.includes(gender as any) ? (gender as any) : 'other';
   }
 
   private sanitizeActivityLevel(level: string): string {

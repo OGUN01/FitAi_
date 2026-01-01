@@ -1,0 +1,40 @@
+src/components/subscription/PaywallModal.tsx(172,14): error TS17008: JSX element 'ScrollView' has no corresponding closing tag.
+src/components/subscription/PaywallModal.tsx(185,23): error TS2657: JSX expressions must have one parent element.
+src/components/subscription/PaywallModal.tsx(196,55): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(205,36): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PaywallModal.tsx(207,31): error TS17002: Expected corresponding JSX closing tag for 'Pressable'.
+src/components/subscription/PaywallModal.tsx(213,29): error TS1005: ')' expected.
+src/components/subscription/PaywallModal.tsx(218,27): error TS1128: Declaration or statement expected.
+src/components/subscription/PaywallModal.tsx(221,34): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(221,35): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(221,36): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PaywallModal.tsx(223,31): error TS17002: Expected corresponding JSX closing tag for 'View'.
+src/components/subscription/PaywallModal.tsx(238,30): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(238,31): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(238,32): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PaywallModal.tsx(245,25): error TS17002: Expected corresponding JSX closing tag for 'View'.
+src/components/subscription/PaywallModal.tsx(247,19): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(247,21): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(248,19): error TS17002: Expected corresponding JSX closing tag for 'Modal'.
+src/components/subscription/PaywallModal.tsx(249,15): error TS1005: ')' expected.
+src/components/subscription/PaywallModal.tsx(260,24): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(260,25): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(260,26): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PaywallModal.tsx(262,21): error TS17002: Expected corresponding JSX closing tag for 'Pressable'.
+src/components/subscription/PaywallModal.tsx(263,17): error TS1128: Declaration or statement expected.
+src/components/subscription/PaywallModal.tsx(265,31): error TS1005: ',' expected.
+src/components/subscription/PaywallModal.tsx(278,18): error TS1128: Declaration or statement expected.
+src/components/subscription/PaywallModal.tsx(279,15): error TS1128: Declaration or statement expected.
+src/components/subscription/PaywallModal.tsx(280,13): error TS1109: Expression expected.
+src/components/subscription/PaywallModal.tsx(296,57): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(303,26): error TS1005: ';' expected.
+src/components/subscription/PaywallModal.tsx(303,32): error TS1434: Unexpected keyword or identifier.
+src/components/subscription/PaywallModal.tsx(303,70): error TS1005: ';' expected.
+src/components/subscription/PaywallModal.tsx(303,80): error TS1443: Module declaration names may only use ' or " quoted strings.
+src/components/subscription/PaywallModal.tsx(304,26): error TS1434: Unexpected keyword or identifier.
+src/components/subscription/PaywallModal.tsx(304,40): error TS1005: '(' expected.
+src/components/subscription/PaywallModal.tsx(304,41): error TS1005: ';' expected.
+src/components/subscription/PaywallModal.tsx(304,58): error TS1005: ',' expected.
+src/components/subscription/PaywallModal.tsx(304,66): error TS1005: ',' expected.
+src/components/subscription/PaywallModal.tsx(304,71): error TS1005: ';' expected.
+src/components/subscription/PaywallModal.tsx(334,29): error TS1160: Unterminated template literal.

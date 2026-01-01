@@ -472,15 +472,15 @@ export function validateRequest<T>(
   if (!result.success) {
     console.error('[Validation] Zod validation failed:', {
       hasError: !!result.error,
-      hasErrors: !!result.error?.errors,
-      errorsType: result.error?.errors ? typeof result.error.errors : 'undefined',
-      errorsLength: result.error?.errors?.length,
+      hasIssues: !!result.error?.issues,
+      issuesType: result.error?.issues ? typeof result.error.issues : 'undefined',
+      issuesLength: result.error?.issues?.length,
       fullError: JSON.stringify(result.error),
     });
 
-    // Safety check: Zod should always return errors array, but defensive programming
-    const errors = result.error?.errors || [];
-    const errorMessages = errors.map(
+    // Safety check: Zod should always return issues array, but defensive programming
+    const issues = result.error?.issues || [];
+    const errorMessages = issues.map(
       (err) => `${err.path.join('.')}: ${err.message}`
     );
 
@@ -505,9 +505,9 @@ export function validateRequestSafe<T>(
   const result = schema.safeParse(data);
 
   if (!result.success) {
-    // Safety check: Zod should always return errors array, but defensive programming
-    const errors = result.error?.errors || [];
-    const errorMessages = errors.map(
+    // Safety check: Zod should always return issues array, but defensive programming
+    const issues = result.error?.issues || [];
+    const errorMessages = issues.map(
       (err) => `${err.path.join('.')}: ${err.message}`
     );
 
@@ -521,4 +521,70 @@ export function validateRequestSafe<T>(
     success: true,
     data: result.data,
   };
+}
+
+// ============================================================================
+// AI-FIRST DIET VALIDATION TYPES (Phase 1)
+// ============================================================================
+
+/**
+ * Critical validation error that blocks the meal plan
+ */
+export interface DietValidationError {
+  severity: 'CRITICAL';
+  code: string;
+  message: string;
+  meal?: string;
+  food?: string;
+  allergen?: string;
+  dietType?: string;
+  current?: number;
+  target?: number;
+  drift?: number;
+  [key: string]: any;
+}
+
+/**
+ * Non-blocking quality warning
+ */
+export interface DietValidationWarning {
+  severity: 'WARNING' | 'INFO';
+  code: string;
+  message: string;
+  action?: string;
+  [key: string]: any;
+}
+
+/**
+ * Complete validation result
+ */
+export interface DietValidationResult {
+  isValid: boolean;
+  errors: DietValidationError[];
+  warnings: DietValidationWarning[];
+}
+
+/**
+ * User profile data for AI prompt context
+ */
+export interface UserProfileContext {
+  age?: number;
+  gender?: string;
+  country?: string;
+  state?: string;
+  occupation_type?: string;
+}
+
+/**
+ * Diet preferences from database
+ */
+export interface DietPreferences {
+  diet_type?: string;
+  allergies?: string[];
+  restrictions?: string[];
+  breakfast_enabled?: boolean;
+  lunch_enabled?: boolean;
+  dinner_enabled?: boolean;
+  snacks_enabled?: boolean;
+  cooking_methods?: string[];
 }

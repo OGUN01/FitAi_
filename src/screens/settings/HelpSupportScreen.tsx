@@ -1,82 +1,201 @@
-import React, { useState } from 'react';
+/**
+ * HelpSupportScreen - Help & Support Center
+ * 
+ * Redesigned following UI/UX Methodology:
+ * - GlassCard for all cards
+ * - Ionicons instead of emojis
+ * - AnimatedPressable with haptics
+ * - ResponsiveTheme for spacing/colors
+ * - FadeInDown entry animations
+ */
+
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
-  TouchableOpacity,
   Alert,
   Linking,
 } from 'react-native';
-import { Card, THEME } from '../../components/ui';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeIn, FadeInUp } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// UI Components
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+
+// Theme & Utils
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rw, rh } from '../../utils/responsive';
+import { haptics } from '../../utils/haptics';
 
 interface FAQItem {
   id: string;
   question: string;
   answer: string;
-  expanded: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
 }
 
 interface HelpSupportScreenProps {
   onBack?: () => void;
 }
 
+interface QuickActionProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  gradientColors: [string, string];
+  title: string;
+  onPress: () => void;
+  animationDelay: number;
+}
+
+const QuickAction: React.FC<QuickActionProps> = ({
+  icon,
+  iconColor,
+  gradientColors,
+  title,
+  onPress,
+  animationDelay,
+}) => {
+  return (
+    <Animated.View 
+      entering={FadeInDown.delay(animationDelay).duration(400)}
+      style={styles.quickActionWrapper}
+    >
+      <AnimatedPressable
+        onPress={() => {
+          haptics.light();
+          onPress();
+        }}
+        scaleValue={0.95}
+        hapticFeedback={false}
+      >
+        <GlassCard 
+          elevation={1} 
+          padding="md" 
+          blurIntensity="light" 
+          borderRadius="lg"
+          style={styles.quickActionCard}
+        >
+          <LinearGradient
+            colors={gradientColors}
+            style={styles.quickActionIcon}
+          >
+            <Ionicons name={icon} size={rf(22)} color="#fff" />
+          </LinearGradient>
+          <Text style={styles.quickActionTitle}>{title}</Text>
+        </GlassCard>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+};
+
+interface ResourceItemProps {
+  icon: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  title: string;
+  description: string;
+  onPress: () => void;
+  animationDelay: number;
+}
+
+const ResourceItem: React.FC<ResourceItemProps> = ({
+  icon,
+  iconColor,
+  title,
+  description,
+  onPress,
+  animationDelay,
+}) => {
+  return (
+    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
+      <AnimatedPressable
+        onPress={() => {
+          haptics.light();
+          onPress();
+        }}
+        scaleValue={0.98}
+        hapticFeedback={false}
+      >
+        <GlassCard 
+          elevation={1} 
+          padding="md" 
+          blurIntensity="light" 
+          borderRadius="lg"
+          style={styles.resourceCard}
+        >
+          <View style={styles.resourceContent}>
+            <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+              <Ionicons name={icon} size={rf(18)} color={iconColor} />
+            </View>
+            <View style={styles.resourceTextContainer}>
+              <Text style={styles.resourceTitle}>{title}</Text>
+              <Text style={styles.resourceDescription}>{description}</Text>
+            </View>
+            <Ionicons 
+              name="chevron-forward" 
+              size={rf(18)} 
+              color={ResponsiveTheme.colors.textMuted} 
+            />
+          </View>
+        </GlassCard>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+};
+
 export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) => {
-  const [faqs, setFaqs] = useState<FAQItem[]>([
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+
+  const faqs: FAQItem[] = [
     {
       id: '1',
       question: 'How do I track my workouts?',
-      answer:
-        'Go to the Fitness tab and tap "Start Workout". Choose your workout type and follow the guided exercises. The app will automatically track your progress, reps, and time.',
-      expanded: false,
+      answer: 'Go to the Fitness tab and tap "Start Workout". Choose your workout type and follow the guided exercises. The app will automatically track your progress, reps, and time.',
+      icon: 'barbell-outline',
     },
     {
       id: '2',
       question: 'Can I customize my meal plans?',
-      answer:
-        'Yes! Go to the Diet tab and tap "Customize Meals". You can adjust portion sizes, swap ingredients, and set dietary preferences. The AI will generate personalized meal suggestions based on your goals.',
-      expanded: false,
+      answer: 'Yes! Go to the Diet tab and tap "Customize Meals". You can adjust portion sizes, swap ingredients, and set dietary preferences. The AI will generate personalized meal suggestions based on your goals.',
+      icon: 'restaurant-outline',
     },
     {
       id: '3',
       question: 'How does the AI personalization work?',
-      answer:
-        'FitAI uses your personal information, fitness goals, and activity history to create 100% personalized content. The more you use the app, the better it gets at understanding your preferences and needs.',
-      expanded: false,
+      answer: 'FitAI uses your personal information, fitness goals, and activity history to create 100% personalized content. The more you use the app, the better it gets at understanding your preferences and needs.',
+      icon: 'sparkles-outline',
     },
     {
       id: '4',
       question: 'Can I sync with other fitness apps?',
-      answer:
-        "Currently, FitAI works as a standalone app with its own comprehensive tracking. We're working on integrations with popular fitness devices and apps for future updates.",
-      expanded: false,
+      answer: "Currently, FitAI works as a standalone app with its own comprehensive tracking. We're working on integrations with popular fitness devices and apps for future updates.",
+      icon: 'sync-outline',
     },
     {
       id: '5',
       question: 'How do I reset my progress?',
-      answer:
-        'Go to Profile > Edit Profile > Personal Information and update your goals. Or contact support if you need to completely reset your account data.',
-      expanded: false,
+      answer: 'Go to Profile > Edit Profile > Personal Information and update your goals. Or contact support if you need to completely reset your account data.',
+      icon: 'refresh-outline',
     },
     {
       id: '6',
       question: 'Is my data secure?',
-      answer:
-        'Yes, we use industry-standard encryption and security measures. Your personal data is never shared without your consent. Check our Privacy Policy for detailed information.',
-      expanded: false,
+      answer: 'Yes, we use industry-standard encryption and security measures. Your personal data is never shared without your consent. Check our Privacy Policy for detailed information.',
+      icon: 'shield-checkmark-outline',
     },
-  ]);
+  ];
 
-  const toggleFAQ = (id: string) => {
-    setFaqs((prev) =>
-      prev.map(
-        (faq) => (faq.id === id ? { ...faq, expanded: !faq.expanded } : { ...faq, expanded: false }) // Close others
-      )
-    );
-  };
+  const toggleFaq = useCallback((id: string) => {
+    haptics.light();
+    setExpandedFaq(prev => prev === id ? null : id);
+  }, []);
 
-  const handleContactSupport = () => {
+  const handleContactSupport = useCallback(() => {
     Alert.alert('Contact Support', "Choose how you'd like to contact our support team:", [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -92,9 +211,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleReportBug = () => {
+  const handleReportBug = useCallback(() => {
     Alert.alert('Report a Bug', 'Help us improve FitAI by reporting any issues you encounter.', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -104,9 +223,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleFeatureRequest = () => {
+  const handleFeatureRequest = useCallback(() => {
     Alert.alert('Feature Request', "We'd love to hear your ideas for improving FitAI!", [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -116,428 +235,450 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleTutorials = () => {
+  const handleTutorials = useCallback(() => {
     Alert.alert('Getting Started', 'Interactive tutorials will be available in the next update!');
-  };
-
-  const handleCommunity = () => {
-    Alert.alert(
-      'Join Our Community',
-      'Connect with other FitAI users and share your fitness journey!',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Discord',
-          onPress: () => {
-            Alert.alert('Discord', 'Discord community link will be available soon!');
-          },
-        },
-        {
-          text: 'Facebook',
-          onPress: () => {
-            Alert.alert('Facebook', 'Facebook group link will be available soon!');
-          },
-        },
-      ]
-    );
-  };
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={onBack}>
-            <Text style={styles.backIcon}>‹</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Help & Support</Text>
-          <View style={styles.headerSpacer} />
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.quickAction} onPress={handleContactSupport}>
-              <Text style={styles.quickActionIcon}>💬</Text>
-              <Text style={styles.quickActionText}>Contact Support</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickAction} onPress={handleReportBug}>
-              <Text style={styles.quickActionIcon}>🐛</Text>
-              <Text style={styles.quickActionText}>Report Bug</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickAction} onPress={handleFeatureRequest}>
-              <Text style={styles.quickActionIcon}>💡</Text>
-              <Text style={styles.quickActionText}>Feature Request</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.quickAction} onPress={handleTutorials}>
-              <Text style={styles.quickActionIcon}>🎓</Text>
-              <Text style={styles.quickActionText}>Tutorials</Text>
-            </TouchableOpacity>
+        <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
+          <AnimatedPressable
+            onPress={() => {
+              haptics.light();
+              onBack?.();
+            }}
+            scaleValue={0.9}
+            hapticFeedback={false}
+          >
+            <View style={styles.backButton}>
+              <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
+            </View>
+          </AnimatedPressable>
+          <View style={styles.headerCenter}>
+            <Ionicons name="help-circle-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.headerTitle}>Help & Support</Text>
           </View>
-        </View>
+          <View style={styles.headerSpacer} />
+        </Animated.View>
 
-        {/* Frequently Asked Questions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="flash-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Quick Actions</Text>
+            </View>
 
-          {faqs.map((faq) => (
-            <Card key={faq.id} style={styles.faqCard} variant="outlined">
-              <TouchableOpacity onPress={() => toggleFAQ(faq.id)}>
-                <View style={styles.faqHeader}>
-                  <Text style={styles.faqQuestion}>{faq.question}</Text>
-                  <Text style={[styles.faqToggle, faq.expanded && styles.faqToggleExpanded]}>
-                    {faq.expanded ? '−' : '+'}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+            <View style={styles.quickActionsGrid}>
+              <QuickAction
+                icon="chatbubbles-outline"
+                iconColor="#fff"
+                gradientColors={['#667eea', '#764ba2']}
+                title="Contact Support"
+                onPress={handleContactSupport}
+                animationDelay={100}
+              />
+              <QuickAction
+                icon="bug-outline"
+                iconColor="#fff"
+                gradientColors={['#FF6B6B', '#FF8E53']}
+                title="Report Bug"
+                onPress={handleReportBug}
+                animationDelay={150}
+              />
+              <QuickAction
+                icon="bulb-outline"
+                iconColor="#fff"
+                gradientColors={['#4CAF50', '#8BC34A']}
+                title="Feature Request"
+                onPress={handleFeatureRequest}
+                animationDelay={200}
+              />
+              <QuickAction
+                icon="school-outline"
+                iconColor="#fff"
+                gradientColors={['#2196F3', '#00BCD4']}
+                title="Tutorials"
+                onPress={handleTutorials}
+                animationDelay={250}
+              />
+            </View>
+          </View>
 
-              {faq.expanded && (
-                <View style={styles.faqAnswer}>
-                  <Text style={styles.faqAnswerText}>{faq.answer}</Text>
-                </View>
-              )}
-            </Card>
-          ))}
-        </View>
+          {/* FAQs */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="help-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+            </View>
 
-        {/* Resources */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Resources</Text>
+            {faqs.map((faq, index) => (
+              <Animated.View 
+                key={faq.id}
+                entering={FadeInDown.delay(300 + index * 50).duration(400)}
+              >
+                <AnimatedPressable
+                  onPress={() => toggleFaq(faq.id)}
+                  scaleValue={0.98}
+                  hapticFeedback={false}
+                >
+                  <GlassCard 
+                    elevation={1} 
+                    padding="md" 
+                    blurIntensity="light" 
+                    borderRadius="lg"
+                    style={[
+                      styles.faqCard,
+                      expandedFaq === faq.id && styles.faqCardExpanded,
+                    ]}
+                  >
+                    <View style={styles.faqHeader}>
+                      <View style={[styles.faqIcon, { backgroundColor: 'rgba(102, 126, 234, 0.15)' }]}>
+                        <Ionicons name={faq.icon} size={rf(16)} color="#667eea" />
+                      </View>
+                      <Text style={styles.faqQuestion}>{faq.question}</Text>
+                      <View style={[styles.expandIcon, expandedFaq === faq.id && styles.expandIconExpanded]}>
+                        <Ionicons 
+                          name={expandedFaq === faq.id ? "chevron-up" : "chevron-down"} 
+                          size={rf(16)} 
+                          color={ResponsiveTheme.colors.textSecondary} 
+                        />
+                      </View>
+                    </View>
+                    
+                    {expandedFaq === faq.id && (
+                      <View style={styles.faqAnswer}>
+                        <Text style={styles.faqAnswerText}>{faq.answer}</Text>
+                      </View>
+                    )}
+                  </GlassCard>
+                </AnimatedPressable>
+              </Animated.View>
+            ))}
+          </View>
 
-          <Card style={styles.resourceCard} variant="outlined">
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('User Guide', 'Comprehensive user guide will be available soon!')
-              }
+          {/* Resources */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="book-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Text style={styles.sectionTitle}>Resources</Text>
+            </View>
+
+            <ResourceItem
+              icon="document-text-outline"
+              iconColor="#4CAF50"
+              title="User Guide"
+              description="Complete guide to using all FitAI features"
+              onPress={() => Alert.alert('User Guide', 'Comprehensive user guide will be available soon!')}
+              animationDelay={600}
+            />
+
+            <ResourceItem
+              icon="videocam-outline"
+              iconColor="#FF6B6B"
+              title="Video Tutorials"
+              description="Step-by-step video guides for beginners"
+              onPress={() => Alert.alert('Video Tutorials', 'Video tutorials will be available soon!')}
+              animationDelay={650}
+            />
+
+            <ResourceItem
+              icon="people-outline"
+              iconColor="#667eea"
+              title="Community Forum"
+              description="Connect with other FitAI users"
+              onPress={() => Alert.alert('Join Our Community', 'Community forum will be available soon!')}
+              animationDelay={700}
+            />
+
+            <ResourceItem
+              icon="pulse-outline"
+              iconColor="#FF9800"
+              title="System Status"
+              description="Check if all FitAI services are running smoothly"
+              onPress={() => Alert.alert('System Status', 'All systems operational!')}
+              animationDelay={750}
+            />
+          </View>
+
+          {/* Contact Card */}
+          <Animated.View entering={FadeInDown.delay(800).duration(400)}>
+            <GlassCard 
+              elevation={2} 
+              padding="lg" 
+              blurIntensity="medium" 
+              borderRadius="xl"
+              style={styles.contactCard}
             >
-              <View style={styles.resourceContent}>
-                <Text style={styles.resourceIcon}>📖</Text>
-                <View style={styles.resourceInfo}>
-                  <Text style={styles.resourceTitle}>User Guide</Text>
-                  <Text style={styles.resourceDescription}>
-                    Complete guide to using all FitAI features
-                  </Text>
-                </View>
-                <Text style={styles.resourceArrow}>›</Text>
+              <LinearGradient
+                colors={['rgba(102, 126, 234, 0.15)', 'rgba(118, 75, 162, 0.1)']}
+                style={StyleSheet.absoluteFill}
+              />
+              <View style={styles.contactIconContainer}>
+                <LinearGradient
+                  colors={['#667eea', '#764ba2']}
+                  style={styles.contactIcon}
+                >
+                  <Ionicons name="headset-outline" size={rf(24)} color="#fff" />
+                </LinearGradient>
               </View>
-            </TouchableOpacity>
-          </Card>
-
-          <Card style={styles.resourceCard} variant="outlined">
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('Video Tutorials', 'Video tutorials will be available soon!')
-              }
-            >
-              <View style={styles.resourceContent}>
-                <Text style={styles.resourceIcon}>🎥</Text>
-                <View style={styles.resourceInfo}>
-                  <Text style={styles.resourceTitle}>Video Tutorials</Text>
-                  <Text style={styles.resourceDescription}>
-                    Step-by-step video guides for beginners
-                  </Text>
-                </View>
-                <Text style={styles.resourceArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-
-          <Card style={styles.resourceCard} variant="outlined">
-            <TouchableOpacity onPress={handleCommunity}>
-              <View style={styles.resourceContent}>
-                <Text style={styles.resourceIcon}>👥</Text>
-                <View style={styles.resourceInfo}>
-                  <Text style={styles.resourceTitle}>Community Forum</Text>
-                  <Text style={styles.resourceDescription}>Connect with other FitAI users</Text>
-                </View>
-                <Text style={styles.resourceArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-
-          <Card style={styles.resourceCard} variant="outlined">
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert('System Status', 'System status page will be available soon!')
-              }
-            >
-              <View style={styles.resourceContent}>
-                <Text style={styles.resourceIcon}>⚡</Text>
-                <View style={styles.resourceInfo}>
-                  <Text style={styles.resourceTitle}>System Status</Text>
-                  <Text style={styles.resourceDescription}>
-                    Check if all FitAI services are running smoothly
-                  </Text>
-                </View>
-                <Text style={styles.resourceArrow}>›</Text>
-              </View>
-            </TouchableOpacity>
-          </Card>
-        </View>
-
-        {/* Contact Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Information</Text>
-
-          <Card style={styles.contactCard} variant="outlined">
-            <View style={styles.contactContent}>
               <Text style={styles.contactTitle}>Need immediate help?</Text>
               <Text style={styles.contactDescription}>
                 Our support team typically responds within 24 hours.
               </Text>
 
               <View style={styles.contactMethods}>
-                <TouchableOpacity
-                  style={styles.contactMethod}
-                  onPress={() => Linking.openURL('mailto:support@fitai.app')}
+                <AnimatedPressable
+                  onPress={() => {
+                    haptics.light();
+                    Linking.openURL('mailto:support@fitai.app');
+                  }}
+                  scaleValue={0.95}
+                  hapticFeedback={false}
+                  style={styles.contactMethodButton}
                 >
-                  <Text style={styles.contactMethodIcon}>✉️</Text>
-                  <Text style={styles.contactMethodText}>support@fitai.app</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.contactMethod}
-                  onPress={() =>
-                    Alert.alert('Phone Support', 'Phone support will be available soon!')
-                  }
-                >
-                  <Text style={styles.contactMethodIcon}>📞</Text>
-                  <Text style={styles.contactMethodText}>+1 (555) 123-4567</Text>
-                </TouchableOpacity>
+                  <View style={styles.contactMethod}>
+                    <Ionicons name="mail-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                    <Text style={styles.contactMethodText}>support@fitai.app</Text>
+                  </View>
+                </AnimatedPressable>
               </View>
-            </View>
-          </Card>
-        </View>
+            </GlassCard>
+          </Animated.View>
 
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </SafeAreaView>
+    </AuroraBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
   },
-
-  scrollView: {
-    flex: 1,
-  },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
-
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: THEME.borderRadius.lg,
-    backgroundColor: THEME.colors.backgroundTertiary,
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  backIcon: {
-    fontSize: 24,
-    color: THEME.colors.text,
-    fontWeight: 'bold',
+  headerCenter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
   },
-
-  title: {
-    fontSize: THEME.fontSize.xxl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
+  headerTitle: {
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: '#fff',
   },
-
   headerSpacer: {
-    width: 40,
+    width: rw(40),
   },
-
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.sm,
+  },
   section: {
-    paddingHorizontal: THEME.spacing.lg,
-    marginBottom: THEME.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
-
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    marginLeft: ResponsiveTheme.spacing.xs,
+  },
   sectionTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
+    fontSize: rf(12),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-
+  // Quick Actions
   quickActionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: THEME.spacing.md,
+    gap: ResponsiveTheme.spacing.sm,
   },
-
-  quickAction: {
-    width: '47%',
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.lg,
+  quickActionWrapper: {
+    width: '48.5%',
+  },
+  quickActionCard: {
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
+    paddingVertical: ResponsiveTheme.spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
-
   quickActionIcon: {
-    fontSize: 32,
-    marginBottom: THEME.spacing.sm,
+    width: rw(48),
+    height: rw(48),
+    borderRadius: rw(24),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
-
-  quickActionText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+  quickActionTitle: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: '#fff',
     textAlign: 'center',
   },
-
+  // FAQ
   faqCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
-
+  faqCardExpanded: {
+    backgroundColor: 'rgba(102, 126, 234, 0.08)',
+  },
   faqHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: THEME.spacing.lg,
   },
-
+  faqIcon: {
+    width: rw(32),
+    height: rw(32),
+    borderRadius: rw(8),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
   faqQuestion: {
     flex: 1,
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
-    marginRight: THEME.spacing.md,
+    fontSize: rf(14),
+    fontWeight: '600',
+    color: '#fff',
+    marginRight: ResponsiveTheme.spacing.sm,
   },
-
-  faqToggle: {
-    fontSize: 20,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    width: 24,
-    textAlign: 'center',
+  expandIcon: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: rw(14),
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
-  faqToggleExpanded: {
-    color: THEME.colors.primary,
+  expandIconExpanded: {
+    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
   },
-
   faqAnswer: {
-    paddingHorizontal: THEME.spacing.lg,
-    paddingBottom: THEME.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
-
   faqAnswerText: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    lineHeight: 20,
-    marginTop: THEME.spacing.sm,
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: rf(20),
   },
-
+  // Resources
   resourceCard: {
-    marginBottom: THEME.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
   },
-
   resourceContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: THEME.spacing.lg,
   },
-
-  resourceIcon: {
-    fontSize: 24,
-    marginRight: THEME.spacing.md,
+  iconContainer: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(12),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: ResponsiveTheme.spacing.md,
   },
-
-  resourceInfo: {
+  resourceTextContainer: {
     flex: 1,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
-
   resourceTitle: {
-    fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.text,
+    fontSize: rf(15),
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
   },
-
   resourceDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.xs,
+    fontSize: rf(12),
+    color: ResponsiveTheme.colors.textSecondary,
   },
-
-  resourceArrow: {
-    fontSize: 20,
-    color: THEME.colors.textMuted,
-    fontWeight: THEME.fontWeight.bold,
-  },
-
+  // Contact Card
   contactCard: {
-    padding: THEME.spacing.lg,
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.lg,
+    overflow: 'hidden',
   },
-
-  contactContent: {
+  contactIconContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+  contactIcon: {
+    width: rw(56),
+    height: rw(56),
+    borderRadius: rw(28),
+    justifyContent: 'center',
     alignItems: 'center',
   },
-
   contactTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: ResponsiveTheme.spacing.xs,
     textAlign: 'center',
   },
-
   contactDescription: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 20,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(18),
   },
-
   contactMethods: {
     width: '100%',
   },
-
+  contactMethodButton: {
+    width: '100%',
+  },
   contactMethod: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: THEME.spacing.md,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.md,
-    marginBottom: THEME.spacing.sm,
+    gap: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
   },
-
-  contactMethodIcon: {
-    fontSize: 16,
-    marginRight: THEME.spacing.sm,
-  },
-
   contactMethodText: {
-    fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium,
-    color: THEME.colors.primary,
+    fontSize: rf(14),
+    fontWeight: '500',
+    color: ResponsiveTheme.colors.primary,
   },
-
   bottomSpacing: {
-    height: THEME.spacing.xl,
+    height: rh(80),
   },
 });
+
+export default HelpSupportScreen;

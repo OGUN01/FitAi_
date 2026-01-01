@@ -91,9 +91,11 @@ export const useProgressData = (): UseProgressDataReturn => {
   // Initialize Track B integration
   useEffect(() => {
     if (isAuthenticated && !trackB.integration.isInitialized) {
-      trackB.actions.initialize();
+      trackB.actions.initialize().catch((error) => {
+        console.error('Failed to initialize Track B integration:', error);
+      });
     }
-  }, [isAuthenticated, trackB.integration.isInitialized]);
+  }, [isAuthenticated, trackB.integration.isInitialized, trackB.actions]);
 
   // Load progress entries
   const loadProgressEntries = useCallback(
@@ -259,9 +261,19 @@ export const useProgressData = (): UseProgressDataReturn => {
 
   // Load initial data when user is authenticated
   useEffect(() => {
+    let isMounted = true;
+
     if (isAuthenticated && user?.id && trackB.integration.isInitialized) {
-      refreshAll();
+      refreshAll().catch((error) => {
+        if (isMounted) {
+          console.error('Failed to refresh progress data:', error);
+        }
+      });
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, user?.id, trackB.integration.isInitialized, refreshAll]);
 
   // Track B status

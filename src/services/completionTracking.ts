@@ -1,7 +1,6 @@
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useNutritionStore } from '../stores/nutritionStore';
-import { DayWorkout } from '../ai/weeklyContentGenerator';
-import { DayMeal } from '../ai/weeklyMealGenerator';
+import { DayWorkout, DayMeal } from '../ai';
 import crudOperations from './crudOperations';
 import { MealLog, SyncStatus } from '../types/localData';
 

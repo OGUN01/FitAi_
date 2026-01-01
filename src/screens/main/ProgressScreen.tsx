@@ -23,6 +23,7 @@ import { haptics } from '../../utils/haptics';
 import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { useAuth } from '../../hooks/useAuth';
 import { useProgressData } from '../../hooks/useProgressData';
+import { useCalculatedMetrics } from '../../hooks/useCalculatedMetrics';
 import { ProgressAnalytics } from '../../components/progress/ProgressAnalytics';
 import DataRetrievalService from '../../services/dataRetrieval';
 import { useFitnessStore } from '../../stores/fitnessStore';
@@ -72,6 +73,12 @@ export const ProgressScreen: React.FC = () => {
     refreshAll,
     clearErrors,
   } = useProgressData();
+  
+  // Use calculated metrics from onboarding - NO FALLBACKS
+  const {
+    metrics: calculatedMetrics,
+    hasCalculatedMetrics,
+  } = useCalculatedMetrics();
 
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -170,13 +177,15 @@ export const ProgressScreen: React.FC = () => {
   ];
 
   // Real stats from progress data
+  // Use calculated metrics from onboarding for goals - NO HARDCODED FALLBACKS
   const stats = progressStats
     ? {
         weight: {
           current: progressStats.weightChange.current,
           change: progressStats.weightChange.change,
           unit: 'kg',
-          goal: progressGoals?.target_weight_kg || 70.0,
+          // Use target from onboarding calculations, then progressGoals, then null
+          goal: calculatedMetrics?.targetWeightKg ?? progressGoals?.target_weight_kg ?? null,
           trend:
             progressStats.weightChange.change < 0
               ? 'decreasing'
@@ -189,7 +198,8 @@ export const ProgressScreen: React.FC = () => {
           current: progressStats.bodyFatChange.current,
           change: progressStats.bodyFatChange.change,
           unit: '%',
-          goal: progressGoals?.target_body_fat_percentage || 15.0,
+          // Use ideal body fat from calculations, then progressGoals, then null
+          goal: calculatedMetrics?.ideal_body_fat_max ?? progressGoals?.target_body_fat_percentage ?? null,
           trend:
             progressStats.bodyFatChange.change < 0
               ? 'decreasing'
@@ -202,7 +212,7 @@ export const ProgressScreen: React.FC = () => {
           current: progressStats.muscleChange.current,
           change: progressStats.muscleChange.change,
           unit: 'kg',
-          goal: progressGoals?.target_muscle_mass_kg || 45.0,
+          goal: progressGoals?.target_muscle_mass_kg ?? null,
           trend:
             progressStats.muscleChange.change < 0
               ? 'decreasing'
@@ -212,25 +222,25 @@ export const ProgressScreen: React.FC = () => {
           weeklyAvg: progressStats.muscleChange.current,
         },
         bmi: {
-          current:
-            progressStats.weightChange.current > 0
-              ? progressStats.weightChange.current / Math.pow(1.75, 2)
-              : 22.4, // Assuming 1.75m height
-          change: -0.7, // Calculated based on weight change
+          // Use calculated BMI from onboarding
+          current: calculatedMetrics?.calculatedBMI ?? (
+            progressStats.weightChange.current > 0 && calculatedMetrics?.heightCm
+              ? progressStats.weightChange.current / Math.pow(calculatedMetrics.heightCm / 100, 2)
+              : null
+          ),
+          change: null, // TODO: Calculate based on weight change
           unit: '',
-          goal: 21.5,
+          goal: 21.5, // Standard healthy BMI target
           trend: progressStats.weightChange.change < 0 ? 'decreasing' : 'increasing',
-          weeklyAvg:
-            progressStats.weightChange.current > 0
-              ? progressStats.weightChange.current / Math.pow(1.75, 2)
-              : 22.4,
+          weeklyAvg: calculatedMetrics?.calculatedBMI ?? null,
         },
       }
     : {
-        weight: { current: 0, change: 0, unit: 'kg', goal: 70.0, trend: 'stable', weeklyAvg: 0 },
-        bodyFat: { current: 0, change: 0, unit: '%', goal: 15.0, trend: 'stable', weeklyAvg: 0 },
-        muscle: { current: 0, change: 0, unit: 'kg', goal: 45.0, trend: 'stable', weeklyAvg: 0 },
-        bmi: { current: 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
+        // NO HARDCODED FALLBACKS - Use null to indicate missing data
+        weight: { current: 0, change: 0, unit: 'kg', goal: calculatedMetrics?.targetWeightKg ?? null, trend: 'stable', weeklyAvg: 0 },
+        bodyFat: { current: 0, change: 0, unit: '%', goal: null, trend: 'stable', weeklyAvg: 0 },
+        muscle: { current: 0, change: 0, unit: 'kg', goal: null, trend: 'stable', weeklyAvg: 0 },
+        bmi: { current: calculatedMetrics?.calculatedBMI ?? 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
       };
 
   // Real achievements based on actual user progress

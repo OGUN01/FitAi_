@@ -90,10 +90,17 @@ export type DietaryLabel =
 export interface MealItem {
   foodId: string;
   food: Food;
+  name?: string; // Optional food name for direct display
   quantity: number; // in serving units
+  unit?: string; // Optional unit for display (e.g., 'g', 'ml', 'piece')
   calories: number;
   macros: Macronutrients;
   notes?: string;
+  // Additional properties used in meal sessions
+  category?: string;
+  preparationTime?: number;
+  instructions?: string[];
+  preparation?: any;
 }
 
 export interface Meal {
@@ -114,6 +121,10 @@ export interface Meal {
   scheduledTime?: string; // ISO string
   createdAt: string;
   updatedAt: string;
+  // Additional properties used in DietScreen
+  ingredients?: string[];
+  instructions?: string[];
+  preparationTime?: number;
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre_workout' | 'post_workout';
@@ -462,6 +473,11 @@ export interface FoodScanResult {
   nutritionEstimate?: NutritionInfo;
   suggestions: string[];
   needsManualInput: boolean;
+}
+
+// Alias for backward compatibility
+export interface FoodRecognitionResult extends FoodScanResult {
+  foods?: RecognizedFood[]; // Alternative name for recognizedFoods
 }
 
 export interface RecognizedFood {

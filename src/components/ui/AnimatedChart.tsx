@@ -33,8 +33,8 @@ interface AnimatedChartProps {
 }
 
 export const AnimatedChart: React.FC<AnimatedChartProps> = ({
-  currentValue,
-  targetValue,
+  currentValue: rawCurrentValue,
+  targetValue: rawTargetValue,
   currentLabel = 'Current',
   targetLabel = 'Target',
   unit = 'kg',
@@ -44,6 +44,10 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   height = 200,
   style,
 }) => {
+  // Sanitize inputs to prevent NaN
+  const currentValue = Number.isFinite(rawCurrentValue) ? rawCurrentValue : 70;
+  const targetValue = Number.isFinite(rawTargetValue) ? rawTargetValue : 65;
+  
   const progress = useSharedValue(0);
   const [tooltipData, setTooltipData] = useState<{
     visible: boolean;
@@ -175,6 +179,10 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       }, 2000);
     });
 
+  // Pre-calculate Y values outside the worklet (worklets can't call JS functions)
+  const startY = valueToY(currentValue);
+  const endY = valueToY(targetValue);
+
   // Animated progress indicator
   const animatedProgressStyle = useAnimatedStyle(() => {
     const translateX = interpolate(
@@ -187,7 +195,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     const translateY = interpolate(
       progress.value,
       [0, 1],
-      [valueToY(currentValue), valueToY(targetValue)],
+      [startY, endY],
       Extrapolate.CLAMP
     );
 
@@ -199,10 +207,14 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     };
   });
 
-  // Calculate percentage change
-  const percentageChange = ((targetValue - currentValue) / currentValue) * 100;
+  // Calculate percentage change (handle division by zero)
+  const percentageChange = currentValue !== 0 
+    ? ((targetValue - currentValue) / currentValue) * 100 
+    : 0;
   const changeDirection = percentageChange > 0 ? 'increase' : 'decrease';
-  const changeText = `${Math.abs(percentageChange).toFixed(1)}% ${changeDirection}`;
+  const changeText = Number.isFinite(percentageChange) 
+    ? `${Math.abs(percentageChange).toFixed(1)}% ${changeDirection}`
+    : '--';
 
   return (
     <View style={[styles.container, style]}>

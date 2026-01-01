@@ -167,18 +167,18 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                     style={[
                       styles.progressFill,
                       {
-                        width: `${getProgressPercentage(dailyNutrition.protein, nutritionGoals.daily_protein)}%`,
+                        width: `${getProgressPercentage(dailyNutrition.protein, nutritionGoals.macroTargets?.protein ?? 0)}%`,
                         backgroundColor: getProgressColor(
                           getProgressPercentage(
                             dailyNutrition.protein,
-                            nutritionGoals.daily_protein
+                            nutritionGoals.macroTargets?.protein ?? 0
                           )
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.daily_protein}g</Text>
+                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.protein ?? 0}g</Text>
               </View>
 
               <View style={styles.progressItem}>
@@ -189,15 +189,15 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                     style={[
                       styles.progressFill,
                       {
-                        width: `${getProgressPercentage(dailyNutrition.carbs, nutritionGoals.daily_carbs)}%`,
+                        width: `${getProgressPercentage(dailyNutrition.carbs, nutritionGoals.macroTargets?.carbohydrates ?? 0)}%`,
                         backgroundColor: getProgressColor(
-                          getProgressPercentage(dailyNutrition.carbs, nutritionGoals.daily_carbs)
+                          getProgressPercentage(dailyNutrition.carbs, nutritionGoals.macroTargets?.carbohydrates ?? 0)
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.daily_carbs}g</Text>
+                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.carbohydrates ?? 0}g</Text>
               </View>
 
               <View style={styles.progressItem}>
@@ -208,15 +208,15 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                     style={[
                       styles.progressFill,
                       {
-                        width: `${getProgressPercentage(dailyNutrition.fat, nutritionGoals.daily_fat)}%`,
+                        width: `${getProgressPercentage(dailyNutrition.fat, nutritionGoals.macroTargets?.fat ?? 0)}%`,
                         backgroundColor: getProgressColor(
-                          getProgressPercentage(dailyNutrition.fat, nutritionGoals.daily_fat)
+                          getProgressPercentage(dailyNutrition.fat, nutritionGoals.macroTargets?.fat ?? 0)
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.daily_fat}g</Text>
+                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.fat ?? 0}g</Text>
               </View>
             </View>
           </View>
@@ -274,7 +274,7 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                     </Text>
                   )}
 
-                {nutritionGoals && dailyNutrition.protein > nutritionGoals.daily_protein * 0.8 && (
+                {nutritionGoals && dailyNutrition.protein > (nutritionGoals.macroTargets?.protein ?? 0) * 0.8 && (
                   <Text style={styles.insightText}>
                     💪 Excellent protein intake! You're supporting your fitness goals.
                   </Text>

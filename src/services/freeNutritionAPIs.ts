@@ -18,6 +18,7 @@ interface NutritionData {
   sodium?: number;
   source: string;
   confidence: number;
+  canonicalName?: string;
 }
 
 interface USDAFood {

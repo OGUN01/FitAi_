@@ -46,7 +46,7 @@ interface GlassCardProps {
 
   /**
    * Show standard border
-   * @default true
+   * @default false
    */
   showBorder?: boolean;
 
@@ -122,7 +122,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   gradientBorder = false,
   padding = 'md',
   borderRadius = 'lg',
-  showBorder = true,
+  showBorder = false,
   pressable = false,
   onPress,
   children,

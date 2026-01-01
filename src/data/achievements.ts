@@ -14,18 +14,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete your first workout',
     icon: '🎯',
     category: 'workout',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'workouts_completed',
+      type: 'total',
       value: 1,
     },
-    reward: {
-      points: 50,
-      badge: 'starter',
-      unlocks: ['workout_streak_3'],
+    points: 50,
+
+    rewards: {
+
+      badges: ['starter'],
+
+      features: ['workout_streak_3'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'workout_streak_3',
@@ -33,19 +47,33 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete workouts for 3 consecutive days',
     icon: '🔥',
     category: 'consistency',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'workout_streak',
+      type: 'streak',
       value: 3,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 100,
-      badge: 'consistent',
-      unlocks: ['workout_streak_7'],
+    points: 100,
+
+    rewards: {
+
+      badges: ['consistent'],
+
+      features: ['workout_streak_7'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'workout_streak_7',
@@ -53,19 +81,33 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete workouts for 7 consecutive days',
     icon: '⚡',
     category: 'consistency',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'workout_streak',
+      type: 'streak',
       value: 7,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 250,
-      badge: 'warrior',
-      unlocks: ['workout_streak_30'],
+    points: 250,
+
+    rewards: {
+
+      badges: ['warrior'],
+
+      features: ['workout_streak_30'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'workout_streak_30',
@@ -73,19 +115,33 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete workouts for 30 consecutive days',
     icon: '👑',
     category: 'consistency',
-    difficulty: 'gold',
+    rarity: 'epic',
     criteria: {
-      type: 'workout_streak',
+      type: 'streak',
       value: 30,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 1000,
-      badge: 'master',
-      unlocks: ['workout_streak_100'],
+    points: 1000,
+
+    rewards: {
+
+      badges: ['master'],
+
+      features: ['workout_streak_100'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'workout_streak_100',
@@ -93,18 +149,31 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete workouts for 100 consecutive days',
     icon: '💎',
     category: 'consistency',
-    difficulty: 'platinum',
+    rarity: 'legendary',
     criteria: {
-      type: 'workout_streak',
+      type: 'streak',
       value: 100,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 5000,
-      badge: 'champion',
+    points: 5000,
+
+    rewards: {
+
+      badges: ['champion'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 
   // STRENGTH ACHIEVEMENTS
@@ -114,18 +183,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 10 strength training workouts',
     icon: '💪',
     category: 'workout',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'strength_workouts',
+      type: 'total',
       value: 10,
     },
-    reward: {
-      points: 200,
-      badge: 'strong',
-      unlocks: ['strength_intermediate'],
+    points: 200,
+
+    rewards: {
+
+      badges: ['strong'],
+
+      features: ['strength_intermediate'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'strength_intermediate',
@@ -133,18 +216,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 50 strength training workouts',
     icon: '🏋️',
     category: 'workout',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'strength_workouts',
+      type: 'total',
       value: 50,
     },
-    reward: {
-      points: 500,
-      badge: 'builder',
-      unlocks: ['strength_advanced'],
+    points: 500,
+
+    rewards: {
+
+      badges: ['builder'],
+
+      features: ['strength_advanced'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'strength_advanced',
@@ -152,17 +249,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 100 strength training workouts',
     icon: '⚔️',
     category: 'workout',
-    difficulty: 'gold',
+    rarity: 'epic',
     criteria: {
-      type: 'strength_workouts',
+      type: 'total',
       value: 100,
     },
-    reward: {
-      points: 1000,
-      badge: 'iron_warrior',
+    points: 1000,
+
+    rewards: {
+
+      badges: ['iron_warrior'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 
   // CARDIO ACHIEVEMENTS
@@ -172,18 +282,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 5 cardio workouts',
     icon: '❤️',
     category: 'workout',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'cardio_workouts',
+      type: 'total',
       value: 5,
     },
-    reward: {
-      points: 150,
-      badge: 'cardio',
-      unlocks: ['cardio_enthusiast'],
+    points: 150,
+
+    rewards: {
+
+      badges: ['cardio'],
+
+      features: ['cardio_enthusiast'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'cardio_enthusiast',
@@ -191,18 +315,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 25 cardio workouts',
     icon: '🏃',
     category: 'workout',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'cardio_workouts',
+      type: 'total',
       value: 25,
     },
-    reward: {
-      points: 400,
-      badge: 'enthusiast',
-      unlocks: ['cardio_machine'],
+    points: 400,
+
+    rewards: {
+
+      badges: ['enthusiast'],
+
+      features: ['cardio_machine'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'cardio_machine',
@@ -210,17 +348,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 75 cardio workouts',
     icon: '🚀',
     category: 'workout',
-    difficulty: 'gold',
+    rarity: 'epic',
     criteria: {
-      type: 'cardio_workouts',
+      type: 'total',
       value: 75,
     },
-    reward: {
-      points: 800,
-      badge: 'machine',
+    points: 800,
+
+    rewards: {
+
+      badges: ['machine'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 
   // NUTRITION ACHIEVEMENTS
@@ -230,19 +381,33 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Log your meals for 7 consecutive days',
     icon: '📊',
     category: 'nutrition',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'nutrition_streak',
+      type: 'streak',
       value: 7,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 200,
-      badge: 'tracker',
-      unlocks: ['nutrition_master'],
+    points: 200,
+
+    rewards: {
+
+      badges: ['tracker'],
+
+      features: ['nutrition_master'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'nutrition_master',
@@ -250,18 +415,31 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Log your meals for 30 consecutive days',
     icon: '🥗',
     category: 'nutrition',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'nutrition_streak',
+      type: 'streak',
       value: 30,
-      timeframe: 'days',
+      timeframe: 'daily',
     },
-    reward: {
-      points: 600,
-      badge: 'nutrition_master',
+    points: 600,
+
+    rewards: {
+
+      badges: ['nutrition_master'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'calorie_goal_week',
@@ -269,18 +447,31 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Meet your daily calorie goal for 7 days',
     icon: '🎯',
     category: 'nutrition',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'calorie_goals_met',
+      type: 'total',
       value: 7,
-      timeframe: 'week',
+      timeframe: 'weekly',
     },
-    reward: {
-      points: 300,
-      badge: 'conscious',
+    points: 300,
+
+    rewards: {
+
+      badges: ['conscious'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'protein_goal_week',
@@ -288,18 +479,31 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Meet your daily protein goal for 7 days',
     icon: '🥩',
     category: 'nutrition',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'protein_goals_met',
+      type: 'total',
       value: 7,
-      timeframe: 'week',
+      timeframe: 'weekly',
     },
-    reward: {
-      points: 400,
-      badge: 'protein_power',
+    points: 400,
+
+    rewards: {
+
+      badges: ['protein_power'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 
   // MILESTONE ACHIEVEMENTS
@@ -309,18 +513,32 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Lose your first 5kg',
     icon: '📉',
     category: 'milestone',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'weight_lost',
+      type: 'personal_best',
       value: 5,
     },
-    reward: {
-      points: 500,
-      badge: 'weight_loss',
-      unlocks: ['weight_loss_10kg'],
+    points: 500,
+
+    rewards: {
+
+      badges: ['weight_loss'],
+
+      features: ['weight_loss_10kg'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'weight_loss_10kg',
@@ -328,17 +546,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Lose 10kg total',
     icon: '🎉',
     category: 'milestone',
-    difficulty: 'gold',
+    rarity: 'epic',
     criteria: {
-      type: 'weight_lost',
+      type: 'personal_best',
       value: 10,
     },
-    reward: {
-      points: 1000,
-      badge: 'double_digits',
+    points: 1000,
+
+    rewards: {
+
+      badges: ['double_digits'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'muscle_gain_2kg',
@@ -346,17 +577,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Gain 2kg of muscle mass',
     icon: '💪',
     category: 'milestone',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'muscle_gained',
+      type: 'personal_best',
       value: 2,
     },
-    reward: {
-      points: 600,
-      badge: 'muscle_builder',
+    points: 600,
+
+    rewards: {
+
+      badges: ['muscle_builder'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 
   // SPECIAL ACHIEVEMENTS
@@ -366,17 +610,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 10 workouts before 8 AM',
     icon: '🌅',
     category: 'workout',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'early_workouts',
+      type: 'total',
       value: 10,
     },
-    reward: {
-      points: 300,
-      badge: 'early_bird',
+    points: 300,
+
+    rewards: {
+
+      badges: ['early_bird'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'night_owl',
@@ -384,17 +641,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete 10 workouts after 8 PM',
     icon: '🦉',
     category: 'workout',
-    difficulty: 'bronze',
+    rarity: 'common',
     criteria: {
-      type: 'late_workouts',
+      type: 'total',
       value: 10,
     },
-    reward: {
-      points: 300,
-      badge: 'night_owl',
+    points: 300,
+
+    rewards: {
+
+      badges: ['night_owl'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'weekend_warrior',
@@ -402,17 +672,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Complete workouts on 10 weekends',
     icon: '🏖️',
     category: 'workout',
-    difficulty: 'silver',
+    rarity: 'rare',
     criteria: {
-      type: 'weekend_workouts',
+      type: 'total',
       value: 10,
     },
-    reward: {
-      points: 400,
-      badge: 'weekend_warrior',
+    points: 400,
+
+    rewards: {
+
+      badges: ['weekend_warrior'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
   {
     id: 'variety_seeker',
@@ -420,17 +703,30 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Try 20 different types of exercises',
     icon: '🎭',
     category: 'workout',
-    difficulty: 'gold',
+    rarity: 'epic',
     criteria: {
-      type: 'unique_exercises',
+      type: 'total',
       value: 20,
     },
-    reward: {
-      points: 700,
-      badge: 'variety_seeker',
+    points: 700,
+
+    rewards: {
+
+      badges: ['variety_seeker'],
+
     },
-    isUnlocked: false,
-    progress: 0,
+
+    // unlockedAt: undefined,
+    progress: {
+
+      current: 0,
+
+      target: 0,
+
+      unit: 'count',
+
+    },
+
   },
 ];
 
@@ -484,21 +780,21 @@ export const getAchievementsByCategory = (category: string): Achievement[] => {
  * Get achievements by difficulty
  */
 export const getAchievementsByDifficulty = (difficulty: string): Achievement[] => {
-  return ACHIEVEMENTS.filter((achievement) => achievement.difficulty === difficulty);
+  return ACHIEVEMENTS.filter((achievement) => achievement.rarity === difficulty);
 };
 
 /**
  * Get unlocked achievements
  */
 export const getUnlockedAchievements = (): Achievement[] => {
-  return ACHIEVEMENTS.filter((achievement) => achievement.isUnlocked);
+  return ACHIEVEMENTS.filter((achievement) => achievement.unlockedAt);
 };
 
 /**
  * Get available achievements (not unlocked but criteria can be met)
  */
 export const getAvailableAchievements = (): Achievement[] => {
-  return ACHIEVEMENTS.filter((achievement) => !achievement.isUnlocked);
+  return ACHIEVEMENTS.filter((achievement) => !achievement.unlockedAt);
 };
 
 /**
@@ -512,8 +808,8 @@ export const getAchievementById = (id: string): Achievement | undefined => {
  * Calculate total points earned
  */
 export const calculateTotalPoints = (): number => {
-  return ACHIEVEMENTS.filter((achievement) => achievement.isUnlocked).reduce(
-    (total, achievement) => total + (achievement.reward?.points || 0),
+  return ACHIEVEMENTS.filter((achievement) => achievement.unlockedAt).reduce(
+    (total, achievement) => total + (achievement.points || 0),
     0
   );
 };
@@ -522,8 +818,8 @@ export const calculateTotalPoints = (): number => {
  * Get next achievements to unlock
  */
 export const getNextAchievements = (limit: number = 5): Achievement[] => {
-  return ACHIEVEMENTS.filter((achievement) => !achievement.isUnlocked)
-    .sort((a, b) => (a.progress || 0) - (b.progress || 0))
+  return ACHIEVEMENTS.filter((achievement) => !achievement.unlockedAt)
+    .sort((a, b) => (a.progress?.current || 0) - (b.progress?.current || 0))
     .slice(0, limit);
 };
 
@@ -546,15 +842,18 @@ export const updateAchievementProgress = (
   userStats: Record<string, number>
 ): Achievement | null => {
   const achievement = getAchievementById(achievementId);
-  if (!achievement || achievement.isUnlocked) return null;
+  if (!achievement || achievement.unlockedAt) return null;
 
   const statValue = userStats[achievement.criteria.type] || 0;
   const progress = Math.min(100, (statValue / achievement.criteria.value) * 100);
 
-  achievement.progress = progress;
+  achievement.progress = {
+    current: progress,
+    target: 100,
+    unit: '%',
+  };
 
   if (progress >= 100) {
-    achievement.isUnlocked = true;
     achievement.unlockedAt = new Date().toISOString();
   }
 

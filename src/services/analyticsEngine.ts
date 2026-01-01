@@ -100,6 +100,8 @@ export interface PredictiveInsights {
     confidence: number;
     reasoning: string[];
   };
+  // Additional property used in HomeScreen
+  plateauRisk?: string;
 }
 
 export interface ComprehensiveAnalytics {

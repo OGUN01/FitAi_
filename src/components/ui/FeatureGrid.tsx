@@ -132,7 +132,11 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
             key={item.id}
             style={[
               styles.gridItem,
-              { width: `${(100 / columns) - 2}%` },
+              { 
+                flex: columns === 2 ? 1 : undefined,
+                minWidth: columns === 2 ? '45%' : `${Math.floor(100 / columns) - 2}%`,
+                maxWidth: columns === 2 ? '48%' : `${Math.floor(100 / columns)}%`,
+              },
             ]}
           >
             <FeatureGridItem
@@ -179,7 +183,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: rf(100),
+    minHeight: 100,
     borderWidth: 2,
     borderColor: 'transparent',
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -196,7 +200,8 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     textAlign: 'center',
-    lineHeight: rf(16),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.15,
+    flexShrink: 1,
   },
 
   labelSelected: {
@@ -205,11 +210,11 @@ const styles = StyleSheet.create({
 
   selectionIndicator: {
     position: 'absolute',
-    top: rp(8),
-    right: rp(8),
-    width: rf(24),
-    height: rf(24),
-    borderRadius: rf(12),
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -226,9 +231,9 @@ const styles = StyleSheet.create({
   },
 
   checkmark: {
-    fontSize: rf(14),
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
-    lineHeight: rf(16),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.15,
   },
 });

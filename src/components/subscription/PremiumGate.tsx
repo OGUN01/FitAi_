@@ -2,7 +2,7 @@
 // Conditionally render content based on subscription status
 
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSubscriptionStore, subscriptionHelpers } from '../../stores/subscriptionStore';
 import PremiumBadge from './PremiumBadge';
 
@@ -24,52 +24,99 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   upgradeDescription = 'This feature requires a premium subscription'
 }) => {
   const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
-  
+
   const hasAccess = checkPremiumAccess(feature);
-  
+
   if (hasAccess) {
     return <>{children}</>;
   }
-  
+
   if (fallback) {
     return <>{fallback}</>;
   }
-  
+
   if (showUpgrade) {
     return (
-      <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 m-4 items-center">
-        <View className="bg-yellow-100 dark:bg-yellow-900/30 rounded-full p-3 mb-4">
-          <Text className="text-4xl">👑</Text>
+      <View style={styles.container}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>👑</Text>
         </View>
-        
-        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-2 text-center">
+
+        <Text style={styles.title}>
           {upgradeText}
         </Text>
-        
-        <Text className="text-gray-600 dark:text-gray-400 text-center mb-6">
+
+        <Text style={styles.description}>
           {upgradeDescription}
         </Text>
-        
+
         <Pressable
           onPress={() => showPaywallModal(feature)}
-          className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl py-3 px-6 min-w-[120px] items-center"
+          style={styles.upgradeButton}
         >
-          <Text className="text-white font-bold">
+          <Text style={styles.upgradeButtonText}>
             Upgrade Now
           </Text>
         </Pressable>
-        
-        <View className="mt-4">
+
+        <View style={styles.badgeContainer}>
           <PremiumBadge size="small" variant="inline" onPress={() => showPaywallModal(feature)} />
         </View>
       </View>
     );
   }
-  
+
   return null;
 };
 
-// Higher-order component for premium feature wrapping
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 24,
+    margin: 16,
+    alignItems: 'center',
+  },
+  iconContainer: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 9999,
+    padding: 12,
+    marginBottom: 16,
+  },
+  iconText: {
+    fontSize: 32,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  upgradeButton: {
+    backgroundColor: '#F97316',
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  upgradeButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  badgeContainer: {
+    marginTop: 16,
+  },
+});
+
 export const withPremiumGate = (feature: string, upgradeProps?: Partial<PremiumGateProps>) => {
   return function PremiumWrapped<T extends {}>(
     Component: React.ComponentType<T>
@@ -84,29 +131,28 @@ export const withPremiumGate = (feature: string, upgradeProps?: Partial<PremiumG
   };
 };
 
-// Hook for premium feature checks with usage tracking
 export const usePremiumFeature = (feature: string) => {
   const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
-  
+
   const hasAccess = checkPremiumAccess(feature);
-  
+
   const requireAccess = (showPaywall = true, trackUsage = true) => {
     if (trackUsage) {
       subscriptionHelpers.trackPremiumFeatureUsage(feature, { attempted: true });
     }
-    
+
     const access = subscriptionHelpers.requiresPremium(feature, showPaywall);
     return access;
   };
-  
+
   const checkLimit = (currentUsage: number) => {
     return subscriptionHelpers.hasReachedLimit(feature, currentUsage);
   };
-  
+
   const getLimit = () => {
     return subscriptionHelpers.getFeatureLimit(feature);
   };
-  
+
   return {
     hasAccess,
     requireAccess,

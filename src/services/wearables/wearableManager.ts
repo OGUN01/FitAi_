@@ -452,24 +452,24 @@ class WearableManager {
     // Handle HealthKit data (iOS)
     if ('sleepHours' in platformData) {
       const healthKitData = platformData as HealthKitData;
-      
+
       return {
         steps: healthKitData.steps || 0,
         calories: healthKitData.activeEnergy || 0,
-        distance: 0, // HealthKit doesn't provide distance directly in our current implementation
+        distance: healthKitData.distance || 0,
         heartRate: healthKitData.heartRate,
         weight: healthKitData.bodyWeight,
         sleepHours: healthKitData.sleepHours,
         workouts: healthKitData.workouts?.map(workout => ({
           id: workout.id,
-          type: workout.workoutType,
-          name: workout.workoutType,
+          type: workout.activityType,
+          name: workout.activityType,
           duration: workout.duration,
-          calories: workout.calories,
-          date: workout.startDate,
+          calories: workout.energyBurned,
+          date: workout.startDate.toISOString(),
           source: 'HealthKit',
         })) || [],
-        lastSyncDate: healthKitData.lastSyncDate || new Date().toISOString(),
+        lastSyncDate: new Date().toISOString(),
         platform: 'ios',
       };
     }

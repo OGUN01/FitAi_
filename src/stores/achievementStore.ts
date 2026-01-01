@@ -38,6 +38,32 @@ interface AchievementStore {
     byTier: Record<AchievementTier, number>;
     byCategory: Record<AchievementCategory, number>;
   };
+
+  // Home screen integration methods
+  getRecentAchievements: (count?: number) => Array<{
+    id: string;
+    title: string;
+    icon: string;
+    category: string;
+    completedAt: string;
+  }>;
+  getNearlyCompletedAchievements: (count?: number) => Array<{
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    category: string;
+    progress: number;
+    currentValue: number;
+    targetValue: number;
+  }>;
+  getDailyProgress: () => {
+    achievementsWorkedOn: number;
+    achievementsCompleted: number;
+    totalProgress: number;
+  };
+  getTotalBadgesEarned: () => number;
+  getTopCategories: () => Array<{ category: string; count: number }>;
 }
 
 export const useAchievementStore = create<AchievementStore>()(

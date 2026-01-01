@@ -20,6 +20,8 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
   const [initializationError, setInitializationError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+
     const initializeApp = async () => {
       const startTime = Date.now();
       const TIMEOUT_MS = 10000; // 10 second timeout
@@ -71,6 +73,8 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
           })(),
         ]);
 
+        if (!mounted) return;
+
         const duration = Date.now() - startTime;
         console.log(
           `✅ AsyncInitializer: All initialization completed successfully in ${duration}ms`
@@ -78,6 +82,8 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
         setIsInitialized(true);
         onInitializationComplete();
       } catch (error) {
+        if (!mounted) return;
+
         const duration = Date.now() - startTime;
         console.error(`❌ AsyncInitializer: Initialization failed after ${duration}ms:`, error);
         setInitializationError(error instanceof Error ? error.message : 'Initialization failed');
@@ -87,7 +93,11 @@ export const AsyncInitializer: React.FC<AsyncInitializerProps> = ({
       }
     };
 
-    initializeApp();
+    initializeApp().catch(error => {
+      console.error('[AsyncInitializer] Unhandled initialization error:', error);
+    });
+
+    return () => { mounted = false; };
   }, [onInitializationComplete]);
 
   if (!isInitialized) {

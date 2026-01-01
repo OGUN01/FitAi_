@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle, Path, G, Text as SvgText } from 'react-native-svg';
-import { rf, rp } from '../../utils/responsive';
+import Svg, { Circle, Path, G, Text as SvgText, Rect } from 'react-native-svg';
+import { rf, rp, rw, rh } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 
 interface CircularClockProps {
@@ -14,17 +14,23 @@ interface CircularClockProps {
 export const CircularClock: React.FC<CircularClockProps> = ({
   sleepTime,
   wakeTime,
-  size = 200,
+  size: rawSize = 200,
   style,
 }) => {
-  const radius = size / 2;
+  // Round all values to prevent precision errors on Android
+  const size = Math.round(rawSize);
+  const radius = Math.round(size / 2);
   const centerX = radius;
   const centerY = radius;
-  const clockRadius = radius - 30;
+  const clockRadius = Math.round(radius - 35);
+  const arcWidth = 16;
 
-  // Convert time string to minutes from midnight
+  // Convert time string to minutes from midnight - with NaN protection
   const timeToMinutes = (time: string): number => {
-    const [hours, minutes] = time.split(':').map(Number);
+    if (!time || typeof time !== 'string') return 0;
+    const parts = time.split(':').map(Number);
+    const hours = Number.isFinite(parts[0]) ? parts[0] : 0;
+    const minutes = Number.isFinite(parts[1]) ? parts[1] : 0;
     return hours * 60 + minutes;
   };
 
@@ -33,12 +39,12 @@ export const CircularClock: React.FC<CircularClockProps> = ({
     return (minutes / (24 * 60)) * 360 - 90; // -90 to start from 12 o'clock
   };
 
-  // Convert angle to SVG path coordinates
+  // Convert angle to SVG path coordinates - round to prevent precision errors
   const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
     const angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
-      x: centerX + radius * Math.cos(angleInRadians),
-      y: centerY + radius * Math.sin(angleInRadians),
+      x: Math.round(centerX + radius * Math.cos(angleInRadians)),
+      y: Math.round(centerY + radius * Math.sin(angleInRadians)),
     };
   };
 
@@ -78,11 +84,16 @@ export const CircularClock: React.FC<CircularClockProps> = ({
   const sleepHours = Math.floor(sleepDuration / 60);
   const sleepMins = sleepDuration % 60;
 
-  // Hour markers (24-hour clock)
-  const hourMarkers = [0, 6, 12, 18].map((hour) => {
+  // Hour markers positioned outside the ring
+  const hourMarkers = [
+    { hour: 0, label: '12AM' },
+    { hour: 6, label: '6AM' },
+    { hour: 12, label: '12PM' },
+    { hour: 18, label: '6PM' },
+  ].map(({ hour, label }) => {
     const angle = minutesToAngle(hour * 60);
-    const pos = polarToCartesian(centerX, centerY, clockRadius + 15, angle);
-    return { hour, x: pos.x, y: pos.y };
+    const pos = polarToCartesian(centerX, centerY, clockRadius + 25, angle);
+    return { hour, label, x: pos.x, y: pos.y };
   });
 
   // Format time for display (convert 24h to 12h with AM/PM)
@@ -96,82 +107,93 @@ export const CircularClock: React.FC<CircularClockProps> = ({
   return (
     <View style={[styles.container, style]}>
       <Svg width={size} height={size}>
-        {/* Clock circle background */}
+        {/* Background circle */}
         <Circle
           cx={centerX}
           cy={centerY}
           r={clockRadius}
-          fill="transparent"
+          fill={`${ResponsiveTheme.colors.surface}30`}
           stroke={ResponsiveTheme.colors.border}
-          strokeWidth="2"
+          strokeWidth="1"
+          opacity={0.5}
         />
 
-        {/* Wake period (light arc) - rest of the day */}
+        {/* Wake period (golden arc) - rest of the day */}
         <Circle
           cx={centerX}
           cy={centerY}
           r={clockRadius}
           fill="transparent"
-          stroke={`${ResponsiveTheme.colors.warning}40`}
-          strokeWidth="20"
+          stroke={`${ResponsiveTheme.colors.warning}50`}
+          strokeWidth={arcWidth}
         />
 
-        {/* Sleep period (dark arc) */}
+        {/* Sleep period (purple arc) */}
         <Path
           d={sleepArcPath}
           fill="transparent"
           stroke={ResponsiveTheme.colors.primary}
-          strokeWidth="20"
+          strokeWidth={arcWidth}
           strokeLinecap="round"
         />
 
-        {/* Hour markers */}
-        {hourMarkers.map(({ hour, x, y }) => (
+        {/* Hour markers - positioned outside */}
+        {hourMarkers.map(({ hour, label, x, y }) => (
           <SvgText
             key={hour}
             x={x}
             y={y}
-            fontSize={rf(12)}
+            fontSize={rf(9)}
             fill={ResponsiveTheme.colors.textMuted}
             textAnchor="middle"
             alignmentBaseline="middle"
+            fontWeight="500"
           >
-            {hour}
+            {label}
           </SvgText>
         ))}
 
-        {/* Center text - sleep duration */}
+        {/* Center content */}
         <SvgText
           x={centerX}
-          y={centerY - 10}
-          fontSize={rf(24)}
+          y={centerY - 6}
+          fontSize={rf(20)}
           fontWeight="bold"
           fill={ResponsiveTheme.colors.text}
           textAnchor="middle"
+          alignmentBaseline="middle"
         >
           {sleepHours}h {sleepMins}m
         </SvgText>
 
         <SvgText
           x={centerX}
-          y={centerY + 15}
-          fontSize={rf(12)}
+          y={centerY + 16}
+          fontSize={rf(10)}
           fill={ResponsiveTheme.colors.textSecondary}
           textAnchor="middle"
+          alignmentBaseline="middle"
         >
           Sleep Duration
         </SvgText>
       </Svg>
 
-      {/* Legend */}
+      {/* Legend - improved design */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: ResponsiveTheme.colors.primary }]} />
-          <Text style={styles.legendText}>😴 {formatTime(sleepTime)}</Text>
+          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.primary }]} />
+          <View style={styles.legendTextContainer}>
+            <Text style={styles.legendTime}>{formatTime(sleepTime)}</Text>
+            <Text style={styles.legendLabel}>Bedtime</Text>
+          </View>
         </View>
+        <View style={styles.legendDivider} />
         <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: ResponsiveTheme.colors.warning }]} />
-          <Text style={styles.legendText}>☀️ {formatTime(wakeTime)}</Text>
+          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.warning }]} />
+          <View style={styles.legendTextContainer}>
+            <Text style={styles.legendTime}>{formatTime(wakeTime)}</Text>
+            <Text style={styles.legendLabel}>Wake up</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -186,25 +208,46 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: ResponsiveTheme.spacing.md,
-    marginTop: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    marginTop: ResponsiveTheme.spacing.lg,
+    backgroundColor: `${ResponsiveTheme.colors.surface}30`,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: ResponsiveTheme.spacing.xs,
+    gap: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
 
-  legendColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+  legendDot: {
+    width: rw(10),
+    height: rw(10),
+    borderRadius: rw(5),
   },
 
-  legendText: {
+  legendTextContainer: {
+    alignItems: 'flex-start',
+  },
+
+  legendTime: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
-    fontWeight: ResponsiveTheme.fontWeight.medium,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  legendLabel: {
+    fontSize: rf(9),
+    color: ResponsiveTheme.colors.textMuted,
+  },
+
+  legendDivider: {
+    width: 1,
+    height: rh(30),
+    backgroundColor: `${ResponsiveTheme.colors.border}50`,
+    marginHorizontal: ResponsiveTheme.spacing.sm,
   },
 });

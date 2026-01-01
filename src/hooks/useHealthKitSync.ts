@@ -34,8 +34,8 @@ export interface UseHealthKitSyncReturn {
   lastSyncTime?: string;
   
   // Health Data (from store)
-  healthMetrics: ReturnType<typeof useHealthDataStore>['metrics'];
-  settings: ReturnType<typeof useHealthDataStore>['settings'];
+  healthMetrics: any;
+  settings: any;
   
   // Actions
   initialize: () => Promise<boolean>;
@@ -119,9 +119,20 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
         // Sync if enough time has passed
         const checkAndSync = async () => {
           try {
-            const shouldSync = await healthKitService.shouldSync(syncIntervalMinutes / 60);
-            if (shouldSync) {
-              console.log('🔄 Performing background HealthKit sync...');
+            // Check if enough time has passed since last sync
+            const hoursInterval = syncIntervalMinutes / 60;
+            if (lastSyncTime) {
+              const lastSync = new Date(lastSyncTime).getTime();
+              const now = Date.now();
+              const hoursSinceLastSync = (now - lastSync) / (1000 * 60 * 60);
+
+              if (hoursSinceLastSync >= hoursInterval) {
+                console.log('🔄 Performing background HealthKit sync...');
+                await syncHealthData(false);
+              }
+            } else {
+              // No previous sync, sync now
+              console.log('🔄 Performing initial background HealthKit sync...');
               await syncHealthData(false);
             }
           } catch (error) {
@@ -142,7 +153,7 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
     if (!settings.autoSyncEnabled || !isHealthKitAuthorized) return;
 
     const intervalMs = syncIntervalMinutes * 60 * 1000;
-    
+
     const periodicSync = async () => {
       try {
         console.log('⏰ Performing periodic HealthKit sync...');
@@ -153,7 +164,10 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
     };
 
     const intervalId = setInterval(periodicSync, intervalMs);
-    return () => clearInterval(intervalId);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [settings.autoSyncEnabled, isHealthKitAuthorized, syncIntervalMinutes, syncHealthData]);
 
   // Action handlers
@@ -206,8 +220,15 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
   }, [exportNutritionToHealthKit]);
 
   const getHealthSummary = useCallback(async () => {
-    return await healthKitService.getHealthSummary();
-  }, []);
+    // Get current health data summary from store
+    return {
+      steps: healthMetrics.steps || 0,
+      activeCalories: healthMetrics.activeCalories || 0,
+      weight: healthMetrics.weight || 0,
+      sleepHours: healthMetrics.sleepHours || 0,
+      heartRate: healthMetrics.heartRate || 0,
+    };
+  }, [healthMetrics]);
 
   return {
     // Status
@@ -321,16 +342,22 @@ export const useHealthKitDashboard = () => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       
-      const weeklyWorkouts = healthKit.healthMetrics.recentWorkouts.filter(
-        workout => new Date(workout.date) >= oneWeekAgo
+      const weeklyWorkouts = (healthKit.healthMetrics.recentWorkouts || []).filter(
+        (workout: any) => new Date(workout.date) >= oneWeekAgo
       ).length;
       
+      // VALIDATION: No fallback for weight - null means no data available
+      const lastWeight = healthKit.healthMetrics.weight;
+      if (!lastWeight || lastWeight === 0) {
+        console.warn('[useHealthKitDashboard] Weight data missing from HealthKit');
+      }
+
       setDashboardData({
         todaySteps: healthKit.healthMetrics.steps,
         todayCalories: healthKit.healthMetrics.activeCalories,
         weeklyWorkouts,
-        lastWeight: healthKit.healthMetrics.weight || 0,
-        sleepScore: healthKit.healthMetrics.sleepHours ? 
+        lastWeight: lastWeight || null, // null = show "no data" UI instead of 0
+        sleepScore: healthKit.healthMetrics.sleepHours ?
           Math.round((healthKit.healthMetrics.sleepHours / 8) * 100) : 0,
       });
     };

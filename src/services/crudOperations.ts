@@ -5,7 +5,7 @@ import { dataManager } from './dataManager';
 import { offlineService } from './offline';
 import {
   OnboardingData,
-  WorkoutSession,
+  LocalWorkoutSession,
   MealLog,
   BodyMeasurement,
   LocalStorageSchema,
@@ -110,7 +110,7 @@ export class CrudOperationsService {
   // WORKOUT SESSION OPERATIONS
   // ============================================================================
 
-  async createWorkoutSession(session: WorkoutSession): Promise<void> {
+  async createWorkoutSession(session: LocalWorkoutSession): Promise<void> {
     try {
       console.log('📝 Creating workout session:', {
         id: session.id,
@@ -139,7 +139,7 @@ export class CrudOperationsService {
     }
   }
 
-  async readWorkoutSessions(limit?: number): Promise<WorkoutSession[]> {
+  async readWorkoutSessions(limit?: number): Promise<LocalWorkoutSession[]> {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
@@ -150,7 +150,7 @@ export class CrudOperationsService {
     }
   }
 
-  async readWorkoutSession(sessionId: string): Promise<WorkoutSession | null> {
+  async readWorkoutSession(sessionId: string): Promise<LocalWorkoutSession | null> {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
@@ -162,7 +162,7 @@ export class CrudOperationsService {
     }
   }
 
-  async updateWorkoutSession(sessionId: string, updates: Partial<WorkoutSession>): Promise<void> {
+  async updateWorkoutSession(sessionId: string, updates: Partial<LocalWorkoutSession>): Promise<void> {
     try {
       // Ensure data layer is initialized before writing
       await this.initialize();
@@ -360,7 +360,7 @@ export class CrudOperationsService {
   // ============================================================================
 
   async batchCreateWorkoutSessions(
-    sessions: WorkoutSession[]
+    sessions: LocalWorkoutSession[]
   ): Promise<{ success: number; failed: number; errors: string[] }> {
     const result = { success: 0, failed: 0, errors: [] as string[] };
 

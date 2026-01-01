@@ -3,9 +3,8 @@
  * Can be called from the app to verify structured output is working
  */
 
-import { geminiService } from '../ai/gemini';
+import { geminiService, weeklyContentGenerator } from '../ai';
 import { WEEKLY_PLAN_SCHEMA, DAILY_WORKOUT_SCHEMA } from '../ai/schemas/workoutSchema';
-import { weeklyContentGenerator } from '../ai/weeklyContentGenerator';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 
 export interface TestResult {

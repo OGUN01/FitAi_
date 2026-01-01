@@ -18,7 +18,7 @@ import Constants from 'expo-constants';
 const isExpoGo =
   Constants.appOwnership === 'expo' ||
   Constants.executionEnvironment === 'storeClient' ||
-  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+  (__DEV__ && !Constants.isDevice && !(Constants.platform?.web as any));
 
 // Load water reminders safely
 let useWaterReminders: any = null;

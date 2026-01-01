@@ -1,0 +1,600 @@
+src/components/debug/FoodRecognitionTest.tsx(80,15): error TS2353: Object literal may only specify known properties, and 'height' does not exist in type 'PersonalInfo'.
+src/components/debug/FoodRecognitionTest.tsx(84,13): error TS2741: Property 'experience' is missing in type '{ primary_goals: string[]; experience_level: string; time_commitment: string; }' but required in type 'FitnessGoals'.
+src/components/debug/FoodRecognitionTest.tsx(107,44): error TS2339: Property 'foods' does not exist on type 'FoodRecognitionResult'.
+src/screens/cooking/CookingSessionScreen.tsx(303,52): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/screens/cooking/CookingSessionScreen.tsx(307,35): error TS2551: Property 'ingredientCalories' does not exist on type '{ container: { flex: number; backgroundColor: string; }; header: { flexDirection: "row"; alignItems: "center"; paddingHorizontal: number; paddingVertical: number; backgroundColor: string; borderBottomWidth: number; borderBottomColor: string; }; ... 70 more ...; completedStepButton: { ...; }; }'. Did you mean 'ingredientsList'?
+src/screens/details/ExerciseDetail.tsx(307,11): error TS2322: Type '(() => void) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/screens/details/MealDetail.tsx(272,13): error TS2322: Type '(() => void) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/screens/details/MealDetail.tsx(278,13): error TS2322: Type '(() => void) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/screens/details/MealDetail.tsx(280,13): error TS2322: Type '({ flex: number; } | { borderColor: string; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { flex: number; } | { borderColor: string; }>(predicate: (value: { flex: number; } | { borderColor: string; }, index: number, array: ({ flex: number; } | { borderColor: string; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; }, index: number, array: ({ ...; } | { ...; })[...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/details/WorkoutDetail.tsx(232,11): error TS2322: Type '(() => void) | undefined' is not assignable to type '() => void'.
+  Type 'undefined' is not assignable to type '() => void'.
+src/screens/main/AnalyticsScreen.tsx(279,11): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; size: "medium"; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(288,11): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; size: "medium"; trend: "stable" | "up" | "down"; trendValue: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(299,11): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; size: "medium"; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(308,11): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; size: "medium"; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(324,11): error TS2322: Type '{ date: string; score: number; }[]' is not assignable to type 'ChartDataPoint[]'.
+  Type '{ date: string; score: number; }' is missing the following properties from type 'ChartDataPoint': x, y
+src/screens/main/AnalyticsScreen.tsx(392,12): error TS2304: Cannot find name 'analyticsHelpers'.
+src/screens/main/AnalyticsScreen.tsx(411,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(419,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(427,13): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(435,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(443,11): error TS2322: Type '{ date: string; count: number; }[]' is not assignable to type 'ChartDataPoint[]'.
+  Type '{ date: string; count: number; }' is missing the following properties from type 'ChartDataPoint': x, y
+src/screens/main/AnalyticsScreen.tsx(453,11): error TS2322: Type '{ date: string; calories: number; }[]' is not assignable to type 'ChartDataPoint[]'.
+  Type '{ date: string; calories: number; }' is missing the following properties from type 'ChartDataPoint': x, y
+src/screens/main/AnalyticsScreen.tsx(504,13): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(512,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(520,13): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(536,11): error TS2322: Type '{ date: string; liters: number; }[]' is not assignable to type 'ChartDataPoint[]'.
+  Type '{ date: string; liters: number; }' is missing the following properties from type 'ChartDataPoint': x, y
+src/screens/main/AnalyticsScreen.tsx(606,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(614,13): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(622,13): error TS2322: Type '{ title: string; value: number; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(630,13): error TS2322: Type '{ title: string; value: string; subtitle: string; iconName: string; color: string; }' is not assignable to type 'IntrinsicAttributes & AnalyticsCardProps'.
+  Property 'iconName' does not exist on type 'IntrinsicAttributes & AnalyticsCardProps'.
+src/screens/main/AnalyticsScreen.tsx(642,11): error TS2322: Type '{ title: string; data: { x: string; y: number; }[]; type: "line"; color: string; height: number; unit: string; }' is not assignable to type 'IntrinsicAttributes & ProgressChartProps'.
+  Property 'unit' does not exist on type 'IntrinsicAttributes & ProgressChartProps'.
+src/screens/main/AnalyticsScreen.tsx(854,36): error TS2345: Argument of type '(value: any) => string' is not assignable to parameter of type 'InterpolationConfigType'.
+src/screens/main/AnalyticsScreen.tsx(854,37): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/screens/main/AnalyticsScreen.tsx(891,21): error TS2322: Type 'AnimatedInterpolation<string | number>' is not assignable to type 'number'.
+src/screens/main/AnalyticsScreen.tsx(897,21): error TS2322: Type '{ colors: string[]; start: { x: number; y: number; }; end: { x: number; y: number; }; }' is not assignable to type 'boolean | undefined'.
+src/screens/main/AnalyticsScreen.tsx(907,38): error TS2345: Argument of type '(value: any) => string' is not assignable to parameter of type 'InterpolationConfigType'.
+src/screens/main/AnalyticsScreen.tsx(907,39): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/screens/main/AnalyticsScreen.tsx(944,72): error TS2339: Property 'emoji' does not exist on type '{ id: number; iconName: string; title: string; subtitle: string; animation: Value; }'.
+src/screens/main/AnalyticsScreen.tsx(1507,55): error TS2339: Property 'xs' does not exist on type '{ sm: number; md: number; lg: number; xl: number; xxl: number; full: number; }'.
+src/screens/main/AnalyticsScreen.tsx(1508,56): error TS2339: Property 'xs' does not exist on type '{ sm: number; md: number; lg: number; xl: number; xxl: number; full: number; }'.
+src/screens/main/DietScreen.tsx(36,38): error TS2367: This comparison appears to be unintentional because the types 'WebManifest | undefined' and 'boolean' have no overlap.
+src/screens/main/DietScreen.tsx(205,35): error TS2339: Property 'planTitle' does not exist on type 'WeeklyMealPlan'.
+src/screens/main/DietScreen.tsx(428,75): error TS2339: Property 'planTitle' does not exist on type 'WeeklyMealPlan'.
+src/screens/main/DietScreen.tsx(810,38): error TS2304: Cannot find name 'nutritionAnalyzer'.
+src/screens/main/DietScreen.tsx(940,21): error TS2339: Property 'specialAction' does not exist on type '{ dietaryRestrictions: string[]; cuisinePreference: any; prepTimeLimit: number; calorieTarget: number; dietType: string[]; dislikes: string[]; customOptions: any; suggestions: any; }'.
+src/screens/main/DietScreen.tsx(954,39): error TS2339: Property 'ingredients' does not exist on type 'Meal'.
+src/screens/main/DietScreen.tsx(959,34): error TS2339: Property 'ingredients' does not exist on type 'Meal'.
+src/screens/main/DietScreen.tsx(965,24): error TS7006: Parameter 'f' implicitly has an 'any' type.
+src/screens/main/DietScreen.tsx(969,27): error TS2345: Argument of type '{ name: string; type: string; foods: any; }' is not assignable to parameter of type '{ name: string; type: "breakfast" | "lunch" | "dinner" | "snack"; foods: { food_id: string; quantity_grams: number; }[]; }'.
+  Types of property 'type' are incompatible.
+    Type 'string' is not assignable to type '"breakfast" | "lunch" | "dinner" | "snack"'.
+src/screens/main/DietScreen.tsx(1077,67): error TS2304: Cannot find name 'weeklyMealContentGenerator'.
+src/screens/main/DietScreen.tsx(1080,35): error TS18047: 'profile' is possibly 'null'.
+src/screens/main/DietScreen.tsx(1092,23): error TS18047: 'profile' is possibly 'null'.
+src/screens/main/DietScreen.tsx(1093,23): error TS18047: 'profile' is possibly 'null'.
+src/screens/main/DietScreen.tsx(1097,30): error TS2304: Cannot find name 'weeklyMealContentGenerator'.
+src/screens/main/DietScreen.tsx(1098,9): error TS18047: 'profile' is possibly 'null'.
+src/screens/main/DietScreen.tsx(1099,9): error TS18047: 'profile' is possibly 'null'.
+src/screens/main/DietScreen.tsx(1128,59): error TS7006: Parameter 'meal' implicitly has an 'any' type.
+src/screens/main/DietScreen.tsx(1132,41): error TS7006: Parameter 'm' implicitly has an 'any' type.
+src/screens/main/DietScreen.tsx(1202,21): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/DietScreen.tsx(1217,13): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/DietScreen.tsx(1258,13): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/DietScreen.tsx(1296,15): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/DietScreen.tsx(1355,57): error TS2339: Property '_value' does not exist on type 'Value'.
+src/screens/main/DietScreen.tsx(1369,19): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/DietScreen.tsx(1785,75): error TS2339: Property 'daily_protein' does not exist on type 'NutritionGoals'.
+src/screens/main/DietScreen.tsx(1786,71): error TS2339: Property 'daily_carbs' does not exist on type 'NutritionGoals'.
+src/screens/main/DietScreen.tsx(1787,67): error TS2339: Property 'daily_fat' does not exist on type 'NutritionGoals'.
+src/screens/main/DietScreen.tsx(1849,42): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/DietScreen.tsx(1866,42): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/DietScreen.tsx(1977,19): error TS2322: Type '{ colors: string[]; start: { x: number; y: number; }; end: { x: number; y: number; }; }' is not assignable to type 'boolean | undefined'.
+src/screens/main/DietScreen.tsx(2086,33): error TS2339: Property 'nutrition' does not exist on type 'DayMeal'.
+src/screens/main/DietScreen.tsx(2093,51): error TS2339: Property 'nutrition' does not exist on type 'DayMeal'.
+src/screens/main/DietScreen.tsx(2098,51): error TS2339: Property 'nutrition' does not exist on type 'DayMeal'.
+src/screens/main/DietScreen.tsx(2103,51): error TS2339: Property 'nutrition' does not exist on type 'DayMeal'.
+src/screens/main/DietScreen.tsx(2285,25): error TS2322: Type '({ width: number; marginRight: number; overflow: "hidden"; } | { height: number; justifyContent: "center"; alignItems: "center"; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { width: number; marginRight: number; overflow: "hidden"; } | { height: number; justifyContent: "center"; alignItems: "center"; }>(predicate: (value: { width: number; marginRight: number; overflow: "hidden"; } | { ...; }, index: number, array: ({ ...; } | { ...; })[]) => value is S, thisArg?: any): S[];...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/DietScreen.tsx(2538,49): error TS2322: Type 'false | { backgroundColor: string; borderColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/DietScreen.tsx(2815,19): error TS2322: Type '"outline" | "solid"' is not assignable to type '"primary" | "secondary" | "outline" | "ghost" | undefined'.
+  Type '"solid"' is not assignable to type '"primary" | "secondary" | "outline" | "ghost" | undefined'.
+src/screens/main/DietScreen.tsx(2817,19): error TS2322: Type '({ alignSelf: "flex-start"; } | { flex: number; marginRight: number; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { alignSelf: "flex-start"; } | { flex: number; marginRight: number; }>(predicate: (value: { alignSelf: "flex-start"; } | { flex: number; marginRight: number; }, index: number, array: ({ alignSelf: "flex-start"; } | { ...; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; },...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/DietScreen.tsx(2824,19): error TS2322: Type '({ alignSelf: "flex-start"; } | { flex: number; marginRight: number; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { alignSelf: "flex-start"; } | { flex: number; marginRight: number; }>(predicate: (value: { alignSelf: "flex-start"; } | { flex: number; marginRight: number; }, index: number, array: ({ alignSelf: "flex-start"; } | { ...; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; },...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/DietScreen.tsx(2835,21): error TS2322: Type '({ alignSelf: "flex-start"; } | { flex: number; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { alignSelf: "flex-start"; } | { flex: number; }>(predicate: (value: { alignSelf: "flex-start"; } | { flex: number; }, index: number, array: ({ alignSelf: "flex-start"; } | { flex: number; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; }, index: number, array: ({ ...; } ...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/DietScreen.tsx(3779,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/DietScreen.tsx(4099,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/DietScreen.tsx(4119,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/DietScreen.tsx(4608,48): error TS2339: Property 'xs' does not exist on type '{ sm: number; md: number; lg: number; xl: number; xxl: number; full: number; }'.
+src/screens/main/FitnessScreen.tsx(30,38): error TS2367: This comparison appears to be unintentional because the types 'WebManifest | undefined' and 'boolean' have no overlap.
+src/screens/main/FitnessScreen.tsx(245,29): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/screens/main/FitnessScreen.tsx(254,20): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(254,57): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(255,18): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(255,36): error TS7006: Parameter 'day' implicitly has an 'any' type.
+src/screens/main/FitnessScreen.tsx(266,5): error TS2322: Type 'Workout[]' is not assignable to type 'DayWorkout[]'.
+  Type 'Workout' is missing the following properties from type 'DayWorkout': dayOfWeek, subCategory, intensityLevel, warmUp, and 3 more.
+src/screens/main/FitnessScreen.tsx(266,60): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/screens/main/FitnessScreen.tsx(280,36): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(280,74): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(281,23): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(381,71): error TS2339: Property 'planTitle' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(384,59): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(388,53): error TS2339: Property 'planTitle' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(393,81): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/screens/main/FitnessScreen.tsx(409,36): error TS2339: Property 'planTitle' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(421,50): error TS2345: Argument of type 'import("D:/FitAi/FitAI/src/ai/index").WeeklyWorkoutPlan' is not assignable to parameter of type 'import("D:/FitAi/FitAI/src/types/ai").WeeklyWorkoutPlan'.
+  Types of property 'workouts' are incompatible.
+    Type 'Workout[]' is not assignable to type 'DayWorkout[]'.
+      Type 'Workout' is missing the following properties from type 'DayWorkout': dayOfWeek, subCategory, intensityLevel, warmUp, and 3 more.
+src/screens/main/FitnessScreen.tsx(446,33): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/screens/main/FitnessScreen.tsx(461,76): error TS2339: Property 'planTitle' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(532,58): error TS2345: Argument of type '{ name: string; type: "strength" | "flexibility" | "cardio" | "hiit" | "yoga" | "pilates" | "hybrid"; exercises: { exercise_id: string; sets: number; reps: string; weight: number; rest_seconds: number; }[]; }' is not assignable to parameter of type '{ name: string; type: string; exercises: { exercise_id: string; sets?: number | undefined; reps?: number | undefined; weight_kg?: number | undefined; duration_seconds?: number | undefined; rest_seconds?: number | undefined; }[]; }'.
+  Types of property 'exercises' are incompatible.
+    Type '{ exercise_id: string; sets: number; reps: string; weight: number; rest_seconds: number; }[]' is not assignable to type '{ exercise_id: string; sets?: number | undefined; reps?: number | undefined; weight_kg?: number | undefined; duration_seconds?: number | undefined; rest_seconds?: number | undefined; }[]'.
+      Type '{ exercise_id: string; sets: number; reps: string; weight: number; rest_seconds: number; }' is not assignable to type '{ exercise_id: string; sets?: number | undefined; reps?: number | undefined; weight_kg?: number | undefined; duration_seconds?: number | undefined; rest_seconds?: number | undefined; }'.
+        Types of property 'reps' are incompatible.
+          Type 'string' is not assignable to type 'number'.
+src/screens/main/FitnessScreen.tsx(661,57): error TS2339: Property '_value' does not exist on type 'Value'.
+src/screens/main/FitnessScreen.tsx(752,35): error TS2820: Type '"target-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"at-outline"'?
+src/screens/main/FitnessScreen.tsx(887,33): error TS2339: Property 'sectionTitle' does not exist on type '{ container: { flex: number; backgroundColor: string; }; scrollView: { flex: number; }; header: { paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; title: { fontSize: number; fontWeight: "700"; color: string; }; ... 81 more ...; suggestedStartText: { ...; }; }'.
+src/screens/main/FitnessScreen.tsx(1002,33): error TS2339: Property 'sectionTitle' does not exist on type '{ container: { flex: number; backgroundColor: string; }; scrollView: { flex: number; }; header: { paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; title: { fontSize: number; fontWeight: "700"; color: string; }; ... 81 more ...; suggestedStartText: { ...; }; }'.
+src/screens/main/FitnessScreen.tsx(1048,23): error TS2322: Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+  Source provides no match for required element at position 0 in target.
+src/screens/main/FitnessScreen.tsx(1072,23): error TS2322: Type 'string[]' is not assignable to type 'readonly [ColorValue, ColorValue, ...ColorValue[]]'.
+  Source provides no match for required element at position 0 in target.
+src/screens/main/FitnessScreen.tsx(1112,17): error TS2322: Type '(workout: DayWorkout) => Promise<void>' is not assignable to type '(workout: Workout) => void'.
+  Types of parameters 'workout' and 'workout' are incompatible.
+    Type 'Workout' is missing the following properties from type 'DayWorkout': dayOfWeek, subCategory, intensityLevel, warmUp, and 3 more.
+src/screens/main/FitnessScreen.tsx(1113,17): error TS2322: Type '(workout: DayWorkout) => void' is not assignable to type '(workout: Workout) => void'.
+  Types of parameters 'workout' and 'workout' are incompatible.
+    Type 'Workout' is missing the following properties from type 'DayWorkout': dayOfWeek, subCategory, intensityLevel, warmUp, and 3 more.
+src/screens/main/FitnessScreen.tsx(1134,52): error TS18048: 'profile.fitnessGoals.primaryGoals' is possibly 'undefined'.
+src/screens/main/FitnessScreen.tsx(1149,60): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(1154,33): error TS2339: Property 'planTitle' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(1157,33): error TS2339: Property 'planDescription' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(1170,44): error TS2339: Property 'totalEstimatedCalories' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/FitnessScreen.tsx(1176,69): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/screens/main/GuestSignUpScreen.tsx(4,22): error TS2307: Cannot find module 'react-native-vector-icons/Ionicons' or its corresponding type declarations.
+src/screens/main/GuestSignUpScreen.tsx(259,49): error TS2322: Type 'false | { opacity: number; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/HomeScreen.tsx(330,7): error TS2448: Block-scoped variable 'realStreak' used before its declaration.
+src/screens/main/HomeScreen.tsx(366,13): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/HomeScreen.tsx(619,23): error TS2322: Type '{ colors: string[]; start: { x: number; y: number; }; end: { x: number; y: number; }; }' is not assignable to type 'boolean | undefined'.
+src/screens/main/HomeScreen.tsx(639,23): error TS2322: Type '{ colors: string[]; start: { x: number; y: number; }; end: { x: number; y: number; }; }' is not assignable to type 'boolean | undefined'.
+src/screens/main/HomeScreen.tsx(659,23): error TS2322: Type '{ colors: string[]; start: { x: number; y: number; }; end: { x: number; y: number; }; }' is not assignable to type 'boolean | undefined'.
+src/screens/main/HomeScreen.tsx(1267,49): error TS2339: Property 'plateauRisk' does not exist on type 'PredictiveInsights'.
+src/screens/main/HomeScreen.tsx(1739,75): error TS18046: 'error' is of type 'unknown'.
+src/screens/main/HomeScreen.tsx(1785,66): error TS18046: 'error' is of type 'unknown'.
+src/screens/main/HomeScreen.tsx(2260,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(2313,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(2356,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(2366,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreen.tsx(2380,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/HomeScreenIntegrationExample.tsx(80,15): error TS2322: Type '{ flexDirection: "row"; flexWrap: "wrap"; justifyContent: string; }' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type '{ flexDirection: "row"; flexWrap: "wrap"; justifyContent: string; }' is not assignable to type 'ViewStyle'.
+    Types of property 'justifyContent' are incompatible.
+      Type 'string' is not assignable to type '"center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "space-evenly" | undefined'.
+src/screens/main/HomeScreenIntegrationExample.tsx(116,17): error TS2322: Type '{ flexDirection: "row"; justifyContent: string; }' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type '{ flexDirection: "row"; justifyContent: string; }' is not assignable to type 'ViewStyle'.
+    Types of property 'justifyContent' are incompatible.
+      Type 'string' is not assignable to type '"center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "space-evenly" | undefined'.
+src/screens/main/HomeScreenIntegrationExample.tsx(150,64): error TS2339: Property 'activityLevel' does not exist on type 'PersonalInfo'.
+src/screens/main/HomeScreenIntegrationExample.tsx(217,9): error TS2322: Type '{ backgroundColor: string; padding: number; borderRadius: number; width: string; marginBottom: number; alignItems: "center"; }' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type '{ backgroundColor: string; padding: number; borderRadius: number; width: string; marginBottom: number; alignItems: "center"; }' is not assignable to type 'ViewStyle'.
+    Types of property 'width' are incompatible.
+      Type 'string' is not assignable to type 'DimensionValue | undefined'.
+src/screens/main/HomeScreenIntegrationExample.tsx(239,9): error TS2322: Type '{ flexDirection: "row"; justifyContent: string; paddingVertical: number; }' is not assignable to type 'StyleProp<ViewStyle>'.
+  Type '{ flexDirection: "row"; justifyContent: string; paddingVertical: number; }' is not assignable to type 'ViewStyle'.
+    Types of property 'justifyContent' are incompatible.
+      Type 'string' is not assignable to type '"center" | "flex-start" | "flex-end" | "space-between" | "space-around" | "space-evenly" | undefined'.
+src/screens/main/ProfileScreen.tsx(138,23): error TS2554: Expected 2 arguments, but got 1.
+src/screens/main/ProfileScreen.tsx(256,17): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(258,11): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(261,13): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(261,65): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(263,18): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(263,53): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(340,13): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/ProfileScreen.tsx(345,13): error TS2339: Property 'impact' does not exist on type '{ readonly configure: (config: Partial<HapticConfig>) => void; readonly enable: () => void; readonly disable: () => void; readonly isEnabled: () => boolean; readonly selection: () => Promise<...>; ... 21 more ...; readonly trigger: (type: HapticType) => Promise<...>; }'.
+src/screens/main/ProfileScreen.tsx(386,17): error TS2554: Expected 2 arguments, but got 1.
+src/screens/main/ProfileScreen.tsx(389,17): error TS2554: Expected 2 arguments, but got 1.
+src/screens/main/ProfileScreen.tsx(395,17): error TS2554: Expected 2 arguments, but got 1.
+src/screens/main/ProfileScreen.tsx(554,50): error TS2339: Property 'background' does not exist on type '{ primary: GradientConfig; secondary: GradientConfig; aurora: { space: GradientConfig; purple: GradientConfig; ocean: GradientConfig; northernLights: GradientConfig; }; ... 4 more ...; progressRing: { ...; }; }'.
+src/screens/main/ProfileScreen.tsx(585,75): error TS2339: Property 'name' does not exist on type 'AuthUser'.
+src/screens/main/ProfileScreen.tsx(597,55): error TS2339: Property 'name' does not exist on type 'AuthUser'.
+src/screens/main/ProfileScreen.tsx(601,24): error TS2339: Property 'createdAt' does not exist on type 'AuthUser'.
+src/screens/main/ProfileScreen.tsx(602,35): error TS2339: Property 'createdAt' does not exist on type 'AuthUser'.
+src/screens/main/ProfileScreen.tsx(743,29): error TS2820: Type '"target-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"at-outline"'?
+src/screens/main/ProfileScreen.tsx(789,29): error TS2820: Type '"ruler-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"alert-outline"'?
+src/screens/main/ProfileScreen.tsx(983,73): error TS2339: Property 'name' does not exist on type 'AuthUser'.
+src/screens/main/ProfileScreen.tsx(1065,64): error TS2339: Property 'danger' does not exist on type '{ primary: GradientConfig; secondary: GradientConfig; success: GradientConfig; warning: GradientConfig; error: GradientConfig; }'.
+src/screens/main/ProfileScreen.tsx(1102,28): error TS2322: Type '(false | { padding: number; marginBottom: number; } | { borderColor: string; backgroundColor: string; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends false | { padding: number; marginBottom: number; } | { borderColor: string; backgroundColor: string; }>(predicate: (value: false | { padding: number; marginBottom: number; } | { borderColor: string; backgroundColor: string; }, index: number, array: (false | ... 1 more ... | { ...; })[]) => value is S, t...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/ProfileScreen.tsx(1104,19): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1109,25): error TS2322: Type '"diamond-outline" | "time-outline" | "crown-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'.
+  Type '"crown-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"crop-outline"'?
+src/screens/main/ProfileScreen.tsx(1109,31): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1110,31): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1117,28): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1118,28): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1122,28): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1123,28): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1130,22): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1130,66): error TS2339: Property 'nextBillingDate' does not exist on type '{ isEligible: boolean; daysRemaining: number; hasUsedTrial: boolean; }'.
+src/screens/main/ProfileScreen.tsx(1133,61): error TS2339: Property 'nextBillingDate' does not exist on type '{ isEligible: boolean; daysRemaining: number; hasUsedTrial: boolean; }'.
+src/screens/main/ProfileScreen.tsx(1136,40): error TS2339: Property 'amount' does not exist on type '{ isEligible: boolean; daysRemaining: number; hasUsedTrial: boolean; }'.
+src/screens/main/ProfileScreen.tsx(1147,20): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1174,18): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1193,23): error TS2820: Type '"outlined"' is not assignable to type '"primary" | "secondary" | "outline" | "ghost" | undefined'. Did you mean '"outline"'?
+src/screens/main/ProfileScreen.tsx(1198,30): error TS2367: This comparison appears to be unintentional because the types 'SubscriptionStatus' and 'string' have no overlap.
+src/screens/main/ProfileScreen.tsx(1215,23): error TS2820: Type '"outlined"' is not assignable to type '"primary" | "secondary" | "outline" | "ghost" | undefined'. Did you mean '"outline"'?
+src/screens/main/ProfileScreen.tsx(1217,23): error TS2322: Type '({ marginBottom: number; } | { borderColor: string; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { marginBottom: number; } | { borderColor: string; }>(predicate: (value: { marginBottom: number; } | { borderColor: string; }, index: number, array: ({ marginBottom: number; } | { borderColor: string; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; }, index: number, array...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/screens/main/ProgressScreen.tsx(442,51): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/ProgressScreen.tsx(581,25): error TS2322: Type 'false | { backgroundColor: string; }' is not assignable to type 'ViewStyle'.
+  Type 'false' has no properties in common with type 'ViewStyle'.
+src/screens/main/ProgressScreen.tsx(883,27): error TS7053: Element implicitly has an 'any' type because expression of type '`rarity${string}`' can't be used to index type '{ container: { flex: number; backgroundColor: string; }; scrollView: { flex: number; }; header: { flexDirection: "row"; justifyContent: "space-between"; alignItems: "center"; paddingHorizontal: number; paddingTop: number; paddingBottom: number; }; ... 118 more ...; emptyModalSubtext: { ...; }; }'.
+src/screens/main/ProgressScreen.tsx(912,76): error TS2339: Property 'totalWorkouts' does not exist on type 'ProgressStats'.
+src/screens/main/ProgressScreen.tsx(921,42): error TS2339: Property 'totalDuration' does not exist on type 'ProgressStats'.
+src/screens/main/ProgressScreen.tsx(922,57): error TS2339: Property 'totalDuration' does not exist on type 'ProgressStats'.
+src/screens/main/ProgressScreen.tsx(931,40): error TS2339: Property 'totalCalories' does not exist on type 'ProgressStats'.
+src/screens/main/ProgressScreen.tsx(939,65): error TS2339: Property 'currentStreak' does not exist on type 'ProgressStats'.
+src/screens/main/ProgressScreen.tsx(1372,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/ProgressScreen.tsx(1379,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/ProgressScreen.tsx(1627,35): error TS2339: Property 'textTertiary' does not exist on type '{ primary: string; primaryDark: string; primaryLight: string; secondary: string; secondaryDark: string; secondaryLight: string; background: string; backgroundSecondary: string; backgroundTertiary: string; ... 16 more ...; borderLight: string; }'.
+src/screens/main/ProgressScreen.tsx(1659,35): error TS2339: Property 'textTertiary' does not exist on type '{ primary: string; primaryDark: string; primaryLight: string; secondary: string; secondaryDark: string; secondaryLight: string; background: string; backgroundSecondary: string; backgroundTertiary: string; ... 16 more ...; borderLight: string; }'.
+src/screens/main/ProgressScreen.tsx(1730,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/main/ProgressScreen.tsx(1743,35): error TS2339: Property 'textTertiary' does not exist on type '{ primary: string; primaryDark: string; primaryLight: string; secondary: string; secondaryDark: string; secondaryLight: string; background: string; backgroundSecondary: string; backgroundTertiary: string; ... 16 more ...; borderLight: string; }'.
+src/screens/main/ProgressScreen.tsx(1763,35): error TS2339: Property 'textTertiary' does not exist on type '{ primary: string; primaryDark: string; primaryLight: string; secondary: string; secondaryDark: string; secondaryLight: string; background: string; backgroundSecondary: string; backgroundTertiary: string; ... 16 more ...; borderLight: string; }'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(371,46): error TS2339: Property 'primary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(389,30): error TS2339: Property 'primary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(394,30): error TS2339: Property 'secondary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(403,30): error TS2339: Property 'primary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(408,30): error TS2339: Property 'secondary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(423,46): error TS2339: Property 'secondary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(437,30): error TS2339: Property 'primary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(446,30): error TS2339: Property 'tertiary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(462,46): error TS2339: Property 'secondary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(476,30): error TS2339: Property 'primary' does not exist on type 'string'.
+src/screens/onboarding/FitnessGoalsScreen.tsx(485,30): error TS2339: Property 'tertiary' does not exist on type 'string'.
+src/screens/onboarding/LoginScreen.tsx(118,25): error TS18048: 'result.user' is possibly 'undefined'.
+src/screens/onboarding/LoginScreen.tsx(130,25): error TS18048: 'result.user' is possibly 'undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(56,5): error TS2345: Argument of type 'WorkoutPreferences | null' is not assignable to parameter of type 'WorkoutPreferences | (() => WorkoutPreferences | null) | null'.
+  Type 'WorkoutPreferences' is not assignable to type 'WorkoutPreferences | (() => WorkoutPreferences | null) | null'.
+    Type 'import("D:/FitAi/FitAI/src/types/user").WorkoutPreferences' is not assignable to type 'import("D:/FitAi/FitAI/src/screens/onboarding/WorkoutPreferencesScreen").WorkoutPreferences'.
+      Types of property 'timePreference' are incompatible.
+        Type 'number | undefined' is not assignable to type 'number'.
+          Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/OnboardingFlow.tsx(133,41): error TS18048: 'profile.fitnessGoals.primaryGoals.length' is possibly 'undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(233,9): error TS2322: Type 'PersonalInfo | null' is not assignable to type 'PersonalInfo | undefined'.
+  Type 'null' is not assignable to type 'PersonalInfo | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(234,9): error TS2322: Type 'FitnessGoals | null' is not assignable to type 'FitnessGoals | undefined'.
+  Type 'null' is not assignable to type 'FitnessGoals | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(251,11): error TS2739: Type '{ primaryGoals: any; timeCommitment: string; experience: "beginner" | "intermediate" | "advanced"; experience_level: "beginner" | "intermediate" | "advanced"; }' is missing the following properties from type 'FitnessGoals': primary_goals, time_commitment
+src/screens/onboarding/OnboardingFlow.tsx(252,26): error TS2339: Property 'primaryGoals' does not exist on type 'WorkoutPreferences'.
+src/screens/onboarding/OnboardingFlow.tsx(261,7): error TS2353: Object literal may only specify known properties, and 'activityLevel' does not exist in type 'PersonalInfo'.
+src/screens/onboarding/OnboardingFlow.tsx(261,27): error TS2339: Property 'activityLevel' does not exist on type 'WorkoutPreferences'.
+src/screens/onboarding/OnboardingFlow.tsx(273,9): error TS2322: Type 'DietPreferences | null' is not assignable to type 'DietPreferences | undefined'.
+  Type 'null' is not assignable to type 'DietPreferences | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(274,9): error TS2739: Type 'WorkoutPreferences' is missing the following properties from type 'WorkoutPreferences': time_preference, workout_types, primary_goals, activity_level
+src/screens/onboarding/OnboardingFlow.tsx(293,9): error TS2322: Type 'PersonalInfo | null' is not assignable to type 'PersonalInfo | undefined'.
+  Type 'null' is not assignable to type 'PersonalInfo | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(294,9): error TS2322: Type 'FitnessGoals | null' is not assignable to type 'FitnessGoals | undefined'.
+  Type 'null' is not assignable to type 'FitnessGoals | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(295,9): error TS2322: Type 'DietPreferences | null' is not assignable to type 'DietPreferences | undefined'.
+  Type 'null' is not assignable to type 'DietPreferences | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(296,9): error TS2322: Type 'WorkoutPreferences | null' is not assignable to type 'WorkoutPreferences | undefined'.
+  Type 'null' is not assignable to type 'WorkoutPreferences | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(316,9): error TS2322: Type 'PersonalInfo | null' is not assignable to type 'PersonalInfo | undefined'.
+  Type 'null' is not assignable to type 'PersonalInfo | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(317,9): error TS2322: Type 'FitnessGoals | null' is not assignable to type 'FitnessGoals | undefined'.
+  Type 'null' is not assignable to type 'FitnessGoals | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(318,9): error TS2322: Type 'DietPreferences | null' is not assignable to type 'DietPreferences | undefined'.
+  Type 'null' is not assignable to type 'DietPreferences | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(319,9): error TS2322: Type 'WorkoutPreferences | null' is not assignable to type 'WorkoutPreferences | undefined'.
+  Type 'null' is not assignable to type 'WorkoutPreferences | undefined'.
+src/screens/onboarding/OnboardingFlow.tsx(340,7): error TS2739: Type 'WorkoutPreferences' is missing the following properties from type 'WorkoutPreferences': time_preference, workout_types, primary_goals, activity_level
+src/screens/onboarding/OnboardingFlow.tsx(471,15): error TS2739: Type 'WorkoutPreferences' is missing the following properties from type 'WorkoutPreferences': time_preference, workout_types, primary_goals, activity_level
+src/screens/onboarding/PersonalInfoScreen.tsx(65,81): error TS2345: Argument of type '() => { name: any; email: any; age: any; gender: any; height: any; weight: any; country: any; state: any; region: any; wake_time: any; sleep_time: any; occupation_type: any; }' is not assignable to parameter of type 'Omit<PersonalInfo, "activityLevel"> | (() => Omit<PersonalInfo, "activityLevel">)'.
+  Type '() => { name: any; email: any; age: any; gender: any; height: any; weight: any; country: any; state: any; region: any; wake_time: any; sleep_time: any; occupation_type: any; }' is not assignable to type '() => Omit<PersonalInfo, "activityLevel">'.
+    Type '{ name: any; email: any; age: any; gender: any; height: any; weight: any; country: any; state: any; region: any; wake_time: any; sleep_time: any; occupation_type: any; }' is missing the following properties from type 'Omit<PersonalInfo, "activityLevel">': first_name, last_name
+src/screens/onboarding/PersonalInfoScreen.tsx(132,21): error TS2345: Argument of type '{ name: any; email: any; age: string; gender: any; height: string; weight: string; country: any; state: any; region: any; wake_time: any; sleep_time: any; occupation_type: any; }' is not assignable to parameter of type 'SetStateAction<Omit<PersonalInfo, "activityLevel">>'.
+  Type '{ name: any; email: any; age: string; gender: any; height: string; weight: string; country: any; state: any; region: any; wake_time: any; sleep_time: any; occupation_type: any; }' is missing the following properties from type 'Omit<PersonalInfo, "activityLevel">': first_name, last_name
+src/screens/onboarding/PersonalInfoScreen.tsx(155,10): error TS18048: 'formData.name' is possibly 'undefined'.
+src/screens/onboarding/PersonalInfoScreen.tsx(162,26): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/screens/onboarding/PersonalInfoScreen.tsx(163,23): error TS2339: Property 'trim' does not exist on type 'number'.
+src/screens/onboarding/PersonalInfoScreen.tsx(164,7): error TS2322: Type 'string' is not assignable to type 'number'.
+src/screens/onboarding/PersonalInfoScreen.tsx(168,7): error TS2322: Type '"Please select your gender"' is not assignable to type '"female" | "male" | "other" | "prefer_not_to_say" | undefined'.
+src/screens/onboarding/PersonalInfoScreen.tsx(172,40): error TS2339: Property 'height' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(173,19): error TS2339: Property 'height' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(174,17): error TS2339: Property 'height' does not exist on type 'Partial<Omit<PersonalInfo, "activityLevel">>'.
+src/screens/onboarding/PersonalInfoScreen.tsx(178,40): error TS2339: Property 'weight' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(179,19): error TS2339: Property 'weight' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(180,17): error TS2339: Property 'weight' does not exist on type 'Partial<Omit<PersonalInfo, "activityLevel">>'.
+src/screens/onboarding/PersonalInfoScreen.tsx(357,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/screens/onboarding/PersonalInfoScreen.tsx(367,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/PersonalInfoScreen.tsx(370,17): error TS2322: Type 'number | undefined' is not assignable to type 'string | undefined'.
+  Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/PersonalInfoScreen.tsx(406,33): error TS2339: Property 'height' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(407,54): error TS2345: Argument of type '"height"' is not assignable to parameter of type 'keyof PersonalInfo'.
+src/screens/onboarding/PersonalInfoScreen.tsx(409,31): error TS2339: Property 'height' does not exist on type 'Partial<Omit<PersonalInfo, "activityLevel">>'.
+src/screens/onboarding/PersonalInfoScreen.tsx(417,33): error TS2339: Property 'weight' does not exist on type 'Omit<PersonalInfo, "activityLevel">'.
+src/screens/onboarding/PersonalInfoScreen.tsx(418,54): error TS2345: Argument of type '"weight"' is not assignable to parameter of type 'keyof PersonalInfo'.
+src/screens/onboarding/PersonalInfoScreen.tsx(420,31): error TS2339: Property 'weight' does not exist on type 'Partial<Omit<PersonalInfo, "activityLevel">>'.
+src/screens/onboarding/ReviewScreen.tsx(54,25): error TS2339: Property 'height' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(55,25): error TS2339: Property 'weight' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(122,46): error TS2339: Property 'height' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(122,76): error TS2339: Property 'height' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(125,46): error TS2339: Property 'weight' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(125,76): error TS2339: Property 'weight' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(128,54): error TS2339: Property 'activityLevel' does not exist on type 'PersonalInfo'.
+src/screens/onboarding/ReviewScreen.tsx(141,22): error TS18048: 'data.fitnessGoals.primaryGoals.length' is possibly 'undefined'.
+src/screens/onboarding/ReviewScreen.tsx(198,22): error TS18048: 'data.workoutPreferences.workoutTypes.length' is possibly 'undefined'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(704,13): error TS2322: Type '{ maxHeartRate: any; restingHeartRate: number | undefined; showLabels: boolean; animated: boolean; height: number; style: { marginVertical: number; }; }' is not assignable to type 'IntrinsicAttributes & ColorCodedZonesProps'.
+  Property 'maxHeartRate' does not exist on type 'IntrinsicAttributes & ColorCodedZonesProps'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(704,42): error TS2339: Property 'max_heart_rate' does not exist on type 'AdvancedReviewData'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(715,23): error TS2820: Type '"target-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"at-outline"'?
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(793,31): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(807,71): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(810,68): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(818,71): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(821,68): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(829,71): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(832,68): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/screens/onboarding/tabs/AdvancedReviewTab.tsx(910,15): error TS2322: Type '{ sleepTime: string; wakeTime: string; size: number; showLabels: boolean; style: { marginVertical: number; }; }' is not assignable to type 'IntrinsicAttributes & CircularClockProps'.
+  Property 'showLabels' does not exist on type 'IntrinsicAttributes & CircularClockProps'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(764,65): error TS2339: Property 'accent' does not exist on type '{ primary: GradientConfig; secondary: GradientConfig; aurora: { space: GradientConfig; purple: GradientConfig; ocean: GradientConfig; northernLights: GradientConfig; }; ... 4 more ...; progressRing: { ...; }; }'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(782,67): error TS2339: Property 'icon' does not exist on type '{ type: "front"; title: string; iconName: string; description: string; instruction: string; } | { type: "side"; title: string; iconName: string; description: string; instruction: string; } | { type: "back"; title: string; iconName: string; description: string; instruction: string; }'.
+  Property 'icon' does not exist on type '{ type: "front"; title: string; iconName: string; description: string; instruction: string; }'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(1183,15): error TS2322: Type '"female" | "male" | "other" | "prefer_not_to_say"' is not assignable to type '"female" | "male" | undefined'.
+  Type '"other"' is not assignable to type '"female" | "male" | undefined'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(1185,17): error TS2322: Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(1186,17): error TS2322: Type 'number | undefined' is not assignable to type 'string | undefined'.
+  Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(1187,17): error TS2322: Type 'number | undefined' is not assignable to type 'string | undefined'.
+  Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/tabs/BodyAnalysisTab.tsx(1188,17): error TS2322: Type 'number | undefined' is not assignable to type 'string | undefined'.
+  Type 'number' is not assignable to type 'string'.
+src/screens/onboarding/tabs/DietPreferencesTab.tsx(920,25): error TS2339: Property 'budgetSlider' does not exist on type '{ container: { flex: number; backgroundColor: string; }; scrollView: { flex: number; }; header: { marginBottom: number; }; headerGradient: { paddingHorizontal: number; paddingTop: number; paddingBottom: number; borderBottomLeftRadius: number; borderBottomRightRadius: number; }; ... 116 more ...; nextButton: { ...; }...'.
+src/screens/onboarding/tabs/WorkoutPreferencesTab.tsx(653,23): error TS2820: Type '"target-outline"' is not assignable to type '"scale" | "search" | "repeat" | "link" | "at" | "pulse" | "filter" | "push" | "map" | "key" | "body" | "code" | "menu" | "time" | "ellipse" | "image" | "stop" | "text" | "warning" | ... 1319 more ... | undefined'. Did you mean '"at-outline"'?
+src/screens/onboarding/tabs/WorkoutPreferencesTab.tsx(686,71): error TS2741: Property 'gradient' is missing in type '{ id: string; title: string; description: string; iconName: string; }' but required in type 'SwipeableCard'.
+src/screens/onboarding/tabs/WorkoutPreferencesTab.tsx(694,42): error TS2345: Argument of type 'SwipeableCard' is not assignable to parameter of type 'string'.
+src/screens/onboarding/tabs/WorkoutPreferencesTab.tsx(695,47): error TS2322: Type 'string | SwipeableCard' is not assignable to type 'string'.
+  Type 'SwipeableCard' is not assignable to type 'string'.
+src/screens/onboarding/tabs/WorkoutPreferencesTab.tsx(695,64): error TS2322: Type 'SwipeableCard' is not assignable to type 'string'.
+src/screens/onboarding/WorkoutPreferencesScreen.tsx(316,32): error TS2339: Property 'location' does not exist on type '{ workoutTypes?: string | undefined; }'.
+src/screens/onboarding/WorkoutPreferencesScreen.tsx(345,21): error TS2339: Property 'location' does not exist on type '{ workoutTypes?: string | undefined; }'.
+src/screens/onboarding/WorkoutPreferencesScreen.tsx(345,72): error TS2339: Property 'location' does not exist on type '{ workoutTypes?: string | undefined; }'.
+src/screens/session/MealSession.tsx(212,67): error TS2339: Property 'category' does not exist on type 'MealItem'.
+src/screens/session/MealSession.tsx(246,48): error TS2339: Property 'preparationTime' does not exist on type 'MealItem'.
+src/screens/session/MealSession.tsx(250,43): error TS2339: Property 'instructions' does not exist on type 'MealItem'.
+src/screens/session/MealSession.tsx(254,49): error TS2339: Property 'instructions' does not exist on type 'MealItem'.
+src/screens/session/MealSessionScreen.tsx(285,30): error TS2339: Property 'preparation' does not exist on type 'MealItem'.
+src/screens/session/MealSessionScreen.tsx(286,24): error TS2339: Property 'instructions' does not exist on type 'DayMeal'.
+src/screens/settings/HealthKitSettingsScreen.tsx(485,21): error TS2322: Type 'string | number | symbol' is not assignable to type 'Key | null | undefined'.
+  Type 'symbol' is not assignable to type 'Key | null | undefined'.
+src/screens/settings/NotificationsScreen.tsx(21,38): error TS2367: This comparison appears to be unintentional because the types 'WebManifest | undefined' and 'boolean' have no overlap.
+src/screens/settings/NotificationsScreen.tsx(76,14): error TS2322: Type '{ children: Element; onPress: () => void; style: { marginTop: number; }; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'children' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/screens/settings/NotificationsScreen.tsx(696,3): error TS1117: An object literal cannot have multiple properties with the same name.
+src/screens/settings/SubscriptionScreen.tsx(218,15): error TS2322: Type '(feature?: string | undefined) => void' is not assignable to type '(event: GestureResponderEvent) => void'.
+  Types of parameters 'feature' and 'event' are incompatible.
+    Type 'GestureResponderEvent' is not assignable to type 'string'.
+src/screens/settings/SubscriptionScreen.tsx(260,23): error TS2322: Type '{ children: string; className: string; }' is not assignable to type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+  Property 'className' does not exist on type 'IntrinsicAttributes & IntrinsicClassAttributes<Text> & Readonly<TextProps>'.
+src/screens/settings/SubscriptionScreen.tsx(287,15): error TS2322: Type '(feature?: string | undefined) => void' is not assignable to type '(event: GestureResponderEvent) => void'.
+  Types of parameters 'feature' and 'event' are incompatible.
+    Type 'GestureResponderEvent' is not assignable to type 'string'.
+src/screens/workout/WorkoutSessionScreen.tsx(135,33): error TS2339: Property 'id' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(136,43): error TS2339: Property 'exerciseName' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(137,35): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(372,41): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(372,65): error TS2339: Property 'exerciseName' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(383,43): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(383,67): error TS2339: Property 'exerciseName' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(832,43): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(839,52): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(854,28): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(875,54): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(890,35): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(1008,50): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(1018,27): error TS2339: Property 'name' does not exist on type 'WorkoutSet'.
+src/screens/workout/WorkoutSessionScreen.tsx(1042,11): error TS2322: Type '({ flex: number; minHeight: number; } | { elevation: number; })[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends { flex: number; minHeight: number; } | { elevation: number; }>(predicate: (value: { flex: number; minHeight: number; } | { elevation: number; }, index: number, array: ({ flex: number; minHeight: number; } | { ...; })[]) => value is S, thisArg?: any): S[]; (predicate: (value: { ...; } | { ...; }, index: ...' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/services/advancedExerciseMatching.ts(398,30): error TS2304: Cannot find name 'geminiService'.
+src/services/advancedExerciseMatching.ts(476,30): error TS2304: Cannot find name 'geminiService'.
+src/services/advancedExerciseMatching.ts(540,9): error TS2322: Type 'ExercisePattern | { primaryMovement: "isolation"; muscleGroup: "full-body"; equipment: "bodyweight"; intensity: "moderate"; }' is not assignable to type 'ExerciseClassification'.
+  Type 'ExercisePattern' is missing the following properties from type 'ExerciseClassification': primaryMovement, muscleGroup, equipment, intensity
+src/services/api.ts(33,85): error TS2552: Cannot find name 'ApiResponse'. Did you mean 'Response'?
+src/services/api.ts(50,56): error TS2552: Cannot find name 'ApiResponse'. Did you mean 'Response'?
+src/services/api.ts(61,54): error TS2552: Cannot find name 'ApiResponse'. Did you mean 'Response'?
+src/services/api.ts(365,32): error TS2552: Cannot find name 'ApiResponse'. Did you mean 'Response'?
+src/services/backupRecoveryService.ts(174,18): error TS2551: Property 'loadAvailableBackups' does not exist on type 'BackupRecoveryService'. Did you mean 'updateAvailableBackups'?
+src/services/backupRecoveryService.ts(282,22): error TS18046: 'error' is of type 'unknown'.
+src/services/backupRecoveryService.ts(361,22): error TS18046: 'error' is of type 'unknown'.
+src/services/backupRecoveryService.ts(565,25): error TS2551: Property 'importAllData' does not exist on type 'DataManagerService'. Did you mean 'importData'?
+src/services/backupRecoveryService.ts(570,27): error TS2551: Property 'importUserData' does not exist on type 'DataManagerService'. Did you mean 'importData'?
+src/services/backupRecoveryService.ts(575,27): error TS2339: Property 'importFitnessData' does not exist on type 'DataManagerService'.
+src/services/backupRecoveryService.ts(580,27): error TS2339: Property 'importNutritionData' does not exist on type 'DataManagerService'.
+src/services/backupRecoveryService.ts(585,27): error TS2339: Property 'importProgressData' does not exist on type 'DataManagerService'.
+src/services/completionTracking.ts(114,17): error TS2353: Object literal may only specify known properties, and 'sugar' does not exist in type 'Macronutrients'.
+src/services/completionTracking.ts(332,16): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/services/completionTracking.ts(373,16): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/services/dataManager.ts(137,5): error TS2322: Type 'OnboardingData | null | undefined' is not assignable to type 'OnboardingData | null'.
+  Type 'undefined' is not assignable to type 'OnboardingData | null'.
+src/services/dataManager.ts(209,7): error TS2322: Type 'WorkoutSession[]' is not assignable to type 'LocalWorkoutSession[]'.
+  Type 'WorkoutSession' is missing the following properties from type 'LocalWorkoutSession': localId, syncStatus, syncMetadata
+src/services/dataManager.ts(212,5): error TS2322: Type 'WorkoutSession[]' is not assignable to type 'LocalWorkoutSession[]'.
+  Type 'WorkoutSession' is missing the following properties from type 'LocalWorkoutSession': localId, syncStatus, syncMetadata
+src/services/dataManager.ts(225,11): error TS2353: Object literal may only specify known properties, and 'syncStatus' does not exist in type 'WorkoutSession'.
+src/services/dataManager.ts(415,16): error TS2339: Property 'syncStatus' does not exist on type 'WorkoutSession'.
+src/services/dataManager.ts(415,46): error TS2339: Property 'syncStatus' does not exist on type 'WorkoutSession'.
+src/services/dataManager.ts(423,48): error TS2367: This comparison appears to be unintentional because the types 'SyncStatus.SYNCED | SyncStatus.FAILED | SyncStatus.CONFLICT' and '"local"' have no overlap.
+src/services/dataManager.ts(677,12): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+src/services/dataManager.ts(721,7): error TS2322: Type 'void' is not assignable to type 'boolean'.
+src/services/dataManager.ts(1168,17): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+src/services/dataRetrieval.ts(52,74): error TS2339: Property 'dayOfWeek' does not exist on type 'Workout'.
+src/services/dataRetrieval.ts(103,7): error TS2322: Type 'Workout | null' is not assignable to type 'DayWorkout | null'.
+  Type 'Workout' is missing the following properties from type 'DayWorkout': dayOfWeek, subCategory, intensityLevel, warmUp, and 3 more.
+src/services/dataRetrieval.ts(325,57): error TS2339: Property 'restDays' does not exist on type 'WeeklyWorkoutPlan'.
+src/services/dataTransformation.ts(55,7): error TS2353: Object literal may only specify known properties, and 'first_name' does not exist in type '{ id: string; email: string; name: string; age?: number | null | undefined; gender?: "female" | "male" | "other" | null | undefined; height_cm?: number | null | undefined; weight_kg?: number | null | undefined; ... 6 more ...; updated_at?: string | undefined; }'.
+src/services/exerciseFilterService.ts(154,7): error TS2322: Type 'string[] | undefined' is not assignable to type 'string[]'.
+  Type 'undefined' is not assignable to type 'string[]'.
+src/services/foodRecognitionService.ts(149,30): error TS2304: Cannot find name 'generateResponseWithImage'.
+src/services/googleFit.ts(144,16): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+src/services/googleFit.ts(144,17): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+src/services/googleFit.ts(283,11): error TS2345: Argument of type '(err: any, res: any) => void' is not assignable to parameter of type 'boolean'.
+src/services/googleFit.ts(472,11): error TS1345: An expression of type 'void' cannot be tested for truthiness.
+src/services/googleFit.ts(641,11): error TS2554: Expected 1 arguments, but got 2.
+src/services/googleFit.ts(736,41): error TS2554: Expected 2 arguments, but got 1.
+src/services/healthConnect.ts(111,64): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+src/services/healthConnect.ts(196,13): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+src/services/healthConnect.ts(566,67): error TS2367: This comparison appears to be unintentional because the types 'number' and 'string' have no overlap.
+src/services/INTEGRATION_EXAMPLE.ts(19,10): error TS2724: '"../types/workout"' has no exported member named 'DayWorkout'. Did you mean 'Workout'?
+src/services/migration.ts(431,42): error TS2339: Property 'transformUserData' does not exist on type 'DataTransformationService'.
+src/services/migration.ts(439,45): error TS2339: Property 'transformFitnessData' does not exist on type 'DataTransformationService'.
+src/services/migration.ts(447,47): error TS2339: Property 'transformNutritionData' does not exist on type 'DataTransformationService'.
+src/services/migration.ts(455,46): error TS2339: Property 'transformProgressData' does not exist on type 'DataTransformationService'.
+src/services/migrationManager.ts(134,7): error TS2739: Type 'MigrationResult' is missing the following properties from type 'MigrationResult': migratedData, conflicts
+src/services/migrationManager.ts(135,31): error TS2345: Argument of type 'import("D:/FitAi/FitAI/src/services/migration").MigrationResult' is not assignable to parameter of type 'import("D:/FitAi/FitAI/src/types/profileData").MigrationResult'.
+  Type 'MigrationResult' is missing the following properties from type 'MigrationResult': migratedData, conflicts
+src/services/migrationManager.ts(138,39): error TS2345: Argument of type 'import("D:/FitAi/FitAI/src/services/migration").MigrationResult' is not assignable to parameter of type 'import("D:/FitAi/FitAI/src/types/profileData").MigrationResult'.
+  Type 'MigrationResult' is missing the following properties from type 'MigrationResult': migratedData, conflicts
+src/services/migrationManager.ts(177,11): error TS2322: Type '{ step: string; code: string; message: string; timestamp: Date; retryCount: number; recoverable: true; }' is not assignable to type 'string'.
+src/services/migrationManager.ts(353,20): error TS2339: Property 'migrationId' does not exist on type 'MigrationResult'.
+src/services/migrationManager.ts(354,27): error TS2339: Property 'progress' does not exist on type 'MigrationResult'.
+src/services/migrationManager.ts(355,25): error TS2339: Property 'progress' does not exist on type 'MigrationResult'.
+src/services/migrationManager.ts(357,63): error TS2339: Property 'message' does not exist on type 'string'.
+src/services/migrationManager.ts(359,28): error TS2551: Property 'migratedDataCount' does not exist on type 'MigrationResult'. Did you mean 'migratedData'?
+src/services/migrationManager.ts(360,25): error TS2551: Property 'migratedDataCount' does not exist on type 'MigrationResult'. Did you mean 'migratedData'?
+src/services/migrationManager.ts(361,32): error TS2551: Property 'migratedDataCount' does not exist on type 'MigrationResult'. Did you mean 'migratedData'?
+src/services/migrationManager.ts(531,18): error TS2322: Type '{ step: string; code: string; message: string; timestamp: Date; retryCount: number; recoverable: boolean; }' is not assignable to type 'string'.
+src/services/migrationService.ts(67,11): error TS18048: 'currentPlan.workouts.length' is possibly 'undefined'.
+src/services/migrationService.ts(69,31): error TS18047: 'currentPlan' is possibly 'null'.
+src/services/onboardingService.ts(595,66): error TS2345: Argument of type '{ age: number; gender: "male" | "female" | "other" | "prefer_not_to_say"; weight: number; height: number; bodyFat: number | undefined; country: string; state: string; fitnessLevel: "beginner" | "intermediate" | "advanced" | "elite"; ... 4 more ...; restingHR: undefined; }' is not assignable to parameter of type 'UserProfile'.
+  Types of property 'activityLevel' are incompatible.
+    Type '"light" | "moderate" | "sedentary" | "active" | "extreme"' is not assignable to type 'ActivityLevel | undefined'.
+      Type '"extreme"' is not assignable to type 'ActivityLevel | undefined'.
+src/services/onboardingService.ts(605,9): error TS2353: Object literal may only specify known properties, and 'bmi_category' does not exist in type 'AdvancedReviewData'.
+src/services/onboardingService.ts(1005,97): error TS2367: This comparison appears to be unintentional because the types 'number | boolean | "medium" | "low" | "high" | "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "beginner" | "intermediate" | "advanced" | "not_applicable"' and '""' have no overlap.
+src/services/onboardingService.ts(1011,55): error TS2367: This comparison appears to be unintentional because the types 'number | boolean | string[] | "medium" | "low" | "high" | "vegetarian" | "vegan" | "non-veg" | "pescatarian" | "beginner" | "intermediate" | "advanced" | "not_applicable"' and '""' have no overlap.
+src/services/onboardingService.ts(1183,97): error TS2367: This comparison appears to be unintentional because the types 'number | boolean | "light" | "home" | "moderate" | "beginner" | "intermediate" | "advanced" | "gym" | "both" | "sedentary" | "active" | "extreme" | "good" | "excellent" | "poor" | "fair"' and '""' have no overlap.
+src/services/onboardingService.ts(1194,97): error TS2367: This comparison appears to be unintentional because the types 'number | boolean | "light" | "home" | "moderate" | "beginner" | "intermediate" | "advanced" | "gym" | "both" | "sedentary" | "active" | "extreme" | "good" | "excellent" | "poor" | "fair"' and '""' have no overlap.
+src/services/privacyPolicyHandler.ts(5,10): error TS2305: Module '"expo-web-browser"' has no exported member 'WebBrowser'.
+src/services/privacyPolicyHandler.ts(110,11): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'timeout' does not exist in type 'RequestInit'.
+src/services/SubscriptionService.ts(15,3): error TS2724: '"react-native-iap"' has no exported member named 'clearTransaction'. Did you mean 'clearTransactionIOS'?
+src/services/SubscriptionService.ts(319,31): error TS2322: Type 'void | ProductPurchase | ProductPurchase[]' is not assignable to type 'Purchase | undefined'.
+  Type 'void' is not assignable to type 'Purchase | undefined'.
+src/services/SubscriptionService.ts(397,62): error TS2554: Expected 1 arguments, but got 2.
+src/services/SubscriptionService.ts(403,11): error TS2554: Expected 1 arguments, but got 3.
+src/services/syncService.ts(224,22): error TS18046: 'error' is of type 'unknown'.
+src/services/syncService.ts(281,7): error TS2783: 'maxRetries' is specified more than once, so this usage will be overwritten.
+src/services/syncService.ts(393,18): error TS18046: 'error' is of type 'unknown'.
+src/services/syncService.ts(429,73): error TS18046: 'error' is of type 'unknown'.
+src/services/syncService.ts(442,42): error TS18046: 'error' is of type 'unknown'.
+src/services/syncService.ts(472,56): error TS18046: 'error' is of type 'unknown'.
+src/services/syncService.ts(487,44): error TS18046: 'error' is of type 'unknown'.
+src/services/trackIntegrationService.ts(205,24): error TS18046: 'error' is of type 'unknown'.
+src/services/trackIntegrationService.ts(229,18): error TS2339: Property 'success' does not exist on type 'void'.
+src/services/trackIntegrationService.ts(246,53): error TS2339: Property 'errors' does not exist on type 'void'.
+src/services/trackIntegrationService.ts(253,24): error TS18046: 'error' is of type 'unknown'.
+src/services/trackIntegrationService.ts(498,47): error TS2345: Argument of type '{ personalInfo: any; fitnessGoals: any; dietPreferences: any; workoutPreferences: any; bodyAnalysis: any; }' is not assignable to parameter of type 'OnboardingData'.
+  Type '{ personalInfo: any; fitnessGoals: any; dietPreferences: any; workoutPreferences: any; bodyAnalysis: any; }' is missing the following properties from type 'OnboardingData': currentStep, isComplete, startedAt
+src/services/userMetricsService.ts(222,37): error TS2339: Property 'bmi_category' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(223,40): error TS2339: Property 'bmi_health_risk' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(224,41): error TS2339: Property 'detected_climate' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(225,43): error TS2339: Property 'detected_ethnicity' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(226,41): error TS2339: Property 'bmr_formula_used' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(227,37): error TS2339: Property 'health_score' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(228,37): error TS2339: Property 'health_grade' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(229,41): error TS2339: Property 'vo2_max_estimate' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(230,47): error TS2339: Property 'vo2_max_classification' does not exist on type 'AdvancedReviewData'.
+src/services/userMetricsService.ts(231,41): error TS2339: Property 'heart_rate_zones' does not exist on type 'AdvancedReviewData'.
+src/stores/offlineStore.ts(194,49): error TS2345: Argument of type 'WorkoutSession' is not assignable to parameter of type 'LocalWorkoutSession'.
+  Type 'WorkoutSession' is missing the following properties from type 'LocalWorkoutSession': localId, syncStatus, syncMetadata
+src/theme/gluestack-ui.config.ts(287,33): error TS2339: Property 'theme' does not exist on type '{ aliases: { bg: string; bgColor: string; p: string; px: string; py: string; pt: string; pb: string; pl: string; pr: string; m: string; mx: string; my: string; mt: string; mb: string; ml: string; mr: string; w: string; ... 5 more ...; rounded: string; }; tokens: { ...; }; globalStyle: { ...; }; }'.
+src/theme/gradients.ts(220,11): error TS2352: Conversion of type 'string[]' to type 'readonly [string, string, ...string[]]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Source provides no match for required element at position 0 in target.
+src/utils/cookingFlowGenerator.ts(80,9): error TS18048: 'ing' is possibly 'undefined'.
+src/utils/cookingFlowGenerator.ts(85,9): error TS18048: 'ing' is possibly 'undefined'.
+src/utils/cookingFlowGenerator.ts(372,49): error TS18048: 'item.name' is possibly 'undefined'.
+src/utils/cookingFlowGenerator.ts(422,49): error TS2345: Argument of type '(string | undefined)[]' is not assignable to parameter of type 'string[]'.
+  Type 'string | undefined' is not assignable to type 'string'.
+    Type 'undefined' is not assignable to type 'string'.
+src/utils/healthCalculations/calculators/fatLossValidator.ts(158,11): error TS7022: 'activityMultiplier' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/utils/healthCalculations/calculators/fatLossValidator.ts(158,32): error TS7053: Element implicitly has an 'any' type because expression of type 'string | number | symbol' can't be used to index type '{ sedentary: number; light: number; moderate: number; active: number; very_active: number; }'.
+src/utils/healthCalculations/calculators/healthScoreCalculator.ts(115,7): error TS2353: Object literal may only specify known properties, and 'grade' does not exist in type 'HealthScore'.
+src/utils/healthCalculations/calculators/healthScoreCalculator.ts(280,42): error TS18048: 'factor.maxScore' is possibly 'undefined'.
+src/utils/healthCalculations/calculators/heartRateCalculator.ts(87,9): error TS2353: Object literal may only specify known properties, and 'intensity' does not exist in type '{ min: number; max: number; name: string; description: string; }'.
+src/utils/healthCalculations/calculators/heartRateCalculator.ts(100,9): error TS2353: Object literal may only specify known properties, and 'intensity' does not exist in type '{ min: number; max: number; name: string; description: string; }'.
+src/utils/healthCalculations/calculators/heartRateCalculator.ts(113,9): error TS2353: Object literal may only specify known properties, and 'intensity' does not exist in type '{ min: number; max: number; name: string; description: string; }'.
+src/utils/healthCalculations/calculators/heartRateCalculator.ts(126,9): error TS2353: Object literal may only specify known properties, and 'intensity' does not exist in type '{ min: number; max: number; name: string; description: string; }'.
+src/utils/healthCalculations/calculators/heartRateCalculator.ts(139,9): error TS2353: Object literal may only specify known properties, and 'intensity' does not exist in type '{ min: number; max: number; name: string; description: string; }'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(67,7): error TS2353: Object literal may only specify known properties, and 'monthlyKg' does not exist in type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(84,28): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(109,105): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(111,58): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(117,64): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(126,118): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(126,161): error TS2339: Property 'category' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(128,56): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(134,71): error TS2339: Property 'monthlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/muscleGainCalculator.ts(151,31): error TS2339: Property 'yearlyKg' does not exist on type 'MuscleGainLimits'.
+src/utils/healthCalculations/calculators/vo2MaxCalculator.ts(65,7): error TS2353: Object literal may only specify known properties, and 'method' does not exist in type 'VO2MaxEstimate'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(304,9): error TS2322: Type 'EthnicityType | undefined' is not assignable to type 'EthnicityType'.
+  Type 'undefined' is not assignable to type 'EthnicityType'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(305,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(325,7): error TS2322: Type 'HeartRateZones | null' is not assignable to type '{ resting: number; fatBurn: { min: number; max: number; }; cardio: { min: number; max: number; }; peak: { min: number; max: number; }; maxHR: number; } | null | undefined'.
+  Type 'HeartRateZones' is missing the following properties from type '{ resting: number; fatBurn: { min: number; max: number; }; cardio: { min: number; max: number; }; peak: { min: number; max: number; }; maxHR: number; }': resting, fatBurn, cardio, peak, maxHR
+src/utils/healthCalculations/HealthCalculatorFacade.ts(326,7): error TS2322: Type 'VO2MaxEstimate | null' is not assignable to type '{ vo2max: number; classification: string; fitnessAge: number; } | null | undefined'.
+  Property 'fitnessAge' is missing in type 'VO2MaxEstimate' but required in type '{ vo2max: number; classification: string; fitnessAge: number; }'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(327,7): error TS2322: Type 'HealthScore | null' is not assignable to type '{ totalScore: number; grade: string; breakdown: { bmi: number; bodyFat: number; hydration: number; nutrition: number; cardiovascular: number; }; recommendations: string[]; } | null | undefined'.
+  Type 'HealthScore' is missing the following properties from type '{ totalScore: number; grade: string; breakdown: { bmi: number; bodyFat: number; hydration: number; nutrition: number; cardiovascular: number; }; recommendations: string[]; }': grade, breakdown
+src/utils/healthCalculations/HealthCalculatorFacade.ts(328,7): error TS2322: Type 'MuscleGainLimits | null' is not assignable to type '{ monthlyRate: number; yearlyGain: number; classification: string; } | null | undefined'.
+  Type 'MuscleGainLimits' is missing the following properties from type '{ monthlyRate: number; yearlyGain: number; classification: string; }': monthlyRate, yearlyGain, classification
+src/utils/healthCalculations/HealthCalculatorFacade.ts(388,9): error TS2322: Type '"error" | "info" | "success" | "warning"' is not assignable to type '"error" | "success" | "warning"'.
+  Type '"info"' is not assignable to type '"error" | "success" | "warning"'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(390,33): error TS2551: Property 'suggestions' does not exist on type 'GoalValidation'. Did you mean 'suggestion'?
+src/utils/healthCalculations/HealthCalculatorFacade.ts(391,38): error TS2339: Property 'adjustedTimeline' does not exist on type 'GoalValidation'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(392,32): error TS2339: Property 'weeklyRate' does not exist on type 'GoalValidation'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(413,9): error TS2322: Type '"error" | "info" | "success" | "warning"' is not assignable to type '"error" | "success" | "warning"'.
+  Type '"info"' is not assignable to type '"error" | "success" | "warning"'.
+src/utils/healthCalculations/HealthCalculatorFacade.ts(415,33): error TS2551: Property 'suggestions' does not exist on type 'GoalValidation'. Did you mean 'suggestion'?
+src/utils/integration.ts(521,65): error TS2339: Property 'toString' does not exist on type 'never'.
+src/utils/testQuickActions.ts(165,11): error TS2322: Type 'string' is not assignable to type 'number'.
+src/utils/testQuickActions.ts(171,9): error TS2739: Type '{ primaryGoals: string[]; experience: string; experience_level: string; timeCommitment: string; }' is missing the following properties from type 'FitnessGoals': primary_goals, time_commitment
+src/utils/validation.ts(635,12): error TS2352: Conversion of type '{ name: string; email: string | undefined; age: any; gender: any; height: any; weight: any; }' to type 'PersonalInfo' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ name: string; email: string | undefined; age: any; gender: any; height: any; weight: any; }' is missing the following properties from type 'PersonalInfo': first_name, last_name, country, state, and 3 more.

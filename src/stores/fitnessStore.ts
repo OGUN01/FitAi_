@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WeeklyWorkoutPlan, DayWorkout } from '../ai/weeklyContentGenerator';
+import { WeeklyWorkoutPlan, DayWorkout } from '../ai';
 import { crudOperations } from '../services/crudOperations';
 import { dataManager } from '../services/dataManager';
 import { offlineService } from '../services/offline';
@@ -102,12 +102,13 @@ export const useFitnessStore = create<FitnessState>()(
 
       saveWeeklyWorkoutPlan: async (plan) => {
         try {
-          console.log('💾 Saving weekly workout plan:', plan.planTitle);
+          const planTitle = (plan as any).planTitle || `Week ${plan.weekNumber} Workout Plan`;
+          console.log('💾 Saving weekly workout plan:', planTitle);
 
           // 🔍 Debug: Validate incoming plan data
           console.log('🔍 Store Debug - Plan validation:');
           console.log('  - Plan object:', plan ? '✅' : '❌');
-          console.log('  - Plan title:', plan?.planTitle || 'undefined');
+          console.log('  - Plan title:', (plan as any)?.planTitle || 'undefined');
           console.log('  - Workouts array:', Array.isArray(plan?.workouts) ? '✅' : '❌');
           console.log('  - Workouts count:', plan?.workouts?.length || 0);
 
@@ -121,7 +122,7 @@ export const useFitnessStore = create<FitnessState>()(
           console.log('  - State has plan:', currentState.weeklyWorkoutPlan ? '✅' : '❌');
           console.log(
             '  - State plan title:',
-            currentState.weeklyWorkoutPlan?.planTitle || 'undefined'
+            (currentState.weeklyWorkoutPlan as any)?.planTitle || 'undefined'
           );
           console.log(
             '  - State workouts count:',
@@ -152,8 +153,9 @@ export const useFitnessStore = create<FitnessState>()(
               }
 
               // Create a proper WorkoutSession object matching the expected schema
-              const workoutSession = {
+              const workoutSession: import('../types/localData').LocalWorkoutSession = {
                 id: `workout_${workout.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                localId: `local_${workout.id}_${Date.now()}`,
                 workoutId: workout.id,
                 userId: useAuthStore.getState().user?.id || 'guest',
                 startedAt: new Date().toISOString(),
@@ -176,9 +178,16 @@ export const useFitnessStore = create<FitnessState>()(
                   notes: exercise.notes || '',
                   personalRecord: false,
                 })),
-                notes: `${workout.dayOfWeek || 'unknown'} - ${workout.description || workout.title}`,
+                notes: `${(workout as any).dayOfWeek || 'unknown'} - ${(workout as any).description || (workout as any).title}`,
                 rating: 0,
                 isCompleted: false,
+                syncStatus: 'pending' as import('../types/localData').SyncStatus,
+                syncMetadata: {
+                  lastSyncedAt: undefined,
+                  lastModifiedAt: new Date().toISOString(),
+                  syncVersion: 1,
+                  deviceId: 'dev-device',
+                },
               };
 
               await crudOperations.createWorkoutSession(workoutSession);
@@ -243,11 +252,11 @@ export const useFitnessStore = create<FitnessState>()(
           const weeklyPlanData = {
             id: planId,
             user_id: userId,
-            plan_title: plan.planTitle,
-            plan_description: plan.planDescription || `${plan.workouts.length} workouts over ${plan.duration}`,
+            plan_title: (plan as any).planTitle || `Week ${plan.weekNumber} Plan`,
+            plan_description: (plan as any).planDescription || `${plan.workouts.length} workouts over ${(plan as any).duration || '1 week'}`,
             week_number: plan.weekNumber || 1,
             total_workouts: plan.workouts.length,
-            duration_range: plan.duration,
+            duration_range: (plan as any).duration || '1 week',
             plan_data: plan, // Store complete plan as JSONB
             is_active: true
           };
@@ -369,8 +378,9 @@ export const useFitnessStore = create<FitnessState>()(
 
         try {
           // Create a proper WorkoutSession object for active session
-          const workoutSession = {
+          const workoutSession: import('../types/localData').LocalWorkoutSession = {
             id: sessionId,
+            localId: `local_${sessionId}`,
             workoutId: workout.id,
             userId: useAuthStore.getState().user?.id || 'guest',
             startedAt: new Date().toISOString(),
@@ -391,9 +401,16 @@ export const useFitnessStore = create<FitnessState>()(
               notes: exercise.notes || '',
               personalRecord: false,
             })),
-            notes: `Active session: ${workout.dayOfWeek} - ${workout.description || workout.title}`,
+            notes: `Active session: ${(workout as any).dayOfWeek} - ${(workout as any).description || (workout as any).title}`,
             rating: 0,
             isCompleted: false,
+            syncStatus: 'pending' as import('../types/localData').SyncStatus,
+            syncMetadata: {
+              lastSyncedAt: undefined,
+              lastModifiedAt: new Date().toISOString(),
+              syncVersion: 1,
+              deviceId: 'dev-device',
+            },
           };
 
           await crudOperations.createWorkoutSession(workoutSession);
@@ -437,8 +454,7 @@ export const useFitnessStore = create<FitnessState>()(
 
           // Update session as completed
           await crudOperations.updateWorkoutSession(sessionId, {
-            status: 'completed' as any,
-            updatedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
           });
 
           // Complete the workout

@@ -1,10 +1,12 @@
 /**
  * Constrained Workout Generation with Optimized System Prompts
  * Based on comprehensive testing results - uses best performing system prompt approach
+ *
+ * NOTE: This file is deprecated and should not be used.
+ * AI generation is now handled by Cloudflare Workers backend.
+ * See: https://fitai-workers.sharmaharsh9887.workers.dev
  */
 
-import { geminiService } from './gemini';
-import { WORKOUT_SCHEMA } from './schemas';
 import { PersonalInfo, FitnessGoals } from '../types/user';
 import { Workout } from '../types/ai';
 import { WorkoutSet } from '../types/workout';
@@ -223,6 +225,9 @@ APPROVED EXERCISES: Push-ups, Squats, Lunges, Plank, Burpees, Mountain Climbers,
 
 /**
  * Generate workout with constrained exercise names (100% accuracy tested)
+ *
+ * @deprecated This function is deprecated. Use Cloudflare Workers backend instead.
+ * @see https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate
  */
 export const generateConstrainedWorkout = async (
   userProfile: PersonalInfo & {
@@ -233,79 +238,11 @@ export const generateConstrainedWorkout = async (
   },
   workoutGoals: string[]
 ): Promise<Workout> => {
-  try {
-    console.log('🎯 Generating constrained workout with optimized system prompt');
-
-    // Build context-aware prompt
-    const workoutPrompt = buildWorkoutPrompt(userProfile, workoutGoals);
-
-    // Generate workout with best-performing system prompt
-    const systemConstrainedPrompt = `${OPTIMIZED_SYSTEM_PROMPT}\n\n${workoutPrompt}`;
-    const workout = await geminiService.generateResponse(
-      systemConstrainedPrompt,
-      userProfile,
-      WORKOUT_SCHEMA,
-      3, // maxRetries
-      {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-      }
-    );
-
-    // Check if generation was successful
-    if (!workout.success || !workout.data) {
-      throw new Error(workout.error || 'Failed to generate workout');
-    }
-
-    // Enhanced validation with comprehensive safety layers
-    const validationResult = exerciseValidator.validateWorkout(workout.data as Workout);
-    const validatedWorkout = validationResult.fixedWorkout;
-
-    // Log validation results
-    console.log('✅ Constrained workout generated successfully');
-    console.log(
-      `📊 Exercises: ${validatedWorkout.exercises.map((ex) => ex.exerciseId).join(', ')}`
-    );
-
-    if (!validationResult.isValid) {
-      console.log('🔧 Auto-corrections applied:');
-      validationResult.issues.forEach((issue) => console.log(`   ${issue}`));
-    }
-
-    const report = exerciseValidator.generateValidationReport(validatedWorkout);
-    console.log(`📈 ${report.summary}`);
-
-    return validatedWorkout;
-  } catch (error) {
-    console.error('❌ Constrained workout generation failed:', error);
-
-    // Fallback to backup system prompt
-    console.log('🔄 Trying backup system prompt...');
-    try {
-      const workoutPrompt = buildWorkoutPrompt(userProfile, workoutGoals);
-      const backupConstrainedPrompt = `${BACKUP_SYSTEM_PROMPT}\n\n${workoutPrompt}`;
-      const fallbackWorkout = await geminiService.generateResponse(
-        backupConstrainedPrompt,
-        userProfile,
-        WORKOUT_SCHEMA,
-        2, // maxRetries
-        {
-          temperature: 0.6,
-          maxOutputTokens: 8192,
-        }
-      );
-
-      if (!fallbackWorkout.success || !fallbackWorkout.data) {
-        throw new Error(fallbackWorkout.error || 'Fallback generation failed');
-      }
-
-      const fallbackValidation = exerciseValidator.validateWorkout(fallbackWorkout.data as Workout);
-      return fallbackValidation.fixedWorkout;
-    } catch (fallbackError) {
-      console.error('❌ Backup generation also failed:', fallbackError);
-      throw new Error(`Workout generation failed: ${(error as Error).message}`);
-    }
-  }
+  throw new Error(
+    'Client-side AI generation is deprecated. ' +
+    'Please use Cloudflare Workers backend at: ' +
+    'https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate'
+  );
 };
 
 /**
@@ -514,66 +451,12 @@ const levenshteinDistance = (str1: string, str2: string): number => {
 
 /**
  * Test the constrained workout generation with various scenarios
+ *
+ * @deprecated This function is deprecated. Use Cloudflare Workers backend instead.
  */
 export const testConstrainedGeneration = async (): Promise<void> => {
-  console.log('🧪 Testing constrained workout generation...');
-
-  const testScenarios = [
-    {
-      name: 'Beginner Home Workout',
-      profile: {
-        name: 'John',
-        age: '25',
-        fitnessGoals: { experience: 'beginner', timeCommitment: '30' },
-        location: 'home',
-        equipment: ['bodyweight'],
-      },
-      goals: ['general_fitness'],
-    },
-    {
-      name: 'Knee Injury Upper Body Focus',
-      profile: {
-        name: 'Sarah',
-        age: '30',
-        fitnessGoals: { experience: 'intermediate', timeCommitment: '45' },
-        location: 'gym',
-        equipment: ['dumbbells', 'bench'],
-        limitations: ['knee injury', 'focus on upper body'],
-      },
-      goals: ['strength', 'muscle_gain'],
-    },
-  ];
-
-  for (const scenario of testScenarios) {
-    try {
-      console.log(`\n📋 Testing: ${scenario.name}`);
-      const workout = await generateConstrainedWorkout(scenario.profile as any, scenario.goals);
-
-      console.log(`✅ Generated workout with ${workout.exercises?.length || 0} exercises:`);
-      workout.exercises?.forEach((ex, idx) => {
-        console.log(`   ${idx + 1}. ${ex.exerciseId} - ${ex.sets} sets x ${ex.reps} reps`);
-      });
-
-      // Validate all exercise names
-      const invalidExercises =
-        workout.exercises?.filter((ex) => {
-          const exerciseName = ex.exerciseId
-            .replace(/_/g, ' ')
-            .replace(/\b\w/g, (l) => l.toUpperCase());
-          return !VERIFIED_EXERCISE_NAMES.some(
-            (valid) => valid.toLowerCase() === exerciseName.toLowerCase()
-          );
-        }) || [];
-
-      if (invalidExercises.length === 0) {
-        console.log('   🎯 All exercise names are valid!');
-      } else {
-        console.log(`   ⚠️  ${invalidExercises.length} invalid exercise names found`);
-      }
-    } catch (error) {
-      console.error(`❌ Test failed for ${scenario.name}:`, (error as Error).message);
-    }
-  }
+  console.log('⚠️ This test is deprecated. Use Cloudflare Workers backend instead.');
+  console.log('Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate');
 };
 
 // Export the main function and utilities

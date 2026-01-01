@@ -226,7 +226,11 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
       >
-        <Text style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}>
+        <Text 
+          style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {getDisplayText()}
         </Text>
         <Text style={styles.triggerIcon}>▼</Text>
@@ -239,9 +243,9 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
           showsHorizontalScrollIndicator={false}
           style={styles.selectedPreview}
         >
-          {getSelectedLabels().map((label, index) => (
-            <View key={index} style={styles.selectedTag}>
-              <Text style={styles.selectedTagText}>{label}</Text>
+          {getSelectedLabels().map((label) => (
+            <View key={`selected-${label}`} style={styles.selectedTag}>
+              <Text style={styles.selectedTagText} numberOfLines={1}>{label}</Text>
             </View>
           ))}
         </ScrollView>
@@ -307,7 +311,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
               /* Options List */
               <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
                 {Object.entries(groupedOptions).map(([region, regionOptions]) => (
-                  <View key={region}>
+                  <View key={`region-${region}`}>
                     {showRegions && region && (
                       <Text style={styles.regionHeader}>{region}</Text>
                     )}

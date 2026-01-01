@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -8,16 +8,11 @@ import Animated, {
   withSpring,
   withTiming,
   interpolate,
-  Extrapolate,
 } from 'react-native-reanimated';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { rf, rw, rh } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { TabValidationResult } from '../../types/onboarding';
-import { colors } from '../../theme/aurora-tokens';
-import { gradients, toLinearGradientProps } from '../../theme/gradients';
 import { animations } from '../../theme/animations';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -26,7 +21,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export interface TabConfig {
   id: number;
   title: string;
-  shortTitle: string; // Short title for compact display
   iconName: string;
   isCompleted: boolean;
   isAccessible: boolean;
@@ -45,229 +39,115 @@ interface OnboardingTabBarProps {
 // ============================================================================
 
 export const ONBOARDING_TABS: Omit<TabConfig, 'isCompleted' | 'isAccessible' | 'validationResult'>[] = [
-  {
-    id: 1,
-    title: 'Personal Info',
-    shortTitle: 'Profile',
-    iconName: 'person-outline',
-  },
-  {
-    id: 2,
-    title: 'Diet Preferences',
-    shortTitle: 'Diet',
-    iconName: 'restaurant-outline',
-  },
-  {
-    id: 3,
-    title: 'Body Analysis',
-    shortTitle: 'Body',
-    iconName: 'body-outline',
-  },
-  {
-    id: 4,
-    title: 'Workout Preferences',
-    shortTitle: 'Fitness',
-    iconName: 'barbell-outline',
-  },
-  {
-    id: 5,
-    title: 'Review',
-    shortTitle: 'Done',
-    iconName: 'checkmark-circle-outline',
-  },
+  { id: 1, title: 'Personal', iconName: 'person' },
+  { id: 2, title: 'Diet', iconName: 'nutrition' },
+  { id: 3, title: 'Body', iconName: 'body' },
+  { id: 4, title: 'Workout', iconName: 'barbell' },
+  { id: 5, title: 'Review', iconName: 'checkmark-done' },
 ];
 
 // ============================================================================
-// ANIMATED TAB COMPONENT - Modern Minimal Design
+// STEP INDICATOR COMPONENT
 // ============================================================================
 
-interface AnimatedTabProps {
+interface StepIndicatorProps {
   tab: TabConfig;
-  index: number;
-  totalTabs: number;
   isActive: boolean;
-  isDisabled: boolean;
+  isCompleted: boolean;
+  isAccessible: boolean;
   onPress: () => void;
-  isLastTab: boolean;
+  index: number;
+  totalSteps: number;
 }
 
-const AnimatedTab: React.FC<AnimatedTabProps> = ({
+const StepIndicator: React.FC<StepIndicatorProps> = ({
   tab,
-  index,
-  totalTabs,
   isActive,
-  isDisabled,
+  isCompleted,
+  isAccessible,
   onPress,
-  isLastTab,
+  index,
+  totalSteps,
 }) => {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(isDisabled ? 0.4 : 1);
+  const animValue = useSharedValue(0);
 
   useEffect(() => {
-    scale.value = withSpring(isActive ? 1 : 0.95, { damping: 15, stiffness: 150 });
-    opacity.value = withTiming(isDisabled ? 0.4 : 1, { duration: 200 });
-  }, [isActive, isDisabled]);
+    animValue.value = withSpring(isActive ? 1 : 0, { damping: 12, stiffness: 120 });
+  }, [isActive]);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
+  const animatedCircleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(animValue.value, [0, 1], [1, 1.08]) }],
   }));
 
-  // Determine status for styling
-  const getStatus = () => {
-    if (tab.isCompleted) return 'completed';
-    if (isActive) return 'active';
-    if (tab.isAccessible) return 'accessible';
-    return 'disabled';
-  };
-
-  const status = getStatus();
-
-  // Get colors based on status
-  const getColors = () => {
-    switch (status) {
-      case 'completed':
-        return {
-          bg: 'rgba(16, 185, 129, 0.15)',
-          border: '#10B981',
-          icon: '#10B981',
-          text: '#10B981',
-          number: '#10B981',
-          numberBg: 'rgba(16, 185, 129, 0.2)',
-        };
-      case 'active':
-        return {
-          bg: 'rgba(139, 92, 246, 0.15)',
-          border: '#8B5CF6',
-          icon: '#8B5CF6',
-          text: '#FFFFFF',
-          number: '#FFFFFF',
-          numberBg: '#8B5CF6',
-        };
-      case 'accessible':
-        return {
-          bg: 'rgba(255, 255, 255, 0.05)',
-          border: 'rgba(255, 255, 255, 0.2)',
-          icon: 'rgba(255, 255, 255, 0.7)',
-          text: 'rgba(255, 255, 255, 0.7)',
-          number: 'rgba(255, 255, 255, 0.7)',
-          numberBg: 'rgba(255, 255, 255, 0.1)',
-        };
-      default:
-        return {
-          bg: 'rgba(255, 255, 255, 0.03)',
-          border: 'rgba(255, 255, 255, 0.1)',
-          icon: 'rgba(255, 255, 255, 0.3)',
-          text: 'rgba(255, 255, 255, 0.3)',
-          number: 'rgba(255, 255, 255, 0.3)',
-          numberBg: 'rgba(255, 255, 255, 0.05)',
-        };
-    }
-  };
-
-  const colors = getColors();
-
-  // Render validation badge
-  const renderValidationBadge = () => {
-    if (!tab.validationResult) return null;
-    const { is_valid, errors, warnings } = tab.validationResult;
-
-    if (tab.isCompleted && is_valid) {
-      return (
-        <View style={[styles.validationBadge, { backgroundColor: '#10B981' }]}>
-          <Ionicons name="checkmark" size={8} color="#FFFFFF" />
-        </View>
-      );
-    }
-
-    if (errors && errors.length > 0) {
-      return (
-        <View style={[styles.validationBadge, { backgroundColor: '#EF4444' }]}>
-          <Text style={styles.validationBadgeText}>!</Text>
-        </View>
-      );
-    }
-
-    if (warnings && warnings.length > 0) {
-      return (
-        <View style={[styles.validationBadge, { backgroundColor: '#F59E0B' }]}>
-          <Text style={styles.validationBadgeText}>!</Text>
-        </View>
-      );
-    }
-
-    return null;
-  };
+  const isDisabled = !isAccessible && !isCompleted && !isActive;
 
   return (
-    <View style={styles.tabItemWrapper}>
-      <Animated.View style={animatedStyle}>
+    <View style={styles.stepWrapper}>
+      {/* Connection Line - Left side */}
+      {index > 0 && (
+        <View style={[
+          styles.connectionLine,
+          styles.connectionLineLeft,
+          (isCompleted || isActive) && styles.connectionLineActive,
+        ]} />
+      )}
+
+      <Animated.View style={animatedCircleStyle}>
         <TouchableOpacity
           style={[
-            styles.tabItem,
-            {
-              backgroundColor: colors.bg,
-              borderColor: colors.border,
-              borderWidth: isActive ? 2 : 1,
-            },
+            styles.stepCircle,
+            isActive && styles.stepCircleActive,
+            isCompleted && styles.stepCircleCompleted,
+            isDisabled && styles.stepCircleDisabled,
           ]}
           onPress={onPress}
           disabled={isDisabled}
           activeOpacity={0.7}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: isActive, disabled: isDisabled }}
-          accessibilityLabel={`${tab.title}, Step ${tab.id} of ${totalTabs}`}
         >
-          {/* Step Number Badge */}
-          <View style={[styles.stepBadge, { backgroundColor: colors.numberBg }]}>
-            {tab.isCompleted ? (
-              <Ionicons name="checkmark" size={10} color={colors.number} />
-            ) : (
-              <Text style={[styles.stepNumber, { color: colors.number }]}>{tab.id}</Text>
-            )}
-          </View>
-
-          {/* Icon */}
-          <View style={styles.iconWrapper}>
-            <Ionicons
-              name={tab.iconName as any}
-              size={rs(18)}
-              color={colors.icon}
-            />
-            {renderValidationBadge()}
-          </View>
-
-          {/* Short Title */}
-          <Text
-            style={[styles.tabLabel, { color: colors.text }]}
-            numberOfLines={1}
-          >
-            {tab.shortTitle || tab.title}
-          </Text>
+          {isCompleted ? (
+            <View style={styles.checkmarkBg}>
+              <Ionicons name="checkmark" size={rf(11)} color="#FFFFFF" />
+            </View>
+          ) : isActive ? (
+            <LinearGradient
+              colors={['#6366F1', '#8B5CF6']}
+              style={styles.activeCircleGradient}
+            >
+              <Text style={styles.stepNumber}>{tab.id}</Text>
+            </LinearGradient>
+          ) : (
+            <Text style={[
+              styles.stepNumber,
+              isDisabled && styles.stepNumberDisabled,
+            ]}>{tab.id}</Text>
+          )}
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Connection Line */}
-      {!isLastTab && (
-        <View style={styles.connectionLineWrapper}>
-          <View
-            style={[
-              styles.connectionLine,
-              {
-                backgroundColor: tab.isCompleted
-                  ? '#10B981'
-                  : 'rgba(255, 255, 255, 0.15)',
-              },
-            ]}
-          />
-        </View>
+      {/* Label */}
+      <Text style={[
+        styles.stepLabel,
+        isActive && styles.stepLabelActive,
+        isCompleted && styles.stepLabelCompleted,
+        isDisabled && styles.stepLabelDisabled,
+      ]} numberOfLines={1}>
+        {tab.title}
+      </Text>
+
+      {/* Connection Line - Right side */}
+      {index < totalSteps - 1 && (
+        <View style={[
+          styles.connectionLine,
+          styles.connectionLineRight,
+          isCompleted && styles.connectionLineActive,
+        ]} />
       )}
     </View>
   );
 };
 
 // ============================================================================
-// MAIN COMPONENT - Modern Fitness App Style
+// MAIN COMPONENT
 // ============================================================================
 
 export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
@@ -276,273 +156,227 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
   onTabPress,
   completionPercentage,
 }) => {
-  // Animated values for smooth transitions
-  const progressWidth = useSharedValue(0);
+  const progressAnim = useSharedValue(0);
+  const completedCount = tabs.filter(t => t.isCompleted).length;
 
-  // Animate progress bar on completion percentage change
   useEffect(() => {
-    progressWidth.value = withTiming(completionPercentage, {
-      duration: 600,
-    });
+    progressAnim.value = withTiming(completionPercentage, { duration: 500 });
   }, [completionPercentage]);
 
   const animatedProgressStyle = useAnimatedStyle(() => ({
-    width: `${progressWidth.value}%`,
+    width: `${progressAnim.value}%`,
   }));
-
-  const activeTabData = tabs.find(tab => tab.id === activeTab);
 
   return (
     <View style={styles.container}>
-      {/* Header Section with Progress */}
-      <View style={styles.headerSection}>
-        <View style={styles.headerTop}>
-          <View style={styles.stepIndicator}>
-            <Text style={styles.stepText}>Step {activeTab}</Text>
-            <Text style={styles.stepDivider}>/</Text>
-            <Text style={styles.totalSteps}>{tabs.length}</Text>
-          </View>
-          <View style={styles.percentageContainer}>
-            <Text style={styles.percentageText}>{Math.round(completionPercentage)}%</Text>
-          </View>
+      {/* Subtle Progress Bar at Top */}
+      <View style={styles.progressBarWrapper}>
+        <View style={styles.progressBarBg}>
+          <Animated.View style={[styles.progressBarFill, animatedProgressStyle]}>
+            <LinearGradient
+              colors={['#6366F1', '#8B5CF6', '#A855F7']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={StyleSheet.absoluteFill}
+            />
+          </Animated.View>
         </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressBarBg}>
-            <Animated.View style={[styles.progressBarFill, animatedProgressStyle]}>
-              <LinearGradient
-                colors={['#8B5CF6', '#A78BFA', '#C4B5FD']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.progressGradient}
-              />
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Active Tab Title */}
-        <Text style={styles.activeTabTitle}>
-          {activeTabData?.title || ''}
-        </Text>
       </View>
 
-      {/* Tab Navigation - Horizontal Scroll */}
-      <View style={styles.tabsContainer}>
+      {/* Step Indicators */}
+      <View style={styles.stepsRow}>
         {tabs.map((tab, index) => {
           const isActive = tab.id === activeTab;
-          const isDisabled = !tab.isAccessible && !tab.isCompleted && !isActive;
-          const isLastTab = index === tabs.length - 1;
+          const isCompleted = tab.isCompleted;
+          const isAccessible = tab.isAccessible;
 
           return (
-            <AnimatedTab
+            <StepIndicator
               key={tab.id}
               tab={tab}
-              index={index}
-              totalTabs={tabs.length}
               isActive={isActive}
-              isDisabled={isDisabled}
-              onPress={() => !isDisabled && onTabPress(tab.id)}
-              isLastTab={isLastTab}
+              isCompleted={isCompleted}
+              isAccessible={isAccessible}
+              onPress={() => (isAccessible || isCompleted || isActive) && onTabPress(tab.id)}
+              index={index}
+              totalSteps={tabs.length}
             />
           );
         })}
+      </View>
+
+      {/* Minimal Step Counter */}
+      <View style={styles.stepCounter}>
+        <Text style={styles.stepCounterText}>
+          {completedCount}/{tabs.length}
+        </Text>
       </View>
     </View>
   );
 };
 
 // ============================================================================
-// STYLES - Modern Fitness App Design (Mobile-First Responsive)
+// STYLES
 // ============================================================================
-
-// Helper to clamp values between min and max
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-// Get responsive values that work on both mobile and desktop
-const getResponsiveSize = (mobile: number, desktop: number) => {
-  const width = SCREEN_WIDTH;
-  if (width < 500) return mobile;
-  if (width > 900) return desktop;
-  // Linear interpolation between mobile and desktop
-  return mobile + ((desktop - mobile) * (width - 500)) / 400;
-};
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0F0F1A',
-    paddingTop: rh(8),
+    backgroundColor: 'rgba(10, 10, 25, 0.95)',
+    paddingTop: rh(6),
     paddingBottom: rh(10),
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.08)',
-  },
-
-  // Header Section
-  headerSection: {
     paddingHorizontal: rw(12),
-    marginBottom: rh(8),
-  },
-
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: rh(8),
-  },
-
-  stepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-
-  stepText: {
-    fontSize: rf(20),
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-
-  stepDivider: {
-    fontSize: rf(14),
-    fontWeight: '400',
-    color: 'rgba(255, 255, 255, 0.4)',
-    marginHorizontal: rw(3),
-  },
-
-  totalSteps: {
-    fontSize: rf(14),
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.5)',
-  },
-
-  percentageContainer: {
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-    paddingHorizontal: rw(10),
-    paddingVertical: rh(4),
-    borderRadius: rw(16),
-    borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
-  },
-
-  percentageText: {
-    fontSize: rf(12),
-    fontWeight: '600',
-    color: '#A78BFA',
   },
 
   // Progress Bar
-  progressBarContainer: {
-    marginBottom: rh(6),
+  progressBarWrapper: {
+    marginBottom: rh(12),
+    paddingHorizontal: rw(4),
   },
 
   progressBarBg: {
-    height: rh(4),
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: rw(2),
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 1,
     overflow: 'hidden',
   },
 
   progressBarFill: {
     height: '100%',
-    borderRadius: rw(2),
+    borderRadius: 1,
     overflow: 'hidden',
   },
 
-  progressGradient: {
-    flex: 1,
-  },
-
-  activeTabTitle: {
-    fontSize: rf(14),
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.7)',
-    letterSpacing: 0.2,
-  },
-
-  // Tabs Container
-  tabsContainer: {
+  // Steps Row
+  stepsRow: {
     flexDirection: 'row',
-    paddingHorizontal: rw(4),
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: rw(4),
   },
 
-  // Tab Item
-  tabItemWrapper: {
+  stepWrapper: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    position: 'relative',
   },
 
-  tabItem: {
+  // Connection Lines
+  connectionLine: {
+    position: 'absolute',
+    top: rw(11),
+    height: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    zIndex: 0,
+  },
+
+  connectionLineLeft: {
+    left: 0,
+    right: '50%',
+    marginRight: rw(11),
+  },
+
+  connectionLineRight: {
+    left: '50%',
+    right: 0,
+    marginLeft: rw(11),
+  },
+
+  connectionLineActive: {
+    backgroundColor: '#10B981',
+  },
+
+  // Step Circle
+  stepCircle: {
+    width: rw(24),
+    height: rw(24),
+    borderRadius: rw(12),
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: rh(6),
-    paddingHorizontal: rw(2),
-    borderRadius: rw(10),
+    zIndex: 1,
+    overflow: 'hidden',
+  },
+
+  stepCircleActive: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+
+  stepCircleCompleted: {
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
+  },
+
+  stepCircleDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+
+  activeCircleGradient: {
     width: '100%',
-    minWidth: rw(52),
-  },
-
-  stepBadge: {
-    width: rw(18),
-    height: rw(18),
-    borderRadius: rw(9),
+    height: '100%',
+    borderRadius: rw(12),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: rh(3),
+  },
+
+  checkmarkBg: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   stepNumber: {
-    fontSize: rf(9),
+    fontSize: rf(10),
     fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 
-  iconWrapper: {
-    position: 'relative',
-    marginBottom: rh(2),
+  stepNumberDisabled: {
+    color: 'rgba(255, 255, 255, 0.2)',
   },
 
-  tabLabel: {
+  // Step Label
+  stepLabel: {
     fontSize: rf(9),
-    fontWeight: '600',
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.35)',
+    marginTop: rh(5),
     textAlign: 'center',
-    letterSpacing: 0,
-    width: '100%',
   },
 
-  // Connection Line
-  connectionLineWrapper: {
-    width: rw(10),
-    justifyContent: 'center',
+  stepLabelActive: {
+    color: '#A78BFA',
+    fontWeight: '600',
+  },
+
+  stepLabelCompleted: {
+    color: '#10B981',
+  },
+
+  stepLabelDisabled: {
+    color: 'rgba(255, 255, 255, 0.15)',
+  },
+
+  // Step Counter
+  stepCounter: {
     alignItems: 'center',
-    flexShrink: 0,
+    marginTop: rh(8),
   },
 
-  connectionLine: {
-    height: rh(2),
-    width: '100%',
-    borderRadius: rw(1),
-  },
-
-  // Validation Badge
-  validationBadge: {
-    position: 'absolute',
-    top: -rh(3),
-    right: -rw(4),
-    width: rw(14),
-    height: rw(14),
-    borderRadius: rw(7),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#0F0F1A',
-  },
-
-  validationBadgeText: {
-    fontSize: rf(8),
-    fontWeight: '700',
-    color: '#FFFFFF',
+  stepCounterText: {
+    fontSize: rf(9),
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontWeight: '500',
+    letterSpacing: 1,
   },
 });
 

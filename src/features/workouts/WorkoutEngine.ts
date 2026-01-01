@@ -1,6 +1,7 @@
 // Workout Engine - Integrates AI generation with exercise database
 
-import { workoutGenerator } from '../../ai/workoutGenerator';
+// Note: workoutGenerator is deprecated. Use Cloudflare Workers backend instead.
+// Import removed to prevent errors. AI generation is now handled by fitaiWorkersClient.
 import {
   EXERCISES,
   getExerciseById,
@@ -13,7 +14,6 @@ import {
   Exercise,
   WorkoutSet,
   AIResponse,
-  AIGenerationContext,
 } from '../../types/ai';
 import { PersonalInfo, FitnessGoals } from '../../types/user';
 
@@ -36,38 +36,11 @@ class WorkoutEngineService {
       difficulty?: 'beginner' | 'intermediate' | 'advanced';
     }
   ): Promise<AIResponse<Workout>> {
-    try {
-      // First, get AI-generated workout structure
-      const aiResponse = await workoutGenerator.generatePersonalizedWorkout(
-        personalInfo,
-        fitnessGoals,
-        preferences
-      );
-
-      if (!aiResponse.success || !aiResponse.data) {
-        return aiResponse;
-      }
-
-      // Enhance the workout with real exercise data
-      const enhancedWorkout = await this.enhanceWorkoutWithExerciseData(
-        aiResponse.data,
-        preferences?.equipment || ['bodyweight'],
-        preferences?.difficulty || (fitnessGoals.experience as any)
-      );
-
-      return {
-        success: true,
-        data: enhancedWorkout,
-        confidence: aiResponse.confidence,
-        generationTime: aiResponse.generationTime,
-        tokensUsed: aiResponse.tokensUsed,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Smart workout generation failed: ${error}`,
-      };
-    }
+    // DEPRECATED: workoutGenerator removed. Use fitaiWorkersClient instead.
+    return {
+      success: false,
+      error: 'workoutGenerator is deprecated. Please use fitaiWorkersClient for AI workout generation.',
+    };
   }
 
   /**
@@ -105,8 +78,10 @@ class WorkoutEngineService {
 
     // Calculate workout duration and calories
     const totalDuration = exercises.reduce((sum, ex) => {
-      const exerciseTime = ex.duration || ex.sets! * ex.reps! * 3; // Estimate 3 seconds per rep
-      const restTime = ex.restTime || 60;
+      const sets = ex.sets ?? 3;
+      const reps = typeof ex.reps === 'number' ? ex.reps : parseInt(ex.reps ?? '10', 10);
+      const exerciseTime = ex.duration ?? sets * reps * 3; // Estimate 3 seconds per rep
+      const restTime = ex.restTime ?? 60;
       return sum + exerciseTime + restTime;
     }, 0);
 
@@ -119,9 +94,9 @@ class WorkoutEngineService {
     // Create workout sets
     const workoutSets: WorkoutSet[] = exercises.map((exercise) => ({
       exerciseId: exercise.id,
-      sets: exercise.sets || this.getDefaultSets(exercise, fitnessGoals.experience),
-      reps: exercise.reps || this.getDefaultReps(exercise, fitnessGoals.experience),
-      restTime: exercise.restTime || this.getDefaultRestTime(exercise),
+      sets: exercise.sets ?? this.getDefaultSets(exercise, fitnessGoals.experience),
+      reps: exercise.reps ?? this.getDefaultReps(exercise, fitnessGoals.experience),
+      restTime: exercise.restTime ?? this.getDefaultRestTime(exercise),
       weight: undefined, // User will set this
     }));
 
@@ -164,7 +139,8 @@ class WorkoutEngineService {
     }
 
     // Filter by goals
-    if (fitnessGoals.primaryGoals.includes('strength')) {
+    const primaryGoals = fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [];
+    if (primaryGoals.includes('strength')) {
       availableExercises = availableExercises.filter((ex) =>
         ex.muscleGroups.some((mg) =>
           ['chest', 'back', 'shoulders', 'arms', 'legs', 'glutes'].includes(mg)
@@ -172,7 +148,7 @@ class WorkoutEngineService {
       );
     }
 
-    if (fitnessGoals.primaryGoals.includes('weight_loss')) {
+    if (primaryGoals.includes('weight_loss')) {
       availableExercises = availableExercises.filter((ex) => ex.calories && ex.calories > 5);
     }
 
@@ -218,20 +194,21 @@ class WorkoutEngineService {
 
     for (const workoutSet of aiWorkout.exercises) {
       // Try to find matching exercise in our database
-      let exercise = getExerciseById(workoutSet.exerciseId);
+      let exercise: Exercise | undefined = getExerciseById(workoutSet.exerciseId) ?? undefined;
 
       if (!exercise) {
         // If not found, find a similar exercise based on the ID/name
-        exercise = this.findSimilarExercise(workoutSet.exerciseId, equipment, difficulty);
+        const similar = this.findSimilarExercise(workoutSet.exerciseId, equipment, difficulty);
+        exercise = similar ?? undefined;
       }
 
       if (exercise) {
         enhancedExercises.push({
           ...workoutSet,
           exerciseId: exercise.id,
-          sets: workoutSet.sets || exercise.sets || this.getDefaultSets(exercise, difficulty),
-          reps: workoutSet.reps || exercise.reps || this.getDefaultReps(exercise, difficulty),
-          restTime: workoutSet.restTime || exercise.restTime || this.getDefaultRestTime(exercise),
+          sets: workoutSet.sets ?? exercise.sets ?? this.getDefaultSets(exercise, difficulty),
+          reps: workoutSet.reps ?? exercise.reps ?? this.getDefaultReps(exercise, difficulty),
+          restTime: workoutSet.restTime ?? exercise.restTime ?? this.getDefaultRestTime(exercise),
         });
       } else {
         // Keep original if no match found
@@ -324,7 +301,7 @@ class WorkoutEngineService {
   }
 
   private getDefaultReps(exercise: Exercise, experience: string): string {
-    if (exercise.reps) return exercise.reps;
+    if (exercise.reps) return typeof exercise.reps === 'string' ? exercise.reps : exercise.reps.toString();
 
     if (exercise.duration) return `${exercise.duration}s`;
 

@@ -1,8 +1,7 @@
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useNutritionStore } from '../stores/nutritionStore';
 import { crudOperations } from './crudOperations';
-import { WeeklyWorkoutPlan, DayWorkout } from '../ai/weeklyContentGenerator';
-import { WeeklyMealPlan, DayMeal } from '../ai/weeklyMealGenerator';
+import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from '../ai';
 
 export interface TodaysData {
   workout: DayWorkout | null;

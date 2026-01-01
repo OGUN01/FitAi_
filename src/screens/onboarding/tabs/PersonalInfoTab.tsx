@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,8 +10,6 @@ import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, AnimatedIco
 import { gradients, toLinearGradientProps } from '../../../theme/gradients';
 import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import TimePicker from '../../../components/onboarding/TimePicker';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -26,6 +24,9 @@ interface PersonalInfoTabProps {
   onNavigateToTab?: (tabNumber: number) => void;
   isLoading?: boolean;
   isAutoSaving?: boolean;
+  // Props for editing from Review tab
+  isEditingFromReview?: boolean;
+  onReturnToReview?: () => void;
 }
 
 interface CountryState {
@@ -69,7 +70,7 @@ const GENDER_OPTIONS = [
   { value: 'male', label: 'Male', iconName: 'man-outline' },
   { value: 'female', label: 'Female', iconName: 'woman-outline' },
   { value: 'other', label: 'Other', iconName: 'people-outline' },
-  { value: 'prefer_not_to_say', label: 'Private', iconName: 'lock-closed-outline' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say', iconName: 'lock-closed-outline' },
 ] as const;
 
 const OCCUPATION_OPTIONS = [
@@ -123,6 +124,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   onNavigateToTab,
   isLoading = false,
   isAutoSaving = false,
+  isEditingFromReview = false,
+  onReturnToReview,
 }) => {
   // No longer creating separate state instances - using props from parent
   
@@ -149,10 +152,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   const [showSleepTimePicker, setShowSleepTimePicker] = useState(false);
   
   // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
+  // Use a ref to track if we're syncing from props to avoid circular updates
+  const isSyncingFromProps = useRef(false);
+
   useEffect(() => {
-    if (data) {
-      console.log('[SYNC] PersonalInfoTab: Syncing form data with prop data:', data);
-      setFormData({
+    if (data && !isSyncingFromProps.current) {
+      const newFormData = {
         first_name: data.first_name || '',
         last_name: data.last_name || '',
         age: data.age || 0,
@@ -163,9 +168,32 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         wake_time: data.wake_time || '07:00',
         sleep_time: data.sleep_time || '23:00',
         occupation_type: data.occupation_type || 'desk_job',
-      });
+      };
+
+      // Only sync if data has actually changed (deep comparison)
+      const hasChanged =
+        formData.first_name !== newFormData.first_name ||
+        formData.last_name !== newFormData.last_name ||
+        formData.age !== newFormData.age ||
+        formData.gender !== newFormData.gender ||
+        formData.country !== newFormData.country ||
+        formData.state !== newFormData.state ||
+        formData.region !== newFormData.region ||
+        formData.wake_time !== newFormData.wake_time ||
+        formData.sleep_time !== newFormData.sleep_time ||
+        formData.occupation_type !== newFormData.occupation_type;
+
+      if (hasChanged) {
+        console.log('[SYNC] PersonalInfoTab: Data changed, syncing form data with prop data:', data);
+        isSyncingFromProps.current = true;
+        setFormData(newFormData);
+        // Reset flag after state update completes
+        setTimeout(() => {
+          isSyncingFromProps.current = false;
+        }, 0);
+      }
     }
-  }, [data]);
+  }, [data]); // ONLY depend on data prop, NOT formData!
   
   // Update available states when country changes
   useEffect(() => {
@@ -180,25 +208,35 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       setAvailableStates([]);
       setShowCustomCountry(false);
     }
-  }, [formData.country]);
+  }, [formData.country]); // No need to add setAvailableStates or setShowCustomCountry - they're stable
   
   // Note: We no longer auto-update parent on every formData change to avoid infinite loops
   // Updates happen via onUpdate in the Next button handler
   
+  // Memoize onUpdate callback to avoid recreating it
+  const onUpdateMemo = React.useCallback((data: Partial<PersonalInfoData>) => {
+    onUpdate(data);
+  }, [onUpdate]);
+
   // Validate when formData changes to show real-time validation feedback
   useEffect(() => {
     // Only trigger validation if validationResult exists (means we're tracking validation)
     if (validationResult !== undefined) {
+      console.log('🔄 [TAB1-SYNC] Form data changed, debouncing onUpdate call (500ms)');
       // Debounce validation to avoid excessive calls
       const timer = setTimeout(() => {
-        const finalData = showCustomCountry && customCountry 
+        const finalData = showCustomCountry && customCountry
           ? { ...formData, country: customCountry }
           : formData;
-        onUpdate(finalData);
+        console.log('🔄 [TAB1-SYNC] Debounce timer fired, calling onUpdate with:', finalData);
+        onUpdateMemo(finalData);
       }, 500);
-      return () => clearTimeout(timer);
+      return () => {
+        console.log('🔄 [TAB1-SYNC] Debounce timer cleared');
+        clearTimeout(timer);
+      };
     }
-  }, [formData, showCustomCountry, customCountry, validationResult, onUpdate]);
+  }, [formData, showCustomCountry, customCountry, validationResult, onUpdateMemo]);
   
   // ============================================================================
   // VALIDATION
@@ -239,29 +277,42 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   // ============================================================================
   
   const updateField = <K extends keyof PersonalInfoData>(
-    field: K, 
+    field: K,
     value: PersonalInfoData[K]
   ) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log(`✏️ [TAB1-INPUT] updateField called - field: "${field}", value:`, value);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log(`✏️ [TAB1-INPUT] Form data updated:`, newData);
+      return newData;
+    });
   };
   
   const handleCountryChange = (country: string) => {
+    console.log(`🌍 [TAB1-INPUT] handleCountryChange called - country: "${country}"`);
     updateField('country', country);
     updateField('state', ''); // Reset state when country changes
     updateField('region', ''); // Reset region when country changes
+    console.log(`🌍 [TAB1-INPUT] Country changed, state and region reset`);
   };
   
   const handleAgeChange = (ageText: string) => {
+    console.log(`🎂 [TAB1-INPUT] handleAgeChange called - ageText: "${ageText}"`);
     // Allow empty string for better user experience while typing
     if (ageText === '') {
+      console.log(`🎂 [TAB1-INPUT] Age text empty, setting age to 0`);
       setFormData(prev => ({ ...prev, age: 0 })); // Use 0 to indicate empty field
       return;
     }
-    
+
     const age = parseInt(ageText);
+    console.log(`🎂 [TAB1-INPUT] Parsed age:`, age);
     // Only update if it's a valid number
     if (!isNaN(age) && age >= 0) {
+      console.log(`🎂 [TAB1-INPUT] Valid age, updating formData`);
       setFormData(prev => ({ ...prev, age }));
+    } else {
+      console.log(`🎂 [TAB1-INPUT] Invalid age, ignoring input`);
     }
   };
   
@@ -275,6 +326,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   };
   
   const handleTimeChange = (field: 'wake_time' | 'sleep_time', time: string) => {
+    console.log(`⏰ [TAB1-INPUT] handleTimeChange called - field: "${field}", time: "${time}"`);
     updateField(field, time);
   };
   
@@ -316,243 +368,300 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   
   const renderNameSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Full Name</Text>
-      <View style={styles.row}>
-        <View style={styles.halfWidth}>
-          <Input
-            label="First Name"
-            placeholder="Enter your first name"
-            value={formData.first_name}
-            onChangeText={(value) => updateField('first_name', value)}
-            error={hasFieldError('first name') ? getFieldError('first name') : undefined}
-          />
-        </View>
-        <View style={styles.halfWidth}>
-          <Input
-            label="Last Name"
-            placeholder="Enter your last name"
-            value={formData.last_name}
-            onChangeText={(value) => updateField('last_name', value)}
-            error={hasFieldError('last name') ? getFieldError('last name') : undefined}
-          />
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>Full Name</Text>
+      </View>
+      <View style={styles.edgeToEdgeContentPadded}>
+        <View style={styles.row}>
+          <View style={styles.halfWidth}>
+            <Input
+              label="First Name"
+              placeholder="John"
+              value={formData.first_name}
+              onChangeText={(value) => updateField('first_name', value)}
+              error={hasFieldError('first name') ? getFieldError('first name') : undefined}
+            />
+          </View>
+          <View style={styles.halfWidth}>
+            <Input
+              label="Last Name"
+              placeholder="Doe"
+              value={formData.last_name}
+              onChangeText={(value) => updateField('last_name', value)}
+              error={hasFieldError('last name') ? getFieldError('last name') : undefined}
+            />
+          </View>
         </View>
       </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
   
   const renderDemographicsSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Demographics</Text>
-      
-      {/* Age Input - Full Width */}
-      <View style={styles.fieldContainer}>
-        <Input
-          label="Age"
-          placeholder="Enter your age (e.g., 25)"
-          value={formData.age > 0 ? formData.age.toString() : ''}
-          onChangeText={handleAgeChange}
-          keyboardType="numeric"
-          error={hasFieldError('age') ? getFieldError('age') : undefined}
-        />
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>Demographics</Text>
       </View>
       
-      {/* Gender Selection - Full Width */}
-      <View style={styles.fieldContainer}>
-        <Text style={styles.inputLabel}>Gender *</Text>
-        <SegmentedControl
-          options={GENDER_OPTIONS.map(opt => ({
-            id: opt.value,
-            label: opt.label,
-            value: opt.value
-          }))}
-          selectedId={formData.gender}
-          onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
-          gradient={['#6366F1', '#8B5CF6']}
-          style={styles.genderSegmentedControl}
-        />
-        {hasFieldError('gender') && (
-          <Text style={styles.errorText}>{getFieldError('gender')}</Text>
-        )}
+      <View style={styles.edgeToEdgeContentPadded}>
+        {/* Age Field - Compact width */}
+        <View style={styles.ageRow}>
+          <View style={styles.ageField}>
+            <Input
+              label="Age"
+              placeholder="25"
+              value={formData.age > 0 ? formData.age.toString() : ''}
+              onChangeText={handleAgeChange}
+              keyboardType="numeric"
+              error={hasFieldError('age') ? getFieldError('age') : undefined}
+            />
+          </View>
+        </View>
+        
+        {/* Gender Field - Full width for all options */}
+        <View style={styles.genderField}>
+          <Text style={styles.inputLabel} numberOfLines={1}>Gender *</Text>
+          <SegmentedControl
+            options={GENDER_OPTIONS.map(opt => ({
+              id: opt.value,
+              label: opt.label,
+              value: opt.value
+            }))}
+            selectedId={formData.gender}
+            onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
+            gradient={['#6366F1', '#8B5CF6']}
+            style={styles.genderSegmentedControl}
+          />
+          {hasFieldError('gender') && (
+            <Text style={styles.errorText}>{getFieldError('gender')}</Text>
+          )}
+        </View>
       </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
   
   const renderLocationSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Location</Text>
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>Location</Text>
+      </View>
       
-      {/* Country Selection */}
-      <View style={styles.locationField}>
-        <Text style={styles.inputLabel}>Country *</Text>
-        <View style={styles.countryGrid}>
-          {COUNTRIES_WITH_STATES.map((country) => (
+      <View style={styles.edgeToEdgeContentPadded}>
+        {/* Country Selection */}
+        <View style={styles.locationField}>
+          <Text style={styles.inputLabel} numberOfLines={1}>Country *</Text>
+          <View style={styles.countryGrid}>
+            {COUNTRIES_WITH_STATES.map((country) => (
+              <AnimatedPressable
+                key={country.name}
+                style={[
+                  styles.countryOption,
+                  ...(formData.country === country.name ? [styles.countryOptionSelected] : []),
+                ]}
+                onPress={() => handleCountryChange(country.name)}
+                scaleValue={0.95}
+              >
+                <Text
+                  style={[
+                    styles.countryOptionText,
+                    formData.country === country.name && styles.countryOptionTextSelected,
+                  ]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {country.name}
+                </Text>
+              </AnimatedPressable>
+            ))}
             <AnimatedPressable
-              key={country.name}
               style={[
                 styles.countryOption,
-                ...(formData.country === country.name ? [styles.countryOptionSelected] : []),
+                ...(formData.country === 'Other' ? [styles.countryOptionSelected] : []),
               ]}
-              onPress={() => handleCountryChange(country.name)}
+              onPress={() => handleCountryChange('Other')}
               scaleValue={0.95}
             >
               <Text
                 style={[
                   styles.countryOptionText,
-                  formData.country === country.name && styles.countryOptionTextSelected,
+                  formData.country === 'Other' && styles.countryOptionTextSelected,
                 ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
-                {country.name}
+                Other
               </Text>
             </AnimatedPressable>
-          ))}
-          <AnimatedPressable
-            style={[
-              styles.countryOption,
-              ...(formData.country === 'Other' ? [styles.countryOptionSelected] : []),
-            ]}
-            onPress={() => handleCountryChange('Other')}
-            scaleValue={0.95}
-          >
-            <Text
-              style={[
-                styles.countryOptionText,
-                formData.country === 'Other' && styles.countryOptionTextSelected,
-              ]}
-            >
-              Other
-            </Text>
-          </AnimatedPressable>
-        </View>
-        {hasFieldError('country') && (
-          <Text style={styles.errorText}>{getFieldError('country')}</Text>
-        )}
-      </View>
-      
-      {/* Custom Country Input */}
-      {showCustomCountry && (
-        <View style={styles.locationField}>
-          <Input
-            label="Country Name"
-            placeholder="Enter your country"
-            value={customCountry}
-            onChangeText={setCustomCountry}
-          />
-        </View>
-      )}
-      
-      {/* State Selection */}
-      {availableStates.length > 0 && (
-        <View style={styles.locationField}>
-          <Text style={styles.inputLabel}>State/Province *</Text>
-          <View style={styles.stateGrid}>
-            {availableStates.map((state) => (
-              <AnimatedPressable
-                key={state}
-                style={[
-                  styles.stateOption,
-                  ...(formData.state === state ? [styles.stateOptionSelected] : []),
-                ]}
-                onPress={() => updateField('state', state)}
-                scaleValue={0.95}
-              >
-                <Text
-                  style={[
-                    styles.stateOptionText,
-                    formData.state === state && styles.stateOptionTextSelected,
-                  ]}
-                >
-                  {state}
-                </Text>
-              </AnimatedPressable>
-            ))}
           </View>
-          {hasFieldError('state') && (
-            <Text style={styles.errorText}>{getFieldError('state')}</Text>
+          {hasFieldError('country') && (
+            <Text style={styles.errorText}>{getFieldError('country')}</Text>
           )}
         </View>
-      )}
-      
-      {/* Custom State Input for Other Countries */}
-      {showCustomCountry && (
+        
+        {/* Custom Country Input */}
+        {showCustomCountry && (
+          <View style={styles.locationField}>
+            <Input
+              label="Country Name"
+              placeholder="Enter your country"
+              value={customCountry}
+              onChangeText={setCustomCountry}
+            />
+          </View>
+        )}
+        
+        {/* State Selection */}
+        {availableStates.length > 0 && (
+          <View style={styles.locationField}>
+            <Text style={styles.inputLabel} numberOfLines={1}>State/Province *</Text>
+            <View style={styles.stateGrid}>
+              {availableStates.map((state) => (
+                <AnimatedPressable
+                  key={state}
+                  style={[
+                    styles.stateOption,
+                    ...(formData.state === state ? [styles.stateOptionSelected] : []),
+                  ]}
+                  onPress={() => updateField('state', state)}
+                  scaleValue={0.95}
+                >
+                  <Text
+                    style={[
+                      styles.stateOptionText,
+                      formData.state === state && styles.stateOptionTextSelected,
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {state}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+            {hasFieldError('state') && (
+              <Text style={styles.errorText}>{getFieldError('state')}</Text>
+            )}
+          </View>
+        )}
+        
+        {/* Custom State Input for Other Countries */}
+        {showCustomCountry && (
+          <View style={styles.locationField}>
+            <Input
+              label="State/Province"
+              placeholder="Enter your state or province"
+              value={formData.state}
+              onChangeText={(value) => updateField('state', value)}
+            />
+          </View>
+        )}
+        
+        {/* Region (Optional) */}
         <View style={styles.locationField}>
           <Input
-            label="State/Province"
-            placeholder="Enter your state or province"
-            value={formData.state}
-            onChangeText={(value) => updateField('state', value)}
+            label="Region/City (Optional)"
+            placeholder="e.g., Mumbai, Los Angeles, London"
+            value={formData.region || ''}
+            onChangeText={(value) => updateField('region', value)}
           />
         </View>
-      )}
-      
-      {/* Region (Optional) */}
-      <View style={styles.locationField}>
-        <Input
-          label="Region/City (Optional)"
-          placeholder="e.g., Mumbai, Los Angeles, London"
-          value={formData.region || ''}
-          onChangeText={(value) => updateField('region', value)}
-        />
       </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
 
   const renderOccupationSection = () => {
-    const featureItems: FeatureItem[] = OCCUPATION_OPTIONS.map(option => ({
-      id: option.value,
-      label: option.label,
-      selected: formData.occupation_type === option.value,
-      icon: (
-        <Ionicons
-          name={option.iconName as any}
-          size={24}
-          color="#FFFFFF"
-        />
-      ),
-    }));
-
     return (
       <GlassCard
-        style={styles.section}
+        style={styles.sectionEdgeToEdge}
         elevation={2}
         blurIntensity="medium"
-        padding="lg"
-        borderRadius="lg"
+        padding="none"
+        borderRadius="none"
       >
-        <Text style={styles.sectionTitle}>Daily Activity</Text>
-        <Text style={styles.sectionSubtitle}>
-          This helps us understand your daily movement beyond exercise
-        </Text>
+        <View style={styles.sectionTitlePadded}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>Daily Activity</Text>
+          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+            This helps us understand your daily movement beyond exercise
+          </Text>
+        </View>
 
-        <FeatureGrid
-          items={featureItems}
-          onItemPress={(id) => updateField('occupation_type', id as PersonalInfoData['occupation_type'])}
-          columns={2}
-          animated={true}
-          selectable={true}
-          style={styles.occupationGrid}
-        />
+        {/* Horizontal scrollable cards - inset from card edges */}
+        <View style={styles.scrollContainerInset}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContentInset}
+            decelerationRate="fast"
+            snapToInterval={rw(105) + rw(10)}
+            snapToAlignment="start"
+          >
+            {OCCUPATION_OPTIONS.map((option) => {
+              const isSelected = formData.occupation_type === option.value;
+              
+              return (
+                <AnimatedPressable
+                  key={option.value}
+                  style={styles.activityCardItem}
+                  onPress={() => updateField('occupation_type', option.value as PersonalInfoData['occupation_type'])}
+                  scaleValue={0.95}
+                >
+                  <View style={[
+                    styles.activityCard,
+                    isSelected && styles.activityCardSelected,
+                  ]}>
+                    <View style={[
+                      styles.activityIconContainer,
+                      isSelected && styles.activityIconContainerSelected,
+                    ]}>
+                      <Ionicons
+                        name={option.iconName as any}
+                        size={rf(24)}
+                        color={isSelected ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                      />
+                    </View>
+                    <Text 
+                      style={[
+                        styles.activityCardTitle,
+                        isSelected && styles.activityCardTitleSelected,
+                      ]}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      {option.label}
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
+          </ScrollView>
+        </View>
 
-        {hasFieldError('occupation') && (
-          <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
-        )}
+        <View style={styles.edgeToEdgeContentPadded}>
+          {hasFieldError('occupation') && (
+            <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
+          )}
+        </View>
+        <View style={styles.sectionBottomPad} />
       </GlassCard>
     );
   };
@@ -564,92 +673,97 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     
     return (
       <GlassCard
-        style={styles.section}
+        style={styles.sectionEdgeToEdge}
         elevation={2}
         blurIntensity="medium"
-        padding="lg"
-        borderRadius="lg"
+        padding="none"
+        borderRadius="none"
       >
-        <Text style={styles.sectionTitle}>Sleep Schedule</Text>
-        <Text style={styles.sectionSubtitle}>
-          Help us understand your daily routine for personalized recommendations
-        </Text>
-        
-        <View style={styles.row}>
-          <View style={styles.halfWidth}>
-            <Text style={styles.inputLabel}>Wake Up Time *</Text>
-            <TouchableOpacity
-              style={styles.timeSelector}
-              onPress={() => setShowWakeTimePicker(true)}
-            >
-              <View style={styles.timeIconContainer}>
-                <Ionicons name="sunny-outline" size={18} color="#F59E0B" />
-                <Text style={styles.timeText}>
-                  {formatTimeForDisplay(formData.wake_time)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.halfWidth}>
-            <Text style={styles.inputLabel}>Sleep Time *</Text>
-            <TouchableOpacity
-              style={styles.timeSelector}
-              onPress={() => setShowSleepTimePicker(true)}
-            >
-              <View style={styles.timeIconContainer}>
-                <Ionicons name="moon-outline" size={18} color="#6366F1" />
-                <Text style={styles.timeText}>
-                  {formatTimeForDisplay(formData.sleep_time)}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.sectionTitlePadded}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>Sleep Schedule</Text>
+          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+            Help us understand your daily routine for personalized recommendations
+          </Text>
         </View>
         
-        {/* Sleep Duration Display */}
-        {sleepDuration && (
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={StyleSheet.flatten([
-              styles.sleepDurationCard,
-              isHealthySleep ? styles.sleepDurationHealthy : styles.sleepDurationWarning
-            ])}
-          >
-            <View style={styles.sleepDurationContent}>
-              <View style={styles.sleepDurationIconContainer}>
-                <Ionicons
-                  name={isHealthySleep ? 'checkmark-circle' : 'alert-circle'}
-                  size={20}
-                  color={isHealthySleep ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
-                />
-              </View>
-              <View style={styles.sleepDurationText}>
-                <Text style={styles.sleepDurationTitle}>
-                  Sleep Duration: {sleepDuration}
-                </Text>
-                <Text style={styles.sleepDurationSubtitle}>
-                  {isHealthySleep
-                    ? 'Great! This is within the recommended 7-9 hours.'
-                    : sleepHours < 7
-                      ? 'Consider getting more sleep for better fitness results.'
-                      : 'Very long sleep duration detected.'
-                  }
-                </Text>
-              </View>
+        <View style={styles.edgeToEdgeContentPadded}>
+          <View style={styles.row}>
+            <View style={styles.halfWidth}>
+              <Text style={styles.inputLabel} numberOfLines={1}>Wake Up Time *</Text>
+              <TouchableOpacity
+                style={styles.timeSelector}
+                onPress={() => setShowWakeTimePicker(true)}
+              >
+                <View style={styles.timeIconContainer}>
+                  <Ionicons name="sunny-outline" size={rf(20)} color="#F59E0B" />
+                  <Text style={styles.timeText} numberOfLines={1}>
+                    {formatTimeForDisplay(formData.wake_time)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          </GlassCard>
-        )}
-        
-        {hasFieldError('wake') && (
-          <Text style={styles.errorText}>{getFieldError('wake')}</Text>
-        )}
-        {hasFieldError('sleep') && (
-          <Text style={styles.errorText}>{getFieldError('sleep')}</Text>
-        )}
+
+            <View style={styles.halfWidth}>
+              <Text style={styles.inputLabel} numberOfLines={1}>Sleep Time *</Text>
+              <TouchableOpacity
+                style={styles.timeSelector}
+                onPress={() => setShowSleepTimePicker(true)}
+              >
+                <View style={styles.timeIconContainer}>
+                  <Ionicons name="moon-outline" size={rf(20)} color="#6366F1" />
+                  <Text style={styles.timeText} numberOfLines={1}>
+                    {formatTimeForDisplay(formData.sleep_time)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* Sleep Duration Display */}
+          {sleepDuration && (
+            <GlassCard
+              elevation={2}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={StyleSheet.flatten([
+                styles.sleepDurationCardInline,
+                isHealthySleep ? styles.sleepDurationHealthy : styles.sleepDurationWarning
+              ])}
+            >
+              <View style={styles.sleepDurationContent}>
+                <View style={styles.sleepDurationIconContainer}>
+                  <Ionicons
+                    name={isHealthySleep ? 'checkmark-circle' : 'alert-circle'}
+                    size={rf(24)}
+                    color={isHealthySleep ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                  />
+                </View>
+                <View style={styles.sleepDurationText}>
+                  <Text style={styles.sleepDurationTitle} numberOfLines={1}>
+                    Sleep Duration: {sleepDuration}
+                  </Text>
+                  <Text style={styles.sleepDurationSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                    {isHealthySleep
+                      ? 'Great! This is within the recommended 7-9 hours.'
+                      : sleepHours < 7
+                        ? 'Consider getting more sleep for better fitness results.'
+                        : 'Very long sleep duration detected.'
+                    }
+                  </Text>
+                </View>
+              </View>
+            </GlassCard>
+          )}
+          
+          {hasFieldError('wake') && (
+            <Text style={styles.errorText}>{getFieldError('wake')}</Text>
+          )}
+          {hasFieldError('sleep') && (
+            <Text style={styles.errorText}>{getFieldError('sleep')}</Text>
+          )}
+        </View>
+        <View style={styles.sectionBottomPad} />
       </GlassCard>
     );
   };
@@ -662,23 +776,39 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header with Gradient */}
-        {/* Hero Section - Simplified Modern Design */}
+        {/* Hero Section with Background Image */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={160}
+          minHeight={180}
+          maxHeight={260}
         >
-          <Text style={styles.title}>Personal Info</Text>
-          <Text style={styles.subtitle}>
-            Help us personalize your fitness journey
+          {/* Animated Avatar Placeholder */}
+          <View style={styles.avatarContainer}>
+            <AnimatedIcon
+              icon={
+                <View style={styles.avatarCircle}>
+                  <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
+                </View>
+              }
+              animationType="pulse"
+              continuous={true}
+              animationDuration={1500}
+              size={rf(80)}
+            />
+          </View>
+
+          <Text style={styles.title} numberOfLines={1}>Tell us about yourself</Text>
+          <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
+            This helps us create a personalized fitness plan just for you
           </Text>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={12} color={ResponsiveTheme.colors.success} />
-              <Text style={styles.autoSaveText}>Saving...</Text>
+              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Text style={styles.autoSaveText} numberOfLines={1}>Saving...</Text>
             </View>
           )}
         </HeroSection>
@@ -719,7 +849,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               <View style={styles.validationTitleRow}>
                 <Ionicons
                   name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
-                  size={18}
+                  size={rf(20)}
                   color={validationResult.is_valid ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
                 />
                 <Text style={[
@@ -729,7 +859,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
                 </Text>
               </View>
-              <Text style={styles.validationPercentage}>
+              <Text style={styles.validationPercentage} numberOfLines={1}>
                 {validationResult.completion_percentage}% Complete
               </Text>
               
@@ -788,50 +918,34 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       {/* Footer Navigation */}
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button
-            title="Back"
+          <AnimatedPressable
+            style={styles.backButtonCompact}
             onPress={onBack}
-            variant="outline"
-            style={styles.backButton}
-          />
-          {onNavigateToTab && (
-            <Button
-              title="Jump to Review"
-              onPress={() => {
-                // Save current changes before navigating
-                const finalData = showCustomCountry && customCountry 
-                  ? { ...formData, country: customCountry }
-                  : formData;
-                onUpdate(finalData);
-                onNavigateToTab(5);
-              }}
-              variant="outline"
-              style={styles.jumpButton}
-            />
-          )}
-          <Button
-            title="Next: Diet Preferences"
+            scaleValue={0.96}
+          >
+            <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </AnimatedPressable>
+          
+          <AnimatedPressable
+            style={styles.nextButtonCompact}
             onPress={() => {
-              console.log('[NEXT] PersonalInfoTab: Next button pressed');
-              console.log('[NEXT] Current form data:', formData);
-              
-              // Prepare final data including custom country if selected
-              const finalData = showCustomCountry && customCountry 
+              const finalData = showCustomCountry && customCountry
                 ? { ...formData, country: customCountry }
                 : formData;
-              
-              // Update parent state for persistence
               onUpdate(finalData);
-              
-              // Pass current form data directly to validation to avoid state timing issues
-              // This ensures we validate the actual form data, not potentially stale hook state
-              onNext(finalData);
+              // If editing from Review, return directly to Review tab
+              if (isEditingFromReview && onReturnToReview) {
+                onReturnToReview();
+              } else {
+                onNext(finalData);
+              }
             }}
-            variant="primary"
-            style={styles.nextButton}
-            loading={isLoading}
-            pulse={validationResult?.is_valid || false}
-          />
+            scaleValue={0.96}
+          >
+            <Text style={styles.nextButtonText}>{isEditingFromReview ? 'Review' : 'Next'}</Text>
+            <Ionicons name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"} size={rf(18)} color="#FFFFFF" />
+          </AnimatedPressable>
         </View>
       </View>
       
@@ -878,59 +992,61 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: rh(12),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   headerGradient: {
-    paddingHorizontal: rw(16),
-    paddingTop: rh(24),
-    paddingBottom: rh(16),
-    borderBottomLeftRadius: rw(24),
-    borderBottomRightRadius: rw(24),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
-    fontSize: rf(24),
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: rh(4),
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: ResponsiveTheme.spacing.sm,
     textAlign: 'center',
     letterSpacing: -0.5,
+    flexShrink: 1,
   },
 
   subtitle: {
-    fontSize: rf(13),
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: rf(18),
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.9)',
+    lineHeight: ResponsiveTheme.fontSize.md * 1.5,
+    marginBottom: ResponsiveTheme.spacing.md,
     textAlign: 'center',
+    flexShrink: 1,
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rw(4),
-    alignSelf: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: rw(12),
-    paddingVertical: rh(4),
-    borderRadius: rw(16),
-    marginTop: rh(8),
+    gap: ResponsiveTheme.spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: `${ResponsiveTheme.colors.success}20`,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   autoSaveText: {
-    fontSize: rf(11),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   avatarContainer: {
-    marginBottom: rh(12),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   avatarCircle: {
-    width: rw(64),
-    height: rw(64),
-    borderRadius: rw(32),
+    width: rf(80),
+    height: rf(80),
+    borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -939,72 +1055,103 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    paddingHorizontal: rw(16),
-    width: '100%',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   section: {
-    marginBottom: rh(16),
-    width: '100%',
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  // Edge-to-edge section styles
+  sectionEdgeToEdge: {
+    marginTop: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.xl,
+    marginHorizontal: -ResponsiveTheme.spacing.lg, // Negate parent's horizontal padding
+  },
+
+  sectionTitlePadded: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+  },
+
+  sectionBottomPad: {
+    height: ResponsiveTheme.spacing.lg,
+  },
+
+  edgeToEdgeContentPadded: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  sleepDurationCardInline: {
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   sectionTitle: {
-    fontSize: rf(15),
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: rh(12),
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
 
   sectionSubtitle: {
-    fontSize: rf(13),
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: rh(12),
-    lineHeight: rf(18),
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.4,
+    flexShrink: 1,
   },
 
   row: {
     flexDirection: 'row',
-    gap: rw(12),
-    width: '100%',
+    gap: ResponsiveTheme.spacing.md,
   },
 
   halfWidth: {
     flex: 1,
-    minWidth: 0,
   },
 
-  fieldContainer: {
-    marginBottom: rh(16),
-    width: '100%',
+  // Demographics Layout - Stacked vertically
+  ageRow: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  ageField: {
+    width: '50%',
+  },
+
+  genderField: {
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   inputLabel: {
-    fontSize: rf(13),
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: rh(8),
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    flexShrink: 1,
   },
 
   // Gender Selection - SegmentedControl
   genderSegmentedControl: {
-    marginTop: rh(8),
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   genderContainer: {
-    gap: rh(8),
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   genderOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: rh(10),
-    paddingHorizontal: rw(12),
-    borderRadius: rw(10),
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: rh(4),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   genderOptionSelected: {
@@ -1013,15 +1160,16 @@ const styles = StyleSheet.create({
   },
 
   genderIcon: {
-    fontSize: rf(16),
-    marginRight: rw(8),
+    fontSize: rf(18),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   genderOptionText: {
-    fontSize: rf(13),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     flex: 1,
+    flexShrink: 1,
   },
 
   genderOptionTextSelected: {
@@ -1031,99 +1179,170 @@ const styles = StyleSheet.create({
 
   // Location Selection
   locationField: {
-    marginBottom: rh(16),
-    width: '100%',
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   countryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: rw(8),
-    marginTop: rh(4),
-    width: '100%',
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   countryOption: {
-    paddingVertical: rh(10),
-    paddingHorizontal: rw(12),
-    borderRadius: rw(10),
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    minWidth: rw(85),
-    maxWidth: rw(110),
+    borderColor: 'transparent',
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    minWidth: '30%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
 
   countryOptionSelected: {
-    borderColor: '#8B5CF6',
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
   },
 
   countryOptionText: {
-    fontSize: rf(11),
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontWeight: '500',
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
     textAlign: 'center',
+    flexShrink: 1,
   },
 
   countryOptionTextSelected: {
-    color: '#A78BFA',
-    fontWeight: '600',
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   stateGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: rw(8),
-    marginTop: rh(4),
-    width: '100%',
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   stateOption: {
-    paddingVertical: rh(8),
-    paddingHorizontal: rw(10),
-    borderRadius: rw(8),
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'transparent',
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   stateOptionSelected: {
-    borderColor: '#8B5CF6',
-    backgroundColor: 'rgba(139, 92, 246, 0.12)',
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}15`,
   },
 
   stateOptionText: {
-    fontSize: rf(11),
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '500',
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    textAlign: 'center',
+    flexShrink: 1,
   },
 
   stateOptionTextSelected: {
-    color: '#A78BFA',
-    fontWeight: '600',
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   // Occupation Selection - FeatureGrid
-  occupationGrid: {
-    marginVertical: rh(12),
+  // Scrollable activity cards container
+  scrollClipContainer: {
+    width: '100%',
+    overflow: 'hidden',
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  // Scroll container inset from card edges - keeps options inside card
+  scrollContainerInset: {
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.sm,
+    overflow: 'hidden',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  // Scroll content with internal padding
+  scrollContentInset: {
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: rw(10),
+  },
+
+  activityScrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: rw(10),
+  },
+
+  activityCardItem: {
+    width: rw(105),
+  },
+
+  activityCard: {
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    padding: ResponsiveTheme.spacing.sm,
+    minHeight: rh(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  activityCardSelected: {
+    borderColor: ResponsiveTheme.colors.primary,
+    backgroundColor: `${ResponsiveTheme.colors.primary}10`,
+  },
+
+  activityIconContainer: {
+    width: rf(44),
+    height: rf(44),
+    borderRadius: rf(22),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  activityIconContainerSelected: {
+    backgroundColor: `${ResponsiveTheme.colors.primary}20`,
+  },
+
+  activityCardTitle: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: rf(14),
+  },
+
+  activityCardTitleSelected: {
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   occupationContainer: {
-    gap: rh(8),
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   occupationOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: rh(12),
-    paddingHorizontal: rw(12),
-    borderRadius: rw(12),
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    marginBottom: rh(8),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   occupationOptionSelected: {
@@ -1132,11 +1351,11 @@ const styles = StyleSheet.create({
   },
 
   occupationIconContainer: {
-    width: rw(44),
-    height: rw(44),
-    borderRadius: rw(22),
+    width: rf(56),
+    height: rf(56),
+    borderRadius: ResponsiveTheme.borderRadius.full,
     overflow: 'hidden',
-    marginRight: rw(12),
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   occupationIconGradient: {
@@ -1148,18 +1367,17 @@ const styles = StyleSheet.create({
 
   occupationTextContainer: {
     flex: 1,
-    minWidth: 0,
   },
 
   occupationCheckmark: {
-    marginLeft: rw(8),
+    marginLeft: ResponsiveTheme.spacing.sm,
   },
 
   occupationLabel: {
-    fontSize: rf(14),
+    fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    marginBottom: rh(2),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   occupationLabelSelected: {
@@ -1167,9 +1385,10 @@ const styles = StyleSheet.create({
   },
 
   occupationDescription: {
-    fontSize: rf(11),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(15),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    flexShrink: 1,
   },
 
   occupationDescriptionSelected: {
@@ -1178,11 +1397,11 @@ const styles = StyleSheet.create({
 
   // Sleep Schedule
   timeSelector: {
-    paddingVertical: rh(12),
-    paddingHorizontal: rw(12),
-    borderRadius: rw(12),
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     alignItems: 'center',
   },
@@ -1190,18 +1409,19 @@ const styles = StyleSheet.create({
   timeIconContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rw(8),
+    gap: ResponsiveTheme.spacing.sm,
   },
 
   timeText: {
-    fontSize: rf(14),
+    fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
+    flexShrink: 1,
   },
 
   sleepDurationCard: {
-    marginTop: rh(12),
-    padding: rw(12),
+    marginTop: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.md,
   },
 
   sleepDurationHealthy: {
@@ -1222,46 +1442,47 @@ const styles = StyleSheet.create({
   },
 
   sleepDurationIconContainer: {
-    marginRight: rw(12),
+    marginRight: ResponsiveTheme.spacing.md,
   },
 
   sleepDurationText: {
     flex: 1,
-    minWidth: 0,
   },
 
   sleepDurationTitle: {
-    fontSize: rf(14),
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: rh(4),
+    marginBottom: ResponsiveTheme.spacing.xs,
+    flexShrink: 1,
   },
 
   sleepDurationSubtitle: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(16),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    flexShrink: 1,
   },
 
   // Validation
   validationSummary: {
-    paddingHorizontal: rw(16),
-    marginBottom: rh(16),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   validationCard: {
-    padding: rw(12),
+    padding: ResponsiveTheme.spacing.md,
   },
 
   validationTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rw(8),
-    marginBottom: rh(4),
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   validationTitle: {
-    fontSize: rf(15),
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
@@ -1271,110 +1492,150 @@ const styles = StyleSheet.create({
   },
 
   validationPercentage: {
-    fontSize: rf(18),
+    fontSize: ResponsiveTheme.fontSize.lg,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    marginBottom: rh(12),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   validationErrors: {
-    marginBottom: rh(12),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   validationErrorTitle: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.error,
-    marginBottom: rh(4),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   validationErrorText: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.error,
-    lineHeight: rf(16),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
   },
 
   validationWarnings: {
-    marginBottom: rh(12),
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   validationWarningTitle: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.warning,
-    marginBottom: rh(4),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   validationWarningText: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.warning,
-    lineHeight: rf(16),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
   },
 
   errorText: {
-    fontSize: rf(12),
-    color: '#EF4444',
-    marginTop: rh(4),
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
+    marginTop: ResponsiveTheme.spacing.xs,
   },
 
   // Footer
+  // Footer - Compact aesthetic design
   footer: {
-    paddingHorizontal: rw(16),
-    paddingVertical: rh(12),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: 'rgba(15, 15, 26, 0.95)',
+    borderTopColor: `${ResponsiveTheme.colors.border}50`,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: rw(8),
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: ResponsiveTheme.spacing.md,
   },
 
+  backButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+    gap: rw(4),
+  },
+
+  backButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  nextButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    gap: rw(4),
+  },
+
+  nextButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#FFFFFF',
+  },
+
+  nextButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  // Legacy button styles
   backButton: {
-    flex: 0.8,
-  },
-
-  jumpButton: {
     flex: 1,
   },
 
-  nextButton: {
+  jumpButton: {
     flex: 1.5,
+  },
+
+  nextButton: {
+    flex: 2,
   },
 
   // Debug styles
   debugInfo: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    padding: rw(8),
-    borderRadius: rw(8),
-    marginTop: rh(12),
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   debugTitle: {
-    fontSize: rf(12),
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
-    marginBottom: rh(4),
+    marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   debugText: {
-    fontSize: rf(10),
+    fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
     fontFamily: 'monospace',
   },
 
   debugButton: {
     backgroundColor: ResponsiveTheme.colors.primary,
-    padding: rw(4),
-    borderRadius: rw(4),
-    marginTop: rh(8),
+    padding: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginTop: ResponsiveTheme.spacing.sm,
     alignSelf: 'center',
   },
 
   debugButtonText: {
     color: ResponsiveTheme.colors.white,
-    fontSize: rf(10),
+    fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.bold,
   },
 });

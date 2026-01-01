@@ -216,3 +216,97 @@ export const getDimensions_Export = () => {
 
 // For backwards compatibility
 export const dimensions = getDimensions_Export();
+
+/**
+ * Get current breakpoint based on screen width
+ * xs: < 360px (very small phones)
+ * sm: 360-413px (standard phones)
+ * md: 414-767px (large phones)
+ * lg: >= 768px (tablets)
+ */
+export const getBreakpoint = (): 'xs' | 'sm' | 'md' | 'lg' => {
+  const { screenWidth } = getDimensions();
+  if (screenWidth < 360) return 'xs';
+  if (screenWidth < 414) return 'sm';
+  if (screenWidth < 768) return 'md';
+  return 'lg';
+};
+
+/**
+ * Calculate responsive card width for grid layouts
+ * @param columns - Number of columns in grid
+ * @param gap - Gap between items (default: ResponsiveTheme.spacing.md)
+ * @param containerPadding - Horizontal padding of container (default: ResponsiveTheme.spacing.lg * 2)
+ * @returns Width percentage as string (e.g., "48%")
+ */
+export const getResponsiveCardWidth = (
+  columns: number = 2,
+  gap: number = 16, // Default gap
+  containerPadding: number = 48 // Default container padding
+): string => {
+  const { screenWidth } = getDimensions();
+  const breakpoint = getBreakpoint();
+  
+  // Adjust columns based on breakpoint
+  let adjustedColumns = columns;
+  if (breakpoint === 'xs' && columns > 2) {
+    adjustedColumns = 2; // Force 2 columns max on very small screens
+  } else if (breakpoint === 'lg' && columns === 2) {
+    adjustedColumns = 3; // Use 3 columns on tablets for 2-column layouts
+  }
+  
+  const totalGaps = (adjustedColumns - 1) * gap;
+  const availableWidth = screenWidth - containerPadding - totalGaps;
+  const cardWidth = availableWidth / adjustedColumns;
+  const percentage = (cardWidth / screenWidth) * 100;
+  
+  return `${Math.floor(percentage)}%`;
+};
+
+/**
+ * Get responsive number of columns based on screen size
+ * @param defaultColumns - Default columns for standard screens
+ */
+export const getResponsiveColumns = (defaultColumns: number = 2): number => {
+  const breakpoint = getBreakpoint();
+  
+  if (breakpoint === 'xs') {
+    return Math.min(defaultColumns, 2); // Max 2 columns on very small screens
+  } else if (breakpoint === 'lg') {
+    return Math.min(defaultColumns + 1, 4); // Add 1 column on tablets, max 4
+  }
+  
+  return defaultColumns;
+};
+
+/**
+ * Get responsive gap size based on screen size
+ * @param baseGap - Base gap value
+ */
+export const getResponsiveGap = (baseGap: number): number => {
+  const breakpoint = getBreakpoint();
+  
+  if (breakpoint === 'xs') {
+    return Math.max(4, baseGap * 0.75); // Reduce gap on small screens
+  } else if (breakpoint === 'lg') {
+    return baseGap * 1.25; // Increase gap on tablets
+  }
+  
+  return baseGap;
+};
+
+/**
+ * Check if device is small (for conditional rendering)
+ */
+export const isSmallDevice = (): boolean => {
+  const breakpoint = getBreakpoint();
+  return breakpoint === 'xs' || breakpoint === 'sm';
+};
+
+/**
+ * Check if device is large (tablet or bigger)
+ */
+export const isLargeDevice = (): boolean => {
+  const breakpoint = getBreakpoint();
+  return breakpoint === 'lg';
+};

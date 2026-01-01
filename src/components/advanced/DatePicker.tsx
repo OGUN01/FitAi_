@@ -115,7 +115,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
           return (
             <TouchableOpacity
-              key={index}
+              key={`date-${date.toISOString()}`}
               style={[
                 styles.optionItem,
                 isSelected && styles.optionItemSelected,
@@ -162,7 +162,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
           return (
             <TouchableOpacity
-              key={index}
+              key={`time-${time.getHours()}-${time.getMinutes()}`}
               style={[styles.optionItem, isSelected && styles.optionItemSelected]}
               onPress={() => {
                 const newDate = new Date(selectedDate);

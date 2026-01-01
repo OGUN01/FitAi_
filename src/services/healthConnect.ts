@@ -8,10 +8,13 @@ import {
   readRecords,
   getSdkStatus,
   openHealthConnectSettings,
-  PermissionType,
+  Permission,
   RecordType,
   SdkAvailabilityStatus,
 } from 'react-native-health-connect';
+
+// Type alias for permissions
+type PermissionType = Permission;
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -96,7 +99,7 @@ class HealthConnectService {
         console.log('💡 Health Connect requires Android 8.0+ and the Health Connect app to be installed');
         return false;
       }
-      
+
       if (sdkStatus === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
         console.log('⚠️ Health Connect provider update required');
         console.log('💡 Please update the Health Connect app from Google Play Store');
@@ -104,8 +107,8 @@ class HealthConnectService {
         await openHealthConnectSettings();
         return false;
       }
-      
-      if (sdkStatus !== SdkAvailabilityStatus.SDK_AVAILABLE) {
+
+      if (sdkStatus !== SdkAvailabilityStatus.SDK_AVAILABLE && sdkStatus !== 'SDK_AVAILABLE') {
         console.log('❌ Health Connect not available - Unknown status:', sdkStatus);
         return false;
       }
@@ -258,9 +261,9 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (stepsRecords.length > 0) {
-          healthData.steps = stepsRecords.reduce((total, record) => total + (record.count || 0), 0);
+
+        if (stepsRecords && 'records' in stepsRecords && stepsRecords.records.length > 0) {
+          healthData.steps = stepsRecords.records.reduce((total: number, record: any) => total + (record.count || 0), 0);
           console.log('📊 Steps retrieved:', healthData.steps);
         }
       } catch (error) {
@@ -276,11 +279,11 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (heartRateRecords.length > 0) {
+
+        if (heartRateRecords && 'records' in heartRateRecords && heartRateRecords.records.length > 0) {
           // Get most recent heart rate reading
-          const latestRecord = heartRateRecords[heartRateRecords.length - 1];
-          healthData.heartRate = latestRecord.beatsPerMinute;
+          const latestRecord = heartRateRecords.records[heartRateRecords.records.length - 1];
+          healthData.heartRate = (latestRecord as any).beatsPerMinute;
           console.log('💓 Heart rate retrieved:', healthData.heartRate);
         }
       } catch (error) {
@@ -296,10 +299,10 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (caloriesRecords.length > 0) {
-          healthData.activeCalories = caloriesRecords.reduce(
-            (total, record) => total + (record.energy?.inKilocalories || 0), 0
+
+        if (caloriesRecords && 'records' in caloriesRecords && caloriesRecords.records.length > 0) {
+          healthData.activeCalories = caloriesRecords.records.reduce(
+            (total: number, record: any) => total + (record.energy?.inKilocalories || 0), 0
           );
           console.log('🔥 Active calories retrieved:', healthData.activeCalories);
         }
@@ -316,10 +319,10 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (distanceRecords.length > 0) {
-          healthData.distance = distanceRecords.reduce(
-            (total, record) => total + (record.distance?.inMeters || 0), 0
+
+        if (distanceRecords && 'records' in distanceRecords && distanceRecords.records.length > 0) {
+          healthData.distance = distanceRecords.records.reduce(
+            (total: number, record: any) => total + (record.distance?.inMeters || 0), 0
           );
           console.log('🏃 Distance retrieved:', healthData.distance, 'meters');
         }
@@ -336,11 +339,11 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (weightRecords.length > 0) {
+
+        if (weightRecords && 'records' in weightRecords && weightRecords.records.length > 0) {
           // Get most recent weight reading
-          const latestRecord = weightRecords[weightRecords.length - 1];
-          healthData.weight = latestRecord.weight?.inKilograms;
+          const latestRecord = weightRecords.records[weightRecords.records.length - 1];
+          healthData.weight = (latestRecord as any).weight?.inKilograms;
           console.log('⚖️ Weight retrieved:', healthData.weight, 'kg');
         }
       } catch (error) {
@@ -356,15 +359,15 @@ class HealthConnectService {
             endTime: endDate.toISOString(),
           },
         });
-        
-        if (sleepRecords.length > 0) {
-          healthData.sleep = sleepRecords.map((sleep, index) => ({
+
+        if (sleepRecords && 'records' in sleepRecords && sleepRecords.records.length > 0) {
+          healthData.sleep = sleepRecords.records.map((sleep: any, index: number) => ({
             startTime: sleep.startTime,
             endTime: sleep.endTime,
             duration: Math.round((new Date(sleep.endTime).getTime() - new Date(sleep.startTime).getTime()) / 60000),
           }));
-          
-          console.log('😴 Sleep sessions retrieved:', healthData.sleep.length);
+
+          console.log('😴 Sleep sessions retrieved:', healthData.sleep?.length || 0);
         }
       } catch (error) {
         console.warn('⚠️ Failed to read sleep data:', error);
@@ -558,11 +561,41 @@ class HealthConnectService {
       if (Platform.OS !== 'android') {
         return false;
       }
-      
+
       const sdkStatus = await getSdkStatus();
-      return sdkStatus === 'SDK_AVAILABLE';
+      return sdkStatus === SdkAvailabilityStatus.SDK_AVAILABLE || sdkStatus === 'SDK_AVAILABLE';
     } catch (error) {
       console.error('❌ Error checking Health Connect availability:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Run a single background sync operation
+   * Returns true if new data was synced, false otherwise
+   */
+  async runBackgroundSyncOnce(): Promise<boolean> {
+    try {
+      console.log('🔄 Running background Health Connect sync...');
+
+      // Check if sync is needed
+      const shouldSync = await this.shouldSync(1); // Check if 1+ hours since last sync
+      if (!shouldSync) {
+        console.log('⏭️ Skipping sync - recent sync exists');
+        return false;
+      }
+
+      // Perform sync
+      const result = await this.syncHealthData(1); // Sync last 1 day
+      if (result.success && result.data) {
+        console.log('✅ Background sync completed successfully');
+        return true;
+      }
+
+      console.log('⚠️ Background sync completed with no new data');
+      return false;
+    } catch (error) {
+      console.error('❌ Background sync failed:', error);
       return false;
     }
   }

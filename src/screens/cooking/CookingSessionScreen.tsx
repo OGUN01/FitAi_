@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { youtubeVideoService, CookingVideo } from '../../services/youtubeVideoService';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../types/ai';
 import { completionTrackingService } from '../../services/completionTracking';
 import { cookingFlowGenerator, CookingFlow } from '../../utils/cookingFlowGenerator';
 import { mealMotivationService } from '../../features/nutrition/MealMotivation';
@@ -300,7 +300,7 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
             <TouchableOpacity
               key={index}
               style={styles.ingredientChip}
-              onPress={() => handleIngredientPress(item.name)}
+              onPress={() => handleIngredientPress(item.name || '')}
               activeOpacity={0.7}
             >
               <Text style={styles.ingredientText}>🥘 {item.name}</Text>

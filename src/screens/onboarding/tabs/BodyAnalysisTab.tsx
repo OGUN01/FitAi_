@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,8 +14,6 @@ import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectW
 import { BodyAnalysisData, PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
 import { useOnboardingState } from '../../../hooks/useOnboardingState';
 import { MetabolicCalculations, BodyCompositionCalculations } from '../../../utils/healthCalculations';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // ============================================================================
 // TYPES
@@ -93,24 +91,24 @@ const STRESS_LEVELS = [
 const PHOTO_TYPES = [
   {
     type: 'front' as const,
-    title: 'Front View',
+    title: 'Front',
     iconName: 'person-outline',
-    description: 'Stand facing the camera',
-    instruction: 'Stand straight, arms at your sides, facing the camera',
+    icon: '👤',
+    shortDesc: 'Face camera',
   },
   {
     type: 'side' as const,
-    title: 'Side View',
+    title: 'Side',
     iconName: 'git-compare-outline',
-    description: 'Turn sideways to camera',
-    instruction: 'Turn to your side, arms at your sides, profile view',
+    icon: '👤',
+    shortDesc: 'Turn sideways',
   },
   {
     type: 'back' as const,
-    title: 'Back View',
+    title: 'Back',
     iconName: 'return-up-back-outline',
-    description: 'Turn around, back to camera',
-    instruction: 'Turn around, arms at your sides, back facing the camera',
+    icon: '👤',
+    shortDesc: 'Back to camera',
   },
 ];
 
@@ -183,9 +181,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   const [showMeasurementGuide, setShowMeasurementGuide] = useState(false);
   
   // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
+  // Use a ref to track if we're syncing from props to avoid circular updates
+  const isSyncingFromProps = useRef(false);
+
   useEffect(() => {
-    if (data) {
-      setFormData({
+    if (data && !isSyncingFromProps.current) {
+      const newFormData = {
         height_cm: data.height_cm || 0,
         current_weight_kg: data.current_weight_kg || 0,
         target_weight_kg: data.target_weight_kg || 0,
@@ -212,18 +213,74 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         ideal_weight_min: data.ideal_weight_min || undefined,
         ideal_weight_max: data.ideal_weight_max || undefined,
         waist_hip_ratio: data.waist_hip_ratio || undefined,
-      });
+      };
+
+      // Deep comparison: check if data has actually changed
+      const hasChanged = JSON.stringify(formData) !== JSON.stringify(newFormData);
+
+      if (hasChanged) {
+        console.log('[SYNC] BodyAnalysisTab: Data changed, syncing form data with prop data:', data);
+        isSyncingFromProps.current = true;
+        setFormData(newFormData);
+        // Reset flag after state update completes
+        setTimeout(() => {
+          isSyncingFromProps.current = false;
+        }, 0);
+      }
     }
-  }, [data]);
+  }, [data]); // ONLY depend on data prop, NOT formData!
   
+  // Memoize BMR calculation function
+  const calculateBMRMemo = React.useCallback((weightKg: number, heightCm: number): number => {
+    // Use proper Mifflin-St Jeor equation with gender and age from personalInfo
+    if (!personalInfoData?.age || !personalInfoData?.gender) {
+      // Fallback to basic calculation if personalInfo not available
+      console.warn('⚠️ PersonalInfo not available for BMR calculation, using fallback');
+      return 10 * weightKg + 6.25 * heightCm - 5 * 25; // Assuming average age of 25, male
+    }
+
+    return MetabolicCalculations.calculateBMR(
+      weightKg,
+      heightCm,
+      personalInfoData.age,
+      personalInfoData.gender
+    );
+  }, [personalInfoData?.age, personalInfoData?.gender]);
+
+  // Memoize ideal weight calculation function
+  const calculateIdealWeightRangeMemo = React.useCallback((heightCm: number): { min: number; max: number } => {
+    // Use gender-specific formula from utils
+    if (!personalInfoData?.gender) {
+      // Fallback to BMI-based calculation if personalInfo not available
+      console.warn('⚠️ PersonalInfo not available for ideal weight calculation, using BMI fallback');
+      const heightM = heightCm / 100;
+      return {
+        min: 18.5 * heightM * heightM,
+        max: 24.9 * heightM * heightM,
+      };
+    }
+
+    return BodyCompositionCalculations.calculateIdealWeightRange(
+      heightCm,
+      personalInfoData.gender,
+      personalInfoData.age
+    );
+  }, [personalInfoData?.gender, personalInfoData?.age]);
+
   // Calculate BMI, BMR, and ideal weight when height/weight or personalInfo changes
   useEffect(() => {
     if (formData.height_cm > 0 && formData.current_weight_kg > 0) {
+      console.log('🧮 [TAB3-CALC] Calculating BMI, BMR, and ideal weight range');
+      console.log('🧮 [TAB3-CALC] Inputs - height:', formData.height_cm, 'cm, weight:', formData.current_weight_kg, 'kg');
+
       const heightM = formData.height_cm / 100;
       const bmi = formData.current_weight_kg / (heightM * heightM);
-      const bmr = calculateBMR(formData.current_weight_kg, formData.height_cm);
-      const idealWeightRange = calculateIdealWeightRange(formData.height_cm);
-      
+      const bmr = calculateBMRMemo(formData.current_weight_kg, formData.height_cm);
+      const idealWeightRange = calculateIdealWeightRangeMemo(formData.height_cm);
+
+      console.log('🧮 [TAB3-CALC] Results - BMI:', Math.round(bmi * 100) / 100, 'BMR:', Math.round(bmr));
+      console.log('🧮 [TAB3-CALC] Ideal weight range:', Math.round(idealWeightRange.min * 100) / 100, '-', Math.round(idealWeightRange.max * 100) / 100, 'kg');
+
       setFormData(prev => ({
         ...prev,
         bmi: Math.round(bmi * 100) / 100,
@@ -232,12 +289,16 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         ideal_weight_max: Math.round(idealWeightRange.max * 100) / 100,
       }));
     }
-  }, [formData.height_cm, formData.current_weight_kg, personalInfoData?.age, personalInfoData?.gender]);
-  
+  }, [formData.height_cm, formData.current_weight_kg, calculateBMRMemo, calculateIdealWeightRangeMemo]);
+
   // Calculate waist-hip ratio when measurements change
   useEffect(() => {
     if (formData.waist_cm && formData.hip_cm && formData.waist_cm > 0 && formData.hip_cm > 0) {
       const ratio = formData.waist_cm / formData.hip_cm;
+      console.log('🧮 [TAB3-CALC] Calculating waist-hip ratio');
+      console.log('🧮 [TAB3-CALC] Waist:', formData.waist_cm, 'cm, Hip:', formData.hip_cm, 'cm');
+      console.log('🧮 [TAB3-CALC] Waist-hip ratio:', Math.round(ratio * 100) / 100);
+
       setFormData(prev => ({
         ...prev,
         waist_hip_ratio: Math.round(ratio * 100) / 100,
@@ -249,40 +310,6 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   // CALCULATION HELPERS
   // ============================================================================
   
-  const calculateBMR = (weightKg: number, heightCm: number): number => {
-    // Use proper Mifflin-St Jeor equation with gender and age from personalInfo
-    if (!personalInfoData?.age || !personalInfoData?.gender) {
-      // Fallback to basic calculation if personalInfo not available
-      console.warn('⚠️ PersonalInfo not available for BMR calculation, using fallback');
-      return 10 * weightKg + 6.25 * heightCm - 5 * 25; // Assuming average age of 25, male
-    }
-    
-    return MetabolicCalculations.calculateBMR(
-      weightKg,
-      heightCm,
-      personalInfoData.age,
-      personalInfoData.gender
-    );
-  };
-  
-  const calculateIdealWeightRange = (heightCm: number): { min: number; max: number } => {
-    // Use gender-specific formula from utils
-    if (!personalInfoData?.gender) {
-      // Fallback to BMI-based calculation if personalInfo not available
-      console.warn('⚠️ PersonalInfo not available for ideal weight calculation, using BMI fallback');
-      const heightM = heightCm / 100;
-      return {
-        min: 18.5 * heightM * heightM,
-        max: 24.9 * heightM * heightM,
-      };
-    }
-    
-    return BodyCompositionCalculations.calculateIdealWeightRange(
-      heightCm,
-      personalInfoData.gender,
-      personalInfoData.age
-    );
-  };
   
   const getBMICategory = (bmi: number): { category: string; color: string; iconName: string } => {
     if (bmi < 18.5) return { category: 'Underweight', color: ResponsiveTheme.colors.warning, iconName: 'alert-circle' };
@@ -312,17 +339,22 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     field: K,
     value: BodyAnalysisData[K]
   ) => {
+    console.log(`✏️ [TAB3-INPUT] updateField called - field: "${String(field)}", value:`, value);
     const updated = { ...formData, [field]: value };
+    console.log(`✏️ [TAB3-INPUT] Updated formData:`, updated);
     setFormData(updated);
     onUpdate(updated);
   };
-  
+
   const handleNumberInput = (field: keyof BodyAnalysisData, text: string) => {
+    console.log(`🔢 [TAB3-INPUT] handleNumberInput - field: "${String(field)}", text: "${text}"`);
     const value = parseFloat(text) || 0;
+    console.log(`🔢 [TAB3-INPUT] Parsed value:`, value);
     updateField(field, value as any);
   };
-  
+
   const handlePhotoCapture = (imageUri: string) => {
+    console.log(`📸 [TAB3-INPUT] handlePhotoCapture - photoType: "${currentPhotoType}", uri: "${imageUri}"`);
     updateField(`${currentPhotoType}_photo_url` as keyof BodyAnalysisData, imageUri as any);
     setShowCamera(false);
   };
@@ -357,45 +389,54 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   };
   
   const analyzePhotos = async () => {
+    console.log('🤖 [TAB3-AI] analyzePhotos called');
     const photoUrls = [formData.front_photo_url, formData.side_photo_url, formData.back_photo_url].filter(Boolean);
-    
+    console.log('🤖 [TAB3-AI] Available photos:', photoUrls.length);
+
     if (photoUrls.length === 0) {
+      console.log('🤖 [TAB3-AI] No photos available for analysis');
       Alert.alert('No Photos', 'Please add at least one photo to analyze.');
       return;
     }
-    
+
+    console.log('🤖 [TAB3-AI] Starting AI analysis...');
     setIsAnalyzingPhotos(true);
-    
+
     try {
       // RELIABLE AI Analysis using Gemini 2.5 Flash
-      console.log('🤖 Starting reliable body analysis...');
-      
+      console.log('🤖 [TAB3-AI] Starting reliable body analysis with Gemini 2.5 Flash...');
+
       // Simulate AI analysis for now (will integrate with Gemini 2.5 Flash)
       await new Promise(resolve => setTimeout(resolve, 3000));
-      
+
       // Mock reliable analysis results
       const mockAnalysis = {
         estimatedBodyFat: Math.random() * 10 + 15, // 15-25% range
         bodyType: ['ectomorph', 'mesomorph', 'endomorph'][Math.floor(Math.random() * 3)] as 'ectomorph' | 'mesomorph' | 'endomorph',
         confidenceScore: Math.floor(Math.random() * 20 + 75), // 75-95% confidence
       };
-      
+
+      console.log('🤖 [TAB3-AI] Analysis complete! Results:', mockAnalysis);
+
       setFormData(prev => ({
         ...prev,
         ai_estimated_body_fat: Math.round(mockAnalysis.estimatedBodyFat * 100) / 100,
         ai_body_type: mockAnalysis.bodyType,
         ai_confidence_score: mockAnalysis.confidenceScore,
       }));
-      
+
+      console.log('🤖 [TAB3-AI] AI results saved to formData');
+
       Alert.alert(
         'Analysis Complete!',
         `Body analysis completed with ${mockAnalysis.confidenceScore}% confidence. Review the results below.`,
         [{ text: 'Great!' }]
       );
     } catch (error) {
+      console.error('❌ [TAB3-AI] Photo analysis failed:', error);
       Alert.alert('Analysis Failed', 'Unable to analyze photos. Please try again.');
-      console.error('❌ Photo analysis failed:', error);
     } finally {
+      console.log('🤖 [TAB3-AI] Analysis process finished, resetting isAnalyzingPhotos');
       setIsAnalyzingPhotos(false);
     }
   };
@@ -420,18 +461,21 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   
   const renderBasicMeasurementsSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Basic Measurements</Text>
-      <Text style={styles.sectionSubtitle}>
-        Provide at least height and current weight to continue. Other fields are optional.
-      </Text>
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>Basic Measurements</Text>
+        <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+          Provide at least height and current weight to continue. Other fields are optional.
+        </Text>
+      </View>
       
-      <View style={styles.measurementsGrid}>
+      <View style={styles.edgeToEdgeContentPadded}>
+        <View style={styles.measurementsGrid}>
         <View style={styles.measurementItem}>
           <Input
             label="Height (cm) *"
@@ -466,11 +510,11 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         </View>
         
         <View style={styles.measurementItem}>
-          <Text style={styles.inputLabel}>Target Timeline (Optional): {formData.target_timeline_weeks} weeks</Text>
+          <Text style={styles.inputLabel} numberOfLines={1}>Target Timeline (Optional): {formData.target_timeline_weeks} weeks</Text>
           <View style={styles.timelineSlider}>
             {[4, 8, 12, 16, 20, 24, 32, 52].map((weeks) => (
               <AnimatedPressable
-                key={weeks}
+                key={`timeline-${weeks}`}
                 style={[
                   styles.timelineOption,
                   ...(formData.target_timeline_weeks === weeks ? [styles.timelineOptionSelected] : []),
@@ -478,10 +522,13 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 onPress={() => updateField('target_timeline_weeks', weeks)}
                 scaleValue={0.95}
               >
-                <Text style={[
-                  styles.timelineText,
-                  ...(formData.target_timeline_weeks === weeks ? [styles.timelineTextSelected] : []),
-                ]}>
+                <Text
+                  style={[
+                    styles.timelineText,
+                    ...(formData.target_timeline_weeks === weeks ? [styles.timelineTextSelected] : []),
+                  ]}
+                  numberOfLines={1}
+                >
                   {weeks}w
                 </Text>
               </AnimatedPressable>
@@ -503,16 +550,16 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           style={styles.bmiCard}
         >
           <View style={styles.bmiContent}>
-            <Text style={styles.bmiTitle}>Current BMI: {formData.bmi}</Text>
+            <Text style={styles.bmiTitle} numberOfLines={1}>Current BMI: {formData.bmi}</Text>
             <View style={styles.bmiCategory}>
               <Ionicons name={getBMICategory(formData.bmi).iconName as any} size={rf(24)} color={getBMICategory(formData.bmi).color} />
-              <Text style={[styles.bmiCategoryText, { color: getBMICategory(formData.bmi).color }]}>
+              <Text style={[styles.bmiCategoryText, { color: getBMICategory(formData.bmi).color }]} numberOfLines={1}>
                 {getBMICategory(formData.bmi).category}
               </Text>
             </View>
 
             {formData.ideal_weight_min && formData.ideal_weight_max && (
-              <Text style={styles.idealWeightText}>
+              <Text style={styles.idealWeightText} numberOfLines={1} ellipsizeMode="tail">
                 Ideal weight range: {formData.ideal_weight_min}kg - {formData.ideal_weight_max}kg
               </Text>
             )}
@@ -531,10 +578,14 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                         size={rf(16)}
                         color={isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
                       />
-                      <Text style={[
-                        styles.weightLossRate,
-                        { color: isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning }
-                      ]}>
+                      <Text 
+                        style={[
+                          styles.weightLossRate,
+                          { color: isHealthyRate ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning }
+                        ]}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
                         Weekly rate: {weeklyRate.toFixed(2)}kg/week
                         {!isHealthyRate && ' (Consider slower pace)'}
                       </Text>
@@ -546,6 +597,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           </View>
         </GlassCard>
       )}
+      </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
 
@@ -556,147 +609,157 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 
     return (
       <GlassCard
-        style={styles.section}
+        style={styles.sectionEdgeToEdge}
         elevation={2}
         blurIntensity="medium"
-        padding="lg"
-        borderRadius="lg"
+        padding="none"
+        borderRadius="none"
       >
-        <Text style={styles.sectionTitle}>Your Transformation Goal</Text>
-        <Text style={styles.sectionSubtitle}>
-          Visualize your weight journey from current to target
-        </Text>
+        <View style={styles.sectionTitlePadded}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>Your Transformation Goal</Text>
+          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+            Visualize your weight journey from current to target
+          </Text>
+        </View>
 
-        <AnimatedChart
-          currentValue={formData.current_weight_kg!}
-          targetValue={formData.target_weight_kg!}
-          currentLabel="Current"
-          targetLabel="Target"
-          unit="kg"
-          showProgress={true}
-          progressWeeks={formData.target_timeline_weeks || 12}
-          width={rw(90)}
-          height={rh(240)}
-          style={styles.goalChart}
-        />
+        <View style={styles.edgeToEdgeContentPadded}>
+          <AnimatedChart
+            currentValue={formData.current_weight_kg!}
+            targetValue={formData.target_weight_kg!}
+            currentLabel="Current"
+            targetLabel="Target"
+            unit="kg"
+            showProgress={true}
+            progressWeeks={formData.target_timeline_weeks || 12}
+            width={Dimensions.get('window').width - ResponsiveTheme.spacing.lg * 4}
+            height={280}
+            style={styles.goalChart}
+          />
+        </View>
+        <View style={styles.sectionBottomPad} />
       </GlassCard>
     );
   };
 
   const renderBodyCompositionSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Body Composition (Optional)</Text>
-      <Text style={styles.sectionSubtitle}>
-        Additional measurements for more accurate analysis
-      </Text>
-      
-      <AnimatedPressable
-        style={styles.measurementGuideButton}
-        onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
-        scaleValue={0.95}
-      >
-        <View style={styles.measurementGuideContent}>
-          <Ionicons name="resize-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.measurementGuideText}>
-            How to measure correctly
-          </Text>
-        </View>
-      </AnimatedPressable>
-      
-      {showMeasurementGuide && (
-        <GlassCard
-          elevation={2}
-          blurIntensity="default"
-          padding="md"
-          borderRadius="lg"
-          style={styles.measurementGuide}
-        >
-          <Text style={styles.guideTitle}>Measurement Guidelines</Text>
-          <Text style={styles.guideText}>
-            • <Text style={styles.guideBold}>Waist:</Text> Measure at the narrowest point, usually just above the belly button{'\n'}
-            • <Text style={styles.guideBold}>Hip:</Text> Measure at the widest point of your hips{'\n'}
-            • <Text style={styles.guideBold}>Chest:</Text> Measure around the fullest part of your chest{'\n'}
-            • <Text style={styles.guideBold}>Body Fat:</Text> Use a body fat scale or professional measurement
-          </Text>
-        </GlassCard>
-      )}
-      
-      <View style={styles.compositionGrid}>
-        <View style={styles.compositionItem}>
-          <Input
-            label="Body Fat % (Optional)"
-            placeholder="20"
-            value={formData.body_fat_percentage ? formData.body_fat_percentage.toString() : ''}
-            onChangeText={(text) => handleNumberInput('body_fat_percentage', text)}
-            keyboardType="numeric"
-          />
-        </View>
-        
-        <View style={styles.compositionItem}>
-          <Input
-            label="Waist (cm)"
-            placeholder="80"
-            value={formData.waist_cm ? formData.waist_cm.toString() : ''}
-            onChangeText={(text) => handleNumberInput('waist_cm', text)}
-            keyboardType="numeric"
-          />
-        </View>
-        
-        <View style={styles.compositionItem}>
-          <Input
-            label="Hip (cm)"
-            placeholder="95"
-            value={formData.hip_cm ? formData.hip_cm.toString() : ''}
-            onChangeText={(text) => handleNumberInput('hip_cm', text)}
-            keyboardType="numeric"
-          />
-        </View>
-        
-        <View style={styles.compositionItem}>
-          <Input
-            label="Chest (cm)"
-            placeholder="100"
-            value={formData.chest_cm ? formData.chest_cm.toString() : ''}
-            onChangeText={(text) => handleNumberInput('chest_cm', text)}
-            keyboardType="numeric"
-          />
-        </View>
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle} numberOfLines={1}>Body Composition (Optional)</Text>
+        <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+          Additional measurements for more accurate analysis
+        </Text>
       </View>
       
-      {/* Waist-Hip Ratio Display */}
-      {formData.waist_hip_ratio && (() => {
-        const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
-        const isHealthy = formData.waist_hip_ratio! < threshold;
-        return (
+      <View style={styles.edgeToEdgeContentPadded}>
+        <AnimatedPressable
+          style={styles.measurementGuideButton}
+          onPress={() => setShowMeasurementGuide(!showMeasurementGuide)}
+          scaleValue={0.95}
+        >
+          <View style={styles.measurementGuideContent}>
+            <Ionicons name="resize-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.measurementGuideText} numberOfLines={1}>
+              How to measure correctly
+            </Text>
+          </View>
+        </AnimatedPressable>
+        
+        {showMeasurementGuide && (
           <GlassCard
             elevation={2}
             blurIntensity="default"
             padding="md"
             borderRadius="lg"
-            style={styles.ratioCard}
+            style={styles.measurementGuideInline}
           >
-            <Text style={styles.ratioTitle}>
-              Waist-Hip Ratio: {formData.waist_hip_ratio}
+            <Text style={styles.guideTitle} numberOfLines={1}>Measurement Guidelines</Text>
+            <Text style={styles.guideText}>
+              • <Text style={styles.guideBold}>Waist:</Text> Measure at the narrowest point, usually just above the belly button{'\n'}
+              • <Text style={styles.guideBold}>Hip:</Text> Measure at the widest point of your hips{'\n'}
+              • <Text style={styles.guideBold}>Chest:</Text> Measure around the fullest part of your chest{'\n'}
+              • <Text style={styles.guideBold}>Body Fat:</Text> Use a body fat scale or professional measurement
             </Text>
-            <View style={styles.ratioStatusRow}>
-              <Ionicons
-                name={isHealthy ? 'checkmark-circle' : 'alert-circle'}
-                size={rf(16)}
-                color={isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
-              />
-              <Text style={[styles.ratioDescription, { color: isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning }]}>
-                {isHealthy ? 'Healthy ratio' : 'Consider waist reduction'}
-              </Text>
-            </View>
           </GlassCard>
-        );
-      })()}
+        )}
+        
+        <View style={styles.compositionGrid}>
+          <View style={styles.compositionItem}>
+            <Input
+              label="Body Fat % (Optional)"
+              placeholder="20"
+              value={formData.body_fat_percentage ? formData.body_fat_percentage.toString() : ''}
+              onChangeText={(text) => handleNumberInput('body_fat_percentage', text)}
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={styles.compositionItem}>
+            <Input
+              label="Waist (cm)"
+              placeholder="80"
+              value={formData.waist_cm ? formData.waist_cm.toString() : ''}
+              onChangeText={(text) => handleNumberInput('waist_cm', text)}
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={styles.compositionItem}>
+            <Input
+              label="Hip (cm)"
+              placeholder="95"
+              value={formData.hip_cm ? formData.hip_cm.toString() : ''}
+              onChangeText={(text) => handleNumberInput('hip_cm', text)}
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={styles.compositionItem}>
+            <Input
+              label="Chest (cm)"
+              placeholder="100"
+              value={formData.chest_cm ? formData.chest_cm.toString() : ''}
+              onChangeText={(text) => handleNumberInput('chest_cm', text)}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+        
+        {/* Waist-Hip Ratio Display */}
+        {formData.waist_hip_ratio && (() => {
+          const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
+          const isHealthy = formData.waist_hip_ratio! < threshold;
+          return (
+            <GlassCard
+              elevation={2}
+              blurIntensity="default"
+              padding="md"
+              borderRadius="lg"
+              style={styles.ratioCardInline}
+            >
+              <Text style={styles.ratioTitle} numberOfLines={1}>
+                Waist-Hip Ratio: {formData.waist_hip_ratio}
+              </Text>
+              <View style={styles.ratioStatusRow}>
+                <Ionicons
+                  name={isHealthy ? 'checkmark-circle' : 'alert-circle'}
+                  size={rf(16)}
+                  color={isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
+                />
+                <Text style={[styles.ratioDescription, { color: isHealthy ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning }]} numberOfLines={1}>
+                  {isHealthy ? 'Healthy ratio' : 'Consider waist reduction'}
+                </Text>
+              </View>
+            </GlassCard>
+          );
+        })()}
+      </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
 
@@ -705,178 +768,158 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     
     return (
       <GlassCard
-        style={styles.section}
+        style={styles.sectionEdgeToEdge}
         elevation={2}
         blurIntensity="medium"
-        padding="lg"
-        borderRadius="lg"
+        padding="none"
+        borderRadius="none"
       >
-        <Text style={styles.sectionTitle}>Photo Analysis (Optional)</Text>
-        <Text style={styles.sectionSubtitle}>
-          AI-powered body composition analysis from photos ({photoCount}/3 photos)
-        </Text>
-        
-        {/* Photo Guidelines */}
-        <GlassCard
-          elevation={2}
-          blurIntensity="default"
-          padding="md"
-          borderRadius="lg"
-          style={styles.instructionCard}
-        >
-          <View style={styles.instructionTitleContainer}>
-            <Ionicons name="camera-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
-            <Text style={styles.instructionTitle}>Photo Guidelines</Text>
-          </View>
-          <Text style={styles.instructionText}>
-            • Wear form-fitting clothes or workout attire{'\n'}
-            • Ensure good lighting{'\n'}
-            • Stand against a plain background{'\n'}
-            • Keep arms at your sides{'\n'}
-            • Take photos from about 6 feet away
-          </Text>
-        </GlassCard>
-        
-        {/* Photo Upload Grid */}
-        <View style={styles.photoGrid}>
-          {PHOTO_TYPES.map((photoType) => {
-            const photoUrl = formData[`${photoType.type}_photo_url` as keyof BodyAnalysisData] as string;
-            
-            return (
-              <View key={photoType.type} style={styles.photoItem}>
-                <AnimatedPressable
-                  style={styles.photoCard}
-                  onPress={() => openPhotoOptions(photoType.type)}
-                  scaleValue={0.95}
-                >
-                  <GlassCard
-                    elevation={1}
-                    blurIntensity="light"
-                    padding="none"
-                    borderRadius="lg"
-                    style={styles.photoCardInner}
-                  >
-                    {photoUrl ? (
-                      <View style={styles.photoPreview}>
-                        <Image source={{ uri: photoUrl }} style={styles.photoImage} />
-
-                        {/* AI Badge Overlay */}
-                        <View style={styles.aiBadgeOverlay}>
-                          <LinearGradient
-                            {...toLinearGradientProps(gradients.accent.purpleBlue)}
-                            style={styles.aiBadgeGradient}
-                          >
-                            <Text style={styles.aiBadgeIcon}>🤖</Text>
-                            <Text style={styles.aiBadgeText}>AI Ready</Text>
-                          </LinearGradient>
-                        </View>
-
-                        <AnimatedPressable
-                          style={styles.removePhotoButton}
-                          onPress={() => removePhoto(photoType.type)}
-                          scaleValue={0.95}
-                        >
-                          <Text style={styles.removePhotoText}>✕</Text>
-                        </AnimatedPressable>
-                      </View>
-                    ) : (
-                      <View style={styles.photoPlaceholder}>
-                        <Text style={styles.photoIcon}>{photoType.icon}</Text>
-                        <Text style={styles.photoTitle}>{photoType.title}</Text>
-                        <Text style={styles.photoDescription}>{photoType.description}</Text>
-                        <Text style={styles.addPhotoText}>Tap to add</Text>
-                      </View>
-                    )}
-                  </GlassCard>
-                </AnimatedPressable>
-                <Text style={styles.photoInstruction}>{photoType.instruction}</Text>
-              </View>
-            );
-          })}
-        </View>
-        
-        {/* AI Analysis Button */}
-        {photoCount > 0 && !formData.ai_estimated_body_fat && (
-          <View style={styles.analysisButtonContainer}>
-            <Button
-              title={isAnalyzingPhotos ? 'Analyzing Photos...' : '🤖 Analyze Photos (Reliable AI)'}
-              onPress={analyzePhotos}
-              variant="secondary"
-              loading={isAnalyzingPhotos}
-              disabled={isAnalyzingPhotos}
-              style={styles.analysisButton}
-            />
-          </View>
-        )}
-        
-        {/* AI Analysis Results */}
-        {formData.ai_estimated_body_fat && (
-          <GlassCard
-            elevation={3}
-            blurIntensity="default"
-            padding="lg"
-            borderRadius="lg"
-            style={styles.analysisResultsCard}
-          >
-            <View style={styles.analysisResultsTitleContainer}>
-              <Ionicons name="analytics-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
-              <Text style={styles.analysisResultsTitle}>AI Analysis Results</Text>
-            </View>
-            <Text style={styles.confidenceScore}>
-              Confidence: {formData.ai_confidence_score}%
-            </Text>
-
-            <View style={styles.analysisGrid}>
-              <View style={styles.analysisItem}>
-                <Text style={styles.analysisLabel}>Estimated Body Fat</Text>
-                <Text style={styles.analysisValue}>{formData.ai_estimated_body_fat}%</Text>
-              </View>
-
-              <View style={styles.analysisItem}>
-                <Text style={styles.analysisLabel}>Body Type</Text>
-                <Text style={styles.analysisValue}>
-                  {formData.ai_body_type ? formData.ai_body_type.charAt(0).toUpperCase() + formData.ai_body_type.slice(1) : 'Unknown'}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.bodyTypeInfo}>
-              <Text style={styles.bodyTypeDescription}>
-                {formData.ai_body_type === 'ectomorph' && 'Naturally lean, fast metabolism, difficulty gaining weight'}
-                {formData.ai_body_type === 'mesomorph' && 'Athletic build, gains muscle easily, balanced metabolism'}
-                {formData.ai_body_type === 'endomorph' && 'Broader build, slower metabolism, gains weight easily'}
+        <View style={styles.sectionTitlePadded}>
+          <View style={styles.photoTitleRow}>
+            <View>
+              <Text style={styles.sectionTitle} numberOfLines={1}>📸 Photo Analysis</Text>
+              <Text style={styles.sectionSubtitle} numberOfLines={1}>
+                AI-powered • {photoCount}/3 photos added
               </Text>
             </View>
+            {photoCount > 0 && !formData.ai_estimated_body_fat && (
+              <AnimatedPressable
+                style={styles.analyzeButtonCompact}
+                onPress={analyzePhotos}
+                scaleValue={0.95}
+              >
+                <Ionicons name="sparkles" size={rf(14)} color="#FFFFFF" />
+                <Text style={styles.analyzeButtonText}>
+                  {isAnalyzingPhotos ? 'Analyzing...' : 'Analyze'}
+                </Text>
+              </AnimatedPressable>
+            )}
+          </View>
+        </View>
 
-            <AnimatedPressable
-              style={styles.reanalyzeButton}
-              onPress={analyzePhotos}
-              scaleValue={0.95}
-            >
-              <Ionicons name="refresh-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
-              <Text style={styles.reanalyzeText}>Re-analyze Photos</Text>
-            </AnimatedPressable>
-          </GlassCard>
+        {/* Horizontal scrollable photo cards */}
+        <View style={styles.scrollClipContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.photoScrollContent}
+            decelerationRate="fast"
+          >
+            {PHOTO_TYPES.map((photoType) => {
+              const photoUrl = formData[`${photoType.type}_photo_url` as keyof BodyAnalysisData] as string;
+              const hasPhoto = !!photoUrl;
+              
+              return (
+                <AnimatedPressable
+                  key={photoType.type}
+                  style={styles.photoCardCompact}
+                  onPress={() => openPhotoOptions(photoType.type)}
+                  scaleValue={0.96}
+                >
+                  <View style={[
+                    styles.photoCardCompactInner,
+                    hasPhoto && styles.photoCardCompactHasPhoto,
+                  ]}>
+                    {hasPhoto ? (
+                      <>
+                        <Image source={{ uri: photoUrl }} style={styles.photoThumbnail} />
+                        <View style={styles.photoOverlay}>
+                          <Ionicons name="checkmark" size={rf(14)} color="#FFFFFF" />
+                        </View>
+                        <AnimatedPressable
+                          style={styles.removePhotoSmall}
+                          onPress={() => removePhoto(photoType.type)}
+                          scaleValue={0.9}
+                        >
+                          <Ionicons name="close" size={rf(14)} color="#FFFFFF" />
+                        </AnimatedPressable>
+                      </>
+                    ) : (
+                      <View style={styles.photoPlaceholderCompact}>
+                        <Ionicons 
+                          name={photoType.iconName as any} 
+                          size={rf(36)} 
+                          color={ResponsiveTheme.colors.primary} 
+                        />
+                        <View style={styles.addPhotoIcon}>
+                          <Ionicons 
+                            name="add-circle" 
+                            size={rf(20)} 
+                            color={ResponsiveTheme.colors.primary}
+                          />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[
+                    styles.photoLabelCompact,
+                    hasPhoto && styles.photoLabelCompactActive,
+                  ]} numberOfLines={1}>
+                    {photoType.title}
+                  </Text>
+                  <Text style={styles.photoHintCompact} numberOfLines={1}>
+                    {photoType.shortDesc}
+                  </Text>
+                </AnimatedPressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+        
+        {/* AI Analysis Results - Compact inline display */}
+        {formData.ai_estimated_body_fat && (
+          <View style={styles.edgeToEdgeContentPadded}>
+            <View style={styles.aiResultsCompact}>
+              <View style={styles.aiResultItem}>
+                <Text style={styles.aiResultLabel}>Body Fat</Text>
+                <Text style={styles.aiResultValue}>{formData.ai_estimated_body_fat}%</Text>
+              </View>
+              <View style={styles.aiResultDivider} />
+              <View style={styles.aiResultItem}>
+                <Text style={styles.aiResultLabel}>Body Type</Text>
+                <Text style={styles.aiResultValue}>
+                  {formData.ai_body_type ? formData.ai_body_type.charAt(0).toUpperCase() + formData.ai_body_type.slice(1) : '-'}
+                </Text>
+              </View>
+              <View style={styles.aiResultDivider} />
+              <View style={styles.aiResultItem}>
+                <Text style={styles.aiResultLabel}>Confidence</Text>
+                <Text style={styles.aiResultValue}>{formData.ai_confidence_score}%</Text>
+              </View>
+              <AnimatedPressable
+                style={styles.reanalyzeSmall}
+                onPress={analyzePhotos}
+                scaleValue={0.9}
+              >
+                <Ionicons name="refresh" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+              </AnimatedPressable>
+            </View>
+          </View>
         )}
+        
+        <View style={styles.sectionBottomPad} />
       </GlassCard>
     );
   };
 
   const renderMedicalInformationSection = () => (
     <GlassCard
-      style={styles.section}
+      style={styles.sectionEdgeToEdge}
       elevation={2}
       blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
+      padding="none"
+      borderRadius="none"
     >
-      <Text style={styles.sectionTitle}>Medical Information</Text>
-      <Text style={styles.sectionSubtitle}>
-        Help us create safe and effective recommendations
-      </Text>
+      <View style={styles.sectionTitlePadded}>
+        <Text style={styles.sectionTitle}>Medical Information</Text>
+        <Text style={styles.sectionSubtitle}>
+          Help us create safe and effective recommendations
+        </Text>
+      </View>
       
-      {/* Medical Conditions */}
-      <View style={styles.medicalField}>
+      <View style={styles.edgeToEdgeContentPadded}>
+        {/* Medical Conditions */}
+        <View style={styles.medicalField}>
         <MultiSelectWithCustom
           options={MEDICAL_CONDITIONS_OPTIONS}
           selectedValues={formData.medical_conditions}
@@ -951,7 +994,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               <View style={styles.trimesterButtons}>
                 {[1, 2, 3].map((trimester) => (
                   <AnimatedPressable
-                    key={trimester}
+                    key={`trimester-${trimester}`}
                     style={[
                       styles.trimesterButton,
                       ...(formData.pregnancy_trimester === trimester ? [styles.trimesterButtonSelected] : []),
@@ -1057,108 +1100,125 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         )}
       </View>
       
-      {/* Medical Warnings */}
-      {formData.medical_conditions.length > 0 && (
-        <GlassCard
-          elevation={3}
-          blurIntensity="default"
-          padding="md"
-          borderRadius="lg"
-          style={styles.medicalWarningCard}
-        >
-          <View style={styles.medicalWarningTitleRow}>
-            <Ionicons name="alert-circle" size={rf(20)} color={ResponsiveTheme.colors.warning} />
-            <Text style={styles.medicalWarningTitle}>Important Medical Notice</Text>
-          </View>
-          <Text style={styles.medicalWarningText}>
-            Based on your medical conditions, please consult with your healthcare provider before starting any new fitness or diet program.
-          </Text>
-        </GlassCard>
-      )}
+        {/* Medical Warnings */}
+        {formData.medical_conditions.length > 0 && (
+          <GlassCard
+            elevation={3}
+            blurIntensity="default"
+            padding="md"
+            borderRadius="lg"
+            style={styles.medicalWarningCardInline}
+          >
+            <View style={styles.medicalWarningTitleRow}>
+              <Ionicons name="alert-circle" size={rf(20)} color={ResponsiveTheme.colors.warning} />
+              <Text style={styles.medicalWarningTitle}>Important Medical Notice</Text>
+            </View>
+            <Text style={styles.medicalWarningText}>
+              Based on your medical conditions, please consult with your healthcare provider before starting any new fitness or diet program.
+            </Text>
+          </GlassCard>
+        )}
+      </View>
+      <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
 
-  const renderCalculatedResultsSection = () => (
-    <GlassCard
-      style={styles.section}
-      elevation={2}
-      blurIntensity="medium"
-      padding="lg"
-      borderRadius="lg"
-    >
-      <Text style={styles.sectionTitle}>Calculated Health Metrics</Text>
-      
-      <View style={styles.resultsGrid}>
-        {formData.bmi && (
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.resultCard}
+  const renderCalculatedResultsSection = () => {
+    // Build metrics array dynamically
+    const metrics: { label: string; value: string; category: string; icon: string; color: string }[] = [];
+    
+    if (formData.bmi) {
+      const bmiInfo = getBMICategory(formData.bmi);
+      metrics.push({
+        label: 'BMI',
+        value: String(formData.bmi),
+        category: bmiInfo.category,
+        icon: 'fitness-outline',
+        color: bmiInfo.category === 'Normal' ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning,
+      });
+    }
+    
+    if (formData.bmr) {
+      metrics.push({
+        label: 'BMR',
+        value: String(formData.bmr),
+        category: 'cal/day',
+        icon: 'flame-outline',
+        color: ResponsiveTheme.colors.primary,
+      });
+    }
+    
+    if (formData.waist_hip_ratio) {
+      const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
+      const isHealthy = formData.waist_hip_ratio < threshold;
+      metrics.push({
+        label: 'W-H Ratio',
+        value: String(formData.waist_hip_ratio),
+        category: isHealthy ? 'Healthy' : 'High Risk',
+        icon: 'body-outline',
+        color: isHealthy ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.error,
+      });
+    }
+    
+    const weeklyRate = getHealthyWeightLossRate();
+    if (weeklyRate > 0) {
+      metrics.push({
+        label: 'Safe Rate',
+        value: `${weeklyRate.toFixed(1)}kg`,
+        category: 'per week',
+        icon: 'trending-down-outline',
+        color: ResponsiveTheme.colors.secondary,
+      });
+    }
+    
+    if (metrics.length === 0) {
+      return null; // Don't render section if no metrics
+    }
+    
+    return (
+      <GlassCard
+        style={styles.sectionEdgeToEdge}
+        elevation={2}
+        blurIntensity="medium"
+        padding="none"
+        borderRadius="none"
+      >
+        <View style={styles.sectionTitlePadded}>
+          <Text style={styles.sectionTitle} numberOfLines={1}>📊 Calculated Metrics</Text>
+          <Text style={styles.sectionSubtitle} numberOfLines={1}>
+            Auto-calculated from your measurements
+          </Text>
+        </View>
+        
+        {/* Horizontal scrollable metrics */}
+        <View style={styles.scrollClipContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.metricsScrollContent}
+            decelerationRate="fast"
           >
-            <Text style={styles.resultLabel}>BMI</Text>
-            <Text style={styles.resultValue}>{formData.bmi}</Text>
-            <Text style={styles.resultCategory}>{getBMICategory(formData.bmi).category}</Text>
-          </GlassCard>
-        )}
+            {metrics.map((metric, index) => (
+              <View key={index} style={styles.metricCardCompact}>
+                <View style={[styles.metricCardInner, { borderColor: metric.color }]}>
+                  <View style={[styles.metricIconCircle, { backgroundColor: `${metric.color}20` }]}>
+                    <Ionicons name={metric.icon as any} size={rf(20)} color={metric.color} />
+                  </View>
+                  <Text style={styles.metricValueCompact}>{metric.value}</Text>
+                  <Text style={[styles.metricCategoryCompact, { color: metric.color }]} numberOfLines={1}>
+                    {metric.category}
+                  </Text>
+                </View>
+                <Text style={styles.metricLabelCompact} numberOfLines={1}>{metric.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
         
-        {formData.bmr && (
-          <GlassCard
-            elevation={2}
-            blurIntensity="default"
-            padding="md"
-            borderRadius="lg"
-            style={styles.resultCard}
-          >
-            <Text style={styles.resultLabel}>BMR</Text>
-            <Text style={styles.resultValue}>{formData.bmr}</Text>
-            <Text style={styles.resultCategory}>cal/day</Text>
-          </GlassCard>
-        )}
-        
-        {formData.waist_hip_ratio && (() => {
-          const threshold = personalInfoData?.gender === 'female' ? 0.85 : 0.9;
-          const isHealthy = formData.waist_hip_ratio! < threshold;
-          return (
-            <GlassCard
-              elevation={2}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.resultCard}
-            >
-              <Text style={styles.resultLabel}>Waist-Hip Ratio</Text>
-              <Text style={styles.resultValue}>{formData.waist_hip_ratio}</Text>
-              <Text style={styles.resultCategory}>
-                {isHealthy ? 'Healthy' : 'High Risk'}
-              </Text>
-            </GlassCard>
-          );
-        })()}
-        
-        {(() => {
-          const weeklyRate = getHealthyWeightLossRate();
-          if (weeklyRate > 0) {
-            return (
-              <GlassCard
-                elevation={2}
-                blurIntensity="default"
-                padding="md"
-                borderRadius="lg"
-                style={styles.resultCard}
-              >
-                <Text style={styles.resultLabel}>Safe Weekly Rate</Text>
-                <Text style={styles.resultValue}>{weeklyRate.toFixed(1)}kg</Text>
-                <Text style={styles.resultCategory}>per week</Text>
-              </GlassCard>
-            );
-          }
-          return null;
-        })()}
-      </View>
-    </GlassCard>
-  );
+        <View style={styles.sectionBottomPad} />
+      </GlassCard>
+    );
+  };
 
   // ============================================================================
   // MAIN RENDER
@@ -1167,22 +1227,38 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section - Simplified Modern Design */}
+        {/* Hero Section with Body Silhouette */}
         <HeroSection
           image={{ uri: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80' }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
-          height={160}
+          minHeight={280}
+          maxHeight={420}
         >
-          <Text style={styles.title}>Body Analysis</Text>
+          <Text style={styles.title}>Body Analysis & Health Profile</Text>
           <Text style={styles.subtitle}>
-            Track your measurements and health profile
+            Comprehensive body analysis with reliable AI-powered insights
           </Text>
+
+          {/* Body Silhouette with Measurement Points */}
+          <View style={styles.silhouetteContainer}>
+            <BodySilhouette
+              gender={personalInfoData?.gender || 'male'}
+              measurements={{
+                height: formData.height_cm,
+                chest: formData.chest_cm,
+                waist: formData.waist_cm,
+                hips: formData.hip_cm,
+              }}
+              showAnimations={true}
+              size={rf(280)}
+            />
+          </View>
 
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(14)} color={ResponsiveTheme.colors.success} />
+              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
               <Text style={styles.autoSaveText}>Saving...</Text>
             </View>
           )}
@@ -1199,11 +1275,11 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           </AnimatedSection>
 
           <AnimatedSection delay={100}>
-            {renderBodyCompositionSection()}
+            {renderPhotoAnalysisSection()}
           </AnimatedSection>
 
           <AnimatedSection delay={200}>
-            {renderPhotoAnalysisSection()}
+            {renderBodyCompositionSection()}
           </AnimatedSection>
 
           <AnimatedSection delay={300}>
@@ -1242,8 +1318,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               {validationResult.errors.length > 0 && (
                 <View style={styles.validationErrors}>
                   <Text style={styles.validationErrorTitle}>Required:</Text>
-                  {validationResult.errors.map((error, index) => (
-                    <Text key={index} style={styles.validationErrorText}>
+                  {validationResult.errors.map((error) => (
+                    <Text key={`error-${error.substring(0, 30)}`} style={styles.validationErrorText}>
                       • {error}
                     </Text>
                   ))}
@@ -1253,8 +1329,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
                   <Text style={styles.validationWarningTitle}>Recommendations:</Text>
-                  {validationResult.warnings.map((warning, index) => (
-                    <Text key={index} style={styles.validationWarningText}>
+                  {validationResult.warnings.map((warning) => (
+                    <Text key={`warning-${warning.substring(0, 30)}`} style={styles.validationWarningText}>
                       • {warning}
                     </Text>
                   ))}
@@ -1268,32 +1344,27 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       {/* Footer Navigation */}
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button
-            title="Back"
+          <AnimatedPressable
+            style={styles.backButtonCompact}
             onPress={onBack}
-            variant="outline"
-            style={styles.backButton}
-          />
-          {onNavigateToTab && (
-            <Button
-              title="Jump to Review"
-              onPress={() => {
-                // Save current changes before navigating
-                onUpdate(formData);
-                onNavigateToTab(5);
-              }}
-              variant="outline"
-              style={styles.jumpButton}
-            />
-          )}
-          <Button
-            title="Next: Workout Preferences"
+            scaleValue={0.96}
+          >
+            <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Text style={styles.backButtonText}>Back</Text>
+          </AnimatedPressable>
+          
+          <AnimatedPressable
+            style={[
+              styles.nextButtonCompact,
+              (validationResult && !validationResult.is_valid) && styles.nextButtonDisabled,
+            ]}
             onPress={() => onNext(formData)}
-            variant="primary"
-            style={styles.nextButton}
+            scaleValue={0.96}
             disabled={validationResult ? !validationResult.is_valid : false}
-            loading={isLoading}
-          />
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+            <Ionicons name="chevron-forward" size={rf(18)} color="#FFFFFF" />
+          </AnimatedPressable>
         </View>
       </View>
       
@@ -1335,115 +1406,149 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    marginBottom: 12,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   headerGradient: {
-    paddingHorizontal: rw(16),
-    paddingTop: rh(20),
-    paddingBottom: rh(16),
-    borderBottomLeftRadius: rw(24),
-    borderBottomRightRadius: rw(24),
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.xl,
+    paddingBottom: ResponsiveTheme.spacing.lg,
+    borderBottomLeftRadius: ResponsiveTheme.borderRadius.xxl,
+    borderBottomRightRadius: ResponsiveTheme.borderRadius.xxl,
   },
 
   title: {
-    fontSize: rf(24),
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: rh(4),
-    letterSpacing: -0.5,
-    textAlign: 'center',
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.white,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   subtitle: {
-    fontSize: rf(13),
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: rf(18),
-    textAlign: 'center',
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: ResponsiveTheme.fontSize.md * 1.4,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   silhouetteContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: rh(16),
+    marginVertical: ResponsiveTheme.spacing.lg,
   },
 
   goalChart: {
-    marginTop: rh(12),
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   autoSaveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: rw(4),
-    alignSelf: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    paddingHorizontal: rw(12),
-    paddingVertical: rh(4),
-    borderRadius: rw(16),
-    marginTop: rh(8),
+    gap: ResponsiveTheme.spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: `${ResponsiveTheme.colors.success}20`,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
   autoSaveText: {
-    fontSize: rf(11),
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.success,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   content: {
-    paddingHorizontal: rw(16),
-    width: '100%',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
   section: {
-    marginBottom: rh(16),
-    width: '100%',
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  // Edge-to-edge section styles
+  sectionEdgeToEdge: {
+    marginTop: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.xl,
+    marginHorizontal: -ResponsiveTheme.spacing.lg,
+  },
+
+  sectionTitlePadded: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+  },
+
+  sectionBottomPad: {
+    height: ResponsiveTheme.spacing.lg,
+  },
+
+  edgeToEdgeContentPadded: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  // Inline variants for cards inside edge-to-edge sections
+  measurementGuideInline: {
+    marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  instructionCardInline: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  ratioCardInline: {
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  medicalWarningCardInline: {
+    marginTop: ResponsiveTheme.spacing.md,
   },
 
   sectionTitle: {
-    fontSize: rf(15),
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: rh(12),
-    letterSpacing: -0.3,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    flexShrink: 1,
   },
 
   sectionSubtitle: {
-    fontSize: rf(13),
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: rh(12),
-    lineHeight: rf(18),
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    flexShrink: 1,
   },
 
   inputLabel: {
-    fontSize: rf(13),
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.text,
-    marginBottom: rh(8),
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   // Basic Measurements Section
   measurementsGrid: {
-    gap: 12,
+    gap: ResponsiveTheme.spacing.md,
   },
 
   measurementItem: {
-    marginBottom: 8,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   timelineSlider: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
+    gap: ResponsiveTheme.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.sm,
   },
 
   timelineOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
 
@@ -1453,7 +1558,7 @@ const styles = StyleSheet.create({
   },
 
   timelineText: {
-    fontSize: 13,
+    fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
@@ -1465,8 +1570,8 @@ const styles = StyleSheet.create({
 
   // BMI Card
   bmiCard: {
-    padding: 12,
-    marginTop: 12,
+    padding: ResponsiveTheme.spacing.md,
+    marginTop: ResponsiveTheme.spacing.md,
     backgroundColor: `${ResponsiveTheme.colors.primary}05`,
     borderColor: ResponsiveTheme.colors.primary,
     borderWidth: 1,
@@ -1477,25 +1582,25 @@ const styles = StyleSheet.create({
   },
 
   bmiTitle: {
-    fontSize: 16,
+    fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
-    marginBottom: 8,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   bmiCategory: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   bmiIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   bmiCategoryText: {
-    fontSize: 14,
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
@@ -1574,7 +1679,9 @@ const styles = StyleSheet.create({
   },
 
   compositionItem: {
-    width: '48%',
+    flex: 1,
+    minWidth: '45%',
+    maxWidth: '48%',
   },
 
   ratioCard: {
@@ -1630,6 +1737,168 @@ const styles = StyleSheet.create({
     lineHeight: rf(20),
   },
 
+  // Compact Photo Analysis styles
+  photoTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  analyzeButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    gap: rw(4),
+  },
+
+  analyzeButtonText: {
+    color: '#FFFFFF',
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  scrollClipContainer: {
+    width: '100%',
+    overflow: 'hidden',
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  photoScrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    gap: rw(12),
+  },
+
+  photoCardCompact: {
+    width: rw(100),
+    alignItems: 'center',
+  },
+
+  photoCardCompactInner: {
+    width: rw(88),
+    height: rw(88),
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: `${ResponsiveTheme.colors.primary}08`,
+    borderWidth: 2,
+    borderColor: `${ResponsiveTheme.colors.primary}40`,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  photoCardCompactHasPhoto: {
+    borderStyle: 'solid',
+    borderColor: ResponsiveTheme.colors.success,
+    backgroundColor: 'transparent',
+  },
+
+  photoThumbnail: {
+    width: '100%',
+    height: '100%',
+    borderRadius: ResponsiveTheme.borderRadius.xl - 2,
+  },
+
+  photoOverlay: {
+    position: 'absolute',
+    bottom: rw(6),
+    right: rw(6),
+    backgroundColor: ResponsiveTheme.colors.success,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    padding: rw(4),
+  },
+
+  removePhotoSmall: {
+    position: 'absolute',
+    top: rw(6),
+    right: rw(6),
+    backgroundColor: ResponsiveTheme.colors.error,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    width: rw(22),
+    height: rw(22),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  photoPlaceholderCompact: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+  },
+
+  addPhotoIcon: {
+    position: 'absolute',
+    bottom: rw(6),
+    right: rw(6),
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+  },
+
+  photoLabelCompact: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.sm,
+    textAlign: 'center',
+  },
+
+  photoLabelCompactActive: {
+    color: ResponsiveTheme.colors.success,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  photoHintCompact: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: rw(2),
+  },
+
+  // AI Results Compact styles
+  aiResultsCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${ResponsiveTheme.colors.success}15`,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  aiResultItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  aiResultLabel: {
+    fontSize: rf(9),
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: rw(2),
+  },
+
+  aiResultValue: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  aiResultDivider: {
+    width: 1,
+    height: rh(30),
+    backgroundColor: ResponsiveTheme.colors.border,
+    marginHorizontal: ResponsiveTheme.spacing.xs,
+  },
+
+  reanalyzeSmall: {
+    padding: ResponsiveTheme.spacing.xs,
+    marginLeft: ResponsiveTheme.spacing.xs,
+  },
+
+  // Legacy photo styles (kept for compatibility)
   photoGrid: {
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.md,
@@ -1644,7 +1913,7 @@ const styles = StyleSheet.create({
   },
 
   photoCardInner: {
-    minHeight: rh(120),
+    minHeight: 120,
   },
 
   photoPreview: {
@@ -1711,7 +1980,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: ResponsiveTheme.spacing.md,
-    minHeight: rh(120),
+    minHeight: 120,
   },
 
   photoIcon: {
@@ -1724,6 +1993,8 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: 'center',
+    flexShrink: 1,
   },
 
   photoDescription: {
@@ -1731,6 +2002,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
     marginBottom: ResponsiveTheme.spacing.sm,
+    flexShrink: 1,
   },
 
   addPhotoText: {
@@ -1753,7 +2025,7 @@ const styles = StyleSheet.create({
   },
 
   analysisButton: {
-    minWidth: rw(200),
+    minWidth: '50%',
   },
 
   analysisResultsCard: {
@@ -1799,6 +2071,8 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.xs,
+    textAlign: 'center',
+    flexShrink: 1,
   },
 
   analysisValue: {
@@ -1815,7 +2089,8 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: rf(18),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
+    flexShrink: 1,
   },
 
   reanalyzeButton: {
@@ -1896,7 +2171,7 @@ const styles = StyleSheet.create({
     height: rf(24),
     borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 2,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1933,7 +2208,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
   },
 
@@ -1974,7 +2249,7 @@ const styles = StyleSheet.create({
   },
 
   stressLevelCardOptional: {
-    borderColor: ResponsiveTheme.colors.border,
+    borderColor: 'transparent',
     borderStyle: 'dashed',
   },
 
@@ -2049,6 +2324,62 @@ const styles = StyleSheet.create({
   },
 
   // Calculated Results Section
+  // Compact metrics styles
+  metricsScrollContent: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    gap: rw(14),
+  },
+
+  metricCardCompact: {
+    width: rw(100),
+    alignItems: 'center',
+  },
+
+  metricCardInner: {
+    width: rw(92),
+    height: rw(105),
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+  },
+
+  metricIconCircle: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  metricValueCompact: {
+    fontSize: rf(18),
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(22),
+  },
+
+  metricCategoryCompact: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    marginTop: rw(4),
+    textAlign: 'center',
+  },
+
+  metricLabelCompact: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.sm,
+    textAlign: 'center',
+  },
+
+  // Legacy results grid styles (kept for compatibility)
   resultsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -2056,7 +2387,9 @@ const styles = StyleSheet.create({
   },
 
   resultCard: {
-    width: '48%',
+    flex: 1,
+    minWidth: '45%',
+    maxWidth: '48%',
     padding: ResponsiveTheme.spacing.md,
     alignItems: 'center',
   },
@@ -2098,7 +2431,7 @@ const styles = StyleSheet.create({
   },
 
   validationTitle: {
-    fontSize: rf(16),
+    fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
   },
@@ -2108,7 +2441,7 @@ const styles = StyleSheet.create({
   },
 
   validationPercentage: {
-    fontSize: rf(20),
+    fontSize: ResponsiveTheme.fontSize.lg,
     color: ResponsiveTheme.colors.primary,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     marginBottom: ResponsiveTheme.spacing.md,
@@ -2128,7 +2461,7 @@ const styles = StyleSheet.create({
   validationErrorText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.error,
-    lineHeight: rf(18),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
   },
 
   validationWarnings: {
@@ -2145,38 +2478,79 @@ const styles = StyleSheet.create({
   validationWarningText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.warning,
-    lineHeight: rf(18),
+    lineHeight: ResponsiveTheme.fontSize.sm * 1.3,
   },
 
   errorText: {
-    fontSize: rf(13),
-    color: '#EF4444',
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.error,
     marginTop: ResponsiveTheme.spacing.xs,
   },
 
-  // Footer
+  // Footer - Compact aesthetic design
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    backgroundColor: 'rgba(15, 15, 26, 0.95)',
+    borderTopColor: `${ResponsiveTheme.colors.border}50`,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
 
   buttonRow: {
     flexDirection: 'row',
-    gap: ResponsiveTheme.spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: ResponsiveTheme.spacing.md,
   },
 
+  backButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: `${ResponsiveTheme.colors.primary}12`,
+    gap: rw(4),
+  },
+
+  backButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  nextButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    gap: rw(4),
+  },
+
+  nextButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#FFFFFF',
+  },
+
+  nextButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  // Legacy button styles (kept for compatibility)
   backButton: {
-    flex: 0.8,
+    minWidth: '25%',
   },
 
   jumpButton: {
+    minWidth: '30%',
     flex: 1,
   },
 
   nextButton: {
+    minWidth: '35%',
     flex: 1.5,
   },
 });

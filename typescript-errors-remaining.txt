@@ -1,0 +1,51 @@
+src/components/subscription/PaywallModal.tsx(186,23): error TS2657: JSX expressions must have one parent element.
+src/components/subscription/PaywallModal.tsx(197,55): error TS1003: Identifier expected.
+src/components/subscription/PaywallModal.tsx(206,47): error TS1005: '}' expected.
+src/components/subscription/PaywallModal.tsx(208,31): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(208,32): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PaywallModal.tsx(210,31): error TS17002: Expected corresponding JSX closing tag for 'Pressable'.
+src/components/subscription/PaywallModal.tsx(216,29): error TS1005: ')' expected.
+src/components/subscription/PaywallModal.tsx(221,27): error TS1128: Declaration or statement expected.
+src/components/subscription/PaywallModal.tsx(254,25): error TS17002: Expected corresponding JSX closing tag for 'ScrollView'.
+src/components/subscription/PaywallModal.tsx(256,19): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(256,21): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PaywallModal.tsx(291,15): error TS17002: Expected corresponding JSX closing tag for 'View'.
+src/components/subscription/PaywallModal.tsx(344,13): error TS17002: Expected corresponding JSX closing tag for 'Modal'.
+src/components/subscription/PaywallModal.tsx(345,9): error TS1005: ')' expected.
+src/components/subscription/PaywallModal.tsx(346,7): error TS1109: Expression expected.
+src/components/subscription/PaywallModal.tsx(347,5): error TS1109: Expression expected.
+src/components/subscription/PaywallModal.tsx(348,3): error TS1109: Expression expected.
+src/components/subscription/PaywallModal.tsx(349,1): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(57,92): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(59,23): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(59,24): error TS1127: Invalid character.
+src/components/subscription/PremiumBadge.tsx(59,25): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(60,27): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(69,96): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(70,21): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(71,29): error TS1005: ',' expected.
+src/components/subscription/PremiumBadge.tsx(72,18): error TS1005: ';' expected.
+src/components/subscription/PremiumBadge.tsx(73,11): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(74,9): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(75,7): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(76,5): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(84,34): error TS1005: '...' expected.
+src/components/subscription/PremiumBadge.tsx(84,83): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(85,23): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(85,24): error TS1127: Invalid character.
+src/components/subscription/PremiumBadge.tsx(85,26): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(86,38): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(159,40): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(159,41): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(182,9): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(183,7): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(184,5): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(187,3): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(221,47): error TS1003: Identifier expected.
+src/components/subscription/PremiumBadge.tsx(221,48): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/subscription/PremiumBadge.tsx(221,49): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+src/components/subscription/PremiumBadge.tsx(223,13): error TS17002: Expected corresponding JSX closing tag for 'View'.
+src/components/subscription/PremiumBadge.tsx(224,9): error TS1005: ')' expected.
+src/components/subscription/PremiumBadge.tsx(225,7): error TS1109: Expression expected.
+src/components/subscription/PremiumBadge.tsx(232,1): error TS1128: Declaration or statement expected.
+src/components/subscription/PremiumBadge.tsx(234,29): error TS1160: Unterminated template literal.

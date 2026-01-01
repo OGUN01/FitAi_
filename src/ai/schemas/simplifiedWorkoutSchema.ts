@@ -1,11 +1,14 @@
 // Simplified Workout Schemas for Google Gemini Structured Output
 // Reduced complexity to avoid API errors while maintaining essential structure
 
+// JSON Schema type for Gemini API
+type JSONSchema = Record<string, any>;
+
 // ============================================================================
 // SIMPLIFIED WEEKLY PLAN SCHEMA
 // ============================================================================
 
-export const SIMPLIFIED_WEEKLY_PLAN_SCHEMA = {
+export const SIMPLIFIED_WEEKLY_PLAN_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     planTitle: {
@@ -88,7 +91,7 @@ export const SIMPLIFIED_WEEKLY_PLAN_SCHEMA = {
 // ULTRA SIMPLE TEST SCHEMA
 // ============================================================================
 
-export const TEST_SIMPLE_SCHEMA = {
+export const TEST_SIMPLE_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     success: {
@@ -108,7 +111,7 @@ export const TEST_SIMPLE_SCHEMA = {
 // DIAGNOSTIC WORKOUT SCHEMA (Minimal for debugging)
 // ============================================================================
 
-export const DIAGNOSTIC_WORKOUT_SCHEMA = {
+export const DIAGNOSTIC_WORKOUT_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     planTitle: {
@@ -155,7 +158,7 @@ export const DIAGNOSTIC_WORKOUT_SCHEMA = {
 // MINIMAL WORKOUT SCHEMA (For testing)
 // ============================================================================
 
-export const MINIMAL_WORKOUT_SCHEMA = {
+export const MINIMAL_WORKOUT_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     title: {

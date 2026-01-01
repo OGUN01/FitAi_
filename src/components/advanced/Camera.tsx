@@ -59,6 +59,7 @@ interface CameraProps {
   onCapture: (uri: string) => void;
   onBarcodeScanned?: (barcode: string, type: string) => void;
   onClose: () => void;
+  visible?: boolean;
   style?: any;
 }
 

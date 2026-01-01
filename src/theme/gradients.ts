@@ -217,8 +217,8 @@ export const gradients = {
 
 // Helper function to convert gradient to LinearGradient props
 export const toLinearGradientProps = (gradient: GradientConfig) => ({
-  colors: gradient.colors,
-  locations: gradient.locations,
+  colors: gradient.colors as readonly [string, string, ...string[]],
+  locations: gradient.locations as readonly [number, number, ...number[]] | undefined,
   start: gradient.start,
   end: gradient.end,
 });

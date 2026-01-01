@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useHealthKitSync } from '../../hooks/useHealthKitSync';
 import { useNavigation } from '@react-navigation/native';
-import { THEME } from '../../constants/theme';
+import { THEME } from '../../utils/constants';
 
 interface HealthDataType {
   key: keyof ReturnType<typeof useHealthKitSync>['settings']['dataTypesToSync'];

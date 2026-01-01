@@ -70,6 +70,9 @@ interface SubscriptionStore {
     isEligible: boolean;
     daysRemaining: number;
     hasUsedTrial: boolean;
+    // Additional properties used in ProfileScreen
+    nextBillingDate?: string;
+    amount?: number;
   };
   
   // Actions

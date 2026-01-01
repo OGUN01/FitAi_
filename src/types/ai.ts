@@ -29,6 +29,9 @@ export type {
   LoggedFood,
 } from './diet';
 
+// Import MealItem for internal use
+import type { MealItem } from './diet';
+
 // ============================================================================
 // AI RESPONSE TYPES
 // ============================================================================
@@ -142,6 +145,85 @@ export interface ProgressAnalysis {
     nutritionFeedback?: string[];
     workoutFeedback?: string[];
   };
+}
+
+// ============================================================================
+// DEPRECATED AI TYPES (moved from old generators - for backward compatibility)
+// TODO: These will be replaced by Workers API types after migration
+// ============================================================================
+
+export interface DayMeal {
+  id: string;
+  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  name: string;
+  description: string;
+  items: MealItem[];
+  totalCalories: number;
+  totalMacros: {
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+    fiber: number;
+  };
+  preparationTime: number;
+  cookingTime?: number;
+  cookingInstructions?: Array<{
+    step: number;
+    instruction: string;
+    timeRequired?: number;
+  }>;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+  dayOfWeek: string;
+  isPersonalized: boolean;
+  aiGenerated: boolean;
+  createdAt: string;
+  // Additional properties used in DietScreen
+  instructions?: string[];
+  nutrition?: {
+    protein: number;
+    carbohydrates: number;
+    carbs?: number; // Alias for carbohydrates
+    fat: number;
+    fiber: number;
+    calories: number;
+  };
+}
+
+export interface ExerciseInstruction {
+  name: string;
+  duration?: number;
+  instructions: string;
+}
+
+export interface DayWorkout extends Workout {
+  dayOfWeek: string; // 'monday', 'tuesday', etc.
+  subCategory: string;
+  intensityLevel: string;
+  warmUp: ExerciseInstruction[];
+  coolDown: ExerciseInstruction[];
+  progressionNotes: string[];
+  safetyConsiderations: string[];
+  expectedBenefits: string[];
+}
+
+export interface WeeklyWorkoutPlan {
+  id: string;
+  weekNumber: number;
+  workouts: DayWorkout[];
+  // Additional properties used in FitnessScreen
+  planTitle?: string;
+  planDescription?: string;
+  restDays?: number[];
+  totalEstimatedCalories?: number;
+}
+
+export interface WeeklyMealPlan {
+  id: string;
+  weekNumber: number;
+  meals: DayMeal[];
+  // Additional properties used in DietScreen
+  planTitle?: string;
 }
 
 // ============================================================================

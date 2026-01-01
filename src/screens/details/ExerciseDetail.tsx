@@ -304,7 +304,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
       <View style={styles.bottomContainer}>
         <Button
           title="Start Exercise"
-          onPress={onStartExercise}
+          onPress={onStartExercise || (() => {})}
           variant="primary"
           size="lg"
           fullWidth

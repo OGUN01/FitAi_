@@ -121,47 +121,9 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               }
               
               if (sectionData) {
-                console.log(`✅ EditContext: Found existing ${section} data:`, sectionData);
-
-                // Special handling for personalInfo: Convert NEW fields to OLD format for display
-                if (section === 'personalInfo' && sectionData) {
-                  const personalData = sectionData as any;
-
-                  console.log('🔍 EditContext: Raw personalInfo data before conversion:', personalData);
-
-                  // Convert first_name/last_name → name
-                  if (!personalData.name && (personalData.first_name || personalData.last_name)) {
-                    const firstName = personalData.first_name || '';
-                    const lastName = personalData.last_name || '';
-                    personalData.name = `${firstName} ${lastName}`.trim();
-                    console.log('📝 EditContext: Computed name from first_name/last_name:', personalData.name);
-                    delete personalData.first_name;
-                    delete personalData.last_name;
-                  }
-
-                  // Convert height_cm (number) → height (string)
-                  if (personalData.height_cm !== undefined && personalData.height_cm !== null) {
-                    personalData.height = String(personalData.height_cm);
-                    console.log(`📝 EditContext: Converted height_cm ${personalData.height_cm} → height "${personalData.height}"`);
-                    delete personalData.height_cm;
-                  }
-
-                  // Convert current_weight_kg (number) → weight (string)
-                  if (personalData.current_weight_kg !== undefined && personalData.current_weight_kg !== null) {
-                    personalData.weight = String(personalData.current_weight_kg);
-                    console.log(`📝 EditContext: Converted current_weight_kg ${personalData.current_weight_kg} → weight "${personalData.weight}"`);
-                    delete personalData.current_weight_kg;
-                  }
-
-                  // Convert age (number) → age (string) if needed
-                  if (typeof personalData.age === 'number') {
-                    personalData.age = String(personalData.age);
-                    console.log(`📝 EditContext: Converted age number → age string "${personalData.age}"`);
-                  }
-
-                  console.log('✅ EditContext: Converted personalInfo data:', personalData);
-                  sectionData = personalData;
-                }
+                console.log(`✅ EditContext: Found existing ${section} data (using database schema):`, sectionData);
+                // No conversion needed - PersonalInfo matches database schema
+                // height/weight are in body_analysis table (BodyMetrics), NOT in profiles table (PersonalInfo)
               }
             }
           } catch (error) {
@@ -175,26 +137,32 @@ export const EditProvider: React.FC<EditProviderProps> = ({
           
           switch (section) {
             case 'personalInfo':
+              // PersonalInfo matches database schema - NO height/weight/activityLevel
               sectionData = {
-                name: user?.name || profile?.personalInfo?.name || '',
+                first_name: profile?.personalInfo?.first_name || '',
+                last_name: profile?.personalInfo?.last_name || '',
+                name: profile?.personalInfo?.name || '',
                 email: user?.email || profile?.personalInfo?.email || '',
-                age: profile?.personalInfo?.age || '',
-                gender: profile?.personalInfo?.gender || '',
-                height: profile?.personalInfo?.height || '',
-                weight: profile?.personalInfo?.weight || '',
-                activityLevel: profile?.personalInfo?.activityLevel || '',
-                id: `personalInfo_${user?.id || 'guest'}_${Date.now()}`,
-                version: 1,
-                updatedAt: new Date().toISOString(),
-                syncStatus: 'pending' as const,
-                source: 'local' as const,
+                age: profile?.personalInfo?.age || 0,
+                gender: profile?.personalInfo?.gender || 'prefer_not_to_say',
+                country: profile?.personalInfo?.country || '',
+                state: profile?.personalInfo?.state || '',
+                region: profile?.personalInfo?.region,
+                wake_time: profile?.personalInfo?.wake_time || '',
+                sleep_time: profile?.personalInfo?.sleep_time || '',
+                occupation_type: profile?.personalInfo?.occupation_type || 'desk_job',
+                profile_picture: profile?.personalInfo?.profile_picture,
+                dark_mode: profile?.personalInfo?.dark_mode,
+                units: profile?.personalInfo?.units,
+                notifications_enabled: profile?.personalInfo?.notifications_enabled,
               };
               break;
             case 'fitnessGoals':
               sectionData = {
-                primaryGoals: profile?.fitnessGoals?.primaryGoals || [],
+                primary_goals: profile?.fitnessGoals?.primary_goals || profile?.fitnessGoals?.primaryGoals || [],
+                time_commitment: profile?.fitnessGoals?.time_commitment || profile?.fitnessGoals?.timeCommitment || '',
                 experience: profile?.fitnessGoals?.experience || '',
-                timeCommitment: profile?.fitnessGoals?.timeCommitment || '',
+                experience_level: profile?.fitnessGoals?.experience_level || profile?.fitnessGoals?.experience || '',
                 id: `fitnessGoals_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -203,19 +171,48 @@ export const EditProvider: React.FC<EditProviderProps> = ({
               };
               break;
             case 'dietPreferences':
+              // Use new DietPreferences type with all required fields
+              const dp = profile?.dietPreferences as any;
               sectionData = {
-                dietType: profile?.dietPreferences?.dietType || 'non-veg' as const,
-                allergies: profile?.dietPreferences?.allergies || [],
-                cuisinePreferences: profile?.dietPreferences?.cuisinePreferences || [],
-                restrictions: profile?.dietPreferences?.restrictions || [],
-                cookingSkill: profile?.dietPreferences?.cookingSkill || 'beginner',
-                mealPrepTime: profile?.dietPreferences?.mealPrepTime || 30,
-                dislikes: profile?.dietPreferences?.dislikes || [],
-                id: `dietPreferences_${user?.id || 'guest'}_${Date.now()}`,
-                version: 1,
-                updatedAt: new Date().toISOString(),
-                syncStatus: 'pending' as const,
-                source: 'local' as const,
+                // Basic diet info
+                diet_type: dp?.diet_type || dp?.dietType || 'non-veg',
+                allergies: dp?.allergies || [],
+                restrictions: dp?.restrictions || [],
+
+                // Diet readiness toggles (6)
+                keto_ready: dp?.keto_ready || false,
+                intermittent_fasting_ready: dp?.intermittent_fasting_ready || false,
+                paleo_ready: dp?.paleo_ready || false,
+                mediterranean_ready: dp?.mediterranean_ready || false,
+                low_carb_ready: dp?.low_carb_ready || false,
+                high_protein_ready: dp?.high_protein_ready || false,
+
+                // Meal preferences (4)
+                breakfast_enabled: dp?.breakfast_enabled !== false,
+                lunch_enabled: dp?.lunch_enabled !== false,
+                dinner_enabled: dp?.dinner_enabled !== false,
+                snacks_enabled: dp?.snacks_enabled !== false,
+
+                // Cooking preferences (3)
+                cooking_skill_level: dp?.cooking_skill_level || dp?.cookingSkill || 'beginner',
+                max_prep_time_minutes: dp?.max_prep_time_minutes || null,
+                budget_level: dp?.budget_level || 'medium',
+
+                // Health habits (14)
+                drinks_enough_water: dp?.drinks_enough_water || false,
+                limits_sugary_drinks: dp?.limits_sugary_drinks || false,
+                eats_regular_meals: dp?.eats_regular_meals || false,
+                avoids_late_night_eating: dp?.avoids_late_night_eating || false,
+                controls_portion_sizes: dp?.controls_portion_sizes || false,
+                reads_nutrition_labels: dp?.reads_nutrition_labels || false,
+                eats_processed_foods: dp?.eats_processed_foods !== false,
+                eats_5_servings_fruits_veggies: dp?.eats_5_servings_fruits_veggies || false,
+                limits_refined_sugar: dp?.limits_refined_sugar || false,
+                includes_healthy_fats: dp?.includes_healthy_fats || false,
+                drinks_alcohol: dp?.drinks_alcohol || false,
+                smokes_tobacco: dp?.smokes_tobacco || false,
+                drinks_coffee: dp?.drinks_coffee || false,
+                takes_supplements: dp?.takes_supplements || false,
               };
               break;
             case 'workoutPreferences':
@@ -225,15 +222,8 @@ export const EditProvider: React.FC<EditProviderProps> = ({
                 location: profile?.workoutPreferences?.location || 'both' as const,
                 intensity: profile?.workoutPreferences?.intensity || 'beginner' as const,
                 timePreference: profile?.workoutPreferences?.timePreference || 30,
-                workoutType: profile?.workoutPreferences?.workoutType || 'strength' as const,
-                timeSlots: profile?.workoutPreferences?.timeSlots || [],
-                duration: profile?.workoutPreferences?.duration || 30,
-                frequency: profile?.workoutPreferences?.frequency || 3,
-                restDays: profile?.workoutPreferences?.restDays || [],
-                trainingStyle: profile?.workoutPreferences?.trainingStyle || 'balanced' as const,
-                goals: profile?.workoutPreferences?.goals || [],
-                injuries: profile?.workoutPreferences?.injuries || [],
-                experience: profile?.workoutPreferences?.experience || 'beginner' as const,
+                primaryGoals: profile?.workoutPreferences?.primaryGoals || [],
+                activityLevel: profile?.workoutPreferences?.activityLevel || 'moderate',
                 id: `workoutPreferences_${user?.id || 'guest'}_${Date.now()}`,
                 version: 1,
                 updatedAt: new Date().toISOString(),
@@ -363,54 +353,23 @@ export const EditProvider: React.FC<EditProviderProps> = ({
 
       switch (editSection) {
         case 'personalInfo':
-          // Convert OLD format back to NEW format before saving
-          const personalInfoToSave = { ...currentData } as any;
-
-          console.log('🔄 EditContext: Converting personalInfo OLD → NEW for saving:', personalInfoToSave);
-
-          // Convert name → first_name/last_name
-          if (personalInfoToSave.name) {
-            const nameParts = personalInfoToSave.name.trim().split(' ');
-            personalInfoToSave.first_name = nameParts[0] || '';
-            personalInfoToSave.last_name = nameParts.slice(1).join(' ') || '';
-            console.log(`📝 EditContext: Split name "${personalInfoToSave.name}" → first_name: "${personalInfoToSave.first_name}", last_name: "${personalInfoToSave.last_name}"`);
-          }
-
-          // Convert height (string) → height_cm (number)
-          if (personalInfoToSave.height) {
-            const heightNum = parseFloat(personalInfoToSave.height);
-            if (!isNaN(heightNum)) {
-              personalInfoToSave.height_cm = heightNum;
-              console.log(`📝 EditContext: Converted height "${personalInfoToSave.height}" → height_cm ${heightNum}`);
-            }
-          }
-
-          // Convert weight (string) → current_weight_kg (number)
-          if (personalInfoToSave.weight) {
-            const weightNum = parseFloat(personalInfoToSave.weight);
-            if (!isNaN(weightNum)) {
-              personalInfoToSave.current_weight_kg = weightNum;
-              console.log(`📝 EditContext: Converted weight "${personalInfoToSave.weight}" → current_weight_kg ${weightNum}`);
-            }
-          }
-
-          // Convert age (string) → age (number) if needed
-          if (typeof personalInfoToSave.age === 'string') {
-            const ageNum = parseInt(personalInfoToSave.age);
-            if (!isNaN(ageNum)) {
-              personalInfoToSave.age = ageNum;
-              console.log(`📝 EditContext: Converted age "${personalInfoToSave.age}" → age number ${ageNum}`);
-            }
-          }
-
-          console.log('✅ EditContext: Final personalInfo to save:', personalInfoToSave);
-          saveResult = await savePersonalInfo(personalInfoToSave as PersonalInfo);
+          // No conversion needed - PersonalInfo already matches database schema
+          // height/weight are in body_analysis table, NOT profiles table
+          console.log('✅ EditContext: Saving PersonalInfo (matches database schema):', currentData);
+          saveResult = await savePersonalInfo(currentData);
           break;
         case 'fitnessGoals':
           saveResult = await saveFitnessGoals(currentData as FitnessGoals);
           break;
         case 'dietPreferences':
-          saveResult = await saveDietPreferences(currentData as DietPreferences);
+          // Transform DietPreferences to match OnboardingData type
+          const simplifiedDietPrefs = {
+            dietType: (currentData as DietPreferences).diet_type,
+            allergies: (currentData as DietPreferences).allergies || [],
+            cuisinePreferences: [], // Not in database schema
+            restrictions: (currentData as DietPreferences).restrictions || [],
+          };
+          saveResult = await saveDietPreferences(simplifiedDietPrefs);
           break;
         case 'workoutPreferences':
           saveResult = await saveWorkoutPreferences(currentData as WorkoutPreferences);

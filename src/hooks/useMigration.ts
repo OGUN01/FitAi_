@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { migrationManager, MigrationState, MigrationAttempt } from '../services/migrationManager';
-import { MigrationProgress, MigrationResult } from '../services/migration';
-import { SyncConflict, ConflictResolution } from '../types/profileData';
+import { MigrationProgress } from '../services/migration';
+import { SyncConflict, ConflictResolution, MigrationResult } from '../types/profileData';
 import { useAuth } from './useAuth';
 
 // ============================================================================

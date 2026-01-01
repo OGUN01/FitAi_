@@ -107,9 +107,9 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // ============================================================================
 
 export const ProgressRing: React.FC<ProgressRingProps> = ({
-  progress,
-  size = 120,
-  strokeWidth = 10,
+  progress: rawProgress,
+  size: rawSize = 120,
+  strokeWidth: rawStrokeWidth = 10,
   color = colors.primary[500],
   gradient = false,
   gradientColors = [colors.primary[400], colors.secondary[500]],
@@ -123,11 +123,16 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 }) => {
   const animatedProgress = useSharedValue(0);
 
-  // Calculate circle properties
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const centerX = size / 2;
-  const centerY = size / 2;
+  // Sanitize inputs to prevent NaN on Android native
+  const progress = Number.isFinite(rawProgress) ? Math.max(0, Math.min(100, rawProgress)) : 0;
+  const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 120;
+  const strokeWidth = Number.isFinite(rawStrokeWidth) ? Math.round(rawStrokeWidth) : 10;
+
+  // Calculate circle properties - round to integers for Android compatibility
+  const radius = Math.round((size - strokeWidth) / 2);
+  const circumference = Math.round(radius * 2 * Math.PI);
+  const centerX = Math.round(size / 2);
+  const centerY = Math.round(size / 2);
 
   // Animate progress on mount or when progress changes
   useEffect(() => {
@@ -143,10 +148,11 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
     }
   }, [progress, animated, duration]);
 
-  // Animated circle props
+  // Animated circle props - round for Android compatibility
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset =
-      circumference - (circumference * animatedProgress.value) / 100;
+    const strokeDashoffset = Math.round(
+      circumference - (circumference * animatedProgress.value) / 100
+    );
 
     return {
       strokeDashoffset,

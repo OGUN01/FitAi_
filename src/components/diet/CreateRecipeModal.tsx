@@ -18,8 +18,13 @@ import {
 import { Card } from '../ui';
 import { ResponsiveTheme } from '../../utils/constants';
 import { rf, rh, rw, rs, rp } from '../../utils/responsive';
-import { geminiService } from '../../ai/gemini';
 import { RECIPE_CREATION_SCHEMA } from '../../ai/schemas/foodRecognitionSchema';
+
+// Stub for deprecated AI service (migrated to Cloudflare Workers)
+const geminiService = {
+  isAvailable: () => false,
+  generateResponse: async () => ({ success: false, error: 'Feature migrated to backend' }),
+};
 
 interface CreateRecipeModalProps {
   visible: boolean;
@@ -162,12 +167,9 @@ Requirements:
 Generate a comprehensive recipe that's practical, healthy, and aligned with the user's goals.`;
 
       // Use structured output for 100% reliable recipe generation
-      const response = await geminiService.generateResponse(prompt, {}, RECIPE_CREATION_SCHEMA, 3, {
-        temperature: 0.8,
-        maxOutputTokens: 4096,
-      });
+      const response = await geminiService.generateResponse();
 
-      if (response.success && response.data) {
+      if (response.success && 'data' in response && response.data) {
         // Recipe data is already structured - no parsing needed!
         const structuredRecipe = response.data as any;
 

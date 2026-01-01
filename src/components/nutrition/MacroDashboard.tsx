@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../types/ai';
 import { THEME } from '../ui';
 
 interface MacroDashboardProps {
@@ -9,6 +9,13 @@ interface MacroDashboardProps {
   showTitle?: boolean;
   compact?: boolean;
   animated?: boolean;
+  /** Daily targets from calculated metrics - NO HARDCODED DEFAULTS */
+  dailyTargets?: {
+    calories: number | null;
+    protein: number | null;
+    carbs: number | null;
+    fat: number | null;
+  };
 }
 
 interface MacroItemProps {
@@ -102,18 +109,12 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   style,
   showTitle = true,
   compact = false,
-  animated = true
+  animated = true,
+  dailyTargets, // CRITICAL: Should be passed from parent using useCalculatedMetrics
 }) => {
-  // Calculate daily targets based on a 2000 calorie diet (rough estimates)
-  const dailyTargets = {
-    calories: 2000,
-    protein: 120, // 24% of calories
-    carbs: 250,   // 50% of calories
-    fat: 67,      // 30% of calories
-  };
-
-  // Calculate percentages of daily targets
-  const calculatePercentage = (value: number, target: number): number => {
+  // Calculate percentages of daily targets (only if targets are provided)
+  const calculatePercentage = (value: number, target: number | null): number | undefined => {
+    if (!target || target === 0) return undefined;
     return Math.min((value / target) * 100, 100);
   };
 
@@ -123,32 +124,32 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       label: 'Calories',
       unit: 'cal',
       color: '#FF6B6B',
-      target: dailyTargets.calories,
-      percentage: calculatePercentage(meal.totalCalories || 0, dailyTargets.calories),
+      target: dailyTargets?.calories ?? undefined,
+      percentage: calculatePercentage(meal.totalCalories || 0, dailyTargets?.calories ?? null),
     },
     {
       value: meal.totalMacros?.protein || 0,
       label: 'Protein',
       unit: 'g',
       color: '#4ECDC4',
-      target: dailyTargets.protein,
-      percentage: calculatePercentage(meal.totalMacros?.protein || 0, dailyTargets.protein),
+      target: dailyTargets?.protein ?? undefined,
+      percentage: calculatePercentage(meal.totalMacros?.protein || 0, dailyTargets?.protein ?? null),
     },
     {
       value: meal.totalMacros?.carbohydrates || 0,
       label: 'Carbs',
       unit: 'g',
       color: '#45B7D1',
-      target: dailyTargets.carbs,
-      percentage: calculatePercentage(meal.totalMacros?.carbohydrates || 0, dailyTargets.carbs),
+      target: dailyTargets?.carbs ?? undefined,
+      percentage: calculatePercentage(meal.totalMacros?.carbohydrates || 0, dailyTargets?.carbs ?? null),
     },
     {
       value: meal.totalMacros?.fat || 0,
       label: 'Fat',
       unit: 'g',
       color: '#96CEB4',
-      target: dailyTargets.fat,
-      percentage: calculatePercentage(meal.totalMacros?.fat || 0, dailyTargets.fat),
+      target: dailyTargets?.fat ?? undefined,
+      percentage: calculatePercentage(meal.totalMacros?.fat || 0, dailyTargets?.fat ?? null),
     },
   ];
 

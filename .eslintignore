@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.expo/
+.expo-shared/
+
+# Build outputs
+android/
+ios/
+dist/
+build/
+
+# Generated files
+*.d.ts
+coverage/
+
+# Temp files
+.temp/
+*.log
+*.cache
+
+# Config files
+metro.config.js
+babel.config.js

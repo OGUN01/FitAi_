@@ -394,7 +394,9 @@ export const useTrackBIntegration = (): UseTrackBIntegrationReturn => {
     updateStats();
     const interval = setInterval(updateStats, 30000); // Every 30 seconds
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   // ============================================================================

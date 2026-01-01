@@ -4,7 +4,7 @@
  */
 
 import { barcodeService } from '../services/barcodeService';
-import { nutritionAnalyzer } from '../ai/nutritionAnalyzer';
+import { nutritionAnalyzer } from '../ai';
 
 export interface TestResult {
   testName: string;

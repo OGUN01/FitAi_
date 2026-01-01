@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WeeklyMealPlan, DayMeal } from '../ai/weeklyMealGenerator';
+import { WeeklyMealPlan, DayMeal } from '../ai';
 import { SyncStatus } from '../types/localData';
 import { Meal } from '../types/ai';
 import { crudOperations } from '../services/crudOperations';
@@ -107,7 +107,8 @@ export const useNutritionStore = create<NutritionState>()(
 
       saveWeeklyMealPlan: async (plan) => {
         try {
-          console.log('🍽️ Saving weekly meal plan:', plan.planTitle);
+          const planTitle = (plan as any).planTitle || `Week ${plan.weekNumber} Meal Plan`;
+          console.log('🍽️ Saving weekly meal plan:', planTitle);
 
           // Save to local storage via Zustand persist first
           set({ weeklyMealPlan: plan });
@@ -147,8 +148,8 @@ export const useNutritionStore = create<NutritionState>()(
               // Create a proper MealLog object matching the expected schema
               const mealLog: import('../types/localData').MealLog = {
                 id: `meal_${meal.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                mealType: (meal.type || 'meal').toLowerCase() as any, // uses DayMeal.type
-                foods: (meal.items || []).map((item, index) => ({
+                mealType: ((meal as any).type || 'meal').toLowerCase() as any, // uses DayMeal.type
+                foods: ((meal as any).items || []).map((item: any, index: number) => ({
                   id: `food_${meal.id}_${index}`,
                   foodId: `food_${meal.id}_${index}`,
                   food: {
@@ -248,11 +249,11 @@ export const useNutritionStore = create<NutritionState>()(
           const weeklyMealPlanData = {
             id: planId,
             user_id: userId,
-            plan_title: plan.planTitle,
-            plan_description: plan.planDescription || `${plan.meals.length} meals planned`,
+            plan_title: (plan as any).planTitle || `Week ${plan.weekNumber} Plan`,
+            plan_description: (plan as any).planDescription || `${plan.meals.length} meals planned`,
             week_number: plan.weekNumber || 1,
             total_meals: plan.meals.length,
-            total_calories: plan.totalEstimatedCalories || plan.meals.reduce((sum, meal) => sum + (meal.totalCalories || 0), 0),
+            total_calories: (plan as any).totalEstimatedCalories || plan.meals.reduce((sum: number, meal: any) => sum + (meal.totalCalories || 0), 0),
             plan_data: plan, // Store complete meal plan as JSONB
             is_active: true
           };
@@ -277,7 +278,7 @@ export const useNutritionStore = create<NutritionState>()(
           const currentPlan = get().weeklyMealPlan;
           if (currentPlan) {
             console.log('📋 Found meal plan in store:', {
-              title: currentPlan.planTitle,
+              title: (currentPlan as any).planTitle || `Week ${currentPlan.weekNumber}`,
               meals: currentPlan.meals.length,
               mealsByDay: currentPlan.meals.reduce(
                 (acc, meal) => {

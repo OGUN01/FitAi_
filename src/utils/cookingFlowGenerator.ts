@@ -1,7 +1,7 @@
 // Smart Cooking Flow Generator
 // Generate logical cooking steps based on meal type and ingredients
 
-import { DayMeal } from '../ai/weeklyMealGenerator';
+import { DayMeal } from '../ai';
 
 export interface CookingStep {
   step: number;

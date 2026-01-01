@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView, BackHandler, Alert, Text } from 'react-native';
+import { View, StyleSheet, SafeAreaView, BackHandler, Alert, Text, StatusBar, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { useOnboardingState } from '../../hooks/useOnboardingState';
@@ -14,13 +15,15 @@ import BodyAnalysisTab from './tabs/BodyAnalysisTab';
 import WorkoutPreferencesTab from './tabs/WorkoutPreferencesTab';
 import AdvancedReviewTab from './tabs/AdvancedReviewTab';
 import { CustomDialog } from '../../components/ui/CustomDialog';
+import { OnboardingCompleteModal } from '../../components/ui/OnboardingCompleteModal';
+import type { OnboardingReviewData } from './ReviewScreen';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 interface OnboardingContainerProps {
-  onComplete: () => void;
+  onComplete: (data: OnboardingReviewData) => void;
   onExit?: () => void;
   startingTab?: number;
   showProgressIndicator?: boolean;
@@ -72,6 +75,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     markTabIncomplete,
     validateTab,
     saveToLocal,
+    saveToDatabase,  // NEW: For immediate database persistence
     completeOnboarding,
     isOnboardingComplete,
     updatePersonalInfo,
@@ -81,9 +85,16 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     updateAdvancedReview,
   } = useOnboardingState();
 
+  // Get safe area insets for proper status bar handling
+  const insets = useSafeAreaInsets();
+
   const [showProgressModal, setShowProgressModal] = useState(false);
 
-  // State for completion dialog (web-compatible)
+  // Track if user is editing from Review tab (to show "Review" button instead of "Next")
+  const [isEditingFromReview, setIsEditingFromReview] = useState(false);
+  const [previousTab, setPreviousTab] = useState<number | null>(null);
+
+  // State for completion dialog (web-compatible - used for errors)
   const [completionDialog, setCompletionDialog] = useState<{
     visible: boolean;
     title: string;
@@ -96,6 +107,9 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     message: '',
     type: 'success',
   });
+
+  // State for premium completion modal (used for success)
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   // Initialize starting tab - update when initialTab or editMode changes
   useEffect(() => {
@@ -121,11 +135,33 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
       const saveInterval = setInterval(() => {
         saveToLocal();
       }, 30000); // Auto-save every 30 seconds
-      
-      return () => clearInterval(saveInterval);
+
+      return () => {
+        clearInterval(saveInterval);
+      };
     }
   }, [hasUnsavedChanges, saveToLocal]);
   
+  // ============================================================================
+  // NAVIGATION FROM REVIEW TAB
+  // ============================================================================
+  
+  // Custom handler for when user navigates from Review tab to edit a specific tab
+  const handleNavigateFromReview = (tabNumber: number) => {
+    console.log('🔄 OnboardingContainer: Navigating from Review (tab 5) to edit tab:', tabNumber);
+    setPreviousTab(currentTab); // Remember we came from Review
+    setIsEditingFromReview(true);
+    setCurrentTab(tabNumber);
+  };
+
+  // Handler to return to Review tab after editing
+  const handleReturnToReview = () => {
+    console.log('✅ OnboardingContainer: Returning to Review tab after editing');
+    setIsEditingFromReview(false);
+    setPreviousTab(null);
+    setCurrentTab(5); // Go back to Review tab
+  };
+
   // ============================================================================
   // TAB CONFIGURATION
   // ============================================================================
@@ -287,30 +323,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     console.log('📊 OnboardingContainer: completeOnboarding() returned:', success);
 
     if (success) {
-      console.log('✅ OnboardingContainer: Success! Showing completion dialog...');
-      setCompletionDialog({
-        visible: true,
-        title: 'Onboarding Complete! 🎉',
-        message: 'Your profile has been set up successfully. Welcome to FitAI!',
-        type: 'success',
-        onConfirm: () => {
-          console.log('🎯 OnboardingContainer: User clicked "Get Started", calling onComplete callback...');
-          setCompletionDialog(prev => ({ ...prev, visible: false }));
-
-          // Collect all onboarding data to pass to callback
-          const completeData = {
-            personalInfo,
-            dietPreferences,
-            bodyAnalysis,
-            workoutPreferences,
-            advancedReview,
-          };
-          console.log('📦 OnboardingContainer: Passing complete data to onComplete:', completeData);
-
-          onComplete(completeData as any);
-          console.log('✅ OnboardingContainer: onComplete callback called with data - should redirect now');
-        },
-      });
+      console.log('✅ OnboardingContainer: Success! Showing premium completion modal...');
+      setShowCompletionModal(true);
     } else {
       console.error('❌ OnboardingContainer: Completion failed! Showing error dialog...');
       setCompletionDialog({
@@ -325,13 +339,90 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
       });
     }
   };
+
+  // Handler for premium completion modal
+  const handleCompletionGetStarted = () => {
+    console.log('🎯 OnboardingContainer: User clicked "Start Your Journey", calling onComplete callback...');
+    setShowCompletionModal(false);
+
+    // Collect all onboarding data to pass to callback
+    // Map the new tab-based data structure to the expected OnboardingReviewData format
+    // CRITICAL: Validate required data before completing onboarding
+    // NO HARDCODED FALLBACKS - if data is missing, user must complete that step
+    if (!personalInfo?.age || !personalInfo?.gender) {
+      console.error('❌ OnboardingContainer: Missing required personal info');
+      throw new Error('Please complete Personal Info tab with age and gender');
+    }
+    if (!bodyAnalysis?.height_cm || !bodyAnalysis?.current_weight_kg) {
+      console.error('❌ OnboardingContainer: Missing required body analysis data');
+      throw new Error('Please complete Body Analysis tab with height and weight');
+    }
+    if (!advancedReview?.daily_calories) {
+      console.error('❌ OnboardingContainer: Missing calculated calorie target');
+      throw new Error('Nutrition calculations not completed. Please wait for calculations to finish.');
+    }
+    
+    const completeData: OnboardingReviewData = {
+      personalInfo: {
+        name: `${personalInfo?.first_name || ''} ${personalInfo?.last_name || ''}`.trim() || 'User',
+        email: personalInfo?.email || '',
+        age: personalInfo.age, // NO FALLBACK - validated above
+        gender: personalInfo.gender, // NO FALLBACK - validated above
+        height: bodyAnalysis.height_cm, // NO FALLBACK - validated above
+        weight: bodyAnalysis.current_weight_kg, // NO FALLBACK - validated above
+        activityLevel: personalInfo?.occupation_type || 'moderate_active',
+      },
+      fitnessGoals: {
+        primary_goals: workoutPreferences?.primary_goals || [],
+        time_commitment: `${workoutPreferences?.session_duration_minutes || 45} minutes`,
+        experience_level: workoutPreferences?.intensity === 'beginner' ? 'beginner' : 
+                          workoutPreferences?.intensity === 'advanced' ? 'advanced' : 'intermediate',
+      },
+      dietPreferences: {
+        dietType: dietPreferences?.diet_type || 'balanced',
+        allergies: dietPreferences?.allergies || [],
+        restrictions: dietPreferences?.cuisine_preferences || [],
+        mealsPerDay: (dietPreferences?.breakfast_enabled ? 1 : 0) + 
+                     (dietPreferences?.lunch_enabled ? 1 : 0) + 
+                     (dietPreferences?.dinner_enabled ? 1 : 0) +
+                     (dietPreferences?.snacks_count || 0),
+        calorieTarget: advancedReview.daily_calories, // NO FALLBACK - validated above
+      },
+      workoutPreferences: {
+        location: workoutPreferences?.location || 'gym',
+        equipment: workoutPreferences?.available_equipment || [],
+        workoutTypes: workoutPreferences?.workout_types || [],
+        workoutsPerWeek: workoutPreferences?.workout_frequency_per_week || 3,
+      },
+      bodyAnalysis: {
+        photos: {},
+        measurements: {
+          weight: bodyAnalysis.current_weight_kg, // NO FALLBACK - validated above
+          height: bodyAnalysis.height_cm, // NO FALLBACK - validated above
+          bodyFat: bodyAnalysis?.body_fat_percentage,
+          waist: bodyAnalysis?.waist_cm,
+          chest: undefined,
+          arms: undefined,
+          hips: bodyAnalysis?.hip_cm,
+        },
+        aiAnalysis: bodyAnalysis?.ai_body_type ? {
+          bodyType: bodyAnalysis.ai_body_type,
+          recommendations: [],
+        } : undefined,
+      },
+    };
+    console.log('📦 OnboardingContainer: Passing complete data to onComplete:', completeData);
+
+    onComplete(completeData);
+    console.log('✅ OnboardingContainer: onComplete callback called with data - should redirect now');
+  };
   
   // ============================================================================
   // TAB CONTENT RENDERER
   // ============================================================================
   
   const renderTabContent = () => {
-    console.log('🎭 OnboardingContainer: renderTabContent called, currentTab:', currentTab);
+    console.log('🎭 OnboardingContainer: renderTabContent called, currentTab:', currentTab, 'isEditingFromReview:', isEditingFromReview);
     
     // Only show "Jump to Review" if tab 5 (Advanced Review) has been accessed
     // This prevents users from jumping to review during initial onboarding flow
@@ -343,6 +434,9 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
       onNavigateToTab: canJumpToReview ? setCurrentTab : undefined,
       isLoading,
       isAutoSaving,
+      // Pass editing from review state for button text change
+      isEditingFromReview,
+      onReturnToReview: handleReturnToReview,
     };
     
     switch (currentTab) {
@@ -390,6 +484,11 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
         );
         
       case 5:
+        // Reset editing state when we're back on Review tab
+        if (isEditingFromReview) {
+          setIsEditingFromReview(false);
+          setPreviousTab(null);
+        }
         return (
           <AdvancedReviewTab
             {...commonProps}
@@ -402,7 +501,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
             onUpdate={updateAdvancedReview}
             onUpdateBodyAnalysis={updateBodyAnalysis}
             onUpdateWorkoutPreferences={updateWorkoutPreferences}
-            onNavigateToTab={setCurrentTab}
+            onSaveToDatabase={saveToDatabase}  // NEW: For immediate database persistence
+            onNavigateToTab={handleNavigateFromReview}
             isComplete={isOnboardingComplete()}
           />
         );
@@ -440,7 +540,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   
   return (
     <AuroraBackground theme="space" animated={true} animationSpeed={1} intensity={0.3}>
-      <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         {/* Tab Navigation Bar - Hidden in edit mode */}
         {!editMode && (
           <OnboardingTabBar
@@ -456,33 +557,37 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
           {renderTabContent()}
         </View>
 
-        {/* Progress Modal Toggle (for debugging/testing) */}
-        {__DEV__ && !editMode && (
-          <View style={styles.debugContainer}>
-            <Text
-              style={styles.debugText}
-              onPress={() => setShowProgressModal(!showProgressModal)}
-            >
-              {showProgressModal ? 'Hide' : 'Show'} Progress
-            </Text>
-          </View>
-        )}
+        {/* Debug button removed for cleaner UI */}
 
-        {/* Completion Dialog (Web-Compatible) */}
+        {/* Premium Completion Modal */}
+        <OnboardingCompleteModal
+          visible={showCompletionModal}
+          userName={personalInfo?.first_name || 'Champion'}
+          onGetStarted={handleCompletionGetStarted}
+          stats={{
+            goal: (workoutPreferences?.primary_goals || [])[0] || 'Get Fit',
+            workoutsPerWeek: workoutPreferences?.workout_frequency_per_week || 3,
+            // Use calculated calorie target - NO HARDCODED FALLBACK
+            // If null, show 'calculating...' in the UI
+            calorieTarget: advancedReview?.daily_calories ?? null,
+          }}
+        />
+
+        {/* Error Dialog (kept for error states) */}
         <CustomDialog
-          visible={completionDialog.visible}
+          visible={completionDialog.visible && completionDialog.type === 'error'}
           title={completionDialog.title}
           message={completionDialog.message}
           type={completionDialog.type}
           actions={[
             {
-              text: completionDialog.type === 'success' ? 'Get Started' : 'OK',
+              text: 'OK',
               onPress: completionDialog.onConfirm || (() => setCompletionDialog(prev => ({ ...prev, visible: false }))),
               style: 'default',
             },
           ]}
         />
-      </SafeAreaView>
+      </View>
     </AuroraBackground>
   );
 };
@@ -519,18 +624,16 @@ const styles = StyleSheet.create({
   // Debug styles
   debugContainer: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: '6%',
+    right: ResponsiveTheme.spacing.md,
     backgroundColor: ResponsiveTheme.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    zIndex: 100,
+    padding: ResponsiveTheme.spacing.sm,
+    borderRadius: ResponsiveTheme.borderRadius.md,
   },
   
   debugText: {
     color: ResponsiveTheme.colors.white,
-    fontSize: 11,
+    fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 });

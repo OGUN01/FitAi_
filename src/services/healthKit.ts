@@ -114,6 +114,11 @@ class HealthKitService {
     }
   }
 
+  async requestPermissions(): Promise<boolean> {
+    const result = await this.requestAuthorization();
+    return result.granted;
+  }
+
   async requestAuthorization(): Promise<HealthKitPermissionsStatus> {
     try {
       if (!this.isInitialized) {
@@ -356,6 +361,7 @@ class HealthKitService {
   startAutoSync(intervalMinutes: number = 15): void {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
+      this.syncInterval = null;
     }
 
     if (Platform.OS !== 'ios' || !HealthKitModule) {
@@ -426,6 +432,156 @@ class HealthKitService {
 
   isAvailable(): boolean {
     return Platform.OS === 'ios' && this.isInitialized && !!HealthKitModule;
+  }
+
+  async syncHealthDataFromHealthKit(daysBack: number = 7): Promise<{
+    success: boolean;
+    data?: HealthKitData;
+    error?: string;
+  }> {
+    try {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - daysBack);
+      const endDate = new Date();
+
+      const data = await this.fetchHealthData(startDate, endDate);
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async exportWorkoutToHealthKit(workout: {
+    type: string;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+    calories: number;
+    distance?: number;
+  }): Promise<boolean> {
+    return this.saveWorkoutToHealthKit({
+      type: workout.type,
+      duration: (workout.endDate.getTime() - workout.startDate.getTime()) / 60000,
+      calories: workout.calories,
+      distance: workout.distance,
+    });
+  }
+
+  async exportNutritionToHealthKit(nutrition: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    water?: number;
+    date: Date;
+  }): Promise<boolean> {
+    // HealthKit doesn't have direct nutrition export in our wrapper
+    // This is a placeholder that returns false for now
+    console.warn('Nutrition export not yet implemented for HealthKit');
+    return false;
+  }
+
+  async exportBodyWeightToHealthKit(weight: number, date: Date = new Date()): Promise<boolean> {
+    return this.saveWeightToHealthKit(weight, 'kg');
+  }
+
+  async clearCache(): Promise<void> {
+    // HealthKit data is managed by iOS, we just clear our cached authorization
+    await AsyncStorage.multiRemove(['healthkit_authorized', 'healthkit_auth_date', 'healthkit_last_sync']);
+  }
+
+  async getHealthSummary(): Promise<any> {
+    const data = await this.fetchHealthData();
+    const lastSync = await this.getLastSyncTime();
+
+    return {
+      dailySteps: data.steps || 0,
+      dailyCalories: data.activeEnergy || 0,
+      dailyDistance: 0, // Not tracked in current implementation
+      lastWeight: data.bodyWeight,
+      heartRate: data.heartRate,
+      recentWorkouts: data.workouts?.length || 0,
+      syncStatus: lastSync ? 'synced' : 'never_synced',
+    };
+  }
+
+  async getHeartRateZones(age: number): Promise<any> {
+    // Calculate heart rate zones similar to Google Fit
+    const maxHR = 220 - age;
+    const restingHR = 60; // Default estimate
+
+    const zones = {
+      zone1: { min: Math.round(maxHR * 0.5), max: Math.round(maxHR * 0.6), name: 'Recovery' },
+      zone2: { min: Math.round(maxHR * 0.6), max: Math.round(maxHR * 0.7), name: 'Aerobic Base' },
+      zone3: { min: Math.round(maxHR * 0.7), max: Math.round(maxHR * 0.8), name: 'Aerobic' },
+      zone4: { min: Math.round(maxHR * 0.8), max: Math.round(maxHR * 0.9), name: 'Lactate Threshold' },
+      zone5: { min: Math.round(maxHR * 0.9), max: maxHR, name: 'VO2 Max' },
+    };
+
+    return { restingHR, maxHR, zones };
+  }
+
+  async getSleepBasedWorkoutRecommendations(): Promise<any> {
+    const data = await this.fetchHealthData();
+    const sleepDuration = data.sleepHours || 7;
+
+    let sleepQuality: 'poor' | 'fair' | 'good' | 'excellent' = 'fair';
+    if (sleepDuration < 6) sleepQuality = 'poor';
+    else if (sleepDuration < 7) sleepQuality = 'fair';
+    else if (sleepDuration < 9) sleepQuality = 'good';
+    else sleepQuality = 'excellent';
+
+    return {
+      sleepQuality,
+      sleepDuration,
+      recommendations: {
+        intensityAdjustment: sleepQuality === 'poor' ? -2 : sleepQuality === 'fair' ? -1 : sleepQuality === 'good' ? 0 : 1,
+        workoutType: sleepQuality === 'poor' ? 'recovery' : sleepQuality === 'fair' ? 'light' : sleepQuality === 'good' ? 'moderate' : 'intense',
+        duration: sleepQuality === 'poor' || sleepQuality === 'fair' ? 'shorter' : sleepQuality === 'good' ? 'normal' : 'longer',
+        notes: [`Sleep quality: ${sleepQuality}`],
+      },
+    };
+  }
+
+  async getActivityAdjustedCalories(baseCalories: number): Promise<any> {
+    const data = await this.fetchHealthData();
+    const activeEnergy = data.activeEnergy || 0;
+    const steps = data.steps || 0;
+
+    let activityMultiplier = 1.0;
+    if (activeEnergy > 600) activityMultiplier = 1.15;
+    else if (activeEnergy > 400) activityMultiplier = 1.10;
+    else if (activeEnergy > 200) activityMultiplier = 1.05;
+    else activityMultiplier = 0.95;
+
+    const adjustedCalories = Math.round(baseCalories * activityMultiplier);
+
+    return {
+      adjustedCalories,
+      activityMultiplier,
+      breakdown: {
+        baseCalories,
+        activeEnergy,
+        exerciseBonus: 0,
+        stepBonus: 0,
+      },
+      recommendations: [],
+    };
+  }
+
+  async detectAndLogActivities(): Promise<any> {
+    // HealthKit activity detection is not implemented in this wrapper
+    return {
+      detectedActivities: [],
+      autoLoggedCount: 0,
+    };
   }
 }
 

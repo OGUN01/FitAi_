@@ -1,0 +1,30 @@
+src/components/animations/ProgressAnimation.tsx(97,15): error TS2322: Type 'AnimatedInterpolation<string | number>' is not assignable to type 'ReactNode'.
+src/components/diet/FoodRecognitionFeedback.tsx(177,50): error TS2322: Type 'number' is not assignable to type '1 | 2 | 3 | 4 | 5 | undefined'.
+src/components/diet/PortionAdjustment.tsx(171,28): error TS2345: Argument of type '(RecognizedFood | { portionSize: { estimatedGrams: number; confidence: number; servingType: "small" | "medium" | "large" | "traditional"; }; nutrition: { calories: number; ... 5 more ...; sodium: number | undefined; }; ... 11 more ...; enhancementSource: "hybrid" | ... 2 more ... | "free_api"; })[]' is not assignable to parameter of type 'RecognizedFood[]'.
+  Type 'RecognizedFood | { portionSize: { estimatedGrams: number; confidence: number; servingType: "small" | "medium" | "large" | "traditional"; }; nutrition: { calories: number; ... 5 more ...; sodium: number | undefined; }; ... 11 more ...; enhancementSource: "hybrid" | ... 2 more ... | "free_api"; }' is not assignable to type 'RecognizedFood'.
+    Type '{ portionSize: { estimatedGrams: number; confidence: number; servingType: "small" | "medium" | "large" | "traditional"; }; nutrition: { calories: number; protein: number; carbs: number; fat: number; fiber: number | undefined; sugar: number | undefined; sodium: number | undefined; }; ... 11 more ...; enhancementSourc...' is not assignable to type 'RecognizedFood'.
+      The types of 'nutrition.fiber' are incompatible between these types.
+        Type 'number | undefined' is not assignable to type 'number'.
+          Type 'undefined' is not assignable to type 'number'.
+src/components/fitness/ExerciseCard.tsx(83,11): error TS2322: Type 'any[]' is not assignable to type 'ViewStyle'.
+  Types of property 'filter' are incompatible.
+    Type '{ <S extends any>(predicate: (value: any, index: number, array: any[]) => value is S, thisArg?: any): S[]; (predicate: (value: any, index: number, array: any[]) => unknown, thisArg?: any): any[]; }' is not assignable to type 'string | readonly FilterFunction[] | undefined'.
+src/components/migration/MigrationIntegration.tsx(11,10): error TS2305: Module '"./MigrationProgressModal"' has no exported member 'MigrationProgressModal'.
+src/components/migration/MigrationIntegration.tsx(112,37): error TS2339: Property 'conflicts' does not exist on type 'MigrationResult'.
+src/components/migration/MigrationIntegration.tsx(114,41): error TS2339: Property 'conflicts' does not exist on type 'MigrationResult'.
+src/components/migration/MigrationProgressModal.tsx(75,21): error TS2345: Argument of type 'boolean | undefined' is not assignable to parameter of type 'SetStateAction<boolean>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<boolean>'.
+src/components/migration/MigrationProgressModal.tsx(76,20): error TS2345: Argument of type 'boolean | undefined' is not assignable to parameter of type 'SetStateAction<boolean>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<boolean>'.
+src/components/migration/MigrationProgressModal.tsx(94,44): error TS2345: Argument of type 'Dispatch<SetStateAction<MigrationStatus | null>>' is not assignable to parameter of type '(progress: MigrationProgress) => void'.
+  Types of parameters 'value' and 'progress' are incompatible.
+    Type 'MigrationProgress' is not assignable to type 'SetStateAction<MigrationStatus | null>'.
+      Type 'MigrationProgress' is missing the following properties from type 'MigrationStatus': isInProgress, progress, completedSteps
+src/components/migration/MigrationProgressModal.tsx(100,21): error TS2345: Argument of type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: false; }' is not assignable to parameter of type 'SetStateAction<MigrationStatus | null>'.
+  Type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: false; }' is missing the following properties from type 'MigrationStatus': isInProgress, currentStep, totalSteps, completedSteps, errors
+src/components/migration/MigrationProgressModal.tsx(114,21): error TS2345: Argument of type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: true; }' is not assignable to parameter of type 'SetStateAction<MigrationStatus | null>'.
+  Type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: true; }' is missing the following properties from type 'MigrationStatus': isInProgress, currentStep, totalSteps, completedSteps, errors
+src/components/migration/MigrationProgressModal.tsx(124,19): error TS2345: Argument of type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: true; }' is not assignable to parameter of type 'SetStateAction<MigrationStatus | null>'.
+  Type '{ step: string; progress: number; message: string; isComplete: true; hasErrors: true; }' is missing the following properties from type 'MigrationStatus': isInProgress, currentStep, totalSteps, completedSteps, errors
+src/components/migration/MigrationProgressModal.tsx(210,64): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.

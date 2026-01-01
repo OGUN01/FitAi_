@@ -255,6 +255,11 @@ export class RealTimeSyncService {
       this.syncTimer = null;
     }
 
+    if (this.connectionMonitorTimer) {
+      clearInterval(this.connectionMonitorTimer);
+      this.connectionMonitorTimer = null;
+    }
+
     this.updateSyncStatus({ isSyncing: false });
     await this.saveSyncStatus();
     await this.saveSyncQueue();
@@ -522,6 +527,7 @@ export class RealTimeSyncService {
   private startAutoSync(): void {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
+      this.syncTimer = null;
     }
 
     this.syncTimer = setInterval(async () => {
@@ -535,10 +541,16 @@ export class RealTimeSyncService {
     }, this.config.syncIntervalMs);
   }
 
+  private connectionMonitorTimer: NodeJS.Timeout | null = null;
+
   private startConnectionMonitoring(): void {
     // Monitor network connectivity
     // This would be implemented with actual network monitoring
-    setInterval(() => {
+    if (this.connectionMonitorTimer) {
+      clearInterval(this.connectionMonitorTimer);
+    }
+
+    this.connectionMonitorTimer = setInterval(() => {
       this.updateConnectionStatus();
     }, 5000);
   }

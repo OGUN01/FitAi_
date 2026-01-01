@@ -1,11 +1,14 @@
 // Simplified Nutrition Schemas for Google Gemini Structured Output
 // Reduced complexity to avoid API errors while maintaining essential nutrition structure
 
+// JSON Schema type for Gemini API
+type JSONSchema = Record<string, any>;
+
 // ============================================================================
 // SIMPLIFIED MEAL SCHEMA
 // ============================================================================
 
-export const SIMPLIFIED_MEAL_SCHEMA = {
+export const SIMPLIFIED_MEAL_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     name: {
@@ -50,7 +53,7 @@ export const SIMPLIFIED_MEAL_SCHEMA = {
 // SIMPLIFIED DAILY NUTRITION SCHEMA
 // ============================================================================
 
-export const SIMPLIFIED_DAILY_NUTRITION_SCHEMA = {
+export const SIMPLIFIED_DAILY_NUTRITION_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     meals: {
@@ -99,7 +102,7 @@ export const SIMPLIFIED_DAILY_NUTRITION_SCHEMA = {
 // SIMPLIFIED WEEKLY MEAL PLAN SCHEMA
 // ============================================================================
 
-export const SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA = {
+export const SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     planTitle: {
@@ -167,7 +170,7 @@ export const SIMPLIFIED_WEEKLY_NUTRITION_SCHEMA = {
 // DIAGNOSTIC NUTRITION SCHEMA (Minimal for testing)
 // ============================================================================
 
-export const DIAGNOSTIC_NUTRITION_SCHEMA = {
+export const DIAGNOSTIC_NUTRITION_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     planTitle: {
@@ -196,7 +199,7 @@ export const DIAGNOSTIC_NUTRITION_SCHEMA = {
 // ULTRA SIMPLE FOOD ANALYSIS SCHEMA
 // ============================================================================
 
-export const SIMPLE_FOOD_ANALYSIS_SCHEMA = {
+export const SIMPLE_FOOD_ANALYSIS_SCHEMA: JSONSchema = {
   type: 'object',
   properties: {
     name: {

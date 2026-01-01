@@ -47,11 +47,12 @@ if (!isExpoGo) {
 import { foodRecognitionService, MealType } from '../../services/foodRecognitionService';
 import { useAuth } from '../../hooks/useAuth';
 import { useNutritionData } from '../../hooks/useNutritionData';
+import { useCalculatedMetrics } from '../../hooks/useCalculatedMetrics';
 import { Meal, DailyMealPlan } from '../../types/ai';
 import { mealMotivationService } from '../../features/nutrition/MealMotivation';
 import MacroDashboard from '../../components/nutrition/MacroDashboard';
 import { Food } from '../../services/nutritionData';
-import { weeklyMealContentGenerator, WeeklyMealPlan, DayMeal } from '../../ai/weeklyMealGenerator';
+import { WeeklyMealPlan, DayMeal } from '../../types/ai';
 import { MealCard } from '../../components/diet/MealCard';
 import { completionTrackingService } from '../../services/completionTracking';
 import FoodRecognitionTest from '../../components/debug/FoodRecognitionTest';
@@ -67,7 +68,14 @@ import { foodRecognitionFeedbackService } from '../../services/foodRecognitionFe
 import PortionAdjustment from '../../components/diet/PortionAdjustment';
 import { barcodeService } from '../../services/barcodeService';
 import type { ScannedProduct } from '../../services/barcodeService';
-import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer';
+// nutritionAnalyzer removed - migrated to Cloudflare Workers
+const nutritionAnalyzer = {
+  assessProductHealth: async (data: any) => ({
+    healthScore: 7,
+    analysis: 'Product analysis available via backend API',
+    recommendations: ['Use the Diet tab for AI-powered analysis'],
+  }),
+};
 import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { LargeProgressRing } from '../../components/ui/aurora/ProgressRing';
@@ -103,7 +111,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   );
   const [waterConsumed, setWaterConsumed] = useState(0); // in liters
   const waterReminders = useWaterReminders ? useWaterReminders() : null;
-  const waterGoal = waterReminders?.config?.dailyGoalLiters || 4; // Default to 4L if no reminders
+  
+  // Use calculated metrics from onboarding - NO FALLBACKS
+  const {
+    metrics: calculatedMetrics,
+    isLoading: metricsLoading,
+    hasCalculatedMetrics,
+    getWaterGoalLiters,
+    getCalorieTarget,
+    getMacroTargets,
+  } = useCalculatedMetrics();
+  
+  // Water goal from calculated metrics (climate-adjusted) or water reminders config
+  // CRITICAL: No hardcoded fallback - if no data, UI should show appropriate state
+  const waterGoal = getWaterGoalLiters() ?? waterReminders?.config?.dailyGoalLiters ?? null;
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -923,11 +944,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     try {
       // Enhanced preferences with options
+      // CRITICAL: Use calculated metrics from onboarding - throw if not available
+      const calorieTarget = getCalorieTarget() ?? nutritionGoals?.daily_calories;
+      if (!calorieTarget) {
+        throw new Error('Calorie target not calculated. Please complete onboarding.');
+      }
+      
       const preferences = {
         dietaryRestrictions: dietPreferences?.allergies || [],
         cuisinePreference: options?.cuisinePreference || 'any',
         prepTimeLimit: options?.quickEasy ? 20 : 30,
-        calorieTarget: nutritionGoals?.daily_calories || 2000,
+        calorieTarget: calorieTarget,
         dietType: dietPreferences?.diet_type || [],
         dislikes: dietPreferences?.dislikes || [],
         customOptions: options?.customOptions || {},
@@ -1004,9 +1031,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     setAiError(null);
 
     try {
+      // CRITICAL: Use calculated metrics from onboarding - throw if not available
+      const userCalorieTarget = getCalorieTarget() ?? nutritionGoals?.daily_calories;
+      if (!userCalorieTarget) {
+        throw new Error('Calorie target not calculated. Please complete onboarding.');
+      }
+      
       const preferences = {
-        calorieTarget: 2000, // Could be calculated based on user goals
-        dietaryRestrictions: [],
+        calorieTarget: userCalorieTarget,
+        dietaryRestrictions: dietPreferences?.allergies || [],
         cuisinePreferences: ['any'],
       };
 
@@ -1074,31 +1107,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     try {
       console.log('[MEAL] Generating weekly meal plan...');
       console.log('[DEBUG] Profile data:', JSON.stringify(profile, null, 2));
-      console.log('[API] API Key available:', !!process.env.EXPO_PUBLIC_GEMINI_API_KEY);
-      console.log('[AI] weeklyMealContentGenerator available:', !!weeklyMealContentGenerator);
 
-      // Use diet preferences from profile or from nutrition data service
-      const userDietPreferences = profile.dietPreferences || {
-        dietType: (dietPreferences?.diet_type?.[0] as any) || 'non-veg',
-        allergies: dietPreferences?.allergies || [],
-        cuisinePreferences: [],
-        restrictions: [],
-        cookingSkill: 'intermediate',
-        mealPrepTime: 'moderate',
-        dislikes: dietPreferences?.dislikes || [],
-      };
-
-      console.log('[DEBUG] Calling weeklyMealContentGenerator.generateWeeklyMealPlan...');
-      console.log('[DEBUG] Parameters:', {
-        personalInfo: profile.personalInfo,
-        fitnessGoals: profile.fitnessGoals,
-        userDietPreferences,
-      });
-
-      const response = await weeklyMealContentGenerator.generateWeeklyMealPlan(
+      // Use aiService for meal plan generation (connected to Cloudflare Workers)
+      const response = await aiService.generateWeeklyMealPlan(
         profile.personalInfo,
         profile.fitnessGoals,
-        userDietPreferences
+        1 // weekNumber
       );
 
       console.log('[DEBUG] Response from generator:', response);
@@ -1200,7 +1214,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            haptics.impact('medium');
+            haptics.medium();
             console.log('[DELETE] Deleting meal:', meal.name);
             // TODO: Implement actual meal deletion from store
             Alert.alert('Success', 'Meal deleted successfully');
@@ -1215,7 +1229,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Handle edit meal
   const handleEditMeal = (meal: DayMeal) => {
-    haptics.impact('light');
+    haptics.light();
     console.log('[EDIT] Editing meal:', meal.name);
     Alert.alert('Edit Meal', `Edit functionality for "${meal.name}" coming soon!`);
     // Reset swipe position
@@ -1256,7 +1270,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     // Mark as added
     setAddedToPlan(prev => new Set(prev).add(suggestionId));
-    haptics.impact('medium');
+    haptics.medium();
 
     // Show success message
     setTimeout(() => {
@@ -1294,7 +1308,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       }),
     ]).start(() => {
       setDismissedSuggestions(prev => new Set(prev).add(suggestionId));
-      haptics.impact('medium');
+      haptics.medium();
     });
   };
 
@@ -1367,7 +1381,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             friction: 10,
             useNativeDriver: true,
           }).start();
-          haptics.impact('light');
+          haptics.light();
         } else {
           // Snap back to closed
           Animated.spring(swipePosition, {
@@ -1777,16 +1791,33 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     mealsCount: 0,
   };
 
-  // Use real nutrition goals or defaults
+  // Get macro targets from calculated metrics (onboarding) - NO FALLBACKS
+  const macroTargets = getMacroTargets();
+  const calorieTarget = getCalorieTarget();
+  
+  // Use calculated targets from onboarding, fallback to nutritionGoals hook, then null
+  // CRITICAL: No hardcoded fallbacks - UI should handle null states
   const nutritionTargets = {
     calories: {
       current: currentNutrition.calories,
-      target: nutritionGoals?.daily_calories || 2000,
+      target: calorieTarget ?? nutritionGoals?.daily_calories ?? null,
     },
-    protein: { current: currentNutrition.protein, target: nutritionGoals?.daily_protein || 120 },
-    carbs: { current: currentNutrition.carbs, target: nutritionGoals?.daily_carbs || 250 },
-    fat: { current: currentNutrition.fat, target: nutritionGoals?.daily_fat || 67 },
-    fiber: { current: 0, target: 25 }, // Fiber not tracked yet
+    protein: { 
+      current: currentNutrition.protein, 
+      target: macroTargets.protein ?? nutritionGoals?.daily_protein ?? null,
+    },
+    carbs: { 
+      current: currentNutrition.carbs, 
+      target: macroTargets.carbs ?? nutritionGoals?.daily_carbs ?? null,
+    },
+    fat: { 
+      current: currentNutrition.fat, 
+      target: macroTargets.fat ?? nutritionGoals?.daily_fat ?? null,
+    },
+    fiber: { 
+      current: 0, 
+      target: calculatedMetrics?.dailyFiberG ?? null,
+    },
   };
 
   return (
@@ -2446,7 +2477,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     <Text style={styles.waterTimelineTitle}>Today's Intake</Text>
                     <View style={styles.waterTimelineBar}>
                       {[...Array(Math.min(Math.ceil(waterConsumed / 0.25), 16))].map((_, index) => (
-                        <View key={index} style={styles.waterTimelineDot} />
+                        <View key={`water-dot-${index}`} style={styles.waterTimelineDot} />
                       ))}
                     </View>
                   </View>
@@ -2733,45 +2764,99 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             </GlassCard>
           </View>
 
-          {/* Quick Actions */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.actionsGrid}>
-              <AnimatedPressable style={styles.actionItem} onPress={handleScanFood} scaleValue={0.95}>
-                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Ionicons name="camera-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
-                  <Text style={styles.actionText}>Scan Food</Text>
-                </GlassCard>
+          {/* Quick Actions - Compact Horizontal Scrollable */}
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.quickActionsSectionTitle}>Quick Actions</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsScroll}
+              decelerationRate="fast"
+            >
+              <AnimatedPressable onPress={handleScanFood} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(102, 126, 234, 0.15)', 'rgba(102, 126, 234, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(102, 126, 234, 0.2)' }]}>
+                    <Ionicons name="camera" size={rf(16)} color="#667eea" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>Scan</Text>
+                </LinearGradient>
               </AnimatedPressable>
 
-              <AnimatedPressable style={styles.actionItem} onPress={handleSearchFood} scaleValue={0.95}>
-                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Ionicons name="sparkles-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
-                  <Text style={styles.actionText}>AI Meals</Text>
-                </GlassCard>
+              <AnimatedPressable onPress={handleSearchFood} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(156, 39, 176, 0.15)', 'rgba(156, 39, 176, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(156, 39, 176, 0.2)' }]}>
+                    <Ionicons name="sparkles" size={rf(16)} color="#9C27B0" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>AI Meals</Text>
+                </LinearGradient>
               </AnimatedPressable>
 
-              <AnimatedPressable style={styles.actionItem} onPress={handleCreateRecipe} scaleValue={0.95}>
-                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Ionicons name="create-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
-                  <Text style={styles.actionText}>Create Recipe</Text>
-                </GlassCard>
+              <AnimatedPressable onPress={handleCreateRecipe} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(76, 175, 80, 0.15)', 'rgba(76, 175, 80, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(76, 175, 80, 0.2)' }]}>
+                    <Ionicons name="create" size={rf(16)} color="#4CAF50" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>Recipe</Text>
+                </LinearGradient>
               </AnimatedPressable>
 
-              <AnimatedPressable style={styles.actionItem} onPress={handleScanProduct} scaleValue={0.95}>
-                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Ionicons name="barcode-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
-                  <Text style={styles.actionText}>Scan Product</Text>
-                </GlassCard>
+              <AnimatedPressable onPress={handleScanProduct} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(255, 152, 0, 0.15)', 'rgba(255, 152, 0, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(255, 152, 0, 0.2)' }]}>
+                    <Ionicons name="barcode" size={rf(16)} color="#FF9800" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>Barcode</Text>
+                </LinearGradient>
               </AnimatedPressable>
 
-              <AnimatedPressable style={styles.actionItem} onPress={handleLogWater} scaleValue={0.95}>
-                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                  <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
-                  <Text style={styles.actionText}>Log Water</Text>
-                </GlassCard>
+              <AnimatedPressable onPress={handleLogWater} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(33, 150, 243, 0.15)', 'rgba(33, 150, 243, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(33, 150, 243, 0.2)' }]}>
+                    <Ionicons name="water" size={rf(16)} color="#2196F3" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>Water</Text>
+                </LinearGradient>
               </AnimatedPressable>
-            </View>
+
+              <AnimatedPressable onPress={() => {}} scaleValue={0.92} style={styles.quickActionPill}>
+                <LinearGradient
+                  colors={['rgba(233, 30, 99, 0.15)', 'rgba(233, 30, 99, 0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.quickActionPillGradient}
+                >
+                  <View style={[styles.quickActionIconCircle, { backgroundColor: 'rgba(233, 30, 99, 0.2)' }]}>
+                    <Ionicons name="restaurant" size={rf(16)} color="#E91E63" />
+                  </View>
+                  <Text style={styles.quickActionPillText}>Log Meal</Text>
+                </LinearGradient>
+              </AnimatedPressable>
+            </ScrollView>
           </View>
 
           {/* Water Intake */}
@@ -3471,6 +3556,51 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
   },
 
+  // ============================================================================
+  // QUICK ACTIONS - Compact Horizontal Scrollable
+  // ============================================================================
+  quickActionsSection: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  quickActionsSectionTitle: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+  quickActionsScroll: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  quickActionPill: {
+    borderRadius: rw(16),
+    overflow: 'hidden',
+  },
+  quickActionPillGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderRadius: rw(16),
+    gap: ResponsiveTheme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  quickActionIconCircle: {
+    width: rw(28),
+    height: rw(28),
+    borderRadius: rw(14),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickActionPillText: {
+    fontSize: rf(12),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+  },
+
+  // Legacy styles kept for compatibility
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

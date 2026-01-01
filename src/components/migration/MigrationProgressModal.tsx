@@ -16,24 +16,25 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { THEME } from '../ui';
-import { migrationManager, MigrationProgress } from '../../services/migrationManager';
+import { migrationManager } from '../../services/migrationManager';
+import { MigrationStatus } from '../../types/profileData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface MigrationProgressModalProps {
+interface MigrationStatusModalProps {
   visible: boolean;
   userId: string;
   onComplete: (success: boolean) => void;
   onCancel?: () => void;
 }
 
-export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
+export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
   visible,
   userId,
   onComplete,
   onCancel,
 }) => {
-  const [progress, setProgress] = useState<MigrationProgress | null>(null);
+  const [progress, setProgress] = useState<MigrationStatus | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [hasErrors, setHasErrors] = useState(false);
 
@@ -71,8 +72,8 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
         useNativeDriver: false,
       }).start();
 
-      setIsComplete(progress.isComplete);
-      setHasErrors(progress.hasErrors);
+      setIsComplete(progress.isComplete ?? false);
+      setHasErrors(progress.hasErrors ?? false);
 
       // Auto-close on completion after delay
       if (progress.isComplete && !progress.hasErrors) {
@@ -90,15 +91,20 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
   const startMigration = async () => {
     try {
       // Set up progress callback
-      migrationManager.setProgressCallback(setProgress);
+      migrationManager.setProgressCallback((progress) => setProgress(progress as unknown as MigrationStatus));
 
       // Check if migration is needed
       const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(userId);
 
       if (!migrationNeeded) {
         setProgress({
+          isInProgress: false,
           step: 'complete',
+          currentStep: 'complete',
           progress: 100,
+          totalSteps: 1,
+          completedSteps: 1,
+          errors: [],
           message: "No migration needed - you're all set!",
           isComplete: true,
           hasErrors: false,
@@ -111,8 +117,13 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
 
       if (!result.success) {
         setProgress({
+          isInProgress: false,
           step: 'error',
+          currentStep: 'error',
           progress: 0,
+          totalSteps: 1,
+          completedSteps: 0,
+          errors: result.errors,
           message: `Migration failed: ${result.errors.join(', ')}`,
           isComplete: true,
           hasErrors: true,
@@ -121,8 +132,13 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
     } catch (error) {
       console.error('❌ Migration error:', error);
       setProgress({
+        isInProgress: false,
         step: 'error',
+        currentStep: 'error',
         progress: 0,
+        totalSteps: 1,
+        completedSteps: 0,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
         message: 'Migration failed due to an unexpected error',
         isComplete: true,
         hasErrors: true,
@@ -206,8 +222,8 @@ export const MigrationProgressModal: React.FC<MigrationProgressModalProps> = ({
                 <>
                   {/* Step Icon and Title */}
                   <View style={styles.stepInfo}>
-                    <Text style={styles.stepIcon}>{getStepIcon(progress.step)}</Text>
-                    <Text style={styles.stepTitle}>{getStepTitle(progress.step)}</Text>
+                    <Text style={styles.stepIcon}>{getStepIcon(progress.step ?? '')}</Text>
+                    <Text style={styles.stepTitle}>{getStepTitle(progress.step ?? '')}</Text>
                   </View>
 
                   {/* Progress Bar */}
@@ -434,3 +450,6 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
   },
 });
+
+// Export with both names for backwards compatibility
+export const MigrationStatusModal = MigrationProgressModal;

@@ -70,6 +70,11 @@ export interface ProgressStats {
     };
   };
   timeRange: number; // days
+  // Additional properties used in ProgressScreen
+  totalWorkouts?: number;
+  totalDuration?: number; // in minutes
+  totalCalories?: number;
+  currentStreak?: number;
 }
 
 export interface ProgressGoals {

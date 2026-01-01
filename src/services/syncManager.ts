@@ -83,7 +83,7 @@ class SyncManager {
       if (!personalInfoResult.success) {
         result.errors.push(...personalInfoResult.errors);
       }
-      result.conflicts.push(...personalInfoResult.conflicts);
+      result.conflicts.push(...(personalInfoResult.conflicts || []));
 
       // Step 2: Migrate Fitness Goals
       this.updateMigrationStatus('Migrating fitness goals', 2);
@@ -92,7 +92,7 @@ class SyncManager {
       if (!fitnessGoalsResult.success) {
         result.errors.push(...fitnessGoalsResult.errors);
       }
-      result.conflicts.push(...fitnessGoalsResult.conflicts);
+      result.conflicts.push(...(fitnessGoalsResult.conflicts || []));
 
       // Step 3: Migrate Diet Preferences
       this.updateMigrationStatus('Migrating diet preferences', 3);
@@ -101,7 +101,7 @@ class SyncManager {
       if (!dietPreferencesResult.success) {
         result.errors.push(...dietPreferencesResult.errors);
       }
-      result.conflicts.push(...dietPreferencesResult.conflicts);
+      result.conflicts.push(...(dietPreferencesResult.conflicts || []));
 
       // Step 4: Migrate Workout Preferences
       this.updateMigrationStatus('Migrating workout preferences', 4);
@@ -110,7 +110,7 @@ class SyncManager {
       if (!workoutPreferencesResult.success) {
         result.errors.push(...workoutPreferencesResult.errors);
       }
-      result.conflicts.push(...workoutPreferencesResult.conflicts);
+      result.conflicts.push(...(workoutPreferencesResult.conflicts || []));
 
       // Calculate overall success
       const successCount = Object.values(result.migratedData).filter(Boolean).length;
@@ -165,17 +165,21 @@ class SyncManager {
       }
 
       console.log('🔄 Migrating personal info to profiles table...');
-      
+
       // Save personal info directly to profiles table (combines personal info with profile)
       const profileData = {
         id: dataManager['userId'],
         email: localData.email || '',
-        name: localData.name,
-        age: localData.age ? parseInt(localData.age) : null,
+        first_name: localData.first_name || '',
+        last_name: localData.last_name || '',
+        age: localData.age,
         gender: localData.gender,
-        height_cm: localData.height ? parseInt(localData.height) : null,
-        weight_kg: localData.weight ? parseFloat(localData.weight) : null,
-        activity_level: localData.activityLevel,
+        country: localData.country || 'US',
+        state: localData.state || '',
+        region: localData.region,
+        wake_time: localData.wake_time || '07:00',
+        sleep_time: localData.sleep_time || '23:00',
+        occupation_type: localData.occupation_type || 'desk_job',
         updated_at: new Date().toISOString()
       };
 
@@ -275,9 +279,19 @@ class SyncManager {
       
       const dietPreferencesData = {
         user_id: dataManager['userId'],
-        diet_type: localData.dietType,
+        diet_type: localData.diet_type,
         allergies: localData.allergies || [],
         restrictions: localData.restrictions || [],
+        keto_ready: localData.keto_ready || false,
+        intermittent_fasting_ready: localData.intermittent_fasting_ready || false,
+        paleo_ready: localData.paleo_ready || false,
+        mediterranean_ready: localData.mediterranean_ready || false,
+        low_carb_ready: localData.low_carb_ready || false,
+        high_protein_ready: localData.high_protein_ready || false,
+        breakfast_enabled: localData.breakfast_enabled ?? true,
+        lunch_enabled: localData.lunch_enabled ?? true,
+        dinner_enabled: localData.dinner_enabled ?? true,
+        snacks_enabled: localData.snacks_enabled ?? false,
         updated_at: new Date().toISOString()
       };
 

@@ -38,9 +38,11 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
   gender = 'male',
   measurements,
   showAnimations = true,
-  size = 300,
+  size: rawSize = 300,
   style,
 }) => {
+  // Sanitize size to prevent NaN in SVG calculations
+  const size = Number.isFinite(rawSize) && rawSize > 0 ? rawSize : 300;
   const height = size;
   const width = size * 0.6;
 

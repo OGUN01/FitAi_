@@ -160,9 +160,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <View style={styles.muscleGroupsSection}>
                 <Text style={styles.sectionTitle}>Target Muscles</Text>
                 <View style={styles.muscleGroupsContainer}>
-                  {exercise.muscleGroups.map((group, index) => (
+                  {exercise.muscleGroups.map((group) => (
                     <View
-                      key={index}
+                      key={`muscle-${group}`}
                       style={[
                         styles.muscleGroupChip,
                         { backgroundColor: getMuscleGroupColor(group) },
@@ -180,8 +180,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <View style={styles.equipmentSection}>
                 <Text style={styles.sectionTitle}>Equipment Needed</Text>
                 <View style={styles.equipmentContainer}>
-                  {exercise.equipment.map((item, index) => (
-                    <View key={index} style={styles.equipmentChip}>
+                  {exercise.equipment.map((item) => (
+                    <View key={`equipment-${item}`} style={styles.equipmentChip}>
                       <Text style={styles.equipmentText}>{item.replace('_', ' ')}</Text>
                     </View>
                   ))}
@@ -194,7 +194,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <View style={styles.instructionsSection}>
                 <Text style={styles.sectionTitle}>Instructions</Text>
                 {exercise.instructions.map((instruction, index) => (
-                  <View key={index} style={styles.instructionItem}>
+                  <View key={`instruction-${index}-${instruction.substring(0, 20)}`} style={styles.instructionItem}>
                     <Text style={styles.instructionNumber}>{index + 1}.</Text>
                     <Text style={styles.instructionText}>{instruction}</Text>
                   </View>
@@ -206,8 +206,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             {exercise.tips && exercise.tips.length > 0 && (
               <View style={styles.tipsSection}>
                 <Text style={styles.sectionTitle}>💡 Tips</Text>
-                {exercise.tips.map((tip, index) => (
-                  <Text key={index} style={styles.tipText}>
+                {exercise.tips.map((tip) => (
+                  <Text key={`tip-${tip.substring(0, 30)}`} style={styles.tipText}>
                     • {tip}
                   </Text>
                 ))}

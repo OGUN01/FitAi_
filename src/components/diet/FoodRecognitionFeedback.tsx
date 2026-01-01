@@ -96,7 +96,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
     return null;
   }
 
-  const renderAccuracyStars = (rating: number, onPress: (rating: number) => void) => {
+  const renderAccuracyStars = (rating: number, onPress: (rating: 1 | 2 | 3 | 4 | 5) => void) => {
     return (
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((star) => (

@@ -63,17 +63,10 @@ export const Input: React.FC<InputProps> = ({
     });
   }, [isFocused]);
 
+  // Note: Shadow animations removed from useAnimatedStyle to fix React Native warning
+  // Shadow glow effect is now applied via inputContainerFocused style
   const animatedStyle = useAnimatedStyle(() => {
-    const shadowOpacity = interpolate(focusAnimation.value, [0, 1], [0, 0.3]);
-    const shadowRadius = interpolate(focusAnimation.value, [0, 1], [0, 8]);
-
-    return {
-      shadowColor: ResponsiveTheme.colors.primary,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity,
-      shadowRadius,
-      elevation: interpolate(focusAnimation.value, [0, 1], [0, 4]),
-    };
+    return {};
   });
 
   return (
@@ -100,7 +93,7 @@ export const Input: React.FC<InputProps> = ({
             inputStyle,
           ]}
           placeholder={placeholder}
-          placeholderTextColor={THEME.colors.textSecondary}
+          placeholderTextColor="rgba(255, 255, 255, 0.35)"
           value={value}
           onChangeText={onChangeText}
           onFocus={() => setIsFocused(true)}
@@ -131,33 +124,37 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: rh(12),
-    width: '100%',
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   label: {
-    fontSize: rf(13),
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: rh(6),
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 6,
+    letterSpacing: 0.3,
   },
 
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    borderRadius: rw(12),
-    borderWidth: 1.5,
-    borderColor: ResponsiveTheme.colors.borderLight,
-    minHeight: rh(48),
-    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    minHeight: 48,
     overflow: 'hidden',
   },
 
   inputContainerFocused: {
-    borderColor: ResponsiveTheme.colors.primary,
-    borderWidth: 2,
-    backgroundColor: `${ResponsiveTheme.colors.primary}08`,
+    borderColor: '#6366F1',
+    borderWidth: 1.5,
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
 
   inputContainerError: {
@@ -171,40 +168,39 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    fontSize: rf(14),
-    color: ResponsiveTheme.colors.text,
-    paddingHorizontal: rw(12),
-    paddingVertical: rh(12),
-    width: '100%',
+    fontSize: 14,
+    color: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
 
   inputWithLeftIcon: {
-    paddingLeft: rw(8),
+    paddingLeft: ResponsiveTheme.spacing.sm,
   },
 
   inputWithRightIcon: {
-    paddingRight: rw(8),
+    paddingRight: ResponsiveTheme.spacing.sm,
   },
 
   inputMultiline: {
     textAlignVertical: 'top',
-    minHeight: rh(80),
+    minHeight: 80,
   },
 
   leftIconContainer: {
-    paddingLeft: rw(12),
-    paddingRight: rw(8),
+    paddingLeft: ResponsiveTheme.spacing.md,
+    paddingRight: ResponsiveTheme.spacing.sm,
   },
 
   rightIconContainer: {
-    paddingRight: rw(12),
-    paddingLeft: rw(8),
+    paddingRight: ResponsiveTheme.spacing.md,
+    paddingLeft: ResponsiveTheme.spacing.sm,
   },
 
   errorText: {
-    fontSize: rf(11),
+    fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.error,
-    marginTop: rh(4),
-    marginLeft: rw(4),
+    marginTop: ResponsiveTheme.spacing.xs,
+    marginLeft: ResponsiveTheme.spacing.xs,
   },
 });

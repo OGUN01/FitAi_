@@ -137,20 +137,38 @@ export async function saveToKV(
 export async function getFromDatabase(
   env: Env,
   type: CacheType,
-  cacheKey: string
+  cacheKey: string,
+  userId?: string
 ): Promise<CacheResult> {
   try {
     const supabase = getSupabaseClient(env);
 
     const tableName = type === 'workout' ? 'workout_cache' : 'meal_cache';
 
-    const { data, error } = await supabase
+    // Build query with user_id filter if provided
+    let query = supabase
       .from(tableName)
       .select('*')
-      .eq('cache_key', cacheKey)
-      .single();
+      .eq('cache_key', cacheKey);
+
+    // Filter by user_id if provided (for user-specific cache)
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.single();
 
     if (error || !data) {
+      return {
+        data: null,
+        hit: false,
+      };
+    }
+
+    // Check if cache entry has expired
+    const expiresAt = (data as any).expires_at;
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      console.log(`[Cache Expired] ${type}:${cacheKey}`);
       return {
         data: null,
         hit: false,
@@ -160,8 +178,8 @@ export async function getFromDatabase(
     // Increment hit count (fire and forget - don't wait)
     Promise.resolve(
       supabase.rpc('increment_cache_hit', {
+        p_table: tableName,
         p_cache_key: cacheKey,
-        p_table_name: tableName,
       })
     ).catch((err: Error) => {
       console.error('[Hit Count Error]', err);
@@ -196,12 +214,18 @@ export async function saveToDatabase(
   type: CacheType,
   cacheKey: string,
   data: any,
-  metadata: CacheMetadata
+  metadata: CacheMetadata,
+  userId?: string
 ): Promise<void> {
   try {
     const supabase = getSupabaseClient(env);
 
     const tableName = type === 'workout' ? 'workout_cache' : 'meal_cache';
+
+    // Calculate expiration date (30 days for workouts, 7 days for meals)
+    const expirationDays = type === 'workout' ? 30 : 7;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expirationDays);
 
     const cacheEntry = {
       cache_key: cacheKey,
@@ -211,6 +235,8 @@ export async function saveToDatabase(
       tokens_used: metadata.tokensUsed,
       cost_usd: metadata.costUsd,
       hit_count: 0,
+      user_id: userId || null, // User-specific cache (NULL for legacy shared cache)
+      expires_at: expiresAt.toISOString(), // Auto-expiration
       created_at: new Date().toISOString(),
       last_accessed: new Date().toISOString(),
     };
@@ -241,7 +267,8 @@ export async function saveToDatabase(
 export async function getCachedData(
   env: Env,
   type: CacheType,
-  params: Record<string, any>
+  params: Record<string, any>,
+  userId?: string
 ): Promise<CacheResult> {
   const cacheKey = generateCacheKey(type, params);
 
@@ -253,8 +280,8 @@ export async function getCachedData(
     return kvResult;
   }
 
-  // Tier 2: Try database
-  const dbResult = await getFromDatabase(env, type, cacheKey);
+  // Tier 2: Try database (with user_id filter for user-specific cache)
+  const dbResult = await getFromDatabase(env, type, cacheKey, userId);
 
   if (dbResult.hit) {
     // Backfill KV cache for next time
@@ -281,14 +308,15 @@ export async function saveCachedData(
   type: CacheType,
   cacheKey: string,
   data: any,
-  metadata: CacheMetadata
+  metadata: CacheMetadata,
+  userId?: string
 ): Promise<void> {
   const kv = type === 'workout' ? env.WORKOUT_CACHE : env.MEAL_CACHE;
 
   // Save to both tiers in parallel
   await Promise.all([
     saveToKV(kv, cacheKey, data),
-    saveToDatabase(env, type, cacheKey, data, metadata),
+    saveToDatabase(env, type, cacheKey, data, metadata, userId),
   ]);
 }
 

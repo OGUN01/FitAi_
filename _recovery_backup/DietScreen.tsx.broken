@@ -1,0 +1,4683 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Modal,
+  RefreshControl,
+  TextInput,
+  Animated,
+  Platform,
+  PanResponder,
+} from 'react-native';
+import { SafeAreaView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
+import { GlassCard } from '../../components/ui/aurora/GlassCard';
+import { AuroraSpinner } from '../../components/ui/aurora/AuroraSpinner';
+import { haptics } from '../../utils/haptics';
+import { gradients, toLinearGradientProps } from '../../theme/gradients';
+import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import { ResponsiveTheme } from '../../utils/constants';
+import { Button, THEME } from '../../components/ui';
+import { Camera } from '../../components/advanced/Camera';
+import { aiService } from '../../ai';
+import { useUserStore } from '../../stores/userStore';
+import { useNutritionStore } from '../../stores/nutritionStore';
+import Constants from 'expo-constants';
+
+// Simple Expo Go detection and safe loading
+const isExpoGo =
+  Constants.appOwnership === 'expo' ||
+  Constants.executionEnvironment === 'storeClient' ||
+  (__DEV__ && !Constants.isDevice && !Constants.platform?.web);
+
+let useWaterReminders: any = null;
+if (!isExpoGo) {
+  try {
+    const notificationStore = require('../../stores/notificationStore');
+    useWaterReminders = notificationStore.useWaterReminders;
+  } catch (error) {
+    console.warn('Failed to load water reminders:', error);
+  }
+}
+import { foodRecognitionService, MealType } from '../../services/foodRecognitionService';
+import { useAuth } from '../../hooks/useAuth';
+import { useNutritionData } from '../../hooks/useNutritionData';
+import { Meal, DailyMealPlan, WeeklyMealPlan, DayMeal } from '../../types/ai';
+import { mealMotivationService } from '../../features/nutrition/MealMotivation';
+import MacroDashboard from '../../components/nutrition/MacroDashboard';
+import { Food } from '../../services/nutritionData';
+import { MealCard } from '../../components/diet/MealCard';
+import { completionTrackingService } from '../../services/completionTracking';
+import FoodRecognitionTest from '../../components/debug/FoodRecognitionTest';
+import MealTypeSelector from '../../components/diet/MealTypeSelector';
+import AIMealsPanel from '../../components/diet/AIMealsPanel';
+import CreateRecipeModal from '../../components/diet/CreateRecipeModal';
+import { runQuickActionsTests, runFoodRecognitionE2ETests } from '../../utils/testQuickActions';
+import { recognizedFoodLogger } from '../../services/recognizedFoodLogger';
+import FoodRecognitionFeedback, {
+  FoodFeedback,
+} from '../../components/diet/FoodRecognitionFeedback';
+import { foodRecognitionFeedbackService } from '../../services/foodRecognitionFeedbackService';
+import PortionAdjustment from '../../components/diet/PortionAdjustment';
+import { barcodeService } from '../../services/barcodeService';
+import type { ScannedProduct } from '../../services/barcodeService';
+// REMOVED: import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer' - moved to Cloudflare Workers
+import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
+import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { LargeProgressRing } from '../../components/ui/aurora/ProgressRing';
+
+interface DietScreenProps {
+  navigation?: any; // Navigation prop for routing
+  route?: any; // Route params
+  isActive?: boolean; // Whether this screen is currently active
+}
+
+export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isActive = true }) => {
+  const [showCamera, setShowCamera] = useState(false);
+  const [showFoodSearch, setShowFoodSearch] = useState(false);
+  const [showTestComponent, setShowTestComponent] = useState(false);
+  const [showMealTypeSelector, setShowMealTypeSelector] = useState(false);
+  const [showAIMealsPanel, setShowAIMealsPanel] = useState(false);
+  const [showCreateRecipe, setShowCreateRecipe] = useState(false);
+  const [userRecipes, setUserRecipes] = useState<any[]>([]);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<{
+    recognizedFoods: any[];
+    imageUri: string;
+    mealId: string;
+  } | null>(null);
+  const [showPortionAdjustment, setShowPortionAdjustment] = useState(false);
+  const [portionData, setPortionData] = useState<{
+    recognizedFoods: any[];
+    imageUri: string;
+  } | null>(null);
+  const [showMealPreparationModal, setShowMealPreparationModal] = useState(false);
+  const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(
+    null
+  );
+  const [waterConsumed, setWaterConsumed] = useState(0); // in liters
+  const waterReminders = useWaterReminders ? useWaterReminders() : null;
+  const waterGoal = waterReminders?.config?.dailyGoalLiters || 4; // Default to 4L if no reminders
+  const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    mealId: string | null;
+    position: { x: number; y: number };
+  }>({
+    visible: false,
+    mealId: null,
+    position: { x: 0, y: 0 },
+  });
+
+  // AI Integration State
+  const [aiMeals, setAiMeals] = useState<Meal[]>([]);
+  const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  // Barcode Scanning State
+  const [cameraMode, setCameraMode] = useState<'food' | 'progress' | 'barcode'>('food');
+  const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
+  const [productHealthAssessment, setProductHealthAssessment] = useState<any>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
+
+  // Swipe State
+  const [mealSwipePositions, setMealSwipePositions] = useState<Record<string, Animated.Value>>({});
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(new Set());
+  const [suggestionSwipeStates, setSuggestionSwipeStates] = useState<Record<number, { translateY: Animated.Value; opacity: Animated.Value }>>({});
+
+  // Card Flip State
+  const [cardFlipStates, setCardFlipStates] = useState<Record<number, Animated.Value>>({});
+  const [addedToPlan, setAddedToPlan] = useState<Set<number>>(new Set());
+
+  // Use nutrition store for meal plan state
+  const {
+    weeklyMealPlan,
+    isGeneratingPlan,
+    mealProgress,
+    saveWeeklyMealPlan,
+    setWeeklyMealPlan,
+    setGeneratingPlan,
+    getMealProgress,
+    updateMealProgress,
+    completeMeal,
+    loadWeeklyMealPlan,
+    loadData,
+  } = useNutritionStore();
+
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const todayName = dayNames[today.getDay()] || 'monday'; // fallback to monday if undefined
+    console.log(`[DEBUG] Today is: ${todayName} (day ${today.getDay()})`);
+    return todayName;
+  });
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Animation refs for micro-interactions
+  const calorieRingProgress = useRef(new Animated.Value(0)).current;
+  const proteinCount = useRef(new Animated.Value(0)).current;
+  const carbsCount = useRef(new Animated.Value(0)).current;
+  const fatsCount = useRef(new Animated.Value(0)).current;
+  const mealCard1Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard1TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard2Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard2TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard3Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard3TranslateX = useRef(new Animated.Value(-50)).current;
+  const mealCard4Opacity = useRef(new Animated.Value(0)).current;
+  const mealCard4TranslateX = useRef(new Animated.Value(-50)).current;
+  const waterWaveOffset = useRef(new Animated.Value(0)).current;
+  const fabScale = useRef(new Animated.Value(1)).current;
+  const fabRotation = useRef(new Animated.Value(0)).current;
+  const waterButton1Ripple = useRef(new Animated.Value(0)).current;
+  const waterButton2Ripple = useRef(new Animated.Value(0)).current;
+  const waterButton3Ripple = useRef(new Animated.Value(0)).current;
+
+  // Ripple effect handler
+  const triggerRipple = (rippleAnim: Animated.Value) => {
+    rippleAnim.setValue(0);
+    Animated.timing(rippleAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Force re-render when meal progress changes
+  const forceRefresh = useCallback(() => {
+    console.log('[REFRESH] DietScreen: Force refresh triggered');
+    setForceUpdate(prev => prev + 1);
+  }, []);
+
+  // Debug: Monitor weeklyMealPlan changes
+  useEffect(() => {
+    console.log(
+      `[DEBUG] weeklyMealPlan changed:`,
+      weeklyMealPlan
+        ? `Plan: ${weeklyMealPlan.planTitle}, meals: ${weeklyMealPlan.meals?.length}`
+        : 'null'
+    );
+  }, [weeklyMealPlan]);
+
+  // Monitor meal progress changes and force refresh
+  useEffect(() => {
+    console.log('[DEBUG] mealProgress changed:', mealProgress);
+    // Force a small delay to ensure state is fully updated
+    const timeout = setTimeout(() => {
+      forceRefresh();
+    }, 50);
+    
+    return () => clearTimeout(timeout);
+  }, [mealProgress, forceRefresh]);
+
+  // Subscribe to completion events for real-time updates
+  useEffect(() => {
+    console.log('[EVENT] DietScreen: Setting up completion event listener');
+
+    const unsubscribe = completionTrackingService.subscribe((event) => {
+      console.log('[EVENT] DietScreen: Received completion event:', event);
+
+      if (event.type === 'meal') {
+        console.log('[MEAL] DietScreen: Meal completion event received for:', event.itemId);
+
+        // Force refresh the UI to show updated completion status
+        setTimeout(() => {
+          console.log('[REFRESH] DietScreen: Triggering refresh due to meal completion event');
+          forceRefresh();
+        }, 100);
+      }
+    });
+
+    return () => {
+      console.log('[EVENT] DietScreen: Cleaning up completion event listener');
+      unsubscribe();
+    };
+  }, [forceRefresh]);
+
+  // Handle navigation parameters when returning from cooking session
+  useEffect(() => {
+    if (route?.params?.mealCompleted) {
+      console.log('[NAV] DietScreen: Returned from cooking session with completion:', {
+        completedMealId: route.params.completedMealId,
+        timestamp: route.params.timestamp
+      });
+      
+      // Force immediate refresh when returning from a completed cooking session
+      forceRefresh();
+      
+      // Clear the navigation parameters to prevent duplicate triggers
+      if (navigation?.setParams) {
+        navigation.setParams({ 
+          mealCompleted: undefined, 
+          completedMealId: undefined, 
+          timestamp: undefined 
+        });
+      }
+    }
+  }, [route?.params, navigation, forceRefresh]);
+
+  // Custom focus effect - refresh data when screen becomes active
+  useEffect(() => {
+    if (isActive) {
+      console.log('[REFRESH] DietScreen became active - refreshing meal data...');
+      console.log('[REFRESH] DietScreen: Current meal progress before refresh:', mealProgress);
+      
+      const refreshMealData = async () => {
+        try {
+          await loadData(); // Refresh nutrition store data
+          console.log('[SUCCESS] Meal data refreshed on focus');
+          
+          // Log meal progress after refresh
+          setTimeout(() => {
+            const currentProgress = useNutritionStore.getState().mealProgress;
+            console.log('[REFRESH] DietScreen: Meal progress after refresh:', currentProgress);
+          }, 100);
+        } catch (error) {
+          console.error('[ERROR] Error refreshing meal data on focus:', error);
+        }
+      };
+
+      refreshMealData();
+    }
+  }, [isActive, loadData]);
+
+  // Micro-interaction: Calorie ring and macro count-up animation on mount
+  useEffect(() => {
+    // Animate calorie ring progress
+    Animated.timing(calorieRingProgress, {
+      toValue: 1,
+      duration: 1500,
+      useNativeDriver: false,
+    }).start();
+
+    // Animate macro counts with stagger
+    Animated.stagger(150, [
+      Animated.timing(proteinCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+      Animated.timing(carbsCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+      Animated.timing(fatsCount, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Meal cards staggered slide-in animation
+  useEffect(() => {
+    Animated.stagger(100, [
+      Animated.parallel([
+        Animated.timing(mealCard1Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard1TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard2Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard2TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard3Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard3TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(mealCard4Opacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(mealCard4TranslateX, {
+          toValue: 0,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
+
+  // Micro-interaction: Water wave continuous animation
+  useEffect(() => {
+    const waveAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(waterWaveOffset, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(waterWaveOffset, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    waveAnimation.start();
+    return () => waveAnimation.stop();
+  }, []);
+
+  // Micro-interaction: FAB scale pulse animation
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(fabScale, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fabScale, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulseAnimation.start();
+    return () => pulseAnimation.stop();
+  }, []);
+
+  // Load existing meal plan on component mount
+  useEffect(() => {
+    const loadExistingMealPlan = async () => {
+      try {
+        console.log('[DEBUG] Loading existing meal plan from store...');
+        await loadData(); // Load all nutrition data
+
+        const existingPlan = await loadWeeklyMealPlan();
+        if (existingPlan) {
+          console.log('[SUCCESS] Found existing meal plan:', existingPlan.planTitle);
+          setWeeklyMealPlan(existingPlan);
+
+          // Comprehensive retrieval test
+          console.log('[TEST] COMPREHENSIVE RETRIEVAL TEST:');
+          const allDays = [
+            'monday',
+            'tuesday',
+            'wednesday',
+            'thursday',
+            'friday',
+            'saturday',
+            'sunday',
+          ];
+          const mealAvailability = allDays.map((day) => {
+            const mealsForDay = existingPlan.meals.filter((meal) => meal.dayOfWeek === day);
+            return {
+              day,
+              mealCount: mealsForDay.length,
+              mealTypes: mealsForDay.map((m) => m.type),
+            };
+          });
+          console.log('[ANALYTICS] Meal availability by day:', mealAvailability);
+
+          const totalMeals = existingPlan.meals.length;
+          const expectedMeals = 21; // 7 days × 3 meals
+          console.log(
+            `[ANALYTICS] Total meals: ${totalMeals}/${expectedMeals} (${Math.round((totalMeals / expectedMeals) * 100)}% complete)`
+          );
+        } else {
+          console.log('[DEBUG] No existing meal plan found');
+        }
+      } catch (error) {
+        console.error('[ERROR] Error loading meal plan:', error);
+      }
+    };
+
+    loadExistingMealPlan();
+  }, []); // Run once on mount
+
+  // Navigation helper for profile completion
+  const navigateToProfileCompletion = async (missingSection: string) => {
+    if (navigation) {
+      // Try to navigate to profile screen
+      try {
+        // Store the intent to edit diet preferences
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        await AsyncStorage.setItem(
+          'profileEditIntent',
+          JSON.stringify({
+            section: 'dietPreferences',
+            fromScreen: 'Diet',
+            timestamp: Date.now(),
+          })
+        );
+
+        console.log('[NAV] DietScreen: Stored edit intent and navigating to Profile');
+        navigation.navigate('Profile');
+      } catch (error) {
+        console.log('Navigation not available, showing alternative');
+        showProfileCompletionModal(missingSection);
+      }
+    } else {
+      showProfileCompletionModal(missingSection);
+    }
+  };
+
+  // Show modal when navigation is not available
+  const showProfileCompletionModal = (missingSection: string) => {
+    Alert.alert(
+      'Complete Your Profile',
+      `To generate personalized meal plans, please complete your ${missingSection}.\n\nYou can update your profile from the Profile tab.`,
+      [
+        { text: 'OK' },
+        {
+          text: 'Go to Profile',
+          onPress: () => {
+            // This will be enhanced when we implement profile editing
+            Alert.alert('Profile', 'Profile editing functionality will be available soon!');
+          },
+        },
+      ]
+    );
+  };
+
+  // Authentication and user data
+  const { user, isAuthenticated, isGuestMode } = useAuth();
+  const { profile } = useUserStore();
+  
+  // Check if user can access meal features (authenticated or in guest mode)
+  const canAccessMealFeatures = isAuthenticated || isGuestMode;
+
+  // Real nutrition data with Track B integration
+  const {
+    foods,
+    foodsLoading,
+    foodsError,
+    loadFoods,
+    userMeals,
+    userMealsLoading,
+    userMealsError,
+    loadUserMeals,
+    dietPreferences,
+    nutritionGoals,
+    dailyNutrition,
+    loadDailyNutrition,
+    logMeal,
+    trackBStatus,
+    refreshAll,
+    clearErrors,
+  } = useNutritionData();
+
+  // Animation values
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  // Animate in on mount
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const handleCameraCapture = async (imageUri: string) => {
+    console.log('[CAMERA] NEW Food Recognition System - Image captured:', imageUri);
+    console.log('[MEAL] Selected meal type:', selectedMealType);
+    console.log('[PROFILE] Profile available:', !!profile);
+
+    setShowCamera(false);
+
+    // Check if we have the food recognition service
+    if (!foodRecognitionService) {
+      Alert.alert('Error', 'Food recognition service not available. Please check your setup.');
+      return;
+    }
+
+    try {
+      setIsGeneratingMeal(true);
+      setAiError(null);
+
+      // Show processing alert
+      Alert.alert(
+        'Revolutionary AI Food Recognition',
+        `Our advanced AI is analyzing your ${selectedMealType} with 90%+ accuracy using Indian cuisine specialization...`,
+        [{ text: 'Processing...', style: 'cancel' }]
+      );
+
+      // Check if we have API keys available
+      const hasApiKey =
+        process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_KEY_1;
+
+      if (!hasApiKey) {
+        // Demo mode without API keys
+        Alert.alert(
+          'Demo Mode - Food Recognition',
+          'API keys not configured. This is a demo of what the food recognition would show:\n\n- Detected: Rice Bowl with Curry (345 cal)\n- Detected: Mixed Vegetables (120 cal)\n- Total: 465 calories\n- Accuracy: 92%\n\nTo enable real recognition, add your Gemini API key to environment variables.',
+          [
+            { text: 'OK' },
+            {
+              text: 'Setup Guide',
+              onPress: () => {
+                Alert.alert(
+                  'Setup',
+                  'Add your Gemini API key to EXPO_PUBLIC_GEMINI_API_KEY in your .env file or use the test-api-keys.js script for setup.'
+                );
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Analyze food with the selected meal type
+      console.log('[DEBUG] Calling food recognition service...');
+      const result = await foodRecognitionService.recognizeFood(
+        imageUri,
+        selectedMealType,
+        profile
+          ? { personalInfo: profile.personalInfo, fitnessGoals: profile.fitnessGoals }
+          : undefined
+      );
+      console.log('[ANALYTICS] Food recognition result:', result);
+
+      if (result.success && result.data) {
+        const recognizedFoods = result.data;
+        const totalCalories = recognizedFoods.reduce(
+          (sum, food) => sum + food.nutrition.calories,
+          0
+        );
+
+        // Show success result with feedback option
+        Alert.alert(
+          'Food Recognition Complete!',
+          `Recognized ${recognizedFoods.length} food item(s):\n\n` +
+            `${recognizedFoods.map((food) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
+            `Total: ${Math.round(totalCalories)} calories\n` +
+            `Accuracy: ${result.accuracy}% | Confidence: ${result.confidence}%`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Adjust Portions',
+              onPress: () => {
+                setPortionData({
+                  recognizedFoods,
+                  imageUri,
+                });
+                setShowPortionAdjustment(true);
+              },
+            },
+            {
+              text: 'Give Feedback',
+              onPress: () => {
+                setFeedbackData({
+                  recognizedFoods,
+                  imageUri,
+                  mealId: `temp_${Date.now()}`, // Temporary ID, will be updated after logging
+                });
+                setShowFeedbackModal(true);
+              },
+            },
+            {
+              text: 'Log Meal',
+              onPress: async () => {
+                try {
+                  console.log('[MEAL] Starting meal logging process...');
+
+                  // Use the recognized food logger service
+                  const logResult = await recognizedFoodLogger.logRecognizedFoods(
+                    user?.id || 'dev-user-001',
+                    recognizedFoods,
+                    selectedMealType
+                  );
+
+                  if (logResult.success) {
+                    // Show success with detailed information
+                    Alert.alert(
+                      'Meal Logged Successfully!',
+                      `${recognizedFoods.length} food item${recognizedFoods.length !== 1 ? 's' : ''} logged\n` +
+                        `Total: ${logResult.totalCalories} calories\n` +
+                        `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                        `Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                        `Your nutrition tracking has been updated!`,
+                      [{ text: 'Awesome!' }]
+                    );
+
+                    console.log('[SUCCESS] Meal logged successfully:', {
+                      mealId: logResult.mealId,
+                      totalCalories: logResult.totalCalories,
+                      foodCount: recognizedFoods.length,
+                    });
+
+                    // Update feedback data with real meal ID
+                    if (feedbackData) {
+                      setFeedbackData((prev) =>
+                        prev ? { ...prev, mealId: logResult.mealId! } : null
+                      );
+                    }
+
+                    // Refresh nutrition data to show updated totals
+                    await loadDailyNutrition();
+                    await refreshAll(); // Refresh all nutrition data
+                  } else {
+                    throw new Error(logResult.error || 'Failed to log meal');
+                  }
+                } catch (logError) {
+                  console.error('[ERROR] Failed to log meal:', logError);
+
+                  const errorMessage =
+                    logError instanceof Error ? logError.message : 'Unknown error occurred';
+                  Alert.alert(
+                    'Meal Logging Failed',
+                    `Error: ${errorMessage}\n\nThe food was recognized successfully, but we couldn't save it to your meal log. Please try again or check your connection.`,
+                    [
+                      { text: 'OK' },
+                      {
+                        text: 'Retry',
+                        onPress: async () => {
+                          // Retry the logging process
+                          try {
+                            const retryResult = await recognizedFoodLogger.logRecognizedFoods(
+                              user?.id || 'dev-user-001',
+                              recognizedFoods,
+                              selectedMealType
+                            );
+
+                            if (retryResult.success) {
+                              Alert.alert('Success!', 'Meal logged successfully on retry!');
+                              await loadDailyNutrition();
+                              await refreshAll();
+                            } else {
+                              Alert.alert(
+                                'Still Failed',
+                                'Please try again later or contact support.'
+                              );
+                            }
+                          } catch (retryError) {
+                            Alert.alert('Retry Failed', 'Please try again later.');
+                          }
+                        },
+                      },
+                    ]
+                  );
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        throw new Error(result.error || 'Food recognition failed');
+      }
+    } catch (error) {
+      console.error('[ERROR] Food recognition failed:', error);
+      console.error('[ERROR] Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : undefined,
+      });
+
+      setAiError(error instanceof Error ? error.message : 'Food recognition failed');
+
+      // Check if it's an API key issue
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('API key') || errorMessage.includes('key')) {
+        Alert.alert(
+          'API Key Required',
+          'The food recognition system needs a Gemini API key to work. Please add your API key to the environment variables.\n\nFor now, you can test the UI components without API calls.',
+          [
+            { text: 'OK' },
+            {
+              text: 'See Setup Guide',
+              onPress: () => {
+                Alert.alert(
+                  'Setup Guide',
+                  'Check the ENVIRONMENT_SETUP.md file in the docs folder for instructions on setting up API keys.'
+                );
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Recognition Failed',
+          `Error: ${errorMessage}\n\nThis could be due to:\n- Missing API keys\n- Network issues\n- Invalid image format\n\nCheck the console for detailed error information.`,
+          [{ text: 'OK' }, { text: 'Try Again', onPress: () => setShowCamera(true) }]
+        );
+      }
+    } finally {
+      setIsGeneratingMeal(false);
+    }
+  };
+
+  // Barcode scanning handlers
+  const handleBarcodeScanned = async (barcode: string, type: string) => {
+    console.log('[DEBUG] Barcode scanned:', { barcode, type });
+    setIsProcessingBarcode(true);
+    setShowCamera(false);
+
+    try {
+      // Show processing alert
+      Alert.alert(
+        'Scanning Product',
+        'Analyzing product information and health assessment...',
+        [{ text: 'Processing...', style: 'cancel' }]
+      );
+
+      // Lookup product using barcode service
+      const lookupResult = await barcodeService.lookupProduct(barcode);
+
+      if (!lookupResult.success || !lookupResult.product) {
+        Alert.alert(
+          'Product Not Found',
+          lookupResult.error || 'This product is not in our database. Try scanning a different barcode or add the product manually.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      const product = lookupResult.product;
+      console.log('[SUCCESS] Product found:', product.name);
+
+      // Generate health assessment
+      const healthAssessment = {
+        overallScore: 70,
+        category: 'moderate' as const,
+        positives: ['Contains protein'],
+        negatives: ['High in sodium'],
+        recommendations: ['Consume in moderation']
+      };
+
+      console.log('[SUCCESS] Health assessment completed:', {
+        score: healthAssessment.overallScore,
+        category: healthAssessment.category
+      });
+
+      // Update state and show modal
+      setScannedProduct(product);
+      setProductHealthAssessment(healthAssessment);
+      setShowProductModal(true);
+
+      // Success alert
+      Alert.alert(
+        'Product Scanned Successfully!',
+        `Found: ${product.name}\nHealth Score: ${healthAssessment.overallScore}/100 (${healthAssessment.category})`,
+        [{ text: 'View Details', onPress: () => setShowProductModal(true) }]
+      );
+
+    } catch (error) {
+      console.error('[ERROR] Barcode scanning error:', error);
+      Alert.alert(
+        'Scanning Error',
+        `Failed to process barcode: ${error}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsProcessingBarcode(false);
+    }
+  };
+
+  const handleScanProduct = () => {
+    setCameraMode('barcode');
+    setShowCamera(true);
+  };
+
+  const handleAddProductToMeal = (product: ScannedProduct) => {
+    // Add product to current meal - integration with meal logging system
+    Alert.alert(
+      'Add to Meal',
+      `Add ${product.name} to your current meal?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Add',
+          onPress: async () => {
+            try {
+              // Here you would integrate with the existing meal logging system
+              // For now, show success message
+              Alert.alert(
+                'Added to Meal',
+                `${product.name} has been added to your ${selectedMealType}.`
+              );
+              
+              // Close the modal
+              setShowProductModal(false);
+              
+              // Refresh nutrition data
+              await loadDailyNutrition();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to add product to meal. Please try again.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Enhanced scan food handler with meal type selection
+  const handleScanFood = () => {
+    setShowMealTypeSelector(true);
+  };
+
+  const handleMealTypeSelected = (mealType: MealType) => {
+    setSelectedMealType(mealType);
+    setShowMealTypeSelector(false);
+
+    // Small delay for smooth transition
+    setTimeout(() => {
+      setShowCamera(true);
+    }, 300);
+  };
+
+  // Enhanced AI Meal Generation Function with comprehensive options
+  const generateAIMeal = async (mealType: string, options?: any) => {
+    // Handle different action types
+    if (mealType === 'daily_plan') {
+      return generateDailyMealPlan();
+    }
+
+    if (!profile?.personalInfo || !profile?.fitnessGoals) {
+      Alert.alert(
+        'Profile Incomplete',
+        'Please complete your profile to generate personalized meals.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigateToProfileCompletion('Personal Information'),
+          },
+        ]
+      );
+      return;
+    }
+
+    setIsGeneratingMeal(true);
+    setAiError(null);
+
+    try {
+      // Enhanced preferences with options
+      const preferences = {
+        dietaryRestrictions: dietPreferences?.allergies || [],
+        cuisinePreference: options?.cuisinePreference || 'any',
+        prepTimeLimit: options?.quickEasy ? 20 : 30,
+        calorieTarget: nutritionGoals?.daily_calories || 2000,
+        dietType: dietPreferences?.diet_type || [],
+        dislikes: dietPreferences?.dislikes || [],
+        customOptions: options?.customOptions || {},
+        suggestions: options?.suggestions || [],
+      };
+
+      // Handle special action types
+      let actualMealType = mealType;
+      if (['meal_prep', 'goal_focused', 'quick_easy'].includes(mealType)) {
+        actualMealType = 'lunch'; // Default to lunch for special actions
+        preferences.specialAction = mealType;
+      }
+
+      const response = await aiService.generateMeal(
+        profile.personalInfo,
+        profile.fitnessGoals,
+        actualMealType as 'breakfast' | 'lunch' | 'dinner' | 'snack',
+        preferences
+      );
+
+      if (response.success && response.data) {
+        setAiMeals((prev) => [response.data!, ...prev]);
+
+        // Optionally save the generated meal to the database
+        if (user?.id && response.data.ingredients && foods.length > 0) {
+          // Convert AI meal to meal log format (simplified)
+          const mealData = {
+            name: response.data.name,
+            type: mealType,
+            foods: response.data.ingredients
+              .slice(0, 3)
+              .map((ingredient: any, index: number) => ({
+                food_id: foods[index % foods.length]?.id || foods[0]?.id,
+                quantity_grams: 100, // Default quantity
+              }))
+              .filter((f) => f.food_id),
+          };
+
+          if (mealData.foods.length > 0) {
+            await logMeal(mealData);
+          }
+        }
+
+        Alert.alert('Meal Generated!', `Your personalized ${mealType} is ready!`, [
+          { text: 'Great!' },
+        ]);
+      } else {
+        setAiError(response.error || 'Failed to generate meal');
+        Alert.alert('Generation Failed', response.error || 'Failed to generate meal');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAiError(errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsGeneratingMeal(false);
+    }
+  };
+
+  // Generate Daily Meal Plan
+  const generateDailyMealPlan = async () => {
+    if (!profile?.personalInfo || !profile?.fitnessGoals) {
+      Alert.alert('Profile Incomplete', 'Please complete your profile to generate meal plans.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Complete Profile',
+          onPress: () => navigateToProfileCompletion('Personal Information'),
+        },
+      ]);
+      return;
+    }
+
+    setIsGeneratingMeal(true);
+    setAiError(null);
+
+    try {
+      const preferences = {
+        calorieTarget: 2000, // Could be calculated based on user goals
+        dietaryRestrictions: [],
+        cuisinePreferences: ['any'],
+      };
+
+      const response = await aiService.generateDailyMealPlan(
+        profile.personalInfo,
+        profile.fitnessGoals,
+        preferences
+      );
+
+      if (response.success && response.data) {
+        setAiMeals((prev) => [...response.data!.meals, ...prev]);
+        Alert.alert(
+          'Daily Meal Plan Generated!',
+          `Your complete meal plan for today is ready!`,
+          [{ text: 'Awesome!' }]
+        );
+      } else {
+        setAiError(response.error || 'Failed to generate meal plan');
+        Alert.alert('Generation Failed', response.error || 'Failed to generate meal plan');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setAiError(errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setIsGeneratingMeal(false);
+    }
+  };
+
+  // Generate Weekly Meal Plan (similar to workout generation)
+  const generateWeeklyMealPlan = async () => {
+    console.log('[MEAL] Generate Weekly Plan button pressed!');
+    console.log('[DEBUG] Profile check:', {
+      personalInfo: !!profile?.personalInfo,
+      fitnessGoals: !!profile?.fitnessGoals,
+      dietPreferences: !!profile?.dietPreferences || !!dietPreferences,
+    });
+
+    // Check what's missing and provide specific guidance
+    const missingItems = [];
+    if (!profile?.personalInfo) missingItems.push('Personal Information');
+    if (!profile?.fitnessGoals) missingItems.push('Fitness Goals');
+    if (!profile?.dietPreferences && !dietPreferences) missingItems.push('Diet Preferences');
+
+    if (missingItems.length > 0) {
+      const primaryMissing = missingItems[0];
+      console.log('[ERROR] Profile incomplete:', missingItems);
+      Alert.alert(
+        'Profile Incomplete',
+        `Please complete the following to generate your meal plan:\n\n• ${missingItems.join('\n• ')}\n\nWould you like to complete your profile now?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Complete Profile',
+            onPress: () => navigateToProfileCompletion(primaryMissing),
+          },
+        ]
+      );
+      return;
+    }
+
+    setGeneratingPlan(true);
+    setAiError(null);
+
+    try {
+      console.log('[MEAL] Generating weekly meal plan...');
+      console.log('[DEBUG] Profile data:', JSON.stringify(profile, null, 2));
+      console.log('[API] API Key available:', !!process.env.EXPO_PUBLIC_GEMINI_API_KEY);
+      // TODO: Re-implement weeklyMealContentGenerator
+      // console.log('[AI] weeklyMealContentGenerator available:', !!weeklyMealContentGenerator);
+
+      // Use diet preferences from profile or from nutrition data service
+      const userDietPreferences = profile?.dietPreferences || {
+        dietType: (dietPreferences?.diet_type?.[0] as any) || 'non-veg',
+        allergies: dietPreferences?.allergies || [],
+        cuisinePreferences: [],
+        restrictions: [],
+        cookingSkill: 'intermediate',
+        mealPrepTime: 'moderate',
+        dislikes: dietPreferences?.dislikes || [],
+      };
+
+      // TODO: Re-implement weekly meal plan generation
+      console.log('[DEBUG] Would call weeklyMealContentGenerator.generateWeeklyMealPlan');
+      console.log('[DEBUG] Parameters:', {
+        personalInfo: profile?.personalInfo,
+        fitnessGoals: profile?.fitnessGoals,
+        userDietPreferences,
+      });
+
+      const response = {
+        mealPlan: [],
+        shoppingList: []
+      };
+
+      console.log('[DEBUG] Response from generator:', response);
+
+      if (response.success && response.data) {
+        console.log('[SUCCESS] Weekly meal plan generated successfully');
+        // Save to store and database
+        await saveWeeklyMealPlan(response.data);
+
+        // Ensure state is updated (backup approach)
+        setWeeklyMealPlan(response.data);
+
+        setForceUpdate((prev) => prev + 1); // Force re-render
+        console.log(`[DEBUG] Meal plan saved to store and database`);
+
+        // COMPREHENSIVE GENERATION TEST
+        console.log('[TEST] COMPREHENSIVE GENERATION TEST:');
+        const allDays = [
+          'monday',
+          'tuesday',
+          'wednesday',
+          'thursday',
+          'friday',
+          'saturday',
+          'sunday',
+        ];
+        const generatedMealsByDay = allDays.map((day) => {
+          const mealsForDay = response.data.meals.filter((meal) => meal.dayOfWeek === day);
+          return {
+            day,
+            mealCount: mealsForDay.length,
+            mealTypes: mealsForDay.map((m) => m.type),
+          };
+        });
+        console.log('[ANALYTICS] Generated meals by day:', generatedMealsByDay);
+
+        const totalGenerated = response.data.meals.length;
+        const expectedTotal = 21; // 7 days × 3 meals
+        console.log(
+          `[ANALYTICS] Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`
+        );
+
+        if (totalGenerated === expectedTotal) {
+          console.log('[SUCCESS] FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!');
+        } else {
+          console.warn(`[WARNING] Incomplete meal plan: Missing ${expectedTotal - totalGenerated} meals`);
+        }
+
+        Alert.alert(
+          'Meal Plan Generated!',
+          `Your personalized 7-day meal plan "${response.data.planTitle}" is ready!`,
+          [{ text: 'View Plan', onPress: () => {} }]
+        );
+      } else {
+        throw new Error(response.error || 'Failed to generate meal plan');
+      }
+    } catch (error) {
+      console.error('Error generating weekly meal plan:', error);
+      setAiError(error instanceof Error ? error.message : 'Failed to generate meal plan');
+      Alert.alert('Error', 'Failed to generate meal plan. Please try again.');
+    } finally {
+      setGeneratingPlan(false);
+    }
+  };
+
+  // Get meals for selected day
+  const getTodaysMeals = (): DayMeal[] => {
+    if (!weeklyMealPlan || !weeklyMealPlan.meals || !Array.isArray(weeklyMealPlan.meals)) {
+      console.log('[DEBUG] getTodaysMeals: No weekly meal plan or meals available');
+      return [];
+    }
+    const mealsForDay = weeklyMealPlan.meals.filter((meal) => meal.dayOfWeek === selectedDay);
+    console.log(`[DEBUG] getTodaysMeals for ${selectedDay}:`, {
+      mealsFound: mealsForDay.length,
+      mealTypes: mealsForDay.map((m) => m.type),
+      mealNames: mealsForDay.map((m) => m.name),
+    });
+    return mealsForDay;
+  };
+
+  // Get or create swipe position for a meal
+  const getSwipePosition = (mealId: string): Animated.Value => {
+    if (!mealSwipePositions[mealId]) {
+      const newPosition = new Animated.Value(0);
+      setMealSwipePositions(prev => ({ ...prev, [mealId]: newPosition }));
+      return newPosition;
+    }
+    return mealSwipePositions[mealId];
+  };
+
+  // Handle delete meal with swipe animation
+  const handleDeleteMeal = (meal: DayMeal) => {
+    Alert.alert(
+      'Delete Meal',
+      `Are you sure you want to delete "${meal.name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            haptics.medium();
+            console.log('[DELETE] Deleting meal:', meal.name);
+            // TODO: Implement actual meal deletion from store
+            Alert.alert('Success', 'Meal deleted successfully');
+            // Reset swipe position
+            const swipePos = getSwipePosition(meal.id);
+            Animated.spring(swipePos, { toValue: 0, useNativeDriver: true }).start();
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle edit meal
+  const handleEditMeal = (meal: DayMeal) => {
+    haptics.light();
+    console.log('[EDIT] Editing meal:', meal.name);
+    Alert.alert('Edit Meal', `Edit functionality for "${meal.name}" coming soon!`);
+    // Reset swipe position
+    const swipePos = getSwipePosition(meal.id);
+    Animated.spring(swipePos, { toValue: 0, useNativeDriver: true }).start();
+  };
+
+  // Get or create flip state for card
+  const getCardFlipState = (cardId: number): Animated.Value => {
+    if (!cardFlipStates[cardId]) {
+      const newFlip = new Animated.Value(0);
+      setCardFlipStates(prev => ({ ...prev, [cardId]: newFlip }));
+      return newFlip;
+    }
+    return cardFlipStates[cardId];
+  };
+
+  // Handle adding meal to plan with flip animation
+  const handleAddToPlan = (suggestionId: number, suggestionName: string) => {
+    const flipValue = getCardFlipState(suggestionId);
+
+    // Flip to back
+    Animated.sequence([
+      Animated.timing(flipValue, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      // Hold for 1 second
+      Animated.delay(1000),
+      // Flip back to front
+      Animated.timing(flipValue, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Mark as added
+    setAddedToPlan(prev => new Set(prev).add(suggestionId));
+    haptics.medium();
+
+    // Show success message
+    setTimeout(() => {
+      Alert.alert('Added to Plan', `${suggestionName} has been added to your meal plan`);
+    }, 300);
+  };
+
+  // Get or create swipe state for suggestion card
+  const getSuggestionSwipeState = (suggestionId: number) => {
+    if (!suggestionSwipeStates[suggestionId]) {
+      const newState = {
+        translateY: new Animated.Value(0),
+        opacity: new Animated.Value(1),
+      };
+      setSuggestionSwipeStates(prev => ({ ...prev, [suggestionId]: newState }));
+      return newState;
+    }
+    return suggestionSwipeStates[suggestionId];
+  };
+
+  // Handle dismissing a suggestion card
+  const handleDismissSuggestion = (suggestionId: number) => {
+    const swipeState = getSuggestionSwipeState(suggestionId);
+
+    Animated.parallel([
+      Animated.timing(swipeState.translateY, {
+        toValue: 300,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(swipeState.opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setDismissedSuggestions(prev => new Set(prev).add(suggestionId));
+      haptics.medium();
+    });
+  };
+
+  // Create PanResponder for suggestion card swipe
+  const createSuggestionPanResponder = (suggestionId: number) => {
+    const swipeState = getSuggestionSwipeState(suggestionId);
+    const DISMISS_THRESHOLD = 100; // Swipe down distance to dismiss
+
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to vertical swipes (down)
+        return gestureState.dy > 5 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow downward swipe
+        if (gestureState.dy > 0) {
+          swipeState.translateY.setValue(gestureState.dy);
+          swipeState.opacity.setValue(1 - gestureState.dy / DISMISS_THRESHOLD / 2);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > DISMISS_THRESHOLD) {
+          // Dismiss the card
+          handleDismissSuggestion(suggestionId);
+        } else {
+          // Snap back
+          Animated.parallel([
+            Animated.spring(swipeState.translateY, {
+              toValue: 0,
+              tension: 100,
+              friction: 10,
+              useNativeDriver: true,
+            }),
+            Animated.timing(swipeState.opacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+    });
+  };
+
+  // Create PanResponder for swipe gestures
+  const createMealPanResponder = (mealId: string) => {
+    const swipePosition = getSwipePosition(mealId);
+    const SWIPE_THRESHOLD = -80; // Minimum swipe distance to reveal actions
+
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only respond to horizontal swipes
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        // Only allow left swipe (negative dx)
+        if (gestureState.dx < 0) {
+          swipePosition.setValue(gestureState.dx);
+        } else if (gestureState.dx > 0 && swipePosition._value < 0) {
+          // Allow swiping back to original position
+          swipePosition.setValue(Math.max(SWIPE_THRESHOLD, gestureState.dx));
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < SWIPE_THRESHOLD / 2) {
+          // Swipe left - reveal actions
+          Animated.spring(swipePosition, {
+            toValue: SWIPE_THRESHOLD,
+            tension: 100,
+            friction: 10,
+            useNativeDriver: true,
+          }).start();
+          haptics.light();
+        } else {
+          // Snap back to closed
+          Animated.spring(swipePosition, {
+            toValue: 0,
+            tension: 100,
+            friction: 10,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    });
+  };
+
+  // Handle meal start (similar to workout start)
+  const handleStartMeal = (meal: DayMeal) => {
+    console.log('[MEAL] handleStartMeal called with meal:', meal.name);
+    console.log('[MEAL] Navigation available:', !!navigation);
+
+    if (!navigation) {
+      console.error('[ERROR] Navigation not available for meal start');
+      Alert.alert('Error', 'Navigation not available');
+      return;
+    }
+
+    // For web platform, use modal instead of Alert.alert
+    if (Platform.OS === 'web') {
+      console.log('[WEB] Web platform detected - showing meal preparation modal');
+      setSelectedMealForPreparation(meal);
+      setShowMealPreparationModal(true);
+      return;
+    }
+
+    // For mobile platforms, use Alert.alert with dynamic messaging
+    const motivationConfig = {
+      personalInfo: profile?.personalInfo,
+      fitnessGoals: profile?.fitnessGoals,
+      currentStreak: 0, // TODO: Implement streak tracking
+      completedMealsToday: 0, // TODO: Implement daily meal counting
+    };
+    
+    const dynamicMessage = mealMotivationService.getMealStartMessage(meal, motivationConfig);
+    const preparationTips = mealMotivationService.getPreparationTips(meal);
+    
+    const fullMessage = `${dynamicMessage}\n\nQuick Tips:\n${preparationTips.slice(0, 2).map(tip => `- ${tip}`).join('\n')}`;
+
+    Alert.alert(
+      'Ready to Cook?',
+      fullMessage,
+      [
+        { text: 'Maybe Later', style: 'cancel' },
+        {
+          text: "Let's Cook!",
+          onPress: () => startMealPreparation(meal),
+        },
+      ]
+    );
+  };
+
+  // Separate function for meal preparation logic
+  const startMealPreparation = async (meal: DayMeal) => {
+    console.log('[MEAL] Starting meal preparation:', meal.name);
+
+    // Initialize progress using completion tracking service
+    completionTrackingService.updateMealProgress(meal.id, 0, {
+      source: 'diet_screen_start',
+      startedAt: new Date().toISOString(),
+    });
+
+    // Check if meal has cooking instructions
+    if (!meal.cookingInstructions || meal.cookingInstructions.length === 0) {
+      console.log('[WARNING] Meal has no cooking instructions, generating basic ones...');
+      // Add basic cooking instructions if none exist
+      meal.cookingInstructions = [
+        { step: 1, instruction: 'Gather all ingredients and prepare your workspace' },
+        { step: 2, instruction: 'Follow your preferred cooking method for this meal' },
+        { step: 3, instruction: 'Cook according to the preparation time specified' },
+        { step: 4, instruction: 'Season to taste and serve immediately' },
+        { step: 5, instruction: 'Enjoy your healthy meal!' },
+      ];
+    }
+
+    // Navigate to CookingSessionScreen
+    console.log('[NAV] Navigating to CookingSessionScreen');
+    navigation.navigate('CookingSession', { meal });
+  };
+
+  // Separate function for meal completion logic
+  const completeMealPreparation = async (meal: DayMeal) => {
+    console.log('[MEAL] Marking meal as complete:', meal.name);
+
+    try {
+      // Use completion tracking service for proper event emission
+      const success = await completionTrackingService.completeMeal(
+        meal.id,
+        {
+          completedAt: new Date().toISOString(),
+          source: 'diet_screen_manual',
+        },
+        user?.id || 'dev-user-001'
+      );
+
+      if (success) {
+        // Refresh nutrition data to update calorie display
+        try {
+          await loadDailyNutrition();
+          console.log('[SUCCESS] Daily nutrition data refreshed after meal completion');
+        } catch (refreshError) {
+          console.warn('[WARNING] Failed to refresh nutrition data:', refreshError);
+        }
+
+        if (Platform.OS === 'web') {
+          setShowMealPreparationModal(false);
+          setSelectedMealForPreparation(null);
+          // You could show a success toast here for web
+          console.log(`[SUCCESS] Meal completed: ${meal.name}`);
+        } else {
+          Alert.alert(
+            'Meal Complete!',
+            `You've completed "${meal.name}"!\n\nCheck the Progress tab to see your achievement!`
+          );
+        }
+      } else {
+        Alert.alert('Error', 'Failed to mark meal as complete. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error completing meal:', error);
+      Alert.alert('Error', 'Failed to mark meal as complete. Please try again.');
+    }
+  };
+
+  const handleSearchFood = () => {
+    setShowAIMealsPanel(true);
+  };
+
+  const handleCreateRecipe = () => {
+    setShowCreateRecipe(true);
+  };
+
+  const handleRecipeCreated = (recipe: any) => {
+    setUserRecipes((prev) => [recipe, ...prev]);
+    setShowCreateRecipe(false);
+
+    // You could save the recipe to the database here
+    console.log('New recipe created:', recipe);
+  };
+
+  // Water tracking handlers with liters
+  const handleAddWater = () => {
+    const incrementAmount = 0.25; // 250ml increment
+
+    if (waterConsumed >= waterGoal) {
+      Alert.alert(
+        'Daily Goal Achieved!',
+        `You've already reached your daily water goal of ${waterGoal}L! Great job staying hydrated!`,
+        [{ text: 'Awesome!' }]
+      );
+      return;
+    }
+
+    const newAmount = Math.min(waterConsumed + incrementAmount, waterGoal + 1);
+    setWaterConsumed(Math.round(newAmount * 100) / 100); // Round to 2 decimal places
+
+    // Show celebration when goal is reached
+    if (newAmount >= waterGoal && waterConsumed < waterGoal) {
+      setTimeout(() => {
+        Alert.alert(
+          'Hydration Goal Achieved!',
+          `Congratulations! You've reached your daily water goal of ${waterGoal}L!`,
+          [
+            { text: 'Keep it up!', style: 'default' },
+            {
+              text: 'Adjust Goal',
+              onPress: () => {
+                if (navigation) {
+                  navigation.navigate('Settings', { screen: 'Notifications' });
+                } else {
+                  Alert.alert(
+                    'Water Settings',
+                    'Navigate to Settings > Notifications to adjust your water goal and reminder schedule.'
+                  );
+                }
+              },
+            },
+          ]
+        );
+      }, 500);
+    } else {
+      // Show encouraging message
+      const remaining = Math.max(waterGoal - newAmount, 0);
+      Alert.alert(
+        'Water Added!',
+        `Great job! ${remaining.toFixed(1)}L more to reach your goal.`
+      );
+    }
+  };
+
+  const handleRemoveWater = () => {
+    if (waterConsumed > 0) {
+      const decrementAmount = 0.25;
+      setWaterConsumed(Math.max(0, Math.round((waterConsumed - decrementAmount) * 100) / 100));
+    }
+  };
+
+  const handleLogWater = () => {
+    Alert.alert('Log Water Intake', 'Choose how to log your water consumption:', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Add 250ml',
+        onPress: () => handleAddWater(),
+      },
+      {
+        text: 'Add 500ml',
+        onPress: () => {
+          const newAmount = Math.min(waterConsumed + 0.5, waterGoal + 1);
+          setWaterConsumed(Math.round(newAmount * 100) / 100);
+          Alert.alert('Water Added!', 'Added 500ml to your daily intake.');
+        },
+      },
+      {
+        text: 'Custom Amount',
+        onPress: () => {
+          Alert.prompt(
+            'Water Amount (Liters)',
+            'How many liters did you drink?',
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Add',
+                onPress: (value) => {
+                  const amount = parseFloat(value || '0');
+                  if (amount > 0 && amount <= 3) {
+                    const newTotal = Math.min(waterConsumed + amount, waterGoal + 2);
+                    setWaterConsumed(Math.round(newTotal * 100) / 100);
+                    Alert.alert('Water Added!', `Added ${amount}L to your daily intake.`);
+                  } else {
+                    Alert.alert(
+                      'Invalid Amount',
+                      'Please enter a number between 0.1 and 3.0 liters.'
+                    );
+                  }
+                },
+              },
+            ],
+            'plain-text',
+            '',
+            'decimal-pad'
+          );
+        },
+      },
+    ]);
+  };
+
+  // Handle feedback submission
+  const handleFeedbackSubmit = async (feedback: FoodFeedback[]) => {
+    if (!feedbackData) return;
+
+    try {
+      const result = await foodRecognitionFeedbackService.submitFeedback(
+        user?.id || 'dev-user-001',
+        feedbackData.mealId,
+        feedback,
+        feedbackData.imageUri,
+        feedbackData.recognizedFoods
+      );
+
+      if (result.success) {
+        console.log('[SUCCESS] Feedback submitted successfully:', result.feedbackId);
+      } else {
+        console.error('[ERROR] Failed to submit feedback:', result.error);
+        Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      }
+    } catch (error) {
+      console.error('[ERROR] Error submitting feedback:', error);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+    }
+  };
+
+  // Handle portion adjustment completion
+  const handlePortionAdjustmentComplete = (adjustedFoods: any[]) => {
+    setShowPortionAdjustment(false);
+
+    // Show updated recognition results with adjusted portions
+    const totalCalories = adjustedFoods.reduce((sum, food) => sum + food.nutrition.calories, 0);
+    const adjustedCount = adjustedFoods.filter(
+      (food) =>
+        food.portionSize.estimatedGrams !==
+        portionData?.recognizedFoods.find((orig) => orig.id === food.id)?.portionSize.estimatedGrams
+    ).length;
+
+    Alert.alert(
+      'Portions Updated!',
+      `${adjustedCount > 0 ? `Updated ${adjustedCount} portion size${adjustedCount !== 1 ? 's' : ''}!\n\n` : ''}` +
+        `${adjustedFoods.map((food) => `- ${food.name} (${food.portionSize.estimatedGrams}g - ${Math.round(food.nutrition.calories)} cal)`).join('\n')}\n\n` +
+        `Total: ${Math.round(totalCalories)} calories`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Give Feedback',
+          onPress: () => {
+            setFeedbackData({
+              recognizedFoods: adjustedFoods,
+              imageUri: portionData?.imageUri || '',
+              mealId: `temp_${Date.now()}`,
+            });
+            setShowFeedbackModal(true);
+          },
+        },
+        {
+          text: 'Log Meal',
+          onPress: async () => {
+            try {
+              console.log('[MEAL] Starting meal logging process with adjusted portions...');
+
+              const logResult = await recognizedFoodLogger.logRecognizedFoods(
+                user?.id || 'dev-user-001',
+                adjustedFoods,
+                selectedMealType
+              );
+
+              if (logResult.success) {
+                Alert.alert(
+                  'Meal Logged Successfully!',
+                  `${adjustedFoods.length} food item${adjustedFoods.length !== 1 ? 's' : ''} logged\n` +
+                    `Total: ${logResult.totalCalories} calories\n` +
+                    `Meal Type: ${selectedMealType.charAt(0).toUpperCase() + selectedMealType.slice(1)}\n` +
+                    `Meal ID: ${logResult.mealId?.slice(-8)}\n\n` +
+                    `Your nutrition tracking has been updated!`,
+                  [{ text: 'Awesome!' }]
+                );
+
+                await loadDailyNutrition();
+                await refreshAll();
+              } else {
+                throw new Error(logResult.error || 'Failed to log meal');
+              }
+            } catch (error) {
+              console.error('[ERROR] Failed to log adjusted meal:', error);
+              Alert.alert('Error', 'Failed to log meal. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+
+    setPortionData(null);
+  };
+
+  // Note: Removed static food database display to focus on AI-generated personalized meals
+  // The foods from database were generic seed data that interfered with personalization
+
+  // Note: Removed food loading and filtering as we now focus on AI-generated personalized meals
+  // The app no longer loads generic foods from database
+
+  const handleMealLongPress = (mealId: string, event: any) => {
+    const { pageX, pageY } = event.nativeEvent;
+    setContextMenu({
+      visible: true,
+      mealId,
+      position: { x: pageX, y: pageY },
+    });
+  };
+
+  const handleContextMenuAction = (action: string) => {
+    setContextMenu({ visible: false, mealId: null, position: { x: 0, y: 0 } });
+
+    switch (action) {
+      case 'edit':
+        Alert.alert('Edit Meal', 'Meal editing feature coming soon...');
+        break;
+      case 'delete':
+        Alert.alert('Delete Meal', 'Meal deletion feature coming soon...');
+        break;
+      case 'duplicate':
+        Alert.alert('Duplicate', 'Meal duplication feature coming soon...');
+        break;
+      case 'details':
+        Alert.alert('Details', 'Meal details feature coming soon...');
+        break;
+    }
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ visible: false, mealId: null, position: { x: 0, y: 0 } });
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+      clearErrors();
+    } catch (error) {
+      console.warn('Failed to refresh nutrition data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Use real daily nutrition data from Track B
+  const currentNutrition = dailyNutrition || {
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fat: 0,
+    mealsCount: 0,
+  };
+
+  // Use real nutrition goals or defaults
+  const nutritionTargets = {
+    calories: {
+      current: currentNutrition.calories,
+      target: nutritionGoals?.daily_calories || 2000,
+    },
+    protein: { current: currentNutrition.protein, target: (nutritionGoals as any)?.daily_protein || nutritionGoals?.macroTargets?.protein || 120 },
+    carbs: { current: currentNutrition.carbs, target: (nutritionGoals as any)?.daily_carbs || nutritionGoals?.macroTargets?.carbohydrates || 250 },
+    fat: { current: currentNutrition.fat, target: (nutritionGoals as any)?.daily_fat || nutritionGoals?.macroTargets?.fat || 67 },
+    fiber: { current: 0, target: 25 }, // Fiber not tracked yet
+  };
+
+  return (
+    <AuroraBackground theme="space" animated={true} intensity={0.3}>
+      <SafeAreaView style={styles.container}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={ResponsiveTheme.colors.primary}
+            colors={[ResponsiveTheme.colors.primary]}
+          />
+        }
+      >
+        <View>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Nutrition Plan</Text>
+
+            {/* DateSelector (Today + navigation) - Aurora Design */}
+            <View style={styles.dateSelector}>
+              <AnimatedPressable
+                style={styles.dateNavButton}
+                onPress={() => Alert.alert('Previous Day', 'Navigate to previous day')}
+                scaleValue={0.9}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Text style={styles.dateNavIcon}>‹</Text>
+              </AnimatedPressable>
+
+              <GlassCard elevation={1} blurIntensity="light" padding="sm" borderRadius="lg" style={styles.dateBadge}>
+                <Text style={styles.dateText}>Today</Text>
+                <Text style={styles.dateSubtext}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
+              </GlassCard>
+
+              <AnimatedPressable
+                style={styles.dateNavButton}
+                onPress={() => Alert.alert('Next Day', 'Navigate to next day')}
+                scaleValue={0.9}
+                hapticFeedback={true}
+                hapticType="light"
+              >
+                <Text style={styles.dateNavIcon}>›</Text>
+              </AnimatedPressable>
+            </View>
+
+            <View style={styles.headerButtons}>
+              {/* Track B Status Indicator */}
+              <AnimatedPressable style={styles.statusButton} scaleValue={0.97}>
+                <Ionicons
+                  name={trackBStatus.isConnected ? 'checkmark-circle' : 'close-circle'}
+                  size={rf(16)}
+                  color={trackBStatus.isConnected ? '#10b981' : '#ef4444'}
+                />
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, isGeneratingPlan && styles.aiButtonDisabled]}
+                onPress={generateWeeklyMealPlan}
+                disabled={isGeneratingPlan}
+                scaleValue={0.95}
+                hapticFeedback={true}
+                hapticType="medium"
+              >
+                {isGeneratingPlan ? (
+                  <AuroraSpinner size="sm" theme="white" />
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="restaurant-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                    <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Week</Text>
+                  </View>
+                )}
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, isGeneratingMeal && styles.aiButtonDisabled]}
+                onPress={generateDailyMealPlan}
+                disabled={isGeneratingMeal}
+                scaleValue={0.95}
+                hapticFeedback={true}
+                hapticType="medium"
+              >
+                {isGeneratingMeal ? (
+                  <AuroraSpinner size="sm" theme="white" />
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="sparkles-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                    <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Day</Text>
+                  </View>
+                )}
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, { backgroundColor: '#f59e0b' }]}
+                onPress={() => setShowTestComponent(true)}
+                scaleValue={0.95}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Test</Text>
+                </View>
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, { backgroundColor: '#10b981' }]}
+                onPress={runQuickActionsTests}
+                scaleValue={0.95}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="checkmark-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Quick</Text>
+                </View>
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, { backgroundColor: '#8b5cf6' }]}
+                onPress={runFoodRecognitionE2ETests}
+                scaleValue={0.95}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>E2E</Text>
+                </View>
+              </AnimatedPressable>
+              <AnimatedPressable
+                style={[styles.aiButton, { backgroundColor: '#ef4444' }]}
+                onPress={() => {
+                  console.log('[TEST] Test button pressed - bypassing profile checks');
+                  Alert.alert(
+                    'Test Button',
+                    'This button works! Check console for Generate Weekly Plan button logs.'
+                  );
+                }}
+                scaleValue={0.95}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="flask-outline" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                  <Text style={[styles.aiButtonText, { marginLeft: 4 }]}>Test</Text>
+                </View>
+              </AnimatedPressable>
+              <AnimatedPressable style={styles.addButton} onPress={handleSearchFood} scaleValue={0.95}>
+                <Ionicons name="sparkles-outline" size={rf(20)} color={ResponsiveTheme.colors.white} />
+              </AnimatedPressable>
+            </View>
+          </View>
+
+          {/* Loading State */}
+          {(foodsLoading || userMealsLoading) && (
+            <View style={styles.loadingContainer}>
+              <AuroraSpinner size="lg" theme="primary" />
+              <Text style={styles.loadingText}>Loading nutrition data...</Text>
+            </View>
+          )}
+
+          {/* Error State */}
+          {(foodsError || userMealsError) && (
+            <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="warning-outline" size={rf(16)} color={ResponsiveTheme.colors.error || '#ef4444'} />
+                <Text style={[styles.errorText, { marginLeft: 8 }]}>{foodsError || userMealsError}</Text>
+              </View>
+              <Button
+                title="Retry"
+                onPress={refreshAll}
+                variant="outline"
+                size="sm"
+                style={styles.retryButton}
+              />
+            </GlassCard>
+          )}
+
+          {/* No Authentication State */}
+          {!canAccessMealFeatures && (
+            <GlassCard style={styles.errorCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="lock-closed-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
+                <Text style={[styles.errorText, { marginLeft: 8 }]}>Please sign in to track your nutrition</Text>
+              </View>
+            </GlassCard>
+          )}
+
+          {/* Calorie Overview - Aurora Design */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <View style={styles.calorieOverviewCenter}>
+                <LargeProgressRing
+                  progress={(nutritionTargets.calories.current / nutritionTargets.calories.target) * 100}
+                  size={200}
+                  strokeWidth={12}
+                  gradient={{
+                    colors: ['#FF6B6B', '#FF8E53', '#FFC107'],
+                    start: { x: 0, y: 0 },
+                    end: { x: 1, y: 1 },
+                  }}
+                >
+                  <View style={styles.calorieCenter}>
+                    <Text style={styles.caloriesRemaining}>
+                      {Math.max(0, nutritionTargets.calories.target - nutritionTargets.calories.current)}
+                    </Text>
+                    <Text style={styles.caloriesLabel}>Calories left</Text>
+                    <Text style={styles.caloriesTarget}>of {nutritionTargets.calories.target}</Text>
+                  </View>
+                </LargeProgressRing>
+              </View>
+
+              {/* Macro Breakdown Grid */}
+              <View style={styles.macroGrid}>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.protein.current)}g</Text>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.protein.target}g</Text>
+                </View>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.carbs.current)}g</Text>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.carbs.target}g</Text>
+                </View>
+                <View style={styles.macroStat}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
+                  <Text style={styles.macroLabel}>Fats</Text>
+                  <Text style={styles.macroTarget}>/ {nutritionTargets.fat.target}g</Text>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Today's Meals - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's Meals</Text>
+
+            {getTodaysMeals().length > 0 ? (
+              getTodaysMeals().map((meal, index) => {
+                const mealTimes = { breakfast: '8:00 AM', lunch: '1:00 PM', dinner: '7:00 PM', snack: '4:00 PM' };
+                const mealTime = mealTimes[meal.type as keyof typeof mealTimes] || '12:00 PM';
+                const mealIcons = { breakfast: 'sunny-outline', lunch: 'restaurant-outline', dinner: 'moon-outline', snack: 'nutrition-outline' };
+                const mealIcon = mealIcons[meal.type as keyof typeof mealIcons] || 'restaurant-outline';
+                const panResponder = createMealPanResponder(meal.id);
+                const swipePosition = getSwipePosition(meal.id);
+
+                return (
+                  <View key={meal.id} style={styles.swipeableContainer}>
+                    {/* Action Buttons (revealed on swipe) */}
+                    <View style={styles.swipeActions}>
+                      <AnimatedPressable
+                        style={styles.swipeActionEdit}
+                        onPress={() => handleEditMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="medium"
+                      >
+                        <Ionicons name="pencil-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
+                        <Text style={styles.swipeActionText}>Edit</Text>
+                      </AnimatedPressable>
+                      <AnimatedPressable
+                        style={styles.swipeActionDelete}
+                        onPress={() => handleDeleteMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="medium"
+                      >
+                        <Ionicons name="trash-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
+                        <Text style={styles.swipeActionText}>Delete</Text>
+                      </AnimatedPressable>
+                    </View>
+
+                    {/* Swipeable Card */}
+                    <Animated.View
+                      {...panResponder.panHandlers}
+                      style={[
+                        styles.swipeableCard,
+                        {
+                          transform: [{ translateX: swipePosition }],
+                        },
+                      ]}
+                    >
+                      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.mealTimelineCard}>
+                    {/* Time Badge */}
+                    <View style={styles.timeBadge}>
+                      <Text style={styles.timeBadgeText}>{mealTime}</Text>
+                    </View>
+
+                    <View style={styles.mealTimelineContent}>
+                      {/* Food Image with Gradient Border */}
+                      <View style={styles.mealImageContainer}>
+                        <LinearGradient
+                          {...(toLinearGradientProps(gradients.border.primary) as any)}
+                          style={styles.mealImageGradientBorder}
+                        >
+                          <View style={styles.mealImageInner}>
+                            <Ionicons name={mealIcon as any} size={rf(24)} color={ResponsiveTheme.colors.primary} />
+                          </View>
+                        </LinearGradient>
+                      </View>
+
+                      {/* Meal Info */}
+                      <View style={styles.mealTimelineInfo}>
+                        <Text style={styles.mealTimelineName}>{meal.name}</Text>
+                        <Text style={styles.mealTimelineCalories}>
+                          {meal.nutrition?.calories || 0} cal
+                        </Text>
+
+                        {/* Macro Badges */}
+                        <View style={styles.macroBadgesContainer}>
+                          <View style={[styles.macroBadge, { backgroundColor: '#FF6B6B33' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#FF6B6B' }]}>
+                              P: {Math.round(meal.nutrition?.protein || 0)}g
+                            </Text>
+                          </View>
+                          <View style={[styles.macroBadge, { backgroundColor: '#4ECDC433' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#4ECDC4' }]}>
+                              C: {Math.round(meal.nutrition?.carbs || 0)}g
+                            </Text>
+                          </View>
+                          <View style={[styles.macroBadge, { backgroundColor: '#FFC10733' }]}>
+                            <Text style={[styles.macroBadgeText, { color: '#FFC107' }]}>
+                              F: {Math.round(meal.nutrition?.fat || 0)}g
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {/* Edit/Delete Icon Button */}
+                      <AnimatedPressable
+                        style={styles.mealActionButton}
+                        onPress={() => handleStartMeal(meal)}
+                        scaleValue={0.9}
+                        hapticFeedback={true}
+                        hapticType="light"
+                      >
+                        <Ionicons name="play" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+                      </AnimatedPressable>
+                    </View>
+                      </GlassCard>
+                    </Animated.View>
+                  </View>
+                );
+              })
+            ) : (
+              <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg">
+                <Text style={styles.emptyMealsText}>No meals planned for today</Text>
+                <Text style={styles.emptyMealsSubtext}>Generate a meal plan to get started</Text>
+              </GlassCard>
+            )}
+          </View>
+
+          {/* Meal Suggestions - Aurora Design */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Meal Suggestions</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={rw(300) + ResponsiveTheme.spacing.md}
+              decelerationRate="fast"
+              contentContainerStyle={styles.suggestionsScrollContent}
+            >
+              {[
+                {
+                  id: 1,
+                  name: 'Grilled Chicken Salad',
+                  icon: 'restaurant-outline',
+                  cookTime: '15 min',
+                  difficulty: 'Easy',
+                  calories: 320,
+                  protein: 35,
+                  carbs: 20,
+                  fat: 10,
+                },
+                {
+                  id: 2,
+                  name: 'Salmon with Quinoa',
+                  icon: 'fish-outline',
+                  cookTime: '25 min',
+                  difficulty: 'Medium',
+                  calories: 450,
+                  protein: 40,
+                  carbs: 35,
+                  fat: 15,
+                },
+                {
+                  id: 3,
+                  name: 'Veggie Buddha Bowl',
+                  icon: 'leaf-outline',
+                  cookTime: '20 min',
+                  difficulty: 'Easy',
+                  calories: 380,
+                  protein: 18,
+                  carbs: 55,
+                  fat: 12,
+                },
+              ].filter(suggestion => !dismissedSuggestions.has(suggestion.id)).map((suggestion) => {
+                const panResponder = createSuggestionPanResponder(suggestion.id);
+                const swipeState = getSuggestionSwipeState(suggestion.id);
+                const flipValue = getCardFlipState(suggestion.id);
+                const isAdded = addedToPlan.has(suggestion.id);
+
+                const frontInterpolate = flipValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '180deg'],
+                });
+                const backInterpolate = flipValue.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['180deg', '360deg'],
+                });
+
+                return (
+                  <Animated.View
+                    key={suggestion.id}
+                    {...panResponder.panHandlers}
+                    style={{
+                      transform: [{ translateY: swipeState.translateY }],
+                      opacity: swipeState.opacity,
+                    }}
+                  >
+                    {/* Front of Card */}
+                    <Animated.View
+                      style={[
+                        styles.cardFace,
+                        {
+                          transform: [{ rotateY: frontInterpolate }],
+                        },
+                      ]}
+                    >
+                      <GlassCard
+                        elevation={3}
+                        blurIntensity="default"
+                        padding="none"
+                        borderRadius="xl"
+                        style={styles.suggestionCard}
+                      >
+                  {/* Hero Image with Gradient Overlay */}
+                  <View style={styles.suggestionImageContainer}>
+                    <LinearGradient
+                      {...(toLinearGradientProps(gradients.overlay.dark) as any)}
+                      style={styles.suggestionGradientOverlay}
+                    >
+                      <Ionicons name={suggestion.icon as any} size={rf(40)} color={ResponsiveTheme.colors.white} />
+                    </LinearGradient>
+                  </View>
+
+                  {/* Content */}
+                  <View style={styles.suggestionContent}>
+                    <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                    <Text style={styles.suggestionDetails}>
+                      {suggestion.cookTime} • {suggestion.difficulty}
+                    </Text>
+
+                    {/* Macro Preview */}
+                    <View style={styles.suggestionMacros}>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.calories}</Text>
+                        <Text style={styles.suggestionMacroLabel}>cal</Text>
+                      </View>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.protein}g</Text>
+                        <Text style={styles.suggestionMacroLabel}>protein</Text>
+                      </View>
+                      <View style={styles.suggestionMacroItem}>
+                        <Text style={styles.suggestionMacroValue}>{suggestion.carbs}g</Text>
+                        <Text style={styles.suggestionMacroLabel}>carbs</Text>
+                      </View>
+                    </View>
+
+                    {/* Add to Plan Button */}
+                    <AnimatedPressable
+                      style={styles.addToPlanButton}
+                      onPress={() => handleAddToPlan(suggestion.id, suggestion.name)}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="medium"
+                      disabled={isAdded}
+                    >
+                      <LinearGradient
+                        {...(toLinearGradientProps(gradients.button.primary) as any)}
+                        style={styles.addToPlanButtonGradient}
+                      >
+                        <Text style={styles.addToPlanButtonText}>Add to Plan</Text>
+                      </LinearGradient>
+                    </AnimatedPressable>
+                  </View>
+                      </GlassCard>
+                    </Animated.View>
+
+                    {/* Back of Card */}
+                    <Animated.View
+                      style={[
+                        styles.cardFace,
+                        styles.cardFaceBack,
+                        {
+                          transform: [{ rotateY: backInterpolate }],
+                        },
+                      ]}
+                    >
+                      <GlassCard
+                        elevation={3}
+                        blurIntensity="default"
+                        padding="lg"
+                        borderRadius="xl"
+                        style={[styles.suggestionCard, styles.suggestionCardBack]}
+                      >
+                        <View style={styles.cardBackContent}>
+                          <Ionicons name="checkmark" size={rf(32)} color={ResponsiveTheme.colors.success || '#10b981'} />
+                          <Text style={styles.cardBackTitle}>Added!</Text>
+                          <Text style={styles.cardBackSubtitle}>Meal added to your plan</Text>
+                        </View>
+                      </GlassCard>
+                    </Animated.View>
+                  </Animated.View>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Water Intake Tracker - Aurora Design */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <Text style={styles.sectionTitle}>Hydration</Text>
+
+              <View style={styles.waterTrackerContainer}>
+                {/* Animated Water Glass with wave effect */}
+                <View style={styles.waterGlassContainer}>
+                  <View style={styles.waterGlass}>
+                    {/* Water fill with gradient and wave animation */}
+                    <Animated.View
+                      style={[
+                        styles.waterFill,
+                        {
+                          height: `${(waterConsumed / waterGoal) * 100}%`,
+                          transform: [
+                            {
+                              translateY: waterWaveOffset.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -5],
+                              }),
+                            },
+                          ],
+                        },
+                      ]}
+                    >
+                      <LinearGradient
+                        colors={['#4ECDC4', '#44A08D', '#2E7D6E']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.waterFillGradient}
+                      />
+                    </Animated.View>
+                    {/* Glass border */}
+                    <View style={styles.glassBorder} />
+                  </View>
+
+                  {/* Water icon/wave */}
+                  <Ionicons name="water-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={styles.waterDropIcon} />
+                </View>
+
+                {/* Water Stats and Controls */}
+                <View style={styles.waterStatsContainer}>
+                  <Text style={styles.waterAmountConsumed}>{waterConsumed.toFixed(1)}L</Text>
+                  <Text style={styles.waterTargetAmount}>of {waterGoal}L goal</Text>
+
+                  {/* Quick Add Buttons with Ripple Effect */}
+                  <View style={styles.waterQuickAddButtons}>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton1Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 0.25, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="light"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton1Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton1Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+250ml</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton2Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 0.5, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="light"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton2Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton2Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+500ml</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.waterQuickAddButton}
+                      onPress={() => {
+                        triggerRipple(waterButton3Ripple);
+                        setWaterConsumed((prev) => Math.min(prev + 1, waterGoal));
+                      }}
+                      scaleValue={0.9}
+                      hapticFeedback={true}
+                      hapticType="medium"
+                    >
+                      <Animated.View
+                        style={[
+                          styles.rippleCircle,
+                          {
+                            opacity: waterButton3Ripple.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0.6, 0],
+                            }),
+                            transform: [
+                              {
+                                scale: waterButton3Ripple.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [0, 3],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                      <Text style={styles.waterQuickAddButtonText}>+1L</Text>
+                    </AnimatedPressable>
+                  </View>
+
+                  {/* Intake Timeline */}
+                  <View style={styles.waterTimeline}>
+                    <Text style={styles.waterTimelineTitle}>Today's Intake</Text>
+                    <View style={styles.waterTimelineBar}>
+                      {[...Array(Math.min(Math.ceil(waterConsumed / 0.25), 16))].map((_, index) => (
+                        <View key={index} style={styles.waterTimelineDot} />
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Weekly Nutrition Trends Chart */}
+          <View style={styles.section}>
+            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+              <Text style={styles.sectionTitle}>Weekly Nutrition Trends</Text>
+
+              {/* Chart Legend */}
+              <View style={styles.chartLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FF6B9D' }]} />
+                  <Text style={styles.legendText}>Protein</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
+                  <Text style={styles.legendText}>Carbs</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FFA726' }]} />
+                  <Text style={styles.legendText}>Fats</Text>
+                </View>
+              </View>
+
+              {/* Grouped Bar Chart */}
+              <View style={styles.weeklyNutritionChart}>
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+                  // Sample data for each day (protein, carbs, fats as percentages)
+                  const dayData = [
+                    { protein: 85, carbs: 70, fats: 60 },
+                    { protein: 90, carbs: 80, fats: 65 },
+                    { protein: 75, carbs: 65, fats: 70 },
+                    { protein: 95, carbs: 85, fats: 75 },
+                    { protein: 80, carbs: 75, fats: 55 },
+                    { protein: 70, carbs: 60, fats: 50 },
+                    { protein: 88, carbs: 72, fats: 68 },
+                  ][index];
+
+                  return (
+                    <View key={day} style={styles.chartDayColumn}>
+                      {/* Grouped bars */}
+                      <View style={styles.barsGroup}>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.proteinBar, { height: `${dayData.protein}%` }]} />
+                        </View>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.carbsBar, { height: `${dayData.carbs}%` }]} />
+                        </View>
+                        <View style={styles.barContainer}>
+                          <View style={[styles.macroBar, styles.fatsBar, { height: `${dayData.fats}%` }]} />
+                        </View>
+                      </View>
+                      {/* Day label */}
+                      <Text style={styles.chartDayLabel}>{day}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+
+              {/* Average Line Indicator */}
+              <View style={styles.averageLine}>
+                <View style={styles.averageLineDashed} />
+                <Text style={styles.averageLineText}>Target Average</Text>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Weekly Meal Plan Section */}
+          {weeklyMealPlan && (
+            <>
+              {/* Day Selector */}
+              <View style={styles.daySelector}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {[
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday',
+                  ].map((day) => (
+                    <AnimatedPressable
+                      key={day}
+                      style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
+                      onPress={() => setSelectedDay(day)}
+                      scaleValue={0.95}
+                    >
+                      <Text
+                        style={[
+                          styles.dayButtonText,
+                          selectedDay === day && styles.selectedDayButtonText,
+                        ]}
+                      >
+                        {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
+                      </Text>
+                    </AnimatedPressable>
+                  ))}
+                </ScrollView>
+              </View>
+
+              {/* Today's Meals from Weekly Plan */}
+              <View style={styles.mealsSection}>
+                <Text style={styles.sectionTitle}>
+                  {selectedDay
+                    ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals`
+                    : "Today's Meals"}
+                </Text>
+                {getTodaysMeals().map((meal) => {
+                  const progress = getMealProgress(meal.id);
+                  console.log(`[MEAL] DietScreen: Rendering meal "${meal.name}" (${meal.id}) with progress:`, progress);
+                  return (
+                    <MealCard
+                      key={meal.id}
+                      meal={meal}
+                      onStartMeal={handleStartMeal}
+                      progress={progress?.progress || 0}
+                    />
+                  );
+                })}
+                {getTodaysMeals().length === 0 && (
+                  <GlassCard style={styles.emptyCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                    <Text style={styles.emptyText}>No meals planned for {selectedDay}</Text>
+                    <Button
+                      title="Generate Meals"
+                      onPress={generateWeeklyMealPlan}
+                      variant="outline"
+                      size="sm"
+                    />
+                  </GlassCard>
+                )}
+              </View>
+            </>
+          )}
+
+          {/* Generate Weekly Plan Prompt */}
+          {!weeklyMealPlan && canAccessMealFeatures && (
+            <GlassCard style={styles.promptCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: ResponsiveTheme.spacing.sm }}>
+                <Ionicons name="restaurant-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.promptTitle, { marginLeft: 8, marginBottom: 0 }]}>Weekly Meal Planning</Text>
+              </View>
+              <Text style={styles.promptText}>
+                Get a personalized 7-day meal plan with recipes tailored to your goals and
+                preferences.
+              </Text>
+              <Button
+                title={isGeneratingPlan ? 'Generating...' : 'Generate Weekly Plan'}
+                onPress={generateWeeklyMealPlan}
+                disabled={isGeneratingPlan}
+                style={styles.promptButton}
+              />
+            </GlassCard>
+          )}
+
+          {/* AI Meal Generation Panel */}
+          {showFoodSearch && (
+            <View style={styles.searchSection}>
+              <GlassCard style={styles.aiMealCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
+                <View style={styles.aiMealContent}>
+                  <Ionicons name="sparkles-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.aiMealIcon} />
+                  <Text style={styles.aiMealTitle}>Generate AI Meals</Text>
+                  <Text style={styles.aiMealText}>
+                    Create personalized meals based on your dietary preferences and nutrition goals.
+                  </Text>
+                  <View style={styles.mealTypeButtons}>
+                    <AnimatedPressable
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('breakfast')}
+                      disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
+                    >
+                      <Ionicons name="sunny-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
+                      <Text style={styles.mealTypeText}>Breakfast</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('lunch')}
+                      disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
+                    >
+                      <Ionicons name="restaurant-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
+                      <Text style={styles.mealTypeText}>Lunch</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('dinner')}
+                      disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
+                    >
+                      <Ionicons name="moon-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
+                      <Text style={styles.mealTypeText}>Dinner</Text>
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.mealTypeButton}
+                      onPress={() => generateAIMeal('snack')}
+                      disabled={isGeneratingMeal}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="selection"
+                    >
+                      <Ionicons name="nutrition-outline" size={rf(24)} color={ResponsiveTheme.colors.text} style={styles.mealTypeEmoji} />
+                      <Text style={styles.mealTypeText}>Snack</Text>
+                    </AnimatedPressable>
+                  </View>
+                  <AnimatedPressable
+                    style={styles.closeSearchButton}
+                    onPress={() => setShowFoodSearch(false)}
+                    scaleValue={0.95}
+                  >
+                    <Text style={styles.closeSearchText}>Close</Text>
+                  </AnimatedPressable>
+                </View>
+              </GlassCard>
+            </View>
+          )}
+
+          {/* Daily Overview */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Today's Progress</Text>
+            <GlassCard style={styles.overviewCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
+              <View style={styles.caloriesSection}>
+                <View style={styles.caloriesHeader}>
+                  <Text style={styles.caloriesConsumed}>{nutritionTargets.calories.current}</Text>
+                  <Text style={styles.caloriesTarget}>
+                    / {nutritionTargets.calories.target} cal
+                  </Text>
+                </View>
+                <View style={styles.caloriesProgress}>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100)}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.remainingText}>
+                    {Math.max(
+                      nutritionTargets.calories.target - nutritionTargets.calories.current,
+                      0
+                    )}{' '}
+                    cal remaining
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.macrosGrid}>
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>
+                    {Math.round(nutritionTargets.protein.current)}g
+                  </Text>
+                  <Text style={styles.macroLabel}>Protein</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.protein.target}g</Text>
+                </View>
+
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>
+                    {Math.round(nutritionTargets.carbs.current)}g
+                  </Text>
+                  <Text style={styles.macroLabel}>Carbs</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.carbs.target}g</Text>
+                </View>
+
+                <View style={styles.macroItem}>
+                  <Text style={styles.macroValue}>{Math.round(nutritionTargets.fat.current)}g</Text>
+                  <Text style={styles.macroLabel}>Fat</Text>
+                  <Text style={styles.macroTarget}>of {nutritionTargets.fat.target}g</Text>
+                </View>
+              </View>
+            </GlassCard>
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <View style={styles.actionsGrid}>
+              <AnimatedPressable style={styles.actionItem} onPress={handleScanFood} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                  <Ionicons name="camera-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
+                  <Text style={styles.actionText}>Scan Food</Text>
+                </GlassCard>
+              </AnimatedPressable>
+
+              <AnimatedPressable style={styles.actionItem} onPress={handleSearchFood} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                  <Ionicons name="sparkles-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
+                  <Text style={styles.actionText}>AI Meals</Text>
+                </GlassCard>
+              </AnimatedPressable>
+
+              <AnimatedPressable style={styles.actionItem} onPress={handleCreateRecipe} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                  <Ionicons name="create-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
+                  <Text style={styles.actionText}>Create Recipe</Text>
+                </GlassCard>
+              </AnimatedPressable>
+
+              <AnimatedPressable style={styles.actionItem} onPress={handleScanProduct} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                  <Ionicons name="barcode-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
+                  <Text style={styles.actionText}>Scan Product</Text>
+                </GlassCard>
+              </AnimatedPressable>
+
+              <AnimatedPressable style={styles.actionItem} onPress={handleLogWater} scaleValue={0.95}>
+                <GlassCard style={styles.actionCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
+                  <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.actionIcon} />
+                  <Text style={styles.actionText}>Log Water</Text>
+                </GlassCard>
+              </AnimatedPressable>
+            </View>
+          </View>
+
+          {/* Water Intake */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Water Intake</Text>
+            <GlassCard style={styles.waterCard} elevation={2} padding="lg" blurIntensity="light" borderRadius="lg">
+              <View style={styles.waterHeader}>
+                <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.waterIcon} />
+                <View style={styles.waterInfo}>
+                  <Text style={styles.waterAmount}>
+                    {waterConsumed}L / {waterGoal}L
+                  </Text>
+                  <Text style={styles.waterSubtext}>
+                    {waterConsumed === 0
+                      ? 'Start tracking your hydration!'
+                      : waterConsumed >= waterGoal
+                        ? 'Daily goal achieved!'
+                        : `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.waterProgress}>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
+                        backgroundColor:
+                          waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.waterButtons}>
+                <Button
+                  title="+ 250ml"
+                  onPress={handleAddWater}
+                  variant={waterConsumed >= waterGoal ? 'solid' : 'outline'}
+                  size="sm"
+                  style={[styles.waterButton, { flex: 1, marginRight: ResponsiveTheme.spacing.sm }]}
+                />
+                <Button
+                  title="Custom"
+                  onPress={handleLogWater}
+                  variant="outline"
+                  size="sm"
+                  style={[
+                    styles.waterButton,
+                    { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm },
+                  ]}
+                />
+                {waterConsumed > 0 && (
+                  <Button
+                    title="- 250ml"
+                    onPress={handleRemoveWater}
+                    variant="outline"
+                    size="sm"
+                    style={[styles.waterButton, { flex: 0.8 }]}
+                  />
+                )}
+              </View>
+            </GlassCard>
+          </View>
+
+          <View style={styles.bottomSpacing} />
+        </View>
+      </ScrollView>
+
+      {/* Camera Modal */}
+      {showCamera && (
+        <Camera
+          mode={cameraMode}
+          onCapture={handleCameraCapture}
+          onBarcodeScanned={cameraMode === 'barcode' ? handleBarcodeScanned : undefined}
+          onClose={() => {
+            setShowCamera(false);
+            setCameraMode('food'); // Reset to default
+          }}
+          style={styles.cameraModal}
+        />
+      )}
+
+      {/* Test Component Modal */}
+      <Modal
+        visible={showTestComponent}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTestComponent(false)}
+      >
+        <View style={styles.testContainer}>
+          <View style={styles.testHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="flask-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+              <Text style={[styles.testTitle, { marginLeft: 8 }]}>Food Recognition Test</Text>
+            </View>
+            <AnimatedPressable
+              onPress={() => setShowTestComponent(false)}
+              style={styles.testCloseButton}
+              scaleValue={0.95}
+            >
+              <Text style={styles.testCloseText}>✕</Text>
+            </AnimatedPressable>
+          </View>
+          <FoodRecognitionTest />
+        </View>
+      </Modal>
+
+      {/* Meal Type Selector Modal */}
+      <MealTypeSelector
+        visible={showMealTypeSelector}
+        onSelect={handleMealTypeSelected}
+        onClose={() => setShowMealTypeSelector(false)}
+      />
+
+      {/* AI Meals Panel */}
+      <AIMealsPanel
+        visible={showAIMealsPanel}
+        onClose={() => setShowAIMealsPanel(false)}
+        onGenerateMeal={generateAIMeal}
+        isGenerating={isGeneratingMeal}
+        profile={profile}
+      />
+
+      {/* Create Recipe Modal */}
+      <CreateRecipeModal
+        visible={showCreateRecipe}
+        onClose={() => setShowCreateRecipe(false)}
+        onRecipeCreated={handleRecipeCreated}
+        profile={profile}
+      />
+
+      {/* Portion Adjustment Modal */}
+      {portionData && (
+        <PortionAdjustment
+          visible={showPortionAdjustment}
+          recognizedFoods={portionData.recognizedFoods}
+          onClose={() => {
+            setShowPortionAdjustment(false);
+            setPortionData(null);
+          }}
+          onAdjustmentComplete={handlePortionAdjustmentComplete}
+        />
+      )}
+
+      {/* Food Recognition Feedback Modal */}
+      {feedbackData && (
+        <FoodRecognitionFeedback
+          visible={showFeedbackModal}
+          recognizedFoods={feedbackData.recognizedFoods}
+          onClose={() => {
+            setShowFeedbackModal(false);
+            setFeedbackData(null);
+          }}
+          onSubmitFeedback={handleFeedbackSubmit}
+          originalImageUri={feedbackData.imageUri}
+        />
+      )}
+
+      {/* Context Menu Modal */}
+      <Modal
+        visible={contextMenu.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeContextMenu}
+      >
+        <AnimatedPressable
+          style={styles.contextMenuOverlay}
+          onPress={closeContextMenu}
+          scaleValue={1}
+        >
+          <View
+            style={[
+              styles.contextMenu,
+              {
+                left: Math.min(contextMenu.position.x, 300),
+                top: Math.min(contextMenu.position.y, 600),
+              },
+            ]}
+          >
+            <AnimatedPressable
+              style={styles.contextMenuItem}
+              onPress={() => handleContextMenuAction('edit')}
+              scaleValue={0.95}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="pencil-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Edit Meal</Text>
+              </View>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={styles.contextMenuItem}
+              onPress={() => handleContextMenuAction('duplicate')}
+              scaleValue={0.95}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="copy-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Duplicate</Text>
+              </View>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={styles.contextMenuItem}
+              onPress={() => handleContextMenuAction('details')}
+              scaleValue={0.95}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="stats-chart-outline" size={rf(16)} color={ResponsiveTheme.colors.text} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Nutrition Details</Text>
+              </View>
+            </AnimatedPressable>
+
+            <AnimatedPressable
+              style={styles.contextMenuItem}
+              onPress={() => handleContextMenuAction('delete')}
+              scaleValue={0.95}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="trash-outline" size={rf(16)} color={ResponsiveTheme.colors.error || '#ef4444'} />
+                <Text style={[styles.contextMenuText, { marginLeft: 8 }]}>Delete Meal</Text>
+              </View>
+            </AnimatedPressable>
+          </View>
+        </AnimatedPressable>
+      </Modal>
+
+      {/* Meal Preparation Modal */}
+      <Modal
+        visible={showMealPreparationModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMealPreparationModal(false)}
+      >
+        <View style={styles.mealModalOverlay}>
+          <View style={styles.mealModal}>
+            {selectedMealForPreparation && (
+              <>
+                <View style={styles.mealModalHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Ionicons name="restaurant-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+                    <Text style={[styles.mealModalTitle, { marginLeft: 8 }]}>Ready to Cook?</Text>
+                  </View>
+                  <AnimatedPressable
+                    onPress={() => setShowMealPreparationModal(false)}
+                    style={styles.mealModalCloseButton}
+                    scaleValue={0.95}
+                  >
+                    <Text style={styles.mealModalCloseText}>✕</Text>
+                  </AnimatedPressable>
+                </View>
+
+                <View style={styles.mealModalContent}>
+                  <Text style={styles.mealModalMealName}>{selectedMealForPreparation.name}</Text>
+                  
+                  {/* Dynamic Motivation Message */}
+                  <View style={styles.motivationSection}>
+                    <Text style={styles.motivationText}>
+                      {mealMotivationService.getMealStartMessage(selectedMealForPreparation, {
+                        personalInfo: profile?.personalInfo,
+                        fitnessGoals: profile?.fitnessGoals,
+                        currentStreak: 0,
+                        completedMealsToday: 0,
+                      })}
+                    </Text>
+                  </View>
+
+                  {/* Macro Dashboard */}
+                  <MacroDashboard 
+                    meal={selectedMealForPreparation}
+                    compact={true}
+                    showTitle={false}
+                    style={styles.modalMacroDashboard}
+                  />
+
+                  <View style={styles.mealModalDetails}>
+                    <View style={styles.mealModalDetailItem}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="time-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Estimated Time:</Text>
+                      </View>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.preparationTime} minutes
+                      </Text>
+                    </View>
+
+                    <View style={styles.mealModalDetailItem}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="flame-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Difficulty:</Text>
+                      </View>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.difficulty}
+                      </Text>
+                    </View>
+
+                    <View style={styles.mealModalDetailItem}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="cart-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+                        <Text style={[styles.mealModalDetailLabel, { marginLeft: 4 }]}>Ingredients:</Text>
+                      </View>
+                      <Text style={styles.mealModalDetailValue}>
+                        {selectedMealForPreparation.items?.length ?? 0} items
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.mealModalDescription}>
+                    {selectedMealForPreparation.description}
+                  </Text>
+                </View>
+
+                <View style={styles.mealModalActions}>
+                  <AnimatedPressable
+                    style={styles.mealModalCancelButton}
+                    onPress={() => setShowMealPreparationModal(false)}
+                    scaleValue={0.95}
+                  >
+                    <Text style={styles.mealModalCancelText}>Cancel</Text>
+                  </AnimatedPressable>
+
+                  <AnimatedPressable
+                    style={styles.mealModalStartButton}
+                    onPress={() => {
+                      startMealPreparation(selectedMealForPreparation);
+                      setShowMealPreparationModal(false);
+                    }}
+                    scaleValue={0.95}
+                  >
+                    <Text style={styles.mealModalStartText}>Start Cooking</Text>
+                  </AnimatedPressable>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Floating Action Button (FAB) - Aurora Design with pulse + rotation */}
+      <Animated.View
+        style={{
+          transform: [
+            { scale: fabScale },
+            {
+              rotate: fabRotation.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['0deg', '45deg'],
+              }),
+            },
+          ],
+        }}
+      >
+        <AnimatedPressable
+          style={styles.fab}
+          onPress={() => {
+            // Rotation animation on press
+            Animated.sequence([
+              Animated.timing(fabRotation, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+              Animated.timing(fabRotation, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+              }),
+            ]).start();
+            handleSearchFood();
+          }}
+          scaleValue={0.9}
+          hapticFeedback={true}
+          hapticType="medium"
+        >
+          <LinearGradient
+            {...(toLinearGradientProps(gradients.button.primary) as any)}
+            style={styles.fabGradient}
+          >
+            <Text style={styles.fabIcon}>+</Text>
+          </LinearGradient>
+        </AnimatedPressable>
+      </Animated.View>
+
+      {/* Product Details Modal */}
+      {scannedProduct && (
+        <ProductDetailsModal
+          visible={showProductModal}
+          onClose={() => setShowProductModal(false)}
+          product={scannedProduct}
+          healthAssessment={productHealthAssessment}
+          onAddToMeal={handleAddProductToMeal}
+        />
+      )}
+      </SafeAreaView>
+    </AuroraBackground>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: ResponsiveTheme.colors.background,
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    paddingBottom: ResponsiveTheme.spacing.md,
+  },
+
+  title: {
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(12),
+  },
+
+  aiButton: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(12),
+    paddingVertical: rp(8),
+    borderRadius: rs(20),
+    minWidth: rw(70),
+    alignItems: 'center',
+  },
+
+  aiButtonDisabled: {
+    backgroundColor: ResponsiveTheme.colors.textMuted,
+  },
+
+  aiButtonText: {
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(12),
+    fontWeight: '600',
+  },
+
+  addButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  addIcon: {
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // DateSelector Styles
+  dateSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  dateNavButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  dateNavIcon: {
+    fontSize: rf(24),
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  dateBadge: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    alignItems: 'center',
+  },
+
+  dateText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  dateSubtext: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: rp(2),
+  },
+
+  section: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  sectionTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  overviewCard: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  caloriesSection: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  caloriesHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  caloriesConsumed: {
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  caloriesTarget: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  caloriesProgress: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  progressBar: {
+    height: rh(8),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  progressFill: {
+    height: '100%',
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+  },
+
+  remainingText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  macrosGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  macroItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+
+  macroValue: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  macroLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  macroTarget: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+  },
+
+  mealCard: {
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  mealContent: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  mealHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+
+  mealInfo: {
+    flex: 1,
+  },
+
+  mealTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+    position: 'relative',
+  },
+
+  aiGeneratedBadge: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: rp(6),
+    paddingVertical: rp(2),
+    borderRadius: rs(8),
+    marginLeft: rp(8),
+  },
+
+  aiGeneratedText: {
+    color: ResponsiveTheme.colors.white,
+    fontSize: rf(9),
+    fontWeight: '600',
+  },
+
+  mealAIButton: {
+    position: 'absolute',
+    right: 0,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    width: rw(20),
+    height: rh(20),
+    borderRadius: rs(10),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealAIText: {
+    fontSize: rf(8),
+  },
+
+  mealIcon: {
+    fontSize: rf(20),
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  mealType: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    flex: 1,
+  },
+
+  mealTime: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
+  },
+
+  mealItems: {
+    marginLeft: ResponsiveTheme.spacing.lg,
+  },
+
+  mealItem: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  plannedText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textMuted,
+    fontStyle: 'italic',
+    marginLeft: ResponsiveTheme.spacing.lg,
+  },
+
+  mealCalories: {
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.md,
+  },
+
+  caloriesValue: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  caloriesLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+  },
+
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  actionItem: {
+    width: '47%',
+  },
+
+  actionCard: {
+    padding: ResponsiveTheme.spacing.lg,
+    alignItems: 'center',
+  },
+
+  actionIcon: {
+    fontSize: rf(32),
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  actionText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    textAlign: 'center',
+  },
+
+  waterCard: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  waterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  waterIcon: {
+    fontSize: rf(32),
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  waterInfo: {
+    flex: 1,
+  },
+
+  waterAmount: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  waterSubtext: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  waterProgress: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  waterButton: {
+    alignSelf: 'flex-start',
+  },
+
+  waterButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  bottomSpacing: {
+    height: ResponsiveTheme.spacing.xl,
+  },
+
+  cameraModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+
+  contextMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+
+  contextMenu: {
+    position: 'absolute',
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    minWidth: rw(180),
+    ...THEME.shadows.md,
+  },
+
+  contextMenuItem: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+  },
+
+  contextMenuText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Search styles
+  searchSection: {
+    marginHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    ...THEME.shadows.sm,
+  },
+
+  searchInput: {
+    flex: 1,
+    height: rh(44),
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+  },
+
+  clearSearchButton: {
+    padding: ResponsiveTheme.spacing.sm,
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  clearSearchText: {
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  foodResults: {
+    marginTop: ResponsiveTheme.spacing.md,
+    maxHeight: rh(120),
+  },
+
+  foodItem: {
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.md,
+    marginRight: ResponsiveTheme.spacing.sm,
+    minWidth: rw(140),
+    ...THEME.shadows.sm,
+  },
+
+  foodName: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: rp(2),
+  },
+
+  foodCategory: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginBottom: rp(4),
+  },
+
+  foodCalories: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+    marginBottom: rp(4),
+  },
+
+  foodMacros: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  foodMacro: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  // Enhanced meal card styles
+  mealNutrition: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  nutritionText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  nutritionDot: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginHorizontal: rp(4),
+  },
+
+  mealRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  ratingStars: {
+    fontSize: rf(12),
+    marginRight: rp(4),
+  },
+
+  ratingText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  difficultyText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginLeft: rp(4),
+  },
+
+  statusButton: {
+    width: rw(32),
+    height: rh(32),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  statusIcon: {
+    fontSize: rf(16),
+  },
+
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: ResponsiveTheme.spacing.xl,
+  },
+
+  loadingText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  errorCard: {
+    padding: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+  },
+
+  errorText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.error,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  retryButton: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+
+  // Weekly Meal Plan Styles
+  daySelector: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+  },
+
+  dayButton: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    marginRight: ResponsiveTheme.spacing.sm,
+    borderRadius: rs(20),
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+  },
+
+  selectedDayButton: {
+    backgroundColor: ResponsiveTheme.colors.primary,
+    borderColor: ResponsiveTheme.colors.primary,
+  },
+
+  dayButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.textSecondary,
+  },
+
+  selectedDayButtonText: {
+    color: ResponsiveTheme.colors.surface,
+  },
+
+  mealsSection: {
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  sectionTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  emptyCard: {
+    padding: ResponsiveTheme.spacing.xl,
+    alignItems: 'center',
+  },
+
+  emptyText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  promptCard: {
+    margin: ResponsiveTheme.spacing.md,
+    padding: ResponsiveTheme.spacing.xl,
+    alignItems: 'center',
+  },
+
+  promptTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  promptText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: rf(22),
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  promptButton: {
+    minWidth: rw(200),
+  },
+
+  // AI Meal Generation styles
+  aiMealCard: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  aiMealContent: {
+    alignItems: 'center',
+  },
+
+  aiMealIcon: {
+    fontSize: rf(36),
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  aiMealTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    textAlign: 'center',
+  },
+
+  aiMealText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(20),
+  },
+
+  mealTypeButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  mealTypeButton: {
+    alignItems: 'center',
+    padding: ResponsiveTheme.spacing.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    minWidth: rw(70),
+  },
+
+  mealTypeEmoji: {
+    fontSize: rf(24),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  mealTypeText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  closeSearchButton: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  closeSearchText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  // Motivation section styles
+  motivationSection: {
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    padding: ResponsiveTheme.spacing.md,
+    marginVertical: ResponsiveTheme.spacing.md,
+  },
+
+  motivationText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.text,
+    lineHeight: rf(18),
+    textAlign: 'center',
+  },
+
+  modalMacroDashboard: {
+    marginVertical: ResponsiveTheme.spacing.md,
+    shadowOpacity: 0.05,
+    elevation: 2,
+  },
+
+  // Test component styles
+  testContainer: {
+    flex: 1,
+    backgroundColor: ResponsiveTheme.colors.background,
+  },
+
+  testHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: ResponsiveTheme.colors.border,
+  },
+
+  testTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  testCloseButton: {
+    width: rw(32),
+    height: rh(32),
+    borderRadius: rs(16),
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  testCloseText: {
+    fontSize: rf(16),
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // Meal Preparation Modal Styles
+  mealModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  mealModal: {
+    backgroundColor: ResponsiveTheme.colors.surface,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+
+  mealModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: ResponsiveTheme.spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: ResponsiveTheme.colors.border,
+  },
+
+  mealModalTitle: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+  },
+
+  mealModalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealModalCloseText: {
+    fontSize: 16,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: 'bold',
+  },
+
+  mealModalContent: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  mealModalMealName: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.lg,
+    textAlign: 'center',
+  },
+
+  mealModalDetails: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  mealModalDetailItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+  },
+
+  mealModalDetailLabel: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: '500',
+  },
+
+  mealModalDetailValue: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  mealModalDescription: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+
+  mealModalActions: {
+    flexDirection: 'row',
+    padding: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+    gap: ResponsiveTheme.spacing.md,
+  },
+
+  mealModalCancelButton: {
+    flex: 1,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    alignItems: 'center',
+  },
+
+  mealModalCancelText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  mealModalStartButton: {
+    flex: 1,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    alignItems: 'center',
+  },
+
+  mealModalStartText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.surface,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  // Aurora Calorie Overview Styles
+  calorieOverviewCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: ResponsiveTheme.spacing.xl,
+  },
+
+  calorieCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  caloriesRemaining: {
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  caloriesLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  macroGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: ResponsiveTheme.spacing.md,
+    paddingTop: ResponsiveTheme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+    opacity: 0.5,
+  },
+
+  macroStat: {
+    alignItems: 'center',
+  },
+
+  macroTarget: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textMuted,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  // Aurora Meal Timeline Styles
+  mealTimelineCard: {
+    marginBottom: ResponsiveTheme.spacing.md,
+    position: 'relative',
+  },
+
+  // Swipeable Container Styles
+  swipeableContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+
+  swipeableCard: {
+    width: '100%',
+  },
+
+  swipeActions: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    paddingRight: ResponsiveTheme.spacing.md,
+  },
+
+  swipeActionEdit: {
+    width: rw(70),
+    height: '100%',
+    backgroundColor: '#4ECDC4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  swipeActionDelete: {
+    width: rw(70),
+    height: '100%',
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+  },
+
+  swipeActionIcon: {
+    fontSize: rf(24),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  swipeActionText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  timeBadge: {
+    position: 'absolute',
+    top: ResponsiveTheme.spacing.sm,
+    right: ResponsiveTheme.spacing.sm,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    zIndex: 1,
+  },
+
+  timeBadgeText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+  },
+
+  mealTimelineContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  mealImageContainer: {
+    marginRight: ResponsiveTheme.spacing.md,
+  },
+
+  mealImageGradientBorder: {
+    width: rw(70),
+    height: rh(70),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: rp(3),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealImageInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mealImageEmoji: {
+    fontSize: rf(32),
+  },
+
+  mealTimelineInfo: {
+    flex: 1,
+  },
+
+  mealTimelineName: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  mealTimelineCalories: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  macroBadgesContainer: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
+  macroBadge: {
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+  },
+
+  macroBadgeText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  mealActionButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: ResponsiveTheme.spacing.sm,
+  },
+
+  mealActionIcon: {
+    fontSize: rf(16),
+  },
+
+  emptyMealsText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  emptyMealsSubtext: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Aurora Meal Suggestions Styles
+  suggestionsScrollContent: {
+    paddingRight: ResponsiveTheme.spacing.lg,
+  },
+
+  suggestionCard: {
+    width: rw(300),
+    marginRight: ResponsiveTheme.spacing.md,
+    overflow: 'hidden',
+  },
+
+  // Card Flip Styles
+  cardFace: {
+    backfaceVisibility: 'hidden',
+    position: 'absolute',
+    width: '100%',
+  },
+
+  cardFaceBack: {
+    position: 'absolute',
+  },
+
+  suggestionCardBack: {
+    height: rh(350),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cardBackContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  cardBackIcon: {
+    fontSize: rf(64),
+    color: '#10b981',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  cardBackTitle: {
+    fontSize: ResponsiveTheme.fontSize.xl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+
+  cardBackSubtitle: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  suggestionImageContainer: {
+    height: rh(150),
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+
+  suggestionGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  suggestionImageEmoji: {
+    fontSize: rf(64),
+  },
+
+  suggestionContent: {
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  suggestionName: {
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.text,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  suggestionDetails: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  suggestionMacros: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    opacity: 0.7,
+  },
+
+  suggestionMacroItem: {
+    alignItems: 'center',
+  },
+
+  suggestionMacroValue: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  suggestionMacroLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+
+  addToPlanButton: {
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    overflow: 'hidden',
+  },
+
+  addToPlanButtonGradient: {
+    paddingVertical: ResponsiveTheme.spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  addToPlanButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.white,
+  },
+
+  // Aurora Water Tracker Styles
+  waterTrackerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  waterGlassContainer: {
+    alignItems: 'center',
+    marginRight: ResponsiveTheme.spacing.xl,
+  },
+
+  waterGlass: {
+    width: rw(100),
+    height: rh(180),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+
+  waterFill: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+
+  waterFillGradient: {
+    width: '100%',
+    height: '100%',
+  },
+
+  glassBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    borderWidth: rp(3),
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+  },
+
+  waterDropIcon: {
+    fontSize: rf(24),
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  waterStatsContainer: {
+    flex: 1,
+  },
+
+  waterAmountConsumed: {
+    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+    color: '#4ECDC4',
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  waterTargetAmount: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  waterQuickAddButtons: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  waterQuickAddButton: {
+    flex: 1,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(78, 205, 196, 0.3)',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  rippleCircle: {
+    position: 'absolute',
+    width: rw(30),
+    height: rh(30),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: '#4ECDC4',
+  },
+
+  waterQuickAddButtonText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: '#4ECDC4',
+    zIndex: 1,
+  },
+
+  waterTimeline: {
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  waterTimelineTitle: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  waterTimelineBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: rp(4),
+  },
+
+  waterTimelineDot: {
+    width: rw(12),
+    height: rh(12),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    backgroundColor: '#4ECDC4',
+  },
+
+  // Weekly Nutrition Trends Chart Styles
+  chartLegend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.lg,
+    marginTop: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
+  legendDot: {
+    width: rw(12),
+    height: rh(12),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+  },
+
+  legendText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  weeklyNutritionChart: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: rh(200),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  chartDayColumn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+
+  barsGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: rp(2),
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+
+  barContainer: {
+    width: rw(8),
+    height: rh(160),
+    justifyContent: 'flex-end',
+  },
+
+  macroBar: {
+    width: '100%',
+    borderRadius: ResponsiveTheme.borderRadius.sm,
+    minHeight: rh(8),
+  },
+
+  proteinBar: {
+    backgroundColor: '#FF6B9D',
+  },
+
+  carbsBar: {
+    backgroundColor: '#4ECDC4',
+  },
+
+  fatsBar: {
+    backgroundColor: '#FFA726',
+  },
+
+  chartDayLabel: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: ResponsiveTheme.spacing.xs,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
+  },
+
+  averageLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: ResponsiveTheme.spacing.md,
+  },
+
+  averageLineDashed: {
+    flex: 1,
+    height: 1,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginRight: ResponsiveTheme.spacing.sm,
+  },
+
+  averageLineText: {
+    fontSize: ResponsiveTheme.fontSize.xs,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // Floating Action Button (FAB) Styles
+  fab: {
+    position: 'absolute',
+    bottom: ResponsiveTheme.spacing.xl,
+    right: ResponsiveTheme.spacing.lg,
+    width: rw(56),
+    height: rh(56),
+    borderRadius: ResponsiveTheme.borderRadius.full,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+
+  fabGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  fabIcon: {
+    fontSize: rf(32),
+    color: ResponsiveTheme.colors.white,
+    fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+});

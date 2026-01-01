@@ -137,11 +137,11 @@ class GoogleFitService {
   async hasPermissions(): Promise<boolean> {
     try {
       if (Platform.OS !== 'android') return false;
-      
+
       const isAuthorized = await GoogleFit.checkIsAuthorized();
       const storedPermissions = await AsyncStorage.getItem('fitai_googlefit_permissions');
-      
-      return isAuthorized && storedPermissions === 'granted';
+
+      return !!(isAuthorized && storedPermissions === 'granted');
     } catch (error) {
       console.error('❌ Error checking Google Fit permissions:', error);
       return false;
@@ -154,11 +154,14 @@ class GoogleFitService {
   private async startObservers(): Promise<void> {
     try {
       console.log('👀 Starting Google Fit data observers...');
-      
+
       // Start observing step count
-      await GoogleFit.startRecording((callback) => {
-        console.log('📊 Google Fit data update received:', callback);
-      });
+      await GoogleFit.startRecording(
+        (callback: any) => {
+          console.log('📊 Google Fit data update received:', callback);
+        },
+        ['step', 'distance', 'activity']
+      );
 
       console.log('✅ Google Fit observers started');
     } catch (error) {
@@ -195,9 +198,9 @@ class GoogleFitService {
           endDate: endDate.toISOString(),
         });
 
-        if (stepsData.length > 0) {
+        if (Array.isArray(stepsData) && stepsData.length > 0) {
           // Get total steps from most recent day
-          const latestSteps = stepsData[stepsData.length - 1];
+          const latestSteps = stepsData[stepsData.length - 1] as any;
           googleFitData.steps = latestSteps.steps || 0;
           console.log(`👟 Steps: ${googleFitData.steps}`);
         }
@@ -272,19 +275,26 @@ class GoogleFitService {
 
       // Fetch Sleep Data
       try {
-        const sleepData = await GoogleFit.getSleepSamples({
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-        });
+        const sleepData = await GoogleFit.getSleepSamples(
+          {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+          },
+          (err: any, res: any) => {
+            if (err) {
+              console.warn('⚠️ Sleep data error:', err);
+            }
+          }
+        );
 
-        if (sleepData.length > 0) {
-          googleFitData.sleepData = sleepData.map((sleep, index) => ({
+        if (Array.isArray(sleepData) && sleepData.length > 0) {
+          googleFitData.sleepData = sleepData.map((sleep: any, index: number) => ({
             id: `googlefit_sleep_${index}`,
             startDate: sleep.startDate,
             endDate: sleep.endDate,
             duration: Math.round((new Date(sleep.endDate).getTime() - new Date(sleep.startDate).getTime()) / 60000),
           }));
-          
+
           console.log(`😴 Sleep sessions: ${googleFitData.sleepData.length}`);
         }
       } catch (error) {
@@ -363,7 +373,7 @@ class GoogleFitService {
       };
 
       // Save workout to Google Fit
-      const result = await GoogleFit.saveWorkout(workoutData);
+      const result = await GoogleFit.saveWorkout(workoutData as any);
 
       if (result) {
         console.log(`✅ Successfully exported workout to Google Fit`);
@@ -409,7 +419,14 @@ class GoogleFitService {
 
       // Save nutrition to Google Fit (this may not be directly supported)
       // For now, we'll save it as a calories entry
-      const result = await GoogleFit.saveFood(nutritionEntry);
+      const result = await GoogleFit.saveFood(
+        nutritionEntry as any,
+        (err: any, res: any) => {
+          if (err) {
+            console.warn('⚠️ Nutrition save error:', err);
+          }
+        }
+      );
 
       console.log(`✅ Nutrition data exported to Google Fit:
         - Calories: ${nutritionData.calories}
@@ -443,7 +460,14 @@ class GoogleFitService {
         unit: 'kg',
       };
 
-      const result = await GoogleFit.saveWeight(weightData);
+      const result = await GoogleFit.saveWeight(
+        weightData as any,
+        (err: any, res: any) => {
+          if (err) {
+            console.warn('⚠️ Weight save error:', err);
+          }
+        }
+      );
 
       if (result) {
         console.log(`✅ Successfully exported body weight to Google Fit`);
@@ -608,17 +632,24 @@ class GoogleFitService {
       try {
         const today = new Date();
         const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-        
-        const heartRateData = await GoogleFit.getHeartRateSamples({
-          startDate: sevenDaysAgo.toISOString(),
-          endDate: today.toISOString(),
-        });
-        
-        if (heartRateData.length > 0) {
+
+        const heartRateData = await GoogleFit.getHeartRateSamples(
+          {
+            startDate: sevenDaysAgo.toISOString(),
+            endDate: today.toISOString(),
+          },
+          (err: any, res: any) => {
+            if (err) {
+              console.warn('⚠️ Heart rate fetch error:', err);
+            }
+          }
+        );
+
+        if (Array.isArray(heartRateData) && heartRateData.length > 0) {
           // Calculate average resting heart rate from recent data
-          const restingReadings = heartRateData.filter(hr => hr.value < 100); // Filter out exercise readings
+          const restingReadings = heartRateData.filter((hr: any) => hr.value < 100); // Filter out exercise readings
           if (restingReadings.length > 0) {
-            const avgResting = restingReadings.reduce((sum, hr) => sum + hr.value, 0) / restingReadings.length;
+            const avgResting = restingReadings.reduce((sum: number, hr: any) => sum + hr.value, 0) / restingReadings.length;
             restingHR = Math.round(avgResting);
           }
         }
@@ -960,9 +991,9 @@ class GoogleFitService {
           startDate: startOfDay.toISOString(),
           endDate: today.toISOString(),
         });
-        
-        if (stepsData.length > 0) {
-          const totalSteps = stepsData[stepsData.length - 1].steps || 0;
+
+        if (Array.isArray(stepsData) && stepsData.length > 0) {
+          const totalSteps = (stepsData[stepsData.length - 1] as any).steps || 0;
           
           if (totalSteps > 1000) {
             activities.push({

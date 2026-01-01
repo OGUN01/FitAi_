@@ -260,7 +260,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
 
   return (
     <>
-      <Card style={[styles.container, style]} variant="elevated">
+      <Card style={StyleSheet.flatten([styles.container, style])} variant="elevated">
         {renderGifPlayer()}
         {renderExerciseInfo()}
       </Card>

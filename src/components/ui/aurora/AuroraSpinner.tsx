@@ -14,7 +14,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { gradients, toLinearGradientProps } from '../../../theme/gradients';
+import { gradients, toLinearGradientProps, gradientAuroraSpace } from '../../../theme/gradients';
 import { animations } from '../../../theme/animations';
 
 // ============================================================================
@@ -110,7 +110,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
       case 'secondary':
         return gradients.secondary;
       case 'aurora':
-        return gradients.aurora.space;
+        return gradientAuroraSpace;
       case 'white':
         return {
           colors: ['rgba(255,255,255,0.2)', 'rgba(255,255,255,1)', 'rgba(255,255,255,0.2)'],

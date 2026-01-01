@@ -97,14 +97,29 @@ export const HEART_RATE_ZONE_COLORS = {
 };
 
 // Helper function to calculate zones based on max HR
-export const calculateHeartRateZones = (maxHR: number): HeartRateZone[] => {
+// Optionally accepts zone distributions for customization
+export const calculateHeartRateZones = (
+  maxHR: number,
+  distributions?: { zone1?: number; zone2?: number; zone3?: number; zone4?: number; zone5?: number }
+): HeartRateZone[] => {
+  // Default distribution based on balanced fitness training
+  const defaultDistributions = {
+    zone1: 10,  // Warm-up/cooldown
+    zone2: 35,  // Fat burn - most time spent here
+    zone3: 30,  // Cardio development
+    zone4: 20,  // High intensity
+    zone5: 5,   // Peak effort
+  };
+
+  const dist = distributions || defaultDistributions;
+
   return [
     {
       zone: 1,
       name: 'Recovery',
       range: '50-60%',
       color: HEART_RATE_ZONE_COLORS.zone1,
-      percentage: 0,
+      percentage: dist.zone1 || 10,
       bpm: `${Math.round(maxHR * 0.5)}-${Math.round(maxHR * 0.6)}`,
     },
     {
@@ -112,7 +127,7 @@ export const calculateHeartRateZones = (maxHR: number): HeartRateZone[] => {
       name: 'Fat Burn',
       range: '60-70%',
       color: HEART_RATE_ZONE_COLORS.zone2,
-      percentage: 0,
+      percentage: dist.zone2 || 35,
       bpm: `${Math.round(maxHR * 0.6)}-${Math.round(maxHR * 0.7)}`,
     },
     {
@@ -120,7 +135,7 @@ export const calculateHeartRateZones = (maxHR: number): HeartRateZone[] => {
       name: 'Cardio',
       range: '70-80%',
       color: HEART_RATE_ZONE_COLORS.zone3,
-      percentage: 0,
+      percentage: dist.zone3 || 30,
       bpm: `${Math.round(maxHR * 0.7)}-${Math.round(maxHR * 0.8)}`,
     },
     {
@@ -128,7 +143,7 @@ export const calculateHeartRateZones = (maxHR: number): HeartRateZone[] => {
       name: 'Hard',
       range: '80-90%',
       color: HEART_RATE_ZONE_COLORS.zone4,
-      percentage: 0,
+      percentage: dist.zone4 || 20,
       bpm: `${Math.round(maxHR * 0.8)}-${Math.round(maxHR * 0.9)}`,
     },
     {
@@ -136,7 +151,7 @@ export const calculateHeartRateZones = (maxHR: number): HeartRateZone[] => {
       name: 'Max',
       range: '90-100%',
       color: HEART_RATE_ZONE_COLORS.zone5,
-      percentage: 0,
+      percentage: dist.zone5 || 5,
       bpm: `${Math.round(maxHR * 0.9)}-${maxHR}`,
     },
   ];

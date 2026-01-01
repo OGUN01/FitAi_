@@ -8,9 +8,11 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Card } from './Card';
 import { Button } from './Button';
 import { THEME } from '../../utils/constants';
+import { rf } from '../../utils/responsive';
 
 interface DialogAction {
   text: string;
@@ -41,18 +43,16 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   type = 'info',
   icon,
 }) => {
-  const getTypeIcon = () => {
-    if (icon) return icon;
-
+  const getTypeIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (type) {
       case 'success':
-        return '🎉';
+        return 'checkmark-circle';
       case 'warning':
-        return '⚠️';
+        return 'warning';
       case 'error':
-        return '❌';
+        return 'close-circle';
       default:
-        return 'ℹ️';
+        return 'information-circle';
     }
   };
 
@@ -91,7 +91,7 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
           <Card style={styles.dialogCard} variant="elevated">
             {/* Icon */}
             <View style={[styles.iconContainer, { backgroundColor: getTypeColor() + '20' }]}>
-              <Text style={styles.icon}>{getTypeIcon()}</Text>
+              <Ionicons name={getTypeIcon()} size={rf(32)} color={getTypeColor()} />
             </View>
 
             {/* Title */}
@@ -242,9 +242,9 @@ export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
   return (
     <CustomDialog
       visible={visible}
-      title="🎯 Workout Started!"
+      title="Ready to Start?"
       message={`Starting "${workoutTitle}". Ready to begin your workout session?`}
-      type="success"
+      type="info"
       actions={[
         {
           text: 'Cancel',
@@ -289,7 +289,7 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
           <Card style={styles.dialogCard} variant="elevated">
             {/* Celebration Icon */}
             <View style={[styles.iconContainer, { backgroundColor: THEME.colors.success + '20' }]}>
-              <Text style={styles.icon}>🎉</Text>
+              <Ionicons name="trophy" size={rf(32)} color={THEME.colors.success} />
             </View>
 
             {/* Title */}

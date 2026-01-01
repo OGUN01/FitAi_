@@ -229,7 +229,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
       <View style={styles.bottomContainer}>
         <Button
           title="Start Workout"
-          onPress={onStartWorkout}
+          onPress={onStartWorkout || (() => {})}
           variant="primary"
           size="lg"
           fullWidth

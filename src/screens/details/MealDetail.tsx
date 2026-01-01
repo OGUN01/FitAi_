@@ -269,13 +269,13 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         <View style={styles.actionButtons}>
           <Button
             title="Edit Meal"
-            onPress={onEdit}
+            onPress={onEdit || (() => {})}
             variant="outline"
             style={styles.actionButton}
           />
           <Button
             title="Delete Meal"
-            onPress={onDelete}
+            onPress={onDelete || (() => {})}
             variant="outline"
             style={[styles.actionButton, styles.deleteButton]}
             textStyle={styles.deleteButtonText}

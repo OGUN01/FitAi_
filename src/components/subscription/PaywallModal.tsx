@@ -2,17 +2,18 @@
 // Beautiful premium subscription upgrade modal
 
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Modal, 
-  Pressable, 
-  ScrollView, 
+import {
+  View,
+  Text,
+  Modal,
+  Pressable,
+  ScrollView,
   ActivityIndicator,
   Alert,
-  Dimensions 
+  Dimensions,
+  StyleSheet
 } from 'react-native';
-import { useSubscriptionStore, subscriptionHelpers } from '../../stores/subscriptionStore';
+import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { SubscriptionPlan } from '../../services/SubscriptionService';
 
 interface PaywallModalProps {
@@ -32,15 +33,15 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   title = 'Upgrade to Premium',
   description = 'Unlock all premium features and take your fitness journey to the next level!'
 }) => {
-  const { 
-    availablePlans, 
-    isPurchasing, 
-    purchaseError, 
+  const {
+    availablePlans,
+    isPurchasing,
+    purchaseError,
     trialInfo,
-    purchasePlan, 
-    restorePurchases 
+    purchasePlan,
+    restorePurchases
   } = useSubscriptionStore();
-  
+
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showFeatures, setShowFeatures] = useState(false);
 
@@ -50,14 +51,14 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       const yearlyPlan = availablePlans.find(p => p.period === 'yearly');
       setSelectedPlan(yearlyPlan?.id || availablePlans[0]?.id);
     }
-  }, [availablePlans]);
+  }, [availablePlans, selectedPlan]);
 
   const handlePurchase = async () => {
     if (!selectedPlan) return;
 
     try {
       const result = await purchasePlan(selectedPlan);
-      
+
       if (result.success) {
         Alert.alert(
           '🎉 Welcome to Premium!',
@@ -80,9 +81,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   };
 
   const getPlanBadge = (plan: SubscriptionPlan) => {
-    if (plan.isPopular) return { text: '🔥 MOST POPULAR', color: 'bg-orange-500' };
-    if (plan.discount) return { text: `${plan.discount}% OFF`, color: 'bg-green-500' };
-    if (plan.period === 'lifetime') return { text: '⭐ BEST VALUE', color: 'bg-purple-500' };
+    if (plan.isPopular) return { text: '🔥 MOST POPULAR', color: '#f97316' };
+    if (plan.discount) return { text: `${plan.discount}% OFF`, color: '#22c55e' };
+    if (plan.period === 'lifetime') return { text: '⭐ BEST VALUE', color: '#a855f7' };
     return null;
   };
 
@@ -104,7 +105,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       'Premium community': '👥',
       'Remove all ads': '❌',
     };
-    
+
     return icons[feature] || '✨';
   };
 
@@ -119,7 +120,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       'multi_device_sync': 'Multi-Device Sync',
       'premium_community': 'Premium Community',
     };
-    
+
     return titles[feature || ''] || title;
   };
 
@@ -134,120 +135,111 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/70">
-        <View className="flex-1 justify-end">
-          <View className="bg-white dark:bg-gray-900 rounded-t-3xl max-h-[85%]">
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <View style={styles.content}>
             {/* Header */}
-            <View className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Text className="text-2xl font-bold text-gray-900 dark:text-white">
+            <View style={styles.header}>
+              <View style={styles.headerContent}>
+                <View style={styles.headerText}>
+                  <Text style={styles.headerTitle}>
                     {getFeatureTitle(feature)}
                   </Text>
-                  <Text className="text-gray-600 dark:text-gray-400 mt-1">
+                  <Text style={styles.headerDescription}>
                     {description}
                   </Text>
                 </View>
-                
+
                 <Pressable
                   onPress={onClose}
-                  className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center"
+                  style={styles.closeButton}
                 >
-                  <Text className="text-gray-600 dark:text-gray-400 text-lg">×</Text>
+                  <Text style={styles.closeButtonText}>×</Text>
                 </Pressable>
               </View>
-              
+
               {/* Trial Info */}
               {trialInfo.isEligible && (
-                <View className="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 mt-4">
-                  <Text className="text-blue-800 dark:text-blue-200 font-semibold">
+                <View style={styles.trialBanner}>
+                  <Text style={styles.trialTitle}>
                     🎁 Start your FREE trial today!
                   </Text>
-                  <Text className="text-blue-600 dark:text-blue-300 text-sm mt-1">
+                  <Text style={styles.trialDescription}>
                     Try all premium features free for 7-14 days
                   </Text>
                 </View>
               )}
             </View>
 
-            <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
               {/* Subscription Plans */}
-              <View className="p-6">
-                <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              <View style={styles.plansSection}>
+                <Text style={styles.sectionTitle}>
                   Choose Your Plan
                 </Text>
-                
-                <View className="space-y-4">
+
+                <View style={styles.plansList}>
                   {availablePlans.map((plan) => {
                     const badge = getPlanBadge(plan);
                     const isSelected = selectedPlan === plan.id;
-                    
+
                     return (
                       <Pressable
                         key={plan.id}
                         onPress={() => setSelectedPlan(plan.id)}
-                        className={`relative border-2 rounded-xl p-4 ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' 
-                            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-                        }`}
+                        style={[
+                          styles.planCard,
+                          isSelected ? styles.planCardSelected : styles.planCardUnselected
+                        ]}
                       >
                         {/* Badge */}
                         {badge && (
-                          <View className={`absolute -top-2 left-4 ${badge.color} rounded-full px-3 py-1`}>
-                            <Text className="text-white text-xs font-bold">
+                          <View style={[styles.badge, { backgroundColor: badge.color }]}>
+                            <Text style={styles.badgeText}>
                               {badge.text}
                             </Text>
                           </View>
                         )}
-                        
-                        <View className="flex-row items-center justify-between">
-                          <View className="flex-1">
-                            <Text className={`text-lg font-semibold ${
-                              isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
-                            }`}>
+
+                        <View style={styles.planContent}>
+                          <View style={styles.planInfo}>
+                            <Text style={styles.planName}>
                               {plan.name}
                             </Text>
-                            
-                            <Text className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+
+                            <Text style={styles.planDescription}>
                               {plan.description}
                             </Text>
-                            
+
                             {plan.freeTrialDays && trialInfo.isEligible && (
-                              <Text className="text-green-600 dark:text-green-400 text-sm font-medium mt-1">
+                              <Text style={styles.trialText}>
                                 {plan.freeTrialDays} days free trial
                               </Text>
                             )}
                           </View>
-                          
-                          <View className="items-end">
-                            <Text className={`text-xl font-bold ${
-                              isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'
-                            }`}>
+
+                          <View style={styles.planPricing}>
+                            <Text style={styles.planPrice}>
                               {plan.price}
                             </Text>
-                            
+
                             {plan.originalPrice && (
-                              <Text className="text-gray-500 text-sm line-through">
+                              <Text style={styles.originalPrice}>
                                 {plan.originalPrice}
                               </Text>
                             )}
-                            
-                            <Text className="text-gray-500 text-xs">
+
+                            <Text style={styles.planPeriod}>
                               {plan.period === 'lifetime' ? 'one time' : `per ${plan.period.slice(0, -2)}`}
                             </Text>
                           </View>
                         </View>
-                        
+
                         {/* Selection Indicator */}
-                        <View className={`absolute top-4 right-4 w-6 h-6 rounded-full border-2 ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-500' 
-                            : 'border-gray-300 dark:border-gray-600'
-                        }`}>
+                        <View style={styles.selectionIndicator}>
                           {isSelected && (
-                            <View className="w-full h-full items-center justify-center">
-                              <Text className="text-white text-xs">✓</Text>
+                            <View style={styles.checkmark}>
+                              <Text style={styles.checkmarkText}>✓</Text>
                             </View>
                           )}
                         </View>
@@ -258,29 +250,27 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               </View>
 
               {/* Features List */}
-              <View className="px-6 pb-6">
+              <View style={styles.featuresSection}>
                 <Pressable
                   onPress={() => setShowFeatures(!showFeatures)}
-                  className="flex-row items-center justify-between py-3"
+                  style={styles.featuresHeader}
                 >
-                  <Text className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <Text style={styles.featuresTitle}>
                     Premium Features
                   </Text>
-                  <Text className={`text-blue-500 transition-transform ${
-                    showFeatures ? 'rotate-180' : ''
-                  }`}>
-                    ⌄
+                  <Text style={styles.featuresToggle}>
+                    {showFeatures ? '⌃' : '⌄'}
                   </Text>
                 </Pressable>
-                
+
                 {showFeatures && selectedPlanData && (
-                  <View className="space-y-3 mt-2">
+                  <View style={styles.featuresList}>
                     {selectedPlanData.features.map((feature, index) => (
-                      <View key={index} className="flex-row items-center">
-                        <Text className="text-2xl mr-3">
+                      <View key={index} style={styles.featureItem}>
+                        <Text style={styles.featureIcon}>
                           {getFeatureIcon(feature)}
                         </Text>
-                        <Text className="text-gray-700 dark:text-gray-300 flex-1">
+                        <Text style={styles.featureText}>
                           {feature}
                         </Text>
                       </View>
@@ -291,30 +281,29 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             </ScrollView>
 
             {/* Bottom Actions */}
-            <View className="p-6 border-t border-gray-200 dark:border-gray-700">
+            <View style={styles.bottomActions}>
               {/* Error Message */}
               {purchaseError && (
-                <View className="bg-red-50 dark:bg-red-900/30 rounded-xl p-3 mb-4">
-                  <Text className="text-red-600 dark:text-red-400 text-center">
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>
                     {purchaseError}
                   </Text>
                 </View>
               )}
-              
+
               {/* Purchase Button */}
               <Pressable
                 onPress={handlePurchase}
                 disabled={isPurchasing || !selectedPlan}
-                className={`rounded-xl py-4 px-6 items-center ${
-                  isPurchasing || !selectedPlan
-                    ? 'bg-gray-300 dark:bg-gray-700'
-                    : 'bg-blue-500 dark:bg-blue-600'
-                }`}
+                style={[
+                  styles.purchaseButton,
+                  (isPurchasing || !selectedPlan) && styles.purchaseButtonDisabled
+                ]}
               >
                 {isPurchasing ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text className="text-white font-bold text-lg">
+                  <Text style={styles.purchaseButtonText}>
                     {trialInfo.isEligible && selectedPlanData?.freeTrialDays
                       ? `Start ${selectedPlanData.freeTrialDays}-Day Free Trial`
                       : `Subscribe for ${selectedPlanData?.price || ''}`
@@ -322,20 +311,20 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   </Text>
                 )}
               </Pressable>
-              
+
               {/* Restore Purchases */}
               <Pressable
                 onPress={handleRestore}
-                className="py-3 items-center"
+                style={styles.restoreButton}
               >
-                <Text className="text-blue-500 dark:text-blue-400">
+                <Text style={styles.restoreButtonText}>
                   Restore Previous Purchases
                 </Text>
               </Pressable>
-              
+
               {/* Terms */}
-              <View className="items-center mt-2">
-                <Text className="text-gray-500 dark:text-gray-400 text-xs text-center">
+              <View style={styles.termsContainer}>
+                <Text style={styles.termsText}>
                   Subscription automatically renews. Cancel anytime in your {'\n'}
                   App Store or Google Play account settings.
                 </Text>
@@ -347,5 +336,263 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+  },
+  content: {
+    flex: 1,
+  },
+  header: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerText: {
+    flex: 1,
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  headerDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    lineHeight: 20,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#6b7280',
+  },
+  trialBanner: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#dbeafe',
+    borderRadius: 8,
+  },
+  trialTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e40af',
+    marginBottom: 4,
+  },
+  trialDescription: {
+    fontSize: 14,
+    color: '#1e40af',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  plansSection: {
+    padding: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 16,
+  },
+  plansList: {
+    gap: 12,
+  },
+  planCard: {
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  planCardSelected: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#eff6ff',
+  },
+  planCardUnselected: {
+    borderColor: '#e5e7eb',
+    backgroundColor: '#fff',
+  },
+  badge: {
+    position: 'absolute',
+    top: -8,
+    right: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  planContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  planInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  planName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  planDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  trialText: {
+    fontSize: 12,
+    color: '#10b981',
+    fontWeight: '600',
+  },
+  planPricing: {
+    alignItems: 'flex-end',
+  },
+  planPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  originalPrice: {
+    fontSize: 14,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+  },
+  planPeriod: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  selectionIndicator: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 24,
+    height: 24,
+  },
+  checkmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#3b82f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  featuresSection: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  featuresHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  featuresTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  featuresToggle: {
+    fontSize: 24,
+    color: '#6b7280',
+  },
+  featuresList: {
+    marginTop: 8,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  featureIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#374151',
+    flex: 1,
+  },
+  bottomActions: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  errorContainer: {
+    padding: 12,
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+  },
+  purchaseButton: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  purchaseButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  purchaseButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  restoreButton: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  restoreButtonText: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  termsContainer: {
+    marginTop: 8,
+  },
+  termsText: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+});
 
 export default PaywallModal;

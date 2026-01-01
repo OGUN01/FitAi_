@@ -29,15 +29,20 @@ interface WeightProjectionChartProps {
 }
 
 export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
-  currentWeight,
-  targetWeight,
-  weeks,
+  currentWeight: rawCurrentWeight,
+  targetWeight: rawTargetWeight,
+  weeks: rawWeeks,
   width = 320,
   height = 200,
   milestones = [],
   style,
 }) => {
   const progress = useSharedValue(0);
+
+  // Sanitize inputs to prevent NaN - use safe defaults
+  const currentWeight = Number.isFinite(rawCurrentWeight) ? rawCurrentWeight : 70;
+  const targetWeight = Number.isFinite(rawTargetWeight) ? rawTargetWeight : 65;
+  const weeks = Number.isFinite(rawWeeks) && rawWeeks > 0 ? rawWeeks : 12;
 
   const padding = 40;
   const chartWidth = width - padding * 2;
@@ -46,7 +51,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   // Calculate data points
   const points: MilestonePoint[] = [];
   const weightDiff = targetWeight - currentWeight;
-  const weeklyChange = weightDiff / weeks;
+  const weeklyChange = weeks > 0 ? weightDiff / weeks : 0;
 
   for (let week = 0; week <= weeks; week++) {
     points.push({

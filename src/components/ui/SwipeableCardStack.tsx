@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Dimensions, Platform, PanResponder, GestureResponderEvent, PanResponderGestureState } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { rf, rp, rh, rw } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
 import { hapticSwipeAction } from '../../utils/haptics';
@@ -22,7 +23,7 @@ export interface SwipeableCard {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  iconName: string; // Ionicons name instead of emoji
   gradient: string[];
   details?: string[];
 }
@@ -99,6 +100,41 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       }
     },
   });
+
+  // Web-compatible PanResponder for gesture handling
+  const startPositionRef = useRef({ x: 0, y: 0 });
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt, gestureState) => {
+        startPositionRef.current = { x: translateX.value, y: translateY.value };
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        translateX.value = startPositionRef.current.x + gestureState.dx;
+        translateY.value = startPositionRef.current.y + gestureState.dy * 0.2;
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        const shouldSwipeLeft = translateX.value < -SWIPE_THRESHOLD;
+        const shouldSwipeRight = translateX.value > SWIPE_THRESHOLD;
+
+        if (shouldSwipeLeft) {
+          translateX.value = withSpring(-SCREEN_WIDTH * 1.5);
+          translateY.value = withSpring(0);
+          hapticSwipeAction();
+          handleSwipeLeft();
+        } else if (shouldSwipeRight) {
+          translateX.value = withSpring(SCREEN_WIDTH * 1.5);
+          translateY.value = withSpring(0);
+          hapticSwipeAction();
+          handleSwipeRight();
+        } else {
+          translateX.value = withSpring(0);
+          translateY.value = withSpring(0);
+        }
+      },
+    })
+  ).current;
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
     const rotate = interpolate(
@@ -178,15 +214,18 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Text style={styles.cardIcon}>{nextCard.icon}</Text>
+            <Ionicons name={nextCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
             <Text style={styles.cardTitle}>{nextCard.title}</Text>
           </LinearGradient>
         </View>
       )}
 
-      {/* Current card (foreground) */}
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View style={[styles.card, cardAnimatedStyle]}>
+      {/* Current card (foreground) - Platform-specific gesture handling */}
+      {Platform.OS === 'web' ? (
+        <Animated.View
+          {...panResponder.panHandlers}
+          style={[styles.card, cardAnimatedStyle]}
+        >
           <LinearGradient
             colors={currentCard.gradient as any}
             style={styles.cardGradient}
@@ -204,14 +243,14 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
 
             {/* Card content */}
             <View style={styles.cardContent}>
-              <Text style={styles.cardIcon}>{currentCard.icon}</Text>
+              <Ionicons name={currentCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
               <Text style={styles.cardTitle}>{currentCard.title}</Text>
               <Text style={styles.cardDescription}>{currentCard.description}</Text>
 
               {currentCard.details && currentCard.details.length > 0 && (
                 <View style={styles.detailsContainer}>
-                  {currentCard.details.map((detail, index) => (
-                    <Text key={index} style={styles.detailText}>
+                  {currentCard.details.map((detail) => (
+                    <Text key={`detail-web-${detail.substring(0, 30)}`} style={styles.detailText}>
                       • {detail}
                     </Text>
                   ))}
@@ -227,7 +266,51 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             </View>
           </LinearGradient>
         </Animated.View>
-      </PanGestureHandler>
+      ) : (
+        <PanGestureHandler onGestureEvent={gestureHandler}>
+          <Animated.View style={[styles.card, cardAnimatedStyle]}>
+            <LinearGradient
+              colors={currentCard.gradient as any}
+              style={styles.cardGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {/* Swipe indicators */}
+              <Animated.View style={[styles.swipeIndicator, styles.swipeLeft, leftIndicatorStyle]}>
+                <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
+              </Animated.View>
+
+              <Animated.View style={[styles.swipeIndicator, styles.swipeRight, rightIndicatorStyle]}>
+                <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
+              </Animated.View>
+
+              {/* Card content */}
+              <View style={styles.cardContent}>
+                <Ionicons name={currentCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
+                <Text style={styles.cardTitle}>{currentCard.title}</Text>
+                <Text style={styles.cardDescription}>{currentCard.description}</Text>
+
+                {currentCard.details && currentCard.details.length > 0 && (
+                  <View style={styles.detailsContainer}>
+                    {currentCard.details.map((detail) => (
+                      <Text key={`detail-native-${detail.substring(0, 30)}`} style={styles.detailText}>
+                        • {detail}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Progress indicator */}
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>
+                  {currentIndex + 1} / {cards.length}
+                </Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </PanGestureHandler>
+      )}
 
       {/* Instructions */}
       <View style={styles.instructions}>
@@ -241,23 +324,23 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    height: rh(400),
+    height: rh(240), // Reduced from 400
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
 
   card: {
-    width: SCREEN_WIDTH * 0.85,
-    height: rh(350),
+    width: SCREEN_WIDTH * 0.8, // Slightly narrower
+    height: rh(200), // Reduced from 350
     borderRadius: ResponsiveTheme.borderRadius.xl,
     position: 'absolute',
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 10,
-    overflow: 'hidden',
   },
 
   cardBackground: {
@@ -267,7 +350,7 @@ const styles = StyleSheet.create({
 
   cardGradient: {
     flex: 1,
-    padding: ResponsiveTheme.spacing.xl,
+    padding: ResponsiveTheme.spacing.md, // Reduced from xl
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -279,24 +362,23 @@ const styles = StyleSheet.create({
   },
 
   cardIcon: {
-    fontSize: rf(64),
-    marginBottom: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm, // Reduced from md
   },
 
   cardTitle: {
-    fontSize: ResponsiveTheme.fontSize.xxl,
+    fontSize: ResponsiveTheme.fontSize.xl, // Reduced from xxl
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.xs, // Reduced from sm
   },
 
   cardDescription: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.sm, // Reduced from md
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    lineHeight: rf(22),
-    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(18),
+    paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   detailsContainer: {
@@ -313,26 +395,26 @@ const styles = StyleSheet.create({
 
   swipeIndicator: {
     position: 'absolute',
-    top: ResponsiveTheme.spacing.xl,
-    padding: ResponsiveTheme.spacing.md,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    borderWidth: 3,
+    top: ResponsiveTheme.spacing.sm, // Reduced from xl
+    padding: ResponsiveTheme.spacing.xs, // Reduced from md
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 2,
   },
 
   swipeLeft: {
-    left: ResponsiveTheme.spacing.xl,
+    left: ResponsiveTheme.spacing.sm, // Reduced from xl
     borderColor: '#FF4444',
     backgroundColor: 'rgba(255, 68, 68, 0.2)',
   },
 
   swipeRight: {
-    right: ResponsiveTheme.spacing.xl,
+    right: ResponsiveTheme.spacing.sm, // Reduced from xl
     borderColor: '#44FF44',
     backgroundColor: 'rgba(68, 255, 68, 0.2)',
   },
 
   swipeIndicatorText: {
-    fontSize: ResponsiveTheme.fontSize.md,
+    fontSize: ResponsiveTheme.fontSize.xs, // Reduced from md
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
   },

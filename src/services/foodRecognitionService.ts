@@ -1,4 +1,3 @@
-import { geminiService, generateResponseWithImage } from '../ai/gemini';
 import { FOOD_RECOGNITION_SCHEMA } from '../ai/schemas/foodRecognitionSchema';
 import { APIKeyRotator } from '../utils/apiKeyRotator';
 import { IndianFoodEnhancer } from '../utils/indianFoodEnhancer';
@@ -9,6 +8,7 @@ import { PersonalInfo, FitnessGoals } from '../types/user';
 export interface FoodRecognitionResult {
   success: boolean;
   data?: RecognizedFood[];
+  foods?: RecognizedFood[]; // Alias for data
   confidence: number;
   accuracy: number;
   processingTime: number;

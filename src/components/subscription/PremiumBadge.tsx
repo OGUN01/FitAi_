@@ -2,7 +2,8 @@
 // Shows premium status and trial information
 
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
 
 interface PremiumBadgeProps {
@@ -19,216 +20,186 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   variant = 'badge'
 }) => {
   const { subscriptionStatus, trialInfo } = useSubscriptionStore();
-  
+
   const isPremium = subscriptionStatus.isPremium;
   const isTrialActive = trialInfo.daysRemaining > 0;
-  
-  const getSizeClasses = () => {
+
+  const getSizeStyles = () => {
     switch (size) {
       case 'small':
         return {
-          container: 'px-2 py-1',
-          text: 'text-xs',
-          icon: 'text-sm',
+          containerPadding: { paddingHorizontal: 8, paddingVertical: 4 },
+          textStyle: { fontSize: 12 },
+          iconStyle: { fontSize: 14 },
         };
       case 'large':
         return {
-          container: 'px-4 py-2',
-          text: 'text-base font-bold',
-          icon: 'text-lg',
+          containerPadding: { paddingHorizontal: 16, paddingVertical: 8 },
+          textStyle: { fontSize: 16, fontWeight: '700' as const },
+          iconStyle: { fontSize: 18 },
         };
-      default: // medium
+      default:
         return {
-          container: 'px-3 py-1.5',
-          text: 'text-sm font-semibold',
-          icon: 'text-base',
+          containerPadding: { paddingHorizontal: 12, paddingVertical: 6 },
+          textStyle: { fontSize: 14, fontWeight: '600' as const },
+          iconStyle: { fontSize: 16 },
         };
     }
   };
 
-  const styles = getSizeClasses();
+  const sizeStyles = getSizeStyles();
 
-  // Badge variant
   if (variant === 'badge') {
     if (!isPremium && !isTrialActive) {
       return (
-        <Pressable
-          onPress={onPress}
-          className={`${styles.container} bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex-row items-center`}
-        >
-          <Text className={`${styles.icon} mr-1`}>⭐</Text>
-          <Text className={`${styles.text} text-white`}>
-            Upgrade
-          </Text>
+        <Pressable onPress={onPress}>
+          <LinearGradient colors={['#FBBF24', '#F97316']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.badgeContainer, sizeStyles.containerPadding]}>
+            <Text style={[styles.icon, sizeStyles.iconStyle]}>⭐</Text>
+            <Text style={[styles.badgeText, sizeStyles.textStyle]}>Upgrade</Text>
+          </LinearGradient>
         </Pressable>
       );
     }
 
     if (isTrialActive && showTrial) {
       return (
-        <View className={`${styles.container} bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex-row items-center`}>
-          <Text className={`${styles.icon} mr-1`}>🎁</Text>
-          <Text className={`${styles.text} text-white`}>
-            Trial: {trialInfo.daysRemaining}d
-          </Text>
-        </View>
+        <LinearGradient colors={['#60A5FA', '#A78BFA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.badgeContainer, sizeStyles.containerPadding]}>
+          <Text style={[styles.icon, sizeStyles.iconStyle]}>🎁</Text>
+          <Text style={[styles.badgeText, sizeStyles.textStyle]}>Trial: {trialInfo.daysRemaining}d</Text>
+        </LinearGradient>
       );
     }
 
     if (isPremium) {
-      const gradientColor = subscriptionStatus.plan === 'lifetime' 
-        ? 'from-purple-500 to-pink-500'
-        : 'from-green-400 to-blue-500';
-        
+      const gradientColors = (subscriptionStatus.plan === 'lifetime' ? ['#A855F7', '#EC4899'] : ['#4ADE80', '#3B82F6']) as readonly [string, string, ...string[]];
       return (
-        <View className={`${styles.container} bg-gradient-to-r ${gradientColor} rounded-full flex-row items-center`}>
-          <Text className={`${styles.icon} mr-1`}>👑</Text>
-          <Text className={`${styles.text} text-white capitalize`}>
-            {subscriptionStatus.plan === 'lifetime' ? 'Lifetime' : 'Premium'}
-          </Text>
-        </View>
+        <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.badgeContainer, sizeStyles.containerPadding]}>
+          <Text style={[styles.icon, sizeStyles.iconStyle]}>👑</Text>
+          <Text style={[styles.badgeText, sizeStyles.textStyle, styles.capitalize]}>{subscriptionStatus.plan === 'lifetime' ? 'Lifetime' : 'Premium'}</Text>
+        </LinearGradient>
       );
     }
-
     return null;
   }
 
-  // Banner variant
   if (variant === 'banner') {
     if (!isPremium && !isTrialActive) {
       return (
-        <Pressable
-          onPress={onPress}
-          className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4 rounded-xl mx-4 my-2"
-        >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1">
-              <View className="flex-row items-center">
-                <Text className="text-2xl mr-2">⭐</Text>
-                <Text className="text-white font-bold text-lg">
-                  Upgrade to Premium
-                </Text>
+        <Pressable onPress={onPress}>
+          <LinearGradient colors={['#FBBF24', '#F97316']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
+            <View style={styles.bannerContent}>
+              <View style={styles.bannerTextContainer}>
+                <View style={styles.bannerHeader}>
+                  <Text style={styles.bannerIcon}>⭐</Text>
+                  <Text style={styles.bannerTitle}>Upgrade to Premium</Text>
+                </View>
+                <Text style={styles.bannerSubtitle}>Unlock unlimited AI workouts, advanced analytics, and more!</Text>
               </View>
-              <Text className="text-white/90 text-sm mt-1">
-                Unlock unlimited AI workouts, advanced analytics, and more!
-              </Text>
+              <View style={styles.bannerButton}>
+                <Text style={styles.bannerButtonText}>Upgrade</Text>
+              </View>
             </View>
-            
-            <View className="bg-white/20 rounded-full px-4 py-2">
-              <Text className="text-white font-bold text-sm">
-                Upgrade
-              </Text>
-            </View>
-          </View>
+          </LinearGradient>
         </Pressable>
       );
     }
 
     if (isTrialActive && showTrial) {
       return (
-        <View className="bg-gradient-to-r from-blue-400 to-purple-500 p-4 rounded-xl mx-4 my-2">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1">
-              <View className="flex-row items-center">
-                <Text className="text-2xl mr-2">🎁</Text>
-                <Text className="text-white font-bold text-lg">
-                  Free Trial Active
-                </Text>
+        <LinearGradient colors={['#60A5FA', '#A78BFA']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
+          <View style={styles.bannerContent}>
+            <View style={styles.bannerTextContainer}>
+              <View style={styles.bannerHeader}>
+                <Text style={styles.bannerIcon}>🎁</Text>
+                <Text style={styles.bannerTitle}>Free Trial Active</Text>
               </View>
-              <Text className="text-white/90 text-sm mt-1">
-                {trialInfo.daysRemaining} days remaining - Enjoy all premium features!
-              </Text>
+              <Text style={styles.bannerSubtitle}>{trialInfo.daysRemaining} days remaining - Enjoy all premium features!</Text>
             </View>
-            
-            <View className="bg-white/20 rounded-full px-4 py-2">
-              <Text className="text-white font-bold text-sm">
-                {trialInfo.daysRemaining}d left
-              </Text>
+            <View style={styles.bannerButton}>
+              <Text style={styles.bannerButtonText}>{trialInfo.daysRemaining}d left</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
       );
     }
 
     if (isPremium) {
-      const gradientColor = subscriptionStatus.plan === 'lifetime'
-        ? 'from-purple-500 to-pink-500'
-        : 'from-green-400 to-blue-500';
-        
+      const gradientColors = (subscriptionStatus.plan === 'lifetime' ? ['#A855F7', '#EC4899'] : ['#4ADE80', '#3B82F6']) as readonly [string, string, ...string[]];
       return (
-        <View className={`bg-gradient-to-r ${gradientColor} p-4 rounded-xl mx-4 my-2`}>
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1">
-              <View className="flex-row items-center">
-                <Text className="text-2xl mr-2">👑</Text>
-                <Text className="text-white font-bold text-lg capitalize">
-                  {subscriptionStatus.plan === 'lifetime' ? 'Lifetime Premium' : 'Premium Active'}
-                </Text>
+        <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.banner}>
+          <View style={styles.bannerContent}>
+            <View style={styles.bannerTextContainer}>
+              <View style={styles.bannerHeader}>
+                <Text style={styles.bannerIcon}>👑</Text>
+                <Text style={[styles.bannerTitle, styles.capitalize]}>{subscriptionStatus.plan === 'lifetime' ? 'Lifetime Premium' : 'Premium Active'}</Text>
               </View>
-              <Text className="text-white/90 text-sm mt-1">
-                You have access to all premium features
-                {subscriptionStatus.expiryDate && subscriptionStatus.plan !== 'lifetime' && 
-                  ` until ${new Date(subscriptionStatus.expiryDate).toLocaleDateString()}`
-                }
-              </Text>
+              <Text style={styles.bannerSubtitle}>You have access to all premium features{subscriptionStatus.expiryDate && subscriptionStatus.plan !== 'lifetime' && ` until ${new Date(subscriptionStatus.expiryDate).toLocaleDateString()}`}</Text>
             </View>
-            
-            <View className="bg-white/20 rounded-full px-4 py-2">
-              <Text className="text-white font-bold text-sm capitalize">
-                {subscriptionStatus.plan}
-              </Text>
+            <View style={styles.bannerButton}>
+              <Text style={[styles.bannerButtonText, styles.capitalize]}>{subscriptionStatus.plan}</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
       );
     }
-
     return null;
   }
 
-  // Inline variant
   if (variant === 'inline') {
     if (!isPremium && !isTrialActive) {
       return (
-        <Pressable onPress={onPress} className="flex-row items-center">
-          <Text className="text-yellow-500 mr-1">⭐</Text>
-          <Text className="text-yellow-600 dark:text-yellow-400 text-sm font-medium">
-            Upgrade to Premium
-          </Text>
+        <Pressable onPress={onPress} style={styles.inlineContainer}>
+          <Text style={styles.inlineIconYellow}>⭐</Text>
+          <Text style={styles.inlineTextYellow}>Upgrade to Premium</Text>
         </Pressable>
       );
     }
 
     if (isTrialActive && showTrial) {
       return (
-        <View className="flex-row items-center">
-          <Text className="text-blue-500 mr-1">🎁</Text>
-          <Text className="text-blue-600 dark:text-blue-400 text-sm font-medium">
-            Trial: {trialInfo.daysRemaining} days left
-          </Text>
+        <View style={styles.inlineContainer}>
+          <Text style={styles.inlineIconBlue}>🎁</Text>
+          <Text style={styles.inlineTextBlue}>Trial: {trialInfo.daysRemaining} days left</Text>
         </View>
       );
     }
 
     if (isPremium) {
-      const textColor = subscriptionStatus.plan === 'lifetime' 
-        ? 'text-purple-600 dark:text-purple-400'
-        : 'text-green-600 dark:text-green-400';
-        
+      const isPurple = subscriptionStatus.plan === 'lifetime';
       return (
-        <View className="flex-row items-center">
-          <Text className="text-yellow-500 mr-1">👑</Text>
-          <Text className={`${textColor} text-sm font-medium capitalize`}>
-            {subscriptionStatus.plan === 'lifetime' ? 'Lifetime' : 'Premium'}
-          </Text>
+        <View style={styles.inlineContainer}>
+          <Text style={styles.inlineIconYellow}>👑</Text>
+          <Text style={[isPurple ? styles.inlineTextPurple : styles.inlineTextGreen, styles.capitalize]}>{subscriptionStatus.plan === 'lifetime' ? 'Lifetime' : 'Premium'}</Text>
         </View>
       );
     }
-
     return null;
   }
 
   return null;
 };
+
+const styles = StyleSheet.create({
+  badgeContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 9999 },
+  badgeText: { color: '#FFFFFF' },
+  icon: { marginRight: 4 },
+  banner: { padding: 16, borderRadius: 16, marginHorizontal: 16, marginVertical: 8 },
+  bannerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bannerTextContainer: { flex: 1 },
+  bannerHeader: { flexDirection: 'row', alignItems: 'center' },
+  bannerIcon: { fontSize: 24, marginRight: 8 },
+  bannerTitle: { color: '#FFFFFF', fontWeight: '700', fontSize: 18 },
+  bannerSubtitle: { color: 'rgba(255, 255, 255, 0.9)', fontSize: 14, marginTop: 4 },
+  bannerButton: { backgroundColor: 'rgba(255, 255, 255, 0.2)', borderRadius: 9999, paddingHorizontal: 16, paddingVertical: 8 },
+  bannerButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+  inlineContainer: { flexDirection: 'row', alignItems: 'center' },
+  inlineIconYellow: { fontSize: 16, marginRight: 4 },
+  inlineIconBlue: { fontSize: 16, marginRight: 4 },
+  inlineTextYellow: { color: '#D97706', fontSize: 14, fontWeight: '500' },
+  inlineTextBlue: { color: '#2563EB', fontSize: 14, fontWeight: '500' },
+  inlineTextPurple: { color: '#9333EA', fontSize: 14, fontWeight: '500' },
+  inlineTextGreen: { color: '#16A34A', fontSize: 14, fontWeight: '500' },
+  capitalize: { textTransform: 'capitalize' },
+});
 
 export default PremiumBadge;

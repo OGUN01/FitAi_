@@ -161,8 +161,8 @@ export const useOnboardingIntegration = () => {
 
         // Try to update fitness goals first, create if they don't exist
         const goalsData = {
-          primaryGoals: fitnessGoals.primaryGoals,
-          timeCommitment: fitnessGoals.timeCommitment as any,
+          primary_goals: fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [],
+          time_commitment: fitnessGoals.time_commitment || fitnessGoals.timeCommitment || '',
           experience: fitnessGoals.experience as any,
           experience_level: fitnessGoals.experience_level || fitnessGoals.experience,
           user_id: authUser.id,
@@ -174,8 +174,8 @@ export const useOnboardingIntegration = () => {
         // If update fails (goals don't exist), create them
         if (!response.success) {
           const createData = {
-            primaryGoals: fitnessGoals.primaryGoals,
-            timeCommitment: fitnessGoals.timeCommitment as any,
+            primary_goals: fitnessGoals.primary_goals || fitnessGoals.primaryGoals || [],
+            time_commitment: fitnessGoals.time_commitment || fitnessGoals.timeCommitment || '',
             experience: fitnessGoals.experience as any,
             experience_level: fitnessGoals.experience_level || fitnessGoals.experience,
             user_id: authUser.id,
@@ -293,9 +293,9 @@ export const useOnboardingIntegration = () => {
             user_id: authUser.id,
             location: workoutPreferences.location,
             equipment: workoutPreferences.equipment,
-            time_preference: workoutPreferences.timePreference,
+            time_preference: (workoutPreferences as any).time_preference || (workoutPreferences as any).timePreference || 30,
             intensity: workoutPreferences.intensity,
-            workout_types: workoutPreferences.workoutTypes,
+            workout_types: (workoutPreferences as any).workout_types || (workoutPreferences as any).workoutTypes || [],
           });
 
           if (error) {
@@ -480,19 +480,11 @@ export const useDashboardIntegration = () => {
    * Get user BMI and health metrics
    */
   const getHealthMetrics = () => {
-    if (!profile?.personalInfo) {
-      return null;
-    }
+    // Try to get height/weight from bodyMetrics first, then fall back to personalInfo (for backward compatibility)
+    const heightCm = profile?.bodyMetrics?.height_cm || 0;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || 0;
 
-    const { height, weight } = profile.personalInfo;
-    if (!height || !weight) {
-      return null;
-    }
-
-    const heightCm = parseInt(height);
-    const weightKg = parseFloat(weight);
-
-    if (isNaN(heightCm) || isNaN(weightKg)) {
+    if (!heightCm || !weightKg) {
       return null;
     }
 
@@ -515,14 +507,18 @@ export const useDashboardIntegration = () => {
       return null;
     }
 
-    const { height, weight, age, gender, activityLevel } = profile.personalInfo;
-    if (!height || !weight || !age || !gender || !activityLevel) {
+    // Get height/weight from bodyMetrics, age/gender from personalInfo
+    const heightCm = profile?.bodyMetrics?.height_cm || 0;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg || 0;
+    const age = profile.personalInfo?.age;
+    const gender = profile.personalInfo?.gender;
+    const activityLevelValue = (profile.personalInfo as any)?.activityLevel || 'moderate';
+
+    if (!heightCm || !weightKg || !age || !gender) {
       return null;
     }
 
-    const heightCm = parseInt(height);
-    const weightKg = parseFloat(weight);
-    const ageNum = parseInt(age);
+    const ageNum = typeof age === 'number' ? age : parseInt(age.toString());
 
     if (isNaN(heightCm) || isNaN(weightKg) || isNaN(ageNum)) {
       return null;
@@ -533,7 +529,7 @@ export const useDashboardIntegration = () => {
       heightCm,
       ageNum,
       gender as 'male' | 'female',
-      activityLevel as any
+      activityLevelValue as any
     );
   };
 

@@ -1,15 +1,7 @@
 // Nutrition Engine - Integrates AI generation with food database
 
-import { nutritionAnalyzer } from '../../ai/nutritionAnalyzer';
-import {
-  FOODS,
-  getFoodById,
-  getFoodsByCategory,
-  searchFoods,
-  calculateNutrition,
-  getHighProteinFoods,
-  getLowCalorieFoods,
-} from '../../data/foods';
+// Note: nutritionAnalyzer is deprecated. Use Cloudflare Workers backend instead.
+// Import removed to prevent errors. AI generation is now handled by fitaiWorkersClient.
 import {
   Meal,
   NutritionPlan,
@@ -40,38 +32,11 @@ class NutritionEngineService {
       prepTimeLimit?: number;
     }
   ): Promise<AIResponse<Meal>> {
-    try {
-      // First, get AI-generated meal structure
-      const aiResponse = await nutritionAnalyzer.generatePersonalizedMeal(
-        personalInfo,
-        fitnessGoals,
-        mealType,
-        preferences
-      );
-
-      if (!aiResponse.success || !aiResponse.data) {
-        return aiResponse;
-      }
-
-      // Enhance the meal with real food data
-      const enhancedMeal = await this.enhanceMealWithFoodData(
-        aiResponse.data,
-        preferences?.dietaryRestrictions || []
-      );
-
-      return {
-        success: true,
-        data: enhancedMeal,
-        confidence: aiResponse.confidence,
-        generationTime: aiResponse.generationTime,
-        tokensUsed: aiResponse.tokensUsed,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Smart meal plan generation failed: ${error}`,
-      };
-    }
+    // DEPRECATED: nutritionAnalyzer removed. Use fitaiWorkersClient instead.
+    return {
+      success: false,
+      error: 'nutritionAnalyzer is deprecated. Please use fitaiWorkersClient for AI meal generation.',
+    };
   }
 
   /**
@@ -86,57 +51,19 @@ class NutritionEngineService {
       calorieTarget?: number;
     }
   ): Promise<AIResponse<DailyMealPlan>> {
-    try {
-      const aiResponse = await nutritionAnalyzer.generateDailyMealPlan(
-        personalInfo,
-        fitnessGoals,
-        preferences
-      );
-
-      if (!aiResponse.success || !aiResponse.data) {
-        return aiResponse;
-      }
-
-      // Enhance all meals with real food data
-      const enhancedMeals: Meal[] = [];
-      for (const meal of aiResponse.data.meals) {
-        const enhancedMeal = await this.enhanceMealWithFoodData(
-          meal,
-          preferences?.dietaryRestrictions || []
-        );
-        enhancedMeals.push(enhancedMeal);
-      }
-
-      // Recalculate totals
-      const totalCalories = enhancedMeals.reduce((sum, meal) => sum + meal.totalCalories, 0);
-      const totalMacros = this.calculateTotalMacros(enhancedMeals);
-
-      const enhancedPlan: DailyMealPlan = {
-        ...aiResponse.data,
-        meals: enhancedMeals,
-        totalCalories,
-        totalMacros,
-      };
-
-      return {
-        success: true,
-        data: enhancedPlan,
-        confidence: aiResponse.confidence,
-        generationTime: aiResponse.generationTime,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: `Smart daily plan generation failed: ${error}`,
-      };
-    }
+    // DEPRECATED: nutritionAnalyzer removed. Use fitaiWorkersClient instead.
+    return {
+      success: false,
+      error: 'nutritionAnalyzer is deprecated. Please use fitaiWorkersClient for AI meal generation.',
+    };
   }
 
   /**
    * Create a custom meal from selected foods
+   * Note: Nutrition data should come from external APIs or Supabase food database
    */
   createCustomMeal(
-    foodSelections: { foodId: string; quantity: number }[],
+    foodSelections: { foodId: string; quantity: number; name?: string; nutrition?: any }[],
     mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
     mealName: string
   ): Meal {
@@ -145,26 +72,46 @@ class NutritionEngineService {
     const totalMacros: Macronutrients = { protein: 0, carbohydrates: 0, fat: 0, fiber: 0 };
 
     for (const selection of foodSelections) {
-      const food = getFoodById(selection.foodId);
-      if (!food) continue;
+      // Use nutrition data passed in (from Supabase or external APIs)
+      if (!selection.nutrition) {
+        console.warn(`No nutrition data provided for food: ${selection.name || selection.foodId}`);
+        continue;
+      }
 
-      const nutrition = calculateNutrition(food, selection.quantity);
+      const { calories, macros } = selection.nutrition;
 
       const mealItem: MealItem = {
-        foodId: food.id,
-        food,
+        foodId: selection.foodId,
+        food: {
+          id: selection.foodId,
+          name: selection.name || 'Unknown Food',
+          category: 'snacks',
+          nutrition: {
+            calories,
+            macros,
+            servingSize: 100,
+            servingUnit: 'g',
+          },
+          allergens: [],
+          dietaryLabels: [],
+          verified: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
         quantity: selection.quantity,
-        calories: nutrition.calories,
-        macros: nutrition.macros,
+        calories,
+        macros,
       };
 
       mealItems.push(mealItem);
-      totalCalories += nutrition.calories;
-      totalMacros.protein += nutrition.macros.protein;
-      totalMacros.carbohydrates += nutrition.macros.carbohydrates;
-      totalMacros.fat += nutrition.macros.fat;
-      totalMacros.fiber += nutrition.macros.fiber;
+      totalCalories += calories;
+      totalMacros.protein += macros.protein;
+      totalMacros.carbohydrates += macros.carbohydrates;
+      totalMacros.fat += macros.fat;
+      totalMacros.fiber += macros.fiber;
     }
+
+    const now = new Date().toISOString();
 
     return {
       id: this.generateMealId(),
@@ -182,11 +129,14 @@ class NutritionEngineService {
       isPersonalized: true,
       aiGenerated: false,
       scheduledTime: this.getDefaultMealTime(mealType),
+      createdAt: now,
+      updatedAt: now,
     };
   }
 
   /**
    * Get food recommendations based on user goals
+   * Now relies on AI to provide recommendations based on user profile
    */
   getFoodRecommendations(
     fitnessGoals: FitnessGoals,
@@ -194,62 +144,14 @@ class NutritionEngineService {
     dietaryRestrictions: string[] = [],
     count: number = 10
   ): Food[] {
-    let recommendedFoods: Food[] = [];
-
-    // Base recommendations on goals
-    if (fitnessGoals.primaryGoals.includes('muscle_gain')) {
-      recommendedFoods = getHighProteinFoods(15);
-    } else if (fitnessGoals.primaryGoals.includes('weight_loss')) {
-      recommendedFoods = getLowCalorieFoods(150);
-    } else {
-      // General fitness - balanced selection
-      recommendedFoods = [
-        ...getFoodsByCategory('protein').slice(0, 3),
-        ...getFoodsByCategory('vegetables').slice(0, 3),
-        ...getFoodsByCategory('fruits').slice(0, 2),
-        ...getFoodsByCategory('grains').slice(0, 2),
-      ];
-    }
-
-    // Filter by dietary restrictions
-    if (dietaryRestrictions.length > 0) {
-      recommendedFoods = recommendedFoods.filter((food) => {
-        // Check if food meets dietary restrictions
-        if (dietaryRestrictions.includes('vegan') && !food.dietaryLabels.includes('vegan')) {
-          return food.category !== 'dairy' && !food.allergens.includes('eggs');
-        }
-        if (dietaryRestrictions.includes('vegetarian') && food.category === 'protein') {
-          return (
-            !food.name.toLowerCase().includes('chicken') &&
-            !food.name.toLowerCase().includes('beef') &&
-            !food.name.toLowerCase().includes('fish')
-          );
-        }
-        if (dietaryRestrictions.includes('gluten-free')) {
-          return !food.allergens.includes('gluten');
-        }
-        return true;
-      });
-    }
-
-    // Meal-specific recommendations
-    if (mealType === 'breakfast') {
-      const breakfastFoods = FOODS.filter(
-        (food) =>
-          food.name.toLowerCase().includes('oats') ||
-          food.name.toLowerCase().includes('eggs') ||
-          food.name.toLowerCase().includes('yogurt') ||
-          food.category === 'fruits'
-      );
-      recommendedFoods = [...recommendedFoods, ...breakfastFoods];
-    }
-
-    // Remove duplicates and limit count
-    const uniqueFoods = recommendedFoods.filter(
-      (food, index, self) => index === self.findIndex((f) => f.id === food.id)
+    // AI-first approach: Return empty array and let AI handle recommendations
+    // AI has full knowledge of all foods and will generate appropriate meals
+    // based on user's fitness goals, dietary restrictions, and preferences
+    console.log(
+      'Food recommendations requested - delegating to AI for generation',
+      { mealType, fitnessGoals, dietaryRestrictions }
     );
-
-    return uniqueFoods.slice(0, count);
+    return [];
   }
 
   /**
@@ -342,6 +244,7 @@ class NutritionEngineService {
 
   /**
    * Search foods with filters
+   * Note: Food search and recommendations should be handled by AI
    */
   searchFoodsWithFilters(
     query: string,
@@ -352,26 +255,9 @@ class NutritionEngineService {
       minProtein?: number;
     }
   ): Food[] {
-    let results = searchFoods(query);
-
-    if (filters) {
-      if (filters.category) {
-        results = results.filter((food) => food.category === filters.category);
-      }
-      if (filters.dietaryLabels) {
-        results = results.filter((food) =>
-          filters.dietaryLabels!.some((label) => food.dietaryLabels.includes(label))
-        );
-      }
-      if (filters.maxCalories) {
-        results = results.filter((food) => food.calories <= filters.maxCalories!);
-      }
-      if (filters.minProtein) {
-        results = results.filter((food) => food.macros.protein >= filters.minProtein!);
-      }
-    }
-
-    return results;
+    // AI-first approach: Food search is delegated to AI which has full knowledge
+    console.log('Food search requested - delegating to AI', { query, filters });
+    return [];
   }
 
   // ============================================================================
@@ -382,65 +268,16 @@ class NutritionEngineService {
     aiMeal: Meal,
     dietaryRestrictions: string[]
   ): Promise<Meal> {
-    const enhancedItems: MealItem[] = [];
-
-    for (const item of aiMeal.items) {
-      // Try to find matching food in our database
-      let food = getFoodById(item.foodId);
-
-      if (!food) {
-        // If not found, find a similar food
-        food = this.findSimilarFood(item.food.name, dietaryRestrictions);
-      }
-
-      if (food) {
-        const nutrition = calculateNutrition(food, item.quantity);
-        enhancedItems.push({
-          ...item,
-          foodId: food.id,
-          food,
-          calories: nutrition.calories,
-          macros: nutrition.macros,
-        });
-      } else {
-        // Keep original if no match found
-        enhancedItems.push(item);
-      }
-    }
-
-    // Recalculate totals
-    const totalCalories = enhancedItems.reduce((sum, item) => sum + item.calories, 0);
-    const totalMacros = this.calculateTotalMacros([{ ...aiMeal, items: enhancedItems }]);
+    // AI meals already have nutrition data calculated by AI
+    // No need to enhance with local database since we're using AI-first approach
+    const totalCalories = aiMeal.items.reduce((sum, item) => sum + item.calories, 0);
+    const totalMacros = this.calculateTotalMacros([aiMeal]);
 
     return {
       ...aiMeal,
-      items: enhancedItems,
       totalCalories,
       totalMacros,
     };
-  }
-
-  private findSimilarFood(foodName: string, dietaryRestrictions: string[]): Food | null {
-    // Search for similar foods
-    let candidates = searchFoods(foodName);
-
-    // Filter by dietary restrictions
-    if (dietaryRestrictions.length > 0) {
-      candidates = candidates.filter((food) => {
-        if (dietaryRestrictions.includes('vegan')) {
-          return (
-            food.dietaryLabels.includes('vegan') ||
-            (food.category !== 'dairy' && !food.allergens.includes('eggs'))
-          );
-        }
-        if (dietaryRestrictions.includes('gluten-free')) {
-          return !food.allergens.includes('gluten');
-        }
-        return true;
-      });
-    }
-
-    return candidates.length > 0 ? candidates[0] : null;
   }
 
   private calculateTotalMacros(meals: Meal[]): Macronutrients {

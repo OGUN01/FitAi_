@@ -1,7 +1,32 @@
 /**
  * Enhanced Profile Data Types with Versioning and Sync Support
  * Designed for 100% data accuracy and seamless local-remote synchronization
+ *
+ * ✅ CRITICAL: This file does NOT define PersonalInfo, FitnessGoals, DietPreferences, or WorkoutPreferences
+ * Those core types are imported from user.ts to maintain a single source of truth
+ * This file only adds sync-related metadata and utility types
  */
+
+import type {
+  PersonalInfo as BasePersonalInfo,
+  FitnessGoals as BaseFitnessGoals,
+  DietPreferences as BaseDietPreferences,
+  WorkoutPreferences as BaseWorkoutPreferences,
+  BodyMetrics,
+} from './user';
+
+// ============================================================================
+// CORE TYPE RE-EXPORTS (Single source of truth from user.ts)
+// ============================================================================
+export type PersonalInfo = BasePersonalInfo;
+export type FitnessGoals = BaseFitnessGoals;
+export type DietPreferences = BaseDietPreferences;
+export type WorkoutPreferences = BaseWorkoutPreferences;
+export type { BodyMetrics } from './user';
+
+// ============================================================================
+// SYNC METADATA (Profile data management specific)
+// ============================================================================
 
 // Base interface for all data with sync metadata
 export interface SyncableData {
@@ -12,68 +37,6 @@ export interface SyncableData {
   lastSyncAt?: string;
   syncStatus: 'pending' | 'synced' | 'conflict' | 'error';
   source: 'local' | 'remote' | 'merged';
-}
-
-// Enhanced Personal Information with validation
-export interface PersonalInfo extends SyncableData {
-  name: string;
-  email?: string;
-  age: string;
-  gender: 'male' | 'female' | 'other';
-  height: string; // in cm
-  weight: string; // in kg
-  activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
-  profilePicture?: string;
-  phoneNumber?: string;
-  dateOfBirth?: string;
-}
-
-// Enhanced Fitness Goals with detailed tracking
-export interface FitnessGoals extends SyncableData {
-  primaryGoals: string[];
-  targetWeight?: string;
-  timeframe?: string;
-  experience: 'beginner' | 'intermediate' | 'advanced';
-  timeCommitment: string;
-  specificTargets?: {
-    muscleGain?: boolean;
-    weightLoss?: boolean;
-    endurance?: boolean;
-    strength?: boolean;
-    flexibility?: boolean;
-  };
-  medicalConditions?: string[];
-  limitations?: string[];
-}
-
-// Enhanced Diet Preferences with comprehensive options
-export interface DietPreferences extends SyncableData {
-  dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian' | 'keto' | 'paleo' | 'mediterranean';
-  allergies: string[];
-  cuisinePreferences: string[];
-  restrictions: string[];
-  cookingSkill?: 'beginner' | 'intermediate' | 'advanced';
-  mealPrepTime?: 'quick' | 'moderate' | 'extended'; // <30min, 30-60min, >60min
-  dislikes?: string[];
-  preferredMealTimes?: string[];
-  budgetRange?: 'low' | 'medium' | 'high';
-  organicPreference?: boolean;
-  supplementsUsed?: string[];
-}
-
-// Enhanced Workout Preferences with detailed options
-export interface WorkoutPreferences extends SyncableData {
-  workoutType: string[];
-  equipment: string[];
-  location: 'home' | 'gym' | 'outdoor' | 'mixed';
-  timeSlots: string[];
-  intensity: 'low' | 'moderate' | 'high';
-  duration: string;
-  frequency: number; // days per week
-  preferredDays?: string[];
-  restDayPreferences?: string[];
-  injuryHistory?: string[];
-  fitnessTracking?: boolean;
 }
 
 // Body Analysis Data with progress tracking
@@ -114,7 +77,9 @@ export interface UserProfile extends SyncableData {
   lastActiveAt: string;
 }
 
-// Data validation schemas
+// ============================================================================
+// DATA VALIDATION
+// ============================================================================
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
@@ -129,7 +94,9 @@ export interface DataValidationSchema {
   validateUserProfile(data: Partial<UserProfile>): ValidationResult;
 }
 
-// Sync and conflict resolution types
+// ============================================================================
+// SYNC AND CONFLICT RESOLUTION
+// ============================================================================
 export interface SyncConflict {
   id: string;
   field: string;
@@ -155,7 +122,9 @@ export interface SyncResult {
   errors: string[];
 }
 
-// Storage operation types
+// ============================================================================
+// STORAGE OPERATIONS
+// ============================================================================
 export interface StorageOperation {
   type: 'create' | 'update' | 'delete' | 'sync';
   dataType:
@@ -176,17 +145,26 @@ export interface StorageQueue {
   lastProcessedAt?: string;
 }
 
-// Migration types
+// ============================================================================
+// MIGRATION
+// ============================================================================
 export interface MigrationStatus {
   isInProgress: boolean;
   progress: number; // 0-100%
   currentStep: string;
+  step?: string; // Alternative name for currentStep (for compatibility)
   totalSteps: number;
   completedSteps: number;
   errors: string[];
+  message?: string; // Status message
+  isComplete?: boolean; // Whether migration is complete
+  hasErrors?: boolean; // Whether there are errors
   startedAt?: string;
   completedAt?: string;
 }
+
+// Alias for backward compatibility
+export type MigrationProgress = MigrationStatus;
 
 export interface MigrationResult {
   success: boolean;
@@ -199,10 +177,13 @@ export interface MigrationResult {
   };
   conflicts: SyncConflict[];
   errors: string[];
+  warnings?: string[];
   duration: number; // in milliseconds
 }
 
-// Edit context types
+// ============================================================================
+// EDIT CONTEXT
+// ============================================================================
 export interface EditContextData {
   isEditMode: boolean;
   editSection: 'personalInfo' | 'fitnessGoals' | 'dietPreferences' | 'workoutPreferences' | null;
@@ -220,7 +201,9 @@ export interface EditActions {
   validateData: () => ValidationResult;
 }
 
-// Storage configuration
+// ============================================================================
+// STORAGE CONFIGURATION
+// ============================================================================
 export interface StorageConfig {
   enableLocalStorage: boolean;
   enableRemoteStorage: boolean;
@@ -231,6 +214,3 @@ export interface StorageConfig {
   enableConflictResolution: boolean;
   enableOfflineQueue: boolean;
 }
-
-// Note: Core types like PersonalInfo, FitnessGoals, etc. are exported from their respective modules
-// This file focuses on profile data management specific types

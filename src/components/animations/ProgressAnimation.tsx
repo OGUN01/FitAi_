@@ -93,14 +93,9 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
           </View>
 
           {showPercentage && (
-            <Animated.Text style={[styles.percentageText, { color }]}>
-              {animatedValue.interpolate({
-                inputRange: [0, 100],
-                outputRange: [0, progress],
-                extrapolate: 'clamp',
-              })}
-              %
-            </Animated.Text>
+            <Text style={[styles.percentageText, { color }]}>
+              {Math.round(progress)}%
+            </Text>
           )}
         </View>
       </View>

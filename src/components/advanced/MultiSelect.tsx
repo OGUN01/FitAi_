@@ -114,7 +114,11 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
       >
-        <Text style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}>
+        <Text 
+          style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {getDisplayText()}
         </Text>
         <Text style={styles.triggerIcon}>▼</Text>
@@ -127,9 +131,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
           showsHorizontalScrollIndicator={false}
           style={styles.selectedPreview}
         >
-          {getSelectedLabels().map((label, index) => (
-            <View key={index} style={styles.selectedTag}>
-              <Text style={styles.selectedTagText}>{label}</Text>
+          {getSelectedLabels().map((label) => (
+            <View key={`selected-${label}`} style={styles.selectedTag}>
+              <Text style={styles.selectedTagText} numberOfLines={1}>{label}</Text>
             </View>
           ))}
         </ScrollView>
@@ -186,6 +190,8 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                           isSelected && styles.optionTextSelected,
                           isDisabled && styles.optionTextDisabled,
                         ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                       >
                         {option.label}
                       </Text>
@@ -392,6 +398,8 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
+    flex: 1,
+    flexShrink: 1,
   },
 
   optionTextSelected: {

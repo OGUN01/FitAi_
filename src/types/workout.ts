@@ -34,6 +34,10 @@ export interface WorkoutSet {
   intensity?: string; // e.g., "75% 1RM" or "moderate"
   tempo?: string; // e.g., "2-1-2-1" (eccentric-pause-concentric-pause)
   rpe?: number; // Rate of Perceived Exertion (1-10)
+  // Additional properties used in WorkoutSessionScreen
+  id?: string;
+  exerciseName?: string;
+  name?: string; // Alias for exerciseName
 }
 
 export interface Workout {
@@ -62,6 +66,8 @@ export interface Workout {
   safetyConsiderations?: string[];
   expectedAdaptations?: string[];
   periodizationWeek?: number; // For progressive programs
+  // Additional properties used in FitnessScreen
+  dayOfWeek?: string; // 'monday', 'tuesday', etc.
 }
 
 export interface WorkoutPlan {
@@ -118,7 +124,9 @@ export interface CompletedSet {
 // WORKOUT PREFERENCES
 // ============================================================================
 
-export interface WorkoutPreferences {
+// NOTE: Renamed to avoid conflict with WorkoutPreferences from user.ts (database type)
+// This type is for internal workout generation logic only
+export interface WorkoutGenerationPreferences {
   preferredTypes: WorkoutType[];
   equipment: EquipmentType[];
   duration: number; // minutes
@@ -230,7 +238,7 @@ export interface WorkoutGenerationRequest {
   equipment: EquipmentType[];
   targetMuscleGroups: MuscleGroup[];
   goals: WorkoutGoal[];
-  preferences: WorkoutPreferences;
+  preferences: WorkoutGenerationPreferences;
   previousWorkouts?: string[]; // workout IDs to avoid repetition
 }
 

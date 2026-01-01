@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../ui';
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../types/ai';
 import { completionTrackingService } from '../../services/completionTracking';
 import { mealMotivationService } from '../../features/nutrition/MealMotivation';
 
@@ -40,9 +40,9 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
   const isCompleted = mealProgress >= 100;
   
   // Find the ingredient in the meal's items array
-  const ingredientData = meal.items?.find(item => 
-    item.name.toLowerCase().includes(ingredientName.toLowerCase()) ||
-    ingredientName.toLowerCase().includes(item.name.toLowerCase())
+  const ingredientData = meal.items?.find(item =>
+    item.name?.toLowerCase().includes(ingredientName.toLowerCase()) ||
+    ingredientName.toLowerCase().includes(item.name?.toLowerCase() || '')
   );
 
   const handleMarkComplete = async () => {

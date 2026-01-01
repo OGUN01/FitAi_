@@ -1,7 +1,7 @@
 // Premium Meal Motivation System
 // Dynamic messaging without LLM calls - pure client-side logic
 
-import { DayMeal } from '../../ai/weeklyMealGenerator';
+import { DayMeal } from '../../ai';
 import { PersonalInfo, FitnessGoals } from '../../types/user';
 
 export interface MealMotivationConfig {
@@ -28,7 +28,8 @@ class MealMotivationService {
   private getGoalBasedMessage(goals?: FitnessGoals, meal?: DayMeal): string {
     if (!goals) return "";
 
-    const primaryGoal = goals.primaryGoals[0];
+    const primaryGoals = goals.primary_goals || goals.primaryGoals || [];
+    const primaryGoal = primaryGoals[0];
     const protein = Math.round(meal?.totalMacros?.protein || 0);
     const calories = meal?.totalCalories || 0;
 

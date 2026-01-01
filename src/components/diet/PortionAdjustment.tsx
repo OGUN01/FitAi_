@@ -8,10 +8,10 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  PanGestureHandler,
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import { ResponsiveTheme } from '../../utils/constants';
 import { Button, Card } from '../ui';
 import { RecognizedFood } from '../../services/foodRecognitionService';
@@ -134,7 +134,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
     setIsProcessing(true);
 
     try {
-      const adjustedFoods = recognizedFoods.map((food, index) => {
+      const adjustedFoods: RecognizedFood[] = recognizedFoods.map((food, index) => {
         const adjustment = adjustments[index];
         if (!adjustment || adjustment.adjustmentRatio === 1.0) {
           return food; // No adjustment needed
@@ -165,7 +165,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             confidence: Math.max(food.portionSize.confidence - 5, 60), // Slightly reduce confidence for user-adjusted portions
           },
           nutrition: scaledNutrition,
-        };
+        } as RecognizedFood;
       });
 
       onAdjustmentComplete(adjustedFoods);
