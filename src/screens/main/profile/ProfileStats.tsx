@@ -166,6 +166,7 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginTop: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.lg,
   },
   scrollContent: {
     paddingHorizontal: ResponsiveTheme.spacing.md,

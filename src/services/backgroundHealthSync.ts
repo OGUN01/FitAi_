@@ -1,12 +1,19 @@
 import { Platform } from 'react-native';
 import { NativeModulesProxy } from 'expo-modules-core';
-import { healthConnectService } from './healthConnect';
+import { healthConnectService, canUseHealthConnect } from './healthConnect';
 
 const TASK_NAME = 'fitai-healthconnect-background-sync';
 
 export async function registerBackgroundHealthSync(minIntervalSeconds: number = 900): Promise<boolean> {
   if (Platform.OS !== 'android') return false;
   try {
+    // Guard: skip if Health Connect native module is not available
+    const healthConnectAvailable = await canUseHealthConnect();
+    if (!healthConnectAvailable) {
+      console.warn('Background sync unavailable: Health Connect native module not available');
+      return false;
+    }
+
     // Guard: skip if native modules are not bundled (Expo Go / old dev client)
     const hasTaskManager = !!(NativeModulesProxy as any)?.ExpoTaskManager;
     const hasBackgroundFetch = !!(NativeModulesProxy as any)?.ExpoBackgroundFetch;

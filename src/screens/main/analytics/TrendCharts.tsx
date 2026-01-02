@@ -113,40 +113,23 @@ const LineChart: React.FC<{
   const chartAreaWidth = CHART_WIDTH - PADDING_LEFT - PADDING_RIGHT;
   const chartAreaHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
-  // Guard against empty data
-  if (!data || data.length === 0) {
-    return (
-      <View style={styles.emptyChart}>
-        <View style={styles.emptyChartIconContainer}>
-          <LinearGradient
-            colors={['rgba(156, 39, 176, 0.2)', 'rgba(156, 39, 176, 0.05)']}
-            style={styles.emptyChartIconBg}
-          />
-          <Ionicons name="analytics-outline" size={rf(36)} color="rgba(156, 39, 176, 0.6)" />
-        </View>
-        <Text style={styles.emptyChartText}>No weight data recorded</Text>
-        <Text style={styles.emptyChartSubtext}>Log your weight to see your progress journey</Text>
-        <View style={styles.emptyChartHint}>
-          <Ionicons name="add-circle-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.emptyChartHintText}>Tap Profile → Log Weight</Text>
-        </View>
-      </View>
-    );
-  }
+  // Check if we have valid data
+  const hasData = data && data.length > 0;
 
-  // Calculate data bounds with nice padding
-  const values = data.map((d) => d.value);
+  // Calculate data bounds with nice padding (use safe defaults when no data)
+  const values = hasData ? data.map((d) => d.value) : [0];
   const maxVal = Math.max(...values);
   const minVal = Math.min(...values);
   const range = maxVal - minVal || 1;
   const paddingAmount = range * 0.2;
   const chartMax = maxVal + paddingAmount;
   const chartMin = Math.max(0, minVal - paddingAmount);
-  const chartRange = chartMax - chartMin;
+  const chartRange = chartMax - chartMin || 1;
 
   // Calculate coordinates
   const getX = (index: number) => {
-    return PADDING_LEFT + (index / (data.length - 1)) * chartAreaWidth;
+    const divisor = hasData && data.length > 1 ? data.length - 1 : 1;
+    return PADDING_LEFT + (index / divisor) * chartAreaWidth;
   };
 
   const getY = (value: number) => {
@@ -155,6 +138,8 @@ const LineChart: React.FC<{
 
   // Generate smooth bezier curve path
   const generateSmoothPath = () => {
+    if (!hasData) return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight}`;
+    
     if (data.length < 2) {
       const x = getX(0);
       const y = getY(data[0].value);
@@ -181,6 +166,8 @@ const LineChart: React.FC<{
 
   // Generate gradient fill area path
   const generateAreaPath = () => {
+    if (!hasData) return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight} L ${PADDING_LEFT + chartAreaWidth} ${PADDING_TOP + chartAreaHeight} Z`;
+    
     const linePath = generateSmoothPath();
     const lastX = getX(data.length - 1);
     const firstX = getX(0);
@@ -189,14 +176,16 @@ const LineChart: React.FC<{
     return `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
   };
 
-  // Animation
+  // Animation - MUST be called unconditionally (before any early returns)
   useEffect(() => {
-    animationProgress.value = withTiming(1, { 
-      duration: 1200, 
-      easing: Easing.out(Easing.cubic) 
-    });
-    glowIntensity.value = withDelay(800, withSpring(1, { damping: 12 }));
-  }, [data]);
+    if (hasData) {
+      animationProgress.value = withTiming(1, { 
+        duration: 1200, 
+        easing: Easing.out(Easing.cubic) 
+      });
+      glowIntensity.value = withDelay(800, withSpring(1, { damping: 12 }));
+    }
+  }, [data, hasData]);
 
   const animatedLineProps = useAnimatedProps(() => ({
     strokeDashoffset: interpolate(animationProgress.value, [0, 1], [1000, 0]),
@@ -208,6 +197,27 @@ const LineChart: React.FC<{
 
   // Y-axis labels
   const yLabels = [chartMax, (chartMax + chartMin) / 2, chartMin];
+
+  // ✅ EARLY RETURN - Now AFTER all hooks are called
+  if (!hasData) {
+    return (
+      <View style={styles.emptyChart}>
+        <View style={styles.emptyChartIconContainer}>
+          <LinearGradient
+            colors={['rgba(156, 39, 176, 0.2)', 'rgba(156, 39, 176, 0.05)']}
+            style={styles.emptyChartIconBg}
+          />
+          <Ionicons name="analytics-outline" size={rf(36)} color="rgba(156, 39, 176, 0.6)" />
+        </View>
+        <Text style={styles.emptyChartText}>No weight data recorded</Text>
+        <Text style={styles.emptyChartSubtext}>Log your weight to see your progress journey</Text>
+        <View style={styles.emptyChartHint}>
+          <Ionicons name="add-circle-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+          <Text style={styles.emptyChartHintText}>Tap Profile → Log Weight</Text>
+        </View>
+      </View>
+    );
+  }
 
   // Trend calculation
   const trend = data.length >= 2 ? data[data.length - 1].value - data[0].value : 0;

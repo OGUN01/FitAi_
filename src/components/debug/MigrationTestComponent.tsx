@@ -14,7 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { THEME } from '../ui';
-import { dataManager } from '../../services/dataManager';
+import { dataBridge } from '../../services/DataBridge';
 import { migrationManager } from '../../services/migrationManager';
 
 interface TestResult {
@@ -52,17 +52,17 @@ export const MigrationTestComponent: React.FC = () => {
 
   const testHasLocalData = async () => {
     const testUserId = 'test-user-123';
-    dataManager.setUserId(testUserId);
+    dataBridge.setUserId(testUserId);
     
-    const hasData = await dataManager.hasLocalData();
+    const hasData = await dataBridge.hasLocalData();
     return { hasData, userId: testUserId };
   };
 
   const testCreateSampleData = async () => {
     const testUserId = 'test-user-123';
-    dataManager.setUserId(testUserId);
+    dataBridge.setUserId(testUserId);
     
-    const created = await dataManager.createSampleProfileData();
+    const created = await dataBridge.createSampleProfileData();
     return { created, userId: testUserId };
   };
 
@@ -74,16 +74,16 @@ export const MigrationTestComponent: React.FC = () => {
 
   const testProfileDataSummary = async () => {
     const testUserId = 'test-user-123';
-    dataManager.setUserId(testUserId);
+    dataBridge.setUserId(testUserId);
     
-    const summary = await dataManager.getProfileDataSummary();
+    const summary = await dataBridge.getProfileDataSummary();
     return summary;
   };
 
   const testLocalStorageMethods = async () => {
     const testUserId = 'test-user-123';
-    dataManager.setUserId(testUserId);
-    await dataManager.testLocalStorageMethods();
+    dataBridge.setUserId(testUserId);
+    await dataBridge.testLocalStorageMethods();
     return { completed: true, userId: testUserId };
   };
 
@@ -95,9 +95,9 @@ export const MigrationTestComponent: React.FC = () => {
 
   const clearTestData = async () => {
     const testUserId = 'test-user-123';
-    dataManager.setUserId(testUserId);
+    dataBridge.setUserId(testUserId);
     
-    const cleared = await dataManager.clearLocalData();
+    const cleared = await dataBridge.clearLocalData();
     return { cleared, userId: testUserId };
   };
 

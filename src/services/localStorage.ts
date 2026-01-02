@@ -1,4 +1,20 @@
-// Enhanced Local Storage Service for Track B Infrastructure
+/**
+ * Enhanced Local Storage Service
+ *
+ * STATUS: AUXILIARY SERVICE (January 2026)
+ *
+ * This service is used ONLY for auxiliary features:
+ * - Backup/Recovery (encrypted backups)
+ * - Migration history tracking
+ * - Sync scheduling stats
+ * - Sync monitoring metrics
+ *
+ * CORE DATA OPERATIONS use DataBridge instead:
+ * - Profile data (personalInfo, dietPreferences, etc.)
+ * - Workout sessions, meal logs, body measurements
+ *
+ * This service provides encryption and versioning for sensitive backup data.
+ */
 // Provides encrypted, compressed, and versioned local storage with quota management
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

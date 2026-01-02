@@ -3,7 +3,7 @@
 
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { subscriptionService, SubscriptionPlan, SubscriptionStatus } from '../services/subscriptionService';
+import { subscriptionService, SubscriptionPlan, SubscriptionStatus } from '../services/SubscriptionService';
 
 // Helper functions
 const calculatePremiumFeatures = (status: SubscriptionStatus) => {
@@ -132,48 +132,62 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
     // Initialize subscription system
     initialize: async () => {
       set({ isLoading: true });
-      
+
       try {
         console.log('💳 Initializing subscription store...');
-        
+
         // Initialize subscription service
-        const initialized = await subscriptionService.initialize();
-        
-        if (initialized) {
-          // Load current subscription status
-          const status = subscriptionService.getCurrentSubscription();
-          
-          // Load available plans
-          await get().loadPlans();
-          
-          // Update premium features based on status
-          const premiumFeatures = calculatePremiumFeatures(status);
-          
-          // Calculate trial info
-          const trialInfo = calculateTrialInfo(status);
-          
-          set({
-            isInitialized: true,
-            subscriptionStatus: status,
-            premiumFeatures,
-            trialInfo,
-            isLoading: false,
-          });
-          
-          console.log(`✅ Subscription store initialized - Plan: ${status.plan}`);
-        } else {
-          throw new Error('Failed to initialize subscription service');
-        }
-        
+        await subscriptionService.initialize();
+
+        // Load current subscription status
+        const status = subscriptionService.getCurrentSubscription();
+
+        // Load available plans (may be empty in backend validation mode)
+        await get().loadPlans();
+
+        // Update premium features based on status
+        const premiumFeatures = calculatePremiumFeatures(status);
+
+        // Calculate trial info
+        const trialInfo = calculateTrialInfo(status);
+
+        set({
+          isInitialized: true,
+          subscriptionStatus: status,
+          premiumFeatures,
+          trialInfo,
+          isLoading: false,
+        });
+
+        console.log(`✅ Subscription store initialized - Plan: ${status.plan}`);
+
       } catch (error) {
         console.error('❌ Error initializing subscription store:', error);
-        set({ 
+        // Set default free tier on error but still mark as initialized
+        set({
           isLoading: false,
-          // Set default free tier
+          isInitialized: true,
           subscriptionStatus: {
             isActive: false,
             isPremium: false,
             plan: 'free',
+          },
+          premiumFeatures: {
+            unlimitedAI: false,
+            advancedAnalytics: false,
+            customThemes: false,
+            exportData: false,
+            prioritySupport: false,
+            removeAds: false,
+            premiumAchievements: false,
+            advancedWorkouts: false,
+            multiDeviceSync: false,
+            premiumCommunity: false,
+          },
+          trialInfo: {
+            isEligible: true,
+            daysRemaining: 0,
+            hasUsedTrial: false,
           },
         });
       }

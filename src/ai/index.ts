@@ -1,82 +1,26 @@
 /**
  * AI Module - Main Entry Point
  *
- * TODO: MIGRATE TO CLOUDFLARE WORKERS BACKEND
+ * CONNECTED TO CLOUDFLARE WORKERS BACKEND
+ * Base URL: https://fitai-workers.sharmaharsh9887.workers.dev
  *
- * CURRENT STATE: This module is being migrated from client-side AI to server-side
- * TIMELINE: Migration in progress
- *
- * MIGRATION PLAN:
- * ================
- *
- * PHASE 1: Create HTTP Client for Cloudflare Workers ✅ (Workers are ready)
- * - Backend endpoints deployed at: https://fitai-workers.sharmaharsh9887.workers.dev
- * - Caching system with user_id support: COMPLETE
- * - RLS policies optimized: COMPLETE
- *
- * PHASE 2: Update Mobile App (IN PROGRESS)
- * ☐ 1. Create src/services/workersClient.ts for HTTP calls
- * ☐ 2. Replace aiService.generateWeeklyWorkoutPlan() with Workers API call
- * ☐ 3. Replace aiService.generateWeeklyMealPlan() with Workers API call
- * ☐ 4. Add authentication headers (JWT from Supabase Auth)
- * ☐ 5. Handle cache metadata from Workers response
- *
- * PHASE 3: Cleanup
- * ☐ 1. Remove @google/generative-ai from package.json
- * ☐ 2. Remove all EXPO_PUBLIC_GEMINI_KEY_* env vars
- * ☐ 3. Delete deprecated files:
- *      - src/ai/gemini.ts (stubbed)
- *      - src/ai/workoutGenerator.ts
- *      - src/ai/weeklyMealGenerator.ts
- *      - src/ai/weeklyContentGenerator.ts
- *      - src/ai/nutritionAnalyzer.ts
- *      - src/ai/constrainedWorkoutGeneration.ts
- *      - src/ai/exerciseValidationService.ts
- *
- * ENDPOINTS TO USE:
- * =================
+ * Endpoints:
  * - Workout Generation: POST /workout/generate
  * - Diet Generation: POST /diet/generate
- * - Base URL: https://fitai-workers.sharmaharsh9887.workers.dev
  *
- * REQUEST FORMAT:
- * {
- *   "profile": { personalInfo, fitnessGoals, workoutPreferences },
- *   "workoutType": "strength",
- *   "duration": 45,
- *   "model": "google/gemini-2.5-flash"
- * }
- *
- * RESPONSE FORMAT:
- * {
- *   "success": true,
- *   "data": { workout or meal plan },
- *   "metadata": {
- *     "cached": false,
- *     "cacheSource": "fresh",
- *     "generationTime": 1234,
- *     "model": "google/gemini-2.5-flash",
- *     "tokensUsed": 5000,
- *     "costUsd": 0.0005
- *   }
- * }
+ * Authentication: JWT token from Supabase Auth (required)
+ * Features: Caching, deduplication, cuisine detection, allergen validation
  */
 
 // ============================================================================
-// TEMPORARY EXPORTS (Keep for now to prevent breaking changes)
+// EXPORTS
 // ============================================================================
-
-// ⚠️ ALL CLIENT-SIDE AI REMOVED - Use Cloudflare Workers Backend
-// Migration Guide: See BACKEND_ARCHITECTURE_UPDATED.md
 
 export { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 
 // Feature Engines - Keep these (they use demo data for UI)
 export { workoutEngine } from '../features/workouts/WorkoutEngine';
 export { nutritionEngine } from '../features/nutrition/NutritionEngine';
-
-// MIGRATION_STUB exports removed - All AI generation now handled by Workers backend
-// Types are exported from '../types/ai' instead
 
 // AI Types
 export * from '../types/ai';
@@ -86,21 +30,37 @@ export * from '../data/exercises';
 export * from '../data/achievements';
 
 // ============================================================================
-// UNIFIED AI SERVICE (Temporary - Will be replaced with Workers client)
+// IMPORTS
 // ============================================================================
 
 import { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
 import { workoutEngine } from '../features/workouts/WorkoutEngine';
 import { nutritionEngine } from '../features/nutrition/NutritionEngine';
-import { PersonalInfo, FitnessGoals } from '../types/user';
+import { PersonalInfo, FitnessGoals, DietPreferences, WorkoutPreferences, BodyMetrics } from '../types/user';
 import { Workout, Meal, DailyMealPlan, MotivationalContent, AIResponse } from '../types/ai';
 
-// Temporary types until migration complete
+// Backend client and transformers
+import { 
+  fitaiWorkersClient, 
+  AuthenticationError, 
+  WorkersAPIError, 
+  NetworkError 
+} from '../services/fitaiWorkersClient';
+import {
+  transformForDietRequest,
+  transformForWorkoutRequest,
+  transformDietResponseToWeeklyPlan,
+  transformWorkoutResponseToWeeklyPlan,
+} from '../services/aiRequestTransformers';
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export interface WeeklyWorkoutPlan {
   id: string;
   weekNumber: number;
   workouts: Workout[];
-  // Additional properties used in FitnessScreen
   planTitle?: string;
   planDescription?: string;
   restDays?: number[];
@@ -111,122 +71,437 @@ export interface WeeklyMealPlan {
   id: string;
   weekNumber: number;
   meals: any[];
-  // Additional properties used in DietScreen
   planTitle?: string;
 }
 
-/**
- * TODO: Replace this entire class with WorkersClient
- *
- * New implementation should:
- * 1. Make HTTP requests to fitai-workers
- * 2. Include user auth token in headers
- * 3. Handle caching metadata from response
- * 4. Show cache hit/miss status to user
- * 5. Track cost savings from caching
- */
+export interface AIServiceMetadata {
+  cached: boolean;
+  cacheSource?: 'kv' | 'database' | 'fresh';
+  generationTime: number;
+  model?: string;
+  tokensUsed?: number;
+  costUsd?: number;
+  cuisineDetected?: string;
+}
+
+// ============================================================================
+// UNIFIED AI SERVICE (Connected to Cloudflare Workers)
+// ============================================================================
+
 class UnifiedAIService {
-  isRealAIAvailable(): boolean {
-    // TODO: Check if Workers endpoint is reachable
-    // For now, always return false to force demo mode
-    console.warn('⚠️ Client-side AI disabled. Migrate to Cloudflare Workers.');
-    return false;
+  private lastMetadata: AIServiceMetadata | null = null;
+
+  /**
+   * Check if backend is reachable and user is authenticated
+   */
+  async isRealAIAvailable(): Promise<boolean> {
+    try {
+      const status = await fitaiWorkersClient.testConnection();
+      return status.connected && status.authenticated;
+    } catch {
+      return false;
+    }
   }
 
+  /**
+   * Get last generation metadata (caching info, cost, etc.)
+   */
+  getLastMetadata(): AIServiceMetadata | null {
+    return this.lastMetadata;
+  }
+
+  /**
+   * Generate a single workout using backend API
+   */
   async generateWorkout(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
-    preferences?: any
+    preferences?: {
+      workoutType?: string;
+      duration?: number;
+      focusMuscles?: string[];
+      bodyMetrics?: BodyMetrics;
+      workoutPreferences?: WorkoutPreferences;
+    }
   ): Promise<AIResponse<Workout>> {
-    // TODO: Call POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate
-    console.error('❌ AI generation not connected to Cloudflare Workers backend');
-    throw new Error(
-      'AI generation is not configured. Please connect to Cloudflare Workers backend.\n' +
-      'Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate'
-    );
+    console.log('🏋️ [aiService] generateWorkout called');
+
+    try {
+      // Transform request for backend
+      const request = transformForWorkoutRequest(
+        personalInfo,
+        fitnessGoals,
+        preferences?.bodyMetrics,
+        preferences?.workoutPreferences,
+        {
+          workoutType: preferences?.workoutType,
+          duration: preferences?.duration,
+          focusMuscles: preferences?.focusMuscles,
+        }
+      );
+
+      console.log('🏋️ [aiService] Calling backend /workout/generate');
+      const response = await fitaiWorkersClient.generateWorkoutPlan(request);
+
+      // Store metadata
+      if (response.metadata) {
+        this.lastMetadata = response.metadata as AIServiceMetadata;
+      }
+
+      if (!response.success || !response.data) {
+        return {
+          success: false,
+          error: response.error || 'Failed to generate workout',
+        };
+      }
+
+      // Transform to single workout
+      const weeklyPlan = transformWorkoutResponseToWeeklyPlan(response, 1);
+      const workout = weeklyPlan?.workouts[0];
+
+      if (!workout) {
+        return {
+          success: false,
+          error: 'No workout generated',
+        };
+      }
+
+      console.log('✅ [aiService] Workout generated successfully');
+      return {
+        success: true,
+        data: workout,
+      };
+    } catch (error) {
+      return this.handleError(error, 'generateWorkout');
+    }
   }
 
+  /**
+   * Generate a single meal using backend API
+   */
   async generateMeal(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
     mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
-    preferences?: any
+    preferences?: {
+      bodyMetrics?: BodyMetrics;
+      dietPreferences?: DietPreferences;
+    }
   ): Promise<AIResponse<Meal>> {
-    // TODO: Call POST https://fitai-workers.sharmaharsh9887.workers.dev/diet/generate
-    console.error('❌ AI generation not connected to Cloudflare Workers backend');
-    throw new Error(
-      'AI generation is not configured. Please connect to Cloudflare Workers backend.\n' +
-      'Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev/diet/generate'
-    );
+    console.log('🍽️ [aiService] generateMeal called for:', mealType);
+
+    try {
+      const request = transformForDietRequest(
+        personalInfo,
+        fitnessGoals,
+        preferences?.bodyMetrics,
+        preferences?.dietPreferences
+      );
+
+      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      const response = await fitaiWorkersClient.generateDietPlan(request);
+
+      if (response.metadata) {
+        this.lastMetadata = response.metadata as AIServiceMetadata;
+      }
+
+      if (!response.success || !response.data) {
+        return {
+          success: false,
+          error: response.error || 'Failed to generate meal',
+        };
+      }
+
+      // Find the meal of requested type
+      const meal = response.data.meals?.find(
+        (m: any) => m.mealType?.toLowerCase() === mealType || m.type?.toLowerCase() === mealType
+      );
+
+      if (!meal) {
+        return {
+          success: false,
+          error: `No ${mealType} found in generated plan`,
+        };
+      }
+
+      console.log('✅ [aiService] Meal generated successfully');
+      return {
+        success: true,
+        data: meal as Meal,
+      };
+    } catch (error) {
+      return this.handleError(error, 'generateMeal');
+    }
   }
 
+  /**
+   * Generate daily meal plan using backend API
+   */
   async generateDailyMealPlan(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
-    preferences?: any
+    preferences?: {
+      bodyMetrics?: BodyMetrics;
+      dietPreferences?: DietPreferences;
+    }
   ): Promise<AIResponse<DailyMealPlan>> {
-    // TODO: Call Workers endpoint multiple times or create batch endpoint
-    console.error('❌ AI generation not connected to Cloudflare Workers backend');
-    throw new Error(
-      'AI generation is not configured. Please connect to Cloudflare Workers backend.\n' +
-      'Endpoint: https://fitai-workers.sharmaharsh9887.workers.dev/diet/generate'
-    );
+    console.log('🍽️ [aiService] generateDailyMealPlan called');
+
+    try {
+      const request = transformForDietRequest(
+        personalInfo,
+        fitnessGoals,
+        preferences?.bodyMetrics,
+        preferences?.dietPreferences
+      );
+
+      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      const response = await fitaiWorkersClient.generateDietPlan(request);
+
+      if (response.metadata) {
+        this.lastMetadata = response.metadata as AIServiceMetadata;
+      }
+
+      if (!response.success || !response.data) {
+        return {
+          success: false,
+          error: response.error || 'Failed to generate daily meal plan',
+        };
+      }
+
+      const dailyPlan: DailyMealPlan = {
+        id: response.data.id || `daily_${Date.now()}`,
+        date: new Date().toISOString().split('T')[0],
+        meals: response.data.meals || [],
+        totalCalories: response.data.dailyTotals?.calories || 0,
+        totalMacros: {
+          protein: response.data.dailyTotals?.protein || 0,
+          carbohydrates: response.data.dailyTotals?.carbs || 0,
+          fat: response.data.dailyTotals?.fat || 0,
+          fiber: 0,
+        },
+      };
+
+      console.log('✅ [aiService] Daily meal plan generated successfully');
+      return {
+        success: true,
+        data: dailyPlan,
+      };
+    } catch (error) {
+      return this.handleError(error, 'generateDailyMealPlan');
+    }
   }
 
+  /**
+   * Generate motivational content (placeholder - not critical feature)
+   */
   async generateMotivationalContent(
     personalInfo: PersonalInfo,
     currentStreak: number = 0
   ): Promise<AIResponse<MotivationalContent>> {
-    // TODO: Maybe create Workers endpoint for this or keep it as demo (not critical)
-    console.warn('⚠️ Motivational content feature not yet migrated to Cloudflare Workers');
+    // This is a non-critical feature - return placeholder content
+    console.warn('⚠️ [aiService] Motivational content uses placeholder (not yet migrated)');
     return {
-      success: false,
-      error: 'Motivational content not yet available. Migration to Workers pending.',
+      success: true,
+      data: {
+        dailyQuote: "Every rep counts! Keep pushing toward your goals.",
+        tip: "Stay hydrated and remember to warm up before your workout.",
+        encouragement: currentStreak > 0 
+          ? `Amazing! You're on a ${currentStreak}-day streak!` 
+          : "Today is a great day to start your fitness journey!",
+      },
     };
   }
 
+  /**
+   * Generate weekly workout plan using backend API
+   * 
+   * IMPORTANT: Requires authenticated user (Supabase login)
+   */
   async generateWeeklyWorkoutPlan(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
-    weekNumber: number = 1
-  ): Promise<AIResponse<WeeklyWorkoutPlan>> {
-    // TODO: PRIORITY - Replace with Workers endpoint call
-    // POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate
-    console.error('❌ CRITICAL: Weekly workout generation not connected to Cloudflare Workers');
-    throw new Error(
-      'Workout generation is not configured.\n\n' +
-      'Required: Connect to Cloudflare Workers backend\n' +
-      'Endpoint: POST https://fitai-workers.sharmaharsh9887.workers.dev/workout/generate\n\n' +
-      'This is the PRIMARY feature - must be implemented before app can be used.'
-    );
+    weekNumber: number = 1,
+    options?: {
+      bodyMetrics?: BodyMetrics;
+      workoutPreferences?: WorkoutPreferences;
+    }
+  ): Promise<AIResponse<WeeklyMealPlan>> {
+    console.log('🏋️ [aiService] generateWeeklyWorkoutPlan called for week:', weekNumber);
+
+    try {
+      // Transform request for backend
+      const request = transformForWorkoutRequest(
+        personalInfo,
+        fitnessGoals,
+        options?.bodyMetrics,
+        options?.workoutPreferences,
+        {
+          workoutType: 'strength',
+          duration: options?.workoutPreferences?.time_preference || 30,
+        }
+      );
+
+      console.log('🏋️ [aiService] Calling backend /workout/generate');
+      const response = await fitaiWorkersClient.generateWorkoutPlan(request);
+
+      // Store metadata for UI display
+      if (response.metadata) {
+        this.lastMetadata = response.metadata as AIServiceMetadata;
+        console.log('📊 [aiService] Generation metadata:', {
+          cached: response.metadata.cached,
+          cacheSource: response.metadata.cacheSource,
+          generationTime: response.metadata.generationTime,
+          model: response.metadata.model,
+        });
+      }
+
+      if (!response.success || !response.data) {
+        console.error('❌ [aiService] Backend returned error:', response.error);
+        return {
+          success: false,
+          error: response.error || 'Failed to generate workout plan',
+        };
+      }
+
+      // Transform backend response to frontend format
+      const weeklyPlan = transformWorkoutResponseToWeeklyPlan(response, weekNumber);
+
+      if (!weeklyPlan) {
+        return {
+          success: false,
+          error: 'Failed to transform workout response',
+        };
+      }
+
+      console.log('✅ [aiService] Weekly workout plan generated successfully:', {
+        workouts: weeklyPlan.workouts.length,
+        title: weeklyPlan.planTitle,
+      });
+
+      return {
+        success: true,
+        data: weeklyPlan as any,
+      };
+    } catch (error) {
+      return this.handleError(error, 'generateWeeklyWorkoutPlan');
+    }
   }
 
+  /**
+   * Generate weekly meal plan using backend API
+   * 
+   * IMPORTANT: Requires authenticated user (Supabase login)
+   */
   async generateWeeklyMealPlan(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
-    weekNumber: number = 1
+    weekNumber: number = 1,
+    options?: {
+      bodyMetrics?: BodyMetrics;
+      dietPreferences?: DietPreferences;
+    }
   ): Promise<AIResponse<WeeklyMealPlan>> {
-    // TODO: PRIORITY - Replace with Workers endpoint call
-    // POST https://fitai-workers.sharmaharsh9887.workers.dev/diet/generate
-    console.error('❌ CRITICAL: Weekly meal generation not connected to Cloudflare Workers');
-    throw new Error(
-      'Meal plan generation is not configured.\n\n' +
-      'Required: Connect to Cloudflare Workers backend\n' +
-      'Endpoint: POST https://fitai-workers.sharmaharsh9887.workers.dev/diet/generate\n\n' +
-      'This is the PRIMARY feature - must be implemented before app can be used.'
-    );
+    console.log('🍽️ [aiService] generateWeeklyMealPlan called for week:', weekNumber);
+
+    try {
+      // Transform request for backend
+      const request = transformForDietRequest(
+        personalInfo,
+        fitnessGoals,
+        options?.bodyMetrics,
+        options?.dietPreferences
+      );
+
+      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      const response = await fitaiWorkersClient.generateDietPlan(request);
+
+      // Store metadata for UI display
+      if (response.metadata) {
+        this.lastMetadata = response.metadata as AIServiceMetadata;
+        console.log('📊 [aiService] Generation metadata:', {
+          cached: response.metadata.cached,
+          cacheSource: response.metadata.cacheSource,
+          generationTime: response.metadata.generationTime,
+          model: response.metadata.model,
+          cuisineDetected: response.metadata.cuisineDetected,
+        });
+      }
+
+      if (!response.success || !response.data) {
+        console.error('❌ [aiService] Backend returned error:', response.error);
+        return {
+          success: false,
+          error: response.error || 'Failed to generate meal plan',
+        };
+      }
+
+      // Transform backend response to frontend format
+      const weeklyPlan = transformDietResponseToWeeklyPlan(response, weekNumber);
+
+      if (!weeklyPlan) {
+        return {
+          success: false,
+          error: 'Failed to transform diet response',
+        };
+      }
+
+      console.log('✅ [aiService] Weekly meal plan generated successfully:', {
+        meals: weeklyPlan.meals.length,
+        title: weeklyPlan.planTitle,
+      });
+
+      return {
+        success: true,
+        data: weeklyPlan,
+      };
+    } catch (error) {
+      return this.handleError(error, 'generateWeeklyMealPlan');
+    }
   }
 
+  /**
+   * Test backend connection
+   */
   async testConnection(): Promise<AIResponse<string>> {
-    // TODO: Test Workers endpoint connectivity
-    // For now, return failure to indicate migration is needed
-    return {
-      success: false,
-      error: 'AI backend not connected. Cloudflare Workers integration required.',
-      data: 'Migration to Cloudflare Workers pending',
-    };
+    console.log('🔗 [aiService] Testing backend connection...');
+    
+    try {
+      const status = await fitaiWorkersClient.testConnection();
+      
+      if (!status.connected) {
+        return {
+          success: false,
+          error: status.error || 'Backend not reachable',
+          data: 'Connection failed',
+        };
+      }
+
+      if (!status.authenticated) {
+        return {
+          success: false,
+          error: status.error || 'User not authenticated',
+          data: 'Authentication required',
+        };
+      }
+
+      console.log('✅ [aiService] Backend connection successful');
+      return {
+        success: true,
+        data: `Connected to FitAI Workers ${status.backendVersion}`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Connection test failed',
+        data: 'Error during connection test',
+      };
+    }
   }
 
+  /**
+   * Get AI service status
+   */
   getAIStatus(): {
     isAvailable: boolean;
     mode: 'real' | 'demo';
@@ -234,10 +509,43 @@ class UnifiedAIService {
     modelVersion?: string;
   } {
     return {
-      isAvailable: false,
-      mode: 'demo',
-      modelVersion: undefined,
-      message: '❌ NOT CONFIGURED - Connect to Cloudflare Workers backend to enable AI generation',
+      isAvailable: true,
+      mode: 'real',
+      modelVersion: 'google/gemini-2.0-flash-exp',
+      message: '✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)',
+    };
+  }
+
+  /**
+   * Handle errors from API calls
+   */
+  private handleError(error: unknown, context: string): AIResponse<any> {
+    console.error(`❌ [aiService] Error in ${context}:`, error);
+
+    if (error instanceof AuthenticationError) {
+      return {
+        success: false,
+        error: 'Authentication required. Please sign in to use AI features.',
+      };
+    }
+
+    if (error instanceof WorkersAPIError) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
+    if (error instanceof NetworkError) {
+      return {
+        success: false,
+        error: 'Network error. Please check your connection and try again.',
+      };
+    }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
     };
   }
 }

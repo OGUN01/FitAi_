@@ -120,41 +120,48 @@ class SubscriptionService {
    * Initialize the subscription service
    */
   async initialize(): Promise<boolean> {
-    // 🚧 DISABLED - Use backend validation
-    console.log('ℹ️ Subscription service is disabled. Use Cloudflare Workers backend.');
-    return false;
-
-    /* DISABLED - Use Cloudflare Workers backend instead
     if (this.isInitialized) return true;
 
     try {
-      console.log('💳 Initializing Premium Subscription Service...');
+      console.log('💳 Initializing Subscription Service (backend validation mode)...');
 
-      // Initialize IAP connection
-      const result = await initConnection();
-      console.log('✅ IAP Connection established:', result);
-
-      // Set up purchase listeners
-      this.setupPurchaseListeners();
-
-      // Load subscription products
-      await this.loadProducts();
-
-      // Load user's current subscription status
+      // Load user's current subscription status from local storage
       await this.loadSubscriptionStatus();
 
-      // Restore purchases if needed
-      await this.restorePurchases();
+      // Initialize with default free tier if no subscription found
+      if (!this.currentSubscription) {
+        this.currentSubscription = {
+          userId: 'current_user',
+          status: {
+            isActive: false,
+            isPremium: false,
+            plan: 'free',
+          },
+          lastUpdated: new Date().toISOString(),
+          purchaseHistory: [],
+        };
+      }
 
       this.isInitialized = true;
-      console.log('🎉 Subscription service initialized successfully!');
+      console.log('✅ Subscription service initialized successfully (backend validation mode)');
 
       return true;
     } catch (error) {
       console.error('❌ Failed to initialize subscription service:', error);
-      return false;
+      // Even on error, initialize with default free tier to prevent app crashes
+      this.currentSubscription = {
+        userId: 'current_user',
+        status: {
+          isActive: false,
+          isPremium: false,
+          plan: 'free',
+        },
+        lastUpdated: new Date().toISOString(),
+        purchaseHistory: [],
+      };
+      this.isInitialized = true;
+      return true;
     }
-    */
   }
 
   /**

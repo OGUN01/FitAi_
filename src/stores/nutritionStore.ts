@@ -5,7 +5,7 @@ import { WeeklyMealPlan, DayMeal } from '../ai';
 import { SyncStatus } from '../types/localData';
 import { Meal } from '../types/ai';
 import { crudOperations } from '../services/crudOperations';
-import { dataManager } from '../services/dataManager';
+import { dataBridge } from '../services/DataBridge';
 import { offlineService } from '../services/offline';
 import { useAuthStore } from '../stores/authStore';
 import { supabase } from '../services/supabase';

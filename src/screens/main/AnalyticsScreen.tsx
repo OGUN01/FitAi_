@@ -62,17 +62,18 @@ export const AnalyticsScreen: React.FC = () => {
     }
   }, [isInitialized, initializeAnalytics]);
 
-  // Calculate metrics data
+  // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo(() => {
-    // Weight data
-    const currentWeight = healthMetrics?.weight || profile?.personalInfo?.weight;
+    // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
+    const currentWeight = calculatedMetrics?.currentWeightKg || healthMetrics?.weight || profile?.personalInfo?.weight;
+    const targetWeight = calculatedMetrics?.targetWeightKg;
     
     // Calculate completed workouts this period
     const completedWorkouts = Object.values(workoutProgress).filter(
       (p) => p.progress === 100
     ).length;
 
-    // Calculate calories burned
+    // Calculate calories burned from workouts
     const totalCaloriesBurned = weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
       const progress = workoutProgress[workout.id];
       if (progress && progress.progress === 100) {
@@ -81,17 +82,24 @@ export const AnalyticsScreen: React.FC = () => {
       return total;
     }, 0) || 0;
 
+    // Calculate weight change toward goal
+    const weightChange = currentWeight && targetWeight 
+      ? Number((targetWeight - currentWeight).toFixed(1))
+      : undefined;
+
     return {
       weight: currentWeight ? {
         current: currentWeight,
-        change: -0.5, // Would come from historical data
-        trend: 'down' as const,
+        change: weightChange ?? 0,
+        trend: weightChange && weightChange < 0 ? 'down' as const : weightChange && weightChange > 0 ? 'up' as const : 'stable' as const,
+        target: targetWeight,
       } : undefined,
-      calories: totalCaloriesBurned > 0 ? {
+      calories: {
         burned: totalCaloriesBurned,
-        change: 15,
-        trend: 'up' as const,
-      } : undefined,
+        target: calculatedMetrics?.dailyCalories || undefined,
+        change: totalCaloriesBurned > 0 ? 15 : 0,
+        trend: totalCaloriesBurned > 0 ? 'up' as const : 'stable' as const,
+      },
       workouts: {
         count: completedWorkouts,
         change: completedWorkouts > 0 ? 3 : 0,
@@ -101,8 +109,13 @@ export const AnalyticsScreen: React.FC = () => {
         days: currentStreak || 0,
         isActive: (currentStreak || 0) > 0,
       },
+      // Add onboarding calculated metrics for display
+      bmi: calculatedMetrics?.calculatedBMI,
+      bmr: calculatedMetrics?.calculatedBMR,
+      tdee: calculatedMetrics?.calculatedTDEE,
+      dailyWater: calculatedMetrics?.dailyWaterML,
     };
-  }, [healthMetrics, profile, weeklyWorkoutPlan, workoutProgress, currentStreak]);
+  }, [healthMetrics, profile, weeklyWorkoutPlan, workoutProgress, currentStreak, calculatedMetrics]);
 
   // Generate chart data based on period
   const chartData = useMemo(() => {
@@ -130,18 +143,20 @@ export const AnalyticsScreen: React.FC = () => {
       return { label, value: count };
     });
 
-    // Use calculated metrics from onboarding - NO HARDCODED FALLBACKS
-    const baseWeight = calculatedMetrics?.currentWeightKg ?? metricsData.weight?.current ?? null;
+    // NO MOCK DATA - Only show actual tracked data
+    // Weight and calorie history would come from a dedicated tracking store in production
+    // For now, return undefined to show empty states until user logs actual data
     
     return {
-      weightData: baseWeight ? labels.map((label, i) => ({
-        label,
-        value: baseWeight + (Math.random() - 0.5) * 2,
-      })) : undefined,
-      calorieData: metricsData.calories ? labels.map((label) => ({
-        label,
-        value: Math.floor(Math.random() * 500 + 300),
-      })) : undefined,
+      // Weight data - only show if user has logged weight entries
+      // TODO: Replace with actual weight history from weightTrackingStore
+      weightData: undefined,
+      
+      // Calorie data - only show if user has logged meals/calories
+      // TODO: Replace with actual calorie history from nutritionStore
+      calorieData: undefined,
+      
+      // Workout data - shows actual completed workouts
       workoutData: workoutData.some(d => d.value > 0) ? workoutData : undefined,
     };
   }, [selectedPeriod, weeklyWorkoutPlan, workoutProgress, metricsData, calculatedMetrics]);

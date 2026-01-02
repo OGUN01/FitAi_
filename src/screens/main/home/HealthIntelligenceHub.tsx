@@ -166,54 +166,100 @@ const MetricItem: React.FC<{
 };
 
 export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
-  sleepHours = 0,
-  sleepQuality = 'fair',
+  sleepHours,
+  sleepQuality,
   restingHeartRate,
   hrTrend,
-  steps = 0,
+  steps,
   stepsGoal = 10000,
-  activeCalories = 0,
+  activeCalories,
   age = 30,
   onPress,
   onDetailPress,
 }) => {
-  // Calculate recovery score (composite metric)
+  // Check if we have ANY real health data
+  const hasRealData = useMemo(() => {
+    return (
+      (sleepHours !== undefined && sleepHours > 0) ||
+      restingHeartRate !== undefined ||
+      (steps !== undefined && steps > 0) ||
+      (activeCalories !== undefined && activeCalories > 0)
+    );
+  }, [sleepHours, restingHeartRate, steps, activeCalories]);
+
+  // Calculate recovery score ONLY if we have real data
   const recoveryScore = useMemo(() => {
+    // If no real data, return null to show placeholder
+    if (!hasRealData) return null;
+
     let score = 50; // Base score
 
     // Sleep contribution (40% of score)
-    const sleepScore = Math.min(sleepHours / 8, 1) * 40;
-    if (sleepQuality === 'excellent') score += sleepScore * 1.2;
-    else if (sleepQuality === 'good') score += sleepScore;
-    else if (sleepQuality === 'fair') score += sleepScore * 0.7;
+    const actualSleepHours = sleepHours || 0;
+    const actualSleepQuality = sleepQuality || 'fair';
+    const sleepScore = Math.min(actualSleepHours / 8, 1) * 40;
+    if (actualSleepQuality === 'excellent') score += sleepScore * 1.2;
+    else if (actualSleepQuality === 'good') score += sleepScore;
+    else if (actualSleepQuality === 'fair') score += sleepScore * 0.7;
     else score += sleepScore * 0.4;
 
     // Heart rate contribution (30% of score)
     if (restingHeartRate) {
-      const maxHR = 220 - age;
       const idealRestingHR = 60;
       const hrDiff = Math.abs(restingHeartRate - idealRestingHR);
       const hrScore = Math.max(0, 30 - hrDiff);
       score += hrScore;
-    } else {
-      score += 15; // Default if no HR data
     }
 
     // Activity contribution (30% of score)
-    const activityScore = Math.min(steps / stepsGoal, 1) * 30;
+    const actualSteps = steps || 0;
+    const activityScore = Math.min(actualSteps / stepsGoal, 1) * 30;
     score += activityScore * 0.7; // Not overdoing it is good for recovery
 
     return Math.round(Math.min(Math.max(score, 0), 100));
-  }, [sleepHours, sleepQuality, restingHeartRate, steps, stepsGoal, age]);
+  }, [sleepHours, sleepQuality, restingHeartRate, steps, stepsGoal, hasRealData]);
 
-  const { label: recoveryLabel, color: recoveryColor } = getRecoveryColor(recoveryScore);
-  const sleepColor = getSleepColor(sleepQuality);
+  const { label: recoveryLabel, color: recoveryColor } = recoveryScore !== null 
+    ? getRecoveryColor(recoveryScore) 
+    : { label: 'No Data', color: ResponsiveTheme.colors.textMuted };
+  const sleepColor = getSleepColor(sleepQuality || 'fair');
   const ringSize = rw(100);
 
   // Format sleep quality
-  const formatSleepQuality = (quality: string) => {
+  const formatSleepQuality = (quality?: string) => {
+    if (!quality) return '--';
     return quality.charAt(0).toUpperCase() + quality.slice(1);
   };
+
+  // Show placeholder when no real health data is available
+  if (!hasRealData) {
+    return (
+      <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
+        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <Ionicons name="pulse" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+              <Text style={styles.headerTitle}>Health Intelligence</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: `${ResponsiveTheme.colors.textMuted}20` }]}>
+              <View style={[styles.statusDot, { backgroundColor: ResponsiveTheme.colors.textMuted }]} />
+              <Text style={[styles.statusText, { color: ResponsiveTheme.colors.textMuted }]}>No Data</Text>
+            </View>
+          </View>
+
+          {/* Placeholder Content */}
+          <View style={styles.placeholderContent}>
+            <Ionicons name="fitness-outline" size={rf(48)} color={ResponsiveTheme.colors.textMuted} />
+            <Text style={styles.placeholderTitle}>Connect Health Data</Text>
+            <Text style={styles.placeholderSubtitle}>
+              Build a development version to sync health data from Health Connect and see your recovery metrics.
+            </Text>
+          </View>
+        </GlassCard>
+      </AnimatedPressable>
+    );
+  }
 
   return (
     <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
@@ -233,7 +279,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
         {/* Main Content */}
         <View style={styles.content}>
           {/* Recovery Ring */}
-          <RecoveryRing score={recoveryScore} size={ringSize} />
+          <RecoveryRing score={recoveryScore ?? 0} size={ringSize} />
 
           {/* Metrics Grid */}
           <View style={styles.metricsGrid}>
@@ -250,7 +296,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
             <MetricItem
               icon="moon"
               label="Sleep"
-              value={sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
+              value={sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
               subvalue="hrs"
               color="#667eea"
               onPress={() => onDetailPress?.('sleep')}
@@ -271,11 +317,11 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
         <View style={styles.insightContainer}>
           <Ionicons name="bulb-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
           <Text style={styles.insightText}>
-            {recoveryScore >= 80
+            {(recoveryScore ?? 0) >= 80
               ? "You're well recovered. Great day for intense training!"
-              : recoveryScore >= 60
+              : (recoveryScore ?? 0) >= 60
               ? "Moderate recovery. Consider a balanced workout."
-              : recoveryScore >= 40
+              : (recoveryScore ?? 0) >= 40
               ? "Low recovery. Focus on light activity today."
               : "Rest recommended. Your body needs recovery."}
           </Text>
@@ -405,6 +451,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(16),
+  },
+  // Placeholder styles when no health data available
+  placeholderContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ResponsiveTheme.spacing.xl,
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  placeholderTitle: {
+    fontSize: rf(16),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+  placeholderSubtitle: {
+    fontSize: rf(12),
+    fontWeight: '400',
+    color: ResponsiveTheme.colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    lineHeight: rf(18),
   },
 });
 

@@ -4,7 +4,7 @@ import { useOffline } from '../hooks/useOffline';
 import { PersonalInfo as UserPersonalInfo, FitnessGoals as UserFitnessGoals, OnboardingData } from '../types/user';
 import { PersonalInfo as ProfilePersonalInfo, FitnessGoals as ProfileFitnessGoals } from '../types/profileData';
 import { api, supabase } from '../services/api';
-import { dataManager } from '../services/dataManager';
+import { dataBridge } from '../services/DataBridge';
 
 /**
  * Integration utilities for connecting existing UI components with the new backend
@@ -45,8 +45,8 @@ export const useOnboardingIntegration = () => {
       const currentUserId = getUserId();
 
       // ALWAYS save to local storage first (for both guest and authenticated users)
-      dataManager.setUserId(currentUserId);
-      const localSaveSuccess = await dataManager.savePersonalInfo(personalInfo);
+      dataBridge.setUserId(currentUserId);
+      const localSaveSuccess = await dataBridge.savePersonalInfo(personalInfo);
 
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save personal info locally');
@@ -147,8 +147,8 @@ export const useOnboardingIntegration = () => {
       const currentUserId = getUserId();
 
       // ALWAYS save to local storage first (for both guest and authenticated users)
-      dataManager.setUserId(currentUserId);
-      const localSaveSuccess = await dataManager.saveFitnessGoals(fitnessGoals);
+      dataBridge.setUserId(currentUserId);
+      const localSaveSuccess = await dataBridge.saveFitnessGoals(fitnessGoals);
 
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save fitness goals locally');
@@ -225,8 +225,8 @@ export const useOnboardingIntegration = () => {
       };
 
       // ALWAYS save to local storage first (for both guest and authenticated users)
-      dataManager.setUserId(currentUserId);
-      const localSaveSuccess = await dataManager.saveDietPreferences(dietPrefsWithDefaults);
+      dataBridge.setUserId(currentUserId);
+      const localSaveSuccess = await dataBridge.saveDietPreferences(dietPrefsWithDefaults);
 
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save diet preferences locally');
@@ -279,8 +279,8 @@ export const useOnboardingIntegration = () => {
       const currentUserId = getUserId();
 
       // ALWAYS save to local storage first (for both guest and authenticated users)
-      dataManager.setUserId(currentUserId);
-      const localSaveSuccess = await dataManager.saveWorkoutPreferences(workoutPreferences);
+      dataBridge.setUserId(currentUserId);
+      const localSaveSuccess = await dataBridge.saveWorkoutPreferences(workoutPreferences);
 
       if (!localSaveSuccess) {
         console.warn('⚠️ Failed to save workout preferences locally');
@@ -636,7 +636,7 @@ export const initializeBackend = async () => {
     // Ensure local data layer is ready before any reads
     try {
       // Initialize the Data Manager directly
-      await (await import('../services/dataManager')).dataManager.initialize();
+      await (await import('../services/DataBridge')).dataBridge.initialize();
     } catch (dmErr) {
       console.warn('Data Manager initialization warning:', dmErr);
     }

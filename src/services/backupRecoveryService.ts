@@ -2,7 +2,7 @@
 // Provides automatic local data backup, cloud backup to Supabase storage, and data recovery mechanisms
 
 import { enhancedLocalStorage } from './localStorage';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import { validationService } from '../utils/validation';
 import { LocalStorageSchema } from '../types/localData';
 
@@ -206,7 +206,7 @@ export class BackupRecoveryService {
       this.updateStatus({ isBackingUp: true });
 
       // Get data to backup
-      const data = await dataManager.exportAllData();
+      const data = await dataBridge.exportAllData();
       if (!data) {
         throw new Error('No data available for backup');
       }
@@ -562,27 +562,27 @@ export class BackupRecoveryService {
 
     if (options.recoveryType === 'full') {
       // Full recovery - replace all data
-      await dataManager.importAllData(backup.data);
+      await dataBridge.importAllData(backup.data);
       recoveredItems.total = 1;
     } else {
       // Selective recovery
       if (options.selectedDataTypes?.includes('user') && backup.data.user) {
-        await dataManager.importUserData(backup.data.user);
+        await dataBridge.importUserData(backup.data.user);
         recoveredItems.users = 1;
       }
 
       if (options.selectedDataTypes?.includes('fitness') && backup.data.fitness) {
-        await dataManager.importFitnessData(backup.data.fitness);
+        await dataBridge.importFitnessData(backup.data.fitness);
         recoveredItems.workouts = backup.data.fitness.workouts?.length || 0;
       }
 
       if (options.selectedDataTypes?.includes('nutrition') && backup.data.nutrition) {
-        await dataManager.importNutritionData(backup.data.nutrition);
+        await dataBridge.importNutritionData(backup.data.nutrition);
         recoveredItems.meals = backup.data.nutrition.meals?.length || 0;
       }
 
       if (options.selectedDataTypes?.includes('progress') && backup.data.progress) {
-        await dataManager.importProgressData(backup.data.progress);
+        await dataBridge.importProgressData(backup.data.progress);
         recoveredItems.progress = backup.data.progress.measurements?.length || 0;
       }
 

@@ -148,28 +148,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     return userProfile?.personalInfo?.age || profile?.personalInfo?.age || 30;
   }, [userProfile, profile]);
 
-  // Weight data for body progress
+  // Weight data for body progress - use calculatedMetrics from onboarding
   const weightData = useMemo(() => {
-    const currentWeight = healthMetrics?.weight || userProfile?.personalInfo?.weight;
-    const goalWeight = userProfile?.fitnessGoals?.targetWeight;
-    const startingWeight = userProfile?.personalInfo?.weight;
+    const currentWeight = calculatedMetrics?.currentWeightKg || healthMetrics?.weight || userProfile?.personalInfo?.weight;
+    const goalWeight = calculatedMetrics?.targetWeightKg || userProfile?.fitnessGoals?.targetWeight;
+    const startingWeight = userProfile?.personalInfo?.weight || currentWeight;
     
     return {
       currentWeight,
       goalWeight,
       startingWeight,
-      // Mock weight history - in production, this would come from a dedicated store
+      // NO MOCK DATA - only show weight history if real data exists
+      // In production, this would come from a dedicated weight tracking store
       weightHistory: currentWeight ? [
-        { date: '2024-12-22', weight: (currentWeight || 0) + 0.5 },
-        { date: '2024-12-23', weight: (currentWeight || 0) + 0.3 },
-        { date: '2024-12-24', weight: (currentWeight || 0) + 0.2 },
-        { date: '2024-12-25', weight: (currentWeight || 0) + 0.1 },
-        { date: '2024-12-26', weight: currentWeight || 0 },
-        { date: '2024-12-27', weight: (currentWeight || 0) - 0.1 },
-        { date: '2024-12-28', weight: currentWeight || 0 },
+        { date: new Date().toISOString().split('T')[0], weight: currentWeight },
       ] : [],
     };
-  }, [healthMetrics, userProfile]);
+  }, [healthMetrics, userProfile, calculatedMetrics]);
 
   // Meal count
   const mealsLogged = useMemo(() => {

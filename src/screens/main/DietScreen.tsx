@@ -79,6 +79,7 @@ const nutritionAnalyzer = {
 import { ProductDetailsModal } from '../../components/diet/ProductDetailsModal';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
 import { LargeProgressRing } from '../../components/ui/aurora/ProgressRing';
+import { GuestSignUpScreen } from './GuestSignUpScreen';
 
 interface DietScreenProps {
   navigation?: any; // Navigation prop for routing
@@ -142,6 +143,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  
+  // Guest Sign Up State
+  const [showGuestSignUp, setShowGuestSignUp] = useState(false);
 
   // Barcode Scanning State
   const [cameraMode, setCameraMode] = useState<'food' | 'progress' | 'barcode'>('food');
@@ -924,6 +928,23 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       return generateDailyMealPlan();
     }
 
+    // AUTHENTICATION CHECK: AI generation requires authenticated user
+    if (!user?.id || user.id.startsWith('guest')) {
+      console.log('[AUTH] User not authenticated for AI generation:', user?.id);
+      Alert.alert(
+        'Sign Up Required',
+        'Create an account to generate personalized AI meals. Your preferences will be used for customized recommendations.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Up',
+            onPress: () => setShowGuestSignUp(true),
+          },
+        ]
+      );
+      return;
+    }
+
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
         'Profile Incomplete',
@@ -1016,6 +1037,23 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
   // Generate Daily Meal Plan
   const generateDailyMealPlan = async () => {
+    // AUTHENTICATION CHECK: AI generation requires authenticated user
+    if (!user?.id || user.id.startsWith('guest')) {
+      console.log('[AUTH] User not authenticated for AI generation:', user?.id);
+      Alert.alert(
+        'Sign Up Required',
+        'Create an account to generate personalized AI meal plans.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Up',
+            onPress: () => setShowGuestSignUp(true),
+          },
+        ]
+      );
+      return;
+    }
+
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert('Profile Incomplete', 'Please complete your profile to generate meal plans.', [
         { text: 'Cancel', style: 'cancel' },
@@ -1072,6 +1110,25 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Generate Weekly Meal Plan (similar to workout generation)
   const generateWeeklyMealPlan = async () => {
     console.log('[MEAL] Generate Weekly Plan button pressed!');
+    
+    // AUTHENTICATION CHECK: AI generation requires authenticated user
+    // Guest users only have local storage data - backend needs Supabase data
+    if (!user?.id || user.id.startsWith('guest')) {
+      console.log('[AUTH] User not authenticated for AI generation:', user?.id);
+      Alert.alert(
+        'Sign Up Required',
+        'Create an account to generate personalized AI meal plans. Your data will be securely stored and used for personalized recommendations.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Up',
+            onPress: () => setShowGuestSignUp(true),
+          },
+        ]
+      );
+      return;
+    }
+
     console.log('[DEBUG] Profile check:', {
       personalInfo: !!profile?.personalInfo,
       fitnessGoals: !!profile?.fitnessGoals,
@@ -1820,6 +1877,20 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     },
   };
 
+  // Show Guest Sign Up Screen if user needs to authenticate
+  if (showGuestSignUp) {
+    return (
+      <GuestSignUpScreen
+        onBack={() => setShowGuestSignUp(false)}
+        onSignUpSuccess={() => {
+          setShowGuestSignUp(false);
+          // Refresh to reload authenticated user data
+          onRefresh();
+        }}
+      />
+    );
+  }
+
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container}>
@@ -2491,61 +2562,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
               <Text style={styles.sectionTitle}>Weekly Nutrition Trends</Text>
 
-              {/* Chart Legend */}
-              <View style={styles.chartLegend}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FF6B9D' }]} />
-                  <Text style={styles.legendText}>Protein</Text>
+              {/* Empty State - No mock data */}
+              <View style={styles.weeklyNutritionEmptyState}>
+                <Ionicons name="bar-chart-outline" size={rf(48)} color={ResponsiveTheme.colors.textMuted} />
+                <Text style={styles.emptyStateTitle}>No nutrition data yet</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  Log your meals to see weekly macro trends
+                </Text>
+                <View style={styles.emptyStateHint}>
+                  <Ionicons name="restaurant-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+                  <Text style={styles.emptyStateHintText}>Start by logging today's meals</Text>
                 </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
-                  <Text style={styles.legendText}>Carbs</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FFA726' }]} />
-                  <Text style={styles.legendText}>Fats</Text>
-                </View>
-              </View>
-
-              {/* Grouped Bar Chart */}
-              <View style={styles.weeklyNutritionChart}>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-                  // Sample data for each day (protein, carbs, fats as percentages)
-                  const dayData = [
-                    { protein: 85, carbs: 70, fats: 60 },
-                    { protein: 90, carbs: 80, fats: 65 },
-                    { protein: 75, carbs: 65, fats: 70 },
-                    { protein: 95, carbs: 85, fats: 75 },
-                    { protein: 80, carbs: 75, fats: 55 },
-                    { protein: 70, carbs: 60, fats: 50 },
-                    { protein: 88, carbs: 72, fats: 68 },
-                  ][index];
-
-                  return (
-                    <View key={day} style={styles.chartDayColumn}>
-                      {/* Grouped bars */}
-                      <View style={styles.barsGroup}>
-                        <View style={styles.barContainer}>
-                          <View style={[styles.macroBar, styles.proteinBar, { height: `${dayData.protein}%` }]} />
-                        </View>
-                        <View style={styles.barContainer}>
-                          <View style={[styles.macroBar, styles.carbsBar, { height: `${dayData.carbs}%` }]} />
-                        </View>
-                        <View style={styles.barContainer}>
-                          <View style={[styles.macroBar, styles.fatsBar, { height: `${dayData.fats}%` }]} />
-                        </View>
-                      </View>
-                      {/* Day label */}
-                      <Text style={styles.chartDayLabel}>{day}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* Average Line Indicator */}
-              <View style={styles.averageLine}>
-                <View style={styles.averageLineDashed} />
-                <Text style={styles.averageLineText}>Target Average</Text>
               </View>
             </GlassCard>
           </View>
@@ -4713,6 +4740,43 @@ const styles = StyleSheet.create({
     height: rh(200),
     paddingHorizontal: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
+  },
+
+  weeklyNutritionEmptyState: {
+    height: rh(200),
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  emptyStateTitle: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+
+  emptyStateSubtext: {
+    fontSize: rf(13),
+    color: ResponsiveTheme.colors.textMuted,
+    textAlign: 'center',
+  },
+
+  emptyStateHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.xs,
+    marginTop: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    borderRadius: rw(16),
+  },
+
+  emptyStateHintText: {
+    fontSize: rf(12),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.primary,
   },
 
   chartDayColumn: {

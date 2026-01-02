@@ -18,6 +18,14 @@ import { UserProfile } from './src/types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { googleAuthService } from './src/services/googleAuth';
+import { supabase } from './src/services/supabase';
+import {
+  PersonalInfoService,
+  DietPreferencesService,
+  BodyAnalysisService,
+  WorkoutPreferencesService,
+  AdvancedReviewService,
+} from './src/services/onboardingService';
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -104,18 +112,54 @@ export default function App() {
 
   // Helper function to convert OnboardingReviewData to UserProfile
   const convertOnboardingToProfile = (data: OnboardingReviewData): UserProfile => {
-    // fitnessGoals is already a separate field in OnboardingReviewData
-    const fitnessGoals = data.fitnessGoals || {
-      primary_goals: [],
-      time_commitment: '30 minutes',
-      experience: 'beginner' as const,
-      experience_level: 'beginner',
+    // ✅ FIX: Create fitnessGoals from workoutPreferences data
+    // The onboarding saves goals data in workoutPreferences, not in a separate fitnessGoals field
+    const wp = data.workoutPreferences;
+    
+    // Convert goals from hyphen format to underscore format for edit modals
+    // e.g., 'weight-loss' -> 'weight_loss', 'muscle-gain' -> 'muscle_gain'
+    const rawGoals = wp?.primary_goals || (wp as any)?.primaryGoals || [];
+    const normalizedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, '_'));
+    
+    // Convert time_preference (number in minutes) to time range string
+    // Onboarding stores: 15, 30, 45, 60, 75, 90, 120
+    // Modal expects: '15-30', '30-45', '45-60', '60+'
+    const timeMinutes = wp?.time_preference || (wp as any)?.timePreference || 30;
+    const getTimeRange = (minutes: number): string => {
+      if (minutes <= 30) return '15-30';
+      if (minutes <= 45) return '30-45';
+      if (minutes <= 60) return '45-60';
+      return '60+';
     };
+    const timeRange = getTimeRange(timeMinutes);
+    
+    // ALWAYS build fitnessGoals from workoutPreferences data (the source of truth)
+    // Don't use data.fitnessGoals directly as it may have incorrect format
+    const fitnessGoals = {
+      // Pull from workoutPreferences which is where onboarding stores this data
+      primary_goals: normalizedGoals.length > 0 ? normalizedGoals : (data.fitnessGoals?.primary_goals || []),
+      primaryGoals: normalizedGoals.length > 0 ? normalizedGoals : (data.fitnessGoals?.primaryGoals || []), // Legacy alias for edit modals
+      time_commitment: timeRange,
+      timeCommitment: timeRange, // Legacy alias for edit modals
+      experience: wp?.intensity || data.fitnessGoals?.experience || 'beginner',
+      experience_level: wp?.intensity || data.fitnessGoals?.experience_level || 'beginner', // Legacy alias
+      // Preserve other optional fields from data.fitnessGoals if they exist
+      preferred_equipment: data.fitnessGoals?.preferred_equipment,
+      target_areas: data.fitnessGoals?.target_areas,
+    };
+
+    // ✅ FIX: Compute name from first_name + last_name if not present
+    const computedName = data.personalInfo.name || 
+      `${data.personalInfo.first_name || ''} ${data.personalInfo.last_name || ''}`.trim() ||
+      'User';
 
     return {
       id: guestId || `guest_${Date.now()}`,
       email: data.personalInfo.email || '',
-      personalInfo: data.personalInfo,
+      personalInfo: {
+        ...data.personalInfo,
+        name: computedName, // Ensure name is always computed
+      },
       fitnessGoals: fitnessGoals,
       dietPreferences: data.dietPreferences ? {
         // Basic diet info
@@ -255,6 +299,171 @@ export default function App() {
     }
   };
 
+  // Verify database has required data for authenticated user
+  const verifyDatabaseData = async (userId: string): Promise<{
+    hasData: boolean;
+    missingTables: string[];
+  }> => {
+    const missingTables: string[] = [];
+
+    try {
+      console.log('🔍 [DB-VERIFY] Checking database data for user:', userId);
+
+      // Check profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('❌ [DB-VERIFY] Error checking profiles:', profileError);
+      }
+      if (!profile) missingTables.push('profiles');
+
+      // Check body_analysis table (required for health calculations)
+      const { data: bodyAnalysis, error: bodyError } = await supabase
+        .from('body_analysis')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (bodyError && bodyError.code !== 'PGRST116') {
+        console.error('❌ [DB-VERIFY] Error checking body_analysis:', bodyError);
+      }
+      if (!bodyAnalysis) missingTables.push('body_analysis');
+
+      // Check workout_preferences table
+      const { data: workout, error: workoutError } = await supabase
+        .from('workout_preferences')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (workoutError && workoutError.code !== 'PGRST116') {
+        console.error('❌ [DB-VERIFY] Error checking workout_preferences:', workoutError);
+      }
+      if (!workout) missingTables.push('workout_preferences');
+
+      // Check advanced_review table (contains calculated metrics)
+      const { data: advancedReview, error: advancedError } = await supabase
+        .from('advanced_review')
+        .select('user_id')
+        .eq('user_id', userId)
+        .single();
+
+      if (advancedError && advancedError.code !== 'PGRST116') {
+        console.error('❌ [DB-VERIFY] Error checking advanced_review:', advancedError);
+      }
+      if (!advancedReview) missingTables.push('advanced_review');
+
+      console.log(`🔍 [DB-VERIFY] User ${userId}: Missing tables: ${missingTables.length > 0 ? missingTables.join(', ') : 'none'}`);
+
+      return {
+        hasData: missingTables.length === 0,
+        missingTables
+      };
+    } catch (error) {
+      console.error('❌ [DB-VERIFY] Verification failed:', error);
+      return { hasData: false, missingTables: ['unknown'] };
+    }
+  };
+
+  // Sync local onboarding data to database
+  const syncLocalToDatabase = async (userId: string): Promise<{ success: boolean; errors: string[] }> => {
+    const errors: string[] = [];
+
+    try {
+      console.log('🔄 [SYNC] Starting local-to-database sync for user:', userId);
+
+      // Load from onboarding_data (primary source used by useOnboardingState)
+      const onboardingDataStr = await AsyncStorage.getItem('onboarding_data');
+      if (!onboardingDataStr) {
+        console.log('🔄 [SYNC] No onboarding_data found in AsyncStorage');
+        return { success: false, errors: ['No local data found'] };
+      }
+
+      const onboardingData = JSON.parse(onboardingDataStr);
+      console.log('🔄 [SYNC] Found onboarding_data, syncing to database...');
+
+      // Save personal info to profiles table
+      if (onboardingData.personalInfo) {
+        try {
+          const success = await PersonalInfoService.save(userId, onboardingData.personalInfo);
+          if (!success) {
+            errors.push('Failed to save personalInfo');
+          } else {
+            console.log('✅ [SYNC] PersonalInfo synced to database');
+          }
+        } catch (e) {
+          errors.push(`Error saving personalInfo: ${e}`);
+        }
+      }
+
+      // Save diet preferences
+      if (onboardingData.dietPreferences) {
+        try {
+          const success = await DietPreferencesService.save(userId, onboardingData.dietPreferences);
+          if (!success) {
+            errors.push('Failed to save dietPreferences');
+          } else {
+            console.log('✅ [SYNC] DietPreferences synced to database');
+          }
+        } catch (e) {
+          errors.push(`Error saving dietPreferences: ${e}`);
+        }
+      }
+
+      // Save body analysis
+      if (onboardingData.bodyAnalysis) {
+        try {
+          const success = await BodyAnalysisService.save(userId, onboardingData.bodyAnalysis);
+          if (!success) {
+            errors.push('Failed to save bodyAnalysis');
+          } else {
+            console.log('✅ [SYNC] BodyAnalysis synced to database');
+          }
+        } catch (e) {
+          errors.push(`Error saving bodyAnalysis: ${e}`);
+        }
+      }
+
+      // Save workout preferences
+      if (onboardingData.workoutPreferences) {
+        try {
+          const success = await WorkoutPreferencesService.save(userId, onboardingData.workoutPreferences);
+          if (!success) {
+            errors.push('Failed to save workoutPreferences');
+          } else {
+            console.log('✅ [SYNC] WorkoutPreferences synced to database');
+          }
+        } catch (e) {
+          errors.push(`Error saving workoutPreferences: ${e}`);
+        }
+      }
+
+      // Save advanced review (contains calculated metrics like BMI, TDEE, water goals)
+      if (onboardingData.advancedReview) {
+        try {
+          const success = await AdvancedReviewService.save(userId, onboardingData.advancedReview);
+          if (!success) {
+            errors.push('Failed to save advancedReview');
+          } else {
+            console.log('✅ [SYNC] AdvancedReview synced to database');
+          }
+        } catch (e) {
+          errors.push(`Error saving advancedReview: ${e}`);
+        }
+      }
+
+      console.log(`🔄 [SYNC] Sync completed. Errors: ${errors.length}`);
+      return { success: errors.length === 0, errors };
+    } catch (error) {
+      console.error('❌ [SYNC] Sync failed:', error);
+      return { success: false, errors: [error instanceof Error ? error.message : 'Unknown error'] };
+    }
+  };
+
   // Load existing onboarding data on app startup
   useEffect(() => {
     let mounted = true;
@@ -278,6 +487,32 @@ export default function App() {
           const isValid = checkProfileComplete(profile);
 
           if (isValid) {
+            // NEW: Verify database actually has the data (fix for sync issues)
+            console.log('🔍 App: Profile valid locally, verifying database...');
+            const dbVerification = await verifyDatabaseData(user.id);
+
+            if (!mounted) return;
+
+            if (!dbVerification.hasData) {
+              console.warn('⚠️ App: Profile valid locally but DB missing data:', dbVerification.missingTables);
+
+              // Attempt to sync local data to database
+              console.log('🔄 App: Attempting to sync local data to database...');
+              const syncResult = await syncLocalToDatabase(user.id);
+
+              if (!mounted) return;
+
+              if (!syncResult.success) {
+                console.error('❌ App: Failed to sync local data to DB:', syncResult.errors);
+                // Still show main navigation - local data exists, DB sync can happen later
+                console.log('⚠️ App: Continuing with local data, DB sync failed');
+              } else {
+                console.log('✅ App: Local data synced to database successfully');
+              }
+            } else {
+              console.log('✅ App: Database verification passed - all data present');
+            }
+
             console.log('✅ App: Profile validation passed - showing MainNavigation');
             setIsOnboardingComplete(true);
           } else {
@@ -507,15 +742,17 @@ export default function App() {
       await new Promise(resolve => setTimeout(resolve, 150));
       console.log('✅ App: Persist middleware should have completed');
 
-      // Store complete data in AsyncStorage with guest ID
+      // Store backup data in AsyncStorage with guest ID (for legacy compatibility)
       const currentGuestId =
         guestId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       await AsyncStorage.setItem(`onboarding_${currentGuestId}`, JSON.stringify(data));
 
-      // Also store in the standard 'onboarding_data' key for consistency
-      // This is what loadExistingData reads from on app restart
-      await AsyncStorage.setItem('onboarding_data', JSON.stringify(data));
-      console.log('✅ App: Onboarding data stored to AsyncStorage');
+      // NOTE: We do NOT save to 'onboarding_data' here!
+      // The complete onboarding data (including advancedReview with water goals, BMI, TDEE, etc.)
+      // is already saved by useOnboardingState.saveToLocal() in completeOnboarding().
+      // Saving the simplified OnboardingReviewData here would OVERWRITE the complete data
+      // and cause calculated metrics (water goal, calories, etc.) to be lost.
+      console.log('✅ App: Guest ID backup stored (complete data already saved by useOnboardingState)');
 
       // Mark onboarding as complete
       await AsyncStorage.setItem('onboarding_completed', 'true');

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { rf, rp, rh, rw, rs } from '../../utils/responsive';
 import { ResponsiveTheme } from '../../utils/constants';
@@ -9,9 +10,16 @@ import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterCredentials } from '../../types/user';
 import { migrationManager } from '../../services/migrationManager';
-import { dataManager } from '../../services/dataManager';
+import { dataBridge } from '../../services/DataBridge';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import {
+  PersonalInfoService,
+  DietPreferencesService,
+  BodyAnalysisService,
+  WorkoutPreferencesService,
+  AdvancedReviewService,
+} from '../../services/onboardingService';
 
 interface GuestSignUpScreenProps {
   onBack: () => void;
@@ -19,6 +27,9 @@ interface GuestSignUpScreenProps {
 }
 
 export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, onSignUpSuccess }) => {
+  // Mode: 'signup' or 'signin'
+  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  
   const [formData, setFormData] = useState<RegisterCredentials>({
     email: '',
     password: '',
@@ -27,7 +38,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
   const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const { register, signInWithGoogle } = useAuth();
+  const { register, login, signInWithGoogle } = useAuth();
 
   const updateField = (field: keyof RegisterCredentials, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -73,7 +84,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
       console.log('[ROCKET] GuestSignUp: Starting Google sign up with data migration...');
       
       // Check for guest data that needs migration
-      const hasGuestData = await dataManager.hasGuestDataForMigration();
+      const hasGuestData = await dataBridge.hasGuestDataForMigration();
       console.log('[SEARCH] GuestSignUp: Guest data check result:', hasGuestData);
 
       const response = await signInWithGoogle();
@@ -92,7 +103,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
                   try {
                     // First, migrate guest data to user-specific keys
                     console.log('[REFRESH] GuestSignUp: Starting guest data key migration...');
-                    const keyMigrationResult = await dataManager.migrateGuestDataToUser(
+                    const keyMigrationResult = await dataBridge.migrateGuestDataToUser(
                       response.user.id
                     );
                     
@@ -194,7 +205,7 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
       console.log('[ROCKET] GuestSignUp: Starting email sign up with data migration...');
       
       // Check if there's guest data before registering
-      const hasGuestData = await dataManager.hasGuestDataForMigration();
+      const hasGuestData = await dataBridge.hasGuestDataForMigration();
       console.log('[SEARCH] GuestSignUp: Guest data check result:', hasGuestData);
 
       // Ensure we trim and normalize the credentials before sending
@@ -239,6 +250,139 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
     }
   };
 
+  // Handle Email Sign In
+  const handleEmailSignIn = async () => {
+    // Simple validation for sign in
+    const newErrors: Partial<RegisterCredentials> = {};
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('[LOCK] GuestSignUp: Signing in with email...');
+      
+      const trimmedCredentials = {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password.trim(),
+      };
+      
+      const result = await login(trimmedCredentials);
+
+      if (result.success && result.user) {
+        console.log('[CHECK] GuestSignUp: Email sign in successful');
+
+        // Store userId for use in async callbacks (TypeScript narrowing doesn't persist)
+        const userId = result.user.id;
+
+        // Check for guest data to migrate (now checks onboarding_data key too)
+        const hasGuestData = await dataBridge.hasGuestDataForMigration();
+
+        if (hasGuestData) {
+          Alert.alert(
+            'Welcome Back!',
+            'We found your local profile data. Would you like to sync it to your account?',
+            [
+              {
+                text: 'Skip',
+                style: 'cancel',
+                onPress: () => onSignUpSuccess(),
+              },
+              {
+                text: 'Sync Data',
+                onPress: async () => {
+                  try {
+                    console.log('[REFRESH] GuestSignUp: Starting comprehensive data migration...');
+
+                    // Step 1: Migrate local storage keys (now handles onboarding_data)
+                    const keyMigrationResult = await dataBridge.migrateGuestDataToUser(userId);
+                    console.log('[REFRESH] Key migration result:', keyMigrationResult);
+
+                    // Step 2: Sync to database using migrationManager (handles personalInfo, fitnessGoals, diet, workout)
+                    const migrationResult = await migrationManager.startProfileMigration(userId);
+                    console.log('[REFRESH] Migration manager result:', migrationResult);
+
+                    // Step 3: Sync bodyAnalysis and advancedReview directly from onboarding_data
+                    // These are NOT handled by migrationManager/syncManager
+                    const syncErrors: string[] = [];
+                    try {
+                      const onboardingDataStr = await AsyncStorage.getItem('onboarding_data');
+                      if (onboardingDataStr) {
+                        const onboardingData = JSON.parse(onboardingDataStr);
+
+                        // Sync body analysis (critical for health calculations)
+                        if (onboardingData.bodyAnalysis) {
+                          const bodySuccess = await BodyAnalysisService.save(userId, onboardingData.bodyAnalysis);
+                          if (!bodySuccess) syncErrors.push('bodyAnalysis');
+                          else console.log('[REFRESH] BodyAnalysis synced to database');
+                        }
+
+                        // Sync advanced review (contains BMI, TDEE, water goals, etc.)
+                        if (onboardingData.advancedReview) {
+                          const reviewSuccess = await AdvancedReviewService.save(userId, onboardingData.advancedReview);
+                          if (!reviewSuccess) syncErrors.push('advancedReview');
+                          else console.log('[REFRESH] AdvancedReview synced to database');
+                        }
+                      }
+                    } catch (syncError) {
+                      console.error('[REFRESH] Error syncing additional data:', syncError);
+                    }
+
+                    // Determine overall success
+                    const overallSuccess = keyMigrationResult.success || migrationResult.success;
+
+                    if (overallSuccess && syncErrors.length === 0) {
+                      Alert.alert('Success', 'Your data has been synced!', [
+                        { text: 'Continue', onPress: () => onSignUpSuccess() }
+                      ]);
+                    } else if (overallSuccess) {
+                      Alert.alert('Partial Sync', 'Most data was synced. You can continue.', [
+                        { text: 'Continue', onPress: () => onSignUpSuccess() }
+                      ]);
+                    } else {
+                      Alert.alert('Sync Issue', 'There was an issue syncing data. You can continue and try again later.', [
+                        { text: 'Continue', onPress: () => onSignUpSuccess() }
+                      ]);
+                    }
+                  } catch (error) {
+                    console.error('[REFRESH] Migration error:', error);
+                    Alert.alert('Error', 'Failed to sync data. You can continue and sync later.', [
+                      { text: 'Continue', onPress: () => onSignUpSuccess() }
+                    ]);
+                  }
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert('Welcome Back!', 'You have signed in successfully.', [
+            { text: 'Continue', onPress: () => onSignUpSuccess() }
+          ]);
+        }
+      } else {
+        Alert.alert('Sign In Failed', result.error || 'Invalid email or password. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred during sign in.');
+      console.error('Email sign in error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container}>
@@ -247,14 +391,18 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
           <AnimatedPressable style={styles.backButton} onPress={onBack} scaleValue={0.97}>
             <Text style={styles.backIcon}>←</Text>
           </AnimatedPressable>
-          <Text style={styles.title}>Complete Your Account</Text>
+          <Text style={styles.title}>
+            {mode === 'signup' ? 'Complete Your Account' : 'Welcome Back'}
+          </Text>
           <Text style={styles.subtitle}>
-            Sign up to save your progress and sync across devices. Your profile data will be preserved.
+            {mode === 'signup' 
+              ? 'Sign up to save your progress and sync across devices. Your profile data will be preserved.'
+              : 'Sign in to access your synced data and continue your fitness journey.'}
           </Text>
         </View>
 
         <View style={styles.form}>
-          {/* Google Sign-Up as Primary */}
+          {/* Google Sign-In/Up as Primary */}
           <AnimatedPressable
             style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
             onPress={handleGoogleSignUp}
@@ -270,11 +418,13 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
           <View style={styles.dividerContainer}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or sign up with email</Text>
+            <Text style={styles.dividerText}>
+              {mode === 'signup' ? 'or sign up with email' : 'or sign in with email'}
+            </Text>
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Email form as secondary option */}
+          {/* Email form */}
           <View style={styles.emailFormContainer}>
             <Input
               label="Email Address"
@@ -288,23 +438,25 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
 
             <PasswordInput
               label="Password"
-              placeholder="Create a password"
+              placeholder={mode === 'signup' ? 'Create a password' : 'Enter your password'}
               value={formData.password}
               onChangeText={(value) => updateField('password', value)}
               error={errors.password}
             />
 
-            <PasswordInput
-              label="Confirm Password"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateField('confirmPassword', value)}
-              error={errors.confirmPassword}
-            />
+            {mode === 'signup' && (
+              <PasswordInput
+                label="Confirm Password"
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChangeText={(value) => updateField('confirmPassword', value)}
+                error={errors.confirmPassword}
+              />
+            )}
 
             <Button
-              title="Create Account"
-              onPress={handleEmailSignUp}
+              title={mode === 'signup' ? 'Create Account' : 'Sign In'}
+              onPress={mode === 'signup' ? handleEmailSignUp : handleEmailSignIn}
               variant="outline"
               size="lg"
               fullWidth
@@ -314,9 +466,20 @@ export const GuestSignUpScreen: React.FC<GuestSignUpScreenProps> = ({ onBack, on
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <AnimatedPressable onPress={onBack} scaleValue={0.97}>
-              <Text style={styles.footerLink}>Sign In instead</Text>
+            <Text style={styles.footerText}>
+              {mode === 'signup' ? 'Already have an account? ' : "Don't have an account? "}
+            </Text>
+            <AnimatedPressable 
+              onPress={() => {
+                setMode(mode === 'signup' ? 'signin' : 'signup');
+                setErrors({});
+                setFormData({ email: '', password: '', confirmPassword: '' });
+              }} 
+              scaleValue={0.97}
+            >
+              <Text style={styles.footerLink}>
+                {mode === 'signup' ? 'Sign In instead' : 'Sign Up instead'}
+              </Text>
             </AnimatedPressable>
           </View>
         </View>

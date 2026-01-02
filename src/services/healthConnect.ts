@@ -2,21 +2,71 @@
 // Provides comprehensive health data synchronization for Android devices (8.0+)
 // Replaces deprecated Google Fit API with modern Health Connect platform
 
-import {
-  initialize,
-  requestPermission,
-  readRecords,
-  getSdkStatus,
-  openHealthConnectSettings,
-  Permission,
-  RecordType,
-  SdkAvailabilityStatus,
-} from 'react-native-health-connect';
-
-// Type alias for permissions
-type PermissionType = Permission;
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Check if the Health Connect native module is available
+// This handles cases where the package isn't properly linked (Expo Go, dev client without linking)
+const isHealthConnectNativeAvailable = (): boolean => {
+  try {
+    // Check if the native module exists
+    const hasNativeModule = !!(NativeModules.HealthConnect || NativeModules.RNHealthConnect);
+    if (!hasNativeModule) {
+      console.log('Health Connect native module not found - package may not be linked');
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.log('Error checking Health Connect native module availability:', error);
+    return false;
+  }
+};
+
+// Lazy-loaded Health Connect module references
+let healthConnectModule: any = null;
+let healthConnectAvailable: boolean | null = null;
+
+// Lazy load the Health Connect module to prevent crashes when not available
+const getHealthConnectModule = async (): Promise<any | null> => {
+  if (healthConnectAvailable === false) {
+    return null;
+  }
+
+  if (healthConnectModule) {
+    return healthConnectModule;
+  }
+
+  try {
+    // First check if native module is available
+    if (!isHealthConnectNativeAvailable()) {
+      healthConnectAvailable = false;
+      return null;
+    }
+
+    // Dynamically import the module
+    const module = await import('react-native-health-connect');
+    healthConnectModule = module;
+    healthConnectAvailable = true;
+    return module;
+  } catch (error) {
+    console.warn('Failed to load react-native-health-connect:', error);
+    healthConnectAvailable = false;
+    return null;
+  }
+};
+
+// SDK Availability Status enum (mirrors the one from react-native-health-connect)
+const SdkAvailabilityStatus = {
+  SDK_AVAILABLE: 'SDK_AVAILABLE',
+  SDK_UNAVAILABLE: 'SDK_UNAVAILABLE',
+  SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED: 'SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED',
+} as const;
+
+// Type alias for permissions (matches react-native-health-connect Permission type)
+type PermissionType = {
+  accessType: 'read' | 'write';
+  recordType: string;
+};
 
 export interface HealthConnectData {
   steps?: number;
@@ -80,27 +130,43 @@ class HealthConnectService {
     try {
       console.log('🔗 DEBUG: Starting Health Connect initialization...');
       console.log('🔗 DEBUG: Platform check - OS:', Platform.OS);
-      
+
       // Health Connect is only available on Android 8.0+
       if (Platform.OS !== 'android') {
         console.log('📱 DEBUG: Health Connect only available on Android devices');
         return false;
       }
-      
+
+      // Get the Health Connect module (lazy loaded)
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        console.log('❌ DEBUG: Health Connect native module not available');
+        console.log('💡 The app may be running in Expo Go or the native module is not linked');
+        console.log('💡 Build a development client or production build to use Health Connect');
+        this.isInitialized = false;
+        return false;
+      }
+
+      const { getSdkStatus, initialize, openHealthConnectSettings, SdkAvailabilityStatus: ModuleSdkStatus } = hcModule;
+
       console.log('🔗 DEBUG: Calling getSdkStatus()...');
       // Check if Health Connect is available on device
       const sdkStatus = await getSdkStatus();
       console.log('🔗 DEBUG: Health Connect SDK Status:', sdkStatus);
-      console.log('🔗 DEBUG: Expected status for success:', SdkAvailabilityStatus.SDK_AVAILABLE);
-      
+      console.log('🔗 DEBUG: Expected status for success:', ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE);
+
       // Check for different SDK availability statuses
-      if (sdkStatus === SdkAvailabilityStatus.SDK_UNAVAILABLE) {
+      const SDK_UNAVAILABLE = ModuleSdkStatus?.SDK_UNAVAILABLE || SdkAvailabilityStatus.SDK_UNAVAILABLE;
+      const SDK_UPDATE_REQUIRED = ModuleSdkStatus?.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED || SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED;
+      const SDK_AVAILABLE = ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE;
+
+      if (sdkStatus === SDK_UNAVAILABLE) {
         console.log('❌ Health Connect SDK is unavailable on this device');
         console.log('💡 Health Connect requires Android 8.0+ and the Health Connect app to be installed');
         return false;
       }
 
-      if (sdkStatus === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) {
+      if (sdkStatus === SDK_UPDATE_REQUIRED) {
         console.log('⚠️ Health Connect provider update required');
         console.log('💡 Please update the Health Connect app from Google Play Store');
         // Optionally open Health Connect settings for user to update
@@ -108,7 +174,7 @@ class HealthConnectService {
         return false;
       }
 
-      if (sdkStatus !== SdkAvailabilityStatus.SDK_AVAILABLE && sdkStatus !== 'SDK_AVAILABLE') {
+      if (sdkStatus !== SDK_AVAILABLE && sdkStatus !== 'SDK_AVAILABLE') {
         console.log('❌ Health Connect not available - Unknown status:', sdkStatus);
         return false;
       }
@@ -117,15 +183,15 @@ class HealthConnectService {
       // Initialize the Health Connect client
       const isInitialized = await initialize();
       this.isInitialized = isInitialized;
-      
+
       console.log('✅ DEBUG: Health Connect initialized result:', isInitialized);
       console.log('🔗 DEBUG: Setting internal state isInitialized to:', isInitialized);
-      
+
       // Cache initialization status
       console.log('🔗 DEBUG: Caching initialization status...');
       await AsyncStorage.setItem('fitai_healthconnect_initialized', isInitialized.toString());
       console.log('🔗 DEBUG: Cached initialization status successfully');
-      
+
       return isInitialized;
 
     } catch (error) {
@@ -143,7 +209,7 @@ class HealthConnectService {
     try {
       console.log('🔐 DEBUG: Starting permission request...');
       console.log('🔐 DEBUG: Current isInitialized state:', this.isInitialized);
-      
+
       if (!this.isInitialized) {
         console.log('🔐 DEBUG: Not initialized, calling initializeHealthConnect...');
         const initialized = await this.initializeHealthConnect();
@@ -154,24 +220,34 @@ class HealthConnectService {
         }
       }
 
+      // Get the Health Connect module
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        console.log('🔐 DEBUG: Health Connect native module not available for permissions');
+        this.permissionsGranted = false;
+        return false;
+      }
+
+      const { requestPermission } = hcModule;
+
       console.log('🔐 DEBUG: Requesting Health Connect permissions...');
       console.log('🔐 DEBUG: Required permissions:', this.permissions.map(p => `${p.accessType} ${p.recordType}`).join(', '));
       console.log('🔐 DEBUG: Total permissions count:', this.permissions.length);
-      
+
       console.log('🔐 DEBUG: Calling requestPermission() with permissions array...');
       const grantedPermissions = await requestPermission(this.permissions);
       console.log('🔐 DEBUG: requestPermission() returned:', grantedPermissions);
-      
+
       this.permissionsGranted = !!grantedPermissions;
-      
+
       console.log('🔐 DEBUG: Final permissions granted result:', this.permissionsGranted);
-      
+
       // Cache permission status
       await AsyncStorage.setItem(
-        'fitai_healthconnect_permissions', 
+        'fitai_healthconnect_permissions',
         this.permissionsGranted ? 'granted' : 'denied'
       );
-      
+
       return this.permissionsGranted;
 
     } catch (error) {
@@ -187,7 +263,19 @@ class HealthConnectService {
   async hasPermissions(): Promise<boolean> {
     try {
       if (Platform.OS !== 'android') return false;
-      
+
+      // Get the Health Connect module
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        // If module is not available, fall back to cached permissions
+        const cachedPermissions = await AsyncStorage.getItem('fitai_healthconnect_permissions');
+        const hasCache = cachedPermissions === 'granted';
+        this.permissionsGranted = hasCache;
+        return hasCache;
+      }
+
+      const { getSdkStatus } = hcModule;
+
       // Always check actual permission status with Health Connect
       // Don't rely solely on cached status as permissions can be revoked externally
       try {
@@ -197,21 +285,21 @@ class HealthConnectService {
           this.permissionsGranted = false;
           return false;
         }
-        
+
         // Check cached permission status as backup
         const cachedPermissions = await AsyncStorage.getItem('fitai_healthconnect_permissions');
-        
+
         if (cachedPermissions === 'granted') {
           this.permissionsGranted = true;
           return true;
         }
-        
+
         // If no cached status, permissions likely not granted yet
         this.permissionsGranted = false;
         return false;
       } catch (sdkError) {
         console.warn('⚠️ SDK check failed, falling back to cache:', sdkError);
-        
+
         // Fallback to cached status if SDK check fails
         const cachedPermissions = await AsyncStorage.getItem('fitai_healthconnect_permissions');
         const hasCache = cachedPermissions === 'granted';
@@ -231,7 +319,7 @@ class HealthConnectService {
    */
   async syncHealthData(daysBack: number = 7): Promise<HealthConnectSyncResult> {
     const startTime = Date.now();
-    
+
     try {
       if (!this.permissionsGranted) {
         console.warn('🔐 Health Connect permissions not granted, checking...');
@@ -243,6 +331,18 @@ class HealthConnectService {
           };
         }
       }
+
+      // Get the Health Connect module
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        return {
+          success: false,
+          error: 'Health Connect native module not available. Build a development client to use Health Connect.',
+          syncTime: Date.now() - startTime,
+        };
+      }
+
+      const { readRecords } = hcModule;
 
       console.log(`📥 Syncing Health Connect data from last ${daysBack} days...`);
 
@@ -402,6 +502,13 @@ class HealthConnectService {
    */
   async openSettings(): Promise<void> {
     try {
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        console.warn('⚙️ Health Connect native module not available - cannot open settings');
+        return;
+      }
+
+      const { openHealthConnectSettings } = hcModule;
       console.log('⚙️ Opening Health Connect settings...');
       await openHealthConnectSettings();
     } catch (error) {
@@ -562,8 +669,18 @@ class HealthConnectService {
         return false;
       }
 
+      // Get the Health Connect module
+      const hcModule = await getHealthConnectModule();
+      if (!hcModule) {
+        console.log('Health Connect native module not available');
+        return false;
+      }
+
+      const { getSdkStatus, SdkAvailabilityStatus: ModuleSdkStatus } = hcModule;
+      const SDK_AVAILABLE = ModuleSdkStatus?.SDK_AVAILABLE || SdkAvailabilityStatus.SDK_AVAILABLE;
+
       const sdkStatus = await getSdkStatus();
-      return sdkStatus === SdkAvailabilityStatus.SDK_AVAILABLE || sdkStatus === 'SDK_AVAILABLE';
+      return sdkStatus === SDK_AVAILABLE || sdkStatus === 'SDK_AVAILABLE';
     } catch (error) {
       console.error('❌ Error checking Health Connect availability:', error);
       return false;
@@ -603,4 +720,24 @@ class HealthConnectService {
 
 // Export singleton instance for consistent usage across app
 export const healthConnectService = new HealthConnectService();
+
+/**
+ * Check if Health Connect native module is available
+ * Use this for quick synchronous checks in UI components
+ */
+export const isHealthConnectModuleAvailable = (): boolean => {
+  return isHealthConnectNativeAvailable();
+};
+
+/**
+ * Check if Health Connect can be used (async version with full check)
+ */
+export const canUseHealthConnect = async (): Promise<boolean> => {
+  if (Platform.OS !== 'android') {
+    return false;
+  }
+  const module = await getHealthConnectModule();
+  return module !== null;
+};
+
 export default healthConnectService;

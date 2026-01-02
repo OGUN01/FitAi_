@@ -272,7 +272,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
                 textAnchor="end"
                 alignmentBaseline="middle"
               >
-                {value.toFixed(0)}
+                {Number.isFinite(value) ? value.toFixed(0) : ''}
               </SvgText>
             </G>
           );
@@ -338,7 +338,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
                 fill={ResponsiveTheme.colors.textMuted}
                 textAnchor="middle"
               >
-                {milestone.label}
+                {String(milestone.label || '')}
               </SvgText>
             </G>
           );

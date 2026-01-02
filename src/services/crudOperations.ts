@@ -1,7 +1,7 @@
 // CRUD Operations Service for Track B Infrastructure
 // Provides comprehensive Create, Read, Update, Delete operations with optimistic updates
 
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import { offlineService } from './offline';
 import {
   OnboardingData,
@@ -36,7 +36,7 @@ export class CrudOperationsService {
 
   async initialize(): Promise<void> {
     try {
-      await dataManager.initialize();
+      await dataBridge.initialize();
       console.log('CRUD Operations Service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize CRUD Operations Service:', error);
@@ -50,7 +50,7 @@ export class CrudOperationsService {
 
   async createOnboardingData(data: OnboardingData): Promise<void> {
     try {
-      await dataManager.storeOnboardingData(data);
+      await dataBridge.storeOnboardingData(data);
       console.log('Onboarding data created successfully');
     } catch (error) {
       console.error('Failed to create onboarding data:', error);
@@ -60,7 +60,7 @@ export class CrudOperationsService {
 
   async readOnboardingData(): Promise<OnboardingData | null> {
     try {
-      return await dataManager.getOnboardingData();
+      return await dataBridge.getOnboardingData();
     } catch (error) {
       console.error('Failed to read onboarding data:', error);
       return null;
@@ -69,7 +69,7 @@ export class CrudOperationsService {
 
   async updateOnboardingData(updates: Partial<OnboardingData>): Promise<void> {
     try {
-      const existing = await dataManager.getOnboardingData();
+      const existing = await dataBridge.getOnboardingData();
       if (!existing) {
         throw new Error('No existing onboarding data to update');
       }
@@ -79,7 +79,7 @@ export class CrudOperationsService {
         ...updates,
       };
 
-      await dataManager.storeOnboardingData(updated);
+      await dataBridge.storeOnboardingData(updated);
       console.log('Onboarding data updated successfully');
     } catch (error) {
       console.error('Failed to update onboarding data:', error);
@@ -89,7 +89,7 @@ export class CrudOperationsService {
 
   async updateUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
     try {
-      await dataManager.updateUserPreferences(preferences);
+      await dataBridge.updateUserPreferences(preferences);
       console.log('User preferences updated successfully');
     } catch (error) {
       console.error('Failed to update user preferences:', error);
@@ -99,7 +99,7 @@ export class CrudOperationsService {
 
   async readUserPreferences(): Promise<UserPreferences | null> {
     try {
-      return await dataManager.getUserPreferences();
+      return await dataBridge.getUserPreferences();
     } catch (error) {
       console.error('Failed to read user preferences:', error);
       return null;
@@ -122,7 +122,7 @@ export class CrudOperationsService {
 
       // Ensure data layer is initialized before writing
       await this.initialize();
-      await dataManager.storeWorkoutSession(session);
+      await dataBridge.storeWorkoutSession(session);
       console.log(`✅ Workout session ${session.id} created successfully`);
 
       // Verify it was stored
@@ -143,7 +143,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      return await dataManager.getWorkoutSessions(limit);
+      return await dataBridge.getWorkoutSessions(limit);
     } catch (error) {
       console.error('Failed to read workout sessions:', error);
       return [];
@@ -154,7 +154,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      const sessions = await dataManager.getWorkoutSessions();
+      const sessions = await dataBridge.getWorkoutSessions();
       return sessions.find((session) => session.id === sessionId) || null;
     } catch (error) {
       console.error('Failed to read workout session:', error);
@@ -166,7 +166,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before writing
       await this.initialize();
-      await dataManager.updateWorkoutSession(sessionId, updates);
+      await dataBridge.updateWorkoutSession(sessionId, updates);
       console.log(`Workout session ${sessionId} updated successfully`);
     } catch (error) {
       console.error('Failed to update workout session:', error);
@@ -203,7 +203,7 @@ export class CrudOperationsService {
 
       // Ensure data layer is initialized before writing
       await this.initialize();
-      await dataManager.storeMealLog(mealLog);
+      await dataBridge.storeMealLog(mealLog);
       console.log(`✅ Meal log ${mealLog.id} created successfully`);
 
       // Verify it was stored
@@ -224,7 +224,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      return await dataManager.getMealLogs(date, limit);
+      return await dataBridge.getMealLogs(date, limit);
     } catch (error) {
       console.error('Failed to read meal logs:', error);
       return [];
@@ -235,7 +235,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      const logs = await dataManager.getMealLogs();
+      const logs = await dataBridge.getMealLogs();
       return logs.find((log) => log.id === logId) || null;
     } catch (error) {
       console.error('Failed to read meal log:', error);
@@ -258,7 +258,7 @@ export class CrudOperationsService {
         syncStatus: SyncStatus.PENDING,
       };
 
-      await dataManager.storeMealLog(updated);
+      await dataBridge.storeMealLog(updated);
       console.log(`Meal log ${logId} updated successfully`);
     } catch (error) {
       console.error('Failed to update meal log:', error);
@@ -287,7 +287,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before writing
       await this.initialize();
-      await dataManager.storeBodyMeasurement(measurement);
+      await dataBridge.storeBodyMeasurement(measurement);
       console.log(`Body measurement ${measurement.id} created successfully`);
     } catch (error) {
       console.error('Failed to create body measurement:', error);
@@ -299,7 +299,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      return await dataManager.getBodyMeasurements(limit);
+      return await dataBridge.getBodyMeasurements(limit);
     } catch (error) {
       console.error('Failed to read body measurements:', error);
       return [];
@@ -310,7 +310,7 @@ export class CrudOperationsService {
     try {
       // Ensure data layer is initialized before reading
       await this.initialize();
-      const measurements = await dataManager.getBodyMeasurements();
+      const measurements = await dataBridge.getBodyMeasurements();
       return measurements.find((measurement) => measurement.id === measurementId) || null;
     } catch (error) {
       console.error('Failed to read body measurement:', error);
@@ -334,7 +334,7 @@ export class CrudOperationsService {
         syncStatus: 'pending',
       };
 
-      await dataManager.storeBodyMeasurement(updated);
+      await dataBridge.storeBodyMeasurement(updated);
       console.log(`Body measurement ${measurementId} updated successfully`);
     } catch (error) {
       console.error('Failed to update body measurement:', error);
@@ -401,7 +401,7 @@ export class CrudOperationsService {
 
   async validateAllData(): Promise<ValidationResult> {
     try {
-      const schema = await dataManager.exportAllData();
+      const schema = await dataBridge.exportAllData();
       if (!schema) {
         return {
           isValid: false,
@@ -444,7 +444,7 @@ export class CrudOperationsService {
     lastUpdated: string | null;
   }> {
     try {
-      return await dataManager.getDataStatistics();
+      return await dataBridge.getDataStatistics();
     } catch (error) {
       console.error('Failed to get data statistics:', error);
       return {
@@ -464,7 +464,7 @@ export class CrudOperationsService {
 
   async exportAllData(): Promise<LocalStorageSchema | null> {
     try {
-      return await dataManager.exportAllData();
+      return await dataBridge.exportAllData();
     } catch (error) {
       console.error('Failed to export data:', error);
       return null;
@@ -473,7 +473,7 @@ export class CrudOperationsService {
 
   async importData(data: LocalStorageSchema): Promise<void> {
     try {
-      await dataManager.importData(data);
+      await dataBridge.importData(data);
       console.log('Data imported successfully');
     } catch (error) {
       console.error('Failed to import data:', error);
@@ -487,7 +487,7 @@ export class CrudOperationsService {
 
   async clearAllData(): Promise<void> {
     try {
-      await dataManager.clearAllData();
+      await dataBridge.clearAllData();
       console.log('All data cleared successfully');
     } catch (error) {
       console.error('Failed to clear all data:', error);
@@ -497,7 +497,7 @@ export class CrudOperationsService {
 
   async getStorageInfo(): Promise<any> {
     try {
-      return await dataManager.getStorageInfo();
+      return await dataBridge.getStorageInfo();
     } catch (error) {
       console.error('Failed to get storage info:', error);
       return null;
@@ -506,7 +506,7 @@ export class CrudOperationsService {
 
   async isQuotaExceeded(): Promise<boolean> {
     try {
-      return await dataManager.isQuotaExceeded();
+      return await dataBridge.isQuotaExceeded();
     } catch (error) {
       console.error('Failed to check quota:', error);
       return false;

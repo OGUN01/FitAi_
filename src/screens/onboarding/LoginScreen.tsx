@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
 import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
 import { migrationManager } from '../../services/migrationManager';
-import { dataManager } from '../../services/dataManager';
+import { dataBridge } from '../../services/DataBridge';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 
 interface LoginScreenProps {
@@ -91,11 +91,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
         // Check for guest data and trigger migration if needed
         if (result.user) {
           // CRITICAL: Check for guest data BEFORE setting userId in dataManager
-          const hasGuestDataForMigration = await dataManager.hasGuestDataForMigration();
+          const hasGuestDataForMigration = await dataBridge.hasGuestDataForMigration();
           console.log('🔍 LoginScreen: Guest data check result:', hasGuestDataForMigration);
           
           // Now set user ID in dataManager for future operations
-          dataManager.setUserId(result.user.id);
+          dataBridge.setUserId(result.user.id);
           
           const hasLocalData = hasGuestDataForMigration;
           console.log('🔍 LoginScreen: Final local data check result:', hasLocalData);
@@ -114,7 +114,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                     try {
                       // First, migrate guest data to user-specific keys
                       console.log('🔄 LoginScreen: Starting guest data key migration...');
-                      const keyMigrationResult = await dataManager.migrateGuestDataToUser(
+                      const keyMigrationResult = await dataBridge.migrateGuestDataToUser(
                         result.user.id
                       );
                       
@@ -253,12 +253,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
       if (response.success) {
         // CRITICAL: Check for guest data BEFORE setting userId in dataManager
         // This ensures we check guest keys instead of user-specific keys
-        const hasGuestDataForMigration = await dataManager.hasGuestDataForMigration();
+        const hasGuestDataForMigration = await dataBridge.hasGuestDataForMigration();
         console.log('🔍 LoginScreen: Google sign-in - Guest data check result:', hasGuestDataForMigration);
         
         // Now set user ID in dataManager for future operations
         if (response.user) {
-          dataManager.setUserId(response.user.id);
+          dataBridge.setUserId(response.user.id);
         }
         
         const hasLocalData = hasGuestDataForMigration;
@@ -278,7 +278,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
                   try {
                     // First, migrate guest data to user-specific keys
                     console.log('🔄 LoginScreen: Starting guest data key migration...');
-                    const keyMigrationResult = await dataManager.migrateGuestDataToUser(
+                    const keyMigrationResult = await dataBridge.migrateGuestDataToUser(
                       response.user.id
                     );
                     

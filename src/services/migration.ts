@@ -4,7 +4,7 @@
 import { enhancedLocalStorage } from './localStorage';
 import { dataTransformation } from './dataTransformation';
 import { validationService } from '../utils/validation';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import {
   LocalStorageSchema,
   ValidationResult,
@@ -146,7 +146,7 @@ export class MigrationEngine {
       this.currentMigration = context;
 
       // Load local data
-      const localData = await dataManager.exportAllData();
+      const localData = await dataBridge.exportAllData();
       if (!localData) {
         throw new Error('No local data found to migrate');
       }

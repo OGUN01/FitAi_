@@ -46,10 +46,11 @@ export interface DeduplicationResult<T = any> {
 // ============================================================================
 
 /**
- * How long to keep in-flight request tracking (10 seconds)
- * Short TTL because AI generation typically completes in 2-5 seconds
+ * How long to keep in-flight request tracking (60 seconds minimum for Cloudflare KV)
+ * Cloudflare KV requires minimum TTL of 60 seconds
+ * AI generation typically completes in 2-5 seconds, but we need to meet KV requirements
  */
-const IN_FLIGHT_TTL_SECONDS = 10;
+const IN_FLIGHT_TTL_SECONDS = 60;
 
 /**
  * How often to poll for in-flight request completion (100ms)

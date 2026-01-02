@@ -131,9 +131,27 @@ export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps>
   useEffect(() => {
     if (visible && profile?.fitnessGoals) {
       const goals = profile.fitnessGoals;
-      setPrimaryGoals(goals.primaryGoals || []);
+      console.log('📊 [GoalsModal] Loading fitnessGoals:', JSON.stringify(goals, null, 2));
+      
+      // Check both camelCase and snake_case formats
+      const rawGoals = goals.primaryGoals || goals.primary_goals || [];
+      
+      // Normalize goals: convert hyphens to underscores for consistency
+      // Onboarding stores 'weight-loss' but modal expects 'weight_loss'
+      const loadedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, '_'));
+      
+      // Handle time commitment - could be '30' (old format) or '15-30' (new format)
+      const rawTime = goals.timeCommitment || goals.time_commitment || '';
+      // If it's a plain number, convert to range
+      const loadedTime = /^\d+$/.test(rawTime) ? 
+        (parseInt(rawTime) <= 30 ? '15-30' : parseInt(rawTime) <= 45 ? '30-45' : parseInt(rawTime) <= 60 ? '45-60' : '60+') 
+        : rawTime;
+      
+      console.log('📊 [GoalsModal] Parsed values:', { rawGoals, loadedGoals, rawTime, loadedTime, experience: goals.experience || goals.experience_level });
+      
+      setPrimaryGoals(loadedGoals);
       setExperience(goals.experience || goals.experience_level || '');
-      setTimeCommitment(goals.timeCommitment || '');
+      setTimeCommitment(loadedTime);
       setErrors({});
     }
   }, [visible, profile]);

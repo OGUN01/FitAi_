@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { offlineService, SyncResult, OfflineAction } from '../services/offline';
-import { dataManager } from '../services/dataManager';
+import { dataBridge } from '../services/DataBridge';
 import {
   OnboardingData,
   WorkoutSession,
@@ -75,8 +75,8 @@ export const useOfflineStore = create<OfflineState>()(
       // Actions
       initialize: async () => {
         try {
-          // Initialize data manager first
-          await dataManager.initialize();
+          // Initialize data bridge first
+          await dataBridge.initialize();
 
           // Set up network listener
           const removeListener = offlineService.addNetworkListener((isOnline) => {
@@ -172,7 +172,7 @@ export const useOfflineStore = create<OfflineState>()(
       // Data Management Actions
       storeOnboardingData: async (data: OnboardingData) => {
         try {
-          await dataManager.storeOnboardingData(data);
+          await dataBridge.storeOnboardingData(data);
           await get().updateDataStats();
         } catch (error) {
           console.error('Failed to store onboarding data:', error);
@@ -182,7 +182,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       getOnboardingData: async () => {
         try {
-          return await dataManager.getOnboardingData();
+          return await dataBridge.getOnboardingData();
         } catch (error) {
           console.error('Failed to get onboarding data:', error);
           return null;
@@ -191,7 +191,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       storeWorkoutSession: async (session: WorkoutSession) => {
         try {
-          await dataManager.storeWorkoutSession(session);
+          await dataBridge.storeWorkoutSession(session);
           await get().updateDataStats();
         } catch (error) {
           console.error('Failed to store workout session:', error);
@@ -201,7 +201,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       getWorkoutSessions: async (limit?: number) => {
         try {
-          return await dataManager.getWorkoutSessions(limit);
+          return await dataBridge.getWorkoutSessions(limit);
         } catch (error) {
           console.error('Failed to get workout sessions:', error);
           return [];
@@ -209,7 +209,7 @@ export const useOfflineStore = create<OfflineState>()(
       },
       storeMealLog: async (mealLog: MealLog) => {
         try {
-          await dataManager.storeMealLog(mealLog);
+          await dataBridge.storeMealLog(mealLog);
           await get().updateDataStats();
         } catch (error) {
           console.error('Failed to store meal log:', error);
@@ -219,7 +219,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       getMealLogs: async (date?: string, limit?: number) => {
         try {
-          return await dataManager.getMealLogs(date, limit);
+          return await dataBridge.getMealLogs(date, limit);
         } catch (error) {
           console.error('Failed to get meal logs:', error);
           return [];
@@ -228,7 +228,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       storeBodyMeasurement: async (measurement: BodyMeasurement) => {
         try {
-          await dataManager.storeBodyMeasurement(measurement);
+          await dataBridge.storeBodyMeasurement(measurement);
           await get().updateDataStats();
         } catch (error) {
           console.error('Failed to store body measurement:', error);
@@ -238,7 +238,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       getBodyMeasurements: async (limit?: number) => {
         try {
-          return await dataManager.getBodyMeasurements(limit);
+          return await dataBridge.getBodyMeasurements(limit);
         } catch (error) {
           console.error('Failed to get body measurements:', error);
           return [];
@@ -247,7 +247,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       updateDataStats: async () => {
         try {
-          const stats = await dataManager.getDataStatistics();
+          const stats = await dataBridge.getDataStatistics();
           set({ dataStats: stats });
         } catch (error) {
           console.error('Failed to update data stats:', error);
@@ -256,7 +256,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       validateLocalData: async () => {
         try {
-          const schema = await dataManager.exportAllData();
+          const schema = await dataBridge.exportAllData();
           if (!schema) {
             return {
               isValid: false,
@@ -294,7 +294,7 @@ export const useOfflineStore = create<OfflineState>()(
 
       exportLocalData: async () => {
         try {
-          return await dataManager.exportAllData();
+          return await dataBridge.exportAllData();
         } catch (error) {
           console.error('Failed to export local data:', error);
           return null;

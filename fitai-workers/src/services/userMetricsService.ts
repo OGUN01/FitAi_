@@ -261,6 +261,7 @@ export async function loadBodyMeasurements(env: Env, userId: string) {
 
 /**
  * Load user's preferences for AI context
+ * Now loads ALL onboarding data for truly personalized AI generation
  */
 export async function loadUserPreferences(env: Env, userId: string) {
   try {
@@ -279,7 +280,34 @@ export async function loadUserPreferences(env: Env, userId: string) {
           breakfast_enabled,
           lunch_enabled,
           dinner_enabled,
-          snacks_enabled
+          snacks_enabled,
+          
+          cooking_skill_level,
+          max_prep_time_minutes,
+          budget_level,
+          
+          keto_ready,
+          intermittent_fasting_ready,
+          paleo_ready,
+          mediterranean_ready,
+          low_carb_ready,
+          high_protein_ready,
+          
+          drinks_enough_water,
+          limits_sugary_drinks,
+          eats_regular_meals,
+          avoids_late_night_eating,
+          controls_portion_sizes,
+          reads_nutrition_labels,
+          eats_processed_foods,
+          eats_5_servings_fruits_veggies,
+          limits_refined_sugar,
+          includes_healthy_fats,
+          
+          drinks_alcohol,
+          smokes_tobacco,
+          drinks_coffee,
+          takes_supplements
         `)
         .eq('user_id', userId)
         .single(),
@@ -291,6 +319,11 @@ export async function loadUserPreferences(env: Env, userId: string) {
           intensity,
           primary_goals,
           activity_level,
+          workout_experience_years,
+          can_do_pushups,
+          can_run_minutes,
+          flexibility_level,
+          workout_frequency_per_week,
           physical_limitations: body_analysis!inner(physical_limitations)
         `)
         .eq('user_id', userId)

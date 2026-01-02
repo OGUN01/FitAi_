@@ -3,8 +3,7 @@
 
 import { migrationEngine, MigrationProgress } from './migration';
 import { enhancedLocalStorage } from './localStorage';
-import { dataManager } from './dataManager';
-import { syncManager } from './syncManager';
+import { dataBridge } from './DataBridge';
 import { profileValidator } from './profileValidator';
 import { supabase } from './supabase';
 import {
@@ -313,7 +312,7 @@ export class MigrationManager {
 
   private async hasLocalDataToMigrate(): Promise<boolean> {
     try {
-      const localData = await dataManager.exportAllData();
+      const localData = await dataBridge.exportAllData();
       if (!localData) return false;
 
       // Check if there's meaningful data to migrate
@@ -416,16 +415,16 @@ export class MigrationManager {
       console.log('🔍 Checking profile migration for user:', userId);
 
       // Set user ID in data manager
-      dataManager.setUserId(userId);
+      dataBridge.setUserId(userId);
 
       // Debug: Check if hasLocalData method exists
-      if (typeof dataManager.hasLocalData !== 'function') {
+      if (typeof dataBridge.hasLocalData !== 'function') {
         console.error('❌ hasLocalData method not found on dataManager');
         return false;
       }
 
       // Check if user has local profile data
-      const hasLocalData = await dataManager.hasLocalData();
+      const hasLocalData = await dataBridge.hasLocalData();
       console.log('📊 Local data check result:', hasLocalData);
 
       if (!hasLocalData) {
@@ -466,8 +465,8 @@ export class MigrationManager {
     console.log('🚀 Starting profile data migration for user:', userId);
 
     try {
-      // Use the existing syncManager for the actual migration
-      const result = await syncManager.migrateLocalDataToRemote(userId);
+      // Use DataBridge for the actual migration
+      const result = await dataBridge.migrateGuestToUser(userId);
 
       if (result.success) {
         console.log('✅ Profile migration completed successfully');
@@ -543,7 +542,7 @@ export class MigrationManager {
 
     try {
       // Validate personal info
-      const personalInfo = await dataManager.loadPersonalInfo();
+      const personalInfo = await dataBridge.loadPersonalInfo();
       if (personalInfo) {
         const validation = profileValidator.validatePersonalInfo(personalInfo);
         if (!validation.isValid) {
@@ -552,7 +551,7 @@ export class MigrationManager {
       }
 
       // Validate fitness goals
-      const fitnessGoals = await dataManager.loadFitnessGoals();
+      const fitnessGoals = await dataBridge.loadFitnessGoals();
       if (fitnessGoals) {
         const validation = profileValidator.validateFitnessGoals(fitnessGoals);
         if (!validation.isValid) {
@@ -561,7 +560,7 @@ export class MigrationManager {
       }
 
       // Validate diet preferences
-      const dietPreferences = await dataManager.loadDietPreferences();
+      const dietPreferences = await dataBridge.loadDietPreferences();
       if (dietPreferences) {
         const validation = profileValidator.validateDietPreferences(dietPreferences);
         if (!validation.isValid) {
@@ -620,11 +619,11 @@ export class MigrationManager {
 
       // Step 0: Test localStorage methods directly
       console.log('🧪 Step 0: Testing localStorage methods...');
-      await dataManager.testLocalStorageMethods();
+      await dataBridge.testLocalStorageMethods();
 
       // Step 1: Test data manager methods
       console.log('🧪 Step 1: Testing DataManager methods...');
-      await dataManager.testMigrationDetection();
+      await dataBridge.testMigrationDetection();
 
       // Step 2: Test migration detection
       console.log('🧪 Step 2: Testing migration detection...');
@@ -650,10 +649,10 @@ export class MigrationManager {
       console.log('🧪 Setting up test environment for migration...');
 
       // Set user ID
-      dataManager.setUserId(userId);
+      dataBridge.setUserId(userId);
 
       // Create sample data
-      const sampleCreated = await dataManager.createSampleProfileData();
+      const sampleCreated = await dataBridge.createSampleProfileData();
 
       if (sampleCreated) {
         console.log('✅ Test environment setup completed');

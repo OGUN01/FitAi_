@@ -174,6 +174,7 @@ export interface MigrationResult {
     dietPreferences?: boolean;
     workoutPreferences?: boolean;
     bodyAnalysis?: boolean;
+    advancedReview?: boolean;
   };
   conflicts: SyncConflict[];
   errors: string[];

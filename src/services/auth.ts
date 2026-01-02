@@ -3,7 +3,7 @@ import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { googleAuthService, GoogleSignInResult } from './googleAuth';
 import { migrationManager } from './migrationManager';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 
 export interface AuthResponse {
   success: boolean;
@@ -224,8 +224,8 @@ class AuthService {
         // Store session in AsyncStorage for persistence
         await AsyncStorage.setItem('auth_session', JSON.stringify(this.currentSession));
 
-        // Set user ID in data manager for potential migration
-        dataManager.setUserId(authUser.id);
+        // Set user ID in data bridge for potential migration
+        dataBridge.setUserId(authUser.id);
 
         // Check if profile data migration is needed (don't await to avoid blocking login)
         this.checkAndTriggerMigration(authUser.id).catch((error) => {

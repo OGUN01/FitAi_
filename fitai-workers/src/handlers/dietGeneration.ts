@@ -43,6 +43,10 @@ import {
 } from '../services/userMetricsService';
 import { adjustPortionsToTarget } from '../utils/portionAdjustment';
 
+// Import the new specialized diet prompt system
+import { buildDietPrompt } from '../prompts/diet';
+import { detectCuisine } from '../prompts/diet/types';
+
 // ============================================================================
 // AI PROVIDER CONFIGURATION
 // ============================================================================
@@ -64,256 +68,10 @@ function createAIProvider(env: Env, modelId: string) {
 }
 
 // ============================================================================
-// CUISINE DETECTION
+// NOTE: Diet prompts are now handled by specialized prompt files in
+// ../prompts/diet/ (vegan.ts, vegetarian.ts, pescatarian.ts, nonVeg.ts, keto.ts)
+// The buildDietPrompt function is imported from there.
 // ============================================================================
-
-/**
- * Detect cuisine type from user's country/state
- * Used to generate region-appropriate meals
- */
-function detectCuisine(country?: string, state?: string): string {
-  if (!country) return 'international';
-
-  const cuisineMap: Record<string, string> = {
-    IN: 'Indian',
-    MX: 'Mexican',
-    US: 'American',
-    IT: 'Italian',
-    JP: 'Japanese',
-    CN: 'Chinese',
-    TH: 'Thai',
-    FR: 'French',
-    ES: 'Spanish',
-    GR: 'Greek',
-    TR: 'Turkish',
-    KR: 'Korean',
-    VN: 'Vietnamese',
-    BR: 'Brazilian',
-    AR: 'Argentinian',
-    GB: 'British',
-    DE: 'German',
-    AU: 'Australian',
-    CA: 'Canadian',
-    NZ: 'New Zealand',
-  };
-
-  return cuisineMap[country.toUpperCase()] || 'International';
-}
-
-// ============================================================================
-// DIET TYPE RULES
-// ============================================================================
-
-/**
- * Get detailed diet type rules for AI prompt
- * Ensures AI respects dietary restrictions accurately
- */
-function getDietTypeRules(dietType?: string): string {
-  const rules: Record<string, string> = {
-    vegan: 'STRICT: No animal products whatsoever (no meat, poultry, fish, dairy, eggs, honey, gelatin)',
-    vegetarian: 'No meat, fish, or poultry. Dairy products and eggs ARE allowed.',
-    pescatarian: 'No meat or poultry. Fish, seafood, dairy, and eggs ARE allowed.',
-    keto: 'Very low carb (<50g total daily), high fat (70% of calories), moderate protein',
-    paleo: 'No grains, legumes, dairy, or processed foods. Focus on meat, fish, vegetables, fruits, nuts',
-    omnivore: 'All foods allowed - balanced diet with variety from all food groups',
-    'gluten-free': 'No wheat, barley, rye, or gluten-containing grains',
-    'dairy-free': 'No milk, cheese, yogurt, butter, cream, or dairy products',
-  };
-
-  return rules[dietType?.toLowerCase() || 'omnivore'] || 'Balanced diet with all food groups';
-}
-
-/**
- * Get protein source notes based on diet type
- * Helps AI understand protein requirements for different diets
- */
-function getDietProteinNote(dietType?: string): string {
-  const notes: Record<string, string> = {
-    vegan: 'CRITICAL - Use high-protein plant sources: lentils, chickpeas, tofu, tempeh, quinoa, nuts. Target +25% higher protein due to lower absorption.',
-    vegetarian: 'Use dairy, eggs, legumes, and plant proteins. Target +15% higher protein.',
-    pescatarian: 'Use fish, seafood, eggs, dairy, and legumes. Target +10% higher protein.',
-  };
-
-  return notes[dietType?.toLowerCase() || ''] || 'Use varied protein sources for optimal nutrition';
-}
-
-/**
- * Get enabled meals from preferences
- */
-function getEnabledMeals(prefs?: DietPreferences): string[] {
-  if (!prefs) return ['Breakfast', 'Lunch', 'Dinner', '2 Snacks'];
-
-  const meals: string[] = [];
-  if (prefs.breakfast_enabled !== false) meals.push('Breakfast');
-  if (prefs.lunch_enabled !== false) meals.push('Lunch');
-  if (prefs.dinner_enabled !== false) meals.push('Dinner');
-  if (prefs.snacks_enabled !== false) meals.push('2 Snacks');
-
-  return meals.length > 0 ? meals : ['Breakfast', 'Lunch', 'Dinner'];
-}
-
-// ============================================================================
-// AI PROMPT BUILDER (COMPREHENSIVE)
-// ============================================================================
-
-/**
- * Build comprehensive AI prompt with all context
- *
- * **NO FOOD FILTERING** - AI uses full knowledge
- * Includes: cuisine, cooking methods, allergens, diet type, nutritional targets
- *
- * @param metrics - Calculated health metrics from Universal Health System
- * @param profile - User profile (age, gender, location)
- * @param prefs - Diet preferences (type, allergies, cooking methods)
- * @returns Detailed AI prompt string
- */
-function buildDietPrompt(
-  metrics: UserHealthMetrics,
-  profile: UserProfileContext | null,
-  prefs: DietPreferences | null
-): string {
-  // Detect cuisine from location
-  const cuisine = detectCuisine(profile?.country, profile?.state);
-
-  // Get cooking methods (default to healthy options)
-  const cookingMethods = prefs?.cooking_methods?.length
-    ? prefs.cooking_methods
-    : ['air fryer', 'steaming', 'grilling', 'minimal oil'];
-
-  // Get allergies and restrictions
-  const allergies = prefs?.allergies || [];
-  const restrictions = prefs?.restrictions || [];
-  const dietType = prefs?.diet_type || 'omnivore';
-
-  // Get enabled meals
-  const enabledMeals = getEnabledMeals(prefs);
-
-  // Build the comprehensive prompt
-  return `You are FitAI, an expert nutritionist specializing in ${cuisine} cuisine.
-
-**USER PROFILE:**
-- Location: ${profile?.state || 'Unknown'}, ${profile?.country || 'Unknown'}
-- Age: ${profile?.age || 'Unknown'}, Gender: ${profile?.gender || 'Unknown'}
-- Diet Type: ${dietType}
-- Allergies: ${allergies.length > 0 ? allergies.join(', ') : 'None'}
-- Restrictions: ${restrictions.length > 0 ? restrictions.join(', ') : 'None'}
-- Occupation: ${profile?.occupation_type || 'General'}
-
-**NUTRITIONAL TARGETS (CALCULATED FROM UNIVERSAL HEALTH SYSTEM):**
-These values are SCIENTIFICALLY CALCULATED based on BMR, TDEE, and user goals.
-You MUST aim to match these targets as closely as possible.
-
-- Daily Calories: ${metrics.daily_calories} kcal (±50 kcal acceptable)
-- Protein: ${metrics.daily_protein_g}g (${getDietProteinNote(dietType)})
-- Carbohydrates: ${metrics.daily_carbs_g}g
-- Fat: ${metrics.daily_fat_g}g
-- Water: ${Math.round(metrics.daily_water_ml / 1000)}L
-
-**BMI & Health Context:**
-- BMI: ${metrics.calculated_bmi?.toFixed(1)} (${metrics.bmi_category || 'Normal'})
-- BMR: ${metrics.calculated_bmr} kcal/day
-- TDEE: ${metrics.calculated_tdee} kcal/day
-- Health Score: ${metrics.health_score || 'N/A'}/100
-
-**COOKING PREFERENCES:**
-- Preferred Methods: ${cookingMethods.join(', ')}
-- Emphasis: Use healthier cooking techniques
-- Oil Usage: Minimal to moderate (prefer olive oil, avocado oil)
-
-**MEAL REQUIREMENTS:**
-- Cuisine: Traditional ${cuisine} meals
-- Diet Type: ${dietType}
-- Meals to Generate: ${enabledMeals.join(', ')}
-- Variety: Use diverse ingredients, avoid repetition
-- Authenticity: Use traditional ${cuisine} ingredients and preparations
-
-**CRITICAL RULES (MUST FOLLOW 100%):**
-
-1. **ALLERGEN AVOIDANCE (CRITICAL):**
-   ${allergies.length > 0
-     ? `NEVER include these allergens: ${allergies.join(', ')}
-   Check ALL food items carefully. Exclude common forms and derivatives.
-   Example: If "peanuts" is an allergen, also avoid peanut butter, peanut oil, etc.`
-     : 'No allergen restrictions.'}
-
-2. **DIET TYPE COMPLIANCE (CRITICAL):**
-   ${getDietTypeRules(dietType)}
-   Violating diet type rules is UNACCEPTABLE.
-
-3. **CALORIE TARGET (CRITICAL):**
-   Total daily calories MUST be within ${metrics.daily_calories - 50} to ${metrics.daily_calories + 50} kcal.
-   This is a HARD requirement.
-
-4. **CUISINE AUTHENTICITY:**
-   Use traditional ${cuisine} foods, spices, and cooking methods.
-   Examples for ${cuisine}:
-   ${getCuisineExamples(cuisine)}
-
-5. **REALISTIC PORTIONS:**
-   Use standard serving sizes:
-   - Rice: 1 cup cooked = 185g
-   - Chicken breast: 150g
-   - Vegetables: 1 cup = 150-200g
-   - Roti/Bread: 1 piece = 80g
-   - Dal/Lentils: 1 cup = 200g
-
-6. **ACCURATE NUTRITION:**
-   Provide EXACT calorie, protein, carb, and fat values for EACH food item.
-   Use standard nutrition databases (USDA, IFCT for Indian foods).
-
-7. **COOKING METHODS:**
-   Prefer: ${cookingMethods.join(', ')}
-   Specify cooking method for each meal.
-
-8. **HIGH PROTEIN PRIORITY:**
-   ${metrics.daily_protein_g}g protein is CRITICAL for muscle maintenance/growth.
-   Distribute protein across all meals (20-40g per meal).
-
-9. **MEAL TIMING:**
-   - Breakfast: 20-25% of daily calories (quick to prepare)
-   - Lunch: 30-35% of daily calories (substantial, balanced)
-   - Dinner: 25-30% of daily calories (protein-focused)
-   - Snacks: 10-15% of daily calories (nutritious, filling)
-
-10. **LOCAL AVAILABILITY:**
-    Use ingredients commonly available in ${profile?.state || 'the region'}.
-
-**OUTPUT FORMAT:**
-Generate a complete daily meal plan with:
-- Meal type, name, and description
-- Cooking method and preparation time
-- Each food item with exact portions and nutrition
-- Meal totals and daily totals
-- Cooking tips and substitution suggestions
-
-Generate the meal plan now. Be creative while respecting all constraints.`;
-}
-
-/**
- * Get cuisine-specific examples to guide AI
- */
-function getCuisineExamples(cuisine: string): string {
-  const examples: Record<string, string> = {
-    Indian:
-      '   - Dal (lentils), Rice, Roti, Paneer, Chicken Curry, Biryani, Sabzi, Raita, Poha, Upma',
-    Mexican:
-      '   - Tacos, Burritos, Enchiladas, Quesadillas, Fajitas, Black Beans, Rice, Guacamole, Salsa',
-    American:
-      '   - Grilled Chicken, Salads, Wraps, Burgers, Sandwiches, Oatmeal, Eggs, Greek Yogurt',
-    Italian:
-      '   - Pasta, Pizza, Risotto, Chicken Parmigiana, Caprese Salad, Minestrone, Tiramisu',
-    Japanese:
-      '   - Sushi, Teriyaki Chicken, Miso Soup, Edamame, Rice Bowls, Tempura, Sashimi',
-    Chinese:
-      '   - Stir-fries, Fried Rice, Noodles, Dumplings, Spring Rolls, Hot Pot, Congee',
-    Thai:
-      '   - Pad Thai, Green Curry, Tom Yum, Papaya Salad, Satay, Fried Rice, Spring Rolls',
-    International:
-      '   - Variety of global dishes: Mediterranean, Asian fusion, Healthy bowls, Salads',
-  };
-
-  return examples[cuisine] || examples.International;
-}
 
 // ============================================================================
 // ALLERGEN VALIDATION
@@ -362,7 +120,10 @@ function getAllergenAliases(allergen: string): string[] {
     ],
     egg: ['egg', 'albumin', 'mayonnaise', 'mayo', 'omelette', 'omelet'],
     soy: ['soy', 'soya', 'tofu', 'tempeh', 'edamame', 'soy sauce', 'tamari'],
-    gluten: ['wheat', 'barley', 'rye', 'gluten', 'flour', 'bread', 'pasta', 'roti', 'naan'],
+    // Gluten - only flag actual gluten sources, not cooking formats
+    // Jowar/bajra/ragi rotis are gluten-free, so don't flag 'roti' generically
+    gluten: ['wheat', 'barley', 'rye', 'gluten', 'wheat flour', 'maida', 'semolina', 'suji', 'rava',
+             'bread', 'pasta', 'naan', 'paratha', 'chapati', 'puri', 'bhatura', 'kulcha', 'couscous', 'seitan'],
     fish: ['fish', 'salmon', 'tuna', 'cod', 'tilapia', 'sardine', 'anchovy', 'mackerel'],
   };
 
@@ -380,11 +141,23 @@ function getAllergenAliases(allergen: string): string[] {
 }
 
 /**
- * Check if food contains allergen (with alias detection)
+ * Check if food contains allergen (with alias detection and exception handling)
  */
 function containsAllergen(foodName: string, allergen: string): boolean {
   const foodLower = foodName.toLowerCase();
   const allergenLower = allergen.toLowerCase();
+
+  // Handle gluten allergen specially
+  if (allergenLower === 'gluten') {
+    // "Gluten-Free" or "GF" labels should NOT be flagged as containing gluten
+    if (foodLower.includes('gluten-free') || foodLower.includes('gluten free') || foodLower.includes('gf')) {
+      return false;
+    }
+    // Check gluten-free grains/millets exceptions
+    if (isGlutenFreeException(foodLower)) {
+      return false; // Jowar, bajra, moong dal, etc. are gluten-free
+    }
+  }
 
   // Direct match
   if (foodLower.includes(allergenLower)) {
@@ -399,6 +172,65 @@ function containsAllergen(foodName: string, allergen: string): boolean {
 // ============================================================================
 // DIET TYPE VIOLATION DETECTION
 // ============================================================================
+
+/**
+ * Vegan-friendly foods that contain dairy/egg keywords but are actually plant-based
+ * This prevents false positives in validation
+ */
+const VEGAN_FRIENDLY_EXCEPTIONS = [
+  // Plant-based milks
+  'soy milk', 'almond milk', 'oat milk', 'coconut milk', 'rice milk', 'cashew milk',
+  'hemp milk', 'flax milk', 'macadamia milk', 'pea milk', 'hazelnut milk',
+  // Nut/seed butters
+  'peanut butter', 'almond butter', 'cashew butter', 'sunflower butter', 'tahini',
+  'seed butter', 'nut butter', 'cocoa butter', 'shea butter', 'mango butter',
+  // Plant-based creams
+  'coconut cream', 'cashew cream', 'oat cream', 'soy cream',
+  // Vegan cheese/dairy alternatives
+  'vegan cheese', 'nutritional yeast', 'dairy-free', 'plant-based',
+  // Vegan yogurt alternatives
+  'vegan yogurt', 'vegan yoghurt', 'coconut yogurt', 'coconut yoghurt',
+  'almond yogurt', 'almond yoghurt', 'soy yogurt', 'soy yoghurt',
+  'oat yogurt', 'oat yoghurt', 'cashew yogurt', 'cashew yoghurt',
+  'plant-based yogurt', 'dairy-free yogurt',
+  // Vegan egg alternatives
+  'tofu scramble', 'chickpea omelette', 'vegan egg', 'flax egg', 'chia egg',
+  'aquafaba', 'just egg',
+  // Butternut squash (contains 'butter' keyword)
+  'butternut', 'butterbeans', 'butter beans', 'butterfly',
+];
+
+/**
+ * Check if food is a vegan-friendly exception
+ * Returns true if the food name matches a known plant-based alternative
+ */
+function isVeganFriendlyException(foodName: string): boolean {
+  const foodLower = foodName.toLowerCase();
+  return VEGAN_FRIENDLY_EXCEPTIONS.some((exception) => foodLower.includes(exception));
+}
+
+/**
+ * Gluten-free foods that might trigger false positives
+ * Indian millets, legumes, and gluten-free grains
+ */
+const GLUTEN_FREE_EXCEPTIONS = [
+  // Gluten-free Indian rotis/breads
+  'jowar', 'bajra', 'ragi', 'nachni', 'makki', 'buckwheat', 'amaranth', 'quinoa',
+  'rice flour', 'besan', 'chickpea flour', 'gram flour', 'almond flour',
+  'coconut flour', 'tapioca', 'sorghum', 'millet',
+  // Gluten-free grains
+  'corn', 'maize', 'polenta', 'teff', 'arrowroot',
+  // Gluten-free dals/legumes (all dals are naturally gluten-free)
+  'moong', 'mung', 'masoor', 'toor', 'chana', 'urad', 'dal', 'lentil',
+];
+
+/**
+ * Check if food is a gluten-free exception
+ */
+function isGlutenFreeException(foodName: string): boolean {
+  const foodLower = foodName.toLowerCase();
+  return GLUTEN_FREE_EXCEPTIONS.some((exception) => foodLower.includes(exception));
+}
 
 /**
  * Check for diet type violations
@@ -448,6 +280,11 @@ function checkDietTypeViolations(meals: Meal[], dietType: string): DietValidatio
   for (const meal of meals) {
     for (const food of meal.foods) {
       const foodLower = food.name.toLowerCase();
+      
+      // Skip validation for known vegan-friendly foods
+      if (isVeganFriendlyException(foodLower)) {
+        continue;
+      }
 
       // Vegan checks (strictest)
       if (dietType.toLowerCase() === 'vegan') {

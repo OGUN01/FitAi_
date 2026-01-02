@@ -353,6 +353,100 @@ export class FitAIWorkersClient {
       },
     });
   }
+
+  /**
+   * Check if user is authenticated (has valid Supabase session)
+   */
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return !!session?.access_token;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Get current user ID from Supabase session
+   */
+  async getCurrentUserId(): Promise<string | null> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.user?.id || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Test backend connection with authentication
+   * Returns connection status and any errors
+   */
+  async testConnection(): Promise<{
+    connected: boolean;
+    authenticated: boolean;
+    error?: string;
+    backendVersion?: string;
+  }> {
+    try {
+      // First check if backend is reachable (no auth required)
+      const healthResponse = await this.healthCheck();
+      
+      if (!healthResponse.success) {
+        return {
+          connected: false,
+          authenticated: false,
+          error: 'Backend health check failed',
+        };
+      }
+
+      // Now check authentication
+      const isAuth = await this.isAuthenticated();
+      
+      if (!isAuth) {
+        return {
+          connected: true,
+          authenticated: false,
+          error: 'User not authenticated - sign up required for AI features',
+          backendVersion: 'v2.0',
+        };
+      }
+
+      // Test authenticated endpoint
+      try {
+        const token = await this.getAuthToken();
+        const authTestResponse = await fetch(`${this.baseUrl}/auth/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        const authData = await authTestResponse.json();
+        
+        return {
+          connected: true,
+          authenticated: authData.success === true,
+          error: authData.success ? undefined : 'Authentication verification failed',
+          backendVersion: 'v2.0',
+        };
+      } catch (authError) {
+        return {
+          connected: true,
+          authenticated: false,
+          error: `Auth test failed: ${authError instanceof Error ? authError.message : String(authError)}`,
+          backendVersion: 'v2.0',
+        };
+      }
+    } catch (error) {
+      return {
+        connected: false,
+        authenticated: false,
+        error: `Connection failed: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
 }
 
 // ============================================================================

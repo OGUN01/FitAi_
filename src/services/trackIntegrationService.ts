@@ -7,7 +7,7 @@ import { realTimeSyncService } from './syncService';
 import { syncMonitoringService } from './syncMonitoring';
 import { intelligentSyncScheduler } from './intelligentSyncScheduler';
 import { backupRecoveryService } from './backupRecoveryService';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import { enhancedLocalStorage } from './localStorage';
 
 // ============================================================================
@@ -495,7 +495,7 @@ export class TrackIntegrationService {
 
       // Store onboarding data in local storage
       if (authData.onboardingData) {
-        await dataManager.storeOnboardingData(authData.onboardingData);
+        await dataBridge.storeOnboardingData(authData.onboardingData);
       }
 
       // Create initial backup

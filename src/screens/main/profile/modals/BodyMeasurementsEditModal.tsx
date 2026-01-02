@@ -2,11 +2,13 @@
  * BodyMeasurementsEditModal - Edit Body Measurements
  * 
  * Fields:
- * - Weight (slider/input)
- * - Height (slider/input)
+ * - Height (input)
+ * - Current Weight (input)
+ * - Target Weight (input)
+ * - Body Fat % (optional input)
  * - BMI (calculated, display only)
  * 
- * Uses useUserStore.updatePersonalInfo() to save changes.
+ * Saves to profile.bodyMetrics via setProfile.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -22,7 +24,6 @@ import { useUser } from '../../../../hooks/useUser';
 import { ResponsiveTheme } from '../../../../utils/constants';
 import { rf, rw } from '../../../../utils/responsive';
 import { haptics } from '../../../../utils/haptics';
-import type { PersonalInfo } from '../../../../types/user';
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -34,21 +35,25 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
   onClose,
 }) => {
   const { profile } = useUser();
-  const { updatePersonalInfo } = useUserStore();
+  const { setProfile } = useUserStore();
 
   // Form state
-  const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [targetWeight, setTargetWeight] = useState('');
+  const [bodyFat, setBodyFat] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Load current values when modal opens
   useEffect(() => {
     if (visible && profile) {
-      // ✅ Get height/weight from bodyMetrics (database: body_analysis table)
+      // ✅ Get measurements from bodyMetrics (database: body_analysis table)
       const bodyMetrics = profile.bodyMetrics;
-      setWeight(bodyMetrics?.current_weight_kg?.toString() || '');
       setHeight(bodyMetrics?.height_cm?.toString() || '');
+      setWeight(bodyMetrics?.current_weight_kg?.toString() || '');
+      setTargetWeight(bodyMetrics?.target_weight_kg?.toString() || '');
+      setBodyFat(bodyMetrics?.body_fat_percentage?.toString() || '');
       setErrors({});
     }
   }, [visible, profile]);
@@ -85,9 +90,19 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
       newErrors.weight = 'Enter valid weight in kg (30-300)';
     }
 
+    // Target weight is optional but must be valid if provided
+    if (targetWeight && (isNaN(Number(targetWeight)) || Number(targetWeight) < 30 || Number(targetWeight) > 300)) {
+      newErrors.targetWeight = 'Enter valid target weight in kg (30-300)';
+    }
+
+    // Body fat is optional but must be valid if provided
+    if (bodyFat && (isNaN(Number(bodyFat)) || Number(bodyFat) < 3 || Number(bodyFat) > 50)) {
+      newErrors.bodyFat = 'Enter valid body fat % (3-50)';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [height, weight]);
+  }, [height, weight, targetWeight, bodyFat]);
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -98,19 +113,36 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
 
     setIsSaving(true);
     try {
-      // TODO: Implement updateBodyMetrics in userStore
-      // For now, this modal won't save until the store method is implemented
-      console.warn('⚠️ BodyMeasurementsEditModal: updateBodyMetrics not yet implemented in userStore');
-      console.log('Would save height:', height, 'cm, weight:', weight, 'kg');
+      if (!profile) {
+        throw new Error('Profile not found');
+      }
 
-      // ✅ Height/weight should be saved to bodyMetrics (database: body_analysis table)
-      // await updateBodyMetrics({
-      //   height_cm: parseFloat(height),
-      //   current_weight_kg: parseFloat(weight),
-      // });
+      // ✅ Update bodyMetrics in profile
+      const updatedBodyMetrics = {
+        ...profile.bodyMetrics,
+        height_cm: parseFloat(height),
+        current_weight_kg: parseFloat(weight),
+        target_weight_kg: targetWeight ? parseFloat(targetWeight) : undefined,
+        body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
+        // Preserve other fields
+        medical_conditions: profile.bodyMetrics?.medical_conditions || [],
+        medications: profile.bodyMetrics?.medications || [],
+        physical_limitations: profile.bodyMetrics?.physical_limitations || [],
+        pregnancy_status: profile.bodyMetrics?.pregnancy_status || false,
+        breastfeeding_status: profile.bodyMetrics?.breastfeeding_status || false,
+      };
+
+      // Update profile with new bodyMetrics
+      const updatedProfile = {
+        ...profile,
+        bodyMetrics: updatedBodyMetrics,
+        updatedAt: new Date().toISOString(),
+      };
+
+      setProfile(updatedProfile);
+      console.log('✅ BodyMeasurementsEditModal: Saved body metrics:', updatedBodyMetrics);
 
       haptics.success();
-      Alert.alert('Note', 'Body measurements will be saved when updateBodyMetrics is implemented in userStore');
       onClose();
     } catch (error) {
       console.error('Error saving body measurements:', error);
@@ -118,16 +150,18 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
     } finally {
       setIsSaving(false);
     }
-  }, [height, weight, profile, onClose, validate]);
+  }, [height, weight, targetWeight, bodyFat, profile, onClose, validate, setProfile]);
 
   const hasChanges = useCallback(() => {
     if (!profile?.bodyMetrics) return true;
     const bodyMetrics = profile.bodyMetrics;
     return (
       height !== (bodyMetrics.height_cm?.toString() || '') ||
-      weight !== (bodyMetrics.current_weight_kg?.toString() || '')
+      weight !== (bodyMetrics.current_weight_kg?.toString() || '') ||
+      targetWeight !== (bodyMetrics.target_weight_kg?.toString() || '') ||
+      bodyFat !== (bodyMetrics.body_fat_percentage?.toString() || '')
     );
-  }, [height, weight, profile]);
+  }, [height, weight, targetWeight, bodyFat, profile]);
 
   return (
     <SettingsModalWrapper
@@ -204,7 +238,7 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
         hint="Height in centimeters"
       />
 
-      {/* Weight */}
+      {/* Current Weight */}
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
@@ -217,6 +251,36 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
         suffix="kg"
         error={errors.weight}
         hint="Weight in kilograms"
+      />
+
+      {/* Target Weight */}
+      <GlassFormInput
+        label="Target Weight"
+        icon="flag-outline"
+        iconColor="#4CAF50"
+        value={targetWeight}
+        onChangeText={setTargetWeight}
+        placeholder="Enter your goal weight"
+        keyboardType="decimal-pad"
+        maxLength={5}
+        suffix="kg"
+        error={errors.targetWeight}
+        hint="Your weight goal (optional)"
+      />
+
+      {/* Body Fat Percentage */}
+      <GlassFormInput
+        label="Body Fat %"
+        icon="body-outline"
+        iconColor="#FF9800"
+        value={bodyFat}
+        onChangeText={setBodyFat}
+        placeholder="Enter body fat percentage"
+        keyboardType="decimal-pad"
+        maxLength={4}
+        suffix="%"
+        error={errors.bodyFat}
+        hint="Optional - if you know it"
       />
 
       {/* Info Card */}

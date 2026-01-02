@@ -158,6 +158,7 @@ export interface DayMeal {
   name: string;
   description: string;
   items: MealItem[];
+  foods?: MealItem[]; // Alias for items (backward compatibility)
   totalCalories: number;
   totalMacros: {
     protein: number;
@@ -165,8 +166,14 @@ export interface DayMeal {
     fat: number;
     fiber: number;
   };
+  // Backward compatibility aliases
+  totalProtein?: number;
+  totalCarbs?: number;
+  totalFat?: number;
   preparationTime: number;
+  prepTime?: number; // Alias for preparationTime
   cookingTime?: number;
+  cookTime?: number; // Alias for cookingTime
   cookingInstructions?: Array<{
     step: number;
     instruction: string;
@@ -188,6 +195,9 @@ export interface DayMeal {
     fiber: number;
     calories: number;
   };
+  // Completion tracking
+  isCompleted?: boolean;
+  completedAt?: string;
 }
 
 export interface ExerciseInstruction {

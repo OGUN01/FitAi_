@@ -290,6 +290,26 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
+    // AUTHENTICATION CHECK: AI generation requires authenticated user
+    // Guest users only have local storage data - backend needs Supabase data
+    if (!user?.id || user.id.startsWith('guest')) {
+      console.log('[AUTH] User not authenticated for AI generation:', user?.id);
+      Alert.alert(
+        'Sign Up Required',
+        'Create an account to generate personalized AI workout plans. Your fitness data will be securely stored and used for customized recommendations.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Up',
+            onPress: () => {
+              // Navigate to auth screen - navigation comes from parent
+            },
+          },
+        ]
+      );
+      return;
+    }
+
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
         'Profile Incomplete',

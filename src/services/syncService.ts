@@ -2,7 +2,7 @@
 // Provides bidirectional data synchronization with Supabase and intelligent sync scheduling
 
 import { enhancedLocalStorage } from './localStorage';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import { conflictResolutionService } from './conflictResolution';
 import { validationService } from '../utils/validation';
 import { LocalStorageSchema } from '../types/localData';

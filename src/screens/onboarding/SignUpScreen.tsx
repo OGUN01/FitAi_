@@ -8,7 +8,7 @@ import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { RegisterCredentials } from '../../types/user';
 import { migrationManager } from '../../services/migrationManager';
-import { dataManager } from '../../services/dataManager';
+import { dataBridge } from '../../services/DataBridge';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
 
 interface SignUpScreenProps {
@@ -71,7 +71,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
     setIsLoading(true);
     try {
       // Check if there's local guest data before registering
-      const hasLocalData = await dataManager.hasLocalData();
+      const hasLocalData = await dataBridge.hasLocalData();
       console.log('🔍 SignUpScreen: Local data check result:', hasLocalData);
 
       // Ensure we trim and normalize the credentials before sending
@@ -119,7 +119,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
 
     try {
       // Check if there's local guest data before Google sign-up
-      const hasLocalData = await dataManager.hasLocalData();
+      const hasLocalData = await dataBridge.hasLocalData();
       console.log('🔍 SignUpScreen: Google sign-up - Local data check result:', hasLocalData);
 
       const response = await signInWithGoogle();

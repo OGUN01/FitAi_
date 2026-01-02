@@ -24,10 +24,10 @@ interface MeasurementPoint {
 interface BodySilhouetteProps {
   gender?: 'male' | 'female';
   measurements?: {
-    height?: string;
-    chest?: string;
-    waist?: string;
-    hips?: string;
+    height?: string | number;
+    chest?: string | number;
+    waist?: string | number;
+    hips?: string | number;
   };
   showAnimations?: boolean;
   size?: number;
@@ -46,12 +46,21 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
   const height = size;
   const width = size * 0.6;
 
+  // Helper to safely convert measurement to string
+  const toMeasurementString = (value: string | number | undefined): string | undefined => {
+    if (value === undefined || value === null) return undefined;
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? String(value) : undefined;
+    }
+    return value;
+  };
+
   // Measurement points (positioned relative to silhouette)
   const measurementPoints: MeasurementPoint[] = [
     {
       id: 'height',
       label: 'Height',
-      value: measurements?.height,
+      value: toMeasurementString(measurements?.height),
       x: width + 20,
       y: height / 2,
       side: 'right',
@@ -59,7 +68,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
     {
       id: 'chest',
       label: 'Chest',
-      value: measurements?.chest,
+      value: toMeasurementString(measurements?.chest),
       x: -20,
       y: height * 0.35,
       side: 'left',
@@ -67,7 +76,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
     {
       id: 'waist',
       label: 'Waist',
-      value: measurements?.waist,
+      value: toMeasurementString(measurements?.waist),
       x: width + 20,
       y: height * 0.5,
       side: 'right',
@@ -75,7 +84,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
     {
       id: 'hips',
       label: 'Hips',
-      value: measurements?.hips,
+      value: toMeasurementString(measurements?.hips),
       x: -20,
       y: height * 0.55,
       side: 'left',

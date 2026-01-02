@@ -20,9 +20,11 @@ interface MetricData {
     current: number;
     change?: number;
     trend?: 'up' | 'down' | 'stable';
+    target?: number;
   };
   calories?: {
     burned: number;
+    target?: number;
     change?: number;
     trend?: 'up' | 'down' | 'stable';
   };
@@ -35,6 +37,11 @@ interface MetricData {
     days: number;
     isActive: boolean;
   };
+  // Health metrics from onboarding calculations
+  bmi?: number | null;
+  bmr?: number | null;
+  tdee?: number | null;
+  dailyWater?: number | null;
 }
 
 interface MetricSummaryGridProps {
@@ -210,6 +217,63 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           onPress={() => onMetricPress?.('streak')}
         />
       </View>
+
+      {/* Health Metrics Section - from onboarding calculations */}
+      {(data.bmi || data.bmr || data.tdee || data.dailyWater) && (
+        <>
+          <SectionHeader
+            title="Health Metrics"
+            icon="fitness-outline"
+            iconColor="#10B981"
+          />
+          
+          {/* Row 3: BMI + BMR */}
+          <View style={styles.row}>
+            <MetricCard
+              title="BMI"
+              value={data.bmi ? data.bmi.toFixed(1) : '--'}
+              subtitle={data.bmi ? (data.bmi < 18.5 ? 'Underweight' : data.bmi < 25 ? 'Normal' : data.bmi < 30 ? 'Overweight' : 'Obese') : undefined}
+              icon="body-outline"
+              color="#8B5CF6"
+              delay={400}
+              onPress={() => onMetricPress?.('bmi')}
+            />
+
+            <MetricCard
+              title="BMR"
+              value={data.bmr ? `${Math.round(data.bmr)}` : '--'}
+              subtitle="cal/day"
+              icon="pulse-outline"
+              color="#EC4899"
+              delay={500}
+              onPress={() => onMetricPress?.('bmr')}
+            />
+          </View>
+
+          {/* Row 4: TDEE + Water */}
+          <View style={styles.row}>
+            <MetricCard
+              title="TDEE"
+              value={data.tdee ? `${Math.round(data.tdee)}` : '--'}
+              subtitle="cal/day"
+              icon="flash-outline"
+              color="#F59E0B"
+              delay={600}
+              onPress={() => onMetricPress?.('tdee')}
+            />
+
+            <MetricCard
+              title="Water Goal"
+              value={data.dailyWater ? `${(data.dailyWater / 1000).toFixed(1)}L` : '--'}
+              subtitle="daily target"
+              icon="water-outline"
+              color="#06B6D4"
+              delay={700}
+              onPress={() => onMetricPress?.('water')}
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 };

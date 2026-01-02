@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { crudOperations } from './crudOperations';
-import { dataManager } from './dataManager';
+import { dataBridge } from './DataBridge';
 import { AuthUser } from '../types/user';
 import { BodyMeasurement } from '../types/localData';
 
