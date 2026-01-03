@@ -524,6 +524,82 @@ class DataBridge {
   // MIGRATION METHODS
   // ============================================================================
 
+  /**
+   * Transform old onboarding format to new database format
+   * Handles nested structures like bodyAnalysis.measurements
+   */
+  private transformBodyAnalysisForDB(data: any): BodyAnalysisData {
+    console.log('[DataBridge] Transforming bodyAnalysis data:', data);
+
+    // Check if data is in old format (nested measurements)
+    if (data.measurements) {
+      const transformed: any = {
+        height_cm: data.measurements.height || data.measurements.height_cm,
+        current_weight_kg: data.measurements.weight || data.measurements.current_weight_kg,
+        target_weight_kg: data.measurements.targetWeight || data.measurements.target_weight_kg || data.measurements.weight,
+        target_timeline_weeks: data.measurements.targetTimeline || data.measurements.target_timeline_weeks || 12,
+        body_fat_percentage: data.measurements.bodyFat || data.measurements.body_fat_percentage,
+        waist_cm: data.measurements.waist || data.measurements.waist_cm,
+        hip_cm: data.measurements.hips || data.measurements.hip_cm,
+        chest_cm: data.measurements.chest || data.measurements.chest_cm,
+        medical_conditions: data.medicalConditions || data.medical_conditions || [],
+        medications: data.medications || [],
+        physical_limitations: data.physicalLimitations || data.physical_limitations || [],
+        pregnancy_status: data.pregnancyStatus || data.pregnancy_status || false,
+        breastfeeding_status: data.breastfeedingStatus || data.breastfeeding_status || false,
+        stress_level: data.stressLevel || data.stress_level || null,
+      };
+
+      // Handle photos
+      if (data.photos) {
+        transformed.front_photo_url = data.photos.front || null;
+        transformed.side_photo_url = data.photos.side || null;
+        transformed.back_photo_url = data.photos.back || null;
+      }
+
+      // Handle AI analysis
+      if (data.aiAnalysis) {
+        transformed.ai_estimated_body_fat = data.aiAnalysis.estimatedBodyFat || null;
+        transformed.ai_body_type = data.aiAnalysis.bodyType || null;
+        transformed.ai_confidence_score = data.aiAnalysis.confidence || null;
+      }
+
+      console.log('[DataBridge] Transformed bodyAnalysis:', transformed);
+      return transformed as BodyAnalysisData;
+    }
+
+    // Data is already in correct format
+    return data as BodyAnalysisData;
+  }
+
+  /**
+   * Transform old workoutPreferences format to new database format
+   */
+  private transformWorkoutPreferencesForDB(data: any): WorkoutPreferencesData {
+    console.log('[DataBridge] Transforming workoutPreferences data:', data);
+
+    // Map old field names to new ones
+    const transformed: any = {
+      location: data.location,
+      equipment: data.equipment || [],
+      time_preference: data.timeCommitment || data.time_preference,
+      intensity: data.experience_level || data.experienceLevel || data.intensity || 'beginner',
+      workout_types: data.workoutTypes || data.workout_types || [],
+      primary_goals: data.primary_goals || data.primaryGoals || [],
+      activity_level: data.activityLevel || data.activity_level || null,
+      workout_experience_years: data.experienceYears || data.workout_experience_years || 0,
+      workout_frequency_per_week: data.workoutsPerWeek || data.workout_frequency_per_week || 3,
+      can_do_pushups: data.canDoPushups || data.can_do_pushups || 0,
+      can_run_minutes: data.canRunMinutes || data.can_run_minutes || 0,
+      flexibility_level: data.flexibilityLevel || data.flexibility_level || 'fair',
+      weekly_weight_loss_goal: data.weeklyWeightLossGoal || data.weekly_weight_loss_goal || null,
+      preferred_workout_times: data.preferredWorkoutTimes || data.preferred_workout_times || [],
+    };
+
+    console.log('[DataBridge] Transformed workoutPreferences:', transformed);
+    return transformed as WorkoutPreferencesData;
+  }
+
   async migrateGuestToUser(userId: string): Promise<MigrationResult> {
     console.log(`[DataBridge] migrateGuestToUser: ${userId}`);
 
@@ -536,52 +612,72 @@ class DataBridge {
     try {
       // Load all local guest data
       const localData = await this.loadFromLocal();
+      console.log('[DataBridge] Loaded local data for migration:', localData);
 
       // Set the user ID
       this.setUserId(userId);
 
       // Sync each data type to database
       if (localData.personalInfo) {
+        console.log('[DataBridge] Migrating personalInfo...');
         const saveResult = await this.savePersonalInfo(localData.personalInfo, userId);
         if (saveResult.success) {
           result.migratedKeys.push('personalInfo');
+          console.log('✅ [DataBridge] personalInfo migrated successfully');
         } else {
+          console.error('❌ [DataBridge] personalInfo migration failed:', saveResult.errors);
           result.errors.push(...saveResult.errors);
         }
       }
 
       if (localData.dietPreferences) {
+        console.log('[DataBridge] Migrating dietPreferences...');
         const saveResult = await this.saveDietPreferences(localData.dietPreferences, userId);
         if (saveResult.success) {
           result.migratedKeys.push('dietPreferences');
+          console.log('✅ [DataBridge] dietPreferences migrated successfully');
         } else {
+          console.error('❌ [DataBridge] dietPreferences migration failed:', saveResult.errors);
           result.errors.push(...saveResult.errors);
         }
       }
 
       if (localData.bodyAnalysis) {
-        const saveResult = await this.saveBodyAnalysis(localData.bodyAnalysis, userId);
+        console.log('[DataBridge] Migrating bodyAnalysis...');
+        // Transform the data format
+        const transformedData = this.transformBodyAnalysisForDB(localData.bodyAnalysis);
+        const saveResult = await this.saveBodyAnalysis(transformedData, userId);
         if (saveResult.success) {
           result.migratedKeys.push('bodyAnalysis');
+          console.log('✅ [DataBridge] bodyAnalysis migrated successfully');
         } else {
+          console.error('❌ [DataBridge] bodyAnalysis migration failed:', saveResult.errors);
           result.errors.push(...saveResult.errors);
         }
       }
 
       if (localData.workoutPreferences) {
-        const saveResult = await this.saveWorkoutPreferences(localData.workoutPreferences, userId);
+        console.log('[DataBridge] Migrating workoutPreferences...');
+        // Transform the data format
+        const transformedData = this.transformWorkoutPreferencesForDB(localData.workoutPreferences);
+        const saveResult = await this.saveWorkoutPreferences(transformedData, userId);
         if (saveResult.success) {
           result.migratedKeys.push('workoutPreferences');
+          console.log('✅ [DataBridge] workoutPreferences migrated successfully');
         } else {
+          console.error('❌ [DataBridge] workoutPreferences migration failed:', saveResult.errors);
           result.errors.push(...saveResult.errors);
         }
       }
 
       if (localData.advancedReview) {
+        console.log('[DataBridge] Migrating advancedReview...');
         const saveResult = await this.saveAdvancedReview(localData.advancedReview, userId);
         if (saveResult.success) {
           result.migratedKeys.push('advancedReview');
+          console.log('✅ [DataBridge] advancedReview migrated successfully');
         } else {
+          console.error('❌ [DataBridge] advancedReview migration failed:', saveResult.errors);
           result.errors.push(...saveResult.errors);
         }
       }
@@ -589,10 +685,13 @@ class DataBridge {
       // Clear guest data after successful migration
       if (result.errors.length === 0) {
         await AsyncStorage.removeItem(ONBOARDING_DATA_KEY);
-        console.log('[DataBridge] Guest data cleared after migration');
+        console.log('✅ [DataBridge] Guest data cleared after successful migration');
+      } else {
+        console.warn('⚠️ [DataBridge] Migration had errors, keeping guest data for retry');
       }
 
       result.success = result.errors.length === 0;
+      console.log('[DataBridge] Migration result:', result);
       return result;
     } catch (error) {
       console.error('[DataBridge] migrateGuestToUser error:', error);
