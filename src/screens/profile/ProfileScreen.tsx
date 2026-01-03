@@ -18,7 +18,7 @@ import { useDashboardIntegration } from '../../utils/integration';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { EditProvider, useEditActions, useEditStatus } from '../../contexts/EditContext';
 import { EditOverlay } from '../../components/profile/EditOverlay';
-import { dataBridge } from '../../services/DataBridge';
+import { dataManager } from '../../services/dataManager';
 import { profileValidator } from '../../services/profileValidator';
 import {
   NotificationsScreen,
@@ -1043,50 +1043,46 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
         animationType="fade"
         onRequestClose={cancelLogout}
       >
-        <View style={styles.confirmationOverlay}>
-          <BlurView intensity={100} style={styles.blurContainer} tint="dark">
-            <View style={styles.confirmationDialog}>
-              <View style={styles.confirmationCard}>
-                <View style={styles.confirmationIconContainer}>
-                  <View style={styles.confirmationIconBg}>
-                    <Ionicons name="log-out-outline" size={rf(32)} color={ResponsiveTheme.colors.error} />
-                  </View>
-                </View>
-                <Text style={styles.confirmationTitle}>Sign Out</Text>
-                <Text style={styles.confirmationMessage}>
-                  Are you sure you want to sign out? Your progress will be saved.
-                </Text>
-
-                <View style={styles.confirmationActions}>
-                  <AnimatedPressable
-                    style={[styles.confirmationButton, styles.confirmationButtonCancel]}
-                    onPress={cancelLogout}
-                    scaleValue={0.95}
-                    hapticFeedback={true}
-                    hapticType="light"
-                  >
-                    <Text style={styles.confirmationButtonTextCancel}>Cancel</Text>
-                  </AnimatedPressable>
-
-                  <AnimatedPressable
-                    style={[styles.confirmationButton, styles.confirmationButtonConfirm]}
-                    onPress={confirmLogout}
-                    scaleValue={0.95}
-                    hapticFeedback={true}
-                    hapticType="medium"
-                  >
-                    <LinearGradient
-                      {...toLinearGradientProps(gradients.button.error)}
-                      style={styles.confirmationButtonGradient}
-                    >
-                      <Text style={styles.confirmationButtonText}>Sign Out</Text>
-                    </LinearGradient>
-                  </AnimatedPressable>
-                </View>
+        <BlurView intensity={80} style={styles.blurContainer}>
+          <View style={styles.confirmationDialog}>
+            <GlassCard elevation={5} blurIntensity="strong" padding="lg" borderRadius="xl">
+              <View style={styles.confirmationIconContainer}>
+                <Ionicons name="log-out-outline" size={rf(48)} color={ResponsiveTheme.colors.error} />
               </View>
-            </View>
-          </BlurView>
-        </View>
+              <Text style={styles.confirmationTitle}>Sign Out</Text>
+              <Text style={styles.confirmationMessage}>
+                Are you sure you want to sign out? Your progress will be saved.
+              </Text>
+
+              <View style={styles.confirmationActions}>
+                <AnimatedPressable
+                  style={[styles.confirmationButton, styles.confirmationButtonCancel]}
+                  onPress={cancelLogout}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="light"
+                >
+                  <Text style={styles.confirmationButtonTextCancel}>Cancel</Text>
+                </AnimatedPressable>
+
+                <AnimatedPressable
+                  style={[styles.confirmationButton, styles.confirmationButtonConfirm]}
+                  onPress={confirmLogout}
+                  scaleValue={0.95}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                >
+                  <LinearGradient
+                    {...toLinearGradientProps(gradients.button.error)}
+                    style={styles.confirmationButtonGradient}
+                  >
+                    <Text style={styles.confirmationButtonText}>Sign Out</Text>
+                  </LinearGradient>
+                </AnimatedPressable>
+              </View>
+            </GlassCard>
+          </View>
+        </BlurView>
       </Modal>
 
       {/* Subscription Management Modal */}
@@ -1968,11 +1964,6 @@ const styles = StyleSheet.create({
   },
 
   // Logout Confirmation Dialog Styles
-  confirmationOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-
   blurContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1982,34 +1973,12 @@ const styles = StyleSheet.create({
 
   confirmationDialog: {
     width: '100%',
-    maxWidth: rw(340),
-  },
-
-  confirmationCard: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.xl,
-    padding: ResponsiveTheme.spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 10,
+    maxWidth: rw(400),
   },
 
   confirmationIconContainer: {
     alignItems: 'center',
-    marginBottom: ResponsiveTheme.spacing.lg,
-  },
-
-  confirmationIconBg: {
-    width: rw(64),
-    height: rh(64),
-    borderRadius: rs(32),
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   confirmationTitle: {
@@ -2024,7 +1993,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.lg,
     lineHeight: rf(22),
   },
 
@@ -2037,13 +2006,11 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     overflow: 'hidden',
-    minHeight: rh(48),
   },
 
   confirmationButtonCancel: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    padding: ResponsiveTheme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2053,10 +2020,9 @@ const styles = StyleSheet.create({
   },
 
   confirmationButtonGradient: {
-    flex: 1,
+    padding: ResponsiveTheme.spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: ResponsiveTheme.spacing.md,
   },
 
   confirmationButtonTextCancel: {
