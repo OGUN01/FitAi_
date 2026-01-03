@@ -18,7 +18,6 @@ import { useDashboardIntegration } from '../../utils/integration';
 import { useSubscriptionStore } from '../../stores/subscriptionStore';
 import { EditProvider, useEditActions, useEditStatus } from '../../contexts/EditContext';
 import { EditOverlay } from '../../components/profile/EditOverlay';
-import { dataManager } from '../../services/dataManager';
 import { profileValidator } from '../../services/profileValidator';
 import {
   NotificationsScreen,
