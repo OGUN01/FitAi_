@@ -436,7 +436,7 @@ const AnalyticsScreen: React.FC = () => {
           
           <AnalyticsCard
             title="Calories Burned"
-            value={currentAnalytics?.workout.caloriesBurnedTotal.toLocaleString() || '0'}
+            value={currentAnalytics?.workout.caloriesBurnedTotal?.toLocaleString() ?? '--'}
             subtitle="total"
             iconName="flame-outline"
             color="orange"
@@ -677,7 +677,7 @@ const AnalyticsScreen: React.FC = () => {
                     Sleep Quality Trend
                   </Text>
                   <Text className="text-green-600 dark:text-green-400 text-sm capitalize">
-                    {currentAnalytics?.sleepWellness.sleepQualityTrend || 'stable'}
+                    {currentAnalytics?.sleepWellness.sleepQualityTrend ?? '--'}
                   </Text>
                 </View>
               </View>

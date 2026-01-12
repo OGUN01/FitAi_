@@ -46,6 +46,7 @@ export interface DietPlaceholders {
   // Preferences
   COOKING_METHODS: string[];
   MEALS_ENABLED: string[];
+  MEAL_EXCLUSION_INSTRUCTIONS: string; // Explicit instructions for meals NOT to generate
   
   // Medical conditions (optional)
   MEDICAL_CONDITIONS: string[];
@@ -364,6 +365,39 @@ export function getEnabledMealsList(prefs?: {
   if (prefs.snacks_enabled !== false) meals.push('2 Snacks');
 
   return meals.length > 0 ? meals : ['Breakfast', 'Lunch', 'Dinner'];
+}
+
+/**
+ * Get explicit instructions for meals that should NOT be generated
+ * Returns empty string if all meals are enabled
+ */
+export function getMealExclusionInstructions(prefs?: {
+  breakfast_enabled?: boolean;
+  lunch_enabled?: boolean;
+  dinner_enabled?: boolean;
+  snacks_enabled?: boolean;
+}): string {
+  if (!prefs) return '';
+  
+  const excluded: string[] = [];
+  if (prefs.breakfast_enabled === false) excluded.push('BREAKFAST');
+  if (prefs.lunch_enabled === false) excluded.push('LUNCH');
+  if (prefs.dinner_enabled === false) excluded.push('DINNER');
+  if (prefs.snacks_enabled === false) {
+    excluded.push('ANY SNACKS (morning_snack, afternoon_snack, evening_snack)');
+  }
+  
+  if (excluded.length === 0) return '';
+  
+  return `
+════════════════════════════════════════════════════════════════════════════════
+⛔ MEAL EXCLUSIONS - DO NOT GENERATE THESE MEALS:
+════════════════════════════════════════════════════════════════════════════════
+The user has DISABLED the following meal types. DO NOT include them in the plan:
+${excluded.map(m => `❌ NO ${m}`).join('\n')}
+
+IMPORTANT: Only generate meals that are in the "Meals to Generate" list above.
+`;
 }
 
 // ============================================================================

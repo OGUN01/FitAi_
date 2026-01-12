@@ -223,25 +223,31 @@ export default function App() {
         };
       })(),
       // ✅ FIX: Map bodyAnalysis from onboarding to bodyMetrics in UserProfile
-      bodyMetrics: data.bodyAnalysis ? {
-        height_cm: (data.bodyAnalysis as any).height_cm || 0,
-        current_weight_kg: (data.bodyAnalysis as any).current_weight_kg || 0,
-        target_weight_kg: (data.bodyAnalysis as any).target_weight_kg,
-        target_timeline_weeks: (data.bodyAnalysis as any).target_timeline_weeks,
-        body_fat_percentage: (data.bodyAnalysis as any).body_fat_percentage,
-        waist_cm: (data.bodyAnalysis as any).waist_cm,
-        hip_cm: (data.bodyAnalysis as any).hip_cm,
-        chest_cm: (data.bodyAnalysis as any).chest_cm,
-        front_photo_url: (data.bodyAnalysis as any).front_photo_url,
-        side_photo_url: (data.bodyAnalysis as any).side_photo_url,
-        back_photo_url: (data.bodyAnalysis as any).back_photo_url,
-        // Medical fields from onboarding
-        medical_conditions: (data.bodyAnalysis as any).medical_conditions || [],
-        medications: (data.bodyAnalysis as any).medications || [],
-        physical_limitations: (data.bodyAnalysis as any).physical_limitations || [],
-        pregnancy_status: (data.bodyAnalysis as any).pregnancy_status || false,
-        breastfeeding_status: (data.bodyAnalysis as any).breastfeeding_status || false,
-      } : undefined,
+      // Handle both flat format (height_cm, current_weight_kg) and nested format (measurements.height, measurements.weight)
+      bodyMetrics: data.bodyAnalysis ? (() => {
+        const ba = data.bodyAnalysis as any;
+        const measurements = ba.measurements || {};
+        return {
+          // Check both flat format and nested measurements format
+          height_cm: ba.height_cm || measurements.height || measurements.height_cm || 0,
+          current_weight_kg: ba.current_weight_kg || measurements.weight || measurements.current_weight_kg || 0,
+          target_weight_kg: ba.target_weight_kg || measurements.targetWeight || measurements.target_weight_kg,
+          target_timeline_weeks: ba.target_timeline_weeks || measurements.target_timeline_weeks,
+          body_fat_percentage: ba.body_fat_percentage || measurements.bodyFat || measurements.body_fat_percentage,
+          waist_cm: ba.waist_cm || measurements.waist || measurements.waist_cm,
+          hip_cm: ba.hip_cm || measurements.hips || measurements.hip_cm,
+          chest_cm: ba.chest_cm || measurements.chest || measurements.chest_cm,
+          front_photo_url: ba.front_photo_url,
+          side_photo_url: ba.side_photo_url,
+          back_photo_url: ba.back_photo_url,
+          // Medical fields from onboarding
+          medical_conditions: ba.medical_conditions || [],
+          medications: ba.medications || [],
+          physical_limitations: ba.physical_limitations || [],
+          pregnancy_status: ba.pregnancy_status || false,
+          breastfeeding_status: ba.breastfeeding_status || false,
+        };
+      })() : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       preferences: {

@@ -1,252 +1,186 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl } from 'react-native';
-import { WorkoutCard } from './WorkoutCard';
-import { ExerciseCard } from './ExerciseCard';
-import { Card, Button, THEME } from '../ui';
-import { Workout } from '../../types/workout';
+/**
+ * DayWorkoutView Component
+ * Displays detailed workout information for a selected day in a modal
+ */
+
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { GlassCard } from '../ui/aurora/GlassCard';
+import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
+import { ResponsiveTheme } from '../../utils/constants';
+import { rf, rw, rh } from '../../utils/responsive';
+import { DayWorkout } from '../../types/ai';
 
 interface DayWorkoutViewProps {
-  selectedDay: string;
-  workouts: Workout[];
-  isLoading?: boolean;
-  onRefresh?: () => void;
-  onStartWorkout: (workout: Workout) => void;
-  onViewWorkoutDetails?: (workout: Workout) => void;
-  onGenerateWorkout?: () => void;
-  isRestDay?: boolean;
-  workoutProgress?: Record<string, number>; // workout id -> progress percentage
+  workout: DayWorkout | null;
+  onStartWorkout: (workoutId: string) => void;
+  onClose: () => void;
 }
 
 export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
-  selectedDay,
-  workouts,
-  isLoading = false,
-  onRefresh,
+  workout,
   onStartWorkout,
-  onViewWorkoutDetails,
-  onGenerateWorkout,
-  isRestDay = false,
-  workoutProgress = {},
+  onClose,
 }) => {
-  const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
-  const [fadeAnim] = useState(new Animated.Value(1));
-
-  const getDayDisplayName = (day: string) => {
-    const dayNames: Record<string, string> = {
-      monday: 'Monday',
-      tuesday: 'Tuesday',
-      wednesday: 'Wednesday',
-      thursday: 'Thursday',
-      friday: 'Friday',
-      saturday: 'Saturday',
-      sunday: 'Sunday',
-    };
-    return dayNames[day] || day;
-  };
-
-  const getDayEmoji = (day: string) => {
-    const dayEmojis: Record<string, string> = {
-      monday: '💪',
-      tuesday: '🔥',
-      wednesday: '⚡',
-      thursday: '🎯',
-      friday: '🚀',
-      saturday: '🏆',
-      sunday: '😴',
-    };
-    return dayEmojis[day] || '📅';
-  };
-
-  const handleWorkoutToggle = (workoutId: string) => {
-    setExpandedWorkout(expandedWorkout === workoutId ? null : workoutId);
-  };
-
-  const renderRestDayContent = () => (
-    <Card style={styles.restDayCard} variant="elevated">
-      <View style={styles.restDayContent}>
-        <Text style={styles.restDayEmoji}>😴</Text>
-        <Text style={styles.restDayTitle}>Rest Day</Text>
-        <Text style={styles.restDaySubtitle}>
-          Recovery is just as important as training! Use this day to:
-        </Text>
-        <View style={styles.restDayTips}>
-          <Text style={styles.restDayTip}>• Gentle stretching or yoga</Text>
-          <Text style={styles.restDayTip}>• Stay hydrated</Text>
-          <Text style={styles.restDayTip}>• Get quality sleep</Text>
-          <Text style={styles.restDayTip}>• Focus on nutrition</Text>
+  if (!workout) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Rest Day</Text>
+          <Pressable onPress={onClose} style={styles.closeButton}>
+            <Ionicons name="close" size={rf(24)} color="#fff" />
+          </Pressable>
         </View>
-        {onGenerateWorkout && (
-          <Button
-            title="Add Optional Workout"
-            onPress={onGenerateWorkout}
-            variant="outline"
-            style={styles.addWorkoutButton}
-          />
-        )}
+        <View style={styles.emptyState}>
+          <Ionicons name="moon" size={rf(48)} color="#667eea" />
+          <Text style={styles.emptyText}>No workout scheduled for this day</Text>
+          <Text style={styles.emptySubtext}>Take this time to rest and recover</Text>
+        </View>
       </View>
-    </Card>
-  );
+    );
+  }
 
-  const renderEmptyState = () => (
-    <Card style={styles.emptyStateCard} variant="elevated">
-      <View style={styles.emptyStateContent}>
-        <Text style={styles.emptyStateEmoji}>📋</Text>
-        <Text style={styles.emptyStateTitle}>No Workouts Scheduled</Text>
-        <Text style={styles.emptyStateSubtitle}>
-          No workouts are planned for {getDayDisplayName(selectedDay).toLowerCase()}. Generate a
-          personalized workout to get started!
-        </Text>
-        {onGenerateWorkout && (
-          <Button
-            title="Generate Workout"
-            onPress={onGenerateWorkout}
-            variant="primary"
-            style={styles.generateButton}
-          />
-        )}
-      </View>
-    </Card>
-  );
-
-  const renderWorkoutsList = () => (
-    <>
-      {workouts.map((workout, index) => (
-        <Animated.View
-          key={workout.id}
-          style={{
-            opacity: fadeAnim,
-            transform: [
-              {
-                translateY: fadeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [20, 0],
-                }),
-              },
-            ],
-          }}
-        >
-          <WorkoutCard
-            workout={workout}
-            onStart={() => onStartWorkout(workout)}
-            onViewDetails={() => onViewWorkoutDetails?.(workout)}
-            isInProgress={workoutProgress[workout.id] > 0 && workoutProgress[workout.id] < 100}
-            progress={workoutProgress[workout.id] || 0}
-            animatedValue={fadeAnim}
-          />
-
-          {/* Expanded Exercise Details */}
-          {expandedWorkout === workout.id && (
-            <View style={styles.exercisesContainer}>
-              <Text style={styles.exercisesTitle}>Exercises ({workout.exercises?.length ?? 0})</Text>
-              {workout.exercises?.map((exerciseSet, exerciseIndex) => {
-                // Create a mock Exercise object for display
-                const mockExercise = {
-                  id: `${workout.id}_${exerciseIndex}`,
-                  name: `Exercise ${exerciseIndex + 1}`, // This would come from exercise database
-                  description: 'Exercise description here',
-                  instructions: [
-                    'Perform the movement with proper form',
-                    'Control the weight throughout the range of motion',
-                    'Breathe properly during the exercise',
-                  ],
-                  muscleGroups: ['chest', 'shoulders'], // This would come from exercise data
-                  equipment: ['dumbbells'], // This would come from exercise data
-                  difficulty: 'intermediate' as const,
-                  tips: ['Focus on form over weight', 'Control the movement'],
-                };
-
-                return (
-                  <ExerciseCard
-                    key={exerciseIndex}
-                    exercise={mockExercise}
-                    workoutSet={exerciseSet}
-                    exerciseNumber={exerciseIndex + 1}
-                    isCompleted={workoutProgress[workout.id] === 100}
-                    onComplete={() => {
-                      // Handle exercise completion
-                      console.log('Exercise completed');
-                    }}
-                    onStart={() => {
-                      // Handle exercise start
-                      console.log('Exercise started');
-                    }}
-                    style={styles.exerciseCard}
-                  />
-                );
-              })}
-            </View>
-          )}
-        </Animated.View>
-      ))}
-    </>
-  );
+  // Note: warmup and cooldown are separate arrays in the workout object
+  const warmupExercises = workout.warmup || [];
+  const mainExercises = workout.exercises || [];
+  const cooldownExercises = workout.cooldown || [];
 
   return (
     <View style={styles.container}>
-      {/* Day Header */}
-      <View style={styles.dayHeader}>
-        <Text style={styles.dayEmoji}>{getDayEmoji(selectedDay)}</Text>
-        <View style={styles.dayInfo}>
-          <Text style={styles.dayName}>{getDayDisplayName(selectedDay)}</Text>
-          <Text style={styles.daySubtitle}>
-            {isRestDay
-              ? 'Rest & Recovery'
-              : workouts.length === 0
-                ? 'No workouts planned'
-                : `${workouts.length} workout${workouts.length > 1 ? 's' : ''} planned`}
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>{workout.title}</Text>
+          <Text style={styles.headerSubtitle}>
+            {workout.dayOfWeek.charAt(0).toUpperCase() + workout.dayOfWeek.slice(1)}
           </Text>
+        </View>
+        <Pressable onPress={onClose} style={styles.closeButton}>
+          <Ionicons name="close" size={rf(24)} color="#fff" />
+        </Pressable>
+      </View>
+
+      {/* Workout Stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Ionicons name="time-outline" size={rf(20)} color="#FF6B6B" />
+          <Text style={styles.statText}>{workout.duration} min</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Ionicons name="flame-outline" size={rf(20)} color="#FF6B6B" />
+          <Text style={styles.statText}>{workout.estimatedCalories} cal</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Ionicons name="barbell-outline" size={rf(20)} color="#FF6B6B" />
+          <Text style={styles.statText}>{workout.exercises.length} exercises</Text>
         </View>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          onRefresh ? (
-            <RefreshControl
-              refreshing={isLoading}
-              onRefresh={onRefresh}
-              tintColor={THEME.colors.primary}
-            />
-          ) : undefined
-        }
-      >
-        {isRestDay
-          ? renderRestDayContent()
-          : workouts.length === 0
-            ? renderEmptyState()
-            : renderWorkoutsList()}
-
-        {/* Summary Stats */}
-        {workouts.length > 0 && !isRestDay && (
-          <Card style={styles.summaryCard} variant="outlined">
-            <Text style={styles.summaryTitle}>Day Summary</Text>
-            <View style={styles.summaryGrid}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  {workouts.reduce((sum, w) => sum + w.duration, 0)}
-                </Text>
-                <Text style={styles.summaryLabel}>Total Minutes</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  {workouts.reduce((sum, w) => sum + w.estimatedCalories, 0)}
-                </Text>
-                <Text style={styles.summaryLabel}>Estimated Calories</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryValue}>
-                  {workouts.reduce((sum, w) => sum + w.exercises.length, 0)}
-                </Text>
-                <Text style={styles.summaryLabel}>Total Exercises</Text>
-              </View>
-            </View>
-          </Card>
+      {/* Exercises List */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Warmup Section */}
+        {warmupExercises.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🔥 Warmup</Text>
+            {warmupExercises.map((exercise, index) => (
+              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+                <View style={styles.exerciseContent}>
+                  <View style={styles.exerciseNumberContainer}>
+                    <Text style={styles.exerciseNumber}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>
+                      {(exercise as any).exerciseData?.name || (exercise as any).name || 'Exercise'}
+                    </Text>
+                    <Text style={styles.exerciseDetails}>
+                      {exercise.sets} sets × {exercise.reps} reps
+                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                    </Text>
+                  </View>
+                </View>
+              </GlassCard>
+            ))}
+          </View>
         )}
 
-        <View style={styles.bottomSpacing} />
+        {/* Main Workout Section */}
+        {mainExercises.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>💪 Main Workout</Text>
+            {mainExercises.map((exercise, index) => (
+              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+                <View style={styles.exerciseContent}>
+                  <View style={styles.exerciseNumberContainer}>
+                    <Text style={styles.exerciseNumber}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>
+                      {exercise.exerciseData?.name || 'Exercise'}
+                    </Text>
+                    <Text style={styles.exerciseDetails}>
+                      {exercise.sets} sets × {exercise.reps} reps
+                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                    </Text>
+                    {(exercise as any).exerciseData?.targetMuscles && (
+                      <Text style={styles.targetMuscles}>
+                        Target: {(exercise as any).exerciseData.targetMuscles.join(', ')}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </GlassCard>
+            ))}
+          </View>
+        )}
+
+        {/* Cooldown Section */}
+        {cooldownExercises.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🧘 Cooldown</Text>
+            {cooldownExercises.map((exercise, index) => (
+              <GlassCard key={exercise.exerciseId} style={styles.exerciseCard}>
+                <View style={styles.exerciseContent}>
+                  <View style={styles.exerciseNumberContainer}>
+                    <Text style={styles.exerciseNumber}>{index + 1}</Text>
+                  </View>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>
+                      {(exercise as any).exerciseData?.name || (exercise as any).name || 'Exercise'}
+                    </Text>
+                    <Text style={styles.exerciseDetails}>
+                      {exercise.sets} sets × {exercise.reps} reps
+                      {exercise.restTime && ` • ${exercise.restTime}s rest`}
+                    </Text>
+                  </View>
+                </View>
+              </GlassCard>
+            ))}
+          </View>
+        )}
+
+        <View style={{ height: rh(100) }} />
       </ScrollView>
+
+      {/* Start Workout Button */}
+      <View style={styles.footer}>
+        <AnimatedPressable
+          onPress={() => onStartWorkout(workout.id)}
+          scaleValue={0.95}
+          hapticFeedback={true}
+        >
+          <LinearGradient
+            colors={['#FF6B6B', '#FF8E53']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.startButton}
+          >
+            <Ionicons name="play-circle" size={rf(24)} color="#fff" />
+            <Text style={styles.startButtonText}>Start Workout</Text>
+          </LinearGradient>
+        </AnimatedPressable>
+      </View>
     </View>
   );
 };
@@ -254,176 +188,139 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
   },
-
-  dayHeader: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: THEME.spacing.lg,
-    backgroundColor: THEME.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingTop: rh(60),
+    paddingBottom: ResponsiveTheme.spacing.md,
   },
-
-  dayEmoji: {
-    fontSize: 32,
-    marginRight: THEME.spacing.md,
+  headerTitle: {
+    fontSize: rf(24),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: rh(4),
   },
-
-  dayInfo: {
-    flex: 1,
+  headerSubtitle: {
+    fontSize: rf(14),
+    color: 'rgba(255, 255, 255, 0.6)',
   },
-
-  dayName: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: 2,
-  },
-
-  daySubtitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-  },
-
-  scrollView: {
-    flex: 1,
-    padding: THEME.spacing.lg,
-  },
-
-  restDayCard: {
-    padding: THEME.spacing.xl,
+  closeButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: rw(20),
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-
-  restDayContent: {
-    alignItems: 'center',
-  },
-
-  restDayEmoji: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.md,
-  },
-
-  restDayTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
-  },
-
-  restDaySubtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 22,
-  },
-
-  restDayTips: {
-    alignSelf: 'stretch',
-    marginBottom: THEME.spacing.lg,
-  },
-
-  restDayTip: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
-    textAlign: 'left',
-  },
-
-  addWorkoutButton: {
-    minWidth: 160,
-  },
-
-  emptyStateCard: {
-    padding: THEME.spacing.xl,
-    alignItems: 'center',
-  },
-
-  emptyStateContent: {
-    alignItems: 'center',
-  },
-
-  emptyStateEmoji: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.md,
-  },
-
-  emptyStateTitle: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
-    textAlign: 'center',
-  },
-
-  emptyStateSubtitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 22,
-  },
-
-  generateButton: {
-    minWidth: 160,
-  },
-
-  exercisesContainer: {
-    marginTop: THEME.spacing.md,
-    marginBottom: THEME.spacing.lg,
-    paddingHorizontal: THEME.spacing.sm,
-  },
-
-  exercisesTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
-  },
-
-  exerciseCard: {
-    marginBottom: THEME.spacing.sm,
-  },
-
-  summaryCard: {
-    padding: THEME.spacing.lg,
-    marginTop: THEME.spacing.lg,
-  },
-
-  summaryTitle: {
-    fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.md,
-    textAlign: 'center',
-  },
-
-  summaryGrid: {
+  statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.sm,
   },
-
-  summaryItem: {
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rw(8),
+  },
+  statText: {
+    fontSize: rf(14),
+    fontWeight: '600',
+    color: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+  section: {
+    marginBottom: ResponsiveTheme.spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: rf(18),
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: ResponsiveTheme.spacing.sm,
+  },
+  exerciseCard: {
+    marginBottom: ResponsiveTheme.spacing.sm,
+    padding: ResponsiveTheme.spacing.md,
+  },
+  exerciseContent: {
+    flexDirection: 'row',
+    gap: ResponsiveTheme.spacing.md,
+  },
+  exerciseNumberContainer: {
+    width: rw(32),
+    height: rh(32),
+    borderRadius: rw(16),
+    backgroundColor: 'rgba(255, 107, 107, 0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-
-  summaryValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
+  exerciseNumber: {
+    fontSize: rf(14),
+    fontWeight: '700',
+    color: '#FF6B6B',
   },
-
-  summaryLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
+  exerciseInfo: {
+    flex: 1,
+  },
+  exerciseName: {
+    fontSize: rf(16),
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: rh(4),
+  },
+  exerciseDetails: {
+    fontSize: rf(13),
+    color: 'rgba(255, 255, 255, 0.7)',
+  },
+  targetMuscles: {
+    fontSize: rf(12),
+    color: 'rgba(255, 255, 255, 0.5)',
+    marginTop: rh(4),
+    fontStyle: 'italic',
+  },
+  footer: {
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingBottom: rh(40),
+    paddingTop: ResponsiveTheme.spacing.md,
+  },
+  startButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: rw(12),
+    paddingVertical: rh(16),
+    borderRadius: ResponsiveTheme.spacing.md,
+  },
+  startButtonText: {
+    fontSize: rf(16),
+    fontWeight: '700',
+    color: '#fff',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: ResponsiveTheme.spacing.xl,
+  },
+  emptyText: {
+    fontSize: rf(18),
+    fontWeight: '600',
+    color: '#fff',
+    marginTop: ResponsiveTheme.spacing.md,
     textAlign: 'center',
   },
-
-  bottomSpacing: {
-    height: THEME.spacing.xl,
+  emptySubtext: {
+    fontSize: rf(14),
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: rh(8),
+    textAlign: 'center',
   },
 });

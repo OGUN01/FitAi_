@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Button, Card, THEME } from '../../components/ui';
 import { NutritionChart } from '../../components/charts';
+import useCalculatedMetrics from '../../hooks/useCalculatedMetrics';
 
 interface FoodItem {
   id: string;
@@ -32,6 +33,9 @@ interface MealDetailProps {
 }
 
 export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, onDelete }) => {
+  // Get user's calorie target - NO HARDCODED VALUES
+  const calculatedMetrics = useCalculatedMetrics();
+  
   // Mock meal data - in real app this would come from props or API
   const meal = {
     id: mealId,
@@ -192,7 +196,7 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         </Card>
 
         {/* Nutrition Chart */}
-        <NutritionChart data={nutritionData} targetCalories={2000} style={styles.chartContainer} />
+        <NutritionChart data={nutritionData} targetCalories={calculatedMetrics?.dailyCalories} style={styles.chartContainer} />
 
         {/* Food Items */}
         <View style={styles.foodSection}>

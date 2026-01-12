@@ -30,6 +30,7 @@ import { useFitnessStore } from '../../stores/fitnessStore';
 import { useNutritionStore } from '../../stores/nutritionStore';
 import { completionTrackingService } from '../../services/completionTracking';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { useHealthDataStore } from '../../stores/healthDataStore';
 
 export const ProgressScreen: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('week');
@@ -53,6 +54,13 @@ export const ProgressScreen: React.FC = () => {
 
   // Authentication and user data
   const { user, isAuthenticated } = useAuth();
+  
+  // Wearable health data from Health Connect / HealthKit
+  const healthMetrics = useHealthDataStore((state) => state.metrics);
+  const isWearableConnected = useHealthDataStore((state) => 
+    state.isHealthKitAuthorized || state.isHealthConnectAuthorized
+  );
+  const healthSettings = useHealthDataStore((state) => state.settings);
 
   // Store data (not used directly here; we use DataRetrievalService to access stores safely)
   // const { loadData: loadFitnessData } = useFitnessStore();
@@ -185,7 +193,7 @@ export const ProgressScreen: React.FC = () => {
           change: progressStats.weightChange.change,
           unit: 'kg',
           // Use target from onboarding calculations, then progressGoals, then null
-          goal: calculatedMetrics?.targetWeightKg ?? progressGoals?.target_weight_kg ?? null,
+          goal: calculatedMetrics?.targetWeightKg, // SINGLE SOURCE
           trend:
             progressStats.weightChange.change < 0
               ? 'decreasing'
@@ -199,7 +207,7 @@ export const ProgressScreen: React.FC = () => {
           change: progressStats.bodyFatChange.change,
           unit: '%',
           // Use ideal body fat from calculations, then progressGoals, then null
-          goal: calculatedMetrics?.ideal_body_fat_max ?? progressGoals?.target_body_fat_percentage ?? null,
+          goal: calculatedMetrics?.ideal_body_fat_max, // SINGLE SOURCE
           trend:
             progressStats.bodyFatChange.change < 0
               ? 'decreasing'
@@ -230,17 +238,17 @@ export const ProgressScreen: React.FC = () => {
           ),
           change: null, // TODO: Calculate based on weight change
           unit: '',
-          goal: 21.5, // Standard healthy BMI target
+          goal: null, // Calculate from user data - no hardcoded values
           trend: progressStats.weightChange.change < 0 ? 'decreasing' : 'increasing',
           weeklyAvg: calculatedMetrics?.calculatedBMI ?? null,
         },
       }
     : {
         // NO HARDCODED FALLBACKS - Use null to indicate missing data
-        weight: { current: 0, change: 0, unit: 'kg', goal: calculatedMetrics?.targetWeightKg ?? null, trend: 'stable', weeklyAvg: 0 },
-        bodyFat: { current: 0, change: 0, unit: '%', goal: null, trend: 'stable', weeklyAvg: 0 },
-        muscle: { current: 0, change: 0, unit: 'kg', goal: null, trend: 'stable', weeklyAvg: 0 },
-        bmi: { current: calculatedMetrics?.calculatedBMI ?? 0, change: 0, unit: '', goal: 21.5, trend: 'stable', weeklyAvg: 0 },
+        weight: { current: null, change: null, unit: 'kg', goal: calculatedMetrics?.targetWeightKg, trend: 'stable', weeklyAvg: null },
+        bodyFat: { current: null, change: null, unit: '%', goal: null, trend: 'stable', weeklyAvg: null },
+        muscle: { current: null, change: null, unit: 'kg', goal: null, trend: 'stable', weeklyAvg: null },
+        bmi: { current: calculatedMetrics?.calculatedBMI, change: 0, unit: '', goal: null, trend: 'stable', weeklyAvg: 0 },
       };
 
   // Real achievements based on actual user progress
@@ -277,7 +285,7 @@ export const ProgressScreen: React.FC = () => {
       category: 'Nutrition',
       points: 50,
       rarity: 'uncommon',
-      progress: weeklyProgress?.mealsCompleted || 0,
+      progress: weeklyProgress?.mealsCompleted, // NO FALLBACK
       target: 5,
     },
     {
@@ -290,7 +298,7 @@ export const ProgressScreen: React.FC = () => {
       category: 'Nutrition',
       points: 100,
       rarity: 'rare',
-      progress: weeklyProgress?.mealsCompleted || 0,
+      progress: weeklyProgress?.mealsCompleted, // NO FALLBACK
       target: 21,
     },
     {
@@ -303,7 +311,7 @@ export const ProgressScreen: React.FC = () => {
       category: 'Consistency',
       points: 100,
       rarity: 'uncommon',
-      progress: weeklyProgress?.streak || 0,
+      progress: weeklyProgress?.streak, // NO FALLBACK
       target: 7,
     },
     {
@@ -575,6 +583,66 @@ export const ProgressScreen: React.FC = () => {
               </View>
             )}
 
+            {/* Wearable Health Data */}
+            {isAuthenticated && isWearableConnected && !showAnalytics && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Wearable Activity</Text>
+                <GlassCard style={styles.todaysCard} elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+                  <View style={styles.wearableHeader}>
+                    <Ionicons name="watch-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
+                    <Text style={styles.wearableLabel}>From your smartwatch</Text>
+                  </View>
+                  <View style={styles.todaysStats}>
+                    {/* Steps */}
+                    <View style={styles.todaysStat}>
+                      <Ionicons name="walk-outline" size={rf(24)} color="#4CAF50" style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Steps</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {healthMetrics.steps.toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Active Calories */}
+                    <View style={styles.todaysStat}>
+                      <Ionicons name="flame-outline" size={rf(24)} color="#FF9800" style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Burned</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {healthMetrics.activeCalories} cal
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Heart Rate */}
+                    <View style={styles.todaysStat}>
+                      <Ionicons name="heart-outline" size={rf(24)} color="#F44336" style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
+                      <View style={styles.todaysStatContent}>
+                        <Text style={styles.todaysStatLabel}>Heart Rate</Text>
+                        <Text style={styles.todaysStatValue}>
+                          {healthMetrics.heartRate || '--'} bpm
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Sleep Hours */}
+                    {healthMetrics.sleepHours && (
+                      <View style={styles.todaysStat}>
+                        <Ionicons name="bed-outline" size={rf(24)} color="#9C27B0" style={{ marginBottom: ResponsiveTheme.spacing.xs }} />
+                        <View style={styles.todaysStatContent}>
+                          <Text style={styles.todaysStatLabel}>Sleep</Text>
+                          <Text style={styles.todaysStatValue}>
+                            {healthMetrics.sleepHours.toFixed(1)}h
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </GlassCard>
+              </View>
+            )}
+
             {/* Progress Analytics Component */}
             {showAnalytics && <ProgressAnalytics />}
 
@@ -644,8 +712,8 @@ export const ProgressScreen: React.FC = () => {
                         style={[
                           styles.progressFill,
                           (() => {
-                            const current = Number(stats.weight.current) || 0;
-                            const goal = Number(stats.weight.goal) || 0;
+                            const current = Number(stats.weight.current);
+                            const goal = Number(stats.weight.goal);
                             if (current <= 0 || !isFinite(current)) {
                               return { width: '0%' };
                             }
@@ -919,7 +987,7 @@ export const ProgressScreen: React.FC = () => {
                 <View style={styles.summaryGrid}>
                   <View style={styles.summaryItem}>
                     <Text style={styles.summaryValue}>
-                      {weeklyProgress?.workoutsCompleted || progressStats?.totalWorkouts || 0}
+                      {weeklyProgress?.workoutsCompleted ?? '--'}
                     </Text>
                     <Text style={styles.summaryLabel}>Total Workouts</Text>
                   </View>
@@ -946,7 +1014,7 @@ export const ProgressScreen: React.FC = () => {
 
                   <View style={styles.summaryItem}>
                     <Text style={styles.summaryValue}>
-                      {weeklyProgress?.streak || progressStats?.currentStreak || 0}
+                      {weeklyProgress?.streak ?? '--'}
                     </Text>
                     <Text style={styles.summaryLabel}>Day Streak</Text>
                   </View>
@@ -1668,6 +1736,23 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textTertiary,
     textAlign: 'center',
+  },
+
+  // Wearable data styles
+  wearableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rp(8),
+    marginBottom: ResponsiveTheme.spacing.md,
+    paddingBottom: ResponsiveTheme.spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+
+  wearableLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: ResponsiveTheme.fontWeight.medium,
   },
 
   // Section header styles

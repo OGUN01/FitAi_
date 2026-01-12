@@ -21,7 +21,7 @@ interface NutritionChartProps {
 
 export const NutritionChart: React.FC<NutritionChartProps> = ({
   data,
-  targetCalories = 2000,
+  targetCalories, // NO DEFAULT - must be passed from calculatedMetrics
   style,
 }) => {
   // Calculate percentages and prepare chart data

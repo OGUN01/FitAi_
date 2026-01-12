@@ -19,3 +19,4 @@ export { default as HealthIntelligenceHub } from './HealthIntelligenceHub';
 export { default as SmartCoaching } from './SmartCoaching';
 export { default as HydrationTracker } from './HydrationTracker';
 export { default as BodyProgressCard } from './BodyProgressCard';
+export { default as SyncStatusIndicator } from './SyncStatusIndicator';

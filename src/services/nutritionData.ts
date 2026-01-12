@@ -163,6 +163,7 @@ class NutritionDataService {
 
   /**
    * Get user's meal history using Track B's data layer
+   * PRIORITY: Query meal_logs table (where completed meals are stored)
    */
   async getUserMeals(
     userId: string,
@@ -170,41 +171,23 @@ class NutritionDataService {
     limit?: number
   ): Promise<NutritionDataResponse<Meal[]>> {
     try {
-      // First try to get from Track B's local storage
-      const localMeals = await crudOperations.readMealLogs(date, limit);
-
-      if (localMeals.length > 0) {
-        // Convert Track B's MealLog format to our Meal format
-        const meals = localMeals.map(this.convertMealLogToMeal);
-        return {
-          success: true,
-          data: meals,
-        };
-      }
-
-      // Fallback to direct Supabase query
+      // CRITICAL: Query meal_logs table directly from Supabase
+      // This is where completionTrackingService.completeMeal inserts data
       let query = supabase
-        .from('meals')
-        .select(
-          `
-          *,
-          meal_foods (
-            *,
-            foods (*)
-          )
-        `
-        )
+        .from('meal_logs')
+        .select('*')
         .eq('user_id', userId)
-        .order('consumed_at', { ascending: false });
+        .order('logged_at', { ascending: false });
 
       if (date) {
         const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
         const endDate = new Date(date);
-        endDate.setDate(endDate.getDate() + 1);
+        endDate.setHours(23, 59, 59, 999);
 
         query = query
-          .gte('consumed_at', startDate.toISOString())
-          .lt('consumed_at', endDate.toISOString());
+          .gte('logged_at', startDate.toISOString())
+          .lte('logged_at', endDate.toISOString());
       }
 
       if (limit) {
@@ -214,22 +197,31 @@ class NutritionDataService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching user meals:', error);
+        console.error('Error fetching meal_logs:', error);
         return {
           success: false,
           error: error.message,
         };
       }
 
-      // Transform the data to match our interface
+      console.log(`📊 meal_logs query result: ${data?.length || 0} meals for date ${date || 'all'}`);
+
+      // Transform meal_logs data to match expected Meal interface
+      // Supabase meal_logs columns: meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat
       const meals =
-        data?.map((meal) => ({
-          ...meal,
-          foods:
-            meal.meal_foods?.map((mf: any) => ({
-              ...mf,
-              food: mf.foods,
-            })) || [],
+        data?.map((mealLog: any) => ({
+          id: mealLog.id,
+          type: mealLog.meal_type,
+          name: mealLog.meal_name,
+          total_calories: mealLog.total_calories || 0,
+          total_protein: mealLog.total_protein || 0,
+          total_carbohydrates: mealLog.total_carbohydrates || 0,
+          total_carbs: mealLog.total_carbohydrates || 0, // Alias for backward compatibility
+          total_fat: mealLog.total_fat || 0,
+          consumed_at: mealLog.logged_at,
+          logged_at: mealLog.logged_at,
+          food_items: mealLog.food_items || [],
+          foods: [],
         })) || [];
 
       return {

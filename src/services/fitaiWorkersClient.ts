@@ -198,7 +198,8 @@ export class FitAIWorkersClient {
 
   constructor(config: WorkersClientConfig = {}) {
     this.baseUrl = config.baseUrl || 'https://fitai-workers.sharmaharsh9887.workers.dev';
-    this.timeout = config.timeout || 30000; // 30 seconds
+    // AI generation can take 60-90+ seconds, so we need a longer timeout
+    this.timeout = config.timeout || 120000; // 120 seconds (2 minutes)
     this.maxRetries = config.maxRetries || 3;
     this.retryDelay = config.retryDelay || 1000; // 1 second
   }
@@ -251,6 +252,17 @@ export class FitAIWorkersClient {
       // Parse response
       const responseData = await response.json();
 
+      // Log response for debugging
+      if (!response.ok) {
+        console.error(`[WorkersClient] API Error Response:`, {
+          status: response.status,
+          statusText: response.statusText,
+          error: responseData.error,
+          errorType: typeof responseData.error,
+          fullResponse: JSON.stringify(responseData).substring(0, 500),
+        });
+      }
+
       // Handle HTTP errors
       if (!response.ok) {
         // Check if we should retry
@@ -261,11 +273,24 @@ export class FitAIWorkersClient {
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
 
+        // Handle error message - could be string or object
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        if (responseData.error) {
+          if (typeof responseData.error === 'string') {
+            errorMessage = responseData.error;
+          } else if (typeof responseData.error === 'object') {
+            // Error is an object - extract message or stringify
+            errorMessage = responseData.error.message ||
+                          responseData.error.error ||
+                          JSON.stringify(responseData.error);
+          }
+        }
+
         throw new WorkersAPIError(
-          responseData.error || `HTTP ${response.status}: ${response.statusText}`,
+          errorMessage,
           response.status,
           responseData.errorCode,
-          responseData.details
+          responseData.details || responseData.error
         );
       }
 
@@ -376,6 +401,59 @@ export class FitAIWorkersClient {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Recognize food from image using Gemini Vision API
+   * @param request - Image data and meal context
+   * @returns Recognized foods with nutrition information
+   */
+  async recognizeFood(request: {
+    imageBase64: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    userContext?: {
+      region?: string;
+      dietaryRestrictions?: string[];
+    };
+  }): Promise<WorkersResponse<{
+    foods: Array<{
+      id: string;
+      name: string;
+      hindiName?: string;
+      category: string;
+      cuisine: string;
+      region?: string;
+      spiceLevel?: string;
+      cookingMethod?: string;
+      estimatedGrams: number;
+      portionConfidence: number;
+      servingType: string;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      fiber: number;
+      sugar?: number;
+      sodium?: number;
+      ingredients?: string[];
+      confidence: number;
+      enhancementSource: string;
+    }>;
+    overallConfidence: number;
+    totalCalories: number;
+    analysisNotes?: string;
+    mealType: string;
+  }>> {
+    const token = await this.getAuthToken();
+
+    return this.makeRequest('/food/recognize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(request),
+    });
   }
 
   /**

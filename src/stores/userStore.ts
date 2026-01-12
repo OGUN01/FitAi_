@@ -1,3 +1,13 @@
+/**
+ * User Store for FitAI
+ *
+ * Handles Supabase user profile operations and remote data sync.
+ *
+ * NOTE: For ONBOARDING profile data (personalInfo, dietPreferences, etc.),
+ *       use profileStore.ts which is the SINGLE SOURCE OF TRUTH for that data.
+ *       This store is for Supabase-specific user profile operations.
+ */
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -19,17 +19,22 @@ import type { WeeklyMealPlan, WeeklyWorkoutPlan, Meal, DayMeal, Workout } from '
 /**
  * Transform frontend types to DietGenerationRequest for backend
  * 
- * Note: The backend primarily reads from Supabase tables (via userId/JWT auth),
- * but we send profile data for:
- * 1. Fallback if database lookup fails
- * 2. Request validation
- * 3. Cache key generation
+ * IMPORTANT: The backend schema expects specific fields for cache key generation:
+ * - calorieTarget (required)
+ * - dietaryRestrictions (array like ['vegetarian'])
+ * - mealsPerDay
+ * - macros (optional)
+ * - excludeIngredients (optional)
+ * 
+ * The backend loads actual user data from Supabase (profile, preferences) via JWT auth.
+ * Fields like 'profile' and 'dietPreferences' are stripped by Zod validation.
  */
 export function transformForDietRequest(
   personalInfo: PersonalInfo,
   fitnessGoals: FitnessGoals,
   bodyMetrics?: BodyMetrics,
-  dietPreferences?: DietPreferences
+  dietPreferences?: DietPreferences,
+  calorieTarget?: number
 ): DietGenerationRequest {
   // Extract activity level from workout preferences or fitness goals
   const activityLevel = personalInfo.activityLevel || 
@@ -42,26 +47,55 @@ export function transformForDietRequest(
     fitnessGoals.primaryGoals?.[0] || 
     'general_fitness';
 
+  // Build dietaryRestrictions array from diet_type (backend expects this for cache key)
+  // Valid values: 'vegetarian', 'vegan', 'pescatarian', 'gluten_free', 'dairy_free', 
+  //               'nut_free', 'halal', 'kosher', 'low_carb', 'keto'
+  const dietaryRestrictions: string[] = [];
+  if (dietPreferences?.diet_type) {
+    // Map common diet types to backend-expected values
+    const dietType = dietPreferences.diet_type.toLowerCase();
+    if (['vegetarian', 'vegan', 'pescatarian', 'keto'].includes(dietType)) {
+      dietaryRestrictions.push(dietType);
+    }
+  }
+  // Add any explicit restrictions
+  if (dietPreferences?.restrictions) {
+    dietaryRestrictions.push(...dietPreferences.restrictions);
+  }
+
+  // Validate required profile data - NO FALLBACKS for critical values
+  if (!personalInfo.age || !personalInfo.weight || !personalInfo.height) {
+    console.warn('[aiRequestTransformers] Missing required profile data - onboarding may be incomplete');
+  }
+
   return {
+    // Profile data (may be stripped by backend, but included for compatibility)
     profile: {
-      age: personalInfo.age || 25,
-      gender: personalInfo.gender || 'other',
-      weight: bodyMetrics?.current_weight_kg || personalInfo.weight || 70,
-      height: bodyMetrics?.height_cm || personalInfo.height || 170,
+      age: personalInfo.age, // NO FALLBACK - must come from onboarding
+      gender: personalInfo.gender, // NO FALLBACK
+      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight, // NO FALLBACK
+      height: bodyMetrics?.height_cm ?? personalInfo.height, // NO FALLBACK
       activityLevel: activityLevel,
       fitnessGoal: primaryGoal,
     },
+    // Diet preferences (may be stripped by backend, but included for compatibility)
     dietPreferences: dietPreferences ? {
       dietType: dietPreferences.diet_type,
-      allergies: dietPreferences.allergies || [],
-      restrictions: dietPreferences.restrictions || [],
-      cuisinePreferences: [], // Will be auto-detected from user's country
+      allergies: dietPreferences.allergies ?? [],
+      restrictions: dietPreferences.restrictions ?? [],
+      cuisinePreferences: [],
       dislikes: [],
     } : undefined,
-    // Note: calorieTarget and macros are read from advanced_review table by backend
-    // We don't send them here to avoid conflicts with calculated values
+    
+    // REQUIRED: Fields that backend schema expects for cache key generation
+    calorieTarget: calorieTarget,
     mealsPerDay: 3,
-    model: 'google/gemini-2.0-flash-exp',
+    
+    // IMPORTANT: dietaryRestrictions is used for cache key (not dietPreferences.dietType)
+    dietaryRestrictions: dietaryRestrictions.length > 0 ? dietaryRestrictions : undefined,
+    
+    // AI model configuration
+    model: 'google/gemini-2.5-flash',
     temperature: 0.7,
   };
 }
@@ -71,7 +105,100 @@ export function transformForDietRequest(
 // ============================================================================
 
 /**
+ * Map onboarding fitness goals to Workers API format
+ * Onboarding uses hyphens (weight-loss), API expects underscores (weight_loss)
+ */
+const FITNESS_GOAL_MAP: Record<string, string> = {
+  'weight-loss': 'weight_loss',
+  'weight-gain': 'muscle_gain',      // Map weight gain to muscle gain
+  'muscle-gain': 'muscle_gain',
+  'general_fitness': 'maintenance',  // Map general fitness to maintenance
+  'general-fitness': 'maintenance',
+  'strength': 'strength',
+  'endurance': 'endurance',
+  'flexibility': 'flexibility',
+  'athletic-performance': 'athletic_performance',
+  'athletic_performance': 'athletic_performance',
+  // Already correct format
+  'weight_loss': 'weight_loss',
+  'muscle_gain': 'muscle_gain',
+  'maintenance': 'maintenance',
+};
+
+/**
+ * Map onboarding equipment to Workers API format
+ * Onboarding: plural, hyphens (dumbbells, cable-machine)
+ * API: singular, spaces (dumbbell, cable)
+ */
+const EQUIPMENT_MAP: Record<string, string> = {
+  // Plural → Singular
+  'dumbbells': 'dumbbell',
+  'kettlebells': 'kettlebell',
+  'barbells': 'barbell',
+
+  // Hyphen → Space
+  'bodyweight': 'body weight',
+  'resistance-bands': 'resistance band',
+  'resistance-band': 'resistance band',
+  'cable-machine': 'cable',
+  'stationary-bike': 'stationary bike',
+  'pull-up-bar': 'body weight',       // Pull-up bar is bodyweight exercise
+  'yoga-mat': 'body weight',          // Yoga mat implies bodyweight
+  'bench': 'body weight',             // Bench is implied with barbell
+  'treadmill': 'body weight',         // Cardio equipment, not needed for strength
+  'rowing-machine': 'body weight',    // Cardio equipment
+
+  // Already correct format
+  'body weight': 'body weight',
+  'dumbbell': 'dumbbell',
+  'barbell': 'barbell',
+  'kettlebell': 'kettlebell',
+  'band': 'band',
+  'cable': 'cable',
+  'machine': 'machine',
+  'medicine ball': 'medicine ball',
+  'resistance band': 'resistance band',
+  'stationary bike': 'stationary bike',
+};
+
+/**
+ * Map onboarding workout preferences to API workout type
+ * Onboarding: What user LIKES (strength, cardio, yoga)
+ * API: What workout to GENERATE (full_body, upper_body, cardio, etc.)
+ */
+const WORKOUT_TYPE_MAP: Record<string, string> = {
+  'strength': 'full_body',
+  'cardio': 'cardio',
+  'hiit': 'full_body',              // HIIT is full body with intensity
+  'yoga': 'core',                   // Yoga → flexibility/core exercises
+  'pilates': 'core',
+  'flexibility': 'core',            // Flexibility exercises
+  'functional': 'full_body',
+  'sports': 'full_body',
+  'dance': 'cardio',
+  'martial-arts': 'full_body',
+
+  // Already correct format
+  'full_body': 'full_body',
+  'upper_body': 'upper_body',
+  'lower_body': 'lower_body',
+  'push': 'push',
+  'pull': 'pull',
+  'legs': 'legs',
+  'chest': 'chest',
+  'back': 'back',
+  'shoulders': 'shoulders',
+  'arms': 'arms',
+  'core': 'core',
+};
+
+/**
  * Transform frontend types to WorkoutGenerationRequest for backend
+ *
+ * IMPORTANT: This function maps onboarding data to Workers API format:
+ * - Fitness goals: weight-loss → weight_loss
+ * - Equipment: dumbbells → dumbbell, bodyweight → body weight
+ * - Workout type: strength (preference) → full_body (actual workout)
  */
 export function transformForWorkoutRequest(
   personalInfo: PersonalInfo,
@@ -79,45 +206,83 @@ export function transformForWorkoutRequest(
   bodyMetrics?: BodyMetrics,
   workoutPreferences?: WorkoutPreferences,
   options?: {
+    requestWeeklyPlan?: boolean;  // ✅ NEW: Flag for weekly plan
     workoutType?: string;
     duration?: number;
     focusMuscles?: string[];
   }
 ): WorkoutGenerationRequest {
   // Get experience level
-  const experienceLevel = workoutPreferences?.intensity || 
-    fitnessGoals.experience_level || 
-    fitnessGoals.experience || 
+  const experienceLevel = workoutPreferences?.intensity ||
+    fitnessGoals.experience_level ||
+    fitnessGoals.experience ||
     'beginner';
 
-  // Get primary fitness goal
-  const primaryGoal = fitnessGoals.primary_goals?.[0] || 
-    fitnessGoals.primaryGoals?.[0] || 
+  // Get primary fitness goal and map to API format
+  const rawGoal = fitnessGoals.primary_goals?.[0] ||
+    fitnessGoals.primaryGoals?.[0] ||
     'general_fitness';
+  const primaryGoal = FITNESS_GOAL_MAP[rawGoal] || 'maintenance';
 
-  // Get available equipment
-  const equipment = workoutPreferences?.equipment || 
-    fitnessGoals.preferred_equipment || 
+  // Get available equipment and map to API format
+  const rawEquipment = workoutPreferences?.equipment ||
+    fitnessGoals.preferred_equipment ||
     ['bodyweight'];
+
+  const equipment = rawEquipment
+    .map(eq => EQUIPMENT_MAP[eq.toLowerCase()] || eq)
+    .filter((value, index, self) => self.indexOf(value) === index);  // Deduplicate
 
   // Get physical limitations/injuries
   const injuries = bodyMetrics?.physical_limitations || [];
 
+  // ✅ CRITICAL: Get medical conditions and medications
+  const medicalConditions = bodyMetrics?.medical_conditions || [];
+  const medications = bodyMetrics?.medications || [];
+
+  // ✅ CRITICAL: Get pregnancy/breastfeeding status
+  const pregnancyStatus = bodyMetrics?.pregnancy_status || false;
+  const pregnancyTrimester = bodyMetrics?.pregnancy_trimester;
+  const breastfeedingStatus = bodyMetrics?.breastfeeding_status || false;
+
+  // ✅ NEW: Get preferred workout time
+  const preferredWorkoutTime = workoutPreferences?.preferred_workout_times?.[0] || 'morning';
+
+  // ✅ NEW: Build weekly plan object (ALWAYS REQUIRED - NO FALLBACK)
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const preferredDays = getWorkoutDaysFromPreferences(workoutPreferences, workoutsPerWeek);
+
+  const weeklyPlan = {
+    workoutsPerWeek: workoutsPerWeek,
+    preferredDays: preferredDays,
+    workoutTypes: workoutPreferences?.workout_types || [],
+    prefersVariety: workoutPreferences?.prefers_variety || false,
+    activityLevel: workoutPreferences?.activity_level,
+    preferredWorkoutTime: preferredWorkoutTime,  // ✅ NEW
+  };
+
   return {
     profile: {
-      age: personalInfo.age || 25,
-      gender: personalInfo.gender || 'other',
-      weight: bodyMetrics?.current_weight_kg || personalInfo.weight || 70,
-      height: bodyMetrics?.height_cm || personalInfo.height || 170,
+      age: personalInfo.age, // NO FALLBACK - must come from onboarding
+      gender: personalInfo.gender, // NO FALLBACK
+      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight, // NO FALLBACK
+      height: bodyMetrics?.height_cm ?? personalInfo.height, // NO FALLBACK
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
       injuries: injuries,
+      // ✅ CRITICAL: Add medical safety fields
+      medicalConditions: medicalConditions,
+      medications: medications,
+      pregnancyStatus: pregnancyStatus,
+      pregnancyTrimester: pregnancyTrimester,
+      breastfeedingStatus: breastfeedingStatus,
     },
-    workoutType: options?.workoutType || 'strength',
-    duration: options?.duration || workoutPreferences?.time_preference || 30,
+    // ✅ NEW: Weekly plan parameters (ALWAYS REQUIRED - NO FALLBACK)
+    weeklyPlan: weeklyPlan,
     focusMuscles: options?.focusMuscles,
-    model: 'google/gemini-2.0-flash-exp',
+    // Use gemini-2.5-flash which is confirmed working via Vercel AI Gateway
+    model: 'google/gemini-2.5-flash',
     temperature: 0.7,
   };
 }
@@ -215,11 +380,39 @@ export function transformDietResponseToWeeklyPlan(
 }
 
 /**
+ * Get workout days based on user preferences
+ */
+function getWorkoutDaysFromPreferences(
+  workoutPreferences?: WorkoutPreferences,
+  workoutsPerWeek: number = 3
+): string[] {
+  // Use user's preferred workout times if available
+  if (workoutPreferences?.preferred_workout_times?.length > 0) {
+    return workoutPreferences.preferred_workout_times.slice(0, workoutsPerWeek);
+  }
+
+  // Otherwise, distribute evenly based on frequency
+  const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  if (workoutsPerWeek === 1) return ['wednesday'];
+  if (workoutsPerWeek === 2) return ['tuesday', 'friday'];
+  if (workoutsPerWeek === 3) return ['monday', 'wednesday', 'friday'];
+  if (workoutsPerWeek === 4) return ['monday', 'tuesday', 'thursday', 'friday'];
+  if (workoutsPerWeek === 5) return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+  if (workoutsPerWeek === 6) return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  if (workoutsPerWeek === 7) return allDays;
+
+  // Default: 3 days
+  return ['monday', 'wednesday', 'friday'];
+}
+
+/**
  * Transform backend workout response to frontend WeeklyWorkoutPlan format
  */
 export function transformWorkoutResponseToWeeklyPlan(
   response: WorkersResponse<WorkoutPlan>,
-  weekNumber: number = 1
+  weekNumber: number = 1,
+  workoutPreferences?: WorkoutPreferences
 ): WeeklyWorkoutPlan | null {
   if (!response.success || !response.data) {
     console.error('[Transformer] Workout response failed:', response.error);
@@ -230,7 +423,8 @@ export function transformWorkoutResponseToWeeklyPlan(
 
   // Create workout for multiple days based on the generated workout
   const workouts: Workout[] = [];
-  const workoutDays = ['monday', 'wednesday', 'friday']; // Default 3-day split
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const workoutDays = getWorkoutDaysFromPreferences(workoutPreferences, workoutsPerWeek);
 
   for (let i = 0; i < workoutDays.length; i++) {
     const day = workoutDays[i];

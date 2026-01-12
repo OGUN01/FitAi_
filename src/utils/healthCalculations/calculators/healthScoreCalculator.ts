@@ -70,7 +70,7 @@ export class HealthScoreCalculator {
     const waterTarget = metrics.waterTarget;
     if (waterTarget && waterTarget > 0) {
       const hydrationScore = this.assessHydration(
-        metrics.waterIntake || 0,
+        metrics.waterIntake ?? 0, // 0 if not tracked
         waterTarget
       );
       totalScore += hydrationScore;
@@ -87,7 +87,7 @@ export class HealthScoreCalculator {
     const proteinTarget = metrics.proteinTarget;
     if (proteinTarget && proteinTarget > 0) {
       const nutritionScore = this.assessNutrition(
-        metrics.protein || 0,
+        metrics.protein ?? 0, // 0 if not tracked
         proteinTarget
       );
       totalScore += nutritionScore;

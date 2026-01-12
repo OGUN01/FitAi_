@@ -25,13 +25,27 @@ export class PersonalInfoService {
       console.log('💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user:', userId);
       console.log('💾 [DB-SERVICE] Input data:', data);
 
+      // CRITICAL: Get user email from auth session - required NOT NULL field in profiles table
+      const { data: { session } } = await supabase.auth.getSession();
+      const userEmail = session?.user?.email || '';
+      
+      if (!userEmail) {
+        console.warn('⚠️ [DB-SERVICE] PersonalInfoService: No email found in auth session');
+      }
+
+      // Ensure NOT NULL fields have fallback values
+      const firstName = data.first_name || '';
+      const lastName = data.last_name || '';
+      const fullName = `${firstName} ${lastName}`.trim() || 'User';
+
       const profileData: Partial<ProfilesRow> = {
         id: userId,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        name: `${data.first_name} ${data.last_name}`.trim(), // Computed full name
-        age: data.age,
-        gender: data.gender,
+        email: userEmail, // Required NOT NULL field
+        first_name: firstName,
+        last_name: lastName,
+        name: fullName, // Computed full name with fallback
+        age: data.age || 25, // NOT NULL - default to 25 if missing
+        gender: data.gender || 'prefer_not_to_say', // NOT NULL - safe default
         country: data.country,
         state: data.state,
         region: data.region || null,
@@ -150,9 +164,9 @@ export class DietPreferencesService {
 
       const dietData: Partial<DietPreferencesRow> = {
         user_id: userId,
-        diet_type: data.diet_type,
-        allergies: data.allergies,
-        restrictions: data.restrictions,
+        diet_type: data.diet_type || 'omnivore', // NOT NULL - default to omnivore
+        allergies: data.allergies || [], // NOT NULL - default to empty array
+        restrictions: data.restrictions || [], // NOT NULL - default to empty array
         
         // Diet readiness toggles
         keto_ready: data.keto_ready,
@@ -453,12 +467,12 @@ export class WorkoutPreferencesService {
 
       const workoutData: Partial<WorkoutPreferencesRow> = {
         user_id: userId,
-        location: data.location,
-        equipment: data.equipment,
+        location: data.location || 'home', // NOT NULL - default to home
+        equipment: data.equipment || ['bodyweight'], // NOT NULL - default to bodyweight
         time_preference: data.time_preference,
-        intensity: data.intensity,
+        intensity: data.intensity || 'moderate', // NOT NULL - default to moderate
         workout_types: data.workout_types,
-        primary_goals: data.primary_goals,
+        primary_goals: data.primary_goals || ['general-fitness'], // NOT NULL - default goal
         activity_level: data.activity_level,
         workout_experience_years: data.workout_experience_years,
         workout_frequency_per_week: data.workout_frequency_per_week,

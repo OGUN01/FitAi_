@@ -41,7 +41,7 @@ import {
   loadUserPreferences,
   UserHealthMetrics,
 } from '../services/userMetricsService';
-import { adjustPortionsToTarget } from '../utils/portionAdjustment';
+import { adjustForProteinTarget } from '../utils/portionAdjustment';
 
 // Import the new specialized diet prompt system
 import { buildDietPrompt } from '../prompts/diet';
@@ -62,8 +62,8 @@ function createAIProvider(env: Env, modelId: string) {
     apiKey: env.AI_GATEWAY_API_KEY,
   });
 
-  // Return model from gateway
-  const model = modelId || 'google/gemini-2.0-flash-exp';
+  // Return model from gateway - use gemini-2.5-flash which is confirmed working
+  const model = modelId || 'google/gemini-2.5-flash';
   return gatewayInstance(model);
 }
 
@@ -767,15 +767,15 @@ async function generateFreshDiet(
   const prompt = buildDietPrompt(metrics, profile, preferences.diet);
 
   console.log('[Diet Generation] Prompt built. Cuisine detected:', {
-    cuisine: detectCuisine(profile?.country, profile?.state),
+    cuisine: detectCuisine(profile?.country),
     country: profile?.country,
     state: profile?.state,
   });
 
-  // 3. Generate with AI
-  const model = createAIProvider(env, request.model || 'google/gemini-2.0-flash-exp');
+  // 3. Generate with AI - use gemini-2.5-flash which is confirmed working
+  const model = createAIProvider(env, request.model || 'google/gemini-2.5-flash');
 
-  console.log('[Diet Generation] Calling AI model:', request.model || 'google/gemini-2.0-flash-exp');
+  console.log('[Diet Generation] Calling AI model:', request.model || 'google/gemini-2.5-flash');
 
   const aiStartTime = Date.now();
   const result = await generateObject({
@@ -812,8 +812,11 @@ async function generateFreshDiet(
     totalCalories: result.object.totalCalories,
   });
 
+  // 3.5 POST-PROCESSING: Filter out disabled meal types (safety net for prompt violations)
+  const filteredMealPlan = filterDisabledMeals(result.object, preferences.diet);
+
   // 4. COMPREHENSIVE VALIDATION (NO FALLBACK)
-  const validationResult = validateDietPlan(result.object, metrics, preferences.diet);
+  const validationResult = validateDietPlan(filteredMealPlan, metrics, preferences.diet);
 
   // If validation FAILED - throw error (NO FALLBACK)
   if (!validationResult.isValid) {
@@ -836,24 +839,32 @@ async function generateFreshDiet(
     console.warn('[Diet Generation] Quality warnings:', validationResult.warnings);
   }
 
-  // 5. Adjust portions to match EXACT calorie target
-  const adjustedDiet = adjustPortionsToTarget(result.object, metrics.daily_calories);
+  // 5. Adjust portions to match EXACT calorie AND protein targets
+  const adjustedDiet = adjustForProteinTarget(
+    filteredMealPlan, 
+    metrics.daily_calories,
+    metrics.daily_protein_g
+  );
 
-  console.log('[Diet Generation] Portions adjusted:', {
-    originalCalories: result.object.totalCalories,
+  console.log('[Diet Generation] Portions adjusted (calorie + protein):', {
+    originalCalories: filteredMealPlan.totalCalories,
     adjustedCalories: adjustedDiet.totalCalories,
     targetCalories: metrics.daily_calories,
-    difference: Math.abs(adjustedDiet.totalCalories - metrics.daily_calories),
+    calorieDifference: Math.abs(adjustedDiet.totalCalories - metrics.daily_calories),
+    originalProtein: filteredMealPlan.totalNutrition.protein,
+    adjustedProtein: adjustedDiet.totalNutrition.protein,
+    targetProtein: metrics.daily_protein_g,
+    proteinDifference: Math.abs(adjustedDiet.totalNutrition.protein - metrics.daily_protein_g),
   });
 
   // Return diet with metadata for deduplication/caching
   return {
     diet: adjustedDiet,
     metadata: {
-      model: request.model || 'google/gemini-2.0-flash-exp',
+      model: request.model || 'google/gemini-2.5-flash',
       aiGenerationTime,
       tokensUsed: result.usage?.totalTokens,
-      costUsd: calculateCost(request.model || 'google/gemini-2.0-flash-exp', result.usage?.totalTokens || 0),
+      costUsd: calculateCost(request.model || 'google/gemini-2.5-flash', result.usage?.totalTokens || 0),
       validationPassed: true,
       warningsCount: validationResult.warnings.length,
       warnings: validationResult.warnings,
@@ -876,6 +887,88 @@ async function generateFreshDiet(
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Filter out disabled meal types from the AI-generated plan
+ * This is a safety net in case AI ignores prompt instructions
+ */
+function filterDisabledMeals(
+  mealPlan: DietResponse,
+  prefs: DietPreferences | null
+): DietResponse {
+  if (!prefs) return mealPlan;
+  
+  // Get meal type flags from preferences
+  const snacksEnabled = (prefs as any)?.snacks_enabled !== false;
+  const breakfastEnabled = (prefs as any)?.breakfast_enabled !== false;
+  const lunchEnabled = (prefs as any)?.lunch_enabled !== false;
+  const dinnerEnabled = (prefs as any)?.dinner_enabled !== false;
+  
+  // Snack meal types to filter
+  const snackTypes = ['morning_snack', 'afternoon_snack', 'evening_snack'];
+  
+  // Filter meals based on enabled flags
+  const filteredMeals = mealPlan.meals.filter(meal => {
+    const mealType = meal.mealType.toLowerCase();
+    
+    // Check if snacks should be excluded
+    if (!snacksEnabled && snackTypes.includes(mealType)) {
+      console.log('[Diet Generation] Filtering out disabled snack:', meal.name);
+      return false;
+    }
+    
+    // Check individual meal types
+    if (!breakfastEnabled && mealType === 'breakfast') {
+      console.log('[Diet Generation] Filtering out disabled breakfast:', meal.name);
+      return false;
+    }
+    if (!lunchEnabled && mealType === 'lunch') {
+      console.log('[Diet Generation] Filtering out disabled lunch:', meal.name);
+      return false;
+    }
+    if (!dinnerEnabled && mealType === 'dinner') {
+      console.log('[Diet Generation] Filtering out disabled dinner:', meal.name);
+      return false;
+    }
+    
+    return true;
+  });
+  
+  // If meals were filtered, recalculate totals
+  if (filteredMeals.length !== mealPlan.meals.length) {
+    const totalNutrition = {
+      calories: filteredMeals.reduce((sum, m) => sum + m.totalNutrition.calories, 0),
+      protein: Math.round(filteredMeals.reduce((sum, m) => sum + m.totalNutrition.protein, 0) * 10) / 10,
+      carbs: Math.round(filteredMeals.reduce((sum, m) => sum + m.totalNutrition.carbs, 0) * 10) / 10,
+      fats: Math.round(filteredMeals.reduce((sum, m) => sum + m.totalNutrition.fats, 0) * 10) / 10,
+      fiber: filteredMeals.some(m => m.totalNutrition.fiber)
+        ? Math.round(filteredMeals.reduce((sum, m) => sum + (m.totalNutrition.fiber || 0), 0) * 10) / 10
+        : undefined,
+      sugar: filteredMeals.some(m => m.totalNutrition.sugar)
+        ? Math.round(filteredMeals.reduce((sum, m) => sum + (m.totalNutrition.sugar || 0), 0) * 10) / 10
+        : undefined,
+      sodium: filteredMeals.some(m => m.totalNutrition.sodium)
+        ? Math.round(filteredMeals.reduce((sum, m) => sum + (m.totalNutrition.sodium || 0), 0))
+        : undefined,
+    };
+    
+    console.log('[Diet Generation] Meals filtered:', {
+      originalCount: mealPlan.meals.length,
+      filteredCount: filteredMeals.length,
+      originalCalories: mealPlan.totalCalories,
+      filteredCalories: totalNutrition.calories,
+    });
+    
+    return {
+      ...mealPlan,
+      meals: filteredMeals,
+      totalCalories: totalNutrition.calories,
+      totalNutrition,
+    };
+  }
+  
+  return mealPlan;
+}
 
 /**
  * Calculate approximate API cost based on model and token usage

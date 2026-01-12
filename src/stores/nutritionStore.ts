@@ -32,6 +32,14 @@ interface MealProgress {
   logId?: string;
 }
 
+// Consumed nutrition computed from completed meals - SINGLE SOURCE OF TRUTH
+interface ConsumedNutrition {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 interface NutritionState {
   // Weekly meal plan state
   weeklyMealPlan: WeeklyMealPlan | null;
@@ -75,6 +83,10 @@ interface NutritionState {
   updateMealProgress: (mealId: string, progress: number) => void;
   completeMeal: (mealId: string, logId?: string) => void;
   getMealProgress: (mealId: string) => MealProgress | null;
+
+  // Computed selectors - SINGLE SOURCE OF TRUTH
+  getConsumedNutrition: () => ConsumedNutrition;
+  getTodaysConsumedNutrition: () => ConsumedNutrition;
 
   // Meal session actions
   startMealSession: (meal: DayMeal) => Promise<string>;
@@ -424,6 +436,56 @@ export const useNutritionStore = create<NutritionState>()(
 
       getMealProgress: (mealId) => {
         return get().mealProgress[mealId] || null;
+      },
+
+      // COMPUTED SELECTORS - SINGLE SOURCE OF TRUTH for consumed nutrition
+      // This calculates consumed nutrition from mealProgress (local state)
+      // avoiding dual-source issues between Zustand and Supabase
+      getConsumedNutrition: () => {
+        const state = get();
+        
+        // Get all meal IDs that are 100% completed
+        const completedMealIds = Object.entries(state.mealProgress)
+          .filter(([_, progress]) => progress.progress === 100)
+          .map(([id]) => id);
+        
+        // Find the actual meal data from weekly plan
+        const completedMeals = state.weeklyMealPlan?.meals.filter(
+          meal => completedMealIds.includes(meal.id)
+        ) || [];
+        
+        // Sum up all nutrition from completed meals
+        return completedMeals.reduce((acc, meal) => ({
+          calories: acc.calories + (meal.totalCalories || 0),
+          protein: acc.protein + (meal.totalMacros?.protein || 0),
+          carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
+          fat: acc.fat + (meal.totalMacros?.fat || 0),
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      },
+
+      // Get consumed nutrition for TODAY only
+      getTodaysConsumedNutrition: () => {
+        const state = get();
+        const today = new Date();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const todayName = dayNames[today.getDay()];
+        
+        // Get all meal IDs that are 100% completed
+        const completedMealIds = Object.entries(state.mealProgress)
+          .filter(([_, progress]) => progress.progress === 100)
+          .map(([id]) => id);
+        
+        // Filter to only today's completed meals
+        const todaysCompletedMeals = state.weeklyMealPlan?.meals.filter(
+          meal => completedMealIds.includes(meal.id) && meal.dayOfWeek === todayName
+        ) || [];
+        
+        return todaysCompletedMeals.reduce((acc, meal) => ({
+          calories: acc.calories + (meal.totalCalories || 0),
+          protein: acc.protein + (meal.totalMacros?.protein || 0),
+          carbs: acc.carbs + (meal.totalMacros?.carbohydrates || 0),
+          fat: acc.fat + (meal.totalMacros?.fat || 0),
+        }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
       },
 
       // Meal session actions

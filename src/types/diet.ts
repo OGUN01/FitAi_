@@ -88,11 +88,13 @@ export type DietaryLabel =
 // ============================================================================
 
 export interface MealItem {
+  id?: string; // Unique identifier for the meal item
   foodId: string;
   food: Food;
   name?: string; // Optional food name for direct display
-  quantity: number; // in serving units
-  unit?: string; // Optional unit for display (e.g., 'g', 'ml', 'piece')
+  quantity: number | string; // in serving units or descriptive string (e.g., "100 grams")
+  amount?: number; // Alternative to quantity
+  unit?: string; // Optional unit for display (e.g., 'g', 'ml', 'piece', 'serving')
   calories: number;
   macros: Macronutrients;
   notes?: string;
@@ -101,6 +103,8 @@ export interface MealItem {
   preparationTime?: number;
   instructions?: string[];
   preparation?: any;
+  // Tracking
+  isLogged?: boolean; // Whether this item has been logged by the user
 }
 
 export interface Meal {

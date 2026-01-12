@@ -39,13 +39,16 @@ import { useDashboardIntegration } from '../../utils/integration';
 import { useAuth } from '../../hooks/useAuth';
 import { useCalculatedMetrics } from '../../hooks/useCalculatedMetrics';
 import DataRetrievalService from '../../services/dataRetrieval';
-import { useFitnessStore } from '../../stores/fitnessStore';
-import { useNutritionStore } from '../../stores/nutritionStore';
-import { useAchievementStore } from '../../stores/achievementStore';
-import { useHealthDataStore } from '../../stores/healthDataStore';
-import { useAnalyticsStore } from '../../stores/analyticsStore';
-import { useSubscriptionStore } from '../../stores/subscriptionStore';
-import { useUserStore } from '../../stores/userStore';
+import { 
+  useFitnessStore,
+  useNutritionStore,
+  useAchievementStore,
+  useHealthDataStore,
+  useAnalyticsStore,
+  useSubscriptionStore,
+  useUserStore,
+  useHydrationStore,
+} from '../../stores';
 import { GuestSignUpScreen } from './GuestSignUpScreen';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -61,7 +64,9 @@ import {
   HealthIntelligenceHub,
   HydrationTracker,
   BodyProgressCard,
+  SyncStatusIndicator,
 } from './home';
+import { completionTrackingService } from '../../services/completionTracking';
 
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
@@ -99,18 +104,29 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Hydration state - NO HARDCODED FALLBACKS
-  // Get water goal from onboarding calculations (climate-adjusted)
+  // HYDRATION - Single Source of Truth from hydrationStore
+  const {
+    waterIntakeML,
+    dailyGoalML: waterGoal,
+    addWater: hydrationAddWater,
+    setDailyGoal: setHydrationGoal,
+    checkAndResetIfNewDay,
+  } = useHydrationStore();
+  
+  // Get calculated metrics for initializing hydration goal
   const {
     metrics: calculatedMetrics,
-    getWaterGoalLiters,
     hasCalculatedMetrics,
   } = useCalculatedMetrics();
   
-  const [waterIntake, setWaterIntake] = useState(0);
-  // Water goal from calculated metrics (in ml) - NO HARDCODED DEFAULT
-  // If null, UI should show "Complete onboarding" message
-  const waterGoal = calculatedMetrics?.dailyWaterML ?? null;
+  // Sync hydration goal from calculated metrics on mount
+  useEffect(() => {
+    if (calculatedMetrics?.dailyWaterML) {
+      setHydrationGoal(calculatedMetrics.dailyWaterML);
+    }
+    // Check for daily reset
+    checkAndResetIfNewDay();
+  }, [calculatedMetrics?.dailyWaterML]);
 
   // Load data
   useEffect(() => {
@@ -120,10 +136,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         setTodaysData(DataRetrievalService.getTodaysData());
         setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
         
+        // Auto-sync health data from wearables on app launch
         if (Platform.OS === 'ios' && healthSettings.healthKitEnabled) {
-          isHealthKitAuthorized ? syncHealthData() : initializeHealthKit();
+          if (isHealthKitAuthorized) {
+            console.log('[HEALTH] Auto-syncing from HealthKit...');
+            syncHealthData();
+          } else {
+            console.log('[HEALTH] Initializing HealthKit...');
+            initializeHealthKit();
+          }
         } else if (Platform.OS === 'android' && healthSettings.healthConnectEnabled) {
-          isHealthConnectAuthorized ? syncFromHealthConnect(7) : initializeHealthConnect();
+          if (isHealthConnectAuthorized) {
+            console.log('[HEALTH] Auto-syncing from Health Connect (7 days)...');
+            syncFromHealthConnect(7);
+          } else {
+            console.log('[HEALTH] Initializing Health Connect...');
+            initializeHealthConnect();
+          }
         }
         
         analyticsInitialized ? refreshAnalytics() : initializeAnalytics();
@@ -135,24 +164,51 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
     loadData();
     Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+    
+    // Subscribe to completion events for real-time UI updates
+    // This ensures HomeScreen refreshes when workouts/meals are completed on other screens
+    console.log('[EVENT] HomeScreen: Setting up completion event listener');
+    const unsubscribe = completionTrackingService.subscribe((event) => {
+      console.log('[EVENT] HomeScreen: Received completion event:', event);
+      // Refresh data when completion events occur
+      setTodaysData(DataRetrievalService.getTodaysData());
+      setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
+    });
+
+    return () => {
+      console.log('[EVENT] HomeScreen: Unsubscribing from completion events');
+      unsubscribe();
+    };
   }, []);
 
   // Memoized values
   const userStats = useMemo(() => getUserStats() || {}, [getUserStats]);
-  const realCaloriesBurned = useMemo(() => DataRetrievalService.getTotalCaloriesBurned(), [todaysData]);
-  const realStreak = useMemo(() => weeklyProgress?.streak || achievementStreak || userStats?.currentStreak || 0, [weeklyProgress, achievementStreak, userStats]);
+  // Combine app-tracked calories with wearable calories (use wearable as primary if connected)
+  const appCaloriesBurned = useMemo(() => DataRetrievalService.getTotalCaloriesBurned(), [todaysData]);
+  const wearableConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
+  const realCaloriesBurned = useMemo(() => {
+    // If wearable is connected, use wearable activeCalories as truth for "calories burned"
+    // Otherwise fall back to app-tracked calories
+    if (wearableConnected && healthMetrics?.activeCalories > 0) {
+      return healthMetrics.activeCalories;
+    }
+    return appCaloriesBurned;
+  }, [wearableConnected, healthMetrics?.activeCalories, appCaloriesBurned]);
+  // SINGLE SOURCE OF TRUTH: achievementStore.currentStreak - NO FALLBACK CHAIN
+  const realStreak = achievementStreak;
   const todaysWorkoutInfo = useMemo(() => DataRetrievalService.getTodaysWorkoutForHome(), [todaysData]);
 
   // User age for heart rate zones
   const userAge = useMemo(() => {
-    return userProfile?.personalInfo?.age || profile?.personalInfo?.age || 30;
-  }, [userProfile, profile]);
+    return profile?.personalInfo?.age; // NO FALLBACK - single source of truth
+  }, [profile]);
 
   // Weight data for body progress - use calculatedMetrics from onboarding
   const weightData = useMemo(() => {
-    const currentWeight = calculatedMetrics?.currentWeightKg || healthMetrics?.weight || userProfile?.personalInfo?.weight;
-    const goalWeight = calculatedMetrics?.targetWeightKg || userProfile?.fitnessGoals?.targetWeight;
-    const startingWeight = userProfile?.personalInfo?.weight || currentWeight;
+    // SINGLE SOURCE - profileStore.bodyMetrics is the truth
+    const currentWeight = profile?.bodyMetrics?.current_weight_kg;
+    const goalWeight = profile?.bodyMetrics?.target_weight_kg;
+    const startingWeight = profile?.bodyMetrics?.starting_weight_kg ?? currentWeight;
     
     return {
       currentWeight,
@@ -201,11 +257,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     }
   }, [loadFitnessData, loadNutritionData, isHealthKitAuthorized, isHealthConnectAuthorized, syncHealthData, syncFromHealthConnect]);
 
-  // Handle water intake
+  // Handle water intake - Uses hydrationStore (single source of truth)
   const handleAddWater = useCallback((amount: number) => {
     haptics.medium();
-    setWaterIntake(prev => Math.min(prev + amount, waterGoal * 1.5)); // Cap at 150% of goal
-  }, [waterGoal]);
+    hydrationAddWater(amount); // Store handles capping at 150% of goal
+  }, [hydrationAddWater]);
 
   // Quick actions (no redundant badges)
   // Quick Actions - Unique actions NOT in navigation bar
@@ -296,8 +352,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
           >
             {/* 1. Header */}
             <HomeHeader
-              userName={profile?.personalInfo?.name || userProfile?.personalInfo?.name || 'Champion'}
-              userInitial={(profile?.personalInfo?.name || userProfile?.personalInfo?.name || 'C').charAt(0)}
+              userName={profile?.personalInfo?.name} // NO FALLBACK - single source
+              userInitial={profile?.personalInfo?.name?.charAt(0)} // NO FALLBACK
               streak={realStreak}
               onProfilePress={() => onNavigateToTab?.('profile')}
               onStreakPress={() => Alert.alert('Streak', `${realStreak} day streak! Keep going!`)}
@@ -319,12 +375,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             <View style={styles.section}>
               <HealthIntelligenceHub
                 sleepHours={healthMetrics?.sleepHours}
-                sleepQuality={healthMetrics?.sleepQuality || 'good'}
+                sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
                 restingHeartRate={healthMetrics?.restingHeartRate}
                 hrTrend={healthMetrics?.restingHeartRate && healthMetrics.restingHeartRate < 65 ? 'down' : 'stable'}
-                steps={healthMetrics?.steps || 0}
-                stepsGoal={10000}
-                activeCalories={healthMetrics?.activeCalories || realCaloriesBurned}
+                steps={healthMetrics?.steps}
+                stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
+                activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
                 age={userAge}
                 onPress={() => onNavigateToTab?.('progress')}
                 onDetailPress={(metric) => {
@@ -338,20 +394,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             <View style={styles.section}>
               <DailyProgressRings
                 caloriesBurned={realCaloriesBurned}
-                caloriesGoal={500}
+                caloriesGoal={healthMetrics?.caloriesGoal} // NO HARDCODED - from healthDataStore
                 workoutMinutes={workoutMinutes}
-                workoutGoal={30}
+                workoutGoal={calculatedMetrics?.recommendedCardioMinutes} // NO HARDCODED - from advanced_review
                 mealsLogged={mealsLogged}
-                mealsGoal={4}
+                mealsGoal={calculatedMetrics?.mealsPerDay} // NO HARDCODED - from user preferences
                 onPress={() => onNavigateToTab?.('progress')}
               />
+              {/* Wearable Sync Status */}
+              {wearableConnected && (
+                <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
+                  <SyncStatusIndicator />
+                </View>
+              )}
             </View>
 
             {/* 5. Today's Workout */}
             <View style={styles.section}>
               <TodaysFocus
                 workoutInfo={todaysWorkoutInfo}
-                workoutProgress={todaysData?.progress?.workoutProgress || 0}
+                workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
                 onWorkoutPress={() => onNavigateToTab?.('fitness')}
               />
             </View>
@@ -361,10 +423,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
               <QuickActions actions={quickActions} />
             </View>
 
-            {/* 7. Hydration Tracker - PREMIUM */}
+            {/* 7. Hydration Tracker - PREMIUM (uses hydrationStore) */}
             <View style={styles.section}>
               <HydrationTracker
-                currentIntake={waterIntake}
+                currentIntake={waterIntakeML}
                 dailyGoal={waterGoal}
                 onAddWater={handleAddWater}
                 onPress={() => Alert.alert('Hydration', 'Detailed hydration tracking')}

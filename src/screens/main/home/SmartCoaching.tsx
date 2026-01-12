@@ -77,15 +77,15 @@ interface SmartCoachingProps {
 // Generate smart recommendations based on user state
 const generateRecommendations = (props: SmartCoachingProps): Recommendation[] => {
   const {
-    recoveryScore = 70,
-    sleepHours = 7,
-    sleepQuality = 'good',
-    lastWorkoutDaysAgo = 1,
-    currentStreak = 0,
-    waterIntake = 0,
-    waterGoal = 8,
-    caloriesConsumed = 0,
-    caloriesGoal = 2000,
+    recoveryScore, // NO DEFAULT - from healthDataStore
+    sleepHours, // NO DEFAULT - from healthDataStore
+    sleepQuality, // NO DEFAULT - from healthDataStore
+    lastWorkoutDaysAgo, // NO DEFAULT - from fitnessStore
+    currentStreak, // NO DEFAULT - from achievementStore
+    waterIntake, // NO DEFAULT - from hydrationStore
+    waterGoal, // NO DEFAULT - from hydrationStore
+    caloriesConsumed, // NO DEFAULT - from nutritionStore
+    caloriesGoal, // NO DEFAULT - from calculatedMetrics
   } = props;
 
   const recommendations: Recommendation[] = [];
@@ -141,7 +141,7 @@ const generateRecommendations = (props: SmartCoachingProps): Recommendation[] =>
   }
 
   // Hydration reminder (time-based)
-  if (hour >= 8 && hour <= 20) {
+  if (hour >= 8 && hour <= 20 && waterGoal > 0) {
     const hydrationPercent = (waterIntake / waterGoal) * 100;
     const expectedPercent = ((hour - 8) / 12) * 100;
     

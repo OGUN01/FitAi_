@@ -62,7 +62,9 @@ const TrendChart: React.FC<{
   const range = maxValue - minValue || 1;
 
   const points = validData.map((value, index) => {
-    const x = Math.round(padding + (index / (validData.length - 1)) * chartWidth);
+    // Guard against division by zero when only 1 data point
+    const xDivisor = validData.length > 1 ? (validData.length - 1) : 1;
+    const x = Math.round(padding + (index / xDivisor) * chartWidth);
     const y = Math.round(padding + chartHeight - ((value - minValue) / range) * chartHeight);
     return { x, y };
   });
@@ -244,7 +246,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
               {/* Mini Chart */}
               <View style={styles.chartContainer}>
                 <TrendChart
-                  data={chartData.length >= 2 ? chartData : [currentWeight || 0, currentWeight || 0]}
+                  data={chartData.length >= 2 ? chartData : currentWeight ? [currentWeight, currentWeight] : []}
                   width={rw(120)}
                   height={rh(50)}
                   color="#9C27B0"

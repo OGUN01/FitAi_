@@ -176,30 +176,35 @@ export const useUserActions = () => {
 
 /**
  * Hook to get user preferences
- * Returns user preferences or default values
+ * NO FALLBACKS - returns undefined if not set
  */
 export const useUserPreferences = () => {
   const profile = useUserStore((state) => state.profile);
 
   return {
-    units: profile?.preferences?.units || 'metric',
-    notifications: profile?.preferences?.notifications ?? true,
-    darkMode: profile?.preferences?.darkMode ?? true,
+    units: profile?.preferences?.units,
+    notifications: profile?.preferences?.notifications,
+    darkMode: profile?.preferences?.darkMode,
   };
 };
 
 /**
  * Hook to get user stats
- * Returns user stats or default values
+ * SINGLE SOURCE OF TRUTH - NO FALLBACKS
+ * If data is missing, returns undefined to let UI show explicit missing state
  */
 export const useUserStats = () => {
   const profile = useUserStore((state) => state.profile);
 
+  // NO FALLBACKS - return actual values or undefined
   return {
-    totalWorkouts: profile?.stats?.totalWorkouts || 0,
-    totalCaloriesBurned: profile?.stats?.totalCaloriesBurned || 0,
-    currentStreak: profile?.stats?.currentStreak || 0,
-    longestStreak: profile?.stats?.longestStreak || 0,
+    totalWorkouts: profile?.stats?.totalWorkouts,
+    totalCaloriesBurned: profile?.stats?.totalCaloriesBurned,
+    // NOTE: currentStreak should come from achievementStore, not here
+    // This is kept for backward compatibility but achievementStore is the source
+    currentStreak: profile?.stats?.currentStreak,
+    longestStreak: profile?.stats?.longestStreak,
+    achievements: profile?.stats?.achievements,
   };
 };
 

@@ -25,6 +25,8 @@ interface WeeklyPlanOverviewProps {
   selectedDay: string;
   onDayPress: (day: string) => void;
   onViewFullPlan: () => void;
+  onRegeneratePlan?: () => void;
+  isRegenerating?: boolean;
 }
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -36,6 +38,8 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
   selectedDay,
   onDayPress,
   onViewFullPlan,
+  onRegeneratePlan,
+  isRegenerating = false,
 }) => {
   // Calculate stats
   const stats = useMemo(() => {
@@ -62,7 +66,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
     const workout = plan.workouts?.find((w: any) => w.dayOfWeek === dayKey);
     const restDays = (plan as any).restDays || [];
     const isRestDay = restDays.includes(dayKey);
-    const progress = workout ? workoutProgress[workout.id]?.progress || 0 : 0;
+    const progress = workout ? workoutProgress[workout.id]?.progress ?? 0 : 0;
     const isSelected = selectedDay === dayKey;
     const isToday = DAY_KEYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1] === dayKey;
 
@@ -85,17 +89,36 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
             <Text style={styles.planTitle} numberOfLines={1}>{(plan as any).planTitle || 'Weekly Workout Plan'}</Text>
             <Text style={styles.planSubtitle}>{(plan as any).duration || `Week ${plan.weekNumber || 1}`}</Text>
           </View>
-          <AnimatedPressable
-            onPress={onViewFullPlan}
-            scaleValue={0.95}
-            hapticFeedback={true}
-            hapticType="light"
-          >
-            <View style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>View All</Text>
-              <Ionicons name="chevron-forward" size={rf(14)} color={ResponsiveTheme.colors.primary} />
-            </View>
-          </AnimatedPressable>
+          <View style={styles.headerActions}>
+            {onRegeneratePlan && (
+              <AnimatedPressable
+                onPress={onRegeneratePlan}
+                disabled={isRegenerating}
+                scaleValue={0.95}
+                hapticFeedback={true}
+                hapticType="medium"
+                style={styles.regenerateButton}
+              >
+                <Ionicons
+                  name={isRegenerating ? "sync" : "refresh"}
+                  size={rf(16)}
+                  color={isRegenerating ? ResponsiveTheme.colors.textSecondary : ResponsiveTheme.colors.primary}
+                  style={isRegenerating ? styles.spinning : undefined}
+                />
+              </AnimatedPressable>
+            )}
+            <AnimatedPressable
+              onPress={onViewFullPlan}
+              scaleValue={0.95}
+              hapticFeedback={true}
+              hapticType="light"
+            >
+              <View style={styles.seeAllButton}>
+                <Text style={styles.seeAllText}>View All</Text>
+                <Ionicons name="chevron-forward" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+              </View>
+            </AnimatedPressable>
+          </View>
         </View>
 
         {/* Mini Calendar */}
@@ -186,6 +209,18 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  regenerateButton: {
+    padding: ResponsiveTheme.spacing.xs,
+    opacity: 1,
+  },
+  spinning: {
+    // Animation will be added via Reanimated
   },
   seeAllButton: {
     flexDirection: 'row',

@@ -38,6 +38,14 @@ export interface WorkoutSet {
   id?: string;
   exerciseName?: string;
   name?: string; // Alias for exerciseName
+  // Exercise data from Workers API
+  exerciseData?: {
+    exerciseId: string;
+    name: string;
+    gifUrl: string;
+    targetMuscles?: string[];
+    instructions?: string[];
+  };
 }
 
 export interface Workout {

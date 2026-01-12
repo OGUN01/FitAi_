@@ -129,8 +129,11 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   nutritionGoal = '4 meals',
   onPress,
 }) => {
-  // Calculate overall score
-  const overallScore = Math.round((moveProgress + exerciseProgress + nutritionProgress) / 3);
+  // Calculate overall score - ensure NaN becomes 0
+  const safeMove = isNaN(moveProgress) ? 0 : moveProgress;
+  const safeExercise = isNaN(exerciseProgress) ? 0 : exerciseProgress;
+  const safeNutrition = isNaN(nutritionProgress) ? 0 : nutritionProgress;
+  const overallScore = Math.round((safeMove + safeExercise + safeNutrition) / 3) || 0;
   
   // Ring sizes (outer to inner)
   const outerSize = rw(160);

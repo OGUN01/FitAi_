@@ -1,9 +1,15 @@
 /**
  * Unified Profile Store for FitAI
  *
- * This is the NEW unified profile store that replaces scattered data management.
- * It consolidates all profile-related data into a single, persisted store with
- * sync status tracking and legacy data migration support.
+ * SINGLE SOURCE OF TRUTH for onboarding profile data:
+ *   - personalInfo (name, age, gender, height, weight, etc.)
+ *   - dietPreferences (dietary restrictions, allergies, cuisine preferences)
+ *   - bodyAnalysis (measurements, body composition goals)
+ *   - workoutPreferences (exercise preferences, schedule, experience level)
+ *   - advancedReview (health conditions, medications, special notes)
+ *
+ * NOTE: This store handles ONBOARDING data.
+ *       For Supabase user profile operations, see userStore.ts
  *
  * Storage key: 'profile-storage-v2' (v2 to avoid conflicts with existing stores)
  */

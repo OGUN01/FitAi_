@@ -760,9 +760,14 @@ class GoogleFitService {
           sleepQuality = 'excellent';
         }
       } else {
-        console.warn('⚠️ No sleep data available from Google Fit, using default recommendations');
-        sleepDuration = 7; // Default assumption
-        sleepQuality = 'fair';
+        console.warn('⚠️ No sleep data available from Google Fit');
+        // NO FALLBACK - return null to indicate missing data
+        return {
+          sleepQuality: null,
+          sleepDuration: null,
+          message: 'No sleep data available from Google Fit',
+          recommendations: null,
+        };
       }
       
       // Generate workout recommendations based on sleep

@@ -1152,7 +1152,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </GlassCard>
         ) : (
           <Slider
-            value={formData.max_prep_time_minutes || 30}
+            value={formData.max_prep_time_minutes}
             onValueChange={(value) => updateField('max_prep_time_minutes', value)}
             minimumValue={15}
             maximumValue={120}

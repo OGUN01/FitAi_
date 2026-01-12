@@ -51,8 +51,8 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
       // ✅ Get measurements from bodyMetrics (database: body_analysis table)
       const bodyMetrics = profile.bodyMetrics;
       setHeight(bodyMetrics?.height_cm?.toString() || '');
-      setWeight(bodyMetrics?.current_weight_kg?.toString() || '');
-      setTargetWeight(bodyMetrics?.target_weight_kg?.toString() || '');
+      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? '');
+      setTargetWeight(bodyMetrics?.target_weight_kg?.toString() ?? '');
       setBodyFat(bodyMetrics?.body_fat_percentage?.toString() || '');
       setErrors({});
     }
@@ -157,8 +157,8 @@ export const BodyMeasurementsEditModal: React.FC<BodyMeasurementsEditModalProps>
     const bodyMetrics = profile.bodyMetrics;
     return (
       height !== (bodyMetrics.height_cm?.toString() || '') ||
-      weight !== (bodyMetrics.current_weight_kg?.toString() || '') ||
-      targetWeight !== (bodyMetrics.target_weight_kg?.toString() || '') ||
+      weight !== (bodyMetrics.current_weight_kg?.toString() ?? '') ||
+      targetWeight !== (bodyMetrics.target_weight_kg?.toString() ?? '') ||
       bodyFat !== (bodyMetrics.body_fat_percentage?.toString() || '')
     );
   }, [height, weight, targetWeight, bodyFat, profile]);

@@ -98,11 +98,11 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   mealsGoal,
   onPress,
 }) => {
-  // Calculate percentages
-  const moveProgress = Math.min((caloriesBurned / caloriesGoal) * 100, 100);
-  const exerciseProgress = Math.min((workoutMinutes / workoutGoal) * 100, 100);
-  const nutritionProgress = Math.min((mealsLogged / mealsGoal) * 100, 100);
-  const overallScore = Math.round((moveProgress + exerciseProgress + nutritionProgress) / 3);
+  // Calculate percentages - guard against division by zero (show 0 instead of NaN)
+  const moveProgress = caloriesGoal > 0 ? Math.min((caloriesBurned / caloriesGoal) * 100, 100) : 0;
+  const exerciseProgress = workoutGoal > 0 ? Math.min((workoutMinutes / workoutGoal) * 100, 100) : 0;
+  const nutritionProgress = mealsGoal > 0 ? Math.min((mealsLogged / mealsGoal) * 100, 100) : 0;
+  const overallScore = Math.round((moveProgress + exerciseProgress + nutritionProgress) / 3) || 0;
   
   // Ring sizes (compact)
   const outerSize = rw(140);

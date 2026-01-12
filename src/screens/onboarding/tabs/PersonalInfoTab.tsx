@@ -129,18 +129,18 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 }) => {
   // No longer creating separate state instances - using props from parent
   
-  // Form state
+  // Form state - NO BIASED DEFAULTS for required fields like gender
   const [formData, setFormData] = useState<PersonalInfoData>({
-    first_name: data?.first_name || '',
-    last_name: data?.last_name || '',
-    age: data?.age || 0, // Start with 0 to allow proper user input
-    gender: data?.gender || 'male',
-    country: data?.country || '',
-    state: data?.state || '',
-    region: data?.region || '',
-    wake_time: data?.wake_time || '07:00',
-    sleep_time: data?.sleep_time || '23:00',
-    occupation_type: data?.occupation_type || 'desk_job',
+    first_name: data?.first_name ?? '',
+    last_name: data?.last_name ?? '',
+    age: data?.age ?? 0, // Start with 0 to require user input
+    gender: data?.gender, // NO DEFAULT - user must explicitly select
+    country: data?.country ?? '',
+    state: data?.state ?? '',
+    region: data?.region ?? '',
+    wake_time: data?.wake_time ?? '07:00',
+    sleep_time: data?.sleep_time ?? '23:00',
+    occupation_type: data?.occupation_type ?? 'desk_job',
   });
   
   const [availableStates, setAvailableStates] = useState<string[]>([]);
@@ -158,16 +158,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        first_name: data.first_name || '',
-        last_name: data.last_name || '',
-        age: data.age || 0,
-        gender: data.gender || 'male',
-        country: data.country || '',
-        state: data.state || '',
-        region: data.region || '',
-        wake_time: data.wake_time || '07:00',
-        sleep_time: data.sleep_time || '23:00',
-        occupation_type: data.occupation_type || 'desk_job',
+        first_name: data.first_name ?? '',
+        last_name: data.last_name ?? '',
+        age: data.age ?? 0,
+        gender: data.gender, // NO DEFAULT - preserve user's selection
+        country: data.country ?? '',
+        state: data.state ?? '',
+        region: data.region ?? '',
+        wake_time: data.wake_time ?? '07:00',
+        sleep_time: data.sleep_time ?? '23:00',
+        occupation_type: data.occupation_type ?? 'desk_job',
       };
 
       // Only sync if data has actually changed (deep comparison)

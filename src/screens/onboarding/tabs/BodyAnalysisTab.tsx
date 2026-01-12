@@ -130,11 +130,11 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   
   // Form state
   const [formData, setFormData] = useState<BodyAnalysisData>({
-    // Basic measurements (required)
-    height_cm: data?.height_cm || 0,
-    current_weight_kg: data?.current_weight_kg || 0,
-    target_weight_kg: data?.target_weight_kg || 0,
-    target_timeline_weeks: data?.target_timeline_weeks || 12,
+    // Basic measurements (required) - NO DEFAULT VALUES, user must enter
+    height_cm: data?.height_cm,
+    current_weight_kg: data?.current_weight_kg,
+    target_weight_kg: data?.target_weight_kg,
+    target_timeline_weeks: data?.target_timeline_weeks ?? 12, // 12 weeks is reasonable default
     
     // Body composition (optional)
     body_fat_percentage: data?.body_fat_percentage || undefined,
@@ -187,10 +187,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        height_cm: data.height_cm || 0,
-        current_weight_kg: data.current_weight_kg || 0,
-        target_weight_kg: data.target_weight_kg || 0,
-        target_timeline_weeks: data.target_timeline_weeks || 12,
+        height_cm: data.height_cm,
+        current_weight_kg: data.current_weight_kg,
+        target_weight_kg: data.target_weight_kg,
+        target_timeline_weeks: data.target_timeline_weeks ?? 12,
         body_fat_percentage: data.body_fat_percentage || undefined,
         waist_cm: data.waist_cm || undefined,
         hip_cm: data.hip_cm || undefined,
@@ -1243,7 +1243,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           {/* Body Silhouette with Measurement Points */}
           <View style={styles.silhouetteContainer}>
             <BodySilhouette
-              gender={personalInfoData?.gender || 'male'}
+              gender={personalInfoData?.gender} // NO DEFAULT - require from PersonalInfoTab
               measurements={{
                 height: formData.height_cm,
                 chest: formData.chest_cm,

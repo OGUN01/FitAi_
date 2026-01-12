@@ -438,6 +438,10 @@ class SyncEngine {
   async syncPersonalInfo(userId: string, data: any): Promise<void> {
     console.log('[SyncEngine] Syncing personal info to profiles table...');
 
+    // CRITICAL: Get email from auth session - it's NOT in guest onboarding data
+    const { data: { session } } = await supabase.auth.getSession();
+    const userEmail = session?.user?.email || data.email || '';
+
     // Build first_name and last_name first for name derivation
     const firstName = data.first_name || data.firstName || '';
     const lastName = data.last_name || data.lastName || '';
@@ -446,17 +450,17 @@ class SyncEngine {
     // Derive from explicit name, or combine first+last, or use email prefix, or fallback to 'User'
     const derivedName = data.name ||
       `${firstName} ${lastName}`.trim() ||
-      (data.email ? data.email.split('@')[0] : '') ||
+      (userEmail ? userEmail.split('@')[0] : '') ||
       'User';
 
     const profileData = {
       id: userId,
-      email: data.email || '',
+      email: userEmail, // Required NOT NULL - from auth session
       name: derivedName, // Required NOT NULL field
       first_name: firstName,
       last_name: lastName,
-      age: data.age,
-      gender: data.gender,
+      age: data.age || 25, // NOT NULL - default if missing
+      gender: data.gender || 'prefer_not_to_say', // NOT NULL - safe default
       country: data.country || 'US',
       state: data.state || '',
       region: data.region,
@@ -467,8 +471,8 @@ class SyncEngine {
       media_preference: data.media_preference || data.mediaPreference || null,
       data_usage_mode: data.data_usage_mode || data.dataUsageMode || null,
       units: data.units || 'metric',
-      notifications_enabled: data.notifications_enabled ?? data.notificationsEnabled ?? true,
-      dark_mode: data.dark_mode ?? data.darkMode ?? false,
+      notifications_enabled: data.notifications_enabled ?? data.notificationsEnabled,
+      dark_mode: data.dark_mode ?? data.darkMode,
       // Climate and ethnicity detection
       detected_climate: data.detected_climate || data.detectedClimate || null,
       detected_ethnicity: data.detected_ethnicity || data.detectedEthnicity || null,
@@ -503,40 +507,40 @@ class SyncEngine {
 
     const dietPreferencesData = {
       user_id: userId,
-      diet_type: data.diet_type || data.dietType,
+      diet_type: data.diet_type || data.dietType || 'omnivore', // NOT NULL - default to omnivore
       allergies: data.allergies || [],
       restrictions: data.restrictions || [],
       // Diet readiness toggles
-      keto_ready: data.keto_ready ?? data.ketoReady ?? false,
-      intermittent_fasting_ready: data.intermittent_fasting_ready ?? data.intermittentFastingReady ?? false,
-      paleo_ready: data.paleo_ready ?? data.paleoReady ?? false,
-      mediterranean_ready: data.mediterranean_ready ?? data.mediterraneanReady ?? false,
-      low_carb_ready: data.low_carb_ready ?? data.lowCarbReady ?? false,
-      high_protein_ready: data.high_protein_ready ?? data.highProteinReady ?? false,
+      keto_ready: data.keto_ready ?? data.ketoReady,
+      intermittent_fasting_ready: data.intermittent_fasting_ready ?? data.intermittentFastingReady,
+      paleo_ready: data.paleo_ready ?? data.paleoReady,
+      mediterranean_ready: data.mediterranean_ready ?? data.mediterraneanReady,
+      low_carb_ready: data.low_carb_ready ?? data.lowCarbReady,
+      high_protein_ready: data.high_protein_ready ?? data.highProteinReady,
       // Meal preferences
-      breakfast_enabled: data.breakfast_enabled ?? data.breakfastEnabled ?? true,
-      lunch_enabled: data.lunch_enabled ?? data.lunchEnabled ?? true,
-      dinner_enabled: data.dinner_enabled ?? data.dinnerEnabled ?? true,
-      snacks_enabled: data.snacks_enabled ?? data.snacksEnabled ?? false,
+      breakfast_enabled: data.breakfast_enabled ?? data.breakfastEnabled,
+      lunch_enabled: data.lunch_enabled ?? data.lunchEnabled,
+      dinner_enabled: data.dinner_enabled ?? data.dinnerEnabled,
+      snacks_enabled: data.snacks_enabled ?? data.snacksEnabled,
       // Cooking preferences
       cooking_skill_level: data.cooking_skill_level || data.cookingSkillLevel || 'beginner',
       max_prep_time_minutes: data.max_prep_time_minutes ?? data.maxPrepTimeMinutes ?? null,
       budget_level: data.budget_level || data.budgetLevel || 'medium',
       // Health habits
-      drinks_enough_water: data.drinks_enough_water ?? data.drinksEnoughWater ?? false,
-      limits_sugary_drinks: data.limits_sugary_drinks ?? data.limitsSugaryDrinks ?? false,
-      eats_regular_meals: data.eats_regular_meals ?? data.eatsRegularMeals ?? false,
-      avoids_late_night_eating: data.avoids_late_night_eating ?? data.avoidsLateNightEating ?? false,
-      controls_portion_sizes: data.controls_portion_sizes ?? data.controlsPortionSizes ?? false,
-      reads_nutrition_labels: data.reads_nutrition_labels ?? data.readsNutritionLabels ?? false,
-      eats_processed_foods: data.eats_processed_foods ?? data.eatsProcessedFoods ?? true,
-      eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies ?? data.eats5ServingsFruitsVeggies ?? false,
-      limits_refined_sugar: data.limits_refined_sugar ?? data.limitsRefinedSugar ?? false,
-      includes_healthy_fats: data.includes_healthy_fats ?? data.includesHealthyFats ?? false,
-      drinks_alcohol: data.drinks_alcohol ?? data.drinksAlcohol ?? false,
-      smokes_tobacco: data.smokes_tobacco ?? data.smokesTobacco ?? false,
-      drinks_coffee: data.drinks_coffee ?? data.drinksCoffee ?? false,
-      takes_supplements: data.takes_supplements ?? data.takesSupplements ?? false,
+      drinks_enough_water: data.drinks_enough_water ?? data.drinksEnoughWater,
+      limits_sugary_drinks: data.limits_sugary_drinks ?? data.limitsSugaryDrinks,
+      eats_regular_meals: data.eats_regular_meals ?? data.eatsRegularMeals,
+      avoids_late_night_eating: data.avoids_late_night_eating ?? data.avoidsLateNightEating,
+      controls_portion_sizes: data.controls_portion_sizes ?? data.controlsPortionSizes,
+      reads_nutrition_labels: data.reads_nutrition_labels ?? data.readsNutritionLabels,
+      eats_processed_foods: data.eats_processed_foods ?? data.eatsProcessedFoods,
+      eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies ?? data.eats5ServingsFruitsVeggies,
+      limits_refined_sugar: data.limits_refined_sugar ?? data.limitsRefinedSugar,
+      includes_healthy_fats: data.includes_healthy_fats ?? data.includesHealthyFats,
+      drinks_alcohol: data.drinks_alcohol ?? data.drinksAlcohol,
+      smokes_tobacco: data.smokes_tobacco ?? data.smokesTobacco,
+      drinks_coffee: data.drinks_coffee ?? data.drinksCoffee,
+      takes_supplements: data.takes_supplements ?? data.takesSupplements,
       updated_at: new Date().toISOString(),
     };
 
@@ -558,31 +562,32 @@ class SyncEngine {
   async syncBodyAnalysis(userId: string, data: any): Promise<void> {
     console.log('[SyncEngine] Syncing body analysis...');
 
+    // NO HARDCODED FALLBACKS - if data is missing, onboarding is incomplete
     const bodyAnalysisData = {
       user_id: userId,
-      // Core measurements
-      height_cm: data.height_cm || data.heightCm || 170,
-      current_weight_kg: data.current_weight_kg || data.currentWeightKg || 70,
-      target_weight_kg: data.target_weight_kg || data.targetWeightKg || 65,
-      target_timeline_weeks: data.target_timeline_weeks || data.targetTimelineWeeks || null,
+      // Core measurements - NO FALLBACK VALUES
+      height_cm: data.height_cm ?? data.heightCm, // NO FALLBACK
+      current_weight_kg: data.current_weight_kg ?? data.currentWeightKg, // NO FALLBACK
+      target_weight_kg: data.target_weight_kg ?? data.targetWeightKg ?? null,
+      target_timeline_weeks: data.target_timeline_weeks ?? data.targetTimelineWeeks ?? null,
       // Body composition
-      body_fat_percentage: data.body_fat_percentage || data.bodyFatPercentage || null,
-      body_fat_source: data.body_fat_source || data.bodyFatSource || null,
-      body_fat_measured_at: data.body_fat_measured_at || data.bodyFatMeasuredAt || null,
+      body_fat_percentage: data.body_fat_percentage ?? data.bodyFatPercentage ?? null,
+      body_fat_source: data.body_fat_source ?? data.bodyFatSource ?? null,
+      body_fat_measured_at: data.body_fat_measured_at ?? data.bodyFatMeasuredAt ?? null,
       // Body measurements
-      waist_cm: data.waist_cm || data.waistCm || null,
-      hip_cm: data.hip_cm || data.hipCm || null,
-      chest_cm: data.chest_cm || data.chestCm || null,
-      waist_hip_ratio: data.waist_hip_ratio || data.waistHipRatio || null,
+      waist_cm: data.waist_cm ?? data.waistCm ?? null,
+      hip_cm: data.hip_cm ?? data.hipCm ?? null,
+      chest_cm: data.chest_cm ?? data.chestCm ?? null,
+      waist_hip_ratio: data.waist_hip_ratio ?? data.waistHipRatio ?? null,
       // Calculated values
-      bmi: data.bmi || null,
-      bmr: data.bmr || null,
-      ideal_weight_min: data.ideal_weight_min || data.idealWeightMin || null,
-      ideal_weight_max: data.ideal_weight_max || data.idealWeightMax || null,
+      bmi: data.bmi ?? null,
+      bmr: data.bmr ?? null,
+      ideal_weight_min: data.ideal_weight_min ?? data.idealWeightMin ?? null,
+      ideal_weight_max: data.ideal_weight_max ?? data.idealWeightMax ?? null,
       // Photos
-      photos: data.photos || null,
-      front_photo_url: data.front_photo_url || data.frontPhotoUrl || null,
-      side_photo_url: data.side_photo_url || data.sidePhotoUrl || null,
+      photos: data.photos ?? null,
+      front_photo_url: data.front_photo_url ?? data.frontPhotoUrl ?? null,
+      side_photo_url: data.side_photo_url ?? data.sidePhotoUrl ?? null,
       back_photo_url: data.back_photo_url || data.backPhotoUrl || null,
       // AI analysis
       analysis: data.analysis || null,
@@ -594,9 +599,9 @@ class SyncEngine {
       medications: data.medications || null,
       physical_limitations: data.physical_limitations || data.physicalLimitations || null,
       // Female health
-      pregnancy_status: data.pregnancy_status ?? data.pregnancyStatus ?? false,
+      pregnancy_status: data.pregnancy_status ?? data.pregnancyStatus, // DB default: false
       pregnancy_trimester: data.pregnancy_trimester || data.pregnancyTrimester || null,
-      breastfeeding_status: data.breastfeeding_status ?? data.breastfeedingStatus ?? false,
+      breastfeeding_status: data.breastfeeding_status ?? data.breastfeedingStatus, // DB default: false
       // Lifestyle
       stress_level: data.stress_level || data.stressLevel || null,
       updated_at: new Date().toISOString(),
@@ -620,33 +625,38 @@ class SyncEngine {
   async syncWorkoutPreferences(userId: string, data: any): Promise<void> {
     console.log('[SyncEngine] Syncing workout preferences...');
 
+    // WARN if required fields are missing - indicates incomplete onboarding
+    if (!data.location || !data.intensity || !data.activity_level) {
+      console.warn('[SyncEngine] Missing required workout preferences - using DB defaults');
+    }
+    
     const workoutPreferencesData = {
       user_id: userId,
-      // Basic preferences
-      location: data.location,
-      equipment: data.equipment || [],
-      time_preference: data.time_preference || data.timePreference,
-      intensity: data.intensity,
-      workout_types: data.workout_types || data.workoutTypes || [],
+      // Basic preferences - DB NOT NULL with defaults
+      location: data.location ?? 'home', // DB NOT NULL
+      equipment: data.equipment ?? ['bodyweight'], // DB NOT NULL
+      time_preference: data.time_preference ?? data.timePreference,
+      intensity: data.intensity ?? 'moderate', // DB NOT NULL
+      workout_types: data.workout_types ?? data.workoutTypes,
       // Goals and activity
-      primary_goals: data.primary_goals || data.primaryGoals || [],
-      activity_level: data.activity_level || data.activityLevel || 'moderate',
+      primary_goals: data.primary_goals ?? data.primaryGoals, // DB NOT NULL - will fail if missing
+      activity_level: data.activity_level ?? data.activityLevel, // DB NOT NULL - will fail if missing
       // Fitness assessment
-      workout_experience_years: data.workout_experience_years || data.workoutExperienceYears || 0,
-      workout_frequency_per_week: data.workout_frequency_per_week || data.workoutFrequencyPerWeek || 0,
-      can_do_pushups: data.can_do_pushups || data.canDoPushups || 0,
-      can_run_minutes: data.can_run_minutes || data.canRunMinutes || 0,
-      flexibility_level: data.flexibility_level || data.flexibilityLevel || 'fair',
+      workout_experience_years: data.workout_experience_years ?? data.workoutExperienceYears,
+      workout_frequency_per_week: data.workout_frequency_per_week ?? data.workoutFrequencyPerWeek,
+      can_do_pushups: data.can_do_pushups ?? data.canDoPushups,
+      can_run_minutes: data.can_run_minutes ?? data.canRunMinutes,
+      flexibility_level: data.flexibility_level ?? data.flexibilityLevel,
       // Weight goals
       weekly_weight_loss_goal: data.weekly_weight_loss_goal ?? data.weeklyWeightLossGoal ?? null,
       // Enhanced preferences
       preferred_workout_times: data.preferred_workout_times || data.preferredWorkoutTimes || [],
-      enjoys_cardio: data.enjoys_cardio ?? data.enjoysCardio ?? true,
-      enjoys_strength_training: data.enjoys_strength_training ?? data.enjoysStrengthTraining ?? true,
-      enjoys_group_classes: data.enjoys_group_classes ?? data.enjoysGroupClasses ?? false,
-      prefers_outdoor_activities: data.prefers_outdoor_activities ?? data.prefersOutdoorActivities ?? false,
-      needs_motivation: data.needs_motivation ?? data.needsMotivation ?? false,
-      prefers_variety: data.prefers_variety ?? data.prefersVariety ?? true,
+      enjoys_cardio: data.enjoys_cardio ?? data.enjoysCardio,
+      enjoys_strength_training: data.enjoys_strength_training ?? data.enjoysStrengthTraining,
+      enjoys_group_classes: data.enjoys_group_classes ?? data.enjoysGroupClasses,
+      prefers_outdoor_activities: data.prefers_outdoor_activities ?? data.prefersOutdoorActivities,
+      needs_motivation: data.needs_motivation ?? data.needsMotivation,
+      prefers_variety: data.prefers_variety ?? data.prefersVariety,
       updated_at: new Date().toISOString(),
     };
 

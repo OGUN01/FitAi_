@@ -3,6 +3,9 @@ import { useNutritionStore } from '../stores/nutritionStore';
 import { DayWorkout, DayMeal } from '../ai';
 import crudOperations from './crudOperations';
 import { MealLog, SyncStatus } from '../types/localData';
+import { supabase } from './supabase';
+import { nutritionRefreshService } from './nutritionRefreshService';
+import { fitnessRefreshService } from './fitnessRefreshService';
 
 export interface CompletionEvent {
   id: string;
@@ -33,7 +36,7 @@ class CompletionTrackingService {
   }
 
   // Complete a workout
-  async completeWorkout(workoutId: string, sessionData?: any): Promise<boolean> {
+  async completeWorkout(workoutId: string, sessionData?: any, userId?: string): Promise<boolean> {
     try {
       const fitnessStore = useFitnessStore.getState();
 
@@ -44,6 +47,51 @@ class CompletionTrackingService {
       const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId);
 
       if (workout) {
+        // Sync workout completion to Supabase (like we do for meals)
+        if (userId) {
+          try {
+            const supabaseResult = await supabase.from('workout_sessions').insert({
+              user_id: userId,
+              workout_id: workoutId,
+              workout_name: workout.title,
+              workout_type: workout.category || 'general',
+              duration_minutes: workout.duration || sessionData?.duration || null,
+              calories_burned: workout.estimatedCalories || sessionData?.stats?.caloriesBurned || null,
+              exercises_completed: sessionData?.exercisesCompleted || workout.exercises?.length || 0,
+              started_at: sessionData?.startedAt || new Date().toISOString(),
+              completed_at: new Date().toISOString(),
+              notes: sessionData?.notes || `Weekly workout plan: ${workout.title}`,
+            });
+
+            if (supabaseResult.error) {
+              console.error(`⚠️ Supabase workout_sessions insert error:`, supabaseResult.error);
+            } else {
+              console.log(
+                `✅ Supabase workout_sessions synced for: ${workout.title} (${workout.estimatedCalories} cal, ${workout.duration} min)`
+              );
+              
+              // CRITICAL: Trigger refresh so fitness hooks refetch data
+              // This ensures UI updates immediately after workout completion
+              try {
+                await fitnessRefreshService.refreshAfterWorkoutCompleted({
+                  workoutId,
+                  workoutName: workout.title,
+                  duration: workout.duration,
+                  caloriesBurned: workout.estimatedCalories,
+                });
+                console.log('🔄 Fitness refresh triggered after workout completion');
+              } catch (refreshError) {
+                console.warn('⚠️ Failed to trigger fitness refresh:', refreshError);
+              }
+            }
+          } catch (supabaseError) {
+            console.error(`❌ Failed to sync workout to Supabase:`, supabaseError);
+            // Continue - local storage succeeded
+          }
+        } else {
+          console.log('⚠️ No userId provided, skipping Supabase sync for workout');
+        }
+
         const event: CompletionEvent = {
           id: `workout_completion_${workoutId}_${Date.now()}`,
           type: 'workout',
@@ -96,8 +144,8 @@ class CompletionTrackingService {
         try {
           console.log(`🍽️ Creating meal log for completed meal: ${meal.name}`);
 
-          // Use provided userId or fallback to dev user
-          const currentUserId = userId || 'dev-user-001';
+          // Use provided userId - NO FALLBACK to fake user IDs
+          const currentUserId = userId;
 
           if (currentUserId) {
             // Create meal log directly using CRUD operations
@@ -124,11 +172,47 @@ class CompletionTrackingService {
               },
             };
 
-            // Store the meal log
+            // Store the meal log locally
             await crudOperations.createMealLog(mealLog);
             console.log(
-              `✅ Meal log created successfully for: ${meal.name} (${meal.totalCalories} calories)`
+              `✅ Local meal log created for: ${meal.name} (${meal.totalCalories} calories)`
             );
+            
+            // CRITICAL: Also insert into Supabase meal_logs table for stats sync
+            // This ensures loadDailyNutrition can read the data from Supabase
+            try {
+              const supabaseResult = await supabase.from('meal_logs').insert({
+                user_id: currentUserId,
+                meal_type: meal.type,
+                meal_name: meal.name,
+                food_items: meal.items || [],
+                total_calories: meal.totalCalories || 0,
+                total_protein: meal.totalMacros?.protein ?? 0,
+                total_carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                total_fat: meal.totalMacros?.fat ?? 0,
+                logged_at: new Date().toISOString(),
+              });
+              
+              if (supabaseResult.error) {
+                console.error(`⚠️ Supabase meal_logs insert error:`, supabaseResult.error);
+              } else {
+                console.log(
+                  `✅ Supabase meal_logs synced for: ${meal.name} (${meal.totalCalories} cal, P:${meal.totalMacros?.protein}g, C:${meal.totalMacros?.carbohydrates}g, F:${meal.totalMacros?.fat}g)`
+                );
+                
+                // CRITICAL: Trigger refresh so useNutritionData hook refetches dailyNutrition
+                // This ensures the calorie ring updates immediately after meal completion
+                try {
+                  await nutritionRefreshService.triggerRefresh();
+                  console.log('🔄 Nutrition refresh triggered after meal completion');
+                } catch (refreshError) {
+                  console.warn('⚠️ Failed to trigger nutrition refresh:', refreshError);
+                }
+              }
+            } catch (supabaseError) {
+              console.error(`❌ Failed to sync to Supabase meal_logs:`, supabaseError);
+              // Continue - local storage succeeded
+            }
           } else {
             console.warn(`⚠️ No user ID available, skipping meal log creation`);
             // Continue with completion even if no user
@@ -173,7 +257,8 @@ class CompletionTrackingService {
   async updateWorkoutProgress(
     workoutId: string,
     progress: number,
-    exerciseData?: any
+    exerciseData?: any,
+    userId?: string
   ): Promise<boolean> {
     try {
       const fitnessStore = useFitnessStore.getState();
@@ -199,7 +284,7 @@ class CompletionTrackingService {
 
         // Auto-complete if progress reaches 100%
         if (progress >= 100) {
-          return this.completeWorkout(workoutId, exerciseData);
+          return this.completeWorkout(workoutId, exerciseData, userId);
         }
       }
 
@@ -240,7 +325,8 @@ class CompletionTrackingService {
 
         // Auto-complete if progress reaches 100%
         if (progress >= 100) {
-          return this.completeMeal(mealId, ingredientData, 'dev-user-001');
+          // Note: userId should be passed from caller - don't use fake ID
+          return this.completeMeal(mealId, ingredientData, undefined);
         }
       }
 
@@ -377,10 +463,11 @@ class CompletionTrackingService {
     }
 
     // Complete today's meals
+    // Note: This is a test function - userId should be provided by caller in production
     const todaysMeals =
       nutritionStore.weeklyMealPlan?.meals.filter((m) => m.dayOfWeek === todayName) || [];
     for (const meal of todaysMeals) {
-      await this.completeMeal(meal.id, undefined, 'dev-user-001');
+      await this.completeMeal(meal.id, undefined, undefined);
     }
   }
 }

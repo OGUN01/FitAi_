@@ -30,6 +30,13 @@ interface WorkoutProgress {
   sessionId?: string;
 }
 
+// Completed workout stats computed from workoutProgress - SINGLE SOURCE OF TRUTH
+interface CompletedWorkoutStats {
+  count: number;
+  totalCalories: number;
+  totalDuration: number;
+}
+
 interface FitnessState {
   // Weekly workout plan state
   weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
@@ -66,6 +73,10 @@ interface FitnessState {
   updateWorkoutProgress: (workoutId: string, progress: number) => void;
   completeWorkout: (workoutId: string, sessionId?: string) => void;
   getWorkoutProgress: (workoutId: string) => WorkoutProgress | null;
+
+  // Computed selectors - SINGLE SOURCE OF TRUTH
+  getCompletedWorkoutStats: () => CompletedWorkoutStats;
+  getTodaysCompletedWorkoutStats: () => CompletedWorkoutStats;
 
   // Workout session actions
   startWorkoutSession: (workout: DayWorkout) => Promise<string>;
@@ -160,8 +171,8 @@ export const useFitnessStore = create<FitnessState>()(
                 userId: useAuthStore.getState().user?.id || 'guest',
                 startedAt: new Date().toISOString(),
                 completedAt: null,
-                duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range
-                caloriesBurned: Math.max(0, Math.min(10000, workout.estimatedCalories || 200)), // Ensure 0-10000 range
+                duration: workout.duration ? Math.max(5, Math.min(300, workout.duration)) : null, // NO FALLBACK - null if missing
+                caloriesBurned: workout.estimatedCalories ? Math.max(0, Math.min(10000, workout.estimatedCalories)) : null, // NO FALLBACK - null if missing
                 exercises: (workout.exercises || []).map((exercise) => ({
                   exerciseId: exercise.exerciseId || 'unknown_exercise',
                   sets: Array.from({ length: Math.max(1, exercise.sets || 3) }, (_, index) => ({
@@ -372,6 +383,53 @@ export const useFitnessStore = create<FitnessState>()(
         return get().workoutProgress[workoutId] || null;
       },
 
+      // COMPUTED SELECTORS - SINGLE SOURCE OF TRUTH for workout stats
+      // This calculates stats from workoutProgress (local state)
+      // avoiding dual-source issues between Zustand and Supabase
+      getCompletedWorkoutStats: () => {
+        const state = get();
+        
+        // Get all workouts that are 100% completed
+        const completedWorkouts = Object.values(state.workoutProgress)
+          .filter(p => p.progress === 100);
+        
+        return {
+          count: completedWorkouts.length,
+          totalCalories: completedWorkouts.reduce((sum, p) => {
+            const workout = state.weeklyWorkoutPlan?.workouts.find(w => w.id === p.workoutId);
+            return sum + (workout?.estimatedCalories || 0);
+          }, 0),
+          totalDuration: completedWorkouts.reduce((sum, p) => {
+            const workout = state.weeklyWorkoutPlan?.workouts.find(w => w.id === p.workoutId);
+            return sum + (workout?.duration || 0);
+          }, 0),
+        };
+      },
+
+      // Get completed workout stats for TODAY only
+      getTodaysCompletedWorkoutStats: () => {
+        const state = get();
+        const today = new Date();
+        const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const todayName = dayNames[today.getDay()];
+        
+        // Get all completed workout IDs
+        const completedWorkoutIds = Object.values(state.workoutProgress)
+          .filter(p => p.progress === 100)
+          .map(p => p.workoutId);
+        
+        // Filter to only today's completed workouts
+        const todaysCompletedWorkouts = state.weeklyWorkoutPlan?.workouts.filter(
+          workout => completedWorkoutIds.includes(workout.id) && (workout as any).dayOfWeek === todayName
+        ) || [];
+        
+        return {
+          count: todaysCompletedWorkouts.length,
+          totalCalories: todaysCompletedWorkouts.reduce((sum, w) => sum + (w.estimatedCalories || 0), 0),
+          totalDuration: todaysCompletedWorkouts.reduce((sum, w) => sum + (w.duration || 0), 0),
+        };
+      },
+
       // Workout session actions
       startWorkoutSession: async (workout) => {
         const sessionId = `session_${workout.id}_${Date.now()}`;
@@ -385,8 +443,8 @@ export const useFitnessStore = create<FitnessState>()(
             userId: useAuthStore.getState().user?.id || 'guest',
             startedAt: new Date().toISOString(),
             completedAt: null,
-            duration: Math.max(5, Math.min(300, workout.duration || 30)), // Ensure 5-300 minute range
-            caloriesBurned: Math.max(0, Math.min(10000, workout.estimatedCalories || 200)), // Ensure 0-10000 range
+            duration: workout.duration ? Math.max(5, Math.min(300, workout.duration)) : null, // NO FALLBACK - null if missing
+            caloriesBurned: workout.estimatedCalories ? Math.max(0, Math.min(10000, workout.estimatedCalories)) : null, // NO FALLBACK - null if missing
             exercises: workout.exercises.map((exercise) => ({
               exerciseId: exercise.exerciseId,
               sets: Array.from({ length: exercise.sets }, (_, index) => ({

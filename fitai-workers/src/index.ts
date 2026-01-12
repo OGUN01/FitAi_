@@ -17,6 +17,7 @@ import { handleExerciseSearch } from './handlers/exerciseSearch';
 import { handleMediaServe, handleMediaUpload, handleMediaDelete } from './handlers/mediaHandler';
 import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
+import { handleFoodRecognition } from './handlers/foodRecognition';
 import { authMiddleware, optionalAuthMiddleware, AuthContext } from './middleware/auth';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
@@ -127,6 +128,7 @@ app.get('/api', (c) => {
         health: '/health',
         workout: '/workout/generate',
         diet: '/diet/generate',
+        food: '/food/recognize',
         chat: '/chat/ai',
         exercises: '/exercises/search',
         media: '/media/*',
@@ -234,6 +236,20 @@ app.post(
   authMiddleware,
   rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
   handleDietGeneration
+);
+
+/**
+ * POST /food/recognize - Recognize food from image using Gemini Vision
+ * - Requires authentication
+ * - Rate limit: 50 requests per hour
+ * - Accepts base64 image, returns recognized foods with nutrition
+ * - Supports Indian and international cuisines
+ */
+app.post(
+  '/food/recognize',
+  authMiddleware,
+  rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+  handleFoodRecognition
 );
 
 /**

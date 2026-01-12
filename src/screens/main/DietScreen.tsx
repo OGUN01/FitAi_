@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,8 +25,8 @@ import { ResponsiveTheme } from '../../utils/constants';
 import { Button, THEME } from '../../components/ui';
 import { Camera } from '../../components/advanced/Camera';
 import { aiService } from '../../ai';
-import { useUserStore } from '../../stores/userStore';
-import { useNutritionStore } from '../../stores/nutritionStore';
+import { useUserStore, useNutritionStore, useHydrationStore, useAchievementStore, useAppStateStore } from '../../stores';
+import type { DayName } from '../../stores';
 import Constants from 'expo-constants';
 
 // Simple Expo Go detection and safe loading
@@ -54,6 +54,8 @@ import MacroDashboard from '../../components/nutrition/MacroDashboard';
 import { Food } from '../../services/nutritionData';
 import { WeeklyMealPlan, DayMeal } from '../../types/ai';
 import { MealCard } from '../../components/diet/MealCard';
+import { PremiumMealCard } from '../../components/diet/PremiumMealCard';
+import { calculateMealSchedule, getMealTime } from '../../utils/mealSchedule';
 import { completionTrackingService } from '../../services/completionTracking';
 import FoodRecognitionTest from '../../components/debug/FoodRecognitionTest';
 import MealTypeSelector from '../../components/diet/MealTypeSelector';
@@ -110,7 +112,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   const [selectedMealForPreparation, setSelectedMealForPreparation] = useState<DayMeal | null>(
     null
   );
-  const [waterConsumed, setWaterConsumed] = useState(0); // in liters
+  // HYDRATION - Single Source of Truth from hydrationStore (ALL IN MILLILITERS)
+  const {
+    waterIntakeML,
+    dailyGoalML: waterGoalML,
+    addWater: hydrationAddWater,
+    setDailyGoal: setHydrationGoal,
+    checkAndResetIfNewDay,
+  } = useHydrationStore();
+  
+  // STREAK - Single Source of Truth from achievementStore
+  const { currentStreak: achievementStreak } = useAchievementStore();
+  
   const waterReminders = useWaterReminders ? useWaterReminders() : null;
   
   // Use calculated metrics from onboarding - NO FALLBACKS
@@ -123,9 +136,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     getMacroTargets,
   } = useCalculatedMetrics();
   
-  // Water goal from calculated metrics (climate-adjusted) or water reminders config
-  // CRITICAL: No hardcoded fallback - if no data, UI should show appropriate state
-  const waterGoal = getWaterGoalLiters() ?? waterReminders?.config?.dailyGoalLiters ?? null;
+  // Sync hydration goal from calculated metrics on mount
+  useEffect(() => {
+    if (calculatedMetrics?.dailyWaterML) {
+      setHydrationGoal(calculatedMetrics.dailyWaterML);
+    }
+    checkAndResetIfNewDay();
+  }, [calculatedMetrics?.dailyWaterML]);
+  
+  // Convert ML to liters for display if needed (but store uses ML)
+  const waterConsumedLiters = waterIntakeML / 1000;
+  const waterGoalLiters = waterGoalML ? waterGoalML / 1000 : null;
   const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -176,15 +197,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     completeMeal,
     loadWeeklyMealPlan,
     loadData,
+    // SINGLE SOURCE OF TRUTH: Use store selector for consumed nutrition
+    // This calculates from mealProgress, avoiding desync with Supabase
+    getTodaysConsumedNutrition,
   } = useNutritionStore();
 
-  const [selectedDay, setSelectedDay] = useState(() => {
-    const today = new Date();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const todayName = dayNames[today.getDay()] || 'monday'; // fallback to monday if undefined
-    console.log(`[DEBUG] Today is: ${todayName} (day ${today.getDay()})`);
-    return todayName;
-  });
+  // Day Selection - Single Source of Truth from appStateStore
+  const { selectedDay, setSelectedDay } = useAppStateStore();
   const [forceUpdate, setForceUpdate] = useState(0);
 
   // Animation refs for micro-interactions
@@ -543,6 +562,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   // Check if user can access meal features (authenticated or in guest mode)
   const canAccessMealFeatures = isAuthenticated || isGuestMode;
 
+  // Calculate meal schedule from user's wake/sleep times
+  const mealSchedule = useMemo(() => {
+    return calculateMealSchedule(
+      profile?.personalInfo?.wake_time,
+      profile?.personalInfo?.sleep_time
+    );
+  }, [profile?.personalInfo?.wake_time, profile?.personalInfo?.sleep_time]);
+
   // Real nutrition data with Track B integration
   const {
     foods,
@@ -679,8 +706,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   console.log('[MEAL] Starting meal logging process...');
 
                   // Use the recognized food logger service
+                  // NO FALLBACK: Require authenticated user
+                  if (!user?.id) {
+                    console.warn('⚠️ Cannot log food: user not authenticated');
+                    Alert.alert('Sign In Required', 'Please sign in to log meals.');
+                    return;
+                  }
                   const logResult = await recognizedFoodLogger.logRecognizedFoods(
-                    user?.id || 'dev-user-001',
+                    user.id,
                     recognizedFoods,
                     selectedMealType
                   );
@@ -731,8 +764,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                         onPress: async () => {
                           // Retry the logging process
                           try {
+                            if (!user?.id) {
+                              console.warn('⚠️ Cannot retry log: user not authenticated');
+                              return;
+                            }
                             const retryResult = await recognizedFoodLogger.logRecognizedFoods(
-                              user?.id || 'dev-user-001',
+                              user.id,
                               recognizedFoods,
                               selectedMealType
                             );
@@ -966,7 +1003,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     try {
       // Enhanced preferences with options
       // CRITICAL: Use calculated metrics from onboarding - throw if not available
-      const calorieTarget = getCalorieTarget() ?? nutritionGoals?.daily_calories;
+      const calorieTarget = getCalorieTarget(); // SINGLE SOURCE - from calculatedMetrics only
       if (!calorieTarget) {
         throw new Error('Calorie target not calculated. Please complete onboarding.');
       }
@@ -1070,7 +1107,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
     try {
       // CRITICAL: Use calculated metrics from onboarding - throw if not available
-      const userCalorieTarget = getCalorieTarget() ?? nutritionGoals?.daily_calories;
+      const userCalorieTarget = getCalorieTarget(); // SINGLE SOURCE - calculatedMetrics only
       if (!userCalorieTarget) {
         throw new Error('Calorie target not calculated. Please complete onboarding.');
       }
@@ -1162,14 +1199,26 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     setAiError(null);
 
     try {
+      // CRITICAL: Get calorie target from calculated metrics - required for meal generation
+      const userCalorieTarget = getCalorieTarget(); // SINGLE SOURCE - calculatedMetrics only
+      if (!userCalorieTarget) {
+        throw new Error('Calorie target not calculated. Please complete onboarding.');
+      }
+      
       console.log('[MEAL] Generating weekly meal plan...');
       console.log('[DEBUG] Profile data:', JSON.stringify(profile, null, 2));
+      console.log('[DEBUG] Calorie target:', userCalorieTarget);
 
       // Use aiService for meal plan generation (connected to Cloudflare Workers)
       const response = await aiService.generateWeeklyMealPlan(
         profile.personalInfo,
         profile.fitnessGoals,
-        1 // weekNumber
+        1, // weekNumber
+        {
+          bodyMetrics: profile.bodyMetrics,
+          dietPreferences: profile.dietPreferences || dietPreferences,
+          calorieTarget: userCalorieTarget, // CRITICAL: Pass calorie target from frontend
+        }
       );
 
       console.log('[DEBUG] Response from generator:', response);
@@ -1475,7 +1524,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     const motivationConfig = {
       personalInfo: profile?.personalInfo,
       fitnessGoals: profile?.fitnessGoals,
-      currentStreak: 0, // TODO: Implement streak tracking
+      currentStreak: achievementStreak, // Single source of truth from achievementStore
       completedMealsToday: 0, // TODO: Implement daily meal counting
     };
     
@@ -1537,7 +1586,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           completedAt: new Date().toISOString(),
           source: 'diet_screen_manual',
         },
-        user?.id || 'dev-user-001'
+        user?.id // Pass userId if available, undefined otherwise (handled by completionTracking)
       );
 
       if (success) {
@@ -1585,28 +1634,29 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     console.log('New recipe created:', recipe);
   };
 
-  // Water tracking handlers with liters
+  // Water tracking handlers - USES HYDRATION STORE (Single Source of Truth)
+  // Store uses MILLILITERS, display uses LITERS
   const handleAddWater = () => {
-    const incrementAmount = 0.25; // 250ml increment
+    const incrementAmountML = 250; // 250ml increment
 
-    if (waterConsumed >= waterGoal) {
+    if (waterGoalML && waterIntakeML >= waterGoalML) {
       Alert.alert(
         'Daily Goal Achieved!',
-        `You've already reached your daily water goal of ${waterGoal}L! Great job staying hydrated!`,
+        `You've already reached your daily water goal of ${waterGoalLiters?.toFixed(1)}L! Great job staying hydrated!`,
         [{ text: 'Awesome!' }]
       );
       return;
     }
 
-    const newAmount = Math.min(waterConsumed + incrementAmount, waterGoal + 1);
-    setWaterConsumed(Math.round(newAmount * 100) / 100); // Round to 2 decimal places
+    const previousIntake = waterIntakeML;
+    hydrationAddWater(incrementAmountML); // Add to store in ML
 
     // Show celebration when goal is reached
-    if (newAmount >= waterGoal && waterConsumed < waterGoal) {
+    if (waterGoalML && (previousIntake + incrementAmountML) >= waterGoalML && previousIntake < waterGoalML) {
       setTimeout(() => {
         Alert.alert(
           'Hydration Goal Achieved!',
-          `Congratulations! You've reached your daily water goal of ${waterGoal}L!`,
+          `Congratulations! You've reached your daily water goal of ${waterGoalLiters?.toFixed(1)}L!`,
           [
             { text: 'Keep it up!', style: 'default' },
             {
@@ -1625,20 +1675,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
           ]
         );
       }, 500);
-    } else {
+    } else if (waterGoalML) {
       // Show encouraging message
-      const remaining = Math.max(waterGoal - newAmount, 0);
+      const remainingL = Math.max((waterGoalML - (previousIntake + incrementAmountML)) / 1000, 0);
       Alert.alert(
         'Water Added!',
-        `Great job! ${remaining.toFixed(1)}L more to reach your goal.`
+        `Great job! ${remainingL.toFixed(1)}L more to reach your goal.`
       );
     }
   };
 
   const handleRemoveWater = () => {
-    if (waterConsumed > 0) {
-      const decrementAmount = 0.25;
-      setWaterConsumed(Math.max(0, Math.round((waterConsumed - decrementAmount) * 100) / 100));
+    if (waterIntakeML > 0) {
+      const decrementAmountML = 250;
+      // Use setWaterIntake for decrementing since addWater only adds
+      const newAmount = Math.max(0, waterIntakeML - decrementAmountML);
+      useHydrationStore.getState().setWaterIntake(newAmount);
     }
   };
 
@@ -1647,13 +1699,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Add 250ml',
-        onPress: () => handleAddWater(),
+        onPress: () => hydrationAddWater(250),
       },
       {
         text: 'Add 500ml',
         onPress: () => {
-          const newAmount = Math.min(waterConsumed + 0.5, waterGoal + 1);
-          setWaterConsumed(Math.round(newAmount * 100) / 100);
+          hydrationAddWater(500);
           Alert.alert('Water Added!', 'Added 500ml to your daily intake.');
         },
       },
@@ -1671,11 +1722,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
               {
                 text: 'Add',
                 onPress: (value) => {
-                  const amount = parseFloat(value || '0');
-                  if (amount > 0 && amount <= 3) {
-                    const newTotal = Math.min(waterConsumed + amount, waterGoal + 2);
-                    setWaterConsumed(Math.round(newTotal * 100) / 100);
-                    Alert.alert('Water Added!', `Added ${amount}L to your daily intake.`);
+                  const amountLiters = parseFloat(value || '0');
+                  if (amountLiters > 0 && amountLiters <= 3) {
+                    const amountML = amountLiters * 1000; // Convert to ML for store
+                    hydrationAddWater(amountML);
+                    Alert.alert('Water Added!', `Added ${amountLiters}L to your daily intake.`);
                   } else {
                     Alert.alert(
                       'Invalid Amount',
@@ -1699,8 +1750,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     if (!feedbackData) return;
 
     try {
+      // NO FALLBACK: Require authenticated user for feedback
+      if (!user?.id) {
+        console.warn('⚠️ Cannot submit feedback: user not authenticated');
+        Alert.alert('Sign In Required', 'Please sign in to submit feedback.');
+        return;
+      }
       const result = await foodRecognitionFeedbackService.submitFeedback(
-        user?.id || 'dev-user-001',
+        user.id,
         feedbackData.mealId,
         feedback,
         feedbackData.imageUri,
@@ -1755,8 +1812,14 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             try {
               console.log('[MEAL] Starting meal logging process with adjusted portions...');
 
+              // NO FALLBACK: Require authenticated user
+              if (!user?.id) {
+                console.warn('⚠️ Cannot log adjusted portions: user not authenticated');
+                Alert.alert('Sign In Required', 'Please sign in to log meals.');
+                return;
+              }
               const logResult = await recognizedFoodLogger.logRecognizedFoods(
-                user?.id || 'dev-user-001',
+                user.id,
                 adjustedFoods,
                 selectedMealType
               );
@@ -1839,13 +1902,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
     }
   };
 
-  // Use real daily nutrition data from Track B
-  const currentNutrition = dailyNutrition || {
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    mealsCount: 0,
+  // SINGLE SOURCE OF TRUTH: Use store selector as PRIMARY source
+  // This calculates consumed nutrition from mealProgress (local state)
+  // and merges with Supabase data to ensure immediate updates on meal completion
+  const storeNutrition = getTodaysConsumedNutrition();
+  const currentNutrition = {
+    // Use MAX of store selector vs Supabase to handle both:
+    // 1. Immediate updates from mealProgress (store) - shows instantly
+    // 2. Historical data from Supabase - catches meals from other sessions
+    calories: Math.max(storeNutrition.calories, dailyNutrition?.calories || 0),
+    protein: Math.max(storeNutrition.protein, dailyNutrition?.protein || 0),
+    carbs: Math.max(storeNutrition.carbs, dailyNutrition?.carbs || 0),
+    fat: Math.max(storeNutrition.fat, dailyNutrition?.fat || 0),
+    mealsCount: dailyNutrition?.mealsCount || 0,
   };
 
   // Get macro targets from calculated metrics (onboarding) - NO FALLBACKS
@@ -1857,19 +1926,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
   const nutritionTargets = {
     calories: {
       current: currentNutrition.calories,
-      target: calorieTarget ?? nutritionGoals?.daily_calories ?? null,
+      target: calorieTarget, // SINGLE SOURCE - from calculatedMetrics only
     },
     protein: { 
       current: currentNutrition.protein, 
-      target: macroTargets.protein ?? nutritionGoals?.daily_protein ?? null,
+      target: macroTargets.protein, // SINGLE SOURCE - from calculatedMetrics only
     },
     carbs: { 
       current: currentNutrition.carbs, 
-      target: macroTargets.carbs ?? nutritionGoals?.daily_carbs ?? null,
+      target: macroTargets.carbs, // SINGLE SOURCE - from calculatedMetrics only
     },
     fat: { 
       current: currentNutrition.fat, 
-      target: macroTargets.fat ?? nutritionGoals?.daily_fat ?? null,
+      target: macroTargets.fat, // SINGLE SOURCE - from calculatedMetrics only
     },
     fiber: { 
       current: 0, 
@@ -2114,120 +2183,106 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             </GlassCard>
           </View>
 
-          {/* Today's Meals - Aurora Design */}
+          {/* Day Selector + Meals - Premium Design */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Meals</Text>
+            {/* Day Selector - Only show when weekly plan exists */}
+            {weeklyMealPlan && (
+              <View style={styles.daySelectorContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {[
+                    'monday',
+                    'tuesday',
+                    'wednesday',
+                    'thursday',
+                    'friday',
+                    'saturday',
+                    'sunday',
+                  ].map((day) => {
+                    const isToday = day === (() => {
+                      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                      return dayNames[new Date().getDay()];
+                    })();
+                    return (
+                      <AnimatedPressable
+                        key={day}
+                        style={[
+                          styles.dayButton, 
+                          selectedDay === day && styles.selectedDayButton,
+                          isToday && styles.todayDayButton
+                        ]}
+                        onPress={() => setSelectedDay(day)}
+                        scaleValue={0.95}
+                      >
+                        <Text
+                          style={[
+                            styles.dayButtonText,
+                            selectedDay === day && styles.selectedDayButtonText,
+                          ]}
+                        >
+                          {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
+                        </Text>
+                        {isToday && <View style={styles.todayIndicator} />}
+                      </AnimatedPressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+            
+            {/* Section Header */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {selectedDay && selectedDay !== (() => {
+                  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                  return dayNames[new Date().getDay()];
+                })() 
+                  ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals`
+                  : "Today's Meals"
+                }
+              </Text>
+              {getTodaysMeals().length > 0 && (
+                <View style={styles.mealCountBadge}>
+                  <Text style={styles.mealCountText}>
+                    {getTodaysMeals().filter(m => getMealProgress(m.id)?.progress === 100).length}/{getTodaysMeals().length}
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {getTodaysMeals().length > 0 ? (
-              getTodaysMeals().map((meal, index) => {
-                const mealTimes = { breakfast: '8:00 AM', lunch: '1:00 PM', dinner: '7:00 PM', snack: '4:00 PM' };
-                const mealTime = mealTimes[meal.type as keyof typeof mealTimes] || '12:00 PM';
-                const mealIcons = { breakfast: 'sunny-outline', lunch: 'restaurant-outline', dinner: 'moon-outline', snack: 'nutrition-outline' };
-                const mealIcon = mealIcons[meal.type as keyof typeof mealIcons] || 'restaurant-outline';
-                const panResponder = createMealPanResponder(meal.id);
-                const swipePosition = getSwipePosition(meal.id);
-
-                return (
-                  <View key={meal.id} style={styles.swipeableContainer}>
-                    {/* Action Buttons (revealed on swipe) */}
-                    <View style={styles.swipeActions}>
-                      <AnimatedPressable
-                        style={styles.swipeActionEdit}
-                        onPress={() => handleEditMeal(meal)}
-                        scaleValue={0.9}
-                        hapticFeedback={true}
-                        hapticType="medium"
-                      >
-                        <Ionicons name="pencil-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
-                        <Text style={styles.swipeActionText}>Edit</Text>
-                      </AnimatedPressable>
-                      <AnimatedPressable
-                        style={styles.swipeActionDelete}
-                        onPress={() => handleDeleteMeal(meal)}
-                        scaleValue={0.9}
-                        hapticFeedback={true}
-                        hapticType="medium"
-                      >
-                        <Ionicons name="trash-outline" size={rf(16)} color={ResponsiveTheme.colors.white} />
-                        <Text style={styles.swipeActionText}>Delete</Text>
-                      </AnimatedPressable>
-                    </View>
-
-                    {/* Swipeable Card */}
-                    <Animated.View
-                      {...panResponder.panHandlers}
-                      style={[
-                        styles.swipeableCard,
-                        {
-                          transform: [{ translateX: swipePosition }],
-                        },
-                      ]}
-                    >
-                      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.mealTimelineCard}>
-                    {/* Time Badge */}
-                    <View style={styles.timeBadge}>
-                      <Text style={styles.timeBadgeText}>{mealTime}</Text>
-                    </View>
-
-                    <View style={styles.mealTimelineContent}>
-                      {/* Food Image with Gradient Border */}
-                      <View style={styles.mealImageContainer}>
-                        <LinearGradient
-                          {...(toLinearGradientProps(gradients.border.primary) as any)}
-                          style={styles.mealImageGradientBorder}
-                        >
-                          <View style={styles.mealImageInner}>
-                            <Ionicons name={mealIcon as any} size={rf(24)} color={ResponsiveTheme.colors.primary} />
-                          </View>
-                        </LinearGradient>
-                      </View>
-
-                      {/* Meal Info */}
-                      <View style={styles.mealTimelineInfo}>
-                        <Text style={styles.mealTimelineName}>{meal.name}</Text>
-                        <Text style={styles.mealTimelineCalories}>
-                          {meal.nutrition?.calories || 0} cal
-                        </Text>
-
-                        {/* Macro Badges */}
-                        <View style={styles.macroBadgesContainer}>
-                          <View style={[styles.macroBadge, { backgroundColor: '#FF6B6B33' }]}>
-                            <Text style={[styles.macroBadgeText, { color: '#FF6B6B' }]}>
-                              P: {Math.round(meal.nutrition?.protein || 0)}g
-                            </Text>
-                          </View>
-                          <View style={[styles.macroBadge, { backgroundColor: '#4ECDC433' }]}>
-                            <Text style={[styles.macroBadgeText, { color: '#4ECDC4' }]}>
-                              C: {Math.round(meal.nutrition?.carbs || 0)}g
-                            </Text>
-                          </View>
-                          <View style={[styles.macroBadge, { backgroundColor: '#FFC10733' }]}>
-                            <Text style={[styles.macroBadgeText, { color: '#FFC107' }]}>
-                              F: {Math.round(meal.nutrition?.fat || 0)}g
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-
-                      {/* Edit/Delete Icon Button */}
-                      <AnimatedPressable
-                        style={styles.mealActionButton}
-                        onPress={() => handleStartMeal(meal)}
-                        scaleValue={0.9}
-                        hapticFeedback={true}
-                        hapticType="light"
-                      >
-                        <Ionicons name="play" size={rf(16)} color={ResponsiveTheme.colors.primary} />
-                      </AnimatedPressable>
-                    </View>
-                      </GlassCard>
-                    </Animated.View>
-                  </View>
-                );
-              })
+              <View style={styles.premiumMealsContainer}>
+                {getTodaysMeals().map((meal, index) => {
+                  const progress = getMealProgress(meal.id);
+                  const mealTime = getMealTime(meal.type as any, mealSchedule);
+                  
+                  return (
+                    <PremiumMealCard
+                      key={meal.id}
+                      meal={meal}
+                      mealTime={mealTime}
+                      onPress={() => handleStartMeal(meal)}
+                      onStartMeal={() => handleStartMeal(meal)}
+                      onCompleteMeal={() => completeMealPreparation(meal)}
+                      progress={progress?.progress}
+                      macroTargets={{
+                        protein: macroTargets.protein,
+                        carbs: macroTargets.carbs,
+                        fat: macroTargets.fat,
+                        calories: calorieTarget,
+                      }}
+                      style={{ marginBottom: ResponsiveTheme.spacing.md }}
+                    />
+                  );
+                })}
+              </View>
             ) : (
               <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg">
-                <Text style={styles.emptyMealsText}>No meals planned for today</Text>
+                <Text style={styles.emptyMealsText}>
+                  {weeklyMealPlan 
+                    ? `No meals planned for ${selectedDay ? selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1) : 'today'}`
+                    : 'No meals planned for today'
+                  }
+                </Text>
                 <Text style={styles.emptyMealsSubtext}>Generate a meal plan to get started</Text>
               </GlassCard>
             )}
@@ -2414,7 +2469,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       style={[
                         styles.waterFill,
                         {
-                          height: `${(waterConsumed / waterGoal) * 100}%`,
+                          height: `${waterGoalLiters ? (waterConsumedLiters / waterGoalLiters) * 100 : 0}%`,
                           transform: [
                             {
                               translateY: waterWaveOffset.interpolate({
@@ -2443,8 +2498,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
 
                 {/* Water Stats and Controls */}
                 <View style={styles.waterStatsContainer}>
-                  <Text style={styles.waterAmountConsumed}>{waterConsumed.toFixed(1)}L</Text>
-                  <Text style={styles.waterTargetAmount}>of {waterGoal}L goal</Text>
+                  <Text style={styles.waterAmountConsumed}>{waterConsumedLiters.toFixed(1)}L</Text>
+                  <Text style={styles.waterTargetAmount}>of {waterGoalLiters?.toFixed(1) ?? '?'}L goal</Text>
 
                   {/* Quick Add Buttons with Ripple Effect */}
                   <View style={styles.waterQuickAddButtons}>
@@ -2452,7 +2507,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       style={styles.waterQuickAddButton}
                       onPress={() => {
                         triggerRipple(waterButton1Ripple);
-                        setWaterConsumed((prev) => Math.min(prev + 0.25, waterGoal));
+                        hydrationAddWater(250); // 250ml
                       }}
                       scaleValue={0.9}
                       hapticFeedback={true}
@@ -2483,7 +2538,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       style={styles.waterQuickAddButton}
                       onPress={() => {
                         triggerRipple(waterButton2Ripple);
-                        setWaterConsumed((prev) => Math.min(prev + 0.5, waterGoal));
+                        hydrationAddWater(500); // 500ml
                       }}
                       scaleValue={0.9}
                       hapticFeedback={true}
@@ -2514,7 +2569,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       style={styles.waterQuickAddButton}
                       onPress={() => {
                         triggerRipple(waterButton3Ripple);
-                        setWaterConsumed((prev) => Math.min(prev + 1, waterGoal));
+                        hydrationAddWater(1000); // 1L = 1000ml
                       }}
                       scaleValue={0.9}
                       hapticFeedback={true}
@@ -2547,7 +2602,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                   <View style={styles.waterTimeline}>
                     <Text style={styles.waterTimelineTitle}>Today's Intake</Text>
                     <View style={styles.waterTimelineBar}>
-                      {[...Array(Math.min(Math.ceil(waterConsumed / 0.25), 16))].map((_, index) => (
+                      {[...Array(Math.min(Math.ceil(waterConsumedLiters / 0.25), 16))].map((_, index) => (
                         <View key={`water-dot-${index}`} style={styles.waterTimelineDot} />
                       ))}
                     </View>
@@ -2577,73 +2632,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
             </GlassCard>
           </View>
 
-          {/* Weekly Meal Plan Section */}
-          {weeklyMealPlan && (
-            <>
-              {/* Day Selector */}
-              <View style={styles.daySelector}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {[
-                    'monday',
-                    'tuesday',
-                    'wednesday',
-                    'thursday',
-                    'friday',
-                    'saturday',
-                    'sunday',
-                  ].map((day) => (
-                    <AnimatedPressable
-                      key={day}
-                      style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
-                      onPress={() => setSelectedDay(day)}
-                      scaleValue={0.95}
-                    >
-                      <Text
-                        style={[
-                          styles.dayButtonText,
-                          selectedDay === day && styles.selectedDayButtonText,
-                        ]}
-                      >
-                        {day ? day.charAt(0).toUpperCase() + day.slice(1, 3) : 'Day'}
-                      </Text>
-                    </AnimatedPressable>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* Today's Meals from Weekly Plan */}
-              <View style={styles.mealsSection}>
-                <Text style={styles.sectionTitle}>
-                  {selectedDay
-                    ? `${selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1)}'s Meals`
-                    : "Today's Meals"}
-                </Text>
-                {getTodaysMeals().map((meal) => {
-                  const progress = getMealProgress(meal.id);
-                  console.log(`[MEAL] DietScreen: Rendering meal "${meal.name}" (${meal.id}) with progress:`, progress);
-                  return (
-                    <MealCard
-                      key={meal.id}
-                      meal={meal}
-                      onStartMeal={handleStartMeal}
-                      progress={progress?.progress || 0}
-                    />
-                  );
-                })}
-                {getTodaysMeals().length === 0 && (
-                  <GlassCard style={styles.emptyCard} elevation={1} padding="md" blurIntensity="light" borderRadius="lg">
-                    <Text style={styles.emptyText}>No meals planned for {selectedDay}</Text>
-                    <Button
-                      title="Generate Meals"
-                      onPress={generateWeeklyMealPlan}
-                      variant="outline"
-                      size="sm"
-                    />
-                  </GlassCard>
-                )}
-              </View>
-            </>
-          )}
+          {/* Weekly Meal Plan - Generate Button (shown only when no plan exists) */}
 
           {/* Generate Weekly Plan Prompt */}
           {!weeklyMealPlan && canAccessMealFeatures && (
@@ -2894,14 +2883,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 <Ionicons name="water-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.waterIcon} />
                 <View style={styles.waterInfo}>
                   <Text style={styles.waterAmount}>
-                    {waterConsumed}L / {waterGoal}L
+                    {waterConsumedLiters.toFixed(1)}L / {waterGoalLiters?.toFixed(1) ?? '?'}L
                   </Text>
                   <Text style={styles.waterSubtext}>
-                    {waterConsumed === 0
+                    {waterConsumedLiters === 0
                       ? 'Start tracking your hydration!'
-                      : waterConsumed >= waterGoal
+                      : waterGoalLiters && waterConsumedLiters >= waterGoalLiters
                         ? 'Daily goal achieved!'
-                        : `${(waterGoal - waterConsumed).toFixed(1)}L more to reach your goal!`}
+                        : waterGoalLiters 
+                          ? `${(waterGoalLiters - waterConsumedLiters).toFixed(1)}L more to reach your goal!`
+                          : 'Set your water goal in settings'}
                   </Text>
                 </View>
               </View>
@@ -2912,9 +2903,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     style={[
                       styles.progressFill,
                       {
-                        width: `${Math.max(0, Math.min((waterConsumed / waterGoal) * 100, 100)) || 0}%`,
+                        width: `${waterGoalLiters ? Math.max(0, Math.min((waterConsumedLiters / waterGoalLiters) * 100, 100)) : 0}%`,
                         backgroundColor:
-                          waterConsumed >= waterGoal ? '#10b981' : ResponsiveTheme.colors.primary,
+                          waterGoalLiters && waterConsumedLiters >= waterGoalLiters ? '#10b981' : ResponsiveTheme.colors.primary,
                       },
                     ]}
                   />
@@ -2925,7 +2916,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                 <Button
                   title="+ 250ml"
                   onPress={handleAddWater}
-                  variant={waterConsumed >= waterGoal ? 'solid' : 'outline'}
+                  variant={waterGoalLiters && waterConsumedLiters >= waterGoalLiters ? 'solid' : 'outline'}
                   size="sm"
                   style={[styles.waterButton, { flex: 1, marginRight: ResponsiveTheme.spacing.sm }]}
                 />
@@ -2939,7 +2930,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                     { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm },
                   ]}
                 />
-                {waterConsumed > 0 && (
+                {waterConsumedLiters > 0 && (
                   <Button
                     title="- 250ml"
                     onPress={handleRemoveWater}
@@ -3148,7 +3139,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({ navigation, route, isAct
                       {mealMotivationService.getMealStartMessage(selectedMealForPreparation, {
                         personalInfo: profile?.personalInfo,
                         fitnessGoals: profile?.fitnessGoals,
-                        currentStreak: 0,
+                        currentStreak: achievementStreak,
                         completedMealsToday: 0,
                       })}
                     </Text>
@@ -3402,6 +3393,30 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ResponsiveTheme.spacing.md,
+  },
+
+  mealCountBadge: {
+    backgroundColor: ResponsiveTheme.colors.primary + '20',
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    paddingVertical: ResponsiveTheme.spacing.xs,
+    borderRadius: ResponsiveTheme.borderRadius.full,
+  },
+
+  mealCountText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+  },
+
+  premiumMealsContainer: {
+    gap: ResponsiveTheme.spacing.md,
   },
 
   overviewCard: {
@@ -3899,6 +3914,11 @@ const styles = StyleSheet.create({
   },
 
   // Weekly Meal Plan Styles
+  daySelectorContainer: {
+    marginBottom: ResponsiveTheme.spacing.md,
+    marginTop: -ResponsiveTheme.spacing.sm,
+  },
+  
   daySelector: {
     marginBottom: ResponsiveTheme.spacing.lg,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -3912,6 +3932,22 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.background,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
+    position: 'relative' as const,
+    alignItems: 'center' as const,
+  },
+  
+  todayDayButton: {
+    borderColor: ResponsiveTheme.colors.primary,
+    borderWidth: 2,
+  },
+  
+  todayIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: ResponsiveTheme.colors.primary,
+    position: 'absolute' as const,
+    bottom: -2,
   },
 
   selectedDayButton: {

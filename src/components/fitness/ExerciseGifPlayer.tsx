@@ -5,11 +5,11 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
   Modal,
   StatusBar,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image'; // ✅ Use Expo Image for GIF animation support
 import { Card, THEME } from '../ui';
 import { exerciseFilterService } from '../../services/exerciseFilterService';
 
@@ -117,12 +117,11 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
             <Text style={styles.fullscreenTitle}>{displayName}</Text>
 
             <Image
-              source={{
-                uri: exercise.gifUrl,
-                cache: 'force-cache',
-              }}
+              source={{ uri: exercise.gifUrl }}
               style={[styles.fullscreenGif, { width: modalWidth, height: modalHeight * 0.8 }]}
-              resizeMode="contain"
+              contentFit="contain"
+              transition={300}
+              cachePolicy="memory-disk"
             />
 
             <Text style={styles.fullscreenHint}>🔍 Maximum quality view • Tap × to close</Text>
@@ -217,10 +216,7 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
               style={styles.gifTouchArea}
             >
               <Image
-                source={{
-                  uri: exercise.gifUrl,
-                  cache: 'force-cache', // Better caching for repeated views
-                }}
+                source={{ uri: exercise.gifUrl }}
                 style={[
                   styles.gif,
                   {
@@ -232,8 +228,9 @@ export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({
                 ]}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
-                resizeMode="contain" // Maintain aspect ratio while fitting container
-                fadeDuration={300} // Smoother loading transition
+                contentFit="contain" // Expo Image prop (was resizeMode)
+                transition={300} // Smooth loading transition
+                cachePolicy="memory-disk" // Better caching for GIFs
               />
 
               {/* Zoom hint overlay */}

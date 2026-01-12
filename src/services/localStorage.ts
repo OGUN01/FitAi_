@@ -157,6 +157,7 @@ const STORAGE_KEYS = {
 
 export class EnhancedLocalStorageService {
   private static instance: EnhancedLocalStorageService;
+  private static initializationPromise: Promise<void> | null = null;
   private encryptionKey: string | null = null;
   private isInitialized = false;
   private compressionEnabled = true;
@@ -167,8 +168,34 @@ export class EnhancedLocalStorageService {
   static getInstance(): EnhancedLocalStorageService {
     if (!EnhancedLocalStorageService.instance) {
       EnhancedLocalStorageService.instance = new EnhancedLocalStorageService();
+      // Auto-initialize on first access (non-blocking)
+      EnhancedLocalStorageService.initializationPromise =
+        EnhancedLocalStorageService.instance.initialize().catch((error) => {
+          console.error('[EnhancedLocalStorage] Auto-initialization failed:', error);
+        });
     }
     return EnhancedLocalStorageService.instance;
+  }
+
+  /**
+   * Ensure the service is initialized before performing operations.
+   * This is async and will wait for initialization to complete.
+   * Safe to call multiple times - will return immediately if already initialized.
+   */
+  async ensureInitializedAsync(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    // If initialization is in progress, wait for it
+    if (EnhancedLocalStorageService.initializationPromise) {
+      await EnhancedLocalStorageService.initializationPromise;
+      return;
+    }
+
+    // Otherwise, initialize now
+    EnhancedLocalStorageService.initializationPromise = this.initialize();
+    await EnhancedLocalStorageService.initializationPromise;
   }
 
   // ============================================================================

@@ -46,22 +46,24 @@ export interface DeduplicationResult<T = any> {
 // ============================================================================
 
 /**
- * How long to keep in-flight request tracking (60 seconds minimum for Cloudflare KV)
- * Cloudflare KV requires minimum TTL of 60 seconds
- * AI generation typically completes in 2-5 seconds, but we need to meet KV requirements
+ * How long to keep in-flight request tracking (180 seconds)
+ * AI generation can take 60-90+ seconds for complex diet/workout plans
+ * Must be longer than MAX_WAIT_MS to prevent premature expiration
  */
-const IN_FLIGHT_TTL_SECONDS = 60;
+const IN_FLIGHT_TTL_SECONDS = 180;
 
 /**
- * How often to poll for in-flight request completion (100ms)
+ * How often to poll for in-flight request completion (500ms)
+ * Increased to reduce KV reads during long AI generation
  */
-const POLL_INTERVAL_MS = 100;
+const POLL_INTERVAL_MS = 500;
 
 /**
- * Maximum time to wait for in-flight request (9 seconds)
+ * Maximum time to wait for in-flight request (120 seconds)
+ * AI generation can take 60-90+ seconds, so we need a longer timeout
  * Must be less than IN_FLIGHT_TTL_SECONDS
  */
-const MAX_WAIT_MS = 9000;
+const MAX_WAIT_MS = 120000;
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -123,8 +125,25 @@ export async function withDeduplication<T>(
   const existingRequest = await kv.get<InFlightRequest>(inFlightKey, 'json');
 
   if (existingRequest) {
-    // Another request is already processing - wait for it
-    return await waitForInFlightRequest<T>(kv, inFlightKey, existingRequest);
+    // Check if the existing request is stale (older than 90 seconds)
+    // AI generation typically completes in 60-90 seconds
+    const requestAge = Date.now() - existingRequest.timestamp;
+    const STALE_THRESHOLD_MS = 90000; // 90 seconds
+    
+    if (existingRequest.status === 'pending' && requestAge > STALE_THRESHOLD_MS) {
+      // Stale pending request - clear it and start fresh
+      console.log(`[Deduplication] Clearing stale pending request (age: ${Math.round(requestAge/1000)}s)`);
+      await kv.delete(inFlightKey);
+      // Fall through to start fresh generation
+    } else if (existingRequest.status === 'pending' || existingRequest.status === 'completed') {
+      // Valid in-flight or completed request - wait for it
+      return await waitForInFlightRequest<T>(kv, inFlightKey, existingRequest);
+    } else if (existingRequest.status === 'error') {
+      // Previous request failed - clear it and start fresh
+      console.log('[Deduplication] Clearing failed request, starting fresh');
+      await kv.delete(inFlightKey);
+      // Fall through to start fresh generation
+    }
   }
 
   // No in-flight request - we're the first one

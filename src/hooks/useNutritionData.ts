@@ -222,10 +222,11 @@ export const useNutritionData = (): UseNutritionDataReturn => {
           const meals = response.data;
           const stats = meals.reduce(
             (acc, meal) => ({
-              calories: acc.calories + meal.total_calories,
-              protein: acc.protein + meal.total_protein,
-              carbs: acc.carbs + meal.total_carbs,
-              fat: acc.fat + meal.total_fat,
+              // Use total_carbohydrates (Supabase column name) with fallback to total_carbs for compatibility
+              calories: acc.calories + (meal.total_calories || 0),
+              protein: acc.protein + (meal.total_protein || 0),
+              carbs: acc.carbs + (meal.total_carbohydrates || meal.total_carbs || 0),
+              fat: acc.fat + (meal.total_fat || 0),
               mealsCount: acc.mealsCount + 1,
             }),
             {

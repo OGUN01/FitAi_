@@ -23,7 +23,10 @@ import AchievementCelebration from '../../components/achievements/AchievementCel
 import completionTrackingService from '../../services/completionTracking';
 import { useAchievementStore } from '../../stores/achievementStore';
 import { trackAchievementActivity } from '../../stores/achievementStore';
+import { rh, rw, rp } from '../../utils/responsive'; // ✅ Add responsive utilities
 import { useAuthStore } from '../../stores/authStore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ✅ Add safe area insets
+import { exerciseFilterService } from '../../services/exerciseFilterService'; // ✅ Add exercise lookup service
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -115,6 +118,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   navigation,
 }) => {
   const { workout, sessionId } = route.params;
+  const insets = useSafeAreaInsets(); // ✅ Get safe area insets for notch handling
 
   console.log('🏋️ ENHANCED WORKOUT SESSION: Initializing', {
     hasWorkout: !!workout,
@@ -747,9 +751,18 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     }
   }, [workoutStats, totalExercises, workout.id, sessionId, navigation]);
 
-  // Enhanced exercise name generator
+  // Enhanced exercise name lookup from database
   const getExerciseName = useCallback((exerciseId: string): string => {
     if (!exerciseId) return 'Exercise';
+
+    // Lookup exercise from database
+    const exercise = exerciseFilterService.getExerciseById(exerciseId);
+
+    if (exercise?.name) {
+      return exercise.name;
+    }
+
+    // Fallback: format the ID as title case
     return safeString(exerciseId, 'Exercise')
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (l) => l.toUpperCase());
@@ -766,7 +779,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       {/* Enhanced Header with Stats */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 12) }]}>
         <TouchableOpacity
           onPress={exitWorkout}
           style={styles.exitButton}
@@ -1416,9 +1429,9 @@ const styles = StyleSheet.create({
 
   navigationContainer: {
     flexDirection: 'row',
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.lg,
-    gap: THEME.spacing.md,
+    paddingHorizontal: rp(16), // ✅ Responsive padding (reduced from 24)
+    paddingVertical: rp(8),    // ✅ Further reduced padding (was 12)
+    gap: rw(12),               // ✅ Responsive gap
     backgroundColor: THEME.colors.surface,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
@@ -1426,7 +1439,8 @@ const styles = StyleSheet.create({
 
   navButton: {
     flex: 1,
-    minHeight: 50,
+    minHeight: 44,             // ✅ Fixed height (no scaling) for consistency
+    maxHeight: 48,             // ✅ Prevent oversizing
   },
 
   primaryNavButton: {

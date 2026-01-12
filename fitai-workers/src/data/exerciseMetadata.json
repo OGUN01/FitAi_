@@ -1,0 +1,1476 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-01-09",
+    "totalTaggedExercises": 250,
+    "tagCategories": {
+      "pregnancyUnsafe": 65,
+      "commonCompounds": 40,
+      "popularMachines": 50,
+      "bodyweightBasics": 55,
+      "isolationExercises": 40
+    },
+    "description": "Manually tagged safety metadata for 250 most common exercises. Priority order: Pregnancy-unsafe > Compound lifts > Machines > Bodyweight > Isolation. Conservative approach: if uncertain, mark as higher risk."
+  },
+  "exerciseMetadata": {
+
+    "_comment_category_1": "========== CATEGORY 1: PREGNANCY-UNSAFE EXERCISES (~65) ==========",
+    "_comment_category_1_desc": "Supine (lying flat), high-impact, fall risk, prone, inverted",
+
+    "_comment_supine": "--- Supine position (lying flat on back) - UNSAFE Trimester 2+ ---",
+
+    "barbell bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "dumbbell bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "barbell incline bench press": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none",
+      "notes": "Incline is safer for pregnancy (30+ degrees OK for Trimester 2)"
+    },
+
+    "smith bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "smith decline bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": true,
+      "impactLevel": "low",
+      "balanceRequired": "none",
+      "notes": "Decline = head below heart, UNSAFE for pregnancy"
+    },
+
+    "barbell close-grip bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "ez-bar close-grip bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "cable bench press": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "lying leg raise": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "supine twist": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "lying tricep extension": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "dumbbell lying rear delt row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "crunch": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "sit up": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_high_impact": "--- High-impact exercises (jumping, plyometrics) - UNSAFE Trimester 2+ ---",
+
+    "jump squat": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "moderate"
+    },
+
+    "box jump": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "high"
+    },
+
+    "burpee": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "jumping jack": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "none"
+    },
+
+    "plyo push up": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "forward jump": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "moderate"
+    },
+
+    "backward jump": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "high"
+    },
+
+    "jump rope": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "kettlebell plyo push-up": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "moderate"
+    },
+
+    "weighted drop push up": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "_comment_fall_risk": "--- Fall risk / balance exercises - UNSAFE Trimester 2+ ---",
+
+    "single leg squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "pistol squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "single leg deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "squat on bosu ball": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "push up on bosu ball": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "_comment_prone": "--- Prone position (face down) - UNSAFE Trimester 3 ---",
+
+    "superman": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "prone cobra": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_inverted": "--- Inverted exercises (upside down) - UNSAFE pregnancy ---",
+
+    "handstand": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": true,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "handstand push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": true,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "_comment_overhead": "--- Overhead exercises - AVOID Trimester 2+ ---",
+
+    "overhead press": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none",
+      "notes": "Overhead exercises increase intra-abdominal pressure - avoid Trimester 2+"
+    },
+
+    "barbell overhead squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "high"
+    },
+
+    "medicine ball overhead slam": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "_comment_category_2": "========== CATEGORY 2: COMMON COMPOUND LIFTS (~40) ==========",
+    "_comment_category_2_desc": "Squats, deadlifts, presses, pulls, rows - require Valsalva",
+
+    "_comment_squats": "--- Squat variations ---",
+
+    "barbell squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "barbell front squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "dumbbell goblet squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "smith squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "barbell wide squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "split squats": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "barbell split squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "bulgarian split squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "_comment_deadlifts": "--- Deadlift variations ---",
+
+    "barbell deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "barbell romanian deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "barbell sumo deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "trap bar deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "dumbbell deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "band straight leg deadlift": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_rows": "--- Row variations ---",
+
+    "barbell bent over row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "dumbbell bent over row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "barbell pendlay row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "lever t bar row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "cable seated row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "smith bent over row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_category_3": "========== CATEGORY 3: POPULAR MACHINES (~50) ==========",
+    "_comment_category_3_desc": "Leg press, lat pulldown, cables, smith machine variations",
+
+    "leg press": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "lat pulldown": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "cable crossover": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "cable fly": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "cable tricep pushdown": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "cable bicep curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "cable lateral raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "lever seated row": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "lever chest press": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "smith shoulder press": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "smith calf raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "leg extension": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "leg curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "pec deck": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "cable face pull": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_category_4": "========== CATEGORY 4: BODYWEIGHT BASICS (~55) ==========",
+    "_comment_category_4_desc": "Push-ups, pull-ups, planks, dips, lunges, bodyweight squats",
+
+    "_comment_pushups": "--- Push-up variations ---",
+
+    "push up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "close-grip push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "diamond push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "decline push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "incline push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "push-up (wall)": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "kneeling push-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_pullups": "--- Pull-up variations ---",
+
+    "pull up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "chin up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "assisted pull up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "scapular pull-up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_planks": "--- Plank variations ---",
+
+    "plank": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "side plank": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "elbow plank": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_dips": "--- Dip variations ---",
+
+    "dip": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "chest dip": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": true,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "bench dip": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_lunges": "--- Lunge variations ---",
+
+    "lunge": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "walking lunge": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "reverse lunge": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "dumbbell lunge": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "_comment_bodyweight_squats": "--- Bodyweight squat variations ---",
+
+    "bodyweight squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "air squat": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "wall sit": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_core": "--- Core/abs bodyweight ---",
+
+    "mountain climber": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": true,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "bicycle crunch": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "russian twist": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_category_5": "========== CATEGORY 5: ISOLATION EXERCISES (~40) ==========",
+    "_comment_category_5_desc": "Curls, extensions, raises, flyes - single joint movements",
+
+    "_comment_biceps": "--- Bicep isolation ---",
+
+    "barbell curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "dumbbell curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "hammer curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "preacher curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "ez bar curl": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_triceps": "--- Tricep isolation ---",
+
+    "tricep extension": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "overhead tricep extension": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "tricep kickback": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "_comment_shoulders": "--- Shoulder isolation ---",
+
+    "lateral raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "front raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "rear delt fly": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "dumbbell shrug": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_chest": "--- Chest isolation ---",
+
+    "dumbbell fly": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "incline dumbbell fly": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_legs": "--- Leg isolation ---",
+
+    "calf raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "seated calf raise": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "glute bridge": {
+      "isSupine": true,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "hip thrust": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "_comment_additional": "========== ADDITIONAL COMMON EXERCISES ==========",
+
+    "step up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "box step up": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "moderate"
+    },
+
+    "kettlebell swing": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "battle rope": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "high",
+      "balanceRequired": "low"
+    },
+
+    "rowing machine": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "treadmill": {
+      "isSupine": false,
+      "isHighImpact": true,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "moderate",
+      "balanceRequired": "low"
+    },
+
+    "elliptical": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "stationary bike": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "none"
+    },
+
+    "farmer carry": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "sled push": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": true,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    },
+
+    "sled pull": {
+      "isSupine": false,
+      "isHighImpact": false,
+      "hasFallRisk": false,
+      "requiresValsalva": false,
+      "isProne": false,
+      "isInverted": false,
+      "impactLevel": "low",
+      "balanceRequired": "low"
+    }
+  }
+}

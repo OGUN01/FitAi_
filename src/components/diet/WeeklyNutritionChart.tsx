@@ -44,11 +44,11 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = ({
   fatTarget,
   onPress,
 }) => {
-  // Calculate max value for scaling
+  // Calculate max value for scaling - ensure minimum of 1 to prevent division by zero
   const maxValue = useMemo(() => {
     const allValues = weeklyData.flatMap((d) => [d.protein, d.carbs, d.fat]);
     const targets = [proteinTarget, carbsTarget, fatTarget];
-    return Math.max(...allValues, ...targets);
+    return Math.max(...allValues, ...targets, 1); // Minimum 1 to prevent NaN
   }, [weeklyData, proteinTarget, carbsTarget, fatTarget]);
 
   // Average percentages
@@ -62,10 +62,11 @@ export const WeeklyNutritionChart: React.FC<WeeklyNutritionChartProps> = ({
       { protein: 0, carbs: 0, fat: 0 }
     );
     const days = weeklyData.length || 1;
+    // Guard against division by zero for targets
     return {
-      protein: Math.round((totals.protein / days / proteinTarget) * 100),
-      carbs: Math.round((totals.carbs / days / carbsTarget) * 100),
-      fat: Math.round((totals.fat / days / fatTarget) * 100),
+      protein: proteinTarget > 0 ? Math.round((totals.protein / days / proteinTarget) * 100) : 0,
+      carbs: carbsTarget > 0 ? Math.round((totals.carbs / days / carbsTarget) * 100) : 0,
+      fat: fatTarget > 0 ? Math.round((totals.fat / days / fatTarget) * 100) : 0,
     };
   }, [weeklyData, proteinTarget, carbsTarget, fatTarget]);
 

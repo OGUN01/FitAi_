@@ -9,6 +9,7 @@ import {
   DietPlaceholders, 
   detectCuisine, 
   getEnabledMealsList,
+  getMealExclusionInstructions,
   getCookingSkillInstructions,
   getPrepTimeInstructions,
   getBudgetInstructions,
@@ -73,7 +74,8 @@ export function buildPlaceholdersFromUserData(
     
     // Preferences
     COOKING_METHODS: prefs?.cooking_methods || [],
-    MEALS_ENABLED: getEnabledMealsList(prefs),
+    MEALS_ENABLED: getEnabledMealsList(prefs ?? undefined),
+    MEAL_EXCLUSION_INSTRUCTIONS: getMealExclusionInstructions(prefs ?? undefined),
     
     // Medical conditions
     MEDICAL_CONDITIONS: prefs?.medical_conditions || [],

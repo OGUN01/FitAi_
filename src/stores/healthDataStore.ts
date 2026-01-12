@@ -11,7 +11,9 @@ import { healthConnectService, HealthConnectData, HealthConnectSyncResult } from
 export interface HealthMetrics {
   // Daily Activity
   steps: number;
+  stepsGoal?: number; // Daily step goal - from user settings or calculated
   activeCalories: number;
+  caloriesGoal?: number; // Daily calories goal - from user settings or calculated
   distance?: number; // in kilometers
   
   // Body Metrics
@@ -532,12 +534,15 @@ export const useHealthDataStore = create<HealthDataState>()(
         
         // Steps insights
         if (metrics.steps > 0) {
-          if (metrics.steps >= 10000) {
-            insights.push("🎉 Great job! You've exceeded your daily step goal.");
-          } else if (metrics.steps >= 5000) {
-            insights.push(`💪 You're halfway to your step goal! ${10000 - metrics.steps} steps to go.`);
-          } else {
-            insights.push("🚶 Consider taking a walk to boost your daily activity.");
+          const stepsGoal = metrics.stepsGoal; // Use stored goal, not hardcoded
+          if (stepsGoal) {
+            if (metrics.steps >= stepsGoal) {
+              insights.push("🎉 Great job! You've exceeded your daily step goal.");
+            } else if (metrics.steps >= stepsGoal / 2) {
+              insights.push(`💪 You're halfway to your step goal! ${stepsGoal - metrics.steps} steps to go.`);
+            } else {
+              insights.push("🚶 Consider taking a walk to boost your daily activity.");
+            }
           }
         }
         

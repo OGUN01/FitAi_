@@ -170,6 +170,8 @@ export interface WorkoutPreferences {
   workout_types: string[]; // TEXT[] - database field name
   primary_goals: string[]; // TEXT[] - database field name
   activity_level: string; // TEXT - database field name
+  workout_frequency_per_week?: number; // INTEGER - how many days per week
+  preferred_workout_times?: string[]; // TEXT[] - e.g., ['monday', 'wednesday', 'friday']
 
   // Backward compatibility - computed from snake_case fields
   timePreference?: number;

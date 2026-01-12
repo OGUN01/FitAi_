@@ -2,7 +2,8 @@
 // Zustand store for managing achievement state and user progress
 
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { achievementEngine, Achievement, UserAchievement, AchievementCategory, AchievementTier } from '../services/achievementEngine';
 
 interface AchievementStore {
@@ -66,8 +67,37 @@ interface AchievementStore {
   getTopCategories: () => Array<{ category: string; count: number }>;
 }
 
+// Custom storage to handle Map serialization
+const achievementStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    const value = await AsyncStorage.getItem(name);
+    if (!value) return null;
+    
+    // Parse and convert userAchievementsArray back to Map
+    const parsed = JSON.parse(value);
+    if (parsed.state?.userAchievementsArray) {
+      parsed.state.userAchievements = new Map(parsed.state.userAchievementsArray);
+      delete parsed.state.userAchievementsArray;
+    }
+    return JSON.stringify(parsed);
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    // Parse and convert Map to array for storage
+    const parsed = JSON.parse(value);
+    if (parsed.state?.userAchievements instanceof Map) {
+      parsed.state.userAchievementsArray = Array.from(parsed.state.userAchievements.entries());
+      delete parsed.state.userAchievements;
+    }
+    await AsyncStorage.setItem(name, JSON.stringify(parsed));
+  },
+  removeItem: async (name: string): Promise<void> => {
+    await AsyncStorage.removeItem(name);
+  },
+};
+
 export const useAchievementStore = create<AchievementStore>()(
-  subscribeWithSelector((set, get) => ({
+  persist(
+    subscribeWithSelector((set, get) => ({
     // Initial State
     isLoading: false,
     isInitialized: false,
@@ -294,7 +324,20 @@ export const useAchievementStore = create<AchievementStore>()(
         .slice(0, 3)
         .map(([category, count]) => ({ category, count }));
     },
-  }))
+  })),
+    {
+      name: 'achievement-storage',
+      storage: achievementStorage as any,
+      partialize: (state) => ({
+        // Persist critical state - userAchievements handled by custom storage
+        userAchievements: state.userAchievements,
+        totalFitCoinsEarned: state.totalFitCoinsEarned,
+        completionRate: state.completionRate,
+        currentStreak: state.currentStreak,
+        isInitialized: state.isInitialized,
+      }),
+    }
+  )
 );
 
 // Achievement activity tracking helpers

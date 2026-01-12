@@ -171,9 +171,9 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
   restingHeartRate,
   hrTrend,
   steps,
-  stepsGoal = 10000,
+  stepsGoal, // NO DEFAULT - must come from store/props
   activeCalories,
-  age = 30,
+  age, // NO DEFAULT - must come from store/props
   onPress,
   onDetailPress,
 }) => {
@@ -195,8 +195,8 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
     let score = 50; // Base score
 
     // Sleep contribution (40% of score)
-    const actualSleepHours = sleepHours || 0;
-    const actualSleepQuality = sleepQuality || 'fair';
+    const actualSleepHours = sleepHours; // NO FALLBACK - use actual data
+    const actualSleepQuality = sleepQuality; // NO FALLBACK
     const sleepScore = Math.min(actualSleepHours / 8, 1) * 40;
     if (actualSleepQuality === 'excellent') score += sleepScore * 1.2;
     else if (actualSleepQuality === 'good') score += sleepScore;
@@ -212,7 +212,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
     }
 
     // Activity contribution (30% of score)
-    const actualSteps = steps || 0;
+    const actualSteps = steps; // NO FALLBACK
     const activityScore = Math.min(actualSteps / stepsGoal, 1) * 30;
     score += activityScore * 0.7; // Not overdoing it is good for recovery
 
@@ -222,7 +222,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
   const { label: recoveryLabel, color: recoveryColor } = recoveryScore !== null 
     ? getRecoveryColor(recoveryScore) 
     : { label: 'No Data', color: ResponsiveTheme.colors.textMuted };
-  const sleepColor = getSleepColor(sleepQuality || 'fair');
+  const sleepColor = getSleepColor(sleepQuality ?? 'unknown');
   const ringSize = rw(100);
 
   // Format sleep quality
@@ -279,7 +279,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
         {/* Main Content */}
         <View style={styles.content}>
           {/* Recovery Ring */}
-          <RecoveryRing score={recoveryScore ?? 0} size={ringSize} />
+          <RecoveryRing score={recoveryScore} size={ringSize} />
 
           {/* Metrics Grid */}
           <View style={styles.metricsGrid}>
@@ -317,11 +317,13 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
         <View style={styles.insightContainer}>
           <Ionicons name="bulb-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
           <Text style={styles.insightText}>
-            {(recoveryScore ?? 0) >= 80
+            {recoveryScore == null
+              ? "Track your health data to get recovery insights."
+              : recoveryScore >= 80
               ? "You're well recovered. Great day for intense training!"
-              : (recoveryScore ?? 0) >= 60
+              : recoveryScore >= 60
               ? "Moderate recovery. Consider a balanced workout."
-              : (recoveryScore ?? 0) >= 40
+              : recoveryScore >= 40
               ? "Low recovery. Focus on light activity today."
               : "Rest recommended. Your body needs recovery."}
           </Text>

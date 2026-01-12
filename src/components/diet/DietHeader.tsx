@@ -35,9 +35,9 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
     return 'Good evening';
   }, []);
 
-  // Calorie status
+  // Calorie status - guard against division by zero
   const calorieStatus = useMemo(() => {
-    const percentage = ((caloriesGoal - caloriesRemaining) / caloriesGoal) * 100;
+    const percentage = caloriesGoal > 0 ? ((caloriesGoal - caloriesRemaining) / caloriesGoal) * 100 : 0;
     if (percentage >= 100) return { text: 'Goal reached!', color: '#4CAF50' };
     if (percentage >= 75) return { text: 'Almost there', color: '#FF9800' };
     if (percentage >= 50) return { text: 'On track', color: '#2196F3' };

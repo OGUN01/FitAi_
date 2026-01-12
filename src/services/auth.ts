@@ -568,23 +568,52 @@ class AuthService {
   }
 
   /**
-   * Check and trigger profile data migration if needed
+   * Check and AUTO-START profile data migration if needed.
+   * Migration runs in background, doesn't block login.
+   * User can access the app immediately - data syncs automatically.
    */
   private async checkAndTriggerMigration(userId: string): Promise<void> {
     try {
-      console.log('🔄 Checking if profile migration is needed for user:', userId);
+      console.log('🔄 [AUTO-MIGRATION] Checking if migration is needed for user:', userId);
 
-      const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(userId);
+      // Check if there's guest data to migrate
+      const hasGuestData = await dataBridge.hasGuestDataForMigration();
 
-      if (migrationNeeded) {
-        console.log('📊 Profile migration needed, will be triggered by UI');
-        // Migration will be triggered by the UI when appropriate
-        // We don't auto-start it here to give user control
-      } else {
-        console.log('✅ No profile migration needed');
+      if (!hasGuestData) {
+        console.log('✅ [AUTO-MIGRATION] No guest data found - skipping migration');
+        return;
       }
+
+      console.log('📊 [AUTO-MIGRATION] Guest data found - auto-starting migration in background');
+
+      // AUTO-START migration (don't await to avoid blocking login)
+      migrationManager
+        .startProfileMigration(userId)
+        .then((result) => {
+          if (result.success) {
+            console.log('✅ [AUTO-MIGRATION] Complete! Migrated keys:', result.migratedKeys);
+            if (result.localSyncKeys && result.remoteSyncKeys) {
+              const pending = result.localSyncKeys.filter(
+                (k: string) => !result.remoteSyncKeys!.includes(k)
+              );
+              if (pending.length > 0) {
+                console.log('⏳ [AUTO-MIGRATION] Pending remote sync:', pending);
+              }
+            }
+          } else {
+            console.warn('⚠️ [AUTO-MIGRATION] Partial success:', {
+              migratedKeys: result.migratedKeys,
+              errors: result.errors,
+            });
+            // Errors are queued for retry - no user action needed
+          }
+        })
+        .catch((error) => {
+          console.error('❌ [AUTO-MIGRATION] Failed:', error);
+          // Data is still in local storage - will retry on next app open
+        });
     } catch (error) {
-      console.error('❌ Error checking migration status:', error);
+      console.error('❌ [AUTO-MIGRATION] Error in migration check:', error);
     }
   }
 }

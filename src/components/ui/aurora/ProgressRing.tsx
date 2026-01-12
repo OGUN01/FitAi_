@@ -124,7 +124,8 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   const animatedProgress = useSharedValue(0);
 
   // Sanitize inputs to prevent NaN on Android native
-  const progress = Number.isFinite(rawProgress) ? Math.max(0, Math.min(100, rawProgress)) : 0;
+  // CRITICAL: Round progress to integer to prevent "Loss of precision" error on Android
+  const progress = Number.isFinite(rawProgress) ? Math.round(Math.max(0, Math.min(100, rawProgress))) : 0;
   const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 120;
   const strokeWidth = Number.isFinite(rawStrokeWidth) ? Math.round(rawStrokeWidth) : 10;
 
@@ -149,9 +150,12 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   }, [progress, animated, duration]);
 
   // Animated circle props - round for Android compatibility
+  // CRITICAL: Use Math.round on all calculations to prevent decimal values on Android
   const animatedProps = useAnimatedProps(() => {
+    'worklet';
+    const currentProgress = Math.round(animatedProgress.value);
     const strokeDashoffset = Math.round(
-      circumference - (circumference * animatedProgress.value) / 100
+      circumference - (circumference * currentProgress) / 100
     );
 
     return {

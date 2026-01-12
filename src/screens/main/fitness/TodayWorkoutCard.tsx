@@ -21,7 +21,15 @@ interface TodayWorkoutCardProps {
   progress: number;
   onStartWorkout: () => void;
   onViewDetails: () => void;
+  onRecoveryTips?: () => void;
+  selectedDay?: string;
+  isToday?: boolean;
 }
+
+// Helper to format day name for display
+const formatDayName = (day: string): string => {
+  return day.charAt(0).toUpperCase() + day.slice(1);
+};
 
 export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   workout,
@@ -30,6 +38,9 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
   progress,
   onStartWorkout,
   onViewDetails,
+  onRecoveryTips,
+  selectedDay,
+  isToday = true,
 }) => {
   const getStatusConfig = () => {
     if (isCompleted) {
@@ -95,9 +106,16 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
 
               {/* Middle: Workout Info */}
               <View style={styles.infoContainer}>
+                {/* Day indicator when not viewing today */}
+                {!isToday && selectedDay && (
+                  <View style={styles.dayIndicator}>
+                    <Ionicons name="calendar-outline" size={rf(12)} color={ResponsiveTheme.colors.primary} />
+                    <Text style={styles.dayIndicatorText}>{formatDayName(selectedDay)}</Text>
+                  </View>
+                )}
                 <View style={styles.titleRow}>
                   <Text style={styles.title} numberOfLines={1}>
-                    {isRestDay ? 'Rest & Recover' : workout?.title || "Today's Workout"}
+                    {isRestDay ? 'Rest & Recover' : workout?.title || (isToday ? "Today's Workout" : "No Workout")}
                   </Text>
                   <View style={[styles.statusBadge, { backgroundColor: `${config.color}20` }]}>
                     <View style={[styles.statusDot, { backgroundColor: config.color }]} />
@@ -147,7 +165,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
             {/* Bottom Section - Action Button */}
             <View style={styles.bottomSection}>
               <AnimatedPressable
-                onPress={onStartWorkout}
+                onPress={isRestDay && onRecoveryTips ? onRecoveryTips : onStartWorkout}
                 scaleValue={0.96}
                 hapticFeedback={true}
                 hapticType="medium"
@@ -161,7 +179,7 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 >
                   <Text style={styles.actionButtonText}>{config.buttonText}</Text>
                   <Ionicons 
-                    name={isCompleted ? 'eye-outline' : 'arrow-forward'} 
+                    name={isRestDay ? 'leaf-outline' : isCompleted ? 'eye-outline' : 'arrow-forward'} 
                     size={rf(18)} 
                     color="#fff" 
                   />
@@ -193,6 +211,19 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     flex: 1,
+  },
+  dayIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: ResponsiveTheme.spacing.xs,
+  },
+  dayIndicatorText: {
+    fontSize: rf(11),
+    fontWeight: '600',
+    color: ResponsiveTheme.colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   titleRow: {
     flexDirection: 'row',

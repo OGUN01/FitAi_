@@ -394,16 +394,16 @@ function mapToCalculatedMetrics(
   if (hrZonesFromJson && typeof hrZonesFromJson === 'object') {
     heartRateZones = {
       fatBurn: {
-        min: hrZonesFromJson.fatBurn?.min ?? hrZonesFromJson.fat_burn?.min ?? 0,
-        max: hrZonesFromJson.fatBurn?.max ?? hrZonesFromJson.fat_burn?.max ?? 0,
+        min: hrZonesFromJson.fatBurn?.min ?? hrZonesFromJson.fat_burn?.min, // SINGLE SOURCE: advanced_review.heart_rate_zones
+        max: hrZonesFromJson.fatBurn?.max ?? hrZonesFromJson.fat_burn?.max,
       },
       cardio: {
-        min: hrZonesFromJson.cardio?.min ?? 0,
-        max: hrZonesFromJson.cardio?.max ?? 0,
+        min: hrZonesFromJson.cardio?.min,
+        max: hrZonesFromJson.cardio?.max,
       },
       peak: {
-        min: hrZonesFromJson.peak?.min ?? 0,
-        max: hrZonesFromJson.peak?.max ?? 0,
+        min: hrZonesFromJson.peak?.min,
+        max: hrZonesFromJson.peak?.max,
       },
     };
   }
@@ -457,7 +457,7 @@ function mapToCalculatedMetrics(
     primaryGoals: workoutPreferences?.primary_goals ?? null,
     
     // Health Scores - NO FALLBACKS
-    healthScore: (advancedReview as any)?.health_score ?? advancedReview?.overall_health_score ?? null,
+    healthScore: (advancedReview as any)?.health_score ?? advancedReview?.overall_health_score, // DB has both columns
     healthGrade: (advancedReview as any)?.health_grade ?? null,
     fitnessReadinessScore: advancedReview?.fitness_readiness_score ?? null,
     dietReadinessScore: advancedReview?.diet_readiness_score ?? null,
@@ -466,7 +466,7 @@ function mapToCalculatedMetrics(
     heartRateZones,
     
     // VO2 Max - NO FALLBACKS
-    vo2MaxEstimate: (advancedReview as any)?.vo2_max_estimate ?? advancedReview?.estimated_vo2_max ?? null,
+    vo2MaxEstimate: (advancedReview as any)?.vo2_max_estimate ?? advancedReview?.estimated_vo2_max, // DB has both columns
     vo2MaxClassification: (advancedReview as any)?.vo2_max_classification ?? null,
   };
 }

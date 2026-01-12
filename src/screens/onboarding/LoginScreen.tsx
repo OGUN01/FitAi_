@@ -7,9 +7,8 @@ import { Button, Input, PasswordInput, THEME } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginCredentials } from '../../types/user';
 import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
-import { migrationManager } from '../../services/migrationManager';
-import { dataBridge } from '../../services/DataBridge';
 import { GoogleIcon } from '../../components/icons/GoogleIcon';
+// Note: Migration is now handled automatically by auth.ts - no manual migration needed in this screen
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -88,121 +87,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
 
         console.log('🔐 LoginScreen: Login successful, user:', result.user?.email);
 
-        // Check for guest data and trigger migration if needed
+        // Migration is now handled automatically by auth.ts in the background
+        // No need for blocking alerts - just proceed immediately
         if (result.user) {
-          // CRITICAL: Check for guest data BEFORE setting userId in dataManager
-          const hasGuestDataForMigration = await dataBridge.hasGuestDataForMigration();
-          console.log('🔍 LoginScreen: Guest data check result:', hasGuestDataForMigration);
-          
-          // Now set user ID in dataManager for future operations
-          dataBridge.setUserId(result.user.id);
-          
-          const hasLocalData = hasGuestDataForMigration;
-          console.log('🔍 LoginScreen: Final local data check result:', hasLocalData);
-
-          if (hasLocalData) {
-            console.log('🚀 LoginScreen: Starting automatic migration of local data');
-
-            // Show migration starting alert
-            Alert.alert(
-              'Syncing Your Data',
-              'We found your profile data and are syncing it to your account. This will only take a moment.',
-              [
-                {
-                  text: 'OK',
-                  onPress: async () => {
-                    try {
-                      // First, migrate guest data to user-specific keys
-                      console.log('🔄 LoginScreen: Starting guest data key migration...');
-                      const keyMigrationResult = await dataBridge.migrateGuestDataToUser(
-                        result.user.id
-                      );
-                      
-                      if (keyMigrationResult.success) {
-                        console.log('✅ LoginScreen: Guest data key migration successful:', keyMigrationResult.migratedKeys);
-                      } else {
-                        console.warn('⚠️ LoginScreen: Guest data key migration had issues:', keyMigrationResult.errors);
-                      }
-                      
-                      // Now start profile migration to remote storage
-                      console.log('🔄 LoginScreen: Starting remote profile migration...');
-                      const migrationResult = await migrationManager.startProfileMigration(
-                        result.user.id
-                      );
-
-                      if (migrationResult.success) {
-                        console.log('✅ LoginScreen: Migration completed successfully');
-                        Alert.alert(
-                          'Data Synced Successfully!',
-                          'Your profile data has been synced to your account. Welcome back!',
-                          [
-                            {
-                              text: 'Continue',
-                              onPress: () => {
-                                console.log(
-                                  '🔐 LoginScreen: Calling onLoginSuccess after migration'
-                                );
-                                onLoginSuccess();
-                              },
-                            },
-                          ]
-                        );
-                      } else {
-                        console.warn('⚠️ LoginScreen: Migration failed, continuing anyway');
-                        Alert.alert(
-                          'Sync Issue',
-                          'There was an issue syncing some data, but you can continue. Your local data is preserved.',
-                          [
-                            {
-                              text: 'Continue',
-                              onPress: () => {
-                                console.log(
-                                  '🔐 LoginScreen: Calling onLoginSuccess despite migration issues'
-                                );
-                                onLoginSuccess();
-                              },
-                            },
-                          ]
-                        );
-                      }
-                    } catch (migrationError) {
-                      console.error('❌ LoginScreen: Migration error:', migrationError);
-                      Alert.alert(
-                        'Sync Issue',
-                        'There was an issue syncing your data, but you can continue. Your local data is preserved.',
-                        [
-                          {
-                            text: 'Continue',
-                            onPress: () => {
-                              console.log(
-                                '🔐 LoginScreen: Calling onLoginSuccess after migration error'
-                              );
-                              onLoginSuccess();
-                            },
-                          },
-                        ]
-                      );
-                    }
-                  },
-                },
-              ]
-            );
-          } else {
-            // No local data, proceed normally
-            Alert.alert(
-              'Success',
-              'Welcome back! You will now be taken to complete your profile.',
-              [
-                {
-                  text: 'Continue',
-                  onPress: () => {
-                    console.log('🔐 LoginScreen: Calling onLoginSuccess (no migration needed)');
-                    onLoginSuccess();
-                  },
-                },
-              ]
-            );
-          }
+          console.log('✅ LoginScreen: Proceeding to app - migration runs automatically in background');
+          // The auth service automatically triggers migration for guest data
+          // User can access the app immediately - data syncs in background
+          onLoginSuccess();
         }
       } else {
         // Check if error is related to email verification
@@ -251,142 +142,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
       const response = await signInWithGoogle();
 
       if (response.success) {
-        // CRITICAL: Check for guest data BEFORE setting userId in dataManager
-        // This ensures we check guest keys instead of user-specific keys
-        const hasGuestDataForMigration = await dataBridge.hasGuestDataForMigration();
-        console.log('🔍 LoginScreen: Google sign-in - Guest data check result:', hasGuestDataForMigration);
-        
-        // Now set user ID in dataManager for future operations
-        if (response.user) {
-          dataBridge.setUserId(response.user.id);
-        }
-        
-        const hasLocalData = hasGuestDataForMigration;
-        console.log('🔍 LoginScreen: Google sign-in - Final local data check result:', hasLocalData);
-
-        if (hasLocalData && response.user) {
-          console.log('🚀 LoginScreen: Starting automatic migration for Google user');
-
-          // Show migration starting alert
-          Alert.alert(
-            'Syncing Your Data',
-            'We found your profile data and are syncing it to your account. This will only take a moment.',
-            [
-              {
-                text: 'OK',
-                onPress: async () => {
-                  try {
-                    // First, migrate guest data to user-specific keys
-                    console.log('🔄 LoginScreen: Starting guest data key migration...');
-                    const keyMigrationResult = await dataBridge.migrateGuestDataToUser(
-                      response.user.id
-                    );
-                    
-                    if (keyMigrationResult.success) {
-                      console.log('✅ LoginScreen: Guest data key migration successful:', keyMigrationResult.migratedKeys);
-                    } else {
-                      console.warn('⚠️ LoginScreen: Guest data key migration had issues:', keyMigrationResult.errors);
-                    }
-                    
-                    // Now start profile migration to remote storage
-                    console.log('🔄 LoginScreen: Starting remote profile migration...');
-                    const migrationResult = await migrationManager.startProfileMigration(
-                      response.user.id
-                    );
-
-                    if (migrationResult.success) {
-                      console.log('✅ LoginScreen: Google migration completed successfully');
-                      Alert.alert(
-                        'Data Synced Successfully!',
-                        'Your profile data has been synced. Welcome to FitAI!',
-                        [
-                          {
-                            text: 'Continue',
-                            onPress: () => {
-                              console.log(
-                                '🚀 LoginScreen: Calling onLoginSuccess after Google migration'
-                              );
-                              onLoginSuccess();
-                            },
-                          },
-                        ]
-                      );
-                    } else {
-                      console.warn('⚠️ LoginScreen: Google migration failed, continuing anyway');
-                      Alert.alert(
-                        'Welcome to FitAI!',
-                        "There was an issue syncing some data, but you can continue. Let's complete your profile setup.",
-                        [
-                          {
-                            text: 'Continue Setup',
-                            onPress: () => {
-                              console.log(
-                                '🚀 LoginScreen: Calling onLoginSuccess despite Google migration issues'
-                              );
-                              onLoginSuccess();
-                            },
-                          },
-                        ]
-                      );
-                    }
-                  } catch (migrationError) {
-                    console.error('❌ LoginScreen: Google migration error:', migrationError);
-                    Alert.alert(
-                      'Welcome to FitAI!',
-                      "There was an issue syncing your data, but you can continue. Let's complete your profile setup.",
-                      [
-                        {
-                          text: 'Continue Setup',
-                          onPress: () => {
-                            console.log(
-                              '🚀 LoginScreen: Calling onLoginSuccess after Google migration error'
-                            );
-                            onLoginSuccess();
-                          },
-                        },
-                      ]
-                    );
-                  }
-                },
-              },
-            ]
-          );
-        } else {
-          // No local data, handle normal Google sign-in flow
-          if (response.onboardingRequired) {
-            // New user or user who hasn't completed onboarding
-            const message = response.isNewUser
-              ? "Welcome to FitAI! Let's set up your personalized fitness profile to get started."
-              : "Welcome back! Let's complete your profile setup to unlock all features.";
-
-            Alert.alert('Welcome!', message, [
-              {
-                text: 'Continue Setup',
-                onPress: () => {
-                  console.log('🚀 LoginScreen: Redirecting to onboarding for Google user');
-                  onLoginSuccess();
-                },
-              },
-            ]);
-          } else {
-            // Returning user with complete onboarding
-            Alert.alert(
-              'Welcome Back!',
-              'Great to see you again! Taking you back to your dashboard.',
-              [
-                {
-                  text: 'Continue',
-                  onPress: () => {
-                    console.log(
-                      '🏠 LoginScreen: Redirecting to main app for returning Google user'
-                    );
-                    onLoginSuccess();
-                  },
-                },
-              ]
-            );
-          }
-        }
+        console.log('✅ LoginScreen: Google sign-in successful');
+        // Migration is now handled automatically by auth.ts in the background
+        // No need for blocking alerts - just proceed immediately
+        console.log('✅ LoginScreen: Proceeding to app - migration runs automatically in background');
+        onLoginSuccess();
       } else {
         Alert.alert('Google Sign-In Failed', response.error || 'Please try again.');
       }

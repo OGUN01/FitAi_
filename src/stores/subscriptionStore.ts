@@ -2,7 +2,8 @@
 // Zustand store for managing premium subscription state
 
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { subscriptionService, SubscriptionPlan, SubscriptionStatus } from '../services/SubscriptionService';
 
 // Helper functions
@@ -96,7 +97,8 @@ interface SubscriptionStore {
 }
 
 export const useSubscriptionStore = create<SubscriptionStore>()(
-  subscribeWithSelector((set, get) => ({
+  persist(
+    subscribeWithSelector((set, get) => ({
     // Initial State
     isLoading: false,
     isInitialized: false,
@@ -370,7 +372,19 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
     isAdFree: () => {
       return get().checkPremiumAccess('remove_ads');
     },
-  }))
+  })),
+    {
+      name: 'subscription-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        // Persist critical subscription state to survive app restarts
+        subscriptionStatus: state.subscriptionStatus,
+        premiumFeatures: state.premiumFeatures,
+        trialInfo: state.trialInfo,
+        isInitialized: state.isInitialized,
+      }),
+    }
+  )
 );
 
 // Subscription management helpers

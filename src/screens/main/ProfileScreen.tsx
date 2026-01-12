@@ -43,6 +43,7 @@ import {
   PrivacySecurityScreen,
   HelpSupportScreen,
   AboutFitAIScreen,
+  WearableConnectionScreen,
 } from '../settings';
 
 // Import edit modals
@@ -166,6 +167,9 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
       case 'sync':
         Alert.alert('Sync', 'Sync settings coming soon!');
         break;
+      case 'wearables':
+        setCurrentSettingsScreen('wearables');
+        break;
       case 'cache':
         Alert.alert('Clear Cache', 'Are you sure you want to clear the cache?', [
           { text: 'Cancel', style: 'cancel' },
@@ -277,6 +281,13 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
   const dataItems: SettingItem[] = [
     {
+      id: 'wearables',
+      title: 'Connect Wearables',
+      subtitle: 'Sync smartwatch & fitness bands',
+      icon: 'watch-outline',
+      iconColor: '#E91E63',
+    },
+    {
       id: 'export',
       title: 'Export Data',
       subtitle: 'Download your fitness data',
@@ -301,7 +312,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
   ];
 
   // Get user display info
-  const userName = profile?.personalInfo?.name || user?.name || 'Anonymous User';
+  const userName = profile?.personalInfo?.name; // NO FALLBACK - single source of truth
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Recently';
@@ -318,6 +329,8 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
           return <HelpSupportScreen onBack={() => setCurrentSettingsScreen(null)} />;
         case 'about':
           return <AboutFitAIScreen onBack={() => setCurrentSettingsScreen(null)} />;
+        case 'wearables':
+          return <WearableConnectionScreen onBack={() => setCurrentSettingsScreen(null)} />;
         default:
           return null;
       }
@@ -360,11 +373,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
           {/* Stats Row */}
           <ProfileStats
-            currentStreak={userStats?.currentStreak || 0}
-            totalWorkouts={userStats?.totalWorkouts || 0}
-            totalCaloriesBurned={userStats?.totalCaloriesBurned || 0}
-            longestStreak={userStats?.longestStreak || 0}
-            achievements={userStats?.achievements || 0}
+            currentStreak={userStats?.currentStreak}
+            totalWorkouts={userStats?.totalWorkouts}
+            totalCaloriesBurned={userStats?.totalCaloriesBurned}
+            longestStreak={userStats?.longestStreak}
+            achievements={userStats?.achievements}
             onStatPress={(statId) => console.log('[ProfileScreen] Stat pressed:', statId)}
           />
 

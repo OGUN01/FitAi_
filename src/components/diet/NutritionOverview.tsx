@@ -103,8 +103,8 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
   fat,
   onPress,
 }) => {
-  // Calculate percentages
-  const calorieProgress = Math.min((calories.current / calories.target) * 100, 100);
+  // Calculate percentages - guard against division by zero
+  const calorieProgress = calories.target > 0 ? Math.min((calories.current / calories.target) * 100, 100) : 0;
   const caloriesRemaining = Math.max(calories.target - calories.current, 0);
 
   // Ring sizes
@@ -180,7 +180,8 @@ const MacroRow: React.FC<{
   color: string;
   delay: number;
 }> = ({ icon, label, current, target, color, delay }) => {
-  const progress = Math.min((current / target) * 100, 100);
+  // Guard against division by zero
+  const progress = target > 0 ? Math.min((current / target) * 100, 100) : 0;
   const progressAnim = useSharedValue(0);
 
   useEffect(() => {

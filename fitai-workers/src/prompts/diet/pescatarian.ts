@@ -126,7 +126,7 @@ OMEGA-3 TIP: Include fatty fish (salmon, mackerel, sardines) 2-3x per week.
 - Occupation: ${p.OCCUPATION}
 - Preferred Cooking: ${formatCookingMethods(p.COOKING_METHODS)}
 - Meals to Generate: ${p.MEALS_ENABLED.join(', ')}
-
+${p.MEAL_EXCLUSION_INSTRUCTIONS}
 ════════════════════════════════════════════════════════════════════════════════
 🍳 COOKING REQUIREMENTS (based on user's onboarding data):
 ════════════════════════════════════════════════════════════════════════════════

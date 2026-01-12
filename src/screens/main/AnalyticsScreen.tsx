@@ -65,7 +65,7 @@ export const AnalyticsScreen: React.FC = () => {
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo(() => {
     // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
-    const currentWeight = calculatedMetrics?.currentWeightKg || healthMetrics?.weight || profile?.personalInfo?.weight;
+    const currentWeight = profile?.bodyMetrics?.current_weight_kg; // SINGLE SOURCE
     const targetWeight = calculatedMetrics?.targetWeightKg;
     
     // Calculate completed workouts this period
@@ -90,7 +90,7 @@ export const AnalyticsScreen: React.FC = () => {
     return {
       weight: currentWeight ? {
         current: currentWeight,
-        change: weightChange ?? 0,
+        change: weightChange,
         trend: weightChange && weightChange < 0 ? 'down' as const : weightChange && weightChange > 0 ? 'up' as const : 'stable' as const,
         target: targetWeight,
       } : undefined,
@@ -106,8 +106,8 @@ export const AnalyticsScreen: React.FC = () => {
         trend: completedWorkouts > 0 ? 'up' as const : 'stable' as const,
       },
       streak: {
-        days: currentStreak || 0,
-        isActive: (currentStreak || 0) > 0,
+        days: currentStreak, // NO FALLBACK
+        isActive: currentStreak !== undefined && currentStreak > 0,
       },
       // Add onboarding calculated metrics for display
       bmi: calculatedMetrics?.calculatedBMI,

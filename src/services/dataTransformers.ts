@@ -435,6 +435,8 @@ export function transformWorkoutResponse(
 function transformWorkersExerciseToWorkoutSet(workersEx: WorkersExercise): WorkoutSet {
   return {
     exerciseId: workersEx.exerciseId,
+    name: workersEx.exerciseData?.name,        // ✅ Preserve exercise name
+    exerciseData: workersEx.exerciseData,      // ✅ Preserve full exercise data
     sets: workersEx.sets || 3,
     reps: workersEx.reps || 12,
     duration: workersEx.duration,

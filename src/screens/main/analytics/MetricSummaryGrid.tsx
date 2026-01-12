@@ -145,7 +145,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 
   // Determine streak message based on actual streak days
   const getStreakMessage = () => {
-    const days = data.streak?.days || 0;
+    const days = data.streak?.days; // NO FALLBACK
     if (days === 0) return 'Start today!';
     if (days >= 30) return 'On fire!';
     if (days >= 14) return 'Amazing!';
@@ -209,7 +209,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 
         <MetricCard
           title="Day Streak"
-          value={(data.streak?.days || 0).toString()}
+          value={data.streak?.days?.toString() ?? '--'}
           subtitle={getStreakMessage()}
           icon="flame"
           color="#FF6B6B"

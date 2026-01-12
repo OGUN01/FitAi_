@@ -2,7 +2,8 @@
 // Zustand store for managing analytics data and insights
 
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   analyticsEngine, 
   ComprehensiveAnalytics, 
@@ -13,6 +14,8 @@ import {
   SleepWellnessAnalytics,
   PredictiveInsights
 } from '../services/analyticsEngine';
+import { useHealthDataStore } from './healthDataStore';
+import { useHydrationStore } from './hydrationStore';
 
 interface AnalyticsStore {
   // State
@@ -34,7 +37,7 @@ interface AnalyticsStore {
     weightProgress: Array<{ date: string; weight: number }>;
     sleepPattern: Array<{ date: string; hours: number; quality?: number }>;
     caloriesBurned: Array<{ date: string; calories: number }>;
-    waterIntake: Array<{ date: string; liters: number }>;
+    waterIntake: Array<{ date: string; milliliters: number }>; // STANDARDIZED: Always use ML
     performanceScore: Array<{ date: string; score: number }>;
   };
   
@@ -66,7 +69,8 @@ interface AnalyticsStore {
 }
 
 export const useAnalyticsStore = create<AnalyticsStore>()(
-  subscribeWithSelector((set, get) => ({
+  persist(
+    subscribeWithSelector((set, get) => ({
     // Initial State
     isLoading: false,
     isInitialized: false,
@@ -244,7 +248,7 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         })).reverse(),
         waterIntake: metricsHistory.slice(0, 30).map(m => ({
           date: m.date,
-          liters: m.waterIntake,
+          milliliters: m.waterIntake, // STANDARDIZED: Always use ML
         })).reverse(),
         performanceScore: state.getPerformanceScoreData(30),
       };
@@ -309,14 +313,20 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
           score += sleepScore;
           
           // Water intake contribution (0-15 points)
-          const waterOptimal = 2.5;
-          const waterScore = Math.min(15, (m.waterIntake / waterOptimal) * 15);
-          score += waterScore;
+          // Use user's water goal from hydrationStore, or skip if not set
+          const waterGoalML = useHydrationStore.getState().dailyGoalML;
+          if (waterGoalML && m.waterIntake) {
+            const waterScore = Math.min(15, (m.waterIntake / (waterGoalML / 1000)) * 15);
+            score += waterScore;
+          }
           
           // Steps contribution (0-15 points)
-          const stepsOptimal = 10000;
-          const stepsScore = Math.min(15, (m.steps / stepsOptimal) * 15);
-          score += stepsScore;
+          // Use user's steps goal from healthDataStore, or skip if not set
+          const healthMetrics = useHealthDataStore.getState().metrics;
+          if (healthMetrics?.stepsGoal && m.steps) {
+            const stepsScore = Math.min(15, (m.steps / healthMetrics.stepsGoal) * 15);
+            score += stepsScore;
+          }
           
           // Mood/energy contribution (0-15 points)
           if (m.mood && m.energyLevel) {
@@ -393,7 +403,20 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
       
       return currentAnalytics.achievements || [];
     },
-  }))
+  })),
+    {
+      name: 'analytics-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        // Persist critical analytics state
+        metricsHistory: state.metricsHistory,
+        analyticsSummary: state.analyticsSummary,
+        chartData: state.chartData,
+        selectedPeriod: state.selectedPeriod,
+        isInitialized: state.isInitialized,
+      }),
+    }
+  )
 );
 
 // Analytics helpers for easy integration
@@ -421,8 +444,9 @@ export const analyticsHelpers = {
       steps: existingMetrics?.steps || 0,
       distance: existingMetrics?.distance || 0,
       activeMinutes: (existingMetrics?.activeMinutes || 0) + workoutData.duration,
-      sleepHours: existingMetrics?.sleepHours || 8,
-      waterIntake: existingMetrics?.waterIntake || 2.5,
+      // NO FALLBACK: Keep existing value or undefined - don't invent fake data
+      sleepHours: existingMetrics?.sleepHours,
+      waterIntake: existingMetrics?.waterIntake,
     };
     
     await store.addDailyMetrics(updatedMetrics);
@@ -485,8 +509,9 @@ export const analyticsHelpers = {
       steps: existingMetrics?.steps || 0,
       distance: existingMetrics?.distance || 0,
       activeMinutes: existingMetrics?.activeMinutes || 0,
-      sleepHours: existingMetrics?.sleepHours || 8,
-      waterIntake: existingMetrics?.waterIntake || 2.5,
+      // NO FALLBACK: Keep existing value or undefined - don't invent fake data
+      sleepHours: existingMetrics?.sleepHours,
+      waterIntake: existingMetrics?.waterIntake,
     };
     
     await store.addDailyMetrics(updatedMetrics);

@@ -1,0 +1,774 @@
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  🚀 COMPREHENSIVE RULE-BASED WORKOUT GENERATION TEST SUITE[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m
+  Testing 35 realistic scenarios from onboarding flow[0m
+[34m  Worker URL: https://fitai-workers.sharmaharsh9887.workers.dev[0m
+[34m  Test User: harshsharmacop@gmail.com
+[0m
+[32m✅ Authenticated as harshsharmacop@gmail.com[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏋️ Gym: Beginner Male - Muscle Gain[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 25yo male, desk_job[0m
+[36m   📏 175cm, 70kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: beginner[0m
+[36m   📅 4x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1448ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏋️ Gym: Intermediate Female - Weight Loss[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 32yo female, moderate_active[0m
+[36m   📏 165cm, 75kg[0m
+[36m   🎯 Goal: weight_loss, Experience: intermediate[0m
+[36m   📅 5x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 865ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏋️ Gym: Advanced Male - Strength[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 28yo male, light_active[0m
+[36m   📏 180cm, 85kg[0m
+[36m   🎯 Goal: strength, Experience: advanced[0m
+[36m   📅 6x/week, 75 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 912ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏋️ Gym: Beginner Female - General Fitness[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 35yo female, desk_job[0m
+[36m   📏 168cm, 68kg[0m
+[36m   🎯 Goal: maintenance, Experience: beginner[0m
+[36m   📅 3x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 892ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏋️ Gym: Intermediate Male - Athletic Performance[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 24yo male, very_active[0m
+[36m   📏 178cm, 80kg[0m
+[36m   🎯 Goal: athletic_performance, Experience: intermediate[0m
+[36m   📅 5x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 942ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Beginner - Bodyweight Only[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 30yo female, desk_job[0m
+[36m   📏 162cm, 65kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 4x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 858ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Intermediate - Dumbbells + Bands[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 38yo male, desk_job[0m
+[36m   📏 177cm, 82kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: intermediate[0m
+[36m   📅 4x/week, 50 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, resistance band[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1064ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Advanced - Full Home Gym (Barbell + Bench)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 33yo male, light_active[0m
+[36m   📏 180cm, 88kg[0m
+[36m   🎯 Goal: strength, Experience: advanced[0m
+[36m   📅 5x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1453ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Beginner - Minimal (Bands Only)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 45yo female, desk_job[0m
+[36m   📏 160cm, 72kg[0m
+[36m   🎯 Goal: maintenance, Experience: beginner[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 854ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Intermediate - Back Injury[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 40yo male, desk_job[0m
+[36m   📏 178cm, 85kg[0m
+[36m   🎯 Goal: strength, Experience: intermediate[0m
+[36m   📅 4x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   🩹 Injuries: back pain, lower back injury[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 890ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: back[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Beginner - Knee Problems[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 35yo female, light_active[0m
+[36m   📏 165cm, 70kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 3x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   🩹 Injuries: knee problems, knee pain[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1137ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: knee[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Intermediate - Shoulder Issues[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 42yo male, moderate_active[0m
+[36m   📏 175cm, 80kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: intermediate[0m
+[36m   📅 4x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   🩹 Injuries: shoulder impingement, rotator cuff[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 948ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: shoulder[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Beginner - Multiple Injuries (Back + Knee)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 48yo male, desk_job[0m
+[36m   📏 177cm, 92kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 3x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   🩹 Injuries: back pain, knee problems[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 463ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: back, knee[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Intermediate - Hypertension[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 55yo male, desk_job[0m
+[36m   📏 175cm, 95kg[0m
+[36m   🎯 Goal: weight_loss, Experience: intermediate[0m
+[36m   📅 4x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   ⚕️  Medical: hypertension, high blood pressure[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 391ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: hypertension, medication[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Gym: Beginner - Diabetes + Asthma[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 45yo male, light_active[0m
+[36m   📏 177cm, 92kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 3x/week, 40 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   ⚕️  Medical: type 2 diabetes, asthma[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 372ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[33m   ⚠️  Expected warnings not found: diabetes, asthma[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏥 Home: Intermediate - PCOS[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 32yo female, desk_job[0m
+[36m   📏 170cm, 75kg[0m
+[36m   🎯 Goal: weight_loss, Experience: intermediate[0m
+[36m   📅 4x/week, 50 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, resistance band[0m
+[31m   ⚕️  Medical: PCOS, polycystic ovary syndrome[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 975ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[33m   ⚠️  Expected warnings not found: PCOS[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🤰 Home: Pregnancy - Trimester 1[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 28yo female, light_active[0m
+[36m   📏 165cm, 68kg[0m
+[36m   🎯 Goal: maintenance, Experience: intermediate[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band, dumbbell[0m
+[35m   🤰 Pregnancy: Trimester 1[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 836ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: pregnancy[0m
+[31m   ✗ Missing medical clearance warning[0m
+[33m
+⚠️  Test PASSED with warnings[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🤰 Home: Pregnancy - Trimester 2[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 30yo female, desk_job[0m
+[36m   📏 168cm, 72kg[0m
+[36m   🎯 Goal: maintenance, Experience: intermediate[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band[0m
+[35m   🤰 Pregnancy: Trimester 2[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1026ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: pregnancy, trimester 2[0m
+[31m   ✗ Missing medical clearance warning[0m
+[33m
+⚠️  Test PASSED with warnings[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🤰 Home: Pregnancy - Trimester 3[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 35yo female, desk_job[0m
+[36m   📏 166cm, 78kg[0m
+[36m   🎯 Goal: maintenance, Experience: beginner[0m
+[36m   📅 2x/week, 20 min/session[0m
+[36m   🔧 Equipment: body weight[0m
+[35m   🤰 Pregnancy: Trimester 3[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 1015ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: pregnancy, trimester 3[0m
+[31m   ✗ Missing medical clearance warning[0m
+[33m
+⚠️  Test PASSED with warnings[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🤱 Home: Breastfeeding - Beginner[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 29yo female, light_active[0m
+[36m   📏 165cm, 72kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 2x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band[0m
+[35m   🤱 Breastfeeding: Yes[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 902ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[33m   ⚠️  Expected warnings not found: breastfeeding, hydration[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  👴 Gym: Senior (68) - Beginner[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 68yo male, desk_job[0m
+[36m   📏 173cm, 80kg[0m
+[36m   🎯 Goal: flexibility, Experience: beginner[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   🩹 Injuries: balance issues[0m
+[31m   ⚕️  Medical: arthritis[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 869ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: senior, arthritis, balance[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  👵 Home: Senior (70) Female - Flexibility[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 70yo female, desk_job[0m
+[36m   📏 160cm, 60kg[0m
+[36m   🎯 Goal: flexibility, Experience: beginner[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 853ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[33m   ⚠️  Expected warnings not found: senior[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  ⚠️  Home: Extreme - Multiple Injuries + Bodyweight Only[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 38yo female, desk_job[0m
+[36m   📏 163cm, 68kg[0m
+[36m   🎯 Goal: maintenance, Experience: beginner[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight[0m
+[31m   🩹 Injuries: back pain, shoulder issues, wrist problems[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 366ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: back, shoulder, wrist[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  ⚠️  Gym: Heart Disease (CRITICAL)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 62yo male, desk_job[0m
+[36m   📏 178cm, 100kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 3x/week, 30 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[31m   ⚕️  Medical: heart disease, cardiovascular disease[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 396ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m   ✓ All exclusions respected[0m
+[33m   ⚠️  Expected warnings not found: heart disease, CRITICAL, medical clearance[0m
+[31m   ✗ Missing medical clearance warning[0m
+[33m
+⚠️  Test PASSED with warnings[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  💼 Gym: Heavy Labor + High Stress[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 42yo male, heavy_labor[0m
+[36m   📏 180cm, 88kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: intermediate[0m
+[36m   📅 3x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 374ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[33m   ⚠️  Expected warnings not found: recovery[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  💼 Home: Very Active - Athlete[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 26yo male, very_active[0m
+[36m   📏 182cm, 78kg[0m
+[36m   🎯 Goal: athletic_performance, Experience: advanced[0m
+[36m   📅 6x/week, 60 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, kettlebell[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 875ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  ⏰ Gym: Time-Constrained (20 min)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 30yo male, desk_job[0m
+[36m   📏 175cm, 75kg[0m
+[36m   🎯 Goal: maintenance, Experience: intermediate[0m
+[36m   📅 5x/week, 20 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 898ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  ⏰ Home: Ultra Short (15 min)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 35yo female, desk_job[0m
+[36m   📏 165cm, 70kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 5x/week, 15 min/session[0m
+[36m   🔧 Equipment: body weight[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 463ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Kettlebells Only[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 33yo male, light_active[0m
+[36m   📏 177cm, 82kg[0m
+[36m   🎯 Goal: strength, Experience: intermediate[0m
+[36m   📅 4x/week, 40 min/session[0m
+[36m   🔧 Equipment: body weight, kettlebell[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 918ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🏠 Home: Cardio Equipment (Treadmill + Bike)[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 40yo female, desk_job[0m
+[36m   📏 168cm, 78kg[0m
+[36m   🎯 Goal: endurance, Experience: beginner[0m
+[36m   📅 4x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, stationary bike[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 869ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🔄 Both: Intermediate - Flexible Location[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 32yo male, light_active[0m
+[36m   📏 178cm, 80kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: intermediate[0m
+[36m   📅 4x/week, 50 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, resistance band[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 712ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  👦 Gym: Young Male (21) - Bulking[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 21yo male, light_active[0m
+[36m   📏 180cm, 72kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: intermediate[0m
+[36m   📅 5x/week, 75 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 676ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  👧 Home: Young Female (23) - Toning[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 23yo female, desk_job[0m
+[36m   📏 165cm, 60kg[0m
+[36m   🎯 Goal: muscle_gain, Experience: beginner[0m
+[36m   📅 4x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, resistance band[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 841ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  🧔 Gym: Middle Age Male (48) - Maintenance[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 48yo male, desk_job[0m
+[36m   📏 177cm, 85kg[0m
+[36m   🎯 Goal: maintenance, Experience: intermediate[0m
+[36m   📅 3x/week, 45 min/session[0m
+[36m   🔧 Equipment: body weight, dumbbell, barbell...[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 401ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m  👩 Home: Middle Age Female (52) - Weight Loss[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[33m
+📋 Profile Summary:[0m
+[36m   👤 52yo female, light_active[0m
+[36m   📏 162cm, 75kg[0m
+[36m   🎯 Goal: weight_loss, Experience: beginner[0m
+[36m   📅 4x/week, 40 min/session[0m
+[36m   🔧 Equipment: body weight, resistance band, dumbbell[0m
+[32m
+✅ Generation Success![0m
+[36m   ⏱️  Time: 868ms[0m
+[36m   📋 Plan: N/A[0m
+[36m   🗓️  Workouts: 0 days/week[0m
+[33m
+🎯 Validation:[0m
+[32m
+✅ Test PASSED[0m
+[1m
+════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[1m  📊 TEST SUMMARY[0m
+[1m════════════════════════════════════════════════════════════════════════════════════════════════════[0m
+[36m
+Total Tests: 35[0m
+[32m✅ Passed: 31[0m
+[33m⚠️  Passed with Warnings: 4[0m
+[31m❌ Failed: 0[0m
+[33m
+⏱️  Performance:[0m
+[36m   Average: 818ms[0m
+[36m   Min: 366ms[0m
+[36m   Max: 1453ms[0m
+[31m   Target: <1200ms ✗[0m
+[32m
+🎯 Success Rate: 100.0%[0m
+[32m
+🎉 ALL TESTS PASSED![0m

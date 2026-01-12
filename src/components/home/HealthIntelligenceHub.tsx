@@ -167,13 +167,13 @@ const MetricItem: React.FC<{
 
 export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
   sleepHours = 0,
-  sleepQuality = 'fair',
+  sleepQuality, // NO DEFAULT - from healthDataStore
   restingHeartRate,
   hrTrend,
-  steps = 0,
-  stepsGoal = 10000,
-  activeCalories = 0,
-  age = 30,
+  steps, // NO DEFAULT - from healthDataStore
+  stepsGoal, // NO DEFAULT - must come from store/props
+  activeCalories, // NO DEFAULT - from healthDataStore
+  age, // NO DEFAULT - from userStore
   onPress,
   onDetailPress,
 }) => {

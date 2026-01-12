@@ -447,45 +447,33 @@ export const useDashboardIntegration = () => {
 
   /**
    * Get user stats for dashboard
+   * NO FALLBACKS - returns undefined values if profile is missing
    */
   const getUserStats = () => {
-    if (!profile) {
-      return {
-        totalWorkouts: 0,
-        totalCaloriesBurned: 0,
-        currentStreak: 0,
-        longestStreak: 0,
-      };
-    }
-
-    return profile.stats;
+    // NO FALLBACKS - return actual profile stats or undefined
+    return profile?.stats;
   };
 
   /**
    * Get user preferences
+   * NO FALLBACKS - returns undefined if profile is missing
    */
   const getUserPreferences = () => {
-    if (!profile) {
-      return {
-        units: 'metric' as const,
-        notifications: true,
-        darkMode: true,
-      };
-    }
-
-    return profile.preferences;
+    // NO FALLBACKS - return actual preferences or undefined
+    return profile?.preferences;
   };
 
   /**
    * Get user BMI and health metrics
+   * NO FALLBACKS - returns null if data is missing
    */
   const getHealthMetrics = () => {
-    // Try to get height/weight from bodyMetrics first, then fall back to personalInfo (for backward compatibility)
-    const heightCm = profile?.bodyMetrics?.height_cm || 0;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg || 0;
+    // Single source: profile.bodyMetrics - NO FALLBACKS
+    const heightCm = profile?.bodyMetrics?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg;
 
     if (!heightCm || !weightKg) {
-      return null;
+      return null; // Explicit null when data missing
     }
 
     const bmi = api.utils.calculateBMI(weightKg, heightCm);
@@ -508,13 +496,13 @@ export const useDashboardIntegration = () => {
     }
 
     // Get height/weight from bodyMetrics, age/gender from personalInfo
-    const heightCm = profile?.bodyMetrics?.height_cm || 0;
-    const weightKg = profile?.bodyMetrics?.current_weight_kg || 0;
+    const heightCm = profile?.bodyMetrics?.height_cm;
+    const weightKg = profile?.bodyMetrics?.current_weight_kg;
     const age = profile.personalInfo?.age;
     const gender = profile.personalInfo?.gender;
-    const activityLevelValue = (profile.personalInfo as any)?.activityLevel || 'moderate';
+    const activityLevelValue = (profile.personalInfo as any)?.activityLevel;
 
-    if (!heightCm || !weightKg || !age || !gender) {
+    if (!heightCm || !weightKg || !age || !gender || !activityLevelValue) {
       return null;
     }
 

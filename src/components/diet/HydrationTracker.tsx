@@ -119,7 +119,8 @@ export const HydrationTracker: React.FC<HydrationTrackerProps> = ({
   onPress,
 }) => {
   const progress = useMemo(() => {
-    return Math.min((currentIntake / dailyGoal) * 100, 100);
+    // Guard against division by zero
+    return dailyGoal > 0 ? Math.min((currentIntake / dailyGoal) * 100, 100) : 0;
   }, [currentIntake, dailyGoal]);
 
   const remainingMl = Math.max(dailyGoal - currentIntake, 0);

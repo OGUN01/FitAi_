@@ -163,6 +163,13 @@ export const UserProfileSchema = z.object({
   // Restrictions
   injuries: z.array(z.string()).optional(),
   restrictions: z.array(z.string()).optional(),
+
+  // ✅ CRITICAL: Medical safety fields
+  medicalConditions: z.array(z.string()).optional().default([]),
+  medications: z.array(z.string()).optional().default([]),
+  pregnancyStatus: z.boolean().optional().default(false),
+  pregnancyTrimester: z.enum(['1', '2', '3']).or(z.number().int().min(1).max(3)).optional(),
+  breastfeedingStatus: z.boolean().optional().default(false),
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
@@ -181,10 +188,15 @@ export const WorkoutGenerationRequestSchema = z.object({
   // User profile (required)
   profile: UserProfileSchema,
 
-  // Workout-specific parameters
-  workoutType: WorkoutTypeSchema.default('full_body'),
-  duration: z.number().int().min(10).max(180).default(45), // minutes
-  difficultyOverride: ExperienceLevelSchema.optional(), // Override profile experience level
+  // ✅ NEW: Weekly plan parameters (REQUIRED for all workout generation)
+  weeklyPlan: z.object({
+    workoutsPerWeek: z.number().int().min(1).max(7).default(3),
+    preferredDays: z.array(z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'])).optional(),
+    workoutTypes: z.array(z.string()).optional(), // User's preferred workout types from onboarding
+    prefersVariety: z.boolean().default(false),
+    activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'extreme']).optional(),
+    preferredWorkoutTime: z.enum(['morning', 'afternoon', 'evening']).optional().default('morning'), // ✅ NEW
+  }),
 
   // Optional filters
   focusMuscles: z.array(MuscleGroupSchema).optional(),
@@ -217,9 +229,9 @@ export const WorkoutExerciseSchema = z.object({
 });
 
 /**
- * Complete workout structure from AI
+ * Single workout structure from AI
  */
-export const WorkoutResponseSchema = z.object({
+export const SingleWorkoutSchema = z.object({
   // Workout metadata
   title: z.string(),
   description: z.string(),
@@ -246,6 +258,26 @@ export const WorkoutResponseSchema = z.object({
   coachingTips: z.array(z.string()).optional(),
   progressionNotes: z.string().optional(),
 });
+
+/**
+ * ✅ NEW: Weekly workout plan structure (array of workouts for different days)
+ */
+export const WeeklyWorkoutPlanSchema = z.object({
+  id: z.string(),
+  planTitle: z.string(),
+  planDescription: z.string(),
+  workouts: z.array(z.object({
+    dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+    workout: SingleWorkoutSchema,
+  })),
+  restDays: z.array(z.string()),
+  totalEstimatedCalories: z.number().int(),
+});
+
+/**
+ * ✅ NEW: Weekly plan response (NO FALLBACK - weekly plan only)
+ */
+export const WorkoutResponseSchema = WeeklyWorkoutPlanSchema;
 
 export type WorkoutResponse = z.infer<typeof WorkoutResponseSchema>;
 

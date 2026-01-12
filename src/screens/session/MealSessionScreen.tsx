@@ -117,6 +117,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
 
     try {
       // Mark meal as completed in the tracking service
+      // NO FALLBACK: Pass userId if available, undefined otherwise (handled by completionTracking)
       const success = await completionTrackingService.completeMeal(
         meal.id,
         {
@@ -126,7 +127,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
           totalItems: totalSteps,
           completedAt: new Date().toISOString(),
         },
-        user?.id || 'dev-user-001'
+        user?.id // Supabase sync requires userId, local storage works without
       );
 
       if (success) {

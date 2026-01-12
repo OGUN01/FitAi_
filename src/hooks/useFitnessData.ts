@@ -7,6 +7,7 @@ import {
   FitnessGoals,
 } from '../services/fitnessData';
 import { useAuth } from './useAuth';
+import { fitnessRefreshService } from '../services/fitnessRefreshService';
 
 interface UseFitnessDataReturn {
   // Exercises
@@ -405,6 +406,20 @@ export const useFitnessData = (): UseFitnessDataReturn => {
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       refreshAll();
+    }
+  }, [isAuthenticated, user?.id, refreshAll]);
+
+  // Register with fitness refresh service for automatic updates
+  // This ensures useFitnessData reacts to workout completions from other parts of the app
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      const unsubscribe = fitnessRefreshService.onRefreshNeeded(refreshAll);
+      console.log('📡 Registered fitness data hook with refresh service');
+
+      return () => {
+        unsubscribe();
+        console.log('📡 Unregistered fitness data hook from refresh service');
+      };
     }
   }, [isAuthenticated, user?.id, refreshAll]);
 

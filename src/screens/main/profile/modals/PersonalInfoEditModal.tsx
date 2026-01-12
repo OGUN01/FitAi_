@@ -98,7 +98,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       setGender(info?.gender || '');
       // ✅ Get height/weight from bodyMetrics (database: body_analysis table)
       setHeight(bodyMetrics?.height_cm?.toString() || '');
-      setWeight(bodyMetrics?.current_weight_kg?.toString() || '');
+      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? ''); // Empty string if no data
       // ✅ FIX: Get activity level from workoutPreferences, not personalInfo
       setActivityLevel(workoutPrefs?.activity_level || '');
       setErrors({});
@@ -206,7 +206,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       age !== (info?.age?.toString() || '') ||
       gender !== (info?.gender || '') ||
       height !== (bodyMetrics?.height_cm?.toString() || '') ||
-      weight !== (bodyMetrics?.current_weight_kg?.toString() || '') ||
+      weight !== (bodyMetrics?.current_weight_kg?.toString() ?? '') ||
       activityLevel !== (workoutPrefs?.activity_level || '')
     );
   }, [name, age, gender, height, weight, activityLevel, profile]);
@@ -304,6 +304,11 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
 };
 
 export default PersonalInfoEditModal;
+
+
+
+
+
 
 
 

@@ -530,7 +530,13 @@ class HealthKitService {
 
   async getSleepBasedWorkoutRecommendations(): Promise<any> {
     const data = await this.fetchHealthData();
-    const sleepDuration = data.sleepHours || 7;
+    const sleepDuration = data.sleepHours; // NO FALLBACK - require actual sleep data
+
+    // If no sleep data, return null recommendations
+    if (!sleepDuration) {
+      console.warn('[HealthKit] No sleep data available for recommendations');
+      return { sleepQuality: null, sleepDuration: null, recommendations: null };
+    }
 
     let sleepQuality: 'poor' | 'fair' | 'good' | 'excellent' = 'fair';
     if (sleepDuration < 6) sleepQuality = 'poor';

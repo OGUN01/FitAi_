@@ -35,7 +35,8 @@
 		"VERCEL_AI_GATEWAY_URL": "https://ai-gateway.vercel.sh/v1",
 		"CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID": "914022281183abb7ca6a5590fec4b994",
 		"CLOUDFLARE_AI_GATEWAY_SLUG": "fitai-production",
-		"CLOUDFLARE_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/914022281183abb7ca6a5590fec4b994/fitai-production"
+		"CLOUDFLARE_AI_GATEWAY_URL": "https://gateway.ai.cloudflare.com/v1/914022281183abb7ca6a5590fec4b994/fitai-production",
+		"RULE_BASED_ROLLOUT_PERCENTAGE": "100"
 	}
 	/**
 	 * Smart Placement

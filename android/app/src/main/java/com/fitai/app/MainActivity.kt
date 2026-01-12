@@ -7,7 +7,6 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
-import dev.matinzd.healthconnect.permissions.HealthConnectPermissionDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
 
@@ -17,10 +16,7 @@ class MainActivity : ReactActivity() {
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
-    super.onCreate(savedInstanceState)
-
-    // Set Health Connect permission delegate - Critical for permission handling
-    HealthConnectPermissionDelegate.setPermissionDelegate(this)
+    super.onCreate(null)
   }
 
   /**

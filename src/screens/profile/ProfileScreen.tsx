@@ -604,7 +604,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
               {/* User Info */}
               <Text style={styles.heroName}>
-                {profile?.personalInfo?.name || user?.name || 'Anonymous User'}
+                {profile?.personalInfo?.name}
               </Text>
               <Text style={styles.heroMemberSince}>
                 Member since{' '}
@@ -619,7 +619,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
               {/* Streak Badge (Floating) */}
               <GlassCard elevation={2} blurIntensity="medium" padding="sm" borderRadius="lg" style={styles.streakBadge}>
                 <Ionicons name="flame-outline" size={rf(20)} color={ResponsiveTheme.colors.primary} />
-                <Text style={styles.streakNumber}>{userStats?.currentStreak || 0}</Text>
+                <Text style={styles.streakNumber}>{userStats?.currentStreak ?? '--'}</Text>
                 <Text style={styles.streakLabel}>Day Streak</Text>
               </GlassCard>
             </View>
@@ -652,7 +652,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
             <View style={styles.quickStatsGrid}>
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
                 <Ionicons name="barbell-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
-                <Text style={styles.quickStatValue}>{userStats?.totalWorkouts || 0}</Text>
+                <Text style={styles.quickStatValue}>{userStats?.totalWorkouts ?? '--'}</Text>
                 <Text style={styles.quickStatLabel}>Total Workouts</Text>
               </GlassCard>
 
@@ -664,7 +664,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({ navigation }) =
 
               <GlassCard elevation={1} padding="md" blurIntensity="light" borderRadius="lg" style={styles.quickStatCard}>
                 <Ionicons name="flame-outline" size={rf(32)} color={ResponsiveTheme.colors.primary} style={styles.quickStatIcon} />
-                <Text style={styles.quickStatValue}>{userStats?.currentStreak || 0}</Text>
+                <Text style={styles.quickStatValue}>{userStats?.currentStreak ?? '--'}</Text>
                 <Text style={styles.quickStatLabel}>Streak Days</Text>
               </GlassCard>
 

@@ -33,6 +33,15 @@ class ExerciseFilterService {
   constructor() {
     // Load and process exercises with difficulty categorization
     this.exercises = this.categorizeExercises();
+    console.log(`[exerciseFilterService] Initialized with ${this.exercises.length} exercises`);
+
+    // Debug: Check if specific exercise IDs exist
+    const testIds = ['75Bgtjy', 'cuC7529', '50BETrz'];
+    console.log('[exerciseFilterService] Testing sample IDs:');
+    testIds.forEach(id => {
+      const found = this.exercises.find(ex => ex.exerciseId === id);
+      console.log(`  ${id}: ${found ? found.name : 'NOT FOUND'}`);
+    });
   }
 
   /**
@@ -313,7 +322,20 @@ class ExerciseFilterService {
    * Get exercise by ID for direct lookup
    */
   getExerciseById(exerciseId: string): FilteredExercise | null {
-    return this.exercises.find((ex) => ex.exerciseId === exerciseId) || null;
+    if (!exerciseId) {
+      console.warn('[exerciseFilterService] getExerciseById called with empty ID');
+      return null;
+    }
+
+    const exercise = this.exercises.find((ex) => ex.exerciseId === exerciseId);
+
+    if (!exercise) {
+      console.warn(`[exerciseFilterService] Exercise not found for ID: "${exerciseId}"`);
+      console.warn(`[exerciseFilterService] Total exercises loaded: ${this.exercises.length}`);
+      console.warn(`[exerciseFilterService] First 5 exercise IDs:`, this.exercises.slice(0, 5).map(e => e.exerciseId));
+    }
+
+    return exercise || null;
   }
 
   /**
