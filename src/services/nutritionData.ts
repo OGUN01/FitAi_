@@ -1,8 +1,8 @@
-import { supabase } from './supabase';
-import { crudOperations } from './crudOperations';
-import { dataBridge } from './DataBridge';
-import { AuthUser } from '../types/user';
-import { MealLog, SyncStatus } from '../types/localData';
+import { supabase } from "./supabase";
+import { crudOperations } from "./crudOperations";
+import { dataBridge } from "./DataBridge";
+import { AuthUser } from "../types/user";
+import { MealLog, SyncStatus } from "../types/localData";
 
 // Types for nutrition data
 export interface Food {
@@ -25,7 +25,7 @@ export interface Meal {
   id: string;
   user_id: string;
   name: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  type: "breakfast" | "lunch" | "dinner" | "snack";
   total_calories: number;
   total_protein: number;
   total_carbs: number;
@@ -107,9 +107,11 @@ class NutritionDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log('Nutrition Data Service initialized with Track B integration');
+      console.log(
+        "Nutrition Data Service initialized with Track B integration",
+      );
     } catch (error) {
-      console.error('Failed to initialize Nutrition Data Service:', error);
+      console.error("Failed to initialize Nutrition Data Service:", error);
       throw error;
     }
   }
@@ -123,25 +125,27 @@ class NutritionDataService {
     barcode?: string;
   }): Promise<NutritionDataResponse<Food[]>> {
     try {
-      let query = supabase.from('foods').select('*').order('name');
+      let query = supabase.from("foods").select("*").order("name");
 
       // Apply filters
-      if (filters?.category && filters.category !== 'all') {
-        query = query.ilike('category', `%${filters.category}%`);
+      if (filters?.category && filters.category !== "all") {
+        query = query.ilike("category", `%${filters.category}%`);
       }
 
       if (filters?.search) {
-        query = query.or(`name.ilike.%${filters.search}%,category.ilike.%${filters.search}%`);
+        query = query.or(
+          `name.ilike.%${filters.search}%,category.ilike.%${filters.search}%`,
+        );
       }
 
       if (filters?.barcode) {
-        query = query.eq('barcode', filters.barcode);
+        query = query.eq("barcode", filters.barcode);
       }
 
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching foods:', error);
+        console.error("Error fetching foods:", error);
         return {
           success: false,
           error: error.message,
@@ -153,10 +157,10 @@ class NutritionDataService {
         data: data || [],
       };
     } catch (error) {
-      console.error('Error in getFoods:', error);
+      console.error("Error in getFoods:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch foods',
+        error: error instanceof Error ? error.message : "Failed to fetch foods",
       };
     }
   }
@@ -168,16 +172,16 @@ class NutritionDataService {
   async getUserMeals(
     userId: string,
     date?: string,
-    limit?: number
+    limit?: number,
   ): Promise<NutritionDataResponse<Meal[]>> {
     try {
       // CRITICAL: Query meal_logs table directly from Supabase
       // This is where completionTrackingService.completeMeal inserts data
       let query = supabase
-        .from('meal_logs')
-        .select('*')
-        .eq('user_id', userId)
-        .order('logged_at', { ascending: false });
+        .from("meal_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .order("logged_at", { ascending: false });
 
       if (date) {
         const startDate = new Date(date);
@@ -186,8 +190,8 @@ class NutritionDataService {
         endDate.setHours(23, 59, 59, 999);
 
         query = query
-          .gte('logged_at', startDate.toISOString())
-          .lte('logged_at', endDate.toISOString());
+          .gte("logged_at", startDate.toISOString())
+          .lte("logged_at", endDate.toISOString());
       }
 
       if (limit) {
@@ -197,14 +201,16 @@ class NutritionDataService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching meal_logs:', error);
+        console.error("Error fetching meal_logs:", error);
         return {
           success: false,
           error: error.message,
         };
       }
 
-      console.log(`📊 meal_logs query result: ${data?.length || 0} meals for date ${date || 'all'}`);
+      console.log(
+        `📊 meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
+      );
 
       // Transform meal_logs data to match expected Meal interface
       // Supabase meal_logs columns: meal_type, meal_name, total_calories, total_protein, total_carbohydrates, total_fat
@@ -226,13 +232,14 @@ class NutritionDataService {
 
       return {
         success: true,
-        data: meals,
+        data: meals as any,
       };
     } catch (error) {
-      console.error('Error in getUserMeals:', error);
+      console.error("Error in getUserMeals:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch user meals',
+        error:
+          error instanceof Error ? error.message : "Failed to fetch user meals",
       };
     }
   }
@@ -241,17 +248,17 @@ class NutritionDataService {
    * Get user's diet preferences
    */
   async getUserDietPreferences(
-    userId: string
+    userId: string,
   ): Promise<NutritionDataResponse<UserDietPreferences>> {
     try {
       const { data, error } = await supabase
-        .from('diet_preferences')
-        .select('*')
-        .eq('user_id', userId)
+        .from("diet_preferences")
+        .select("*")
+        .eq("user_id", userId)
         .single();
 
       if (error) {
-        console.error('Error fetching diet preferences:', error);
+        console.error("Error fetching diet preferences:", error);
         return {
           success: false,
           error: error.message,
@@ -263,38 +270,51 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.error('Error in getUserDietPreferences:', error);
+      console.error("Error in getUserDietPreferences:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch diet preferences',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch diet preferences",
       };
     }
   }
 
   /**
    * Get user's nutrition goals
-   * 
+   *
    * PRIORITY: First reads from advanced_review (onboarding calculations),
    * then falls back to nutrition_goals table for backward compatibility.
-   * 
+   *
    * CRITICAL: Does NOT create default goals - if no data exists, returns null.
    * This makes data flow issues immediately visible instead of masking them.
    */
-  async getUserNutritionGoals(userId: string): Promise<NutritionDataResponse<NutritionGoals>> {
+  async getUserNutritionGoals(
+    userId: string,
+  ): Promise<NutritionDataResponse<NutritionGoals>> {
     try {
-      console.log('📊 [NutritionData] getUserNutritionGoals - Loading for user:', userId);
-      
+      console.log(
+        "📊 [NutritionData] getUserNutritionGoals - Loading for user:",
+        userId,
+      );
+
       // STEP 1: Try to load from advanced_review (onboarding calculated values)
       // This is the SOURCE OF TRUTH for nutrition targets
       const { data: advancedReview, error: advancedError } = await supabase
-        .from('advanced_review')
-        .select('daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g, daily_water_ml')
-        .eq('user_id', userId)
+        .from("advanced_review")
+        .select(
+          "daily_calories, daily_protein_g, daily_carbs_g, daily_fat_g, daily_water_ml",
+        )
+        .eq("user_id", userId)
         .maybeSingle();
-      
+
       if (advancedReview && !advancedError) {
-        console.log('✅ [NutritionData] Found goals in advanced_review (onboarding):', advancedReview);
-        
+        console.log(
+          "✅ [NutritionData] Found goals in advanced_review (onboarding):",
+          advancedReview,
+        );
+
         // Map advanced_review fields to NutritionGoals format
         const goalsFromOnboarding: NutritionGoals = {
           id: `onboarding_${userId}`,
@@ -317,22 +337,25 @@ class NutritionDataService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-        
+
         return {
           success: true,
           data: goalsFromOnboarding,
         };
       }
-      
+
       // STEP 2: Fallback to nutrition_goals table (for backward compatibility)
       const { data, error } = await supabase
-        .from('nutrition_goals')
-        .select('*')
-        .eq('user_id', userId)
+        .from("nutrition_goals")
+        .select("*")
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [NutritionData] Error fetching nutrition goals:', error);
+        console.error(
+          "❌ [NutritionData] Error fetching nutrition goals:",
+          error,
+        );
         return {
           success: false,
           error: error.message,
@@ -342,24 +365,39 @@ class NutritionDataService {
       // CRITICAL: NO DEFAULT CREATION
       // If no goals exist anywhere, return null to make the issue visible
       if (!data) {
-        console.warn('⚠️ [NutritionData] No nutrition goals found for user:', userId);
-        console.warn('⚠️ [NutritionData] User needs to complete onboarding to calculate nutrition targets');
+        console.warn(
+          "⚠️ [NutritionData] No nutrition goals found for user:",
+          userId,
+        );
+        console.warn(
+          "⚠️ [NutritionData] User needs to complete onboarding to calculate nutrition targets",
+        );
         return {
           success: false,
-          error: 'No nutrition goals found. Please complete onboarding to calculate your personalized targets.',
+          error:
+            "No nutrition goals found. Please complete onboarding to calculate your personalized targets.",
         };
       }
 
-      console.log('✅ [NutritionData] Found goals in nutrition_goals table:', data);
+      console.log(
+        "✅ [NutritionData] Found goals in nutrition_goals table:",
+        data,
+      );
       return {
         success: true,
         data,
       };
     } catch (error) {
-      console.error('❌ [NutritionData] Error in getUserNutritionGoals:', error);
+      console.error(
+        "❌ [NutritionData] Error in getUserNutritionGoals:",
+        error,
+      );
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch nutrition goals',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch nutrition goals",
       };
     }
   }
@@ -375,12 +413,12 @@ class NutritionDataService {
     userId: string,
     mealData: {
       name: string;
-      type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      type: "breakfast" | "lunch" | "dinner" | "snack";
       foods: {
         food_id: string;
         quantity_grams: number;
       }[];
-    }
+    },
   ): Promise<NutritionDataResponse<Meal>> {
     try {
       // Calculate nutrition totals
@@ -395,7 +433,7 @@ class NutritionDataService {
           id: `${f.food_id}_${Date.now()}`,
           foodId: f.food_id,
           quantity: f.quantity_grams,
-          unit: 'grams',
+          unit: "grams",
           macros: undefined,
         })),
         totalCalories: nutritionTotals.calories,
@@ -412,7 +450,7 @@ class NutritionDataService {
           lastSyncedAt: undefined,
           lastModifiedAt: new Date().toISOString(),
           syncVersion: 1,
-          deviceId: 'dev-device',
+          deviceId: "dev-device",
         },
       };
 
@@ -421,7 +459,7 @@ class NutritionDataService {
 
       // Also create in Supabase for immediate access
       const { data, error } = await supabase
-        .from('meals')
+        .from("meals")
         .insert({
           user_id: userId,
           name: mealData.name,
@@ -436,7 +474,7 @@ class NutritionDataService {
         .single();
 
       if (error) {
-        console.error('Error creating meal:', error);
+        console.error("Error creating meal:", error);
         return {
           success: false,
           error: error.message,
@@ -449,9 +487,11 @@ class NutritionDataService {
           mealData.foods.map(async (food) => {
             // Get nutrition for this specific food and quantity
             const { data: foodData } = await supabase
-              .from('foods')
-              .select('calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
-              .eq('id', food.food_id)
+              .from("foods")
+              .select(
+                "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
+              )
+              .eq("id", food.food_id)
               .single();
 
             const multiplier = food.quantity_grams / 100;
@@ -459,18 +499,31 @@ class NutritionDataService {
               meal_id: data.id,
               food_id: food.food_id,
               quantity_grams: food.quantity_grams,
-              calories: foodData ? Math.round(foodData.calories_per_100g * multiplier) : 0,
-              protein: foodData ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10 : 0,
-              carbs: foodData ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10 : 0,
-              fat: foodData ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10 : 0,
+              calories: foodData
+                ? Math.round(foodData.calories_per_100g * multiplier)
+                : 0,
+              protein: foodData
+                ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10
+                : 0,
+              carbs: foodData
+                ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10
+                : 0,
+              fat: foodData
+                ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10
+                : 0,
             };
-          })
+          }),
         );
 
-        const { error: mealFoodsError } = await supabase.from('meal_foods').insert(mealFoodsData);
+        const { error: mealFoodsError } = await supabase
+          .from("meal_foods")
+          .insert(mealFoodsData);
 
         if (mealFoodsError) {
-          console.warn('Warning: Failed to create meal_foods entries:', mealFoodsError);
+          console.warn(
+            "Warning: Failed to create meal_foods entries:",
+            mealFoodsError,
+          );
           // Don't fail the entire operation for this
         }
       }
@@ -480,10 +533,10 @@ class NutritionDataService {
         data,
       };
     } catch (error) {
-      console.error('Error in logMeal:', error);
+      console.error("Error in logMeal:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to log meal',
+        error: error instanceof Error ? error.message : "Failed to log meal",
       };
     }
   }
@@ -492,7 +545,7 @@ class NutritionDataService {
    * Calculate nutrition totals for a meal
    */
   private async calculateMealNutrition(
-    foods: { food_id: string; quantity_grams: number }[]
+    foods: { food_id: string; quantity_grams: number }[],
   ): Promise<{
     calories: number;
     protein: number;
@@ -506,9 +559,11 @@ class NutritionDataService {
 
     for (const foodItem of foods) {
       const { data: food } = await supabase
-        .from('foods')
-        .select('calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g')
-        .eq('id', foodItem.food_id)
+        .from("foods")
+        .select(
+          "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
+        )
+        .eq("id", foodItem.food_id)
         .single();
 
       if (food) {
@@ -534,7 +589,7 @@ class NutritionDataService {
   private convertMealLogToMeal(mealLog: MealLog): Meal {
     return {
       id: mealLog.id,
-      user_id: mealLog.userId || 'local-user',
+      user_id: mealLog.userId || "local-user",
       name: mealLog.notes || `${mealLog.mealType} meal`,
       type: mealLog.mealType,
       total_calories: mealLog.totalCalories,

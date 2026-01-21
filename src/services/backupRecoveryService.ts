@@ -366,7 +366,9 @@ export class BackupRecoveryService {
         error instanceof Error ? error.message : String(error);
       const result: BackupResult = {
         success: false,
-        timestamp: new Date(),
+        backupId: this.generateBackupId(),
+        type: "full",
+        location: "local",
         startTime,
         endTime,
         duration: endTime.getTime() - startTime.getTime(),

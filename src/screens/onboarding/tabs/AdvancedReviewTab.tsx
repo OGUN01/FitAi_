@@ -3188,12 +3188,12 @@ const styles = StyleSheet.create({
     // Inherits from ColorCodedZones component
   },
 
-  fitnessCardTitle: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
+  // fitnessCardTitle: {  // Duplicate removed
+  //   fontSize: ResponsiveTheme.fontSize.md,
+  //   fontWeight: ResponsiveTheme.fontWeight.semibold,
+  //   color: ResponsiveTheme.colors.text,
+  //   marginBottom: ResponsiveTheme.spacing.sm,
+  // },
 
   fitnessCardValue: {
     fontSize: ResponsiveTheme.fontSize.xxl,

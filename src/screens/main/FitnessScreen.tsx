@@ -391,7 +391,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         },
       ],
     );
-  }, [generateWeeklyWorkoutPlan]);
+  }, []);
 
   // Generate weekly workout plan
   const generateWeeklyWorkoutPlan = useCallback(async () => {
@@ -483,7 +483,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
           >
             {/* 1. Header */}
             <FitnessHeader
-              userName={userName}
+              userName={userName || ""}
               weekNumber={weeklyWorkoutPlan?.weekNumber || 1}
               totalWorkouts={weekStats.totalWorkouts}
               completedWorkouts={weekStats.completedCount}
@@ -494,14 +494,14 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
             {weeklyWorkoutPlan && (
               <View style={styles.section}>
                 <TodayWorkoutCard
-                  workout={selectedDayWorkout}
+                  workout={selectedDayWorkout as any}
                   isRestDay={isSelectedDayRestDay}
                   isCompleted={selectedDayProgress === 100}
-                  progress={selectedDayProgress}
+                  progress={selectedDayProgress || 0}
                   onStartWorkout={handleStartSelectedDayWorkout}
                   onViewDetails={handleViewWorkoutDetails}
                   onRecoveryTips={handleRecoveryTips}
-                  selectedDay={selectedDay}
+                  selectedDay={selectedDay as any}
                   isToday={isSelectedDayToday}
                 />
               </View>
@@ -514,7 +514,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                   plan={weeklyWorkoutPlan}
                   workoutProgress={workoutProgress}
                   selectedDay={selectedDay}
-                  onDayPress={setSelectedDay}
+                  onDayPress={setSelectedDay as any}
                   onViewFullPlan={handleViewFullPlan}
                   onRegeneratePlan={handleRegeneratePlan}
                   isRegenerating={isGeneratingPlan}

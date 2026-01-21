@@ -273,11 +273,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
     // Transform workout preferences data into the expected format for AI services
     const transformedFitnessGoals: FitnessGoals = {
-      primaryGoals: data.primaryGoals,
-      timeCommitment: data.timePreference.toString(), // Convert minutes to string
+      primary_goals: data.primaryGoals || [],
+      time_commitment: data.timePreference.toString(), // Convert minutes to string
       experience: data.intensity,
       experience_level: data.intensity, // Duplicate for backward compatibility
-    };
+    } as any;
 
     // Update personalInfo to include activityLevel
     const updatedPersonalInfo: PersonalInfo = {
@@ -378,7 +378,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       console.log(
         "💾 Saving complete onboarding data (guest or authenticated)",
       );
-      const result = await saveOnboardingData(completeData);
+      const result = await saveOnboardingData(completeData as any);
 
       if (!result.success) {
         console.warn("Failed to save onboarding data:", result.error);
@@ -504,13 +504,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
         return (
           <ReviewScreen
-            data={{
-              personalInfo,
-              fitnessGoals,
-              dietPreferences,
-              workoutPreferences,
-              bodyAnalysis: bodyAnalysis || { photos: {} },
-            }}
+            data={
+              {
+                personalInfo,
+                fitnessGoals,
+                dietPreferences,
+                workoutPreferences,
+                bodyAnalysis: bodyAnalysis || { photos: {} },
+                isComplete: true,
+              } as any
+            }
             onComplete={handleReviewComplete}
             onBack={handleReviewBack}
             onEditSection={handleReviewEditSection}

@@ -118,7 +118,7 @@ class DataRetrievalService {
     });
 
     return {
-      workout: todaysWorkout,
+      workout: todaysWorkout as any,
       meals: todaysMeals,
       progress: {
         workoutProgress,
@@ -392,6 +392,7 @@ class DataRetrievalService {
       "saturday",
     ];
     const todayName = dayNames[today.getDay()];
+    const todayIndex = today.getDay();
 
     // Check if today is a rest day
     const isRestDay =

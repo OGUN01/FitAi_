@@ -382,7 +382,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
   if (showGuestSignUp) {
     return (
       <GuestSignUpScreen
-        onSuccess={() => setShowGuestSignUp(false)}
+        onSignUpSuccess={() => setShowGuestSignUp(false)}
         onBack={() => setShowGuestSignUp(false)}
       />
     );
@@ -398,7 +398,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
         >
           {/* Profile Header */}
           <ProfileHeader
-            userName={userName}
+            userName={userName || ""}
             memberSince={memberSince}
             onEditPress={handleEditProfile}
           />
@@ -413,11 +413,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
 
           {/* Stats Row */}
           <ProfileStats
-            currentStreak={userStats?.currentStreak}
-            totalWorkouts={userStats?.totalWorkouts}
-            totalCaloriesBurned={userStats?.totalCaloriesBurned}
-            longestStreak={userStats?.longestStreak}
-            achievements={userStats?.achievements}
+            currentStreak={userStats?.currentStreak || 0}
+            totalWorkouts={userStats?.totalWorkouts || 0}
+            totalCaloriesBurned={userStats?.totalCaloriesBurned || 0}
+            longestStreak={userStats?.longestStreak || 0}
+            achievements={userStats?.achievements?.length || 0}
             onStatPress={(statId) =>
               console.log("[ProfileScreen] Stat pressed:", statId)
             }
@@ -532,7 +532,9 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
         </Modal>
 
         {/* Edit Overlay */}
-        {showOverlay && <EditOverlay />}
+        {showOverlay && (
+          <EditOverlay visible={true} onClose={() => setShowOverlay(false)} />
+        )}
 
         {/* Edit Modals */}
         <PersonalInfoEditModal

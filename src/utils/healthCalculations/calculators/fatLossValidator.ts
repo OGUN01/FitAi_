@@ -13,7 +13,7 @@
  * Date: 2025-12-30
  */
 
-import { GoalValidation } from '../types';
+import { GoalValidation } from "../types";
 
 export class FatLossValidator {
   /**
@@ -24,7 +24,7 @@ export class FatLossValidator {
     currentWeight: number,
     targetWeight: number,
     timelineWeeks: number,
-    bmi: number
+    bmi: number,
   ): GoalValidation {
     const weightToLose = currentWeight - targetWeight;
     const weeklyRate = weightToLose / timelineWeeks;
@@ -36,16 +36,16 @@ export class FatLossValidator {
     if (weeklyRate <= 1.0) {
       return {
         valid: true,
-        severity: 'success',
+        severity: "success",
         message: `${weeklyRate.toFixed(1)}kg/week is sustainable and healthy. Excellent goal! This rate maximizes fat loss while preserving muscle mass.`,
         achievementProbability: 85,
         recommendations: [
-          'Maintain high protein (2.0-2.4g/kg bodyweight)',
-          'Include resistance training 3-4x/week',
-          'Expect steady, sustainable progress',
-          'Minimal muscle loss risk',
-          'High adherence likelihood'
-        ]
+          "Maintain high protein (2.0-2.4g/kg bodyweight)",
+          "Include resistance training 3-4x/week",
+          "Expect steady, sustainable progress",
+          "Minimal muscle loss risk",
+          "High adherence likelihood",
+        ],
       };
     }
 
@@ -53,17 +53,17 @@ export class FatLossValidator {
     if (weeklyRate <= 1.5) {
       return {
         valid: true,
-        severity: 'info',
+        severity: "info",
         message: `${weeklyRate.toFixed(1)}kg/week is aggressive but achievable. Requires strict adherence and may be challenging to maintain long-term.`,
         achievementProbability: 60,
         recommendations: [
-          'Very high protein (2.5g/kg bodyweight)',
-          'Aggressive resistance training 4-5x/week',
-          'Monitor energy levels closely',
-          'Consider diet breaks every 8-12 weeks',
-          'Increased hunger and fatigue expected',
-          'Track strength to monitor muscle loss'
-        ]
+          "Very high protein (2.5g/kg bodyweight)",
+          "Aggressive resistance training 4-5x/week",
+          "Monitor energy levels closely",
+          "Consider diet breaks every 8-12 weeks",
+          "Increased hunger and fatigue expected",
+          "Track strength to monitor muscle loss",
+        ],
       };
     }
 
@@ -71,20 +71,20 @@ export class FatLossValidator {
     if (weeklyRate <= 2.0) {
       return {
         valid: true,
-        severity: 'warning',
+        severity: "warning",
         message: `${weeklyRate.toFixed(1)}kg/week is very aggressive. Recommended only for 8-12 weeks maximum. Significant risk of muscle loss and metabolic adaptation.`,
         achievementProbability: 40,
         recommendations: [
-          'Maximum protein (2.5-3.0g/kg bodyweight)',
-          'Heavy resistance training mandatory (prevent muscle loss)',
-          'Plan diet breaks every 8-12 weeks',
-          'Monitor strength loss carefully',
-          'Consider slower approach for sustainability',
-          'High refeed days (1-2x/week) may help',
-          'Expect significant hunger and low energy'
+          "Maximum protein (2.5-3.0g/kg bodyweight)",
+          "Heavy resistance training mandatory (prevent muscle loss)",
+          "Plan diet breaks every 8-12 weeks",
+          "Monitor strength loss carefully",
+          "Consider slower approach for sustainability",
+          "High refeed days (1-2x/week) may help",
+          "Expect significant hunger and low energy",
         ],
         suggestedTimeline: Math.ceil(weightToLose / 1.0),
-        suggestion: `Consider ${Math.ceil(weightToLose / 1.0)} weeks at 1kg/week for better muscle preservation.`
+        suggestion: `Consider ${Math.ceil(weightToLose / 1.0)} weeks at 1kg/week for better muscle preservation.`,
       };
     }
 
@@ -93,39 +93,39 @@ export class FatLossValidator {
     if (bmi > 35) {
       return {
         valid: true,
-        severity: 'warning',
+        severity: "warning",
         message: `${weeklyRate.toFixed(1)}kg/week is extreme but may be appropriate given your current BMI (${bmi.toFixed(1)}). Medical supervision strongly recommended.`,
         achievementProbability: 30,
         recommendations: [
-          'Medical consultation strongly advised',
-          'Very high protein (3g/kg lean mass)',
-          'Frequent monitoring (weekly check-ins)',
-          'Aggressive resistance training essential',
-          'Plan for slower rate as BMI decreases',
-          'Blood work to monitor health markers',
-          'Expect significant metabolic adaptation'
+          "Medical consultation strongly advised",
+          "Very high protein (3g/kg lean mass)",
+          "Frequent monitoring (weekly check-ins)",
+          "Aggressive resistance training essential",
+          "Plan for slower rate as BMI decreases",
+          "Blood work to monitor health markers",
+          "Expect significant metabolic adaptation",
         ],
         allowOverride: true,
-        suggestion: `As BMI improves, plan to reduce rate to 1-1.5kg/week for final 10-15kg.`
+        suggestion: `As BMI improves, plan to reduce rate to 1-1.5kg/week for final 10-15kg.`,
       };
     }
 
     // Tier 4: Extreme (>2 kg/week) - Low/Normal BMI
     return {
       valid: true,
-      severity: 'error',
+      severity: "error",
       message: `${weeklyRate.toFixed(1)}kg/week is extremely aggressive and likely unsustainable. Strong risk of muscle loss, metabolic damage, and rebound weight gain.`,
       achievementProbability: 10,
       suggestion: `To lose ${weightToLose.toFixed(1)}kg safely, consider ${Math.ceil(weightToLose / 1)}weeks (1kg/week) or ${Math.ceil(weightToLose / 0.75)}weeks (0.75kg/week).`,
       allowOverride: true,
       recommendations: [
-        'Strongly reconsider timeline',
-        'Focus on sustainable approach',
-        'Preserve lean mass priority',
-        'Extreme deficits rarely work long-term',
-        'Very high rebound risk',
-        'Consider professional guidance'
-      ]
+        "Strongly reconsider timeline",
+        "Focus on sustainable approach",
+        "Preserve lean mass priority",
+        "Extreme deficits rarely work long-term",
+        "Very high rebound risk",
+        "Consider professional guidance",
+      ],
     };
   }
 
@@ -135,7 +135,7 @@ export class FatLossValidator {
   calculateSafeDeficit(
     bmi: number,
     tdee: number,
-    activityLevel: string
+    activityLevel: string,
   ): {
     minDeficit: number;
     maxDeficit: number;
@@ -155,20 +155,22 @@ export class FatLossValidator {
     }
 
     // Activity level modifier (active people can handle larger deficits)
-    const activityMultiplier = {
+    const activityFactors: Record<string, number> = {
       sedentary: 0.8,
       light: 0.9,
       moderate: 1.0,
       active: 1.1,
-      very_active: 1.15
-    }[activityLevel as keyof typeof activityMultiplier] || 1.0;
+      very_active: 1.15,
+    };
+    const activityMultiplier: number =
+      activityFactors[activityLevel as string] || 1.0;
 
     const adjustedMaxDeficit = Math.round(maxDeficit * activityMultiplier);
 
     return {
       minDeficit: 300, // Minimum for meaningful fat loss
       maxDeficit: Math.min(adjustedMaxDeficit, tdee * 0.4), // Never exceed 40% of TDEE
-      recommendedDeficit: Math.min(500, adjustedMaxDeficit * 0.7) // Conservative recommendation
+      recommendedDeficit: Math.min(500, adjustedMaxDeficit * 0.7), // Conservative recommendation
     };
   }
 
@@ -178,7 +180,7 @@ export class FatLossValidator {
   validateTimeline(
     currentWeight: number,
     targetWeight: number,
-    bmi: number
+    bmi: number,
   ): {
     minWeeks: number;
     optimalWeeks: number;
@@ -199,7 +201,7 @@ export class FatLossValidator {
     return {
       minWeeks,
       optimalWeeks,
-      maxWeeks
+      maxWeeks,
     };
   }
 
@@ -209,7 +211,7 @@ export class FatLossValidator {
    */
   calculateProteinRequirements(
     leanBodyMass: number,
-    weeklyRate: number
+    weeklyRate: number,
   ): {
     minimum: number;
     optimal: number;
@@ -231,7 +233,7 @@ export class FatLossValidator {
     return {
       minimum: Math.round(leanBodyMass * (multiplier - 0.3)),
       optimal: Math.round(leanBodyMass * multiplier),
-      maximum: Math.round(leanBodyMass * (multiplier + 0.3))
+      maximum: Math.round(leanBodyMass * (multiplier + 0.3)),
     };
   }
 }

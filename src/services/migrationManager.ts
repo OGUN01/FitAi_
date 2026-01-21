@@ -115,7 +115,7 @@ export class MigrationManager {
   /**
    * Start migration process
    */
-  async startMigration(userId: string): Promise<void> {
+  async startMigration(userId: string): Promise<MigrationResult> {
     if (this.currentMigration.progress?.status === "running") {
       throw new Error("Migration is already in progress");
     }
@@ -140,6 +140,8 @@ export class MigrationManager {
 
       // Update state
       await this.checkMigrationStatus();
+
+      return result as any;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
@@ -175,23 +177,25 @@ export class MigrationManager {
           bodyMeasurements: 0,
           achievements: 0,
         },
-        errors: [
-          {
-            step: "unknown",
-            code: "MIGRATION_START_FAILED",
-            message: errorMessage,
-            timestamp: new Date(),
-            retryCount: 0,
-            recoverable: true,
-          },
-        ],
+        errors: [errorMessage],
         warnings: [],
         duration: 0,
+        migratedData: {
+          personalInfo: false,
+          fitnessGoals: false,
+          dietPreferences: false,
+          workoutPreferences: false,
+          bodyAnalysis: false,
+          advancedReview: false,
+        },
+        conflicts: [],
       };
 
       this.currentMigration.result = errorResult;
       this.notifyResultChange(errorResult);
       await this.saveMigrationAttempt(errorResult);
+
+      return errorResult;
     } finally {
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();
@@ -360,15 +364,16 @@ export class MigrationManager {
     try {
       const history = await this.getMigrationHistory();
       const attempt: MigrationAttempt = {
-        id: result.migrationId,
-        startTime: result.progress.startTime,
-        endTime: result.progress.endTime,
+        id: (result as any).migrationId || "",
+        startTime: (result as any).progress?.startTime || new Date(),
+        endTime: (result as any).progress?.endTime,
         success: result.success,
-        error: result.success ? undefined : result.errors[0]?.message,
+        error: result.success ? undefined : (result.errors as any)[0]?.message,
         dataCount: {
-          workouts: result.migratedData?.workoutSessions?.length ?? 0,
-          meals: result.migratedData?.mealLogs?.length ?? 0,
-          measurements: result.migratedData?.bodyMeasurements?.length ?? 0,
+          workouts: (result.migratedData as any)?.workoutSessions?.length ?? 0,
+          meals: (result.migratedData as any)?.mealLogs?.length ?? 0,
+          measurements:
+            (result.migratedData as any)?.bodyMeasurements?.length ?? 0,
         },
       };
 
@@ -501,48 +506,21 @@ export class MigrationManager {
         console.error("❌ Profile migration failed:", result.errors);
       }
 
-      return result;
+      return result as any;
     } catch (error) {
       console.error("❌ Profile migration error:", error);
 
       const errorMessage =
         error instanceof Error ? error.message : "Unknown migration error";
-      const errorObj = {
-        step: "profile_migration",
-        code: "PROFILE_MIGRATION_FAILED",
-        message: errorMessage,
-        timestamp: new Date(),
-        retryCount: 0,
-        recoverable: true,
-      };
 
       return {
         success: false,
         migrationId: `profile_error_${Date.now()}`,
-        progress: {
-          migrationId: `profile_error_${Date.now()}`,
-          status: "failed",
-          currentStep: "profile_migration",
-          currentStepIndex: 0,
-          totalSteps: 1,
-          percentage: 0,
-          startTime: new Date(),
-          endTime: new Date(),
-          message: errorMessage,
-          errors: [errorObj],
-          warnings: [],
-        },
-        migratedDataCount: {
-          userProfiles: 0,
-          workoutSessions: 0,
-          mealLogs: 0,
-          bodyMeasurements: 0,
-          achievements: 0,
-        },
-        errors: [errorObj],
-        warnings: [],
+        errors: [errorMessage],
+        migratedData: {},
+        conflicts: [],
         duration: 0,
-      };
+      } as any;
     }
   }
 

@@ -3,7 +3,7 @@
  * Gradient configurations for backgrounds, buttons, and card borders
  */
 
-import { colors } from './aurora-tokens';
+import { colors } from "./aurora-tokens";
 
 // Type definition for gradient configuration
 export interface GradientConfig {
@@ -71,11 +71,11 @@ export const gradientAuroraOcean: GradientConfig = {
 // Northern Lights gradient (animated, multi-color)
 export const gradientNorthernLights: GradientConfig = {
   colors: [
-    '#1C0A1F', // Deep purple
-    '#2E1A2F', // Purple
-    '#0A1F1C', // Teal
-    '#1A2F2E', // Blue-teal
-    '#0A0F1C', // Deep blue
+    "#1C0A1F", // Deep purple
+    "#2E1A2F", // Purple
+    "#0A1F1C", // Teal
+    "#1A2F2E", // Blue-teal
+    "#0A0F1C", // Deep blue
   ],
   locations: [0, 0.25, 0.5, 0.75, 1],
   start: { x: 0, y: 0 },
@@ -85,7 +85,7 @@ export const gradientNorthernLights: GradientConfig = {
 
 // Glass gradient overlay
 export const gradientGlass: GradientConfig = {
-  colors: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
+  colors: ["rgba(255, 255, 255, 0.1)", "rgba(255, 255, 255, 0.05)"],
   locations: [0, 1],
   start: { x: 0, y: 0 },
   end: { x: 1, y: 1 },
@@ -130,9 +130,9 @@ export const gradientBorder = {
   } as GradientConfig,
   glass: {
     colors: [
-      'rgba(255, 255, 255, 0.18)',
-      'rgba(255, 255, 255, 0.1)',
-      'rgba(255, 255, 255, 0.18)',
+      "rgba(255, 255, 255, 0.18)",
+      "rgba(255, 255, 255, 0.1)",
+      "rgba(255, 255, 255, 0.18)",
     ],
     locations: [0, 0.5, 1],
     start: { x: 0, y: 0 },
@@ -144,7 +144,7 @@ export const gradientBorder = {
 // Overlay gradients for hero images
 export const gradientOverlay = {
   dark: {
-    colors: ['rgba(0, 0, 0, 0.7)', 'rgba(0, 0, 0, 0.3)'],
+    colors: ["rgba(0, 0, 0, 0.7)", "rgba(0, 0, 0, 0.3)"],
     locations: [0, 1],
     start: { x: 0, y: 1 },
     end: { x: 0, y: 0 },
@@ -154,7 +154,7 @@ export const gradientOverlay = {
     colors: [
       `${colors.primary[900]}CC`,
       `${colors.primary[700]}66`,
-      'transparent',
+      "transparent",
     ],
     locations: [0, 0.5, 1],
     start: { x: 0, y: 1 },
@@ -165,7 +165,7 @@ export const gradientOverlay = {
     colors: [
       `${colors.secondary[900]}CC`,
       `${colors.secondary[700]}66`,
-      'transparent',
+      "transparent",
     ],
     locations: [0, 0.5, 1],
     start: { x: 0, y: 1 },
@@ -217,24 +217,26 @@ export const gradients = {
 
 // Helper function to convert gradient to LinearGradient props
 export const toLinearGradientProps = (gradient: GradientConfig) => ({
-  colors: gradient.colors as readonly [string, string, ...string[]],
-  locations: gradient.locations as readonly [number, number, ...number[]] | undefined,
+  colors: gradient.colors as unknown as readonly [string, string, ...string[]],
+  locations: gradient.locations as
+    | readonly [number, number, ...number[]]
+    | undefined,
   start: gradient.start,
   end: gradient.end,
 });
 
 // Aurora theme variants for easy switching
-export type AuroraTheme = 'space' | 'purple' | 'ocean' | 'northernLights';
+export type AuroraTheme = "space" | "purple" | "ocean" | "northernLights";
 
 export const getAuroraGradient = (theme: AuroraTheme): GradientConfig => {
   switch (theme) {
-    case 'space':
+    case "space":
       return gradientAuroraSpace;
-    case 'purple':
+    case "purple":
       return gradientAuroraPurple;
-    case 'ocean':
+    case "ocean":
       return gradientAuroraOcean;
-    case 'northernLights':
+    case "northernLights":
       return gradientNorthernLights;
     default:
       return gradientAuroraSpace;

@@ -13,7 +13,7 @@ import type {
   DietPreferences as BaseDietPreferences,
   WorkoutPreferences as BaseWorkoutPreferences,
   BodyMetrics,
-} from './user';
+} from "./user";
 
 // ============================================================================
 // CORE TYPE RE-EXPORTS (Single source of truth from user.ts)
@@ -22,7 +22,7 @@ export type PersonalInfo = BasePersonalInfo;
 export type FitnessGoals = BaseFitnessGoals;
 export type DietPreferences = BaseDietPreferences;
 export type WorkoutPreferences = BaseWorkoutPreferences;
-export type { BodyMetrics } from './user';
+export type { BodyMetrics } from "./user";
 
 // ============================================================================
 // SYNC METADATA (Profile data management specific)
@@ -35,8 +35,8 @@ export interface SyncableData {
   createdAt: string;
   updatedAt: string;
   lastSyncAt?: string;
-  syncStatus: 'pending' | 'synced' | 'conflict' | 'error';
-  source: 'local' | 'remote' | 'merged';
+  syncStatus: "pending" | "synced" | "conflict" | "error";
+  source: "local" | "remote" | "merged";
 }
 
 // Body Analysis Data with progress tracking
@@ -90,7 +90,9 @@ export interface DataValidationSchema {
   validatePersonalInfo(data: Partial<PersonalInfo>): ValidationResult;
   validateFitnessGoals(data: Partial<FitnessGoals>): ValidationResult;
   validateDietPreferences(data: Partial<DietPreferences>): ValidationResult;
-  validateWorkoutPreferences(data: Partial<WorkoutPreferences>): ValidationResult;
+  validateWorkoutPreferences(
+    data: Partial<WorkoutPreferences>,
+  ): ValidationResult;
   validateUserProfile(data: Partial<UserProfile>): ValidationResult;
 }
 
@@ -104,12 +106,12 @@ export interface SyncConflict {
   remoteValue: any;
   localTimestamp: string;
   remoteTimestamp: string;
-  conflictType: 'value_mismatch' | 'version_conflict' | 'deletion_conflict';
+  conflictType: "value_mismatch" | "version_conflict" | "deletion_conflict";
 }
 
 export interface ConflictResolution {
   conflictId: string;
-  resolution: 'use_local' | 'use_remote' | 'merge' | 'manual';
+  resolution: "use_local" | "use_remote" | "merge" | "manual";
   mergedValue?: any;
   userChoice?: boolean;
 }
@@ -126,14 +128,14 @@ export interface SyncResult {
 // STORAGE OPERATIONS
 // ============================================================================
 export interface StorageOperation {
-  type: 'create' | 'update' | 'delete' | 'sync';
+  type: "create" | "update" | "delete" | "sync";
   dataType:
-    | 'personalInfo'
-    | 'fitnessGoals'
-    | 'dietPreferences'
-    | 'workoutPreferences'
-    | 'bodyAnalysis'
-    | 'userProfile';
+    | "personalInfo"
+    | "fitnessGoals"
+    | "dietPreferences"
+    | "workoutPreferences"
+    | "bodyAnalysis"
+    | "userProfile";
   data: any;
   timestamp: string;
   userId?: string;
@@ -175,11 +177,20 @@ export interface MigrationResult {
     workoutPreferences?: boolean;
     bodyAnalysis?: boolean;
     advancedReview?: boolean;
+    workoutSessions?: any[];
+    mealLogs?: any[];
+    bodyMeasurements?: any[];
   };
   conflicts: SyncConflict[];
   errors: string[];
   warnings?: string[];
   duration: number; // in milliseconds
+  migrationId?: string;
+  progress?: any;
+  migratedDataCount?: any;
+  migratedKeys?: string[];
+  localSyncKeys?: string[];
+  remoteSyncKeys?: string[];
 }
 
 // ============================================================================
@@ -187,7 +198,12 @@ export interface MigrationResult {
 // ============================================================================
 export interface EditContextData {
   isEditMode: boolean;
-  editSection: 'personalInfo' | 'fitnessGoals' | 'dietPreferences' | 'workoutPreferences' | null;
+  editSection:
+    | "personalInfo"
+    | "fitnessGoals"
+    | "dietPreferences"
+    | "workoutPreferences"
+    | null;
   originalData: any;
   currentData: any;
   hasChanges: boolean;

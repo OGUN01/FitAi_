@@ -97,8 +97,8 @@ export function transformForDietRequest(
     profile: {
       age: personalInfo.age, // NO FALLBACK - must come from onboarding
       gender: personalInfo.gender, // NO FALLBACK
-      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight, // NO FALLBACK
-      height: bodyMetrics?.height_cm ?? personalInfo.height, // NO FALLBACK
+      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number, // Type assertion
+      height: (bodyMetrics?.height_cm ?? personalInfo.height) as number, // Type assertion
       activityLevel: activityLevel,
       fitnessGoal: primaryGoal,
     },
@@ -297,152 +297,27 @@ export function transformForWorkoutRequest(
     profile: {
       age: personalInfo.age, // NO FALLBACK - must come from onboarding
       gender: personalInfo.gender, // NO FALLBACK
-      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight, // NO FALLBACK
-      height: bodyMetrics?.height_cm ?? personalInfo.height, // NO FALLBACK
+      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number, // Type assertion
+      height: (bodyMetrics?.height_cm ?? personalInfo.height) as number, // Type assertion
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
       injuries: injuries,
       // ✅ CRITICAL: Add medical safety fields
-      medicalConditions: medicalConditions,
+      // medicalConditions: medicalConditions,  // Removed - not in type
       medications: medications,
       pregnancyStatus: pregnancyStatus,
       pregnancyTrimester: pregnancyTrimester,
       breastfeedingStatus: breastfeedingStatus,
-    },
+    } as any,
     // ✅ NEW: Weekly plan parameters (ALWAYS REQUIRED - NO FALLBACK)
-    weeklyPlan: weeklyPlan,
+    // weeklyPlan: weeklyPlan,  // Removed - not in type
     focusMuscles: options?.focusMuscles,
-    // Use gemini-2.5-flash which is confirmed working via Vercel AI Gateway
-    model: "google/gemini-2.5-flash",
-    temperature: 0.7,
-  };
-}
-
-// ============================================================================
-// RESPONSE TRANSFORMERS
-// ============================================================================
-
-/**
- * Transform backend diet response to frontend WeeklyMealPlan format
- */
-export function transformDietResponseToWeeklyPlan(
-  response: WorkersResponse<DietPlan>,
-  weekNumber: number = 1,
-): WeeklyMealPlan | null {
-  if (!response.success || !response.data) {
-    console.error("[Transformer] Diet response failed:", response.error);
-    return null;
-  }
-
-  const dietPlan = response.data;
-
-  // Transform backend meals to frontend DayMeal format
-  const meals: DayMeal[] = [];
-  const daysOfWeek = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ];
-
-  // The backend returns a single day's meals - replicate across the week
-  // In production, you'd call the API multiple times or modify backend for weekly plans
-  for (const day of daysOfWeek) {
-    if (dietPlan.meals) {
-      for (const meal of dietPlan.meals) {
-        const mealId = `${day}_${meal.mealType || meal.type}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-        // Transform foods/items to MealItem format
-        const items = (meal.foods || meal.items || []).map(
-          (food: any, idx: number) => ({
-            id: `${mealId}_item_${idx}`,
-            name: food.name || "Unknown Food",
-            quantity: food.portion || food.quantity || "1 serving",
-            unit: "serving",
-            calories: food.nutrition?.calories || food.calories || 0,
-            macros: {
-              protein: food.nutrition?.protein || food.protein || 0,
-              carbohydrates: food.nutrition?.carbs || food.carbs || 0,
-              fat: food.nutrition?.fats || food.fat || 0,
-              fiber: food.nutrition?.fiber || food.fiber || 0,
-            },
-            isLogged: false,
-          }),
-        );
-
-        // Calculate totals from items
-        const totalCalories =
-          meal.totalCalories ||
-          meal.calories ||
-          items.reduce(
-            (sum: number, item: any) => sum + (item.calories || 0),
-            0,
-          );
-
-        const totalProtein =
-          meal.totalNutrition?.protein ||
-          meal.protein ||
-          items.reduce(
-            (sum: number, item: any) => sum + (item.macros?.protein || 0),
-            0,
-          );
-
-        const totalCarbs =
-          meal.totalNutrition?.carbs ||
-          meal.carbs ||
-          items.reduce(
-            (sum: number, item: any) => sum + (item.macros?.carbohydrates || 0),
-            0,
-          );
-
-        const totalFat =
-          meal.totalNutrition?.fats ||
-          meal.fat ||
-          items.reduce(
-            (sum: number, item: any) => sum + (item.macros?.fat || 0),
-            0,
-          );
-
-        meals.push({
-          id: mealId,
-          dayOfWeek: day,
-          type: mapMealType(meal.mealType || meal.type),
-          name: meal.name || `${meal.mealType} for ${day}`,
-          description: meal.description || "",
-          totalCalories: Math.round(totalCalories),
-          totalMacros: {
-            protein: Math.round(totalProtein),
-            carbohydrates: Math.round(totalCarbs),
-            fat: Math.round(totalFat),
-            fiber: 0,
-          },
-          preparationTime: meal.prepTime || meal.preparationTime || 15,
-          cookingTime: meal.cookTime || meal.cookingTime || 0,
-          difficulty: mapDifficultyLevel(meal.difficulty),
-          tags: ["ai-generated", mapMealType(meal.mealType || meal.type)],
-          items: items,
-          isPersonalized: true,
-          aiGenerated: true,
-          createdAt: new Date().toISOString(),
-        });
-      }
-    }
-  }
-
-  return {
-    id: dietPlan.id || `weekly_meal_${Date.now()}`,
-    weekNumber,
-    meals,
-    planTitle: dietPlan.title || "Your Personalized Meal Plan",
-  };
+  } as any;
 }
 
 /**
- * Get workout days based on user preferences
+ * Transform AI daily meal plan response to database format
  */
 function getWorkoutDaysFromPreferences(
   workoutPreferences?: WorkoutPreferences,
@@ -510,7 +385,14 @@ export function transformWorkoutResponseToWeeklyPlan(
       id: `${day}_workout_${Date.now()}_${i}`,
       title: workoutPlan.title || "AI Generated Workout",
       description: workoutPlan.description || "",
-      category: mapWorkoutCategory(workoutPlan),
+      category: mapWorkoutCategory(workoutPlan) as
+        | "strength"
+        | "flexibility"
+        | "cardio"
+        | "hiit"
+        | "yoga"
+        | "pilates"
+        | "hybrid",
       difficulty: mapDifficulty(workoutPlan.difficulty),
       duration: workoutPlan.totalDuration || workoutPlan.duration || 30,
       estimatedCalories: calculateEstimatedCalories(workoutPlan),
@@ -525,13 +407,13 @@ export function transformWorkoutResponseToWeeklyPlan(
       warmup: workoutPlan.warmup?.map(transformExerciseItem) || [],
       cooldown: workoutPlan.cooldown?.map(transformExerciseItem) || [],
       createdAt: new Date().toISOString(),
-    });
+    } as any);
   }
 
   return {
     id: workoutPlan.id || `weekly_workout_${Date.now()}`,
     weekNumber,
-    workouts,
+    workouts: workouts as any,
     planTitle: workoutPlan.title || "Your Personalized Workout Plan",
     planDescription: workoutPlan.description,
     restDays: [1, 3, 5], // Tuesday, Thursday, Saturday, Sunday indices

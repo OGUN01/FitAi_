@@ -138,9 +138,9 @@ const ActionItem: React.FC<ActionItemProps> = ({
           blurIntensity="light"
           borderRadius="lg"
           style={
-            isDanger
+            (isDanger
               ? [styles.actionCard, styles.dangerCard]
-              : styles.actionCard
+              : styles.actionCard) as any
           }
         >
           <View style={styles.actionContent}>

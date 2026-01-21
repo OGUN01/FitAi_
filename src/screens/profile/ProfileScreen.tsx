@@ -955,7 +955,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                     ]}
                   >
                     <Ionicons
-                      name="ruler-outline"
+                      name="scale-outline" // Changed from "ruler-outline"
                       size={rf(24)}
                       color={ResponsiveTheme.colors.primary}
                       style={styles.settingIcon}
@@ -1474,12 +1474,12 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                   <Text style={styles.modalSectionTitle}>Current Plan</Text>
                   <GlassCard
                     style={
-                      subscriptionStatus.isPremium
+                      (subscriptionStatus.isPremium
                         ? [
                             styles.subscriptionStatusCard,
                             styles.activeSubscriptionCard,
                           ]
-                        : styles.subscriptionStatusCard
+                        : styles.subscriptionStatusCard) as any
                     }
                     elevation={2}
                     padding="lg"
@@ -1490,11 +1490,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                       <View style={styles.subscriptionStatusHeader}>
                         <Ionicons
                           name={
-                            subscriptionStatus.isPremium
-                              ? "crown-outline"
+                            (subscriptionStatus.isPremium
+                              ? "trophy-outline"
                               : subscriptionStatus.isTrialActive
                                 ? "time-outline"
-                                : "diamond-outline"
+                                : "diamond-outline") as any
                           }
                           size={rf(32)}
                           color={ResponsiveTheme.colors.primary}
@@ -1616,7 +1616,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                             "Opening billing management...",
                           );
                         }}
-                        variant="outlined"
+                        variant="outline" // Changed from "outlined"
                         size="md"
                         style={styles.actionButton}
                       />
@@ -1645,9 +1645,11 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                             ],
                           );
                         }}
-                        variant="outlined"
+                        variant="outline"
                         size="md"
-                        style={[styles.actionButton, styles.cancelButton]}
+                        style={
+                          [styles.actionButton, styles.cancelButton] as any
+                        }
                       />
                     </View>
                   )}

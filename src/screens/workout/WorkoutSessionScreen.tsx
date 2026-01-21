@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,22 +11,22 @@ import {
   Platform,
   Vibration,
   Dimensions,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
 // REMOVED: import { DayWorkout } from '../../ai/weeklyContentGenerator' - moved to Cloudflare Workers
-import { DayWorkout } from '../../types/ai';
-import { WorkoutTimer } from '../../components/fitness/WorkoutTimer';
-import { ExerciseGifPlayer } from '../../components/fitness/ExerciseGifPlayer';
-import { ExerciseInstructionModal } from '../../components/fitness/ExerciseInstructionModal';
-import { ExerciseSessionModal } from '../../components/fitness/ExerciseSessionModal';
-import AchievementCelebration from '../../components/achievements/AchievementCelebration';
-import completionTrackingService from '../../services/completionTracking';
-import { useAchievementStore } from '../../stores/achievementStore';
-import { trackAchievementActivity } from '../../stores/achievementStore';
-import { rh, rw, rp } from '../../utils/responsive'; // ✅ Add responsive utilities
-import { useAuthStore } from '../../stores/authStore';
-import { useSafeAreaInsets } from 'react-native-safe-area-context'; // ✅ Add safe area insets
-import { exerciseFilterService } from '../../services/exerciseFilterService'; // ✅ Add exercise lookup service
+import { DayWorkout } from "../../types/ai";
+import { WorkoutTimer } from "../../components/fitness/WorkoutTimer";
+import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
+import { ExerciseInstructionModal } from "../../components/fitness/ExerciseInstructionModal";
+import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionModal";
+import AchievementCelebration from "../../components/achievements/AchievementCelebration";
+import completionTrackingService from "../../services/completionTracking";
+import { useAchievementStore } from "../../stores/achievementStore";
+import { trackAchievementActivity } from "../../stores/achievementStore";
+import { rh, rw, rp } from "../../utils/responsive"; // ✅ Add responsive utilities
+import { useAuthStore } from "../../stores/authStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context"; // ✅ Add safe area insets
+import { exerciseFilterService } from "../../services/exerciseFilterService"; // ✅ Add exercise lookup service
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -54,10 +54,10 @@ interface WorkoutStats {
 }
 
 // Safe string conversion utility
-const safeString = (value: any, fallback: string = ''): string => {
+const safeString = (value: any, fallback: string = ""): string => {
   if (value === null || value === undefined) return fallback;
-  if (typeof value === 'number' && Number.isNaN(value)) return fallback;
-  if (typeof value === 'string') return value;
+  if (typeof value === "number" && Number.isNaN(value)) return fallback;
+  if (typeof value === "string") return value;
   try {
     return String(value);
   } catch {
@@ -69,12 +69,16 @@ const safeString = (value: any, fallback: string = ''): string => {
 const parseDurationFromReps = (reps: any): number => {
   if (!reps) return 0;
   const str = String(reps).toLowerCase().trim();
-  
+
   // First, check if this looks like a rep range (contains dash, "to", etc.)
-  if (str.includes('-') || str.includes('to') || str.match(/^\d+\s*[-–]\s*\d+$/)) {
+  if (
+    str.includes("-") ||
+    str.includes("to") ||
+    str.match(/^\d+\s*[-–]\s*\d+$/)
+  ) {
     return 0; // This is a rep range, not a time duration
   }
-  
+
   // mm:ss format
   const mmss = str.match(/^(\d+):(\d{1,2})$/);
   if (mmss) {
@@ -82,28 +86,28 @@ const parseDurationFromReps = (reps: any): number => {
     const s = parseInt(mmss[2], 10);
     if (!Number.isNaN(m) && !Number.isNaN(s)) return m * 60 + s;
   }
-  
+
   // Time with explicit units: 30 seconds, 30 sec, 30s
   const sec = str.match(/^(\d+)\s*(seconds|second|secs|sec|s)$/);
   if (sec) {
     const v = parseInt(sec[1], 10);
     return Number.isNaN(v) ? 0 : v;
   }
-  
+
   // Time with explicit units: 1 minute, 2 min, 1m
   const min = str.match(/^(\d+)\s*(minutes|minute|mins|min|m)$/);
   if (min) {
     const v = parseInt(min[1], 10);
     return Number.isNaN(v) ? 0 : v * 60;
   }
-  
+
   // Only treat as time if it's purely numeric AND doesn't look like reps
   // This catches cases like just "30" (30 seconds) but avoids "12" from "10-12"
   const pure = parseInt(str, 10);
   if (!Number.isNaN(pure) && str === pure.toString()) {
     return pure; // Pure number like "30" - treat as seconds
   }
-  
+
   return 0; // Not a time duration
 };
 
@@ -120,7 +124,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const { workout, sessionId } = route.params;
   const insets = useSafeAreaInsets(); // ✅ Get safe area insets for notch handling
 
-  console.log('🏋️ ENHANCED WORKOUT SESSION: Initializing', {
+  console.log("🏋️ ENHANCED WORKOUT SESSION: Initializing", {
     hasWorkout: !!workout,
     workoutTitle: workout?.title,
     sessionId,
@@ -130,11 +134,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   // CRITICAL DEBUG: Log the actual exercise structure
   if (workout?.exercises?.length > 0) {
     console.log(
-      '🔍 CRITICAL DEBUG - First Exercise Structure:',
-      JSON.stringify(workout.exercises[0], null, 2)
+      "🔍 CRITICAL DEBUG - First Exercise Structure:",
+      JSON.stringify(workout.exercises[0], null, 2),
     );
-    console.log('🔍 CRITICAL DEBUG - Exercise Keys:', Object.keys(workout.exercises[0] || {}));
-    console.log('🔍 CRITICAL DEBUG - Looking for ID in:', {
+    console.log(
+      "🔍 CRITICAL DEBUG - Exercise Keys:",
+      Object.keys(workout.exercises[0] || {}),
+    );
+    console.log("🔍 CRITICAL DEBUG - Looking for ID in:", {
       exerciseId: workout.exercises[0]?.exerciseId,
       id: workout.exercises[0]?.id,
       exerciseName: workout.exercises[0]?.exerciseName,
@@ -144,13 +151,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   // Enhanced safety checks
   if (!workout) {
-    console.error('🚨 No workout provided');
+    console.error("🚨 No workout provided");
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>⚠️</Text>
           <Text style={styles.errorText}>No Workout Data</Text>
-          <Text style={styles.errorSubtext}>Unable to load workout information</Text>
+          <Text style={styles.errorSubtext}>
+            Unable to load workout information
+          </Text>
           <Button
             title="Go Back"
             onPress={() => navigation.goBack()}
@@ -163,13 +172,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }
 
   if (!workout.exercises || workout.exercises.length === 0) {
-    console.error('🚨 No exercises in workout');
+    console.error("🚨 No exercises in workout");
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>🏋️‍♂️</Text>
           <Text style={styles.errorText}>No Exercises Found</Text>
-          <Text style={styles.errorSubtext}>This workout appears to be empty</Text>
+          <Text style={styles.errorSubtext}>
+            This workout appears to be empty
+          </Text>
           <Button
             title="Go Back"
             onPress={() => navigation.goBack()}
@@ -188,7 +199,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       exerciseIndex: index,
       completedSets: new Array(safeNumber(exercise?.sets, 3)).fill(false),
       isCompleted: false,
-    }))
+    })),
   );
   const [isRestTime, setIsRestTime] = useState(false);
   const [restTimeRemaining, setRestTimeRemaining] = useState(0);
@@ -199,20 +210,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
   const [showExerciseSession, setShowExerciseSession] = useState(false);
-  
+
   // Achievement system integration
   const { user } = useAuthStore();
-  const { 
-    showCelebration, 
-    celebrationAchievement, 
-    hideCelebration, 
-    checkProgress 
+  const {
+    showCelebration,
+    celebrationAchievement,
+    hideCelebration,
+    checkProgress,
   } = useAchievementStore();
   const [recentAchievements, setRecentAchievements] = useState<any[]>([]);
   const [showAchievementToast, setShowAchievementToast] = useState(false);
   const [toastAchievement, setToastAchievement] = useState<any>(null);
   const [achievementToastAnim] = useState(new Animated.Value(0));
-  const [miniToastText, setMiniToastText] = useState('');
+  const [miniToastText, setMiniToastText] = useState("");
   const [showMiniToast, setShowMiniToast] = useState(false);
   const [miniToastAnim] = useState(new Animated.Value(0));
 
@@ -222,7 +233,12 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, [workout.exercises, currentExerciseIndex]);
 
   const currentProgress = useMemo(() => {
-    return exerciseProgress[currentExerciseIndex] || { completedSets: [], isCompleted: false };
+    return (
+      exerciseProgress[currentExerciseIndex] || {
+        completedSets: [],
+        isCompleted: false,
+      }
+    );
   }, [exerciseProgress, currentExerciseIndex]);
 
   const totalExercises = useMemo(() => {
@@ -242,13 +258,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   }, [exerciseProgress, totalExercises]);
 
   const workoutStats = useMemo((): WorkoutStats => {
-    const duration = Math.round((currentTime.getTime() - workoutStartTime.getTime()) / 60000);
-    const exercisesCompleted = exerciseProgress.filter((ep) => ep?.isCompleted).length;
+    const duration = Math.round(
+      (currentTime.getTime() - workoutStartTime.getTime()) / 60000,
+    );
+    const exercisesCompleted = exerciseProgress.filter(
+      (ep) => ep?.isCompleted,
+    ).length;
     const setsCompleted = exerciseProgress.reduce(
       (total, ep) => total + (ep?.completedSets?.filter(Boolean).length || 0),
-      0
+      0,
     );
-    const caloriesBurned = Math.round((duration * safeNumber(workout.estimatedCalories, 300)) / 60);
+    const caloriesBurned = Math.round(
+      (duration * safeNumber(workout.estimatedCalories, 300)) / 60,
+    );
 
     return {
       totalDuration: Math.max(0, duration),
@@ -256,64 +278,78 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       setsCompleted: Math.max(0, setsCompleted),
       caloriesBurned: Math.max(0, caloriesBurned),
     };
-  }, [currentTime, workoutStartTime, exerciseProgress, workout.estimatedCalories]);
+  }, [
+    currentTime,
+    workoutStartTime,
+    exerciseProgress,
+    workout.estimatedCalories,
+  ]);
 
   // Achievement notification helpers
-  const showAchievementMiniToast = useCallback((message: string) => {
-    setMiniToastText(message);
-    setShowMiniToast(true);
-    
-    Animated.sequence([
-      Animated.timing(miniToastAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.delay(2000),
-      Animated.timing(miniToastAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowMiniToast(false);
-    });
-  }, [miniToastAnim]);
+  const showAchievementMiniToast = useCallback(
+    (message: string) => {
+      setMiniToastText(message);
+      setShowMiniToast(true);
 
-  const showAchievementNotification = useCallback((achievement: any) => {
-    setToastAchievement(achievement);
-    setShowAchievementToast(true);
-    
-    Animated.sequence([
-      Animated.timing(achievementToastAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.delay(3000),
-      Animated.timing(achievementToastAnim, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      setShowAchievementToast(false);
-    });
-  }, [achievementToastAnim]);
+      Animated.sequence([
+        Animated.timing(miniToastAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.delay(2000),
+        Animated.timing(miniToastAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowMiniToast(false);
+      });
+    },
+    [miniToastAnim],
+  );
+
+  const showAchievementNotification = useCallback(
+    (achievement: any) => {
+      setToastAchievement(achievement);
+      setShowAchievementToast(true);
+
+      Animated.sequence([
+        Animated.timing(achievementToastAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.delay(3000),
+        Animated.timing(achievementToastAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setShowAchievementToast(false);
+      });
+    },
+    [achievementToastAnim],
+  );
 
   // Listen for achievement celebrations
   useEffect(() => {
     if (showCelebration && celebrationAchievement) {
-      console.log('🎉 Achievement earned during workout:', celebrationAchievement.title);
-      
+      console.log(
+        "🎉 Achievement earned during workout:",
+        celebrationAchievement.title,
+      );
+
       // Show achievement toast notification first
       showAchievementNotification(celebrationAchievement);
-      
+
       // Add to recent achievements for session summary
-      setRecentAchievements(prev => [...prev, celebrationAchievement]);
-      
+      setRecentAchievements((prev) => [...prev, celebrationAchievement]);
+
       // Haptic feedback for achievement
-      if (Platform.OS !== 'web') {
+      if (Platform.OS !== "web") {
         Vibration.vibrate([100, 50, 100]);
       }
     }
@@ -348,7 +384,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     async (setIndex: number) => {
       try {
         // Haptic feedback
-        if (Platform.OS !== 'web') {
+        if (Platform.OS !== "web") {
           Vibration.vibrate(50);
         }
 
@@ -359,7 +395,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           !newProgress[currentExerciseIndex].completedSets[setIndex];
 
         // Check if all sets are completed
-        const allSetsCompleted = newProgress[currentExerciseIndex].completedSets.every(Boolean);
+        const allSetsCompleted =
+          newProgress[currentExerciseIndex].completedSets.every(Boolean);
         newProgress[currentExerciseIndex].isCompleted = allSetsCompleted;
 
         // Track completion time
@@ -372,20 +409,20 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           try {
             // Track individual set completion
             await checkProgress(user.id, {
-              action: 'set_completed',
+              action: "set_completed",
               exercise: currentExercise.name || currentExercise.exerciseName,
               setNumber: setIndex + 1,
               totalSets: currentProgress.completedSets.length,
-              workoutType: workout.category || 'General',
+              workoutType: workout.category || "General",
               timestamp: new Date().toISOString(),
             });
 
             // Track exercise completion if all sets are done
             if (allSetsCompleted) {
               await checkProgress(user.id, {
-                action: 'exercise_completed',
+                action: "exercise_completed",
                 exercise: currentExercise.name || currentExercise.exerciseName,
-                exerciseType: workout.category || 'General',
+                exerciseType: workout.category || "General",
                 setsCompleted: currentProgress.completedSets.length,
                 exerciseIndex: currentExerciseIndex + 1,
                 totalExercises: totalExercises,
@@ -393,33 +430,42 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               });
 
               // Show mini achievement toast for exercise completion
-              showAchievementMiniToast(`Exercise ${currentExerciseIndex + 1}/${totalExercises} Complete! 💪`);
+              showAchievementMiniToast(
+                `Exercise ${currentExerciseIndex + 1}/${totalExercises} Complete! 💪`,
+              );
             }
           } catch (achievementError) {
-            console.warn('Achievement tracking for set completion failed:', achievementError);
+            console.warn(
+              "Achievement tracking for set completion failed:",
+              achievementError,
+            );
           }
         }
 
         setExerciseProgress(newProgress);
 
         // Enhanced progress tracking
-        const completedExercises = newProgress.filter((ep) => ep?.isCompleted).length;
+        const completedExercises = newProgress.filter(
+          (ep) => ep?.isCompleted,
+        ).length;
         const progressPercentage =
-          totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0;
+          totalExercises > 0
+            ? Math.round((completedExercises / totalExercises) * 100)
+            : 0;
 
         // Save progress
         await completionTrackingService.updateWorkoutProgress(
-          workout.id || 'unknown',
+          workout.id || "unknown",
           progressPercentage,
           {
-            sessionId: sessionId || 'unknown',
+            sessionId: sessionId || "unknown",
             exerciseIndex: currentExerciseIndex,
             setIndex,
             completedExercises,
             totalExercises,
             timestamp: new Date().toISOString(),
             stats: workoutStats,
-          }
+          },
         );
 
         // Start rest timer if set is completed and not the last set
@@ -440,34 +486,39 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // Track workout milestones
         if (user?.id) {
           try {
-            const completedExercises = newProgress.filter(ep => ep.isCompleted).length;
-            const completionPercentage = (completedExercises / totalExercises) * 100;
+            const completedExercises = newProgress.filter(
+              (ep) => ep.isCompleted,
+            ).length;
+            const completionPercentage =
+              (completedExercises / totalExercises) * 100;
 
             // Milestone tracking
             if (completionPercentage === 50) {
               await checkProgress(user.id, {
-                action: 'workout_halfway',
-                workoutType: workout.category || 'General',
+                action: "workout_halfway",
+                workoutType: workout.category || "General",
                 exercisesCompleted: completedExercises,
                 totalExercises: totalExercises,
-                timeElapsed: Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000),
+                timeElapsed: Math.round(
+                  (new Date().getTime() - workoutStartTime.getTime()) / 60000,
+                ),
               });
-              showAchievementMiniToast('Halfway There! 🔥 Keep Going!');
+              showAchievementMiniToast("Halfway There! 🔥 Keep Going!");
             } else if (completionPercentage === 75) {
               await checkProgress(user.id, {
-                action: 'workout_three_quarters',
-                workoutType: workout.category || 'General',
+                action: "workout_three_quarters",
+                workoutType: workout.category || "General",
                 exercisesCompleted: completedExercises,
                 totalExercises: totalExercises,
               });
-              showAchievementMiniToast('Almost Done! 💪 Final Push!');
+              showAchievementMiniToast("Almost Done! 💪 Final Push!");
             }
           } catch (milestoneError) {
-            console.warn('Milestone tracking failed:', milestoneError);
+            console.warn("Milestone tracking failed:", milestoneError);
           }
         }
       } catch (error) {
-        console.error('Failed to update workout progress:', error);
+        console.error("Failed to update workout progress:", error);
       }
     },
     [
@@ -478,7 +529,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       workout.id,
       workoutStats,
       totalExercises,
-    ]
+    ],
   );
 
   // Enhanced rest timer
@@ -504,7 +555,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       }
       // If all sets are already completed, do nothing here; user can navigate Next/Finish
     } catch (err) {
-      console.error('completeSetAfterTimer error:', err);
+      console.error("completeSetAfterTimer error:", err);
       setShowExerciseTimer(false);
     }
   }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
@@ -524,7 +575,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         handleSetComplete(nextIncompleteIndex);
       }
     } catch (err) {
-      console.error('completeSetFromSession error:', err);
+      console.error("completeSetFromSession error:", err);
       setShowExerciseSession(false);
     }
   }, [exerciseProgress, currentExerciseIndex, handleSetComplete]);
@@ -577,31 +628,38 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   // Enhanced workout completion
   const completeWorkout = useCallback(async () => {
-    console.log('🔥 Completing enhanced workout');
+    console.log("🔥 Completing enhanced workout");
 
     try {
       const finalStats = {
         ...workoutStats,
-        totalDuration: Math.round((new Date().getTime() - workoutStartTime.getTime()) / 60000),
+        totalDuration: Math.round(
+          (new Date().getTime() - workoutStartTime.getTime()) / 60000,
+        ),
       };
 
-      const success = await completionTrackingService.completeWorkout(workout.id || 'unknown', {
-        sessionId: sessionId || 'unknown',
-        duration: finalStats.totalDuration,
-        exercisesCompleted: finalStats.exercisesCompleted,
-        totalExercises,
-        completedAt: new Date().toISOString(),
-        stats: finalStats,
-      });
+      const success = await completionTrackingService.completeWorkout(
+        workout.id || "unknown",
+        {
+          sessionId: sessionId || "unknown",
+          duration: finalStats.totalDuration,
+          exercisesCompleted: finalStats.exercisesCompleted,
+          totalExercises,
+          completedAt: new Date().toISOString(),
+          stats: finalStats,
+        },
+      );
 
       if (success) {
         // Track achievement progress for workout completion
         if (user?.id) {
-          console.log('🏆 Tracking achievement progress for workout completion');
+          console.log(
+            "🏆 Tracking achievement progress for workout completion",
+          );
           try {
             // Track workout completion with detailed activity data
             trackAchievementActivity.workoutCompleted(user.id, {
-              workoutType: workout.category || 'General',
+              workoutType: workout.category || "General",
               duration: finalStats.totalDuration,
               caloriesBurned: finalStats.caloriesBurned,
               exercisesCompleted: finalStats.exercisesCompleted,
@@ -613,8 +671,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
             // Additional achievement tracking for specific milestones
             await checkProgress(user.id, {
-              action: 'workout_completed',
-              workoutType: workout.category || 'General',
+              action: "workout_completed",
+              workoutType: workout.category || "General",
               duration: finalStats.totalDuration,
               caloriesBurned: finalStats.caloriesBurned,
               exercisesCompleted: finalStats.exercisesCompleted,
@@ -623,12 +681,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               isConsistent: true, // Could be enhanced with actual streak data
             });
           } catch (achievementError) {
-            console.warn('Achievement tracking failed:', achievementError);
+            console.warn("Achievement tracking failed:", achievementError);
           }
         }
 
         // Create workout completion message with achievements
-        let completionMessage = `Outstanding performance! You completed "${safeString(workout.title, 'Workout')}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
+        let completionMessage =
+          `Outstanding performance! You completed "${safeString(workout.title, "Workout")}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
           `📊 Stats:\n` +
           `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(totalExercises)}\n` +
           `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
@@ -642,64 +701,70 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           });
         }
 
-        Alert.alert(
-          '🎉 Workout Complete!',
-          completionMessage,
-          [
-            {
-              text: 'View Achievements',
-              onPress: () => navigation.navigate('Analytics'),
-              style: 'default',
-            },
-            {
-              text: 'View Progress',
-              onPress: () => navigation.navigate('Progress'),
-            },
-            {
-              text: 'Done',
-              onPress: () => navigation.goBack(),
-              style: 'default',
-            },
-          ]
-        );
+        Alert.alert("🎉 Workout Complete!", completionMessage, [
+          {
+            text: "View Achievements",
+            onPress: () => navigation.navigate("Analytics"),
+            style: "default",
+          },
+          {
+            text: "View Progress",
+            onPress: () => navigation.navigate("Progress"),
+          },
+          {
+            text: "Done",
+            onPress: () => navigation.goBack(),
+            style: "default",
+          },
+        ]);
       } else {
-        throw new Error('Failed to save workout completion');
+        throw new Error("Failed to save workout completion");
       }
     } catch (error) {
-      console.error('🚨 Error completing workout:', error);
+      console.error("🚨 Error completing workout:", error);
       Alert.alert(
-        'Workout Complete!',
-        `Great job! You completed "${safeString(workout.title, 'Workout')}" in ${safeString(workoutStats.totalDuration)} minutes.\n\nNote: Progress may not have been saved.`,
-        [{ text: 'Done', onPress: () => navigation.goBack() }]
+        "Workout Complete!",
+        `Great job! You completed "${safeString(workout.title, "Workout")}" in ${safeString(workoutStats.totalDuration)} minutes.\n\nNote: Progress may not have been saved.`,
+        [{ text: "Done", onPress: () => navigation.goBack() }],
       );
     }
-  }, [workout, sessionId, workoutStats, totalExercises, navigation, workoutStartTime]);
+  }, [
+    workout,
+    sessionId,
+    workoutStats,
+    totalExercises,
+    navigation,
+    workoutStartTime,
+  ]);
 
   // Enhanced exit handling
   const exitWorkout = useCallback(async () => {
-    console.log('🚪 Enhanced exit workout');
-    const hasProgress = workoutStats.exercisesCompleted > 0 || workoutStats.setsCompleted > 0;
+    console.log("🚪 Enhanced exit workout");
+    const hasProgress =
+      workoutStats.exercisesCompleted > 0 || workoutStats.setsCompleted > 0;
 
     // For web platform, directly navigate back
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       if (hasProgress) {
         try {
           const progressPercentage =
             totalExercises > 0
-              ? Math.round((workoutStats.exercisesCompleted / totalExercises) * 100)
+              ? Math.round(
+                  (workoutStats.exercisesCompleted / totalExercises) * 100,
+                )
               : 0;
           await completionTrackingService.updateWorkoutProgress(
-            workout.id || 'unknown',
+            workout.id || "unknown",
             progressPercentage,
             {
-              sessionId: sessionId || 'unknown',
+              sessionId: sessionId || "unknown",
               partialCompletion: true,
               exitedAt: new Date().toISOString(),
               stats: workoutStats,
-            }
+            },
           );
         } catch (error) {
-          console.error('❌ Failed to save progress:', error);
+          console.error("❌ Failed to save progress:", error);
         }
       }
       navigation.goBack();
@@ -709,51 +774,58 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     // Enhanced mobile exit dialog
     if (hasProgress) {
       Alert.alert(
-        'Save Progress?',
+        "Save Progress?",
         `You've completed ${safeString(workoutStats.exercisesCompleted)}/${safeString(totalExercises)} exercises and ${safeString(workoutStats.setsCompleted)} sets.\n\nYour progress will be saved.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: "Cancel", style: "cancel" },
           {
-            text: 'Save & Exit',
+            text: "Save & Exit",
             onPress: async () => {
               try {
                 const progressPercentage =
                   totalExercises > 0
-                    ? Math.round((workoutStats.exercisesCompleted / totalExercises) * 100)
+                    ? Math.round(
+                        (workoutStats.exercisesCompleted / totalExercises) *
+                          100,
+                      )
                     : 0;
                 await completionTrackingService.updateWorkoutProgress(
-                  workout.id || 'unknown',
+                  workout.id || "unknown",
                   progressPercentage,
                   {
-                    sessionId: sessionId || 'unknown',
+                    sessionId: sessionId || "unknown",
                     partialCompletion: true,
                     exitedAt: new Date().toISOString(),
                     stats: workoutStats,
-                  }
+                  },
                 );
               } catch (error) {
-                console.error('❌ Failed to save progress:', error);
+                console.error("❌ Failed to save progress:", error);
               }
               navigation.goBack();
             },
           },
-        ]
+        ],
       );
     } else {
-      Alert.alert('Exit Workout?', 'Are you sure you want to exit? No progress has been made.', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Exit',
-          style: 'destructive',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      Alert.alert(
+        "Exit Workout?",
+        "Are you sure you want to exit? No progress has been made.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Exit",
+            style: "destructive",
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
     }
   }, [workoutStats, totalExercises, workout.id, sessionId, navigation]);
 
   // Enhanced exercise name lookup from database
   const getExerciseName = useCallback((exerciseId: string): string => {
-    if (!exerciseId) return 'Exercise';
+    if (!exerciseId) return "Exercise";
 
     // Lookup exercise from database
     const exercise = exerciseFilterService.getExerciseById(exerciseId);
@@ -763,8 +835,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     }
 
     // Fallback: format the ID as title case
-    return safeString(exerciseId, 'Exercise')
-      .replace(/_/g, ' ')
+    return safeString(exerciseId, "Exercise")
+      .replace(/_/g, " ")
       .replace(/\b\w/g, (l) => l.toUpperCase());
   }, []);
 
@@ -791,16 +863,21 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
         <View style={styles.headerInfo}>
           <Text style={styles.workoutTitle} numberOfLines={1}>
-            {safeString(workout.title, 'Workout')}
+            {safeString(workout.title, "Workout")}
           </Text>
           <Text style={styles.progressText}>
-            Exercise {safeString(currentExerciseIndex + 1)} of {safeString(totalExercises)}
+            Exercise {safeString(currentExerciseIndex + 1)} of{" "}
+            {safeString(totalExercises)}
           </Text>
         </View>
 
         <View style={styles.headerRight}>
-          <Text style={styles.timerText}>{safeString(workoutStats.totalDuration)}m</Text>
-          <Text style={styles.caloriesText}>{safeString(workoutStats.caloriesBurned)} cal</Text>
+          <Text style={styles.timerText}>
+            {safeString(workoutStats.totalDuration)}m
+          </Text>
+          <Text style={styles.caloriesText}>
+            {safeString(workoutStats.caloriesBurned)} cal
+          </Text>
         </View>
       </View>
 
@@ -842,14 +919,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       <WorkoutTimer
         isVisible={showExerciseTimer}
         duration={derivedExerciseDuration}
-        title={safeString(currentExercise.name || 'Exercise Timer')}
+        title={safeString(currentExercise.name || "Exercise Timer")}
         onComplete={completeSetAfterTimer}
         onCancel={() => setShowExerciseTimer(false)}
       >
         {/* Show the same GIF above the timer for guidance */}
         <ExerciseGifPlayer
-          exerciseId={safeString(currentExercise.exerciseId, '')}
-          exerciseName={safeString(currentExercise.name, '')}
+          exerciseId={safeString(currentExercise.exerciseId, "")}
+          exerciseName={safeString(currentExercise.name, "")}
           height={180}
           width={220}
           showTitle={false}
@@ -865,14 +942,18 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           <Text style={styles.nextExerciseName}>
             {safeString(
               nextExercise.name || getExerciseName(nextExercise.exerciseId),
-              'Next Exercise'
+              "Next Exercise",
             )}
           </Text>
         </View>
       )}
 
       {/* Enhanced Main Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         <Animated.View
           style={[
             styles.exerciseContainer,
@@ -884,8 +965,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         >
           {/* Enhanced Exercise Visual */}
           <ExerciseGifPlayer
-            exerciseId={safeString(currentExercise.exerciseId, '')}
-            exerciseName={safeString(currentExercise.name, '')}
+            exerciseId={safeString(currentExercise.exerciseId, "")}
+            exerciseName={safeString(currentExercise.name, "")}
             height={280}
             width={320}
             showTitle={false}
@@ -900,8 +981,9 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             <View style={styles.exerciseHeader}>
               <Text style={styles.exerciseName} numberOfLines={2}>
                 {safeString(
-                  currentExercise.name || getExerciseName(currentExercise.exerciseId),
-                  'Current Exercise'
+                  currentExercise.name ||
+                    getExerciseName(currentExercise.exerciseId),
+                  "Current Exercise",
                 )}
               </Text>
 
@@ -936,19 +1018,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
               <View style={styles.exerciseDetails}>
                 <Text style={styles.exerciseDetailText}>
-                  {safeString(currentExercise.sets, '0')} sets ×{' '}
-                  {safeString(currentExercise.reps, '0')} reps
+                  {safeString(currentExercise.sets, "0")} sets ×{" "}
+                  {safeString(currentExercise.reps, "0")} reps
                 </Text>
 
                 {safeNumber(currentExercise.weight, 0) > 0 && (
                   <Text style={styles.exerciseDetailText}>
-                    {safeString(currentExercise.weight, '0')}kg
+                    {safeString(currentExercise.weight, "0")}kg
                   </Text>
                 )}
 
                 {safeNumber(currentExercise.restTime, 0) > 0 && (
                   <Text style={styles.exerciseDetailText}>
-                    Rest: {safeString(currentExercise.restTime, '0')}s
+                    Rest: {safeString(currentExercise.restTime, "0")}s
                   </Text>
                 )}
               </View>
@@ -961,24 +1043,35 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
                 {currentProgress.completedSets?.map((isCompleted, setIndex) => (
                   <TouchableOpacity
                     key={setIndex}
-                    style={[styles.setButton, isCompleted && styles.setButtonCompleted]}
+                    style={[
+                      styles.setButton,
+                      isCompleted && styles.setButtonCompleted,
+                    ]}
                     onPress={() => handleSetComplete(setIndex)}
                     activeOpacity={0.8}
                   >
                     <Text
-                      style={[styles.setButtonText, isCompleted && styles.setButtonTextCompleted]}
+                      style={[
+                        styles.setButtonText,
+                        isCompleted && styles.setButtonTextCompleted,
+                      ]}
                     >
                       {safeString(setIndex + 1)}
                     </Text>
-                    {isCompleted && <Text style={styles.setButtonCheck}>✓</Text>}
+                    {isCompleted && (
+                      <Text style={styles.setButtonCheck}>✓</Text>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
 
               {/* Sets Progress Text */}
               <Text style={styles.setsProgressText}>
-                {safeString(currentProgress.completedSets?.filter(Boolean).length || 0)} /{' '}
-                {safeString(currentProgress.completedSets?.length || 0)} completed
+                {safeString(
+                  currentProgress.completedSets?.filter(Boolean).length || 0,
+                )}{" "}
+                / {safeString(currentProgress.completedSets?.length || 0)}{" "}
+                completed
               </Text>
             </View>
 
@@ -988,8 +1081,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
               <Text style={styles.instructionsText}>
                 {safeString(
                   currentExercise.notes ||
-                    'Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.',
-                  'Exercise instructions not available'
+                    "Focus on proper form and controlled movements. Maintain steady breathing throughout each rep.",
+                  "Exercise instructions not available",
                 )}
               </Text>
             </View>
@@ -997,15 +1090,21 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
             {/* Workout Stats */}
             <View style={styles.statsContainer}>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{safeString(workoutStats.setsCompleted)}</Text>
+                <Text style={styles.statValue}>
+                  {safeString(workoutStats.setsCompleted)}
+                </Text>
                 <Text style={styles.statLabel}>Sets Done</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{safeString(workoutStats.totalDuration)}m</Text>
+                <Text style={styles.statValue}>
+                  {safeString(workoutStats.totalDuration)}m
+                </Text>
                 <Text style={styles.statLabel}>Duration</Text>
               </View>
               <View style={styles.statItem}>
-                <Text style={styles.statValue}>{safeString(workoutStats.caloriesBurned)}</Text>
+                <Text style={styles.statValue}>
+                  {safeString(workoutStats.caloriesBurned)}
+                </Text>
                 <Text style={styles.statLabel}>Calories</Text>
               </View>
             </View>
@@ -1017,8 +1116,8 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       <ExerciseInstructionModal
         isVisible={showInstructionModal}
         onClose={() => setShowInstructionModal(false)}
-        exerciseId={safeString(currentExercise.exerciseId, '')}
-        exerciseName={safeString(currentExercise.name, '')}
+        exerciseId={safeString(currentExercise.exerciseId, "")}
+        exerciseName={safeString(currentExercise.name, "")}
       />
 
       {/* Exercise Session Modal for Rep-Based Exercises */}
@@ -1026,14 +1125,16 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         isVisible={showExerciseSession}
         onComplete={completeSetFromSession}
         onCancel={() => setShowExerciseSession(false)}
-        exerciseId={safeString(currentExercise.exerciseId, '')}
+        exerciseId={safeString(currentExercise.exerciseId, "")}
         exerciseName={safeString(
           currentExercise.name || getExerciseName(currentExercise.exerciseId),
-          'Current Exercise'
+          "Current Exercise",
         )}
-        reps={safeString(currentExercise.reps, '')}
+        reps={safeString(currentExercise.reps, "")}
         currentSet={
-          (exerciseProgress[currentExerciseIndex]?.completedSets?.filter(Boolean).length || 0) + 1
+          (exerciseProgress[currentExerciseIndex]?.completedSets?.filter(
+            Boolean,
+          ).length || 0) + 1
         }
         totalSets={safeNumber(currentExercise.sets, 3)}
       />
@@ -1049,10 +1150,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         />
 
         <Button
-          title={currentExerciseIndex === totalExercises - 1 ? 'Finish Workout' : 'Next Exercise'}
+          title={
+            currentExerciseIndex === totalExercises - 1
+              ? "Finish Workout"
+              : "Next Exercise"
+          }
           onPress={goToNextExercise}
           variant="primary"
-          style={[styles.navButton, styles.primaryNavButton]}
+          style={[styles.navButton, styles.primaryNavButton] as any}
         />
       </View>
 
@@ -1082,10 +1187,16 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           ]}
         >
           <View style={styles.achievementToastContent}>
-            <Text style={styles.achievementToastIcon}>{toastAchievement.icon}</Text>
+            <Text style={styles.achievementToastIcon}>
+              {toastAchievement.icon}
+            </Text>
             <View style={styles.achievementToastText}>
-              <Text style={styles.achievementToastTitle}>Achievement Unlocked!</Text>
-              <Text style={styles.achievementToastDescription}>{toastAchievement.title}</Text>
+              <Text style={styles.achievementToastTitle}>
+                Achievement Unlocked!
+              </Text>
+              <Text style={styles.achievementToastDescription}>
+                {toastAchievement.title}
+              </Text>
             </View>
           </View>
         </Animated.View>
@@ -1116,7 +1227,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   );
 };
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
@@ -1126,8 +1237,8 @@ const styles = StyleSheet.create({
 
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: THEME.spacing.xl,
   },
 
@@ -1140,14 +1251,14 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.error,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   errorSubtext: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.xl,
   },
 
@@ -1156,9 +1267,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
     backgroundColor: THEME.colors.surface,
@@ -1171,11 +1282,11 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: THEME.colors.error + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: THEME.colors.error + "20",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: THEME.colors.error + '40',
+    borderColor: THEME.colors.error + "40",
   },
 
   exitButtonText: {
@@ -1186,7 +1297,7 @@ const styles = StyleSheet.create({
 
   headerInfo: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: THEME.spacing.md,
   },
 
@@ -1194,7 +1305,7 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   progressText: {
@@ -1204,7 +1315,7 @@ const styles = StyleSheet.create({
   },
 
   headerRight: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
 
   timerText: {
@@ -1224,18 +1335,18 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.border,
     marginHorizontal: THEME.spacing.lg,
     borderRadius: 3,
-    overflow: 'hidden',
-    position: 'relative',
+    overflow: "hidden",
+    position: "relative",
   },
 
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
     borderRadius: 3,
   },
 
   progressPercentage: {
-    position: 'absolute',
+    position: "absolute",
     right: THEME.spacing.sm,
     top: -20,
     fontSize: THEME.fontSize.xs,
@@ -1244,7 +1355,7 @@ const styles = StyleSheet.create({
   },
 
   nextExercisePreview: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     marginHorizontal: THEME.spacing.lg,
     marginTop: THEME.spacing.md,
     padding: THEME.spacing.md,
@@ -1273,19 +1384,19 @@ const styles = StyleSheet.create({
 
   exerciseContainer: {
     marginTop: THEME.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   exerciseGifPlayer: {
     marginBottom: THEME.spacing.lg,
-    alignSelf: 'center',
+    alignSelf: "center",
     elevation: 4,
   },
 
   exerciseCard: {
     padding: THEME.spacing.xl,
     marginBottom: THEME.spacing.lg,
-    width: '100%',
+    width: "100%",
   },
 
   exerciseHeader: {
@@ -1296,14 +1407,14 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   exerciseDetails: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
     gap: THEME.spacing.md,
   },
 
@@ -1317,7 +1428,6 @@ const styles = StyleSheet.create({
     borderRadius: THEME.borderRadius.sm,
   },
 
-
   setsContainer: {
     marginBottom: THEME.spacing.xl,
   },
@@ -1327,13 +1437,13 @@ const styles = StyleSheet.create({
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   setsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "center",
+    flexWrap: "wrap",
     gap: THEME.spacing.md,
     marginBottom: THEME.spacing.sm,
   },
@@ -1343,11 +1453,11 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
     borderColor: THEME.colors.border,
-    position: 'relative',
+    position: "relative",
   },
 
   setButtonCompleted: {
@@ -1366,7 +1476,7 @@ const styles = StyleSheet.create({
   },
 
   setButtonCheck: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: 2,
     fontSize: 12,
@@ -1377,7 +1487,7 @@ const styles = StyleSheet.create({
   setsProgressText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     fontWeight: THEME.fontWeight.medium,
   },
 
@@ -1402,15 +1512,15 @@ const styles = StyleSheet.create({
   },
 
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingTop: THEME.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {
@@ -1424,14 +1534,14 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
     fontWeight: THEME.fontWeight.medium,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
 
   navigationContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: rp(16), // ✅ Responsive padding (reduced from 24)
-    paddingVertical: rp(8),    // ✅ Further reduced padding (was 12)
-    gap: rw(12),               // ✅ Responsive gap
+    paddingVertical: rp(8), // ✅ Further reduced padding (was 12)
+    gap: rw(12), // ✅ Responsive gap
     backgroundColor: THEME.colors.surface,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
@@ -1439,8 +1549,8 @@ const styles = StyleSheet.create({
 
   navButton: {
     flex: 1,
-    minHeight: 44,             // ✅ Fixed height (no scaling) for consistency
-    maxHeight: 48,             // ✅ Prevent oversizing
+    minHeight: 44, // ✅ Fixed height (no scaling) for consistency
+    maxHeight: 48, // ✅ Prevent oversizing
   },
 
   primaryNavButton: {
@@ -1449,7 +1559,7 @@ const styles = StyleSheet.create({
 
   // Achievement Toast Styles
   achievementToast: {
-    position: 'absolute',
+    position: "absolute",
     top: 60,
     left: THEME.spacing.lg,
     right: THEME.spacing.lg,
@@ -1457,13 +1567,13 @@ const styles = StyleSheet.create({
   },
 
   achievementToastContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: THEME.colors.success,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -1488,20 +1598,20 @@ const styles = StyleSheet.create({
 
   achievementToastDescription: {
     fontSize: THEME.fontSize.xs,
-    color: THEME.colors.white + 'CC',
+    color: THEME.colors.white + "CC",
   },
 
   // Mini Toast Styles
   miniToast: {
-    position: 'absolute',
-    top: '50%',
-    alignSelf: 'center',
-    backgroundColor: THEME.colors.primary + 'E6',
+    position: "absolute",
+    top: "50%",
+    alignSelf: "center",
+    backgroundColor: THEME.colors.primary + "E6",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
     borderRadius: 20,
     zIndex: 999,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -1512,6 +1622,6 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.white,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

@@ -733,11 +733,11 @@ class HealthConnectService {
           console.log("📊 Steps sources (all):", origins);
 
           // Check if raw sensor is mixed with app data (causes double-counting)
-          const hasRawSensor = origins.some((o) =>
+          const hasRawSensor = origins.some((o: any) =>
             this.EXCLUDED_RAW_SOURCES.includes(o),
           );
           const appSources = origins.filter(
-            (o) => !this.EXCLUDED_RAW_SOURCES.includes(o),
+            (o: any) => !this.EXCLUDED_RAW_SOURCES.includes(o),
           );
           const hasAppSources = appSources.length > 0;
 
@@ -1038,11 +1038,11 @@ class HealthConnectService {
 
         if (distanceAggregate && distanceAggregate.DISTANCE) {
           const origins = distanceAggregate.dataOrigins || [];
-          const hasRawSensor = origins.some((o) =>
+          const hasRawSensor = origins.some((o: string) =>
             this.EXCLUDED_RAW_SOURCES.includes(o),
           );
           const appSources = origins.filter(
-            (o) => !this.EXCLUDED_RAW_SOURCES.includes(o),
+            (o: string) => !this.EXCLUDED_RAW_SOURCES.includes(o),
           );
           const hasAppSources = appSources.length > 0;
 

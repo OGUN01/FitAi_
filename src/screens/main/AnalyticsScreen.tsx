@@ -1,8 +1,8 @@
 /**
  * AnalyticsScreen - Progress Analytics Dashboard
- * 
+ *
  * REDESIGNED: Following HomeScreen pattern with modular components
- * 
+ *
  * Layout Order:
  * 1. AnalyticsHeader (title with AI badge, period selector)
  * 2. MetricSummaryGrid (2x2 metrics: Weight, Calories, Workouts, Streak)
@@ -10,22 +10,25 @@
  * 4. TrendCharts (detailed analytics charts)
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, RefreshControl } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rh } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, StyleSheet, RefreshControl } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 // Stores
-import { useAnalyticsStore } from '../../stores/analyticsStore';
-import { useHealthDataStore } from '../../stores/healthDataStore';
-import { useFitnessStore } from '../../stores/fitnessStore';
-import { useAchievementStore } from '../../stores/achievementStore';
-import { useUserStore } from '../../stores/userStore';
-import { useCalculatedMetrics } from '../../hooks/useCalculatedMetrics';
+import { useAnalyticsStore } from "../../stores/analyticsStore";
+import { useHealthDataStore } from "../../stores/healthDataStore";
+import { useFitnessStore } from "../../stores/fitnessStore";
+import { useAchievementStore } from "../../stores/achievementStore";
+import { useUserStore } from "../../stores/userStore";
+import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
 
 // Modular Components
 import {
@@ -34,13 +37,13 @@ import {
   AchievementShowcase,
   TrendCharts,
   Period,
-} from './analytics';
+} from "./analytics";
 
 export const AnalyticsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
 
   // State
-  const [selectedPeriod, setSelectedPeriod] = useState<Period>('month');
+  const [selectedPeriod, setSelectedPeriod] = useState<Period>("month");
   const [refreshing, setRefreshing] = useState(false);
 
   // Stores
@@ -67,43 +70,52 @@ export const AnalyticsScreen: React.FC = () => {
     // Weight data - prefer calculated metrics from onboarding, fallback to health metrics or profile
     const currentWeight = profile?.bodyMetrics?.current_weight_kg; // SINGLE SOURCE
     const targetWeight = calculatedMetrics?.targetWeightKg;
-    
+
     // Calculate completed workouts this period
     const completedWorkouts = Object.values(workoutProgress).filter(
-      (p) => p.progress === 100
+      (p) => p.progress === 100,
     ).length;
 
     // Calculate calories burned from workouts
-    const totalCaloriesBurned = weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
-      const progress = workoutProgress[workout.id];
-      if (progress && progress.progress === 100) {
-        return total + (workout.estimatedCalories || 0);
-      }
-      return total;
-    }, 0) || 0;
+    const totalCaloriesBurned =
+      weeklyWorkoutPlan?.workouts?.reduce((total, workout) => {
+        const progress = workoutProgress[workout.id];
+        if (progress && progress.progress === 100) {
+          return total + (workout.estimatedCalories || 0);
+        }
+        return total;
+      }, 0) || 0;
 
     // Calculate weight change toward goal
-    const weightChange = currentWeight && targetWeight 
-      ? Number((targetWeight - currentWeight).toFixed(1))
-      : undefined;
+    const weightChange =
+      currentWeight && targetWeight
+        ? Number((targetWeight - currentWeight).toFixed(1))
+        : undefined;
 
     return {
-      weight: currentWeight ? {
-        current: currentWeight,
-        change: weightChange,
-        trend: weightChange && weightChange < 0 ? 'down' as const : weightChange && weightChange > 0 ? 'up' as const : 'stable' as const,
-        target: targetWeight,
-      } : undefined,
+      weight: currentWeight
+        ? {
+            current: currentWeight,
+            change: weightChange,
+            trend:
+              weightChange && weightChange < 0
+                ? ("down" as const)
+                : weightChange && weightChange > 0
+                  ? ("up" as const)
+                  : ("stable" as const),
+            target: targetWeight,
+          }
+        : undefined,
       calories: {
         burned: totalCaloriesBurned,
         target: calculatedMetrics?.dailyCalories || undefined,
         change: totalCaloriesBurned > 0 ? 15 : 0,
-        trend: totalCaloriesBurned > 0 ? 'up' as const : 'stable' as const,
+        trend: totalCaloriesBurned > 0 ? ("up" as const) : ("stable" as const),
       },
       workouts: {
         count: completedWorkouts,
         change: completedWorkouts > 0 ? 3 : 0,
-        trend: completedWorkouts > 0 ? 'up' as const : 'stable' as const,
+        trend: completedWorkouts > 0 ? ("up" as const) : ("stable" as const),
       },
       streak: {
         days: currentStreak, // NO FALLBACK
@@ -115,30 +127,48 @@ export const AnalyticsScreen: React.FC = () => {
       tdee: calculatedMetrics?.calculatedTDEE,
       dailyWater: calculatedMetrics?.dailyWaterML,
     };
-  }, [healthMetrics, profile, weeklyWorkoutPlan, workoutProgress, currentStreak, calculatedMetrics]);
+  }, [
+    healthMetrics,
+    profile,
+    weeklyWorkoutPlan,
+    workoutProgress,
+    currentStreak,
+    calculatedMetrics,
+  ]);
 
   // Generate chart data based on period
   const chartData = useMemo(() => {
-    const labels = selectedPeriod === 'week' 
-      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-      : selectedPeriod === 'month'
-      ? ['W1', 'W2', 'W3', 'W4']
-      : ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'];
+    const labels =
+      selectedPeriod === "week"
+        ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        : selectedPeriod === "month"
+          ? ["W1", "W2", "W3", "W4"]
+          : ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
 
     // Calculate workout data per day/week
     const workoutData = labels.map((label, index) => {
       // Count workouts for this period
-      const count = weeklyWorkoutPlan?.workouts?.filter((w, i) => {
-        if (selectedPeriod === 'week') {
-          const dayMap: Record<string, number> = {
-            'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
-            'friday': 4, 'saturday': 5, 'sunday': 6,
-          };
-          return dayMap[w.dayOfWeek?.toLowerCase()] === index && 
-                 workoutProgress[w.id]?.progress === 100;
-        }
-        return false;
-      }).length || 0;
+      const count =
+        weeklyWorkoutPlan?.workouts?.filter((w, i) => {
+          if (selectedPeriod === "week") {
+            const dayMap: Record<string, number> = {
+              monday: 0,
+              tuesday: 1,
+              wednesday: 2,
+              thursday: 3,
+              friday: 4,
+              saturday: 5,
+              sunday: 6,
+            };
+            const dayOfWeek = w.dayOfWeek?.toLowerCase();
+            return (
+              dayOfWeek &&
+              dayMap[dayOfWeek] === index &&
+              workoutProgress[w.id]?.progress === 100
+            );
+          }
+          return false;
+        }).length || 0;
 
       return { label, value: count };
     });
@@ -146,20 +176,28 @@ export const AnalyticsScreen: React.FC = () => {
     // NO MOCK DATA - Only show actual tracked data
     // Weight and calorie history would come from a dedicated tracking store in production
     // For now, return undefined to show empty states until user logs actual data
-    
+
     return {
       // Weight data - only show if user has logged weight entries
       // TODO: Replace with actual weight history from weightTrackingStore
       weightData: undefined,
-      
+
       // Calorie data - only show if user has logged meals/calories
       // TODO: Replace with actual calorie history from nutritionStore
       calorieData: undefined,
-      
+
       // Workout data - shows actual completed workouts
-      workoutData: workoutData.some(d => d.value > 0) ? workoutData : undefined,
+      workoutData: workoutData.some((d) => d.value > 0)
+        ? workoutData
+        : undefined,
     };
-  }, [selectedPeriod, weeklyWorkoutPlan, workoutProgress, metricsData, calculatedMetrics]);
+  }, [
+    selectedPeriod,
+    weeklyWorkoutPlan,
+    workoutProgress,
+    metricsData,
+    calculatedMetrics,
+  ]);
 
   // Handlers
   const handlePeriodChange = useCallback((period: Period) => {
@@ -173,7 +211,7 @@ export const AnalyticsScreen: React.FC = () => {
     try {
       await refreshAnalytics();
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setRefreshing(false);
     }
@@ -181,18 +219,21 @@ export const AnalyticsScreen: React.FC = () => {
 
   const handleMetricPress = useCallback((metric: string) => {
     haptics.light();
-    console.log('Metric pressed:', metric);
+    console.log("Metric pressed:", metric);
   }, []);
 
   const handleChartPress = useCallback((chartType: string) => {
     haptics.light();
-    console.log('Chart pressed:', chartType);
+    console.log("Chart pressed:", chartType);
   }, []);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <Animated.View entering={FadeIn.duration(300)} style={styles.animatedContainer}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Animated.View
+          entering={FadeIn.duration(300)}
+          style={styles.animatedContainer}
+        >
           <Animated.ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
@@ -214,7 +255,7 @@ export const AnalyticsScreen: React.FC = () => {
 
             {/* 2. Metric Summary Grid */}
             <MetricSummaryGrid
-              data={metricsData}
+              data={metricsData as any}
               period={selectedPeriod}
               onMetricPress={handleMetricPress}
             />

@@ -422,26 +422,33 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
 
     const completeData: OnboardingReviewData = {
       personalInfo: {
-        name:
-          `${personalInfo?.first_name || ""} ${personalInfo?.last_name || ""}`.trim() ||
-          "User",
+        first_name: personalInfo?.first_name || "User",
+        last_name: personalInfo?.last_name || "",
         email: personalInfo?.email || "",
         age: personalInfo.age, // NO FALLBACK - validated above
         gender: personalInfo.gender, // NO FALLBACK - validated above
         height: bodyAnalysis.height_cm, // NO FALLBACK - validated above
         weight: bodyAnalysis.current_weight_kg, // NO FALLBACK - validated above
-        activityLevel: personalInfo?.occupation_type || "moderate_active",
-      },
+        occupation_type: personalInfo?.occupation_type || "moderate_active",
+        country: personalInfo?.country || "",
+        state: personalInfo?.state || "",
+      } as any,
       fitnessGoals: {
         primary_goals: workoutPreferences?.primary_goals || [],
         time_commitment: `${workoutPreferences?.session_duration_minutes || 45} minutes`,
+        experience:
+          workoutPreferences?.intensity === "beginner"
+            ? "beginner"
+            : workoutPreferences?.intensity === "advanced"
+              ? "advanced"
+              : "intermediate",
         experience_level:
           workoutPreferences?.intensity === "beginner"
             ? "beginner"
             : workoutPreferences?.intensity === "advanced"
               ? "advanced"
               : "intermediate",
-      },
+      } as any,
       dietPreferences: {
         dietType: (dietPreferences?.diet_type || "balanced") as
           | "vegetarian"
@@ -450,13 +457,8 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
           | "pescatarian",
         allergies: dietPreferences?.allergies || [],
         restrictions: dietPreferences?.cuisine_preferences || [],
-        mealsPerDay:
-          (dietPreferences?.breakfast_enabled ? 1 : 0) +
-          (dietPreferences?.lunch_enabled ? 1 : 0) +
-          (dietPreferences?.dinner_enabled ? 1 : 0) +
-          (dietPreferences?.snacks_count || 0),
         calorieTarget: advancedReview.daily_calories, // NO FALLBACK - validated above
-      },
+      } as any,
       workoutPreferences: {
         location: workoutPreferences?.location || "gym",
         equipment: workoutPreferences?.available_equipment || [],
@@ -654,7 +656,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
               workoutPreferences?.workout_frequency_per_week || 3,
             // Use calculated calorie target - NO HARDCODED FALLBACK
             // If null, show 'calculating...' in the UI
-            calorieTarget: advancedReview?.daily_calories ?? null,
+            calorieTarget: advancedReview?.daily_calories ?? (null as any),
           }}
         />
 

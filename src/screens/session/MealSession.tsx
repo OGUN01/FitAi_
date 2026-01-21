@@ -296,7 +296,7 @@ export const MealSession: React.FC<MealSessionProps> = ({
                 <Card
                   key={index}
                   style={
-                    index === currentStep && completedSteps[index]
+                    (index === currentStep && completedSteps[index]
                       ? [
                           styles.stepOverviewCard,
                           styles.currentStepOverview,
@@ -309,7 +309,7 @@ export const MealSession: React.FC<MealSessionProps> = ({
                               styles.stepOverviewCard,
                               styles.completedStepOverview,
                             ]
-                          : styles.stepOverviewCard
+                          : styles.stepOverviewCard) as any
                   }
                 >
                   <View style={styles.stepOverviewContent}>

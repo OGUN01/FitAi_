@@ -300,7 +300,7 @@ export const MealDetail: React.FC<MealDetailProps> = ({
             title="Delete Meal"
             onPress={onDelete || (() => {})}
             variant="outline"
-            style={[styles.actionButton, styles.deleteButton]}
+            style={[styles.actionButton, styles.deleteButton] as any}
             textStyle={styles.deleteButtonText}
           />
         </View>

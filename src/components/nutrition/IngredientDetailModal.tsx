@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,12 @@ import {
   SafeAreaView,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { THEME } from '../ui';
-import { DayMeal } from '../../types/ai';
-import { completionTrackingService } from '../../services/completionTracking';
-import { mealMotivationService } from '../../features/nutrition/MealMotivation';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { THEME } from "../ui";
+import { DayMeal } from "../../types/ai";
+import { completionTrackingService } from "../../services/completionTracking";
+import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 
 interface IngredientDetailModalProps {
   visible: boolean;
@@ -26,7 +26,7 @@ interface IngredientDetailModalProps {
   mealProgress?: number;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
   visible,
@@ -34,69 +34,75 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
   ingredientName,
   meal,
   onMealComplete,
-  mealProgress = 0
+  mealProgress = 0,
 }) => {
   const [isCompleting, setIsCompleting] = useState(false);
   const isCompleted = mealProgress >= 100;
-  
+
   // Find the ingredient in the meal's items array
-  const ingredientData = meal.items?.find(item =>
-    item.name?.toLowerCase().includes(ingredientName.toLowerCase()) ||
-    ingredientName.toLowerCase().includes(item.name?.toLowerCase() || '')
+  const ingredientData = meal.items?.find(
+    (item) =>
+      item.name?.toLowerCase().includes(ingredientName.toLowerCase()) ||
+      ingredientName.toLowerCase().includes(item.name?.toLowerCase() || ""),
   );
 
   const handleMarkComplete = async () => {
     if (isCompleted || isCompleting) {
-      console.log('🍽️ Meal already completed or completing in progress');
+      console.log("🍽️ Meal already completed or completing in progress");
       return;
     }
 
     try {
       setIsCompleting(true);
-      console.log('🍽️ IngredientDetailModal: Marking meal as completed:', meal.name, meal.id);
+      console.log(
+        "🍽️ IngredientDetailModal: Marking meal as completed:",
+        meal.name,
+        meal.id,
+      );
 
       // Use the completion tracking service to mark meal as complete
       const success = await completionTrackingService.completeMeal(meal.id, {
         completedAt: new Date().toISOString(),
-        source: 'ingredient_detail_modal',
+        source: "ingredient_detail_modal",
         quickComplete: true,
       });
 
       if (success) {
         // Generate dynamic completion message
-        const completionMessage = mealMotivationService.getCompletionMessage(meal, {});
-        
-        Alert.alert(
-          '🎉 Meal Completed!',
-          completionMessage,
-          [
-            {
-              text: 'Awesome! 🍽️',
-              onPress: () => {
-                console.log('🍽️ IngredientDetailModal: Meal completion confirmed');
-                
-                // Call the completion callback
-                if (onMealComplete) {
-                  onMealComplete(meal.id);
-                }
-                
-                // Close the modal
-                onClose();
-              },
-            },
-          ]
+        const completionMessage = mealMotivationService.getCompletionMessage(
+          meal,
+          {},
         );
-        
-        console.log('✅ Meal completed successfully from ingredient modal');
+
+        Alert.alert("🎉 Meal Completed!", completionMessage, [
+          {
+            text: "Awesome! 🍽️",
+            onPress: () => {
+              console.log(
+                "🍽️ IngredientDetailModal: Meal completion confirmed",
+              );
+
+              // Call the completion callback
+              if (onMealComplete) {
+                onMealComplete(meal.id);
+              }
+
+              // Close the modal
+              onClose();
+            },
+          },
+        ]);
+
+        console.log("✅ Meal completed successfully from ingredient modal");
       } else {
-        throw new Error('Failed to complete meal');
+        throw new Error("Failed to complete meal");
       }
     } catch (error) {
-      console.error('❌ Failed to complete meal from ingredient modal:', error);
+      console.error("❌ Failed to complete meal from ingredient modal:", error);
       Alert.alert(
-        '❌ Error',
-        'Failed to mark meal as completed. Please try again.',
-        [{ text: 'OK' }]
+        "❌ Error",
+        "Failed to mark meal as completed. Please try again.",
+        [{ text: "OK" }],
       );
     } finally {
       setIsCompleting(false);
@@ -121,7 +127,11 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+    >
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -135,7 +145,11 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         {/* Completion Status Banner */}
         {isCompleted && (
           <View style={styles.completionBanner}>
-            <Ionicons name="checkmark-circle" size={20} color={THEME.colors.success} />
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={THEME.colors.success}
+            />
             <Text style={styles.completionBannerText}>
               🎉 This meal has been completed!
             </Text>
@@ -154,7 +168,8 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 AI-Generated Ingredient
               </Text>
               <Text style={styles.quantityText}>
-                {ingredientData.quantity}{ingredientData.unit || 'g'} in this meal
+                {ingredientData.quantity}
+                {ingredientData.unit || "g"} in this meal
               </Text>
             </View>
           </View>
@@ -162,11 +177,13 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           {/* Main Nutrition Facts */}
           <View style={styles.nutritionCard}>
             <Text style={styles.sectionTitle}>Nutrition Facts</Text>
-            
+
             {/* Calories - Featured */}
             <View style={styles.calorieSection}>
               <Text style={styles.calorieLabel}>Calories</Text>
-              <Text style={styles.calorieValue}>{Math.round(ingredientData.calories)}</Text>
+              <Text style={styles.calorieValue}>
+                {Math.round(ingredientData.calories)}
+              </Text>
             </View>
 
             <View style={styles.divider} />
@@ -178,21 +195,33 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 value={ingredientData.macros?.protein || 0}
                 unit="g"
                 color="#4ECDC4"
-                percentage={((ingredientData.macros?.protein || 0) * 4) / ingredientData.calories * 100}
+                percentage={
+                  (((ingredientData.macros?.protein || 0) * 4) /
+                    ingredientData.calories) *
+                  100
+                }
               />
               <NutritionRow
                 label="Carbohydrates"
                 value={ingredientData.macros?.carbohydrates || 0}
                 unit="g"
                 color="#45B7D1"
-                percentage={((ingredientData.macros?.carbohydrates || 0) * 4) / ingredientData.calories * 100}
+                percentage={
+                  (((ingredientData.macros?.carbohydrates || 0) * 4) /
+                    ingredientData.calories) *
+                  100
+                }
               />
               <NutritionRow
                 label="Fat"
                 value={ingredientData.macros?.fat || 0}
                 unit="g"
                 color="#96CEB4"
-                percentage={((ingredientData.macros?.fat || 0) * 9) / ingredientData.calories * 100}
+                percentage={
+                  (((ingredientData.macros?.fat || 0) * 9) /
+                    ingredientData.calories) *
+                  100
+                }
               />
               <NutritionRow
                 label="Fiber"
@@ -207,14 +236,18 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
           <View style={styles.contextCard}>
             <Text style={styles.sectionTitle}>In This Meal</Text>
             <View style={styles.contextInfo}>
+              <Text style={styles.contextText}>🍽️ Part of: {meal.name}</Text>
               <Text style={styles.contextText}>
-                🍽️ Part of: {meal.name}
+                📊 Contributes{" "}
+                {Math.round(
+                  (ingredientData.calories / meal.totalCalories) * 100,
+                )}
+                % of total calories
               </Text>
               <Text style={styles.contextText}>
-                📊 Contributes {Math.round((ingredientData.calories / meal.totalCalories) * 100)}% of total calories
-              </Text>
-              <Text style={styles.contextText}>
-                💪 Provides {Math.round(ingredientData.macros?.protein || 0)}g of the meal's {Math.round(meal.totalMacros?.protein || 0)}g protein
+                💪 Provides {Math.round(ingredientData.macros?.protein || 0)}g
+                of the meal's {Math.round(meal.totalMacros?.protein || 0)}g
+                protein
               </Text>
             </View>
           </View>
@@ -224,10 +257,15 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
             <Text style={styles.sectionTitle}>Serving Details</Text>
             <View style={styles.quantityInfo}>
               <Text style={styles.quantityText}>
-                📏 Quantity: {ingredientData.quantity} {ingredientData.unit || 'grams'}
+                📏 Quantity: {ingredientData.quantity}{" "}
+                {ingredientData.unit || "grams"}
               </Text>
               <Text style={styles.quantityText}>
-                ⚖️ Calories per gram: {Math.round((ingredientData.calories / ingredientData.quantity) * 100) / 100}
+                ⚖️ Calories per gram:{" "}
+                {Math.round(
+                  (ingredientData.calories / Number(ingredientData.quantity)) *
+                    100,
+                ) / 100}
               </Text>
             </View>
           </View>
@@ -236,12 +274,14 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
         {/* Action Buttons */}
         <View style={styles.actionSection}>
           <View style={styles.navigationButtons}>
-            <TouchableOpacity 
-              style={[styles.navButton, styles.previousButton]} 
+            <TouchableOpacity
+              style={[styles.navButton, styles.previousButton]}
               onPress={onClose}
             >
               <Ionicons name="chevron-back" size={24} color="#6B7280" />
-              <Text style={[styles.navButtonText, styles.previousButtonText]}>Previous</Text>
+              <Text style={[styles.navButtonText, styles.previousButtonText]}>
+                Previous
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -249,7 +289,7 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
                 styles.navButton,
                 styles.completeButton,
                 isCompleted && styles.completedButton,
-                isCompleting && styles.loadingButton
+                isCompleting && styles.loadingButton,
               ]}
               onPress={handleMarkComplete}
               disabled={isCompleted || isCompleting}
@@ -258,32 +298,42 @@ export const IngredientDetailModal: React.FC<IngredientDetailModalProps> = ({
               {isCompleting ? (
                 <>
                   <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={[styles.navButtonText, styles.completeButtonText]}>
+                  <Text
+                    style={[styles.navButtonText, styles.completeButtonText]}
+                  >
                     Completing...
                   </Text>
                 </>
               ) : (
                 <>
-                  <Ionicons 
-                    name={isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'} 
-                    size={24} 
-                    color="#FFFFFF" 
+                  <Ionicons
+                    name={
+                      isCompleted
+                        ? "checkmark-circle"
+                        : "checkmark-circle-outline"
+                    }
+                    size={24}
+                    color="#FFFFFF"
                   />
-                  <Text style={[styles.navButtonText, styles.completeButtonText]}>
-                    {isCompleted ? '✅ Completed' : 'Mark Complete'}
+                  <Text
+                    style={[styles.navButtonText, styles.completeButtonText]}
+                  >
+                    {isCompleted ? "✅ Completed" : "Mark Complete"}
                   </Text>
                 </>
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.navButton, styles.nextButton]} 
+            <TouchableOpacity
+              style={[styles.navButton, styles.nextButton]}
               onPress={() => {
                 // For future use - could navigate to next ingredient or step
                 onClose();
               }}
             >
-              <Text style={[styles.navButtonText, styles.nextButtonText]}>Next Step</Text>
+              <Text style={[styles.navButtonText, styles.nextButtonText]}>
+                Next Step
+              </Text>
               <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
@@ -305,15 +355,21 @@ const NutritionRow: React.FC<{
     <Text style={styles.nutritionLabel}>{label}</Text>
     <View style={styles.nutritionValueContainer}>
       <Text style={[styles.nutritionValue, { color }]}>
-        {Math.round(value * 10) / 10}{unit}
+        {Math.round(value * 10) / 10}
+        {unit}
       </Text>
       {percentage && percentage > 0 && (
         <View style={styles.percentageContainer}>
-          <View style={[styles.percentageBar, { backgroundColor: color + '20' }]}>
+          <View
+            style={[styles.percentageBar, { backgroundColor: color + "20" }]}
+          >
             <View
               style={[
                 styles.percentageFill,
-                { backgroundColor: color, width: `${Math.min(percentage, 100)}%` }
+                {
+                  backgroundColor: color,
+                  width: `${Math.min(percentage, 100)}%`,
+                },
               ]}
             />
           </View>
@@ -331,21 +387,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modal: {
     backgroundColor: THEME.colors.surface,
     borderRadius: 16,
     padding: THEME.spacing.lg,
     width: screenWidth - 40,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
     borderBottomWidth: 1,
@@ -356,7 +412,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
   },
   content: {
@@ -364,8 +420,8 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.lg,
   },
   ingredientHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.xl,
   },
   ingredientIcon: {
@@ -373,8 +429,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 20,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: THEME.spacing.lg,
   },
   iconText: {
@@ -385,14 +441,14 @@ const styles = StyleSheet.create({
   },
   ingredientName: {
     fontSize: THEME.fontSize.xxl,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
   ingredientCategory: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: THEME.spacing.xs,
   },
   quantityText: {
@@ -404,7 +460,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: THEME.spacing.lg,
     marginBottom: THEME.spacing.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -412,25 +468,25 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
   calorieSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
   calorieLabel: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
   },
   calorieValue: {
     fontSize: THEME.fontSize.xxl,
-    fontWeight: '700',
-    color: '#FF6B6B',
+    fontWeight: "700",
+    color: "#FF6B6B",
   },
   divider: {
     height: 1,
@@ -441,31 +497,31 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
   },
   nutritionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: THEME.spacing.sm,
   },
   nutritionLabel: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
   },
   nutritionValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 2,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   nutritionValue: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '700',
+    fontWeight: "700",
     marginRight: THEME.spacing.md,
   },
   percentageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   percentageBar: {
@@ -475,7 +531,7 @@ const styles = StyleSheet.create({
     marginRight: THEME.spacing.sm,
   },
   percentageFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 3,
   },
   percentageText: {
@@ -488,7 +544,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: THEME.spacing.lg,
     marginBottom: THEME.spacing.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -507,7 +563,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: THEME.spacing.lg,
     marginBottom: THEME.spacing.lg,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -519,7 +575,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.error,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Action Section Styles
@@ -532,15 +588,15 @@ const styles = StyleSheet.create({
   },
 
   navigationButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.sm,
   },
 
   navButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.sm,
     borderRadius: 12,
@@ -567,12 +623,12 @@ const styles = StyleSheet.create({
   },
 
   nextButton: {
-    backgroundColor: '#6B7280',
+    backgroundColor: "#6B7280",
   },
 
   navButtonText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     marginHorizontal: THEME.spacing.xs,
   },
 
@@ -590,22 +646,22 @@ const styles = StyleSheet.create({
 
   // Completion Banner Styles
   completionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: THEME.colors.success + '15',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: THEME.colors.success + "15",
     paddingVertical: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.lg,
     marginHorizontal: THEME.spacing.lg,
     marginTop: THEME.spacing.sm,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: THEME.colors.success + '30',
+    borderColor: THEME.colors.success + "30",
   },
 
   completionBannerText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.success,
     marginLeft: THEME.spacing.sm,
   },

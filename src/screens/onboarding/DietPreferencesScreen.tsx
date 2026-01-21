@@ -506,9 +506,9 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                 >
                   <Card
                     style={
-                      dietType === option.id
+                      (dietType === option.id
                         ? [styles.dietTypeCard, styles.dietTypeCardSelected]
-                        : styles.dietTypeCard
+                        : styles.dietTypeCard) as any
                     }
                     variant="outlined"
                   >

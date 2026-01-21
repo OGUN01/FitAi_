@@ -389,9 +389,9 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
                     blurIntensity="light"
                     borderRadius="lg"
                     style={
-                      expandedFaq === faq.id
+                      (expandedFaq === faq.id
                         ? [styles.faqCard, styles.faqCardExpanded]
-                        : styles.faqCard
+                        : styles.faqCard) as any
                     }
                   >
                     <View style={styles.faqHeader}>

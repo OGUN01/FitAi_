@@ -284,7 +284,6 @@ export class RealTimeSyncService {
       id: this.generateOperationId(),
       timestamp: new Date(),
       retryCount: 0,
-      maxRetries: this.config.maxRetries,
       ...operation,
     };
 

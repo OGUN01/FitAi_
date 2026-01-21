@@ -249,7 +249,7 @@ const StatCard: React.FC<{
   icon: string;
   subtitle: string;
 }> = ({ title, value, icon, subtitle }) => (
-  <View style={styles.statCard}>
+  <View style={styles.statCard as any}>
     <Text style={styles.statIcon}>{icon}</Text>
     <Text style={styles.statValue}>{value}</Text>
     <Text style={styles.statTitle}>{title}</Text>
@@ -351,7 +351,7 @@ const styles = {
     borderRadius: 12,
     width: "48%",
     marginBottom: 12,
-    alignItems: "center" as const as const,
+    alignItems: "center" as const,
   },
   statIcon: {
     fontSize: 24,
@@ -387,7 +387,7 @@ const styles = {
     borderRadius: 12,
     flex: 1,
     marginHorizontal: 4,
-    alignItems: "center" as const as const,
+    alignItems: "center" as const,
   },
   healthValue: {
     fontSize: 20,
@@ -410,7 +410,7 @@ const styles = {
     backgroundColor: "#1a1f2e",
     padding: 24,
     borderRadius: 12,
-    alignItems: "center" as const as const,
+    alignItems: "center" as const,
   },
   caloriesValue: {
     fontSize: 36,

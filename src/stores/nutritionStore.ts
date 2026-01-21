@@ -588,28 +588,31 @@ export const useNutritionStore = create<NutritionState>()(
           const mealLog: import("../types/localData").MealLog = {
             id: logId,
             mealType: meal.type.toLowerCase() as any,
-            foods: meal.items.map((item, index) => ({
-              id: `food_${meal.id}_${index}`,
-              foodId: `food_${meal.id}_${index}`,
-              food: {
-                id: `food_${meal.id}_${index}`,
-                name: item.name || "Unknown food",
-                isCustom: true,
-                isFavorite: false,
-                localId: `local_${Date.now()}_${index}`,
-                usageCount: 1,
-                verificationStatus: "user_created",
-              } as any,
-              quantity: item.quantity || 100,
-              unit: "grams",
-              calories: item.calories || 0,
-              macros: {
-                protein: item.macros?.protein ?? 0,
-                carbohydrates: item.macros?.carbohydrates ?? 0,
-                fat: item.macros?.fat ?? 0,
-                fiber: item.macros?.fiber ?? 0,
-              },
-            })),
+            foods: meal.items.map(
+              (item, index) =>
+                ({
+                  id: `food_${meal.id}_${index}`,
+                  foodId: `food_${meal.id}_${index}`,
+                  food: {
+                    id: `food_${meal.id}_${index}`,
+                    name: item.name || "Unknown food",
+                    isCustom: true,
+                    isFavorite: false,
+                    localId: `local_${Date.now()}_${index}`,
+                    usageCount: 1,
+                    verificationStatus: "user_created",
+                  } as any,
+                  quantity: item.quantity || 100,
+                  unit: "grams",
+                  calories: item.calories || 0,
+                  macros: {
+                    protein: item.macros?.protein ?? 0,
+                    carbohydrates: item.macros?.carbohydrates ?? 0,
+                    fat: item.macros?.fat ?? 0,
+                    fiber: item.macros?.fiber ?? 0,
+                  },
+                }) as any,
+            ),
             totalCalories: meal.totalCalories || 0,
             totalMacros: {
               protein: meal.totalMacros?.protein ?? 0,
@@ -646,11 +649,14 @@ export const useNutritionStore = create<NutritionState>()(
               mealId: meal.id,
               logId,
               startedAt: new Date().toISOString(),
-              ingredients: meal.items.map((item, index) => ({
-                ingredientId: `${meal.id}_${index}`,
-                completed: false,
-                quantity: item.quantity || 100,
-              })),
+              ingredients: meal.items.map(
+                (item, index) =>
+                  ({
+                    ingredientId: `${meal.id}_${index}`,
+                    completed: false,
+                    quantity: item.quantity || 100,
+                  }) as any,
+              ),
             },
           });
 

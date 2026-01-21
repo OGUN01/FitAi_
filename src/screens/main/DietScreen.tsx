@@ -1164,7 +1164,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               nutrition: product.nutrition,
               confidence: product.confidence,
               enhancementSource: "barcode" as const,
-            };
+              estimatedGrams: product.nutrition.servingSize || 100,
+              servingDescription: product.nutrition.servingUnit || "serving",
+              nutritionPer100g: product.nutrition,
+            } as any;
 
             const logResult = await recognizedFoodLogger.logRecognizedFoods(
               user.id,
@@ -1292,7 +1295,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         profile.personalInfo,
         profile.fitnessGoals,
         actualMealType as "breakfast" | "lunch" | "dinner" | "snack",
-        preferences,
+        preferences as any,
       );
 
       if (response.success && response.data) {
@@ -1395,7 +1398,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       const response = await aiService.generateDailyMealPlan(
         profile.personalInfo,
         profile.fitnessGoals,
-        preferences,
+        preferences as any,
       );
 
       if (response.success && response.data) {
@@ -1497,8 +1500,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         1, // weekNumber
         {
           bodyMetrics: profile!.bodyMetrics,
-          dietPreferences:
-            profile!.dietPreferences || dietPreferences || undefined,
+          dietPreferences: (profile!.dietPreferences ||
+            dietPreferences ||
+            undefined) as any,
           calorieTarget: userCalorieTarget, // CRITICAL: Pass calorie target from frontend
         },
       );
@@ -2743,13 +2747,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                           100
                         : 0
                     }
-                    size={200}
-                    strokeWidth={12}
-                    gradient={{
-                      colors: ["#FF6B6B", "#FF8E53", "#FFC107"],
-                      start: { x: 0, y: 0 },
-                      end: { x: 1, y: 1 },
-                    }}
+                    gradient={true}
+                    gradientColors={["#FF6B6B", "#FF8E53", "#FFC107"]}
                   >
                     <View style={styles.calorieCenter}>
                       <Text style={styles.caloriesRemaining}>
@@ -3841,7 +3840,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     onPress={handleAddWater}
                     variant={
                       waterGoalLiters && waterConsumedLiters >= waterGoalLiters
-                        ? "solid"
+                        ? ("solid" as any)
                         : "outline"
                     }
                     size="sm"
@@ -4440,13 +4439,6 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xl,
   },
 
-  sectionTitle: {
-    fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: ResponsiveTheme.colors.text,
-    marginBottom: ResponsiveTheme.spacing.md,
-  },
-
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between" as const,
@@ -4539,11 +4531,6 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
-  },
-
-  macroTarget: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
   },
 
   mealCard: {
@@ -4643,11 +4630,6 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
-  },
-
-  caloriesLabel: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.textMuted,
   },
 
   // ============================================================================
@@ -4985,7 +4967,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     position: "relative" as const,
-    alignItems: "center" as const as const,
+    alignItems: "center" as const,
   },
 
   todayDayButton: {
@@ -5024,7 +5006,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: "700",
+    fontWeight: "700" as const,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.lg,
   },

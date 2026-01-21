@@ -228,7 +228,7 @@ export class TrackIntegrationService {
       // Start migration
       const result = await migrationManager.startMigration(userId);
 
-      if (result.success) {
+      if (result && result.success) {
         this.updateStatus({ migrationCompleted: true });
 
         this.emitEvent({
@@ -245,7 +245,9 @@ export class TrackIntegrationService {
 
         this.log("Migration completed successfully");
       } else {
-        throw new Error(`Migration failed: ${result.errors[0]?.message}`);
+        throw new Error(
+          `Migration failed: ${(result as any)?.errors?.[0]?.message || "Unknown error"}`,
+        );
       }
     } catch (error) {
       this.log("Migration flow failed:", error);

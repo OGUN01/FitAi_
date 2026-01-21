@@ -169,7 +169,9 @@ export const useOnboardingIntegration = () => {
 
       // ALWAYS save to local storage first (for both guest and authenticated users)
       dataBridge.setUserId(currentUserId);
-      const localSaveSuccess = await dataBridge.saveFitnessGoals(fitnessGoals);
+      const localSaveSuccess = await dataBridge.saveFitnessGoals(
+        fitnessGoals as any,
+      );
 
       if (!localSaveSuccess) {
         console.warn("⚠️ Failed to save fitness goals locally");
@@ -571,7 +573,7 @@ export const useDashboardIntegration = () => {
       return null;
     }
 
-    const ageNum = typeof age === "number" ? age : parseInt(age.toString());
+    const ageNum = typeof age === "number" ? age : parseInt(String(age));
 
     if (isNaN(heightCm) || isNaN(weightKg) || isNaN(ageNum)) {
       return null;

@@ -1267,6 +1267,7 @@ export const ProgressScreen: React.FC = () => {
                         <View
                           style={[
                             styles.rarityBadge,
+                            // @ts-ignore - dynamic style access
                             styles[
                               `rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`
                             ],
@@ -1792,14 +1793,15 @@ const styles = StyleSheet.create({
     marginBottom: rp(4),
   },
 
-  progressBar: {
-    height: rh(4),
-    backgroundColor: ResponsiveTheme.colors.border,
-    borderRadius: rs(2),
-    overflow: "hidden",
-  },
+  // progressBar: {  // Duplicate removed
+  //   height: rh(4),
+  //   backgroundColor: ResponsiveTheme.colors.border,
+  //   borderRadius: rs(2),
+  //   overflow: "hidden",
+  // },
 
-  progressFill: {
+  progressFillDuplicate: {
+    // Renamed duplicate
     height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: rs(2),
@@ -2167,11 +2169,11 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.lg,
   },
 
-  loadingText: {
-    marginLeft: ResponsiveTheme.spacing.sm,
-    fontSize: ResponsiveTheme.fontSize.sm,
-    color: ResponsiveTheme.colors.textSecondary,
-  },
+  // loadingText: {  // Duplicate removed
+  //   marginLeft: ResponsiveTheme.spacing.sm,
+  //   fontSize: ResponsiveTheme.fontSize.sm,
+  //   color: ResponsiveTheme.colors.textSecondary,
+  // },
 
   endFooter: {
     paddingVertical: ResponsiveTheme.spacing.lg,

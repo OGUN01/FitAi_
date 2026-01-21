@@ -284,7 +284,9 @@ export const config = createConfig({
 });
 
 export type Config = typeof config;
-export type ConfigType = Config['theme'];
+// Note: config object doesn't have a 'theme' property in createConfig result
+// Use the config directly or access specific properties
+export type ConfigType = typeof config;
 
 // Export default
 export default config;

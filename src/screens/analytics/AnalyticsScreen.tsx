@@ -363,7 +363,10 @@ const AnalyticsScreen: React.FC = () => {
       >
         <ProgressChart
           title="Performance Score"
-          data={chartData.performanceScore}
+          data={chartData.performanceScore.map((point) => ({
+            x: point.date,
+            y: point.score,
+          }))}
           type="area"
           color="#8B5CF6"
           height={220}
@@ -493,7 +496,10 @@ const AnalyticsScreen: React.FC = () => {
         {/* Workout Frequency Chart */}
         <ProgressChart
           title="Workout Frequency"
-          data={chartData.workoutFrequency}
+          data={chartData.workoutFrequency.map((point) => ({
+            x: point.date,
+            y: point.count,
+          }))}
           type="bar"
           color="#3B82F6"
           height={200}
@@ -503,7 +509,10 @@ const AnalyticsScreen: React.FC = () => {
         {/* Calories Burned Chart */}
         <ProgressChart
           title="Calories Burned"
-          data={chartData.caloriesBurned}
+          data={chartData.caloriesBurned.map((point) => ({
+            x: point.date,
+            y: point.calories,
+          }))}
           type="area"
           color="#F59E0B"
           height={200}
@@ -590,7 +599,10 @@ const AnalyticsScreen: React.FC = () => {
         {/* Water Intake Chart */}
         <ProgressChart
           title="Daily Water Intake"
-          data={chartData.waterIntake}
+          data={chartData.waterIntake.map((point) => ({
+            x: point.date,
+            y: point.milliliters,
+          }))}
           type="line"
           color="#06B6D4"
           height={200}
@@ -1014,13 +1026,8 @@ const AnalyticsScreen: React.FC = () => {
                 <View style={styles.metricContent}>
                   <MiniProgressRing
                     progress={70}
-                    size={60}
-                    strokeWidth={5}
-                    gradient={{
-                      colors: ["#FF6B6B", "#FF8E53"],
-                      start: { x: 0, y: 0 },
-                      end: { x: 1, y: 1 },
-                    }}
+                    gradient={true}
+                    gradientColors={["#FF6B6B", "#FF8E53"]}
                   >
                     <Animated.Text style={styles.streakNumber}>
                       {metricCard4Value.interpolate({

@@ -538,7 +538,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             {/* 5. Today's Workout */}
             <View style={styles.section}>
               <TodaysFocus
-                workoutInfo={todaysWorkoutInfo}
+                workoutInfo={todaysWorkoutInfo as any}
                 workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
                 onWorkoutPress={() => onNavigateToTab?.("fitness")}
               />

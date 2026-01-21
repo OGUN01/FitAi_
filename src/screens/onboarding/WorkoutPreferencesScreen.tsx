@@ -409,9 +409,9 @@ export const WorkoutPreferencesScreen: React.FC<
                 >
                   <Card
                     style={
-                      location === option.id
+                      (location === option.id
                         ? [styles.locationCard, styles.locationCardSelected]
-                        : styles.locationCard
+                        : styles.locationCard) as any
                     }
                     variant="outlined"
                   >
@@ -484,9 +484,9 @@ export const WorkoutPreferencesScreen: React.FC<
               >
                 <Card
                   style={
-                    intensity === option.value
+                    (intensity === option.value
                       ? [styles.intensityCard, styles.intensityCardSelected]
-                      : styles.intensityCard
+                      : styles.intensityCard) as any
                   }
                   variant="outlined"
                 >

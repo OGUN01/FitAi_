@@ -66,12 +66,11 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
       try {
         await WebBrowser.openBrowserAsync(this.PRIVACY_POLICY_URL, {
           dismissButtonStyle: "done",
-          preferredBarTintColor: "#ffffff",
-          preferredControlTintColor: "#000000",
+          controlsColor: "#000000",
           readerMode: false,
           showTitle: true,
           enableBarCollapsing: false,
-        });
+        } as any);
         console.log("✅ PRIVACY: Opened privacy policy with WebBrowser");
       } catch (webBrowserError) {
         console.warn(
@@ -112,10 +111,15 @@ class PrivacyPolicyHandler implements PrivacyPolicyHandlerService {
 
       // Optional: Test HTTP request to verify URL exists
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const response = await fetch(this.PRIVACY_POLICY_URL, {
           method: "HEAD",
-          timeout: 10000,
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (response.status >= 200 && response.status < 400) {
           console.log("✅ PRIVACY: Privacy policy URL is accessible");

@@ -167,10 +167,10 @@ export const GoalsPreferencesEditModal: React.FC<
     setIsSaving(true);
     try {
       const updatedGoals: FitnessGoals = {
-        primaryGoals,
+        primary_goals: primaryGoals,
+        time_commitment: timeCommitment,
         experience,
         experience_level: experience, // For backward compatibility
-        timeCommitment,
         // Preserve existing optional fields
         preferred_equipment: profile?.fitnessGoals?.preferred_equipment,
         target_areas: profile?.fitnessGoals?.target_areas,

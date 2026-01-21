@@ -313,8 +313,8 @@ export class HealthCalculatorFacade {
       bmiClassification: {
         category: bmiClass.category,
         healthRisk: bmiClass.healthRisk,
-        ethnicity: bmiClass.ethnicity,
-        message: bmiClass.message,
+        ethnicity: bmiClass.ethnicity as any,
+        message: bmiClass.message as any,
       },
       tdee,
       dailyCalories: tdee,
@@ -334,10 +334,10 @@ export class HealthCalculatorFacade {
       },
 
       // Advanced Metrics
-      heartRateZones: hrZones,
-      vo2max,
-      healthScore,
-      muscleGainLimits,
+      heartRateZones: hrZones as any,
+      vo2max: vo2max as any,
+      healthScore: healthScore as any,
+      muscleGainLimits: muscleGainLimits as any,
 
       // Context
       climate: climateResult.climate,
@@ -403,7 +403,7 @@ export class HealthCalculatorFacade {
 
       return {
         valid: validation.valid,
-        severity: validation.severity,
+        severity: validation.severity as "error" | "success" | "warning",
         message: validation.message,
         suggestions: validation.suggestion ? [validation.suggestion] : [],
         adjustedTimeline: validation.adjustedTimeline,
@@ -428,7 +428,7 @@ export class HealthCalculatorFacade {
 
       return {
         valid: validation.valid,
-        severity: validation.severity,
+        severity: validation.severity as "error" | "success" | "warning",
         message: validation.message,
         suggestions: validation.suggestion ? [validation.suggestion] : [],
       };
