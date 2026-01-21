@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Input, Card, THEME } from '../../components/ui';
-import { PersonalInfo } from '../../types/user';
-import TimePicker from '../../components/onboarding/TimePicker';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Input, Card, THEME } from "../../components/ui";
+import { PersonalInfo } from "../../types/user";
+import TimePicker from "../../components/onboarding/TimePicker";
 import {
   useEditContext,
   useEditMode,
   useEditData,
   useEditActions,
-} from '../../contexts/EditContext';
+} from "../../contexts/EditContext";
 
 interface PersonalInfoScreenProps {
   onNext?: (data: PersonalInfo) => void;
@@ -62,77 +68,80 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     return initialData;
   };
 
-  const [formData, setFormData] = useState<Omit<PersonalInfo, 'activityLevel'>>(() => {
-    const data = getInitialData();
-    return {
-      name: data.name || '',
-      email: data.email || '',
-      age: data.age || '',
-      gender: data.gender || '',
-      height: data.height || '',
-      weight: data.weight || '',
-      country: data.country || '',
-      state: data.state || '',
-      region: data.region || '',
-      wake_time: data.wake_time || '07:00',
-      sleep_time: data.sleep_time || '23:00',
-      occupation_type: data.occupation_type || 'desk_job',
-    };
-  });
+  const [formData, setFormData] = useState<Omit<PersonalInfo, "activityLevel">>(
+    () => {
+      const data = getInitialData();
+      return {
+        name: data.name || "",
+        email: data.email || "",
+        age: data.age || "",
+        gender: data.gender || "",
+        height: data.height || "",
+        weight: data.weight || "",
+        country: data.country || "",
+        state: data.state || "",
+        region: data.region || "",
+        wake_time: data.wake_time || "07:00",
+        sleep_time: data.sleep_time || "23:00",
+        occupation_type: data.occupation_type || "desk_job",
+      };
+    },
+  );
 
   // Time picker state
   const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
   const [showSleepTimePicker, setShowSleepTimePicker] = useState(false);
   const [availableStates, setAvailableStates] = useState<string[]>([]);
   const [showCustomCountry, setShowCustomCountry] = useState(false);
-  const [customCountry, setCustomCountry] = useState('');
+  const [customCountry, setCustomCountry] = useState("");
 
-  const [errors, setErrors] = useState<Partial<Omit<PersonalInfo, 'activityLevel'>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Omit<PersonalInfo, "activityLevel">>
+  >({});
 
   // Track if data has been populated to prevent loops
   const [isDataPopulated, setIsDataPopulated] = useState(false);
 
   // Update form data when edit context data is loaded (only once)
   useEffect(() => {
-    if (
-      isEditMode &&
-      editContextData?.currentData &&
-      !isDataPopulated
-    ) {
+    if (isEditMode && editContextData?.currentData && !isDataPopulated) {
       const data = editContextData.currentData;
 
       // Check if we have actual user data (not just metadata)
-      const hasActualData = data.name || data.age || data.gender || data.height || data.weight;
+      const hasActualData =
+        data.name || data.age || data.gender || data.height || data.weight;
 
-      console.log('🔄 PersonalInfoScreen: Loading edit data:', {
+      console.log("🔄 PersonalInfoScreen: Loading edit data:", {
         hasData: !!data,
         hasActualData,
         dataKeys: Object.keys(data),
         name: data.name,
         age: data.age,
-        gender: data.gender
+        gender: data.gender,
       });
 
       if (hasActualData) {
         const newFormData = {
-          name: data.name || '',
-          email: data.email || '',
-          age: data.age ? String(data.age) : '',
-          gender: data.gender || '',
-          height: data.height ? String(data.height) : '',
-          weight: data.weight ? String(data.weight) : '',
-          country: data.country || '',
-          state: data.state || '',
-          region: data.region || '',
-          wake_time: data.wake_time || '07:00',
-          sleep_time: data.sleep_time || '23:00',
-          occupation_type: data.occupation_type || 'desk_job',
+          name: data.name || "",
+          email: data.email || "",
+          age: data.age ? String(data.age) : "",
+          gender: data.gender || "",
+          height: data.height ? String(data.height) : "",
+          weight: data.weight ? String(data.weight) : "",
+          country: data.country || "",
+          state: data.state || "",
+          region: data.region || "",
+          wake_time: data.wake_time || "07:00",
+          sleep_time: data.sleep_time || "23:00",
+          occupation_type: data.occupation_type || "desk_job",
         };
-        console.log('✅ PersonalInfoScreen: Setting form data:', newFormData);
+        console.log("✅ PersonalInfoScreen: Setting form data:", newFormData);
         setFormData(newFormData);
         setIsDataPopulated(true);
       } else {
-        console.warn('⚠️ PersonalInfoScreen: No actual user data found in currentData');
+        console.warn(
+          "⚠️ PersonalInfoScreen: No actual user data found in currentData",
+        );
       }
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
@@ -150,34 +159,52 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   }, [formData, isEditMode, isDataPopulated]); // Removed editContextData?.updateData from deps
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Omit<PersonalInfo, 'activityLevel'>> = {};
+    const newErrors: Partial<Omit<PersonalInfo, "activityLevel">> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.name || !formData.name.trim()) {
+      newErrors.name = "Name is required";
     }
 
     // Email is optional during onboarding - users can add it later
 
     // Improved age validation - use parseInt for consistency with backend
-    const age = parseInt(formData.age);
-    if (!formData.age.trim() || isNaN(age) || age < 13 || age > 120) {
-      newErrors.age = 'Please enter a valid age (13-120)';
+    const age = parseInt(formData.age ?? "");
+    if (
+      !formData.age ||
+      !formData.age.trim() ||
+      isNaN(age) ||
+      age < 13 ||
+      age > 120
+    ) {
+      newErrors.age = "Please enter a valid age (13-120)";
     }
 
     if (!formData.gender) {
-      newErrors.gender = 'Please select your gender';
+      newErrors.gender = "Please select your gender";
     }
 
     // Improved height validation
-    const height = parseFloat(formData.height);
-    if (!formData.height.trim() || isNaN(height) || height < 100 || height > 250) {
-      newErrors.height = 'Please enter a valid height (100-250 cm)';
+    const height = parseFloat(formData.height ?? "");
+    if (
+      !formData.height ||
+      !formData.height.trim() ||
+      isNaN(height) ||
+      height < 100 ||
+      height > 250
+    ) {
+      newErrors.height = "Please enter a valid height (100-250 cm)";
     }
 
     // Improved weight validation
-    const weight = parseFloat(formData.weight);
-    if (!formData.weight.trim() || isNaN(weight) || weight < 30 || weight > 300) {
-      newErrors.weight = 'Please enter a valid weight (30-300 kg)';
+    const weight = parseFloat(formData.weight ?? "");
+    if (
+      !formData.weight ||
+      !formData.weight.trim() ||
+      isNaN(weight) ||
+      weight < 30 ||
+      weight > 300
+    ) {
+      newErrors.weight = "Please enter a valid weight (30-300 kg)";
     }
 
     setErrors(newErrors);
@@ -201,7 +228,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       // In onboarding mode, proceed to next step
       if (onNext) {
         // Add placeholder activityLevel for backward compatibility
-        onNext({ ...formData, activityLevel: '' } as PersonalInfo);
+        onNext({ ...formData, activityLevel: "" } as PersonalInfo);
       }
     }
   };
@@ -222,7 +249,10 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     }
   };
 
-  const updateField = (field: keyof Omit<PersonalInfo, 'activityLevel'>, value: string) => {
+  const updateField = (
+    field: keyof Omit<PersonalInfo, "activityLevel">,
+    value: string,
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -230,75 +260,119 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   };
 
   const genderOptions = [
-    { label: 'Male', value: 'male' },
-    { label: 'Female', value: 'female' },
-    { label: 'Other', value: 'other' },
+    { label: "Male", value: "male" },
+    { label: "Female", value: "female" },
+    { label: "Other", value: "other" },
   ];
 
   // Constants for location and occupation
   const COUNTRIES_WITH_STATES = [
     {
-      name: 'United States',
-      states: ['California', 'Texas', 'Florida', 'New York', 'Pennsylvania', 'Illinois', 'Ohio', 'Georgia', 'North Carolina', 'Michigan']
+      name: "United States",
+      states: [
+        "California",
+        "Texas",
+        "Florida",
+        "New York",
+        "Pennsylvania",
+        "Illinois",
+        "Ohio",
+        "Georgia",
+        "North Carolina",
+        "Michigan",
+      ],
     },
     {
-      name: 'India',
-      states: ['Maharashtra', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'Uttar Pradesh', 'West Bengal', 'Rajasthan', 'Madhya Pradesh', 'Andhra Pradesh', 'Kerala']
+      name: "India",
+      states: [
+        "Maharashtra",
+        "Gujarat",
+        "Karnataka",
+        "Tamil Nadu",
+        "Uttar Pradesh",
+        "West Bengal",
+        "Rajasthan",
+        "Madhya Pradesh",
+        "Andhra Pradesh",
+        "Kerala",
+      ],
     },
     {
-      name: 'Canada',
-      states: ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland and Labrador', 'Prince Edward Island']
+      name: "Canada",
+      states: [
+        "Ontario",
+        "Quebec",
+        "British Columbia",
+        "Alberta",
+        "Manitoba",
+        "Saskatchewan",
+        "Nova Scotia",
+        "New Brunswick",
+        "Newfoundland and Labrador",
+        "Prince Edward Island",
+      ],
     },
     {
-      name: 'United Kingdom',
-      states: ['England', 'Scotland', 'Wales', 'Northern Ireland']
+      name: "United Kingdom",
+      states: ["England", "Scotland", "Wales", "Northern Ireland"],
     },
     {
-      name: 'Australia',
-      states: ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory']
+      name: "Australia",
+      states: [
+        "New South Wales",
+        "Victoria",
+        "Queensland",
+        "Western Australia",
+        "South Australia",
+        "Tasmania",
+        "Australian Capital Territory",
+        "Northern Territory",
+      ],
     },
   ];
 
   const OCCUPATION_OPTIONS = [
     {
-      value: 'desk_job',
-      label: 'Desk Job',
-      icon: '💻',
-      description: 'Office worker, programmer, student - mostly sitting'
+      value: "desk_job",
+      label: "Desk Job",
+      icon: "💻",
+      description: "Office worker, programmer, student - mostly sitting",
     },
     {
-      value: 'light_active',
-      label: 'Light Activity',
-      icon: '🚶',
-      description: 'Teacher, retail, light housework - some movement'
+      value: "light_active",
+      label: "Light Activity",
+      icon: "🚶",
+      description: "Teacher, retail, light housework - some movement",
     },
     {
-      value: 'moderate_active',
-      label: 'Moderate Activity',
-      icon: '🏃',
-      description: 'Nurse, server, active parent - regular movement'
+      value: "moderate_active",
+      label: "Moderate Activity",
+      icon: "🏃",
+      description: "Nurse, server, active parent - regular movement",
     },
     {
-      value: 'heavy_labor',
-      label: 'Heavy Labor',
-      icon: '🏗️',
-      description: 'Construction, farming, warehouse - physical work'
+      value: "heavy_labor",
+      label: "Heavy Labor",
+      icon: "🏗️",
+      description: "Construction, farming, warehouse - physical work",
     },
     {
-      value: 'very_active',
-      label: 'Very Active',
-      icon: '💪',
-      description: 'Athlete, trainer, manual labor - constant activity'
-    }
+      value: "very_active",
+      label: "Very Active",
+      icon: "💪",
+      description: "Athlete, trainer, manual labor - constant activity",
+    },
   ];
 
   // Update available states when country changes
   useEffect(() => {
-    const selectedCountry = COUNTRIES_WITH_STATES.find(c => c.name === formData.country);
+    const selectedCountry = COUNTRIES_WITH_STATES.find(
+      (c) => c.name === formData.country,
+    );
     if (selectedCountry) {
       setAvailableStates(selectedCountry.states);
       setShowCustomCountry(false);
-    } else if (formData.country === 'Other') {
+    } else if (formData.country === "Other") {
       setAvailableStates([]);
       setShowCustomCountry(true);
     } else {
@@ -309,18 +383,18 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 
   // Helper functions
   const formatTimeForDisplay = (time: string): string => {
-    const [hours, minutes] = time.split(':');
+    const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
   const calculateSleepDuration = (): string => {
-    if (!formData.wake_time || !formData.sleep_time) return '';
+    if (!formData.wake_time || !formData.sleep_time) return "";
 
-    const [wakeHour, wakeMin] = formData.wake_time.split(':').map(Number);
-    const [sleepHour, sleepMin] = formData.sleep_time.split(':').map(Number);
+    const [wakeHour, wakeMin] = formData.wake_time.split(":").map(Number);
+    const [sleepHour, sleepMin] = formData.sleep_time.split(":").map(Number);
 
     const wakeMinutes = wakeHour * 60 + wakeMin;
     const sleepMinutes = sleepHour * 60 + sleepMin;
@@ -335,14 +409,17 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   };
 
   const handleCountryChange = (country: string) => {
-    updateField('country', country);
-    updateField('state', ''); // Reset state when country changes
-    updateField('region', ''); // Reset region when country changes
+    updateField("country", country);
+    updateField("state", ""); // Reset state when country changes
+    updateField("region", ""); // Reset region when country changes
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Tell us about yourself</Text>
           <Text style={styles.subtitle}>
@@ -355,7 +432,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
             label="Full Name"
             placeholder="Enter your full name"
             value={formData.name}
-            onChangeText={(value) => updateField('name', value)}
+            onChangeText={(value) => updateField("name", value)}
             error={errors.name}
           />
 
@@ -365,7 +442,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 label="Age"
                 placeholder="25"
                 value={formData.age}
-                onChangeText={(value) => updateField('age', value)}
+                onChangeText={(value) => updateField("age", value)}
                 keyboardType="numeric"
                 error={errors.age}
               />
@@ -379,14 +456,16 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                     key={option.value}
                     style={[
                       styles.genderOption,
-                      formData.gender === option.value && styles.genderOptionSelected,
+                      formData.gender === option.value &&
+                        styles.genderOptionSelected,
                     ]}
-                    onPress={() => updateField('gender', option.value)}
+                    onPress={() => updateField("gender", option.value)}
                   >
                     <Text
                       style={[
                         styles.genderOptionText,
-                        formData.gender === option.value && styles.genderOptionTextSelected,
+                        formData.gender === option.value &&
+                          styles.genderOptionTextSelected,
                       ]}
                     >
                       {option.label}
@@ -394,7 +473,9 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   </TouchableOpacity>
                 ))}
               </View>
-              {errors.gender && <Text style={styles.errorText}>{errors.gender}</Text>}
+              {errors.gender && (
+                <Text style={styles.errorText}>{errors.gender}</Text>
+              )}
             </View>
           </View>
 
@@ -404,7 +485,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 label="Height (cm)"
                 placeholder="170"
                 value={formData.height}
-                onChangeText={(value) => updateField('height', value)}
+                onChangeText={(value) => updateField("height", value)}
                 keyboardType="numeric"
                 error={errors.height}
               />
@@ -415,7 +496,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 label="Weight (kg)"
                 placeholder="70"
                 value={formData.weight}
-                onChangeText={(value) => updateField('weight', value)}
+                onChangeText={(value) => updateField("weight", value)}
                 keyboardType="numeric"
                 error={errors.weight}
               />
@@ -432,14 +513,16 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   key={country.name}
                   style={[
                     styles.countryOption,
-                    formData.country === country.name && styles.countryOptionSelected,
+                    formData.country === country.name &&
+                      styles.countryOptionSelected,
                   ]}
                   onPress={() => handleCountryChange(country.name)}
                 >
                   <Text
                     style={[
                       styles.countryOptionText,
-                      formData.country === country.name && styles.countryOptionTextSelected,
+                      formData.country === country.name &&
+                        styles.countryOptionTextSelected,
                     ]}
                   >
                     {country.name}
@@ -449,21 +532,24 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               <TouchableOpacity
                 style={[
                   styles.countryOption,
-                  formData.country === 'Other' && styles.countryOptionSelected,
+                  formData.country === "Other" && styles.countryOptionSelected,
                 ]}
-                onPress={() => handleCountryChange('Other')}
+                onPress={() => handleCountryChange("Other")}
               >
                 <Text
                   style={[
                     styles.countryOptionText,
-                    formData.country === 'Other' && styles.countryOptionTextSelected,
+                    formData.country === "Other" &&
+                      styles.countryOptionTextSelected,
                   ]}
                 >
                   Other
                 </Text>
               </TouchableOpacity>
             </View>
-            {errors.country && <Text style={styles.errorText}>{errors.country}</Text>}
+            {errors.country && (
+              <Text style={styles.errorText}>{errors.country}</Text>
+            )}
 
             {/* Custom Country Input */}
             {showCustomCountry && (
@@ -489,12 +575,13 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                         styles.stateOption,
                         formData.state === state && styles.stateOptionSelected,
                       ]}
-                      onPress={() => updateField('state', state)}
+                      onPress={() => updateField("state", state)}
                     >
                       <Text
                         style={[
                           styles.stateOptionText,
-                          formData.state === state && styles.stateOptionTextSelected,
+                          formData.state === state &&
+                            styles.stateOptionTextSelected,
                         ]}
                       >
                         {state}
@@ -502,7 +589,9 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                     </TouchableOpacity>
                   ))}
                 </View>
-                {errors.state && <Text style={styles.errorText}>{errors.state}</Text>}
+                {errors.state && (
+                  <Text style={styles.errorText}>{errors.state}</Text>
+                )}
               </View>
             )}
 
@@ -513,7 +602,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   label="State/Province"
                   placeholder="Enter your state or province"
                   value={formData.state}
-                  onChangeText={(value) => updateField('state', value)}
+                  onChangeText={(value) => updateField("state", value)}
                 />
               </View>
             )}
@@ -523,8 +612,8 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               <Input
                 label="Region/City (Optional)"
                 placeholder="e.g., Mumbai, Los Angeles, London"
-                value={formData.region || ''}
-                onChangeText={(value) => updateField('region', value)}
+                value={formData.region || ""}
+                onChangeText={(value) => updateField("region", value)}
               />
             </View>
           </View>
@@ -540,16 +629,20 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                 key={option.value}
                 style={[
                   styles.occupationOption,
-                  formData.occupation_type === option.value && styles.occupationOptionSelected,
+                  formData.occupation_type === option.value &&
+                    styles.occupationOptionSelected,
                 ]}
-                onPress={() => updateField('occupation_type', option.value as any)}
+                onPress={() =>
+                  updateField("occupation_type", option.value as any)
+                }
               >
                 <Text style={styles.occupationIcon}>{option.icon}</Text>
                 <View style={styles.occupationTextContainer}>
                   <Text
                     style={[
                       styles.occupationLabel,
-                      formData.occupation_type === option.value && styles.occupationLabelSelected,
+                      formData.occupation_type === option.value &&
+                        styles.occupationLabelSelected,
                     ]}
                   >
                     {option.label}
@@ -557,7 +650,8 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   <Text
                     style={[
                       styles.occupationDescription,
-                      formData.occupation_type === option.value && styles.occupationDescriptionSelected,
+                      formData.occupation_type === option.value &&
+                        styles.occupationDescriptionSelected,
                     ]}
                   >
                     {option.description}
@@ -571,7 +665,8 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sleep Schedule</Text>
             <Text style={styles.sectionSubtitle}>
-              Help us understand your daily routine for personalized recommendations
+              Help us understand your daily routine for personalized
+              recommendations
             </Text>
 
             <View style={styles.row}>
@@ -582,7 +677,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   onPress={() => setShowWakeTimePicker(true)}
                 >
                   <Text style={styles.timeText}>
-                    🌅 {formatTimeForDisplay(formData.wake_time || '07:00')}
+                    🌅 {formatTimeForDisplay(formData.wake_time || "07:00")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -594,7 +689,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
                   onPress={() => setShowSleepTimePicker(true)}
                 >
                   <Text style={styles.timeText}>
-                    🌙 {formatTimeForDisplay(formData.sleep_time || '23:00')}
+                    🌙 {formatTimeForDisplay(formData.sleep_time || "23:00")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -617,16 +712,15 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               </Card>
             )}
           </View>
-
         </View>
       </ScrollView>
 
       {/* Time Picker Modals */}
       <TimePicker
         visible={showWakeTimePicker}
-        initialTime={formData.wake_time || '07:00'}
+        initialTime={formData.wake_time || "07:00"}
         onTimeSelect={(time) => {
-          updateField('wake_time', time);
+          updateField("wake_time", time);
           setShowWakeTimePicker(false);
         }}
         onClose={() => setShowWakeTimePicker(false)}
@@ -636,9 +730,9 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
 
       <TimePicker
         visible={showSleepTimePicker}
-        initialTime={formData.sleep_time || '23:00'}
+        initialTime={formData.sleep_time || "23:00"}
         onTimeSelect={(time) => {
-          updateField('sleep_time', time);
+          updateField("sleep_time", time);
           setShowSleepTimePicker(false);
         }}
         onClose={() => setShowSleepTimePicker(false)}
@@ -649,13 +743,13 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? 'Cancel' : 'Back'}
+            title={isEditMode ? "Cancel" : "Back"}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? 'Save Changes' : 'Next'}
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -700,8 +794,8 @@ const styles = StyleSheet.create({
   },
 
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -717,7 +811,7 @@ const styles = StyleSheet.create({
   },
 
   genderContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -730,7 +824,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   genderOptionSelected: {
@@ -796,7 +890,7 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -828,8 +922,8 @@ const styles = StyleSheet.create({
   },
 
   countryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -853,7 +947,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   countryOptionTextSelected: {
@@ -862,8 +956,8 @@ const styles = StyleSheet.create({
   },
 
   stateGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -899,8 +993,8 @@ const styles = StyleSheet.create({
 
   // Occupation styles
   occupationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -953,7 +1047,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -972,8 +1066,8 @@ const styles = StyleSheet.create({
   },
 
   sleepDurationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   sleepDurationIcon: {

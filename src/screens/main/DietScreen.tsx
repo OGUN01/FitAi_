@@ -2478,7 +2478,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 <AnimatedPressable
                   style={[
                     styles.aiButton,
-                    isGeneratingPlan && styles.aiButtonDisabled,
+                    ...(isGeneratingPlan ? [styles.aiButtonDisabled] : []),
                   ]}
                   onPress={generateWeeklyMealPlan}
                   disabled={isGeneratingPlan}
@@ -2506,7 +2506,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 <AnimatedPressable
                   style={[
                     styles.aiButton,
-                    isGeneratingMeal && styles.aiButtonDisabled,
+                    ...(isGeneratingMeal ? [styles.aiButtonDisabled] : []),
                   ]}
                   onPress={generateDailyMealPlan}
                   disabled={isGeneratingMeal}
@@ -2784,8 +2784,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                           key={day}
                           style={[
                             styles.dayButton,
-                            selectedDay === day && styles.selectedDayButton,
-                            isToday && styles.todayDayButton,
+                            ...(selectedDay === day
+                              ? [styles.selectedDayButton]
+                              : []),
+                            ...(isToday ? [styles.todayDayButton] : []),
                           ]}
                           onPress={() => setSelectedDay(day)}
                           scaleValue={0.95}
@@ -3078,10 +3080,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                             blurIntensity="medium"
                             padding="lg"
                             borderRadius="xl"
-                            style={[
-                              styles.suggestionCard,
-                              styles.suggestionCardBack,
-                            ]}
+                            style={styles.suggestionCard}
                           >
                             <View style={styles.cardBackContent}>
                               <Ionicons
@@ -3781,20 +3780,22 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                         : "outline"
                     }
                     size="sm"
-                    style={[
-                      styles.waterButton,
-                      { flex: 1, marginRight: ResponsiveTheme.spacing.sm },
-                    ]}
+                    style={{
+                      ...styles.waterButton,
+                      flex: 1,
+                      marginRight: ResponsiveTheme.spacing.sm,
+                    }}
                   />
                   <Button
                     title="Custom"
                     onPress={handleLogWater}
                     variant="outline"
                     size="sm"
-                    style={[
-                      styles.waterButton,
-                      { flex: 0.7, marginRight: ResponsiveTheme.spacing.sm },
-                    ]}
+                    style={{
+                      ...styles.waterButton,
+                      flex: 0.7,
+                      marginRight: ResponsiveTheme.spacing.sm,
+                    }}
                   />
                   {waterConsumedLiters > 0 && (
                     <Button
@@ -3802,7 +3803,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                       onPress={handleRemoveWater}
                       variant="outline"
                       size="sm"
-                      style={[styles.waterButton, { flex: 0.8 }]}
+                      style={{ ...styles.waterButton, flex: 0.8 }}
                     />
                   )}
                 </View>

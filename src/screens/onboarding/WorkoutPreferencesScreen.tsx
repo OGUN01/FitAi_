@@ -1,18 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
-import { MultiSelect } from '../../components/advanced/MultiSelect';
-import { Slider } from '../../components/advanced/Slider';
-import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card, THEME } from "../../components/ui";
+import { MultiSelect } from "../../components/advanced/MultiSelect";
+import { Slider } from "../../components/advanced/Slider";
+import {
+  useEditMode,
+  useEditData,
+  useEditActions,
+} from "../../contexts/EditContext";
 
 export interface WorkoutPreferences {
-  location: 'home' | 'gym' | 'both';
+  location: "home" | "gym" | "both";
   equipment: string[];
   timePreference: number; // minutes
-  intensity: 'beginner' | 'intermediate' | 'advanced';
+  intensity: "beginner" | "intermediate" | "advanced";
   workoutTypes: string[];
 }
 
@@ -27,7 +37,9 @@ interface WorkoutPreferencesScreenProps {
   onEditCancel?: () => void;
 }
 
-export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> = ({
+export const WorkoutPreferencesScreen: React.FC<
+  WorkoutPreferencesScreenProps
+> = ({
   onNext,
   onBack,
   initialData = {},
@@ -68,13 +80,19 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
   };
 
   const data = getInitialData();
-  const [location, setLocation] = useState<WorkoutPreferences['location']>(data.location || 'both');
-  const [equipment, setEquipment] = useState<string[]>(data.equipment || []);
-  const [timePreference, setTimePreference] = useState<number>(data.timePreference || 30);
-  const [intensity, setIntensity] = useState<WorkoutPreferences['intensity']>(
-    data.intensity || 'beginner'
+  const [location, setLocation] = useState<WorkoutPreferences["location"]>(
+    data.location || "both",
   );
-  const [workoutTypes, setWorkoutTypes] = useState<string[]>(data.workoutTypes || []);
+  const [equipment, setEquipment] = useState<string[]>(data.equipment || []);
+  const [timePreference, setTimePreference] = useState<number>(
+    data.timePreference || 30,
+  );
+  const [intensity, setIntensity] = useState<WorkoutPreferences["intensity"]>(
+    data.intensity || "beginner",
+  );
+  const [workoutTypes, setWorkoutTypes] = useState<string[]>(
+    data.workoutTypes || [],
+  );
 
   const [errors, setErrors] = useState<{
     workoutTypes?: string;
@@ -94,37 +112,38 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
   // Update form data when edit context data changes (only once)
   useEffect(() => {
-    if (
-      isEditMode &&
-      editContextData?.currentData &&
-      !isDataPopulated
-    ) {
+    if (isEditMode && editContextData?.currentData && !isDataPopulated) {
       const data = editContextData.currentData;
 
       // Check if we have actual workout preferences data (not just metadata)
-      const hasActualData = data.location || data.intensity || data.timePreference ||
-                           (data.equipment && data.equipment.length > 0) ||
-                           (data.workoutTypes && data.workoutTypes.length > 0);
+      const hasActualData =
+        data.location ||
+        data.intensity ||
+        data.timePreference ||
+        (data.equipment && data.equipment.length > 0) ||
+        (data.workoutTypes && data.workoutTypes.length > 0);
 
-      console.log('🔄 WorkoutPreferencesScreen: Loading edit data:', {
+      console.log("🔄 WorkoutPreferencesScreen: Loading edit data:", {
         hasData: !!data,
         hasActualData,
         dataKeys: Object.keys(data),
         location: data.location,
         intensity: data.intensity,
-        timePreference: data.timePreference
+        timePreference: data.timePreference,
       });
 
       if (hasActualData) {
-        setLocation(data.location || 'both');
+        setLocation(data.location || "both");
         setEquipment(data.equipment || []);
         setTimePreference(data.timePreference || 30);
-        setIntensity(data.intensity || 'beginner');
+        setIntensity(data.intensity || "beginner");
         setWorkoutTypes(data.workoutTypes || []);
-        console.log('✅ WorkoutPreferencesScreen: Data loaded successfully');
+        console.log("✅ WorkoutPreferencesScreen: Data loaded successfully");
         setIsDataPopulated(true);
       } else {
-        console.warn('⚠️ WorkoutPreferencesScreen: No actual workout preferences data found in currentData');
+        console.warn(
+          "⚠️ WorkoutPreferencesScreen: No actual workout preferences data found in currentData",
+        );
       }
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
@@ -138,7 +157,15 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
       return () => clearTimeout(timeoutId);
     }
-  }, [location, equipment, timePreference, intensity, workoutTypes, isEditMode, isDataPopulated]);
+  }, [
+    location,
+    equipment,
+    timePreference,
+    intensity,
+    workoutTypes,
+    isEditMode,
+    isDataPopulated,
+  ]);
 
   // Auto-populate from body analysis if available
   useEffect(() => {
@@ -147,91 +174,142 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
       // Auto-set intensity based on fitness level
       if (analysis.fitnessLevel) {
-        const fitnessMapping: Record<string, WorkoutPreferences['intensity']> = {
-          'Beginner': 'beginner',
-          'Intermediate': 'intermediate',
-          'Advanced': 'advanced'
-        };
-        setIntensity(fitnessMapping[analysis.fitnessLevel] || 'beginner');
+        const fitnessMapping: Record<string, WorkoutPreferences["intensity"]> =
+          {
+            Beginner: "beginner",
+            Intermediate: "intermediate",
+            Advanced: "advanced",
+          };
+        setIntensity(fitnessMapping[analysis.fitnessLevel] || "beginner");
       }
     }
   }, [bodyAnalysis, isDataPopulated]);
 
   const locationOptions = [
     {
-      id: 'home',
-      title: 'Home',
-      icon: '🏠',
-      description: 'Workout from the comfort of your home',
+      id: "home",
+      title: "Home",
+      icon: "🏠",
+      description: "Workout from the comfort of your home",
     },
     {
-      id: 'gym',
-      title: 'Gym',
-      icon: '🏋️',
-      description: 'Access to full gym equipment',
+      id: "gym",
+      title: "Gym",
+      icon: "🏋️",
+      description: "Access to full gym equipment",
     },
     {
-      id: 'both',
-      title: 'Both',
-      icon: '🔄',
-      description: 'Flexible workouts anywhere',
+      id: "both",
+      title: "Both",
+      icon: "🔄",
+      description: "Flexible workouts anywhere",
     },
   ];
 
   const equipmentOptions = [
-    { id: 'bodyweight', label: 'Bodyweight', value: 'bodyweight', icon: '🤸' },
-    { id: 'dumbbells', label: 'Dumbbells', value: 'dumbbells', icon: '🏋️' },
-    { id: 'resistance-bands', label: 'Resistance Bands', value: 'resistance-bands', icon: '🎗️' },
-    { id: 'kettlebells', label: 'Kettlebells', value: 'kettlebells', icon: '⚖️' },
-    { id: 'barbell', label: 'Barbell', value: 'barbell', icon: '🏋️‍♂️' },
-    { id: 'pull-up-bar', label: 'Pull-up Bar', value: 'pull-up-bar', icon: '🏗️' },
-    { id: 'yoga-mat', label: 'Yoga Mat', value: 'yoga-mat', icon: '🧘' },
-    { id: 'bench', label: 'Bench', value: 'bench', icon: '🪑' },
-    { id: 'cable-machine', label: 'Cable Machine', value: 'cable-machine', icon: '🔗' },
-    { id: 'treadmill', label: 'Treadmill', value: 'treadmill', icon: '🏃' },
-    { id: 'stationary-bike', label: 'Stationary Bike', value: 'stationary-bike', icon: '🚴' },
-    { id: 'rowing-machine', label: 'Rowing Machine', value: 'rowing-machine', icon: '🚣' },
+    { id: "bodyweight", label: "Bodyweight", value: "bodyweight", icon: "🤸" },
+    { id: "dumbbells", label: "Dumbbells", value: "dumbbells", icon: "🏋️" },
+    {
+      id: "resistance-bands",
+      label: "Resistance Bands",
+      value: "resistance-bands",
+      icon: "🎗️",
+    },
+    {
+      id: "kettlebells",
+      label: "Kettlebells",
+      value: "kettlebells",
+      icon: "⚖️",
+    },
+    { id: "barbell", label: "Barbell", value: "barbell", icon: "🏋️‍♂️" },
+    {
+      id: "pull-up-bar",
+      label: "Pull-up Bar",
+      value: "pull-up-bar",
+      icon: "🏗️",
+    },
+    { id: "yoga-mat", label: "Yoga Mat", value: "yoga-mat", icon: "🧘" },
+    { id: "bench", label: "Bench", value: "bench", icon: "🪑" },
+    {
+      id: "cable-machine",
+      label: "Cable Machine",
+      value: "cable-machine",
+      icon: "🔗",
+    },
+    { id: "treadmill", label: "Treadmill", value: "treadmill", icon: "🏃" },
+    {
+      id: "stationary-bike",
+      label: "Stationary Bike",
+      value: "stationary-bike",
+      icon: "🚴",
+    },
+    {
+      id: "rowing-machine",
+      label: "Rowing Machine",
+      value: "rowing-machine",
+      icon: "🚣",
+    },
   ];
 
   const intensityOptions = [
     {
-      value: 'beginner',
-      label: 'Beginner',
-      description: 'New to fitness or returning after a break',
-      icon: '🌱',
+      value: "beginner",
+      label: "Beginner",
+      description: "New to fitness or returning after a break",
+      icon: "🌱",
     },
     {
-      value: 'intermediate',
-      label: 'Intermediate',
-      description: 'Some experience with regular exercise',
-      icon: '💪',
+      value: "intermediate",
+      label: "Intermediate",
+      description: "Some experience with regular exercise",
+      icon: "💪",
     },
     {
-      value: 'advanced',
-      label: 'Advanced',
-      description: 'Experienced with consistent training',
-      icon: '🔥',
+      value: "advanced",
+      label: "Advanced",
+      description: "Experienced with consistent training",
+      icon: "🔥",
     },
   ];
 
   const workoutTypeOptions = [
-    { id: 'strength', label: 'Strength Training', value: 'strength', icon: '💪' },
-    { id: 'cardio', label: 'Cardio', value: 'cardio', icon: '❤️' },
-    { id: 'hiit', label: 'HIIT', value: 'hiit', icon: '⚡' },
-    { id: 'yoga', label: 'Yoga', value: 'yoga', icon: '🧘' },
-    { id: 'pilates', label: 'Pilates', value: 'pilates', icon: '🤸‍♀️' },
-    { id: 'flexibility', label: 'Flexibility', value: 'flexibility', icon: '🤸' },
-    { id: 'functional', label: 'Functional Training', value: 'functional', icon: '🏃‍♂️' },
-    { id: 'sports', label: 'Sports Training', value: 'sports', icon: '⚽' },
-    { id: 'dance', label: 'Dance Fitness', value: 'dance', icon: '💃' },
-    { id: 'martial-arts', label: 'Martial Arts', value: 'martial-arts', icon: '🥋' },
+    {
+      id: "strength",
+      label: "Strength Training",
+      value: "strength",
+      icon: "💪",
+    },
+    { id: "cardio", label: "Cardio", value: "cardio", icon: "❤️" },
+    { id: "hiit", label: "HIIT", value: "hiit", icon: "⚡" },
+    { id: "yoga", label: "Yoga", value: "yoga", icon: "🧘" },
+    { id: "pilates", label: "Pilates", value: "pilates", icon: "🤸‍♀️" },
+    {
+      id: "flexibility",
+      label: "Flexibility",
+      value: "flexibility",
+      icon: "🤸",
+    },
+    {
+      id: "functional",
+      label: "Functional Training",
+      value: "functional",
+      icon: "🏃‍♂️",
+    },
+    { id: "sports", label: "Sports Training", value: "sports", icon: "⚽" },
+    { id: "dance", label: "Dance Fitness", value: "dance", icon: "💃" },
+    {
+      id: "martial-arts",
+      label: "Martial Arts",
+      value: "martial-arts",
+      icon: "🥋",
+    },
   ];
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
 
     if (workoutTypes.length === 0) {
-      newErrors.workoutTypes = 'Please select at least one workout type';
+      newErrors.workoutTypes = "Please select at least one workout type";
     }
 
     setErrors(newErrors);
@@ -297,22 +375,29 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Let's create your fitness profile</Text>
-          <Text style={styles.subtitle}>Tell us about your goals, activity level, and workout preferences</Text>
+          <Text style={styles.subtitle}>
+            Tell us about your goals, activity level, and workout preferences
+          </Text>
         </View>
 
         <View style={styles.content}>
           {/* Workout Location */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Where do you prefer to workout?</Text>
+            <Text style={styles.sectionTitle}>
+              Where do you prefer to workout?
+            </Text>
             <View style={styles.locationGrid}>
               {locationOptions.map((option) => (
                 <TouchableOpacity
                   key={option.id}
                   onPress={() => {
-                    setLocation(option.id as WorkoutPreferences['location']);
+                    setLocation(option.id as WorkoutPreferences["location"]);
                     if (errors.location) {
                       setErrors((prev) => ({ ...prev, location: undefined }));
                     }
@@ -320,10 +405,11 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                   style={styles.locationItem}
                 >
                   <Card
-                    style={[
-                      styles.locationCard,
-                      location === option.id && styles.locationCardSelected,
-                    ]}
+                    style={
+                      location === option.id
+                        ? [styles.locationCard, styles.locationCardSelected]
+                        : styles.locationCard
+                    }
                     variant="outlined"
                   >
                     <View style={styles.locationContent}>
@@ -331,18 +417,23 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                       <Text
                         style={[
                           styles.locationTitle,
-                          location === option.id && styles.locationTitleSelected,
+                          location === option.id &&
+                            styles.locationTitleSelected,
                         ]}
                       >
                         {option.title}
                       </Text>
-                      <Text style={styles.locationDescription}>{option.description}</Text>
+                      <Text style={styles.locationDescription}>
+                        {option.description}
+                      </Text>
                     </View>
                   </Card>
                 </TouchableOpacity>
               ))}
             </View>
-            {errors.location && <Text style={styles.errorText}>{errors.location}</Text>}
+            {errors.location && (
+              <Text style={styles.errorText}>{errors.location}</Text>
+            )}
           </View>
 
           {/* Available Equipment */}
@@ -359,8 +450,12 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
 
           {/* Time Preference */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Workout Duration: {formatTime(timePreference)}</Text>
-            <Text style={styles.sectionSubtitle}>How much time can you dedicate per workout?</Text>
+            <Text style={styles.sectionTitle}>
+              Workout Duration: {formatTime(timePreference)}
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              How much time can you dedicate per workout?
+            </Text>
             <View style={styles.sliderContainer}>
               <Slider
                 min={15}
@@ -380,13 +475,16 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
             {intensityOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
-                onPress={() => setIntensity(option.value as WorkoutPreferences['intensity'])}
+                onPress={() =>
+                  setIntensity(option.value as WorkoutPreferences["intensity"])
+                }
               >
                 <Card
-                  style={[
-                    styles.intensityCard,
-                    intensity === option.value && styles.intensityCardSelected,
-                  ]}
+                  style={
+                    intensity === option.value
+                      ? [styles.intensityCard, styles.intensityCardSelected]
+                      : styles.intensityCard
+                  }
                   variant="outlined"
                 >
                   <View style={styles.intensityContent}>
@@ -395,13 +493,16 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
                       <Text
                         style={[
                           styles.intensityTitle,
-                          intensity === option.value && styles.intensityTitleSelected,
+                          intensity === option.value &&
+                            styles.intensityTitleSelected,
                         ]}
                       >
                         {option.label}
                       </Text>
                     </View>
-                    <Text style={styles.intensityDescription}>{option.description}</Text>
+                    <Text style={styles.intensityDescription}>
+                      {option.description}
+                    </Text>
                   </View>
                 </Card>
               </TouchableOpacity>
@@ -424,7 +525,9 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
               searchable={true}
               maxSelections={5}
             />
-            {errors.workoutTypes && <Text style={styles.errorText}>{errors.workoutTypes}</Text>}
+            {errors.workoutTypes && (
+              <Text style={styles.errorText}>{errors.workoutTypes}</Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -432,13 +535,13 @@ export const WorkoutPreferencesScreen: React.FC<WorkoutPreferencesScreenProps> =
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? 'Cancel' : 'Back'}
+            title={isEditMode ? "Cancel" : "Back"}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? 'Save Changes' : 'Next'}
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -500,13 +603,13 @@ const styles = StyleSheet.create({
   },
 
   goalsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
   goalItem: {
-    width: '48%',
+    width: "48%",
   },
 
   goalCard: {
@@ -519,7 +622,7 @@ const styles = StyleSheet.create({
   },
 
   goalContent: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -532,7 +635,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -543,7 +646,7 @@ const styles = StyleSheet.create({
   goalDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   activityCard: {
@@ -576,13 +679,13 @@ const styles = StyleSheet.create({
   },
 
   locationGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
   locationItem: {
-    width: '31%',
+    width: "31%",
   },
 
   locationCard: {
@@ -595,7 +698,7 @@ const styles = StyleSheet.create({
   },
 
   locationContent: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -608,7 +711,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -619,7 +722,7 @@ const styles = StyleSheet.create({
   locationDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   sliderContainer: {
@@ -640,8 +743,8 @@ const styles = StyleSheet.create({
   },
 
   intensityHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -680,7 +783,7 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 

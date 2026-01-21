@@ -1,8 +1,8 @@
 // AI-related TypeScript type definitions for FitAI
 
-import { PersonalInfo, FitnessGoals } from './user';
-import { Workout } from './workout';
-import { NutritionPlan } from './diet';
+import { PersonalInfo, FitnessGoals } from "./user";
+import { Workout } from "./workout";
+import { NutritionPlan } from "./diet";
 
 // Re-export types from other modules that AI uses
 export type {
@@ -13,7 +13,7 @@ export type {
   CompletedExercise,
   CompletedSet,
   WorkoutSession,
-} from './workout';
+} from "./workout";
 
 export type {
   Macronutrients,
@@ -27,10 +27,10 @@ export type {
   MealLog,
   WaterLog,
   LoggedFood,
-} from './diet';
+} from "./diet";
 
 // Import MealItem for internal use
-import type { MealItem } from './diet';
+import type { MealItem } from "./diet";
 
 // ============================================================================
 // AI RESPONSE TYPES
@@ -64,7 +64,7 @@ export interface WorkoutGenerationParams {
     workoutDuration?: number; // minutes
     excludeExercises?: string[];
     focusMuscles?: string[];
-    intensity?: 'low' | 'moderate' | 'high';
+    intensity?: "low" | "moderate" | "high";
   };
   constraints?: {
     injuries?: string[];
@@ -80,8 +80,8 @@ export interface NutritionGenerationParams {
     dietaryRestrictions?: string[];
     allergies?: string[];
     cuisinePreferences?: string[];
-    mealComplexity?: 'simple' | 'moderate' | 'complex';
-    budget?: 'low' | 'medium' | 'high';
+    mealComplexity?: "simple" | "moderate" | "complex";
+    budget?: "low" | "medium" | "high";
   };
   currentMetrics?: {
     weight?: number;
@@ -98,7 +98,7 @@ export interface AINutritionRequest {
     allergies?: string[];
     cuisinePreferences?: string[];
   };
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
   targetCalories?: number;
 }
 
@@ -127,10 +127,10 @@ export interface ProgressMetrics {
 export interface ProgressAnalysis {
   summary: string;
   trends: {
-    weight: 'increasing' | 'decreasing' | 'stable';
-    bodyFat?: 'increasing' | 'decreasing' | 'stable';
-    strength?: 'improving' | 'declining' | 'stable';
-    endurance?: 'improving' | 'declining' | 'stable';
+    weight: "increasing" | "decreasing" | "stable";
+    bodyFat?: "increasing" | "decreasing" | "stable";
+    strength?: "improving" | "declining" | "stable";
+    endurance?: "improving" | "declining" | "stable";
   };
   achievements: string[];
   recommendations: string[];
@@ -154,7 +154,7 @@ export interface ProgressAnalysis {
 
 export interface DayMeal {
   id: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  type: "breakfast" | "lunch" | "dinner" | "snack";
   name: string;
   description: string;
   items: MealItem[];
@@ -179,7 +179,7 @@ export interface DayMeal {
     instruction: string;
     timeRequired?: number;
   }>;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   tags: string[];
   dayOfWeek: string;
   isPersonalized: boolean;
@@ -198,6 +198,7 @@ export interface DayMeal {
   // Completion tracking
   isCompleted?: boolean;
   completedAt?: string;
+  timing?: string; // Meal timing
 }
 
 export interface ExerciseInstruction {
@@ -226,6 +227,7 @@ export interface WeeklyWorkoutPlan {
   planDescription?: string;
   restDays?: number[];
   totalEstimatedCalories?: number;
+  duration?: number; // Total duration in minutes for the week
 }
 
 export interface WeeklyMealPlan {
@@ -245,19 +247,19 @@ export interface MotivationalContent {
     icon: string;
     title: string;
     content: string;
-    category: 'nutrition' | 'exercise' | 'mindset' | 'recovery';
+    category: "nutrition" | "exercise" | "mindset" | "recovery";
   };
   encouragement: {
     message: string;
     emoji: string;
-    tone: 'supportive' | 'energetic' | 'calm' | 'challenging';
+    tone: "supportive" | "energetic" | "calm" | "challenging";
   };
   challenge: {
     title: string;
     description: string;
     reward: string;
     duration: string;
-    difficulty: 'easy' | 'medium' | 'hard';
+    difficulty: "easy" | "medium" | "hard";
   };
   quote: {
     text: string;
@@ -281,7 +283,7 @@ export interface MotivationalContent {
 // ============================================================================
 
 export interface AIServiceConfig {
-  provider: 'gemini' | 'openai' | 'anthropic' | 'demo';
+  provider: "gemini" | "openai" | "anthropic" | "demo";
   apiKey?: string;
   model?: string;
   maxTokens?: number;
@@ -355,9 +357,9 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
-  category: 'workout' | 'nutrition' | 'consistency' | 'milestone' | 'social';
+  category: "workout" | "nutrition" | "consistency" | "milestone" | "social";
   points: number;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity: "common" | "rare" | "epic" | "legendary";
   unlockedAt?: string;
   progress?: {
     current: number;
@@ -365,9 +367,9 @@ export interface Achievement {
     unit: string;
   };
   criteria: {
-    type: 'streak' | 'total' | 'personal_best' | 'challenge' | 'special';
+    type: "streak" | "total" | "personal_best" | "challenge" | "special";
     value: number;
-    timeframe?: 'daily' | 'weekly' | 'monthly' | 'all_time';
+    timeframe?: "daily" | "weekly" | "monthly" | "all_time";
   };
   rewards?: {
     xp?: number;
@@ -396,9 +398,9 @@ export interface AIError {
 export interface DemoModeConfig {
   enabled: boolean;
   scenarios: {
-    workout: 'beginner' | 'intermediate' | 'advanced';
-    nutrition: 'weight_loss' | 'muscle_gain' | 'maintenance';
-    progress: 'good' | 'average' | 'needs_improvement';
+    workout: "beginner" | "intermediate" | "advanced";
+    nutrition: "weight_loss" | "muscle_gain" | "maintenance";
+    progress: "good" | "average" | "needs_improvement";
   };
   simulateDelay?: boolean;
   delayRange?: [number, number]; // min and max milliseconds

@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, LayoutAnimation } from 'react-native';
-import { Card, THEME } from '../ui';
-import { Exercise, WorkoutSet } from '../../types/workout';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  LayoutAnimation,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { Exercise, WorkoutSet } from "../../types/workout";
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -42,46 +49,57 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const formatReps = (reps: number | string) => {
-    if (typeof reps === 'string') return reps;
+    if (typeof reps === "string") return reps;
     return reps.toString();
   };
 
   const getMuscleGroupColor = (group: string) => {
     const colors: Record<string, string> = {
-      chest: '#FF6B6B',
-      back: '#4ECDC4',
-      shoulders: '#45B7D1',
-      biceps: '#96CEB4',
-      triceps: '#FFEAA7',
-      legs: '#DDA0DD',
-      abs: '#98D8C8',
-      glutes: '#F7DC6F',
-      cardio: '#FF7675',
-      flexibility: '#A29BFE',
+      chest: "#FF6B6B",
+      back: "#4ECDC4",
+      shoulders: "#45B7D1",
+      biceps: "#96CEB4",
+      triceps: "#FFEAA7",
+      legs: "#DDA0DD",
+      abs: "#98D8C8",
+      glutes: "#F7DC6F",
+      cardio: "#FF7675",
+      flexibility: "#A29BFE",
     };
     return colors[group.toLowerCase()] || THEME.colors.primary;
   };
 
   const getDifficultyIcon = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner':
-        return '🟢';
-      case 'intermediate':
-        return '🟡';
-      case 'advanced':
-        return '🔴';
+      case "beginner":
+        return "🟢";
+      case "intermediate":
+        return "🟡";
+      case "advanced":
+        return "🔴";
       default:
-        return '⚪';
+        return "⚪";
     }
   };
 
   return (
-    <Card style={[styles.card, isCompleted && styles.cardCompleted, style]} variant="outlined">
-      <TouchableOpacity style={styles.cardContent} onPress={handleToggleExpand} activeOpacity={0.7}>
+    <Card
+      style={
+        isCompleted
+          ? [styles.card, styles.cardCompleted, style]
+          : [styles.card, style]
+      }
+      variant="outlined"
+    >
+      <TouchableOpacity
+        style={styles.cardContent}
+        onPress={handleToggleExpand}
+        activeOpacity={0.7}
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.exerciseNumber}>
@@ -89,16 +107,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           </View>
 
           <View style={styles.titleSection}>
-            <Text style={[styles.exerciseName, isCompleted && styles.exerciseNameCompleted]}>
+            <Text
+              style={[
+                styles.exerciseName,
+                isCompleted && styles.exerciseNameCompleted,
+              ]}
+            >
               {exercise.name}
             </Text>
             <View style={styles.metaRow}>
               <Text style={styles.metaText}>
                 {workoutSet.sets} sets × {formatReps(workoutSet.reps)} reps
               </Text>
-              {workoutSet.weight && <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>}
+              {workoutSet.weight && (
+                <Text style={styles.metaText}> • {workoutSet.weight}kg</Text>
+              )}
               {workoutSet.duration && (
-                <Text style={styles.metaText}> • {formatTime(workoutSet.duration)}</Text>
+                <Text style={styles.metaText}>
+                  {" "}
+                  • {formatTime(workoutSet.duration)}
+                </Text>
               )}
             </View>
           </View>
@@ -120,7 +148,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
         {showTimer && remainingTime > 0 && (
           <View style={styles.timerSection}>
             <View style={styles.timerDisplay}>
-              <Text style={styles.timerText}>Rest: {formatTime(remainingTime)}</Text>
+              <Text style={styles.timerText}>
+                Rest: {formatTime(remainingTime)}
+              </Text>
             </View>
           </View>
         )}
@@ -142,7 +172,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <View style={styles.detailRow}>
                   <Text style={styles.detailIcon}>⏱️</Text>
                   <Text style={styles.detailLabel}>Rest time:</Text>
-                  <Text style={styles.detailValue}>{formatTime(workoutSet.restTime)}</Text>
+                  <Text style={styles.detailValue}>
+                    {formatTime(workoutSet.restTime)}
+                  </Text>
                 </View>
               )}
 
@@ -150,7 +182,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <View style={styles.detailRow}>
                   <Text style={styles.detailIcon}>🔥</Text>
                   <Text style={styles.detailLabel}>Calories:</Text>
-                  <Text style={styles.detailValue}>{exercise.calories} per set</Text>
+                  <Text style={styles.detailValue}>
+                    {exercise.calories} per set
+                  </Text>
                 </View>
               )}
             </View>
@@ -168,7 +202,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                         { backgroundColor: getMuscleGroupColor(group) },
                       ]}
                     >
-                      <Text style={styles.muscleGroupText}>{group.replace('_', ' ')}</Text>
+                      <Text style={styles.muscleGroupText}>
+                        {group.replace("_", " ")}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -181,8 +217,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <Text style={styles.sectionTitle}>Equipment Needed</Text>
                 <View style={styles.equipmentContainer}>
                   {exercise.equipment.map((item) => (
-                    <View key={`equipment-${item}`} style={styles.equipmentChip}>
-                      <Text style={styles.equipmentText}>{item.replace('_', ' ')}</Text>
+                    <View
+                      key={`equipment-${item}`}
+                      style={styles.equipmentChip}
+                    >
+                      <Text style={styles.equipmentText}>
+                        {item.replace("_", " ")}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -194,7 +235,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <View style={styles.instructionsSection}>
                 <Text style={styles.sectionTitle}>Instructions</Text>
                 {exercise.instructions.map((instruction, index) => (
-                  <View key={`instruction-${index}-${instruction.substring(0, 20)}`} style={styles.instructionItem}>
+                  <View
+                    key={`instruction-${index}-${instruction.substring(0, 20)}`}
+                    style={styles.instructionItem}
+                  >
                     <Text style={styles.instructionNumber}>{index + 1}.</Text>
                     <Text style={styles.instructionText}>{instruction}</Text>
                   </View>
@@ -207,7 +251,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               <View style={styles.tipsSection}>
                 <Text style={styles.sectionTitle}>💡 Tips</Text>
                 {exercise.tips.map((tip) => (
-                  <Text key={`tip-${tip.substring(0, 30)}`} style={styles.tipText}>
+                  <Text
+                    key={`tip-${tip.substring(0, 30)}`}
+                    style={styles.tipText}
+                  >
                     • {tip}
                   </Text>
                 ))}
@@ -217,7 +264,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
               {!isCompleted ? (
-                <TouchableOpacity style={styles.completeButton} onPress={onComplete}>
+                <TouchableOpacity
+                  style={styles.completeButton}
+                  onPress={onComplete}
+                >
                   <Text style={styles.completeButtonText}>Mark Complete</Text>
                 </TouchableOpacity>
               ) : (
@@ -231,7 +281,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
 
         {/* Expand/Collapse Indicator */}
         <View style={styles.expandIndicator}>
-          <Text style={styles.expandIcon}>{isExpanded ? '▲' : '▼'}</Text>
+          <Text style={styles.expandIcon}>{isExpanded ? "▲" : "▼"}</Text>
         </View>
       </TouchableOpacity>
     </Card>
@@ -253,8 +303,8 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -263,8 +313,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: THEME.spacing.md,
   },
 
@@ -290,8 +340,8 @@ const styles = StyleSheet.create({
   },
 
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   metaText: {
@@ -300,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   statusSection: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   completedBadge: {
@@ -308,14 +358,14 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.success,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   completedIcon: {
     color: THEME.colors.white,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   playButton: {
@@ -323,8 +373,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   playIcon: {
@@ -332,7 +382,7 @@ const styles = StyleSheet.create({
   },
 
   timerSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
 
@@ -361,8 +411,8 @@ const styles = StyleSheet.create({
   },
 
   detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.xs,
   },
 
@@ -397,8 +447,8 @@ const styles = StyleSheet.create({
   },
 
   muscleGroupsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs,
   },
 
@@ -412,7 +462,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.white,
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.medium,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
 
   equipmentSection: {
@@ -420,8 +470,8 @@ const styles = StyleSheet.create({
   },
 
   equipmentContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs,
   },
 
@@ -436,7 +486,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.text,
     fontSize: THEME.fontSize.xs,
     fontWeight: THEME.fontWeight.medium,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
 
   instructionsSection: {
@@ -444,7 +494,7 @@ const styles = StyleSheet.create({
   },
 
   instructionItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -475,7 +525,7 @@ const styles = StyleSheet.create({
   },
 
   actionButtons: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: THEME.spacing.md,
   },
 
@@ -504,7 +554,7 @@ const styles = StyleSheet.create({
   },
 
   expandIndicator: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: THEME.spacing.sm,
   },
 

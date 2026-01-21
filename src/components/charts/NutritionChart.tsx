@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
-import { THEME } from '../../utils/constants';
+import React from "react";
+import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { PieChart } from "react-native-chart-kit";
+import { THEME } from "../../utils/constants";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -29,21 +29,21 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
 
   const chartData = [
     {
-      name: 'Carbs',
+      name: "Carbs",
       population: data.carbs,
       color: THEME.colors.secondary,
       legendFontColor: THEME.colors.textSecondary,
       legendFontSize: 12,
     },
     {
-      name: 'Protein',
+      name: "Protein",
       population: data.protein,
       color: THEME.colors.primary,
       legendFontColor: THEME.colors.textSecondary,
       legendFontSize: 12,
     },
     {
-      name: 'Fat',
+      name: "Fat",
       population: data.fat,
       color: THEME.colors.warning,
       legendFontColor: THEME.colors.textSecondary,
@@ -60,29 +60,34 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
   };
 
   // Calculate macro percentages
-  const carbsPercentage = totalMacros > 0 ? (data.carbs / totalMacros) * 100 : 0;
-  const proteinPercentage = totalMacros > 0 ? (data.protein / totalMacros) * 100 : 0;
+  const carbsPercentage =
+    totalMacros > 0 ? (data.carbs / totalMacros) * 100 : 0;
+  const proteinPercentage =
+    totalMacros > 0 ? (data.protein / totalMacros) * 100 : 0;
   const fatPercentage = totalMacros > 0 ? (data.fat / totalMacros) * 100 : 0;
 
   // Calculate calories from macros (4 cal/g for carbs and protein, 9 cal/g for fat)
   const calculatedCalories = data.carbs * 4 + data.protein * 4 + data.fat * 9;
-  const caloriesProgress = targetCalories > 0 ? (data.calories / targetCalories) * 100 : 0;
+  const caloriesProgress =
+    (targetCalories ?? 0) > 0
+      ? (data.calories / (targetCalories ?? 1)) * 100
+      : 0;
 
   const macroStats = [
     {
-      name: 'Carbs',
+      name: "Carbs",
       grams: data.carbs,
       percentage: carbsPercentage,
       color: THEME.colors.secondary,
     },
     {
-      name: 'Protein',
+      name: "Protein",
       grams: data.protein,
       percentage: proteinPercentage,
       color: THEME.colors.primary,
     },
     {
-      name: 'Fat',
+      name: "Fat",
       grams: data.fat,
       percentage: fatPercentage,
       color: THEME.colors.warning,
@@ -108,12 +113,17 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
               styles.progressFill,
               {
                 width: `${Math.min(caloriesProgress, 100)}%`,
-                backgroundColor: caloriesProgress > 100 ? THEME.colors.error : THEME.colors.primary,
+                backgroundColor:
+                  caloriesProgress > 100
+                    ? THEME.colors.error
+                    : THEME.colors.primary,
               },
             ]}
           />
         </View>
-        <Text style={styles.progressText}>{caloriesProgress.toFixed(0)}% of daily goal</Text>
+        <Text style={styles.progressText}>
+          {caloriesProgress.toFixed(0)}% of daily goal
+        </Text>
       </View>
 
       {/* Pie Chart */}
@@ -134,7 +144,9 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
       ) : (
         <View style={styles.noDataContainer}>
           <Text style={styles.noDataText}>No nutrition data</Text>
-          <Text style={styles.noDataSubtext}>Log your meals to see breakdown</Text>
+          <Text style={styles.noDataSubtext}>
+            Log your meals to see breakdown
+          </Text>
         </View>
       )}
 
@@ -143,11 +155,15 @@ export const NutritionChart: React.FC<NutritionChartProps> = ({
         {macroStats.map((macro, index) => (
           <View key={index} style={styles.macroItem}>
             <View style={styles.macroHeader}>
-              <View style={[styles.macroColorDot, { backgroundColor: macro.color }]} />
+              <View
+                style={[styles.macroColorDot, { backgroundColor: macro.color }]}
+              />
               <Text style={styles.macroName}>{macro.name}</Text>
             </View>
             <Text style={styles.macroGrams}>{macro.grams}g</Text>
-            <Text style={styles.macroPercentage}>{macro.percentage.toFixed(0)}%</Text>
+            <Text style={styles.macroPercentage}>
+              {macro.percentage.toFixed(0)}%
+            </Text>
           </View>
         ))}
       </View>
@@ -164,9 +180,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
 
@@ -177,7 +193,7 @@ const styles = StyleSheet.create({
   },
 
   caloriesContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
 
   caloriesValue: {
@@ -199,29 +215,29 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: THEME.colors.surface,
     borderRadius: THEME.borderRadius.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: THEME.spacing.xs,
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: THEME.borderRadius.sm,
   },
 
   progressText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   chartContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: THEME.spacing.md,
   },
 
   noDataContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.xxl,
   },
 
@@ -238,19 +254,19 @@ const styles = StyleSheet.create({
   },
 
   macroStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: THEME.spacing.md,
   },
 
   macroItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   macroHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.xs,
   },
 

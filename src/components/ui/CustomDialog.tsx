@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,18 +7,18 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Dimensions,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Card } from './Card';
-import { Button } from './Button';
-import { THEME } from '../../utils/constants';
-import { rf } from '../../utils/responsive';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Card } from "./Card";
+import { Button } from "./Button";
+import { THEME } from "../../utils/constants";
+import { rf } from "../../utils/responsive";
 
 interface DialogAction {
   text: string;
   onPress: () => void;
-  style?: 'default' | 'cancel' | 'destructive';
-  variant?: 'primary' | 'secondary' | 'outline';
+  style?: "default" | "cancel" | "destructive";
+  variant?: "primary" | "secondary" | "outline";
 }
 
 interface CustomDialogProps {
@@ -27,7 +27,7 @@ interface CustomDialogProps {
   message?: string;
   actions?: DialogAction[];
   onDismiss?: () => void;
-  type?: 'info' | 'success' | 'warning' | 'error';
+  type?: "info" | "success" | "warning" | "error";
   icon?: string;
 }
 
@@ -40,29 +40,29 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
   message,
   actions = [],
   onDismiss,
-  type = 'info',
+  type = "info",
   icon,
 }) => {
   const getTypeIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (type) {
-      case 'success':
-        return 'checkmark-circle';
-      case 'warning':
-        return 'warning';
-      case 'error':
-        return 'close-circle';
+      case "success":
+        return "checkmark-circle";
+      case "warning":
+        return "warning";
+      case "error":
+        return "close-circle";
       default:
-        return 'information-circle';
+        return "information-circle";
     }
   };
 
   const getTypeColor = () => {
     switch (type) {
-      case 'success':
+      case "success":
         return THEME.colors.success;
-      case 'warning':
+      case "warning":
         return THEME.colors.warning;
-      case 'error':
+      case "error":
         return THEME.colors.error;
       default:
         return THEME.colors.primary;
@@ -73,25 +73,39 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
     if (action.variant) return action.variant;
 
     switch (action.style) {
-      case 'destructive':
-        return 'primary';
-      case 'cancel':
-        return 'outline';
+      case "destructive":
+        return "primary";
+      case "cancel":
+        return "outline";
       default:
-        return 'primary';
+        return "primary";
     }
   };
 
   if (!visible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+    >
       <View style={styles.overlay}>
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
             {/* Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: getTypeColor() + '20' }]}>
-              <Ionicons name={getTypeIcon()} size={rf(32)} color={getTypeColor()} />
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: getTypeColor() + "20" },
+              ]}
+            >
+              <Ionicons
+                name={getTypeIcon()}
+                size={rf(32)}
+                color={getTypeColor()}
+              />
             </View>
 
             {/* Title */}
@@ -118,10 +132,11 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         title={action.text}
                         onPress={action.onPress}
                         variant={getButtonVariant(action)}
-                        style={[
-                          styles.actionButton,
-                          index === actions.length - 1 && styles.lastActionButton,
-                        ]}
+                        style={
+                          index === actions.length - 1
+                            ? [styles.actionButton, styles.lastActionButton]
+                            : styles.actionButton
+                        }
                       />
                     ))}
                   </View>
@@ -140,46 +155,46 @@ export const showDialog = {
   info: (title: string, message?: string, actions?: DialogAction[]) => {
     // This would be implemented with a global state management solution
     // For now, it's a placeholder
-    console.log('Info Dialog:', { title, message, actions });
+    console.log("Info Dialog:", { title, message, actions });
   },
 
   success: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log('Success Dialog:', { title, message, actions });
+    console.log("Success Dialog:", { title, message, actions });
   },
 
   warning: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log('Warning Dialog:', { title, message, actions });
+    console.log("Warning Dialog:", { title, message, actions });
   },
 
   error: (title: string, message?: string, actions?: DialogAction[]) => {
-    console.log('Error Dialog:', { title, message, actions });
+    console.log("Error Dialog:", { title, message, actions });
   },
 };
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   safeArea: {
-    width: '85%', // Use percentage instead of screenWidth
+    width: "85%", // Use percentage instead of screenWidth
     maxWidth: 400,
   },
 
   dialogCard: {
     padding: THEME.spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   iconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -191,33 +206,33 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   message: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
     marginBottom: THEME.spacing.xl,
   },
 
   actionsContainer: {
-    width: '100%',
+    width: "100%",
   },
 
   singleAction: {
-    width: '100%',
+    width: "100%",
   },
 
   multipleActions: {
-    flexDirection: 'column',
+    flexDirection: "column",
     gap: THEME.spacing.sm,
   },
 
   actionButton: {
-    width: '100%',
+    width: "100%",
   },
 
   lastActionButton: {
@@ -247,14 +262,14 @@ export const WorkoutStartDialog: React.FC<WorkoutStartDialogProps> = ({
       type="info"
       actions={[
         {
-          text: 'Cancel',
+          text: "Cancel",
           onPress: onCancel,
-          style: 'cancel',
+          style: "cancel",
         },
         {
-          text: 'Begin Workout',
+          text: "Begin Workout",
           onPress: onConfirm,
-          style: 'default',
+          style: "default",
         },
       ]}
     />
@@ -288,8 +303,17 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
         <SafeAreaView style={styles.safeArea}>
           <Card style={styles.dialogCard} variant="elevated">
             {/* Celebration Icon */}
-            <View style={[styles.iconContainer, { backgroundColor: THEME.colors.success + '20' }]}>
-              <Ionicons name="trophy" size={rf(32)} color={THEME.colors.success} />
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: THEME.colors.success + "20" },
+              ]}
+            >
+              <Ionicons
+                name="trophy"
+                size={rf(32)}
+                color={THEME.colors.success}
+              />
             </View>
 
             {/* Title */}
@@ -297,7 +321,9 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 
             {/* Stats */}
             <View style={styles.statsContainer}>
-              <Text style={styles.statsTitle}>Great job! You completed "{workoutTitle}"</Text>
+              <Text style={styles.statsTitle}>
+                Great job! You completed "{workoutTitle}"
+              </Text>
 
               <View style={styles.statsGrid}>
                 <View style={styles.statItem}>
@@ -325,7 +351,12 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
                 variant="outline"
                 style={styles.actionButton}
               />
-              <Button title="Done" onPress={onDone} variant="primary" style={styles.actionButton} />
+              <Button
+                title="Done"
+                onPress={onDone}
+                variant="primary"
+                style={styles.actionButton}
+              />
             </View>
           </Card>
         </SafeAreaView>
@@ -337,28 +368,28 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
 // Additional styles for workout complete dialog
 const workoutCompleteStyles = StyleSheet.create({
   statsContainer: {
-    width: '100%',
+    width: "100%",
     marginBottom: THEME.spacing.xl,
   },
 
   statsTitle: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.lg,
     lineHeight: 22,
   },
 
   statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingVertical: THEME.spacing.lg,
     backgroundColor: THEME.colors.backgroundSecondary,
     borderRadius: THEME.borderRadius.lg,
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {

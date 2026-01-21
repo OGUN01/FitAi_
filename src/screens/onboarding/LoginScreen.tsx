@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Input, PasswordInput, THEME } from '../../components/ui';
-import { useAuth } from '../../hooks/useAuth';
-import { LoginCredentials } from '../../types/user';
-import { quickGoogleSignInTest } from '../../utils/quickGoogleTest';
-import { GoogleIcon } from '../../components/icons/GoogleIcon';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Input, PasswordInput, THEME } from "../../components/ui";
+import { useAuth } from "../../hooks/useAuth";
+import { LoginCredentials } from "../../types/user";
+// import { quickGoogleSignInTest } from '../../utils/quickGoogleTest'; // Module not found - commented out
+import { GoogleIcon } from "../../components/icons/GoogleIcon";
 // Note: Migration is now handled automatically by auth.ts - no manual migration needed in this screen
 
 interface LoginScreenProps {
@@ -16,10 +23,14 @@ interface LoginScreenProps {
   onSignUp: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack, onSignUp }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLoginSuccess,
+  onBack,
+  onSignUp,
+}) => {
   const [formData, setFormData] = useState<LoginCredentials>({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -38,13 +49,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
     const newErrors: Partial<LoginCredentials> = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     }
 
     setErrors(newErrors);
@@ -52,21 +63,25 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
   };
 
   const handleLogin = async () => {
-    console.log('🔐 LoginScreen: Starting login process', { email: formData.email });
+    console.log("🔐 LoginScreen: Starting login process", {
+      email: formData.email,
+    });
 
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      console.log('🔐 LoginScreen: Calling login service...');
+      console.log("🔐 LoginScreen: Calling login service...");
       // Ensure we trim the credentials before sending
       const trimmedCredentials = {
         email: formData.email.trim().toLowerCase(),
         password: formData.password.trim(),
       };
-      console.log('🔐 LoginScreen: Using credentials:', { email: trimmedCredentials.email });
+      console.log("🔐 LoginScreen: Using credentials:", {
+        email: trimmedCredentials.email,
+      });
       const result = await login(trimmedCredentials);
-      console.log('🔐 LoginScreen: Login result:', {
+      console.log("🔐 LoginScreen: Login result:", {
         success: result.success,
         error: result.error,
       });
@@ -75,45 +90,59 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
         // Check if user's email is verified
         if (result.user && !result.user.isEmailVerified) {
           Alert.alert(
-            'Email Verification Required',
-            'Please check your email and click the verification link to activate your account before logging in.',
+            "Email Verification Required",
+            "Please check your email and click the verification link to activate your account before logging in.",
             [
-              { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
-              { text: 'OK' },
-            ]
+              {
+                text: "Resend Email",
+                onPress: () => handleResendVerification(formData.email),
+              },
+              { text: "OK" },
+            ],
           );
           return;
         }
 
-        console.log('🔐 LoginScreen: Login successful, user:', result.user?.email);
+        console.log(
+          "🔐 LoginScreen: Login successful, user:",
+          result.user?.email,
+        );
 
         // Migration is now handled automatically by auth.ts in the background
         // No need for blocking alerts - just proceed immediately
         if (result.user) {
-          console.log('✅ LoginScreen: Proceeding to app - migration runs automatically in background');
+          console.log(
+            "✅ LoginScreen: Proceeding to app - migration runs automatically in background",
+          );
           // The auth service automatically triggers migration for guest data
           // User can access the app immediately - data syncs in background
           onLoginSuccess();
         }
       } else {
         // Check if error is related to email verification
-        if (result.error?.includes('email') || result.error?.includes('confirm')) {
+        if (
+          result.error?.includes("email") ||
+          result.error?.includes("confirm")
+        ) {
           Alert.alert(
-            'Email Verification Required',
-            'Please check your email and click the verification link to activate your account.',
+            "Email Verification Required",
+            "Please check your email and click the verification link to activate your account.",
             [
-              { text: 'Resend Email', onPress: () => handleResendVerification(formData.email) },
-              { text: 'OK' },
-            ]
+              {
+                text: "Resend Email",
+                onPress: () => handleResendVerification(formData.email),
+              },
+              { text: "OK" },
+            ],
           );
         } else {
-          console.log('🔐 LoginScreen: Login failed:', result.error);
-          Alert.alert('Login Failed', result.error || 'Invalid credentials');
+          console.log("🔐 LoginScreen: Login failed:", result.error);
+          Alert.alert("Login Failed", result.error || "Invalid credentials");
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
-      console.error('Login error:', error);
+      Alert.alert("Error", "An unexpected error occurred");
+      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -124,12 +153,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
     try {
       const result = await resendEmailVerification(email);
       if (result.success) {
-        Alert.alert('Email Sent', 'Please check your email for the verification link.');
+        Alert.alert(
+          "Email Sent",
+          "Please check your email for the verification link.",
+        );
       } else {
-        Alert.alert('Error', result.error || 'Failed to send verification email');
+        Alert.alert(
+          "Error",
+          result.error || "Failed to send verification email",
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to send verification email');
+      Alert.alert("Error", "Failed to send verification email");
     } finally {
       setIsLoading(false);
     }
@@ -142,17 +177,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
       const response = await signInWithGoogle();
 
       if (response.success) {
-        console.log('✅ LoginScreen: Google sign-in successful');
+        console.log("✅ LoginScreen: Google sign-in successful");
         // Migration is now handled automatically by auth.ts in the background
         // No need for blocking alerts - just proceed immediately
-        console.log('✅ LoginScreen: Proceeding to app - migration runs automatically in background');
+        console.log(
+          "✅ LoginScreen: Proceeding to app - migration runs automatically in background",
+        );
         onLoginSuccess();
       } else {
-        Alert.alert('Google Sign-In Failed', response.error || 'Please try again.');
+        Alert.alert(
+          "Google Sign-In Failed",
+          response.error || "Please try again.",
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Google Sign-In failed. Please try again.');
-      console.error('Google Sign-In error:', error);
+      Alert.alert("Error", "Google Sign-In failed. Please try again.");
+      console.error("Google Sign-In error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -160,16 +200,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue your fitness journey</Text>
+          <Text style={styles.subtitle}>
+            Sign in to continue your fitness journey
+          </Text>
         </View>
 
         <View style={styles.form}>
           {/* Google Sign-In as Primary */}
           <TouchableOpacity
-            style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
+            style={[
+              styles.googlePrimaryButton,
+              isLoading && styles.buttonDisabled,
+            ]}
             onPress={handleGoogleSignIn}
             disabled={isLoading}
             activeOpacity={0.8}
@@ -178,7 +226,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
               <GoogleIcon size={20} style={styles.googleIcon} />
               <Text style={styles.googlePrimaryText}>Continue with Google</Text>
             </View>
-            <Text style={styles.googleSubtext}>Recommended • No email verification needed</Text>
+            <Text style={styles.googleSubtext}>
+              Recommended • No email verification needed
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.dividerContainer}>
@@ -193,7 +243,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
               label="Email Address"
               placeholder="Enter your email address"
               value={formData.email}
-              onChangeText={(value) => updateField('email', value)}
+              onChangeText={(value) => updateField("email", value)}
               keyboardType="email-address"
               autoCapitalize="none"
               error={errors.email}
@@ -203,7 +253,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onBack
               label="Password"
               placeholder="Enter your password"
               value={formData.password}
-              onChangeText={(value) => updateField('password', value)}
+              onChangeText={(value) => updateField("password", value)}
               error={errors.password}
             />
 
@@ -258,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   title: {
@@ -266,13 +316,13 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(22),
   },
 
@@ -283,13 +333,13 @@ const styles = StyleSheet.create({
 
   // Google Primary Button Styles
   googlePrimaryButton: {
-    backgroundColor: '#4285F4',
+    backgroundColor: "#4285F4",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -300,9 +350,9 @@ const styles = StyleSheet.create({
   },
 
   googleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -311,15 +361,15 @@ const styles = StyleSheet.create({
   },
 
   googlePrimaryText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   googleSubtext: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: ResponsiveTheme.fontSize.sm,
-    textAlign: 'center',
+    textAlign: "center",
     opacity: 0.9,
   },
 
@@ -335,8 +385,8 @@ const styles = StyleSheet.create({
   },
 
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -351,7 +401,7 @@ const styles = StyleSheet.create({
     marginHorizontal: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   signUpButton: {
@@ -372,6 +422,6 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
 });

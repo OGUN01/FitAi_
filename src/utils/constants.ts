@@ -2,11 +2,11 @@
 // This file contains all application constants
 
 export const APP_CONFIG = {
-  NAME: 'FitAI',
-  VERSION: '0.1.6',
+  NAME: "FitAI",
+  VERSION: "0.1.6",
   API_TIMEOUT: 10000,
   MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
-  SUPPORTED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
+  SUPPORTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/webp"],
 };
 
 // Dark Cosmic Theme - Inspired by CultFit Design
@@ -14,51 +14,54 @@ export const APP_CONFIG = {
 export const THEME = {
   colors: {
     // Primary Colors - Premium Purple (Cult.fit inspired)
-    primary: '#6366F1', // Vibrant Indigo
-    primaryDark: '#4F46E5',
-    primaryLight: '#818CF8',
+    primary: "#6366F1", // Vibrant Indigo
+    primaryDark: "#4F46E5",
+    primaryLight: "#818CF8",
+    primaryFaded: "rgba(99, 102, 241, 0.3)", // Primary with transparency
 
     // Secondary Colors - Energetic Green (Nike inspired)
-    secondary: '#10B981', // Emerald Green
-    secondaryDark: '#059669',
-    secondaryLight: '#34D399',
+    secondary: "#10B981", // Emerald Green
+    secondaryDark: "#059669",
+    secondaryLight: "#34D399",
 
     // Background Colors
-    background: '#0a0f1c', // Deep dark blue
-    backgroundSecondary: '#1a1f2e', // Slightly lighter dark
-    backgroundTertiary: '#252a3a', // Card backgrounds
+    background: "#0a0f1c", // Deep dark blue
+    backgroundSecondary: "#1a1f2e", // Slightly lighter dark
+    backgroundTertiary: "#252a3a", // Card backgrounds
 
     // Surface Colors
-    surface: '#1e2332',
-    surfaceLight: '#2a2f3f',
+    surface: "#1e2332",
+    surfaceLight: "#2a2f3f",
 
     // Text Colors
-    text: '#ffffff', // Primary white text
-    textSecondary: '#b0b0b0', // Secondary gray text
-    textMuted: '#8a8a8a', // Muted text
+    text: "#ffffff", // Primary white text
+    textSecondary: "#b0b0b0", // Secondary gray text
+    textMuted: "#8a8a8a", // Muted text
+    textTertiary: "#6a6a6a", // Tertiary text
 
     // Status Colors
-    success: '#4caf50',
-    warning: '#ff9800',
-    error: '#f44336',
-    info: '#2196f3',
-    accent: '#818CF8', // Accent color (same as primaryLight)
+    success: "#4caf50",
+    warning: "#ff9800",
+    error: "#f44336",
+    info: "#2196f3",
+    accent: "#818CF8", // Accent color (same as primaryLight)
 
     // Utility Colors
-    white: '#ffffff',
-    black: '#000000',
-    transparent: 'transparent',
+    white: "#ffffff",
+    black: "#000000",
+    transparent: "transparent",
 
     // Gradient Colors
-    gradientStart: '#0a0f1c',
-    gradientEnd: '#1a1f2e',
+    gradientStart: "#0a0f1c",
+    gradientEnd: "#1a1f2e",
 
     // Border Colors
-    border: '#333844',
-    borderLight: '#404552',
+    border: "#333844",
+    borderLight: "#404552",
   },
 
   spacing: {
+    xxs: 2,
     xs: 4,
     sm: 8,
     md: 16,
@@ -69,6 +72,7 @@ export const THEME = {
   },
 
   borderRadius: {
+    xs: 2,
     sm: 4,
     md: 8,
     lg: 12,
@@ -78,37 +82,37 @@ export const THEME = {
   },
 
   fontSize: {
-    micro: 12,   // Labels, metadata
-    xs: 13,      // Small labels
-    sm: 14,      // Caption text
-    md: 16,      // Body text
-    lg: 20,      // H3 - Subsection headings
-    xl: 24,      // H2 - Section headings
-    xxl: 32,     // H1 - Primary headings
+    micro: 12, // Labels, metadata
+    xs: 13, // Small labels
+    sm: 14, // Caption text
+    md: 16, // Body text
+    lg: 20, // H3 - Subsection headings
+    xl: 24, // H2 - Section headings
+    xxl: 32, // H1 - Primary headings
     display: 48, // Display - Hero headings
   },
 
   fontWeight: {
-    light: '300' as '300',
-    normal: '400' as '400',
-    medium: '500' as '500',
-    semibold: '600' as '600',
-    bold: '700' as '700',
-    extrabold: '800' as '800',
+    light: "300" as "300",
+    normal: "400" as "400",
+    medium: "500" as "500",
+    semibold: "600" as "600",
+    bold: "700" as "700",
+    extrabold: "800" as "800",
   },
 
   shadows: {
     sm: {
       // Web-compatible shadow only
-      boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
+      boxShadow: "0px 1px 2px rgba(0, 0, 0, 0.2)",
     },
     md: {
       // Web-compatible shadow only
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)',
+      boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.25)",
     },
     lg: {
       // Web-compatible shadow only
-      boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
+      boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.3)",
     },
   },
 };
@@ -120,12 +124,13 @@ export const THEME = {
 // Create responsive theme function - SAFE: no module-level execution
 export const createResponsiveTheme = () => {
   // Import responsive functions lazily to avoid circular dependency
-  const { rf, rp, rbr } = require('./responsive');
+  const { rf, rp, rbr } = require("./responsive");
 
   return {
     ...THEME,
 
     spacing: {
+      xxs: rp(THEME.spacing.xxs),
       xs: rp(THEME.spacing.xs),
       sm: rp(THEME.spacing.sm),
       md: rp(THEME.spacing.md),
@@ -136,6 +141,7 @@ export const createResponsiveTheme = () => {
     },
 
     borderRadius: {
+      xs: rbr(THEME.borderRadius.xs),
       sm: rbr(THEME.borderRadius.sm),
       md: rbr(THEME.borderRadius.md),
       lg: rbr(THEME.borderRadius.lg),
@@ -163,20 +169,20 @@ export const createResponsiveTheme = () => {
 export const ResponsiveTheme = THEME;
 
 export const STORAGE_KEYS = {
-  USER_DATA: '@fitai_user_data',
-  ONBOARDING_DATA: '@fitai_onboarding_data',
-  WORKOUT_DATA: '@fitai_workout_data',
-  DIET_DATA: '@fitai_diet_data',
-  SETTINGS: '@fitai_settings',
+  USER_DATA: "@fitai_user_data",
+  ONBOARDING_DATA: "@fitai_onboarding_data",
+  WORKOUT_DATA: "@fitai_workout_data",
+  DIET_DATA: "@fitai_diet_data",
+  SETTINGS: "@fitai_settings",
 };
 
 export const API_ENDPOINTS = {
-  AUTH: '/auth',
-  USERS: '/users',
-  WORKOUTS: '/workouts',
-  DIET: '/diet',
-  BODY_ANALYSIS: '/body-analysis',
-  FOODS: '/foods',
+  AUTH: "/auth",
+  USERS: "/users",
+  WORKOUTS: "/workouts",
+  DIET: "/diet",
+  BODY_ANALYSIS: "/body-analysis",
+  FOODS: "/foods",
 };
 
 export const VALIDATION_RULES = {

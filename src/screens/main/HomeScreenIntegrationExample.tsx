@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useDashboardIntegration, useUnitConversion } from '../../utils/integration';
-import { useOffline } from '../../hooks/useOffline';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
+import {
+  useDashboardIntegration,
+  useUnitConversion,
+} from "../../utils/integration";
+import { useOffline } from "../../hooks/useOffline";
+import { useAuth } from "../../hooks/useAuth";
 
 /**
  * Example of how to integrate the existing HomeScreen with real backend data
@@ -49,7 +58,7 @@ export const HomeScreenIntegrationExample: React.FC = () => {
         // await getCompleteProfile(user.id);
       }
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setRefreshing(false);
     }
@@ -59,13 +68,18 @@ export const HomeScreenIntegrationExample: React.FC = () => {
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#ff6b35" />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor="#ff6b35"
+        />
       }
     >
       {/* Header with user greeting */}
       <View style={styles.header}>
         <Text style={styles.greeting}>
-          Good {getTimeOfDay()}, {profile?.personalInfo.name || 'Fitness Enthusiast'}!
+          Good {getTimeOfDay()},{" "}
+          {profile?.personalInfo.name || "Fitness Enthusiast"}!
         </Text>
         <Text style={styles.subtitle}>Ready to crush your goals today?</Text>
       </View>
@@ -80,28 +94,36 @@ export const HomeScreenIntegrationExample: React.FC = () => {
         <View style={styles.statsGrid}>
           <StatCard
             title="Total Workouts"
-            value={stats.totalWorkouts.toString()}
+            value={stats?.totalWorkouts?.toString() ?? "--"}
             icon="💪"
             subtitle="All time"
           />
 
           <StatCard
             title="Current Streak"
-            value={`${stats.currentStreak} days`}
+            value={
+              stats?.currentStreak !== undefined
+                ? `${stats.currentStreak} days`
+                : "--"
+            }
             icon="🔥"
             subtitle="Keep it up!"
           />
 
           <StatCard
             title="Calories Burned"
-            value={stats.totalCaloriesBurned.toString()}
+            value={stats?.totalCaloriesBurned?.toString() ?? "--"}
             icon="⚡"
             subtitle="Total"
           />
 
           <StatCard
             title="Longest Streak"
-            value={`${stats.longestStreak} days`}
+            value={
+              stats?.longestStreak !== undefined
+                ? `${stats.longestStreak} days`
+                : "--"
+            }
             icon="🏆"
             subtitle="Personal best"
           />
@@ -147,7 +169,8 @@ export const HomeScreenIntegrationExample: React.FC = () => {
             <Text style={styles.caloriesValue}>{dailyCalories}</Text>
             <Text style={styles.caloriesLabel}>Calories per day</Text>
             <Text style={styles.caloriesSubtitle}>
-              Based on your profile and {profile?.personalInfo.activityLevel} activity level
+              Based on your profile and {profile?.personalInfo.activityLevel}{" "}
+              activity level
             </Text>
           </View>
         </View>
@@ -160,21 +183,31 @@ export const HomeScreenIntegrationExample: React.FC = () => {
         <View style={styles.preferencesList}>
           <PreferenceItem
             label="Units"
-            value={preferences.units === 'metric' ? 'Metric (kg, cm)' : 'Imperial (lbs, ft)'}
+            value={
+              preferences?.units === "metric"
+                ? "Metric (kg, cm)"
+                : "Imperial (lbs, ft)"
+            }
           />
           <PreferenceItem
             label="Notifications"
-            value={preferences.notifications ? 'Enabled' : 'Disabled'}
+            value={preferences?.notifications ? "Enabled" : "Disabled"}
           />
-          <PreferenceItem label="Theme" value={preferences.darkMode ? 'Dark Mode' : 'Light Mode'} />
+          <PreferenceItem
+            label="Theme"
+            value={preferences?.darkMode ? "Dark Mode" : "Light Mode"}
+          />
         </View>
       </View>
 
       {/* Integration Instructions */}
       <View style={styles.instructionsContainer}>
-        <Text style={styles.instructionsTitle}>🔧 Integration Instructions</Text>
+        <Text style={styles.instructionsTitle}>
+          🔧 Integration Instructions
+        </Text>
         <Text style={styles.instructionsText}>
-          This example shows how to replace mock data in HomeScreen.tsx with real backend data:
+          This example shows how to replace mock data in HomeScreen.tsx with
+          real backend data:
         </Text>
         <Text style={styles.instructionsText}>
           • Use useDashboardIntegration() hook for user stats and metrics
@@ -185,7 +218,9 @@ export const HomeScreenIntegrationExample: React.FC = () => {
         <Text style={styles.instructionsText}>
           • Use useOffline() for sync status and network indicators
         </Text>
-        <Text style={styles.instructionsText}>• Add pull-to-refresh for data synchronization</Text>
+        <Text style={styles.instructionsText}>
+          • Add pull-to-refresh for data synchronization
+        </Text>
       </View>
     </ScrollView>
   );
@@ -193,16 +228,16 @@ export const HomeScreenIntegrationExample: React.FC = () => {
 
 // Helper Components
 
-const NetworkStatusIndicator: React.FC<{ isOnline: boolean; queueLength: number }> = ({
-  isOnline,
-  queueLength,
-}) => {
+const NetworkStatusIndicator: React.FC<{
+  isOnline: boolean;
+  queueLength: number;
+}> = ({ isOnline, queueLength }) => {
   if (isOnline && queueLength === 0) return null;
 
   return (
     <View style={[styles.networkStatus, !isOnline && styles.offline]}>
       <Text style={styles.networkStatusText}>
-        {!isOnline ? '📱 Offline Mode' : `📤 ${queueLength} items pending sync`}
+        {!isOnline ? "📱 Offline Mode" : `📤 ${queueLength} items pending sync`}
       </Text>
     </View>
   );
@@ -235,7 +270,10 @@ const HealthMetricCard: React.FC<{
   </View>
 );
 
-const PreferenceItem: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+const PreferenceItem: React.FC<{ label: string; value: string }> = ({
+  label,
+  value,
+}) => (
   <View style={styles.preferenceItem}>
     <Text style={styles.preferenceLabel}>{label}</Text>
     <Text style={styles.preferenceValue}>{value}</Text>
@@ -246,23 +284,23 @@ const PreferenceItem: React.FC<{ label: string; value: string }> = ({ label, val
 
 const getTimeOfDay = (): string => {
   const hour = new Date().getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  return 'evening';
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
 };
 
 const getBMIColor = (bmi: number): string => {
-  if (bmi < 18.5) return '#FF9800'; // Underweight
-  if (bmi < 25) return '#4CAF50'; // Normal
-  if (bmi < 30) return '#FF9800'; // Overweight
-  return '#F44336'; // Obese
+  if (bmi < 18.5) return "#FF9800"; // Underweight
+  if (bmi < 25) return "#4CAF50"; // Normal
+  if (bmi < 30) return "#FF9800"; // Overweight
+  return "#F44336"; // Obese
 };
 
 // Styles
 const styles = {
   container: {
     flex: 1,
-    backgroundColor: '#0a0f1c',
+    backgroundColor: "#0a0f1c",
   },
   header: {
     padding: 20,
@@ -270,27 +308,27 @@ const styles = {
   },
   greeting: {
     fontSize: 24,
-    fontWeight: 'bold' as const,
-    color: '#ffffff',
+    fontWeight: "bold" as const,
+    color: "#ffffff",
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: '#8e9aaf',
+    color: "#8e9aaf",
   },
   networkStatus: {
-    backgroundColor: '#ff6b35',
+    backgroundColor: "#ff6b35",
     padding: 8,
     marginHorizontal: 20,
     borderRadius: 6,
     marginBottom: 20,
   },
   offline: {
-    backgroundColor: '#666',
+    backgroundColor: "#666",
   },
   networkStatusText: {
-    color: '#ffffff',
-    textAlign: 'center' as const,
+    color: "#ffffff",
+    textAlign: "center" as const,
     fontSize: 14,
   },
   statsContainer: {
@@ -298,22 +336,22 @@ const styles = {
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold' as const,
-    color: '#ffffff',
+    fontWeight: "bold" as const,
+    color: "#ffffff",
     marginBottom: 16,
   },
   statsGrid: {
-    flexDirection: 'row' as const,
-    flexWrap: 'wrap' as const,
-    justifyContent: 'space-between',
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    justifyContent: "space-between",
   },
   statCard: {
-    backgroundColor: '#1a1f2e',
+    backgroundColor: "#1a1f2e",
     padding: 16,
     borderRadius: 12,
-    width: '48%',
+    width: "48%",
     marginBottom: 12,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   statIcon: {
     fontSize: 24,
@@ -321,113 +359,113 @@ const styles = {
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold' as const,
-    color: '#ff6b35',
+    fontWeight: "bold" as const,
+    color: "#ff6b35",
     marginBottom: 4,
   },
   statTitle: {
     fontSize: 14,
-    color: '#ffffff',
-    textAlign: 'center' as const,
+    color: "#ffffff",
+    textAlign: "center" as const,
     marginBottom: 2,
   },
   statSubtitle: {
     fontSize: 12,
-    color: '#8e9aaf',
-    textAlign: 'center' as const,
+    color: "#8e9aaf",
+    textAlign: "center" as const,
   },
   healthContainer: {
     padding: 20,
   },
   healthGrid: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between',
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
   },
   healthCard: {
-    backgroundColor: '#1a1f2e',
+    backgroundColor: "#1a1f2e",
     padding: 16,
     borderRadius: 12,
     flex: 1,
     marginHorizontal: 4,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   healthValue: {
     fontSize: 20,
-    fontWeight: 'bold' as const,
+    fontWeight: "bold" as const,
     marginBottom: 4,
   },
   healthTitle: {
     fontSize: 14,
-    color: '#ffffff',
+    color: "#ffffff",
     marginBottom: 2,
   },
   healthSubtitle: {
     fontSize: 12,
-    color: '#8e9aaf',
+    color: "#8e9aaf",
   },
   caloriesContainer: {
     padding: 20,
   },
   caloriesCard: {
-    backgroundColor: '#1a1f2e',
+    backgroundColor: "#1a1f2e",
     padding: 24,
     borderRadius: 12,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   caloriesValue: {
     fontSize: 36,
-    fontWeight: 'bold' as const,
-    color: '#ff6b35',
+    fontWeight: "bold" as const,
+    color: "#ff6b35",
     marginBottom: 4,
   },
   caloriesLabel: {
     fontSize: 16,
-    color: '#ffffff',
+    color: "#ffffff",
     marginBottom: 8,
   },
   caloriesSubtitle: {
     fontSize: 14,
-    color: '#8e9aaf',
-    textAlign: 'center' as const,
+    color: "#8e9aaf",
+    textAlign: "center" as const,
   },
   preferencesContainer: {
     padding: 20,
   },
   preferencesList: {
-    backgroundColor: '#1a1f2e',
+    backgroundColor: "#1a1f2e",
     borderRadius: 12,
     padding: 16,
   },
   preferenceItem: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-between',
+    flexDirection: "row" as const,
+    justifyContent: "space-between",
     paddingVertical: 8,
   },
   preferenceLabel: {
     fontSize: 14,
-    color: '#ffffff',
+    color: "#ffffff",
   },
   preferenceValue: {
     fontSize: 14,
-    color: '#8e9aaf',
+    color: "#8e9aaf",
   },
   instructionsContainer: {
     margin: 20,
     padding: 16,
-    backgroundColor: '#1a1f2e',
+    backgroundColor: "#1a1f2e",
     borderRadius: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#ff6b35',
+    borderLeftColor: "#ff6b35",
   },
   instructionsTitle: {
     fontSize: 16,
-    fontWeight: 'bold' as const,
-    color: '#ff6b35',
+    fontWeight: "bold" as const,
+    color: "#ff6b35",
     marginBottom: 8,
   },
   instructionsText: {
     fontSize: 14,
-    color: '#8e9aaf',
+    color: "#8e9aaf",
     marginBottom: 4,
     lineHeight: 20,
   },

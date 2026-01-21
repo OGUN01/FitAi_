@@ -1,20 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { WelcomeScreen } from './WelcomeScreen';
-import { LoginScreen } from './LoginScreen';
-import { SignUpScreen } from './SignUpScreen';
-import { PersonalInfoScreen } from './PersonalInfoScreen';
-import { DietPreferencesScreen, DietPreferences } from './DietPreferencesScreen';
-import { WorkoutPreferencesScreen, WorkoutPreferences } from './WorkoutPreferencesScreen';
-import { BodyAnalysisScreen, BodyAnalysis } from './BodyAnalysisScreen';
-import { ReviewScreen, OnboardingReviewData } from './ReviewScreen';
-import { PersonalInfo, FitnessGoals, RegisterCredentials } from '../../types/user';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
-import { useOnboardingIntegration } from '../../utils/integration';
-import { useAuth } from '../../hooks/useAuth';
-import { useUserStore } from '../../stores/userStore';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { WelcomeScreen } from "./WelcomeScreen";
+import { LoginScreen } from "./LoginScreen";
+import { SignUpScreen } from "./SignUpScreen";
+import { PersonalInfoScreen } from "./PersonalInfoScreen";
+import {
+  DietPreferencesScreen,
+  DietPreferences,
+} from "./DietPreferencesScreen";
+import {
+  WorkoutPreferencesScreen,
+  WorkoutPreferences,
+} from "./WorkoutPreferencesScreen";
+import { BodyAnalysisScreen, BodyAnalysis } from "./BodyAnalysisScreen";
+import { ReviewScreen, OnboardingReviewData } from "./ReviewScreen";
+import {
+  PersonalInfo,
+  FitnessGoals,
+  RegisterCredentials,
+} from "../../types/user";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { useOnboardingIntegration } from "../../utils/integration";
+import { useAuth } from "../../hooks/useAuth";
+import { useUserStore } from "../../stores/userStore";
 
 interface OnboardingFlowProps {
   onComplete: (userData: OnboardingReviewData) => void;
@@ -24,45 +34,48 @@ interface OnboardingFlowProps {
 }
 
 type OnboardingStep =
-  | 'welcome'
-  | 'signup'
-  | 'login'
-  | 'personal-info'
-  | 'body-analysis'
-  | 'workout-preferences'
-  | 'diet-preferences'
-  | 'review';
+  | "welcome"
+  | "signup"
+  | "login"
+  | "personal-info"
+  | "body-analysis"
+  | "workout-preferences"
+  | "diet-preferences"
+  | "review";
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
-  startStep = 'welcome',
+  startStep = "welcome",
   initialData,
   onPartialSave,
 }) => {
-  const { user, isInitialized, isAuthenticated, isGuestMode, setGuestMode } = useAuth();
+  const { user, isInitialized, isAuthenticated, isGuestMode, setGuestMode } =
+    useAuth();
   const { getCompleteProfile } = useUserStore();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>(startStep as OnboardingStep);
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>(
+    startStep as OnboardingStep,
+  );
   const [hasAutoRedirected, setHasAutoRedirected] = useState(false);
   const [personalInfo, setPersonalInfo] = useState<PersonalInfo | null>(
-    initialData?.personalInfo || null
+    initialData?.personalInfo || null,
   );
   const [fitnessGoals, setFitnessGoals] = useState<FitnessGoals | null>(
-    initialData?.fitnessGoals || null
+    initialData?.fitnessGoals || null,
   );
-  const [dietPreferences, setDietPreferences] = useState<DietPreferences | null>(
-    initialData?.dietPreferences || null
-  );
-  const [workoutPreferences, setWorkoutPreferences] = useState<WorkoutPreferences | null>(
-    initialData?.workoutPreferences || null
-  );
+  const [dietPreferences, setDietPreferences] =
+    useState<DietPreferences | null>(initialData?.dietPreferences || null);
+  const [workoutPreferences, setWorkoutPreferences] =
+    useState<WorkoutPreferences | null>(
+      initialData?.workoutPreferences || null,
+    );
   const [bodyAnalysis, setBodyAnalysis] = useState<BodyAnalysis | null>(
-    initialData?.bodyAnalysis || null
+    initialData?.bodyAnalysis || null,
   );
 
   // Log when initial data is provided
   useEffect(() => {
     if (initialData) {
-      console.log('📥 OnboardingFlow: Initial data provided for resume:', {
+      console.log("📥 OnboardingFlow: Initial data provided for resume:", {
         hasPersonalInfo: !!initialData.personalInfo,
         hasFitnessGoals: !!initialData.fitnessGoals,
         hasDietPreferences: !!initialData.dietPreferences,
@@ -75,10 +88,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   // Check if user is authenticated and skip to profile setup
   // Only auto-redirect from welcome screen, not from signup/login flow
   useEffect(() => {
-    console.log('🎭 OnboardingFlow: Auth state check', {
+    console.log("🎭 OnboardingFlow: Auth state check", {
       isInitialized,
       isAuthenticated,
-      user: user ? `${user.email} (verified: ${user.isEmailVerified})` : 'null',
+      user: user ? `${user.email} (verified: ${user.isEmailVerified})` : "null",
       currentStep,
     });
 
@@ -87,14 +100,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     if (
       isInitialized &&
       isAuthenticated &&
-      currentStep === 'welcome' &&
+      currentStep === "welcome" &&
       !hasAutoRedirected &&
-      startStep === 'welcome'
+      startStep === "welcome"
     ) {
       console.log(
-        '🎭 OnboardingFlow: User is authenticated and verified, skipping to personal info'
+        "🎭 OnboardingFlow: User is authenticated and verified, skipping to personal info",
       );
-      setCurrentStep('personal-info');
+      setCurrentStep("personal-info");
       setHasAutoRedirected(true);
     }
   }, [isAuthenticated, isInitialized, currentStep, hasAutoRedirected]);
@@ -103,11 +116,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   useEffect(() => {
     if (
       isInitialized &&
-      startStep !== 'welcome' &&
+      startStep !== "welcome" &&
       startStep !== currentStep &&
       !hasAutoRedirected
     ) {
-      console.log('🎭 OnboardingFlow: Initializing with start step:', startStep);
+      console.log(
+        "🎭 OnboardingFlow: Initializing with start step:",
+        startStep,
+      );
       setCurrentStep(startStep as OnboardingStep);
       setHasAutoRedirected(true);
     }
@@ -116,8 +132,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   // Load existing data when resuming onboarding
   useEffect(() => {
     const loadExistingData = async () => {
-      if (isInitialized && user && isAuthenticated && startStep !== 'welcome') {
-        console.log('🔄 OnboardingFlow: Loading existing data for resume');
+      if (isInitialized && user && isAuthenticated && startStep !== "welcome") {
+        console.log("🔄 OnboardingFlow: Loading existing data for resume");
         try {
           const profileResponse = await getCompleteProfile(user.id);
           if (profileResponse.success && profileResponse.data) {
@@ -125,18 +141,25 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
             // Load personal info if exists
             if (profile.personalInfo) {
-              console.log('📋 OnboardingFlow: Loading existing personal info');
+              console.log("📋 OnboardingFlow: Loading existing personal info");
               setPersonalInfo(profile.personalInfo);
             }
 
             // Load fitness goals if exists
-            if (profile.fitnessGoals && profile.fitnessGoals.primaryGoals?.length > 0) {
-              console.log('🎯 OnboardingFlow: Loading existing fitness goals');
+            if (
+              profile.fitnessGoals &&
+              profile.fitnessGoals.primaryGoals &&
+              profile.fitnessGoals.primaryGoals.length > 0
+            ) {
+              console.log("🎯 OnboardingFlow: Loading existing fitness goals");
               setFitnessGoals(profile.fitnessGoals);
             }
           }
         } catch (error) {
-          console.error('❌ OnboardingFlow: Error loading existing data:', error);
+          console.error(
+            "❌ OnboardingFlow: Error loading existing data:",
+            error,
+          );
         }
       }
     };
@@ -152,45 +175,45 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleWelcomeNext = () => {
     // Enable guest mode and skip signup - go directly to onboarding
     setGuestMode(true);
-    console.log('🎭 OnboardingFlow: Starting guest mode onboarding');
-    setCurrentStep('personal-info');
+    console.log("🎭 OnboardingFlow: Starting guest mode onboarding");
+    setCurrentStep("personal-info");
   };
 
   const handleWelcomeLogin = () => {
-    setCurrentStep('login');
+    setCurrentStep("login");
   };
 
   const handleLoginSuccess = async () => {
     // User is now authenticated, App.tsx will now handle determining
     // the correct starting step and loading existing data
-    console.log('✅ Login successful, letting App.tsx handle resume logic');
+    console.log("✅ Login successful, letting App.tsx handle resume logic");
     // The onboarding flow will be restarted by App.tsx with the correct step
   };
 
   const handleLoginBack = () => {
-    setCurrentStep('welcome');
+    setCurrentStep("welcome");
   };
 
   const handleLoginSignUp = () => {
-    setCurrentStep('signup');
+    setCurrentStep("signup");
   };
 
   // Sign Up handlers
   const handleSignUpSuccess = () => {
     // After successful signup, redirect to login page
-    setCurrentStep('login');
+    setCurrentStep("login");
   };
 
   const handleSignUpBack = () => {
-    setCurrentStep('welcome');
+    setCurrentStep("welcome");
   };
 
   const handleSignUpLogin = () => {
-    setCurrentStep('login');
+    setCurrentStep("login");
   };
 
   const handlePersonalInfoNext = async (data: PersonalInfo) => {
-    console.log('📝 Personal info submitted:', data);
+    console.log("📝 Personal info submitted:", data);
     setPersonalInfo(data);
 
     // Save partial data
@@ -198,33 +221,34 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       onPartialSave({ personalInfo: data });
     }
 
-    console.log('✅ Personal info state updated');
-    setCurrentStep('diet-preferences');
+    console.log("✅ Personal info state updated");
+    setCurrentStep("diet-preferences");
   };
 
   const handlePersonalInfoBack = async () => {
     // For authenticated users, we need to allow them to logout and return to welcome
     if (user && isAuthenticated) {
-      console.log('🔙 PersonalInfo back: Authenticated user wants to go back, logging out');
+      console.log(
+        "🔙 PersonalInfo back: Authenticated user wants to go back, logging out",
+      );
       await logout();
       setHasAutoRedirected(false); // Reset auto-redirect flag
-      setCurrentStep('welcome');
+      setCurrentStep("welcome");
     } else if (user && !isAuthenticated) {
-      console.log('🔙 PersonalInfo back: Clearing unverified user session');
+      console.log("🔙 PersonalInfo back: Clearing unverified user session");
       await logout();
       setHasAutoRedirected(false); // Reset auto-redirect flag
-      setCurrentStep('welcome');
+      setCurrentStep("welcome");
     } else {
       // Guest user can go back normally
-      console.log('🔙 PersonalInfo back: Guest user going back to welcome');
-      setCurrentStep('welcome');
+      console.log("🔙 PersonalInfo back: Guest user going back to welcome");
+      setCurrentStep("welcome");
     }
   };
 
-
   // Diet Preferences handlers
   const handleDietPreferencesNext = (data: DietPreferences) => {
-    console.log('🍽️ Diet preferences completed');
+    console.log("🍽️ Diet preferences completed");
     setDietPreferences(data);
 
     // Save partial data with current state
@@ -236,17 +260,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('body-analysis');
+    setCurrentStep("body-analysis");
   };
 
   const handleDietPreferencesBack = () => {
-    setCurrentStep('personal-info');
+    setCurrentStep("personal-info");
   };
 
   // Workout Preferences handlers
   const handleWorkoutPreferencesNext = (data: WorkoutPreferences) => {
-    console.log('💪 Workout preferences completed');
-    
+    console.log("💪 Workout preferences completed");
+
     // Transform workout preferences data into the expected format for AI services
     const transformedFitnessGoals: FitnessGoals = {
       primaryGoals: data.primaryGoals,
@@ -254,13 +278,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       experience: data.intensity,
       experience_level: data.intensity, // Duplicate for backward compatibility
     };
-    
+
     // Update personalInfo to include activityLevel
     const updatedPersonalInfo: PersonalInfo = {
       ...personalInfo!,
       activityLevel: data.activityLevel,
     };
-    
+
     setWorkoutPreferences(data);
     setFitnessGoals(transformedFitnessGoals);
     setPersonalInfo(updatedPersonalInfo);
@@ -275,16 +299,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('review');
+    setCurrentStep("review");
   };
 
   const handleWorkoutPreferencesBack = () => {
-    setCurrentStep('body-analysis');
+    setCurrentStep("body-analysis");
   };
 
   // Body Analysis handlers
   const handleBodyAnalysisNext = (data: BodyAnalysis) => {
-    console.log('📸 Body analysis completed');
+    console.log("📸 Body analysis completed");
     setBodyAnalysis(data);
 
     // Save partial data with current state
@@ -298,15 +322,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('workout-preferences');
+    setCurrentStep("workout-preferences");
   };
 
   const handleBodyAnalysisBack = () => {
-    setCurrentStep('diet-preferences');
+    setCurrentStep("diet-preferences");
   };
 
   const handleBodyAnalysisSkip = () => {
-    console.log('📸 Body analysis skipped');
+    console.log("📸 Body analysis skipped");
     const emptyBodyAnalysis = { photos: {} };
     setBodyAnalysis(emptyBodyAnalysis);
 
@@ -321,15 +345,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       });
     }
 
-    setCurrentStep('workout-preferences');
+    setCurrentStep("workout-preferences");
   };
 
   // Review handlers
   const handleReviewComplete = async () => {
-    console.log('🎉 Onboarding completion started');
+    console.log("🎉 Onboarding completion started");
 
-    if (!personalInfo || !fitnessGoals || !dietPreferences || !workoutPreferences) {
-      Alert.alert('Error', 'Some required information is missing. Please complete all sections.');
+    if (
+      !personalInfo ||
+      !fitnessGoals ||
+      !dietPreferences ||
+      !workoutPreferences
+    ) {
+      Alert.alert(
+        "Error",
+        "Some required information is missing. Please complete all sections.",
+      );
       return;
     }
 
@@ -343,61 +375,68 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
     // Save onboarding data (works for both guest and authenticated users)
     try {
-      console.log('💾 Saving complete onboarding data (guest or authenticated)');
+      console.log(
+        "💾 Saving complete onboarding data (guest or authenticated)",
+      );
       const result = await saveOnboardingData({
         ...completeData,
         isComplete: true,
       });
 
       if (!result.success) {
-        console.warn('Failed to save onboarding data:', result.error);
+        console.warn("Failed to save onboarding data:", result.error);
       } else {
         if (isGuestMode) {
-          console.log('✅ Guest onboarding data saved locally');
+          console.log("✅ Guest onboarding data saved locally");
         } else {
-          console.log('✅ Authenticated user onboarding data saved to backend');
+          console.log("✅ Authenticated user onboarding data saved to backend");
         }
       }
     } catch (error) {
-      console.warn('Error saving onboarding data:', error);
+      console.warn("Error saving onboarding data:", error);
     }
 
-    console.log('🚀 Calling onComplete with complete data');
+    console.log("🚀 Calling onComplete with complete data");
     onComplete(completeData);
   };
 
   const handleReviewBack = () => {
-    setCurrentStep('workout-preferences');
+    setCurrentStep("workout-preferences");
   };
 
   const handleReviewEditSection = (section: keyof OnboardingReviewData) => {
     console.log(`✏️ Editing section: ${section}`);
 
     switch (section) {
-      case 'personalInfo':
-        setCurrentStep('personal-info');
+      case "personalInfo":
+        setCurrentStep("personal-info");
         break;
-      case 'fitnessGoals':
-        setCurrentStep('workout-preferences');
+      case "fitnessGoals":
+        setCurrentStep("workout-preferences");
         break;
-      case 'dietPreferences':
-        setCurrentStep('diet-preferences');
+      case "dietPreferences":
+        setCurrentStep("diet-preferences");
         break;
-      case 'workoutPreferences':
-        setCurrentStep('workout-preferences');
+      case "workoutPreferences":
+        setCurrentStep("workout-preferences");
         break;
-      case 'bodyAnalysis':
-        setCurrentStep('body-analysis');
+      case "bodyAnalysis":
+        setCurrentStep("body-analysis");
         break;
     }
   };
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 'welcome':
-        return <WelcomeScreen onGetStarted={handleWelcomeNext} onLogin={handleWelcomeLogin} />;
+      case "welcome":
+        return (
+          <WelcomeScreen
+            onGetStarted={handleWelcomeNext}
+            onLogin={handleWelcomeLogin}
+          />
+        );
 
-      case 'signup':
+      case "signup":
         return (
           <SignUpScreen
             onSignUpSuccess={handleSignUpSuccess}
@@ -406,7 +445,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'login':
+      case "login":
         return (
           <LoginScreen
             onLoginSuccess={handleLoginSuccess}
@@ -415,7 +454,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'personal-info':
+      case "personal-info":
         return (
           <PersonalInfoScreen
             onNext={handlePersonalInfoNext}
@@ -424,8 +463,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-
-      case 'diet-preferences':
+      case "diet-preferences":
         return (
           <DietPreferencesScreen
             onNext={handleDietPreferencesNext}
@@ -434,7 +472,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'workout-preferences':
+      case "workout-preferences":
         return (
           <WorkoutPreferencesScreen
             onNext={handleWorkoutPreferencesNext}
@@ -444,7 +482,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'body-analysis':
+      case "body-analysis":
         return (
           <BodyAnalysisScreen
             onNext={handleBodyAnalysisNext}
@@ -454,11 +492,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         );
 
-      case 'review':
-        if (!personalInfo || !fitnessGoals || !dietPreferences || !workoutPreferences) {
+      case "review":
+        if (
+          !personalInfo ||
+          !fitnessGoals ||
+          !dietPreferences ||
+          !workoutPreferences
+        ) {
           // If required data is missing, go back to the first incomplete step
-          console.warn('Missing required data for review screen');
-          setCurrentStep('personal-info');
+          console.warn("Missing required data for review screen");
+          setCurrentStep("personal-info");
           return null;
         }
 
@@ -478,11 +521,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         );
 
       default:
-        return <WelcomeScreen onGetStarted={handleWelcomeNext} onLogin={handleWelcomeLogin} />;
+        return (
+          <WelcomeScreen
+            onGetStarted={handleWelcomeNext}
+            onLogin={handleWelcomeLogin}
+          />
+        );
     }
   };
 
-  console.log('🎭 OnboardingFlow: Rendering step:', currentStep);
+  console.log("🎭 OnboardingFlow: Rendering step:", currentStep);
 
   return <View style={styles.container}>{renderCurrentStep()}</View>;
 };

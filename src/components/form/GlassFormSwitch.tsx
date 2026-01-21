@@ -1,6 +1,6 @@
 /**
  * GlassFormSwitch - Glassmorphic Toggle Switch Component
- * 
+ *
  * Features:
  * - Glassmorphic card styling
  * - Icon support
@@ -8,13 +8,13 @@
  * - Animated switch
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, Switch, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '../../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+import React from "react";
+import { View, Text, StyleSheet, Switch, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 interface GlassFormSwitchProps {
   label: string;
@@ -52,11 +52,16 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
       <View style={[styles.container, disabled && styles.containerDisabled]}>
         {/* Icon */}
         {icon && (
-          <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
-            <Ionicons 
-              name={icon} 
-              size={rf(18)} 
-              color={disabled ? ResponsiveTheme.colors.textMuted : iconColor} 
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: `${iconColor}15` },
+            ]}
+          >
+            <Ionicons
+              name={icon}
+              size={rf(18)}
+              color={disabled ? ResponsiveTheme.colors.textMuted : iconColor}
             />
           </View>
         )}
@@ -82,10 +87,12 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
           }}
           disabled={disabled}
           trackColor={{
-            false: 'rgba(255, 255, 255, 0.1)',
+            false: "rgba(255, 255, 255, 0.1)",
             true: `${ResponsiveTheme.colors.primary}50`,
           }}
-          thumbColor={value ? ResponsiveTheme.colors.primary : 'rgba(255, 255, 255, 0.4)'}
+          thumbColor={
+            value ? ResponsiveTheme.colors.primary : "rgba(255, 255, 255, 0.4)"
+          }
           ios_backgroundColor="rgba(255, 255, 255, 0.1)"
         />
       </View>
@@ -95,12 +102,12 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: "rgba(255, 255, 255, 0.08)",
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -111,8 +118,8 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(12),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
   },
   textContainer: {
@@ -121,8 +128,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: rf(15),
-    fontWeight: '500',
-    color: '#fff',
+    fontWeight: "500",
+    color: "#fff",
   },
   labelDisabled: {
     color: ResponsiveTheme.colors.textMuted,
@@ -136,4 +143,3 @@ const styles = StyleSheet.create({
 });
 
 export default GlassFormSwitch;
-

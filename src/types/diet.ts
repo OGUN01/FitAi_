@@ -9,6 +9,8 @@ export interface Macronutrients {
   carbohydrates: number; // in grams
   fat: number; // in grams
   fiber: number; // in grams
+  sugar?: number; // in grams
+  sodium?: number; // in mg
 }
 
 export interface Micronutrients {
@@ -44,44 +46,44 @@ export interface Food {
 }
 
 export type FoodCategory =
-  | 'fruits'
-  | 'vegetables'
-  | 'grains'
-  | 'proteins'
-  | 'dairy'
-  | 'fats_oils'
-  | 'beverages'
-  | 'snacks'
-  | 'condiments'
-  | 'supplements'
-  | 'prepared_foods'
-  | 'other';
+  | "fruits"
+  | "vegetables"
+  | "grains"
+  | "proteins"
+  | "dairy"
+  | "fats_oils"
+  | "beverages"
+  | "snacks"
+  | "condiments"
+  | "supplements"
+  | "prepared_foods"
+  | "other";
 
 export type Allergen =
-  | 'milk'
-  | 'eggs'
-  | 'fish'
-  | 'shellfish'
-  | 'tree_nuts'
-  | 'peanuts'
-  | 'wheat'
-  | 'soybeans'
-  | 'sesame';
+  | "milk"
+  | "eggs"
+  | "fish"
+  | "shellfish"
+  | "tree_nuts"
+  | "peanuts"
+  | "wheat"
+  | "soybeans"
+  | "sesame";
 
 export type DietaryLabel =
-  | 'vegan'
-  | 'vegetarian'
-  | 'gluten_free'
-  | 'dairy_free'
-  | 'nut_free'
-  | 'organic'
-  | 'non_gmo'
-  | 'keto_friendly'
-  | 'paleo_friendly'
-  | 'low_carb'
-  | 'high_protein'
-  | 'low_sodium'
-  | 'sugar_free';
+  | "vegan"
+  | "vegetarian"
+  | "gluten_free"
+  | "dairy_free"
+  | "nut_free"
+  | "organic"
+  | "non_gmo"
+  | "keto_friendly"
+  | "paleo_friendly"
+  | "low_carb"
+  | "high_protein"
+  | "low_sodium"
+  | "sugar_free";
 
 // ============================================================================
 // MEAL TYPES
@@ -129,11 +131,19 @@ export interface Meal {
   ingredients?: string[];
   instructions?: string[];
   preparationTime?: number;
+  total_carbohydrates?: number; // in grams
+  timing?: string; // meal timing
 }
 
-export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'pre_workout' | 'post_workout';
+export type MealType =
+  | "breakfast"
+  | "lunch"
+  | "dinner"
+  | "snack"
+  | "pre_workout"
+  | "post_workout";
 
-export type MealDifficulty = 'easy' | 'medium' | 'hard';
+export type MealDifficulty = "easy" | "medium" | "hard";
 
 export interface Recipe {
   instructions: string[];
@@ -153,16 +163,16 @@ export interface RecipeIngredient {
 }
 
 export type CookingMethod =
-  | 'baking'
-  | 'grilling'
-  | 'frying'
-  | 'steaming'
-  | 'boiling'
-  | 'sauteing'
-  | 'roasting'
-  | 'raw'
-  | 'blending'
-  | 'microwaving';
+  | "baking"
+  | "grilling"
+  | "frying"
+  | "steaming"
+  | "boiling"
+  | "sauteing"
+  | "roasting"
+  | "raw"
+  | "blending"
+  | "microwaving";
 
 export interface Substitution {
   originalIngredient: string;
@@ -201,30 +211,30 @@ export interface NutritionPlan {
 }
 
 export type DietaryRestriction =
-  | 'vegetarian'
-  | 'vegan'
-  | 'pescatarian'
-  | 'keto'
-  | 'paleo'
-  | 'mediterranean'
-  | 'low_carb'
-  | 'low_fat'
-  | 'high_protein'
-  | 'gluten_free'
-  | 'dairy_free'
-  | 'nut_free'
-  | 'halal'
-  | 'kosher';
+  | "vegetarian"
+  | "vegan"
+  | "pescatarian"
+  | "keto"
+  | "paleo"
+  | "mediterranean"
+  | "low_carb"
+  | "low_fat"
+  | "high_protein"
+  | "gluten_free"
+  | "dairy_free"
+  | "nut_free"
+  | "halal"
+  | "kosher";
 
 export type NutritionGoal =
-  | 'weight_loss'
-  | 'weight_gain'
-  | 'muscle_gain'
-  | 'maintenance'
-  | 'performance'
-  | 'health'
-  | 'energy'
-  | 'recovery';
+  | "weight_loss"
+  | "weight_gain"
+  | "muscle_gain"
+  | "maintenance"
+  | "performance"
+  | "health"
+  | "energy"
+  | "recovery";
 
 // ============================================================================
 // MEAL LOGGING
@@ -280,28 +290,28 @@ export interface NutritionPreferences {
 }
 
 export type Cuisine =
-  | 'american'
-  | 'italian'
-  | 'mexican'
-  | 'chinese'
-  | 'japanese'
-  | 'indian'
-  | 'thai'
-  | 'mediterranean'
-  | 'french'
-  | 'greek'
-  | 'middle_eastern'
-  | 'korean'
-  | 'vietnamese'
-  | 'spanish'
-  | 'german'
-  | 'british'
-  | 'african'
-  | 'caribbean';
+  | "american"
+  | "italian"
+  | "mexican"
+  | "chinese"
+  | "japanese"
+  | "indian"
+  | "thai"
+  | "mediterranean"
+  | "french"
+  | "greek"
+  | "middle_eastern"
+  | "korean"
+  | "vietnamese"
+  | "spanish"
+  | "german"
+  | "british"
+  | "african"
+  | "caribbean";
 
-export type CookingSkill = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+export type CookingSkill = "beginner" | "intermediate" | "advanced" | "expert";
 
-export type BudgetLevel = 'low' | 'moderate' | 'high' | 'unlimited';
+export type BudgetLevel = "low" | "moderate" | "high" | "unlimited";
 
 // ============================================================================
 // NUTRITION ANALYTICS
@@ -350,8 +360,14 @@ export interface WaterLog {
   notes?: string;
 }
 
-export type WaterSource = 'tap' | 'bottled' | 'filtered' | 'sparkling' | 'flavored' | 'other';
-export type WaterTemperature = 'cold' | 'room_temp' | 'warm' | 'hot';
+export type WaterSource =
+  | "tap"
+  | "bottled"
+  | "filtered"
+  | "sparkling"
+  | "flavored"
+  | "other";
+export type WaterTemperature = "cold" | "room_temp" | "warm" | "hot";
 
 export interface WaterGoal {
   dailyTarget: number; // ml
@@ -386,19 +402,24 @@ export interface NutritionGoalTarget {
 }
 
 export type NutritionGoalType =
-  | 'daily_calories'
-  | 'daily_protein'
-  | 'daily_carbs'
-  | 'daily_fat'
-  | 'daily_fiber'
-  | 'daily_water'
-  | 'weekly_meal_prep'
-  | 'monthly_weight_change'
-  | 'reduce_sugar'
-  | 'increase_vegetables'
-  | 'consistent_logging';
+  | "daily_calories"
+  | "daily_protein"
+  | "daily_carbs"
+  | "daily_fat"
+  | "daily_fiber"
+  | "daily_water"
+  | "weekly_meal_prep"
+  | "monthly_weight_change"
+  | "reduce_sugar"
+  | "increase_vegetables"
+  | "consistent_logging";
 
-export type GoalTimeframe = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type GoalTimeframe =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "yearly";
 
 // ============================================================================
 // MEAL GENERATION
@@ -446,7 +467,7 @@ export interface NutritionTip {
   title: string;
   content: string;
   category: NutritionTipCategory;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   tags: string[];
   sources: string[];
   imageUrl?: string;
@@ -456,16 +477,16 @@ export interface NutritionTip {
 }
 
 export type NutritionTipCategory =
-  | 'macronutrients'
-  | 'micronutrients'
-  | 'hydration'
-  | 'meal_timing'
-  | 'food_prep'
-  | 'supplements'
-  | 'weight_management'
-  | 'performance'
-  | 'recovery'
-  | 'general_health';
+  | "macronutrients"
+  | "micronutrients"
+  | "hydration"
+  | "meal_timing"
+  | "food_prep"
+  | "supplements"
+  | "weight_management"
+  | "performance"
+  | "recovery"
+  | "general_health";
 
 // ============================================================================
 // FOOD SCANNING
@@ -482,6 +503,7 @@ export interface FoodScanResult {
 // Alias for backward compatibility
 export interface FoodRecognitionResult extends FoodScanResult {
   foods?: RecognizedFood[]; // Alternative name for recognizedFoods
+  data?: RecognizedFood[]; // Alternative name for recognizedFoods
 }
 
 export interface RecognizedFood {
@@ -497,4 +519,9 @@ export interface RecognizedFood {
     amount: number;
     unit: string;
   };
+  portionSize?: {
+    amount: number;
+    unit: string;
+  };
+  enhancementSource?: "ai" | "manual" | "database";
 }

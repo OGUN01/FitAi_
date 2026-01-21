@@ -636,7 +636,7 @@ export const useFitnessStore = create<FitnessState>()(
           });
 
           // Complete the workout
-          get().completeWorkout(currentSession.workoutId, sessionId);
+          await get().completeWorkout(currentSession.workoutId, sessionId);
 
           set({ currentWorkoutSession: null });
 

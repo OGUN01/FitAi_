@@ -21,7 +21,7 @@
  * Date: 2025-12-30
  */
 
-import { UserProfile, HealthScore, ScoreFactor, ActivityLevel } from '../types';
+import { UserProfile, HealthScore, ScoreFactor, ActivityLevel } from "../types";
 
 interface HealthMetrics {
   bmi?: number;
@@ -50,18 +50,20 @@ export class HealthScoreCalculator {
     const bmiScore = this.assessBMI(metrics.bmi, metrics.bmiCategory);
     totalScore += bmiScore;
     factors.push({
-      category: 'BMI/Body Composition',
+      category: "BMI/Body Composition",
       score: bmiScore,
-      maxScore: 20
+      maxScore: 20,
     });
 
     // 2. Activity Level Assessment (20 points)
-    const activityScore = this.assessActivity(user.activityLevel || 'sedentary');
+    const activityScore = this.assessActivity(
+      user.activityLevel || "sedentary",
+    );
     totalScore += activityScore;
     factors.push({
-      category: 'Physical Activity',
+      category: "Physical Activity",
       score: activityScore,
-      maxScore: 20
+      maxScore: 20,
     });
 
     // 3. Hydration Assessment (15 points)
@@ -71,13 +73,13 @@ export class HealthScoreCalculator {
     if (waterTarget && waterTarget > 0) {
       const hydrationScore = this.assessHydration(
         metrics.waterIntake ?? 0, // 0 if not tracked
-        waterTarget
+        waterTarget,
       );
       totalScore += hydrationScore;
       factors.push({
-        category: 'Hydration',
+        category: "Hydration",
         score: hydrationScore,
-        maxScore: 15
+        maxScore: 15,
       });
     }
 
@@ -88,31 +90,35 @@ export class HealthScoreCalculator {
     if (proteinTarget && proteinTarget > 0) {
       const nutritionScore = this.assessNutrition(
         metrics.protein ?? 0, // 0 if not tracked
-        proteinTarget
+        proteinTarget,
       );
       totalScore += nutritionScore;
       factors.push({
-        category: 'Nutrition Quality',
+        category: "Nutrition Quality",
         score: nutritionScore,
-        maxScore: 25
+        maxScore: 25,
       });
     }
 
     // 5. Cardiovascular Fitness Assessment (20 points)
     if (metrics.vo2max) {
-      const cardioScore = this.assessCardio(metrics.vo2max, user.age, user.gender);
+      const cardioScore = this.assessCardio(
+        metrics.vo2max,
+        user.age,
+        user.gender,
+      );
       totalScore += cardioScore;
       factors.push({
-        category: 'Cardiovascular Fitness',
+        category: "Cardiovascular Fitness",
         score: cardioScore,
-        maxScore: 20
+        maxScore: 20,
       });
     } else {
       // Default neutral score if VO2 max not available
       factors.push({
-        category: 'Cardiovascular Fitness',
+        category: "Cardiovascular Fitness",
         score: 10,
-        maxScore: 20
+        maxScore: 20,
       });
       totalScore += 10;
     }
@@ -124,7 +130,7 @@ export class HealthScoreCalculator {
       totalScore: Math.round(finalScore),
       grade: this.getGrade(finalScore),
       factors,
-      recommendations: this.getRecommendations(factors, user)
+      recommendations: this.getRecommendations(factors, user),
     };
   }
 
@@ -167,7 +173,7 @@ export class HealthScoreCalculator {
       light: 10,
       moderate: 15,
       active: 18,
-      very_active: 20
+      very_active: 20,
     };
 
     return activityScores[activityLevel] || 5;
@@ -200,17 +206,26 @@ export class HealthScoreCalculator {
     if (percentage >= 90 && percentage <= 120) return 25;
 
     // Good range: 80-90% or 120-130% = 20 points
-    if ((percentage >= 80 && percentage < 90) || (percentage > 120 && percentage <= 130)) {
+    if (
+      (percentage >= 80 && percentage < 90) ||
+      (percentage > 120 && percentage <= 130)
+    ) {
       return 20;
     }
 
     // Acceptable: 70-80% or 130-150% = 15 points
-    if ((percentage >= 70 && percentage < 80) || (percentage > 130 && percentage <= 150)) {
+    if (
+      (percentage >= 70 && percentage < 80) ||
+      (percentage > 130 && percentage <= 150)
+    ) {
       return 15;
     }
 
     // Below optimal: 50-70% or 150-200% = 10 points
-    if ((percentage >= 50 && percentage < 70) || (percentage > 150 && percentage <= 200)) {
+    if (
+      (percentage >= 50 && percentage < 70) ||
+      (percentage > 150 && percentage <= 200)
+    ) {
       return 10;
     }
 
@@ -224,14 +239,14 @@ export class HealthScoreCalculator {
   private assessCardio(
     vo2max: number,
     age: number,
-    gender: 'male' | 'female' | 'other' | 'prefer_not_to_say'
+    gender: "male" | "female" | "other" | "prefer_not_to_say",
   ): number {
     // Age and gender-specific thresholds
     let excellent: number;
     let good: number;
     let average: number;
 
-    if (gender === 'male') {
+    if (gender === "male") {
       if (age < 30) {
         excellent = 60;
         good = 52;
@@ -273,57 +288,63 @@ export class HealthScoreCalculator {
    * Convert score to letter grade
    */
   private getGrade(score: number): string {
-    if (score >= 90) return 'A (Excellent)';
-    if (score >= 80) return 'B (Good)';
-    if (score >= 70) return 'C (Fair)';
-    if (score >= 60) return 'D (Needs Improvement)';
-    return 'F (Poor)';
+    if (score >= 90) return "A (Excellent)";
+    if (score >= 80) return "B (Good)";
+    if (score >= 70) return "C (Fair)";
+    if (score >= 60) return "D (Needs Improvement)";
+    return "F (Poor)";
   }
 
   /**
    * Generate personalized recommendations based on weak areas
    */
-  private getRecommendations(factors: ScoreFactor[], user: UserProfile): string[] {
+  private getRecommendations(
+    factors: ScoreFactor[],
+    user: UserProfile,
+  ): string[] {
     const recommendations: string[] = [];
 
     factors.forEach((factor) => {
-      const percentage = (factor.score / factor.maxScore) * 100;
+      const percentage =
+        (factor.maxScore ?? 0) > 0
+          ? (factor.score / (factor.maxScore ?? 1)) * 100
+          : 0;
 
       // Focus on areas scoring below 70%
       if (percentage < 70) {
         switch (factor.category) {
-          case 'BMI/Body Composition':
+          case "BMI/Body Composition":
             recommendations.push(
-              'Improve body composition through balanced nutrition and exercise',
-              'Consider consulting a healthcare provider about healthy weight goals'
+              "Improve body composition through balanced nutrition and exercise",
+              "Consider consulting a healthcare provider about healthy weight goals",
             );
             break;
 
-          case 'Physical Activity':
+          case "Physical Activity":
             recommendations.push(
-              'Increase physical activity to at least 150 minutes moderate exercise per week',
-              'Start with small, achievable increases in daily movement'
+              "Increase physical activity to at least 150 minutes moderate exercise per week",
+              "Start with small, achievable increases in daily movement",
             );
             break;
 
-          case 'Hydration':
+          case "Hydration":
             recommendations.push(
-              'Increase water intake to meet daily hydration goals',
-              'Set reminders to drink water throughout the day'
+              "Increase water intake to meet daily hydration goals",
+              "Set reminders to drink water throughout the day",
             );
             break;
 
-          case 'Nutrition Quality':
+          case "Nutrition Quality":
             recommendations.push(
-              'Prioritize protein intake to meet daily targets',
-              'Focus on whole foods and balanced macronutrient distribution'
+              "Prioritize protein intake to meet daily targets",
+              "Focus on whole foods and balanced macronutrient distribution",
             );
             break;
 
-          case 'Cardiovascular Fitness':
+          case "Cardiovascular Fitness":
             recommendations.push(
-              'Build aerobic capacity with regular cardio exercise',
-              'Gradually increase cardio intensity and duration'
+              "Build aerobic capacity with regular cardio exercise",
+              "Gradually increase cardio intensity and duration",
             );
             break;
         }
@@ -333,9 +354,9 @@ export class HealthScoreCalculator {
     // If no major issues, provide general optimization tips
     if (recommendations.length === 0) {
       recommendations.push(
-        'Excellent health! Continue current habits',
-        'Focus on consistency and gradual progression',
-        'Consider setting performance-based goals'
+        "Excellent health! Continue current habits",
+        "Focus on consistency and gradual progression",
+        "Consider setting performance-based goals",
       );
     }
 
@@ -349,17 +370,17 @@ export class HealthScoreCalculator {
    */
   analyzeTrend(
     currentScore: number,
-    previousScore?: number
+    previousScore?: number,
   ): {
-    trend: 'improving' | 'stable' | 'declining';
+    trend: "improving" | "stable" | "declining";
     change: number;
     message: string;
   } {
     if (!previousScore) {
       return {
-        trend: 'stable',
+        trend: "stable",
         change: 0,
-        message: 'Baseline health score established'
+        message: "Baseline health score established",
       };
     }
 
@@ -367,24 +388,24 @@ export class HealthScoreCalculator {
 
     if (change >= 5) {
       return {
-        trend: 'improving',
+        trend: "improving",
         change: Math.round(change),
-        message: `Health score improved by ${Math.round(change)} points! Keep up the great work.`
+        message: `Health score improved by ${Math.round(change)} points! Keep up the great work.`,
       };
     }
 
     if (change <= -5) {
       return {
-        trend: 'declining',
+        trend: "declining",
         change: Math.round(change),
-        message: `Health score declined by ${Math.abs(Math.round(change))} points. Review your habits and make adjustments.`
+        message: `Health score declined by ${Math.abs(Math.round(change))} points. Review your habits and make adjustments.`,
       };
     }
 
     return {
-      trend: 'stable',
+      trend: "stable",
       change: Math.round(change),
-      message: 'Health score is stable. Focus on consistency.'
+      message: "Health score is stable. Focus on consistency.",
     };
   }
 }

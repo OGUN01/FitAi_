@@ -9,26 +9,31 @@ export interface PersonalInfoData {
   first_name: string;
   last_name: string;
   age: number; // 13-120
-  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
-  
+  gender: "male" | "female" | "other" | "prefer_not_to_say";
+
   // Location (3-tier system)
   country: string;
   state: string;
   region?: string;
-  
+
   // Sleep schedule
   wake_time: string; // TIME format "HH:MM"
   sleep_time: string; // TIME format "HH:MM"
-  
+
   // Occupation (for activity level guidance)
-  occupation_type: 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active';
-  
+  occupation_type:
+    | "desk_job"
+    | "light_active"
+    | "moderate_active"
+    | "heavy_labor"
+    | "very_active";
+
   // Legacy fields (keep for compatibility)
   email?: string;
   name?: string; // Will be computed from first_name + last_name
   profile_picture?: string;
   dark_mode?: boolean;
-  units?: 'metric' | 'imperial';
+  units?: "metric" | "imperial";
   notifications_enabled?: boolean;
 }
 
@@ -37,10 +42,12 @@ export interface PersonalInfoData {
 // ============================================================================
 export interface DietPreferencesData {
   // Existing diet data (enhanced)
-  diet_type: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
+  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
   allergies: string[]; // TEXT[] in database
   restrictions: string[]; // TEXT[] in database
-  
+  cuisine_preferences?: string[]; // Cuisine preferences
+  snacks_count?: number; // Number of snacks per day
+
   // NEW: Diet readiness toggles (6 fields)
   keto_ready: boolean;
   intermittent_fasting_ready: boolean;
@@ -48,18 +55,22 @@ export interface DietPreferencesData {
   mediterranean_ready: boolean;
   low_carb_ready: boolean;
   high_protein_ready: boolean;
-  
+
   // NEW: Meal preferences (4 fields)
   breakfast_enabled: boolean;
   lunch_enabled: boolean;
   dinner_enabled: boolean;
   snacks_enabled: boolean;
-  
+
   // NEW: Cooking preferences (3 fields)
-  cooking_skill_level: 'beginner' | 'intermediate' | 'advanced' | 'not_applicable';
+  cooking_skill_level:
+    | "beginner"
+    | "intermediate"
+    | "advanced"
+    | "not_applicable";
   max_prep_time_minutes: number | null; // 5-180, null when not_applicable
-  budget_level: 'low' | 'medium' | 'high';
-  
+  budget_level: "low" | "medium" | "high";
+
   // NEW: Health habits (14 boolean fields)
   drinks_enough_water: boolean;
   limits_sugary_drinks: boolean;
@@ -84,7 +95,7 @@ export interface HealthHabits {
     drinks_enough_water: boolean;
     limits_sugary_drinks: boolean;
   };
-  
+
   // Eating patterns
   eating_patterns: {
     eats_regular_meals: boolean;
@@ -92,7 +103,7 @@ export interface HealthHabits {
     controls_portion_sizes: boolean;
     reads_nutrition_labels: boolean;
   };
-  
+
   // Food choices
   food_choices: {
     eats_processed_foods: boolean;
@@ -100,7 +111,7 @@ export interface HealthHabits {
     limits_refined_sugar: boolean;
     includes_healthy_fats: boolean;
   };
-  
+
   // Substances
   substances: {
     drinks_alcohol: boolean;
@@ -119,43 +130,43 @@ export interface BodyAnalysisData {
   current_weight_kg: number; // DECIMAL(5,2), 30-300
   target_weight_kg: number; // DECIMAL(5,2), 30-300
   target_timeline_weeks: number; // INTEGER, 4-104
-  
+
   // Body composition (optional)
   body_fat_percentage?: number; // DECIMAL(4,2), 3-50
   waist_cm?: number; // DECIMAL(5,2)
   hip_cm?: number; // DECIMAL(5,2)
   chest_cm?: number; // DECIMAL(5,2)
-  
+
   // Photos (individual URLs instead of JSONB)
   front_photo_url?: string;
   side_photo_url?: string;
   back_photo_url?: string;
-  
+
   // AI analysis results (RELIABLE ONLY)
   ai_estimated_body_fat?: number; // DECIMAL(4,2)
-  ai_body_type?: 'ectomorph' | 'mesomorph' | 'endomorph';
+  ai_body_type?: "ectomorph" | "mesomorph" | "endomorph";
   ai_confidence_score?: number; // INTEGER, 0-100
-  
+
   // Medical information
   medical_conditions: string[]; // TEXT[]
   medications: string[]; // TEXT[]
   physical_limitations: string[]; // TEXT[]
-  
+
   // Pregnancy/Breastfeeding status (CRITICAL for safety)
   pregnancy_status: boolean;
-  pregnancy_trimester?: 1 | 2 | 3;  // Only if pregnancy_status = true
+  pregnancy_trimester?: 1 | 2 | 3; // Only if pregnancy_status = true
   breastfeeding_status: boolean;
-  
+
   // NEW: Stress level (affects deficit limits and recovery)
-  stress_level?: 'low' | 'moderate' | 'high';  // Optional - can be measured via fitness devices
-  
+  stress_level?: "low" | "moderate" | "high"; // Optional - can be measured via fitness devices
+
   // Calculated values (auto-computed)
   bmi?: number; // DECIMAL(4,2)
   bmr?: number; // DECIMAL(7,2)
   ideal_weight_min?: number; // DECIMAL(5,2)
   ideal_weight_max?: number; // DECIMAL(5,2)
   waist_hip_ratio?: number; // DECIMAL(3,2)
-  
+
   // Legacy JSONB fields (keep for backward compatibility)
   photos?: {
     front?: string;
@@ -176,26 +187,28 @@ export interface BodyAnalysisData {
 // ============================================================================
 export interface WorkoutPreferencesData {
   // Existing data (enhanced)
-  location: 'home' | 'gym' | 'both';
+  location: "home" | "gym" | "both";
   equipment: string[]; // TEXT[]
   time_preference: number; // INTEGER (minutes)
-  intensity: 'beginner' | 'intermediate' | 'advanced';
+  session_duration_minutes?: number; // Alias for time_preference
+  intensity: "beginner" | "intermediate" | "advanced";
   workout_types: string[]; // TEXT[]
-  
+  available_equipment?: string[]; // Alias for equipment
+
   // NEW: Goals and activity (moved from profiles)
   primary_goals: string[]; // TEXT[]
-  activity_level: 'sedentary' | 'light' | 'moderate' | 'active' | 'extreme';
-  
+  activity_level: "sedentary" | "light" | "moderate" | "active" | "extreme";
+
   // NEW: Current fitness assessment
   workout_experience_years: number; // INTEGER, 0-50
   workout_frequency_per_week: number; // INTEGER, 0-7
   can_do_pushups: number; // INTEGER, 0-200
   can_run_minutes: number; // INTEGER, 0-300
-  flexibility_level: 'poor' | 'fair' | 'good' | 'excellent';
-  
+  flexibility_level: "poor" | "fair" | "good" | "excellent";
+
   // NEW: Weight goals (populated from body_analysis)
   weekly_weight_loss_goal?: number; // DECIMAL(3,2)
-  
+
   // NEW: Enhanced preferences
   preferred_workout_times: string[]; // TEXT[] - 'morning', 'afternoon', 'evening'
   enjoys_cardio: boolean;
@@ -215,7 +228,7 @@ export interface AdvancedReviewData {
   calculated_bmr?: number; // DECIMAL(7,2)
   calculated_tdee?: number; // DECIMAL(7,2)
   metabolic_age?: number; // INTEGER
-  
+
   // Daily nutritional needs
   daily_calories?: number; // INTEGER
   daily_protein_g?: number; // INTEGER
@@ -223,22 +236,23 @@ export interface AdvancedReviewData {
   daily_fat_g?: number; // INTEGER
   daily_water_ml?: number; // INTEGER
   daily_fiber_g?: number; // INTEGER
-  
+
   // Weight management
   healthy_weight_min?: number; // DECIMAL(5,2)
   healthy_weight_max?: number; // DECIMAL(5,2)
   weekly_weight_loss_rate?: number; // DECIMAL(3,2)
   estimated_timeline_weeks?: number; // INTEGER
   total_calorie_deficit?: number; // INTEGER
-  
+
   // Body composition
   ideal_body_fat_min?: number; // DECIMAL(4,2)
   ideal_body_fat_max?: number; // DECIMAL(5,2)
   lean_body_mass?: number; // DECIMAL(5,2)
   fat_mass?: number; // DECIMAL(5,2)
-  
+
   // Fitness metrics
   estimated_vo2_max?: number; // DECIMAL(4,1)
+  max_heart_rate?: number; // Maximum heart rate
   target_hr_fat_burn_min?: number; // INTEGER
   target_hr_fat_burn_max?: number; // INTEGER
   target_hr_cardio_min?: number; // INTEGER
@@ -248,29 +262,41 @@ export interface AdvancedReviewData {
   recommended_workout_frequency?: number; // INTEGER
   recommended_cardio_minutes?: number; // INTEGER
   recommended_strength_sessions?: number; // INTEGER
-  
+
   // Health scores (0-100)
   overall_health_score?: number; // INTEGER, 0-100
   diet_readiness_score?: number; // INTEGER, 0-100
   fitness_readiness_score?: number; // INTEGER, 0-100
   goal_realistic_score?: number; // INTEGER, 0-100
-  
+
   // Sleep analysis
   recommended_sleep_hours?: number; // DECIMAL(3,1)
   current_sleep_duration?: number; // DECIMAL(3,1)
   sleep_efficiency_score?: number; // INTEGER, 0-100
-  
+
   // Completion metrics
   data_completeness_percentage?: number; // INTEGER, 0-100
   reliability_score?: number; // INTEGER, 0-100
   personalization_level?: number; // INTEGER, 0-100
-  
+
   // Validation results (NEW)
-  validation_status?: 'passed' | 'warnings' | 'blocked';
+  validation_status?: "passed" | "warnings" | "blocked";
   validation_errors?: any; // JSONB
   validation_warnings?: any; // JSONB
   refeed_schedule?: any; // JSONB
   medical_adjustments?: string[]; // TEXT[]
+
+  // Additional missing properties
+  bmi_category?: string;
+  bmi_health_risk?: string;
+  detected_climate?: string;
+  detected_ethnicity?: string;
+  bmr_formula_used?: string;
+  health_score?: number;
+  health_grade?: string;
+  vo2_max_estimate?: number;
+  vo2_max_classification?: string;
+  heart_rate_zones?: any;
 }
 
 // ============================================================================
@@ -303,10 +329,10 @@ export interface CompleteOnboardingData {
   body_analysis: BodyAnalysisData;
   workout_preferences: WorkoutPreferencesData;
   advanced_review: AdvancedReviewData;
-  
+
   // Progress tracking
   onboarding_progress: OnboardingProgressData;
-  
+
   // Metadata
   user_id: string;
   created_at?: string;
@@ -340,7 +366,7 @@ export interface BodyAnalysisFormState extends BodyAnalysisData {
   is_loading: boolean;
   is_dirty: boolean;
   is_analyzing_photos: boolean;
-  photo_upload_progress: Record<'front' | 'side' | 'back', number>;
+  photo_upload_progress: Record<"front" | "side" | "back", number>;
 }
 
 export interface WorkoutPreferencesFormState extends WorkoutPreferencesData {
@@ -353,7 +379,7 @@ export interface WorkoutPreferencesFormState extends WorkoutPreferencesData {
 export interface AdvancedReviewFormState extends AdvancedReviewData {
   // UI-specific fields
   is_loading: boolean;
-  calculation_status: 'pending' | 'calculating' | 'complete' | 'error';
+  calculation_status: "pending" | "calculating" | "complete" | "error";
   last_calculated_at?: string;
 }
 
@@ -369,17 +395,23 @@ export interface ProfilesRow {
   email?: string | null;
   name?: string | null;
   age?: number | null;
-  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+  gender?: "male" | "female" | "other" | "prefer_not_to_say" | null;
   profile_picture?: string | null;
   dark_mode?: boolean | null;
-  units?: 'metric' | 'imperial' | null;
+  units?: "metric" | "imperial" | null;
   notifications_enabled?: boolean | null;
   country?: string | null;
   state?: string | null;
   region?: string | null;
   wake_time?: string | null;
   sleep_time?: string | null;
-  occupation_type?: 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active' | null;
+  occupation_type?:
+    | "desk_job"
+    | "light_active"
+    | "moderate_active"
+    | "heavy_labor"
+    | "very_active"
+    | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -387,7 +419,7 @@ export interface ProfilesRow {
 export interface DietPreferencesRow {
   id: string;
   user_id: string;
-  diet_type?: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian' | null;
+  diet_type?: "vegetarian" | "vegan" | "non-veg" | "pescatarian" | null;
   allergies?: string[] | null;
   restrictions?: string[] | null;
   keto_ready?: boolean | null;
@@ -400,9 +432,14 @@ export interface DietPreferencesRow {
   lunch_enabled?: boolean | null;
   dinner_enabled?: boolean | null;
   snacks_enabled?: boolean | null;
-  cooking_skill_level?: 'beginner' | 'intermediate' | 'advanced' | 'not_applicable' | null;
+  cooking_skill_level?:
+    | "beginner"
+    | "intermediate"
+    | "advanced"
+    | "not_applicable"
+    | null;
   max_prep_time_minutes?: number | null;
-  budget_level?: 'low' | 'medium' | 'high' | null;
+  budget_level?: "low" | "medium" | "high" | null;
   drinks_enough_water?: boolean | null;
   limits_sugary_drinks?: boolean | null;
   eats_regular_meals?: boolean | null;
@@ -436,7 +473,7 @@ export interface BodyAnalysisRow {
   side_photo_url?: string | null;
   back_photo_url?: string | null;
   ai_estimated_body_fat?: number | null;
-  ai_body_type?: 'ectomorph' | 'mesomorph' | 'endomorph' | null;
+  ai_body_type?: "ectomorph" | "mesomorph" | "endomorph" | null;
   ai_confidence_score?: number | null;
   medical_conditions?: string[] | null;
   medications?: string[] | null;
@@ -444,7 +481,7 @@ export interface BodyAnalysisRow {
   pregnancy_status?: boolean | null;
   pregnancy_trimester?: 1 | 2 | 3 | null;
   breastfeeding_status?: boolean | null;
-  stress_level?: 'low' | 'moderate' | 'high' | null;
+  stress_level?: "low" | "moderate" | "high" | null;
   bmi?: number | null;
   bmr?: number | null;
   ideal_weight_min?: number | null;
@@ -460,18 +497,24 @@ export interface BodyAnalysisRow {
 export interface WorkoutPreferencesRow {
   id: string;
   user_id: string;
-  location?: 'home' | 'gym' | 'both' | null;
+  location?: "home" | "gym" | "both" | null;
   equipment?: string[] | null;
   time_preference?: number | null;
-  intensity?: 'beginner' | 'intermediate' | 'advanced' | null;
+  intensity?: "beginner" | "intermediate" | "advanced" | null;
   workout_types?: string[] | null;
   primary_goals?: string[] | null;
-  activity_level?: 'sedentary' | 'light' | 'moderate' | 'active' | 'extreme' | null;
+  activity_level?:
+    | "sedentary"
+    | "light"
+    | "moderate"
+    | "active"
+    | "extreme"
+    | null;
   workout_experience_years?: number | null;
   workout_frequency_per_week?: number | null;
   can_do_pushups?: number | null;
   can_run_minutes?: number | null;
-  flexibility_level?: 'poor' | 'fair' | 'good' | 'excellent' | null;
+  flexibility_level?: "poor" | "fair" | "good" | "excellent" | null;
   weekly_weight_loss_goal?: number | null;
   preferred_workout_times?: string[] | null;
   enjoys_cardio?: boolean | null;
@@ -558,10 +601,10 @@ export const VALIDATION_RULES = {
     last_name: { min_length: 1, max_length: 50 },
     country: { required: true },
     state: { required: true },
-    wake_time: { required: true, format: 'HH:MM' },
-    sleep_time: { required: true, format: 'HH:MM' },
+    wake_time: { required: true, format: "HH:MM" },
+    sleep_time: { required: true, format: "HH:MM" },
   },
-  
+
   body_analysis: {
     height_cm: { min: 100, max: 250 },
     current_weight_kg: { min: 30, max: 300 },
@@ -570,11 +613,11 @@ export const VALIDATION_RULES = {
     body_fat_percentage: { min: 3, max: 50 },
     ai_confidence_score: { min: 0, max: 100 },
   },
-  
+
   diet_preferences: {
     max_prep_time_minutes: { min: 5, max: 180 },
   },
-  
+
   workout_preferences: {
     workout_experience_years: { min: 0, max: 50 },
     workout_frequency_per_week: { min: 0, max: 7 },
@@ -583,7 +626,7 @@ export const VALIDATION_RULES = {
     workout_types: { min_items: 1 },
     primary_goals: { min_items: 1 },
   },
-  
+
   health_scores: {
     min: 0,
     max: 100,

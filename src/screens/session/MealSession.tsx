@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   Animated,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
-import { DayMeal } from '../../types/ai';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
+import { DayMeal } from "../../types/ai";
 
 interface MealSessionProps {
   route: {
@@ -21,7 +21,10 @@ interface MealSessionProps {
   navigation: any;
 }
 
-export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) => {
+export const MealSession: React.FC<MealSessionProps> = ({
+  route,
+  navigation,
+}) => {
   const { meal } = route.params;
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([]);
@@ -48,31 +51,31 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const getMealTypeIcon = (type: string) => {
     switch (type) {
-      case 'breakfast':
-        return '🌅';
-      case 'lunch':
-        return '☀️';
-      case 'dinner':
-        return '🌙';
-      case 'snack':
-        return '🍎';
+      case "breakfast":
+        return "🌅";
+      case "lunch":
+        return "☀️";
+      case "dinner":
+        return "🌙";
+      case "snack":
+        return "🍎";
       default:
-        return '🍽️';
+        return "🍽️";
     }
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy':
+      case "easy":
         return THEME.colors.success;
-      case 'medium':
+      case "medium":
         return THEME.colors.warning;
-      case 'hard':
+      case "hard":
         return THEME.colors.error;
       default:
         return THEME.colors.textSecondary;
@@ -100,14 +103,14 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
 
   const handleMealComplete = () => {
     Alert.alert(
-      '🎉 Meal Completed!',
+      "🎉 Meal Completed!",
       `Congratulations! You've successfully prepared "${meal.name}". Enjoy your meal!`,
       [
         {
-          text: 'Finish',
+          text: "Finish",
           onPress: () => navigation.goBack(),
         },
-      ]
+      ],
     );
   };
 
@@ -117,20 +120,21 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
 
   const handleQuit = () => {
     Alert.alert(
-      'Quit Meal Preparation?',
-      'Are you sure you want to quit? Your progress will be lost.',
+      "Quit Meal Preparation?",
+      "Are you sure you want to quit? Your progress will be lost.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Quit',
-          style: 'destructive',
+          text: "Quit",
+          style: "destructive",
           onPress: () => navigation.goBack(),
         },
-      ]
+      ],
     );
   };
 
-  const progress = (completedSteps.filter(Boolean).length / meal.items.length) * 100;
+  const progress =
+    (completedSteps.filter(Boolean).length / meal.items.length) * 100;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,8 +147,11 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
           <Text style={styles.headerTitle}>Meal Preparation</Text>
           <Text style={styles.headerSubtitle}>{formatTime(sessionTime)}</Text>
         </View>
-        <TouchableOpacity style={styles.pauseButton} onPress={handlePauseResume}>
-          <Text style={styles.pauseIcon}>{isPaused ? '▶️' : '⏸️'}</Text>
+        <TouchableOpacity
+          style={styles.pauseButton}
+          onPress={handlePauseResume}
+        >
+          <Text style={styles.pauseIcon}>{isPaused ? "▶️" : "⏸️"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -154,8 +161,9 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
         <Text style={styles.progressText}>
-          {Math.round(progress)}% Complete ({completedSteps.filter(Boolean).length}/
-          {meal.items.length} ingredients)
+          {Math.round(progress)}% Complete (
+          {completedSteps.filter(Boolean).length}/{meal.items.length}{" "}
+          ingredients)
         </Text>
       </View>
 
@@ -166,7 +174,9 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
             <Card style={styles.mealOverviewCard} variant="elevated">
               <View style={styles.mealHeader}>
                 <View style={styles.mealIconContainer}>
-                  <Text style={styles.mealIcon}>{getMealTypeIcon(meal.type)}</Text>
+                  <Text style={styles.mealIcon}>
+                    {getMealTypeIcon(meal.type)}
+                  </Text>
                 </View>
                 <View style={styles.mealInfo}>
                   <Text style={styles.mealName}>{meal.name}</Text>
@@ -180,11 +190,18 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
                   <Text style={styles.statLabel}>Calories</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={styles.statValue}>{meal.preparationTime}min</Text>
+                  <Text style={styles.statValue}>
+                    {meal.preparationTime}min
+                  </Text>
                   <Text style={styles.statLabel}>Prep Time</Text>
                 </View>
                 <View style={styles.statItem}>
-                  <Text style={[styles.statValue, { color: getDifficultyColor(meal.difficulty) }]}>
+                  <Text
+                    style={[
+                      styles.statValue,
+                      { color: getDifficultyColor(meal.difficulty) },
+                    ]}
+                  >
                     {meal.difficulty}
                   </Text>
                   <Text style={styles.statLabel}>Difficulty</Text>
@@ -208,8 +225,12 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
                     </Text>
                   </View>
                   <View style={styles.ingredientDetails}>
-                    <Text style={styles.ingredientCalories}>{item.calories} cal</Text>
-                    <Text style={styles.ingredientCategory}>{item.category}</Text>
+                    <Text style={styles.ingredientCalories}>
+                      {item.calories} cal
+                    </Text>
+                    <Text style={styles.ingredientCategory}>
+                      {item.category}
+                    </Text>
                   </View>
                 </Card>
               ))}
@@ -231,13 +252,16 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
                 <Text style={styles.stepNumber}>
                   Step {currentStep + 1} of {meal.items.length}
                 </Text>
-                <Text style={styles.stepTitle}>Prepare {meal.items[currentStep]?.name}</Text>
+                <Text style={styles.stepTitle}>
+                  Prepare {meal.items[currentStep]?.name}
+                </Text>
               </View>
 
               <View style={styles.stepContent}>
                 <View style={styles.stepDetails}>
                   <Text style={styles.stepQuantity}>
-                    {meal.items[currentStep]?.quantity} {meal.items[currentStep]?.unit}
+                    {meal.items[currentStep]?.quantity}{" "}
+                    {meal.items[currentStep]?.unit}
                   </Text>
                   <Text style={styles.stepCalories}>
                     {meal.items[currentStep]?.calories} calories
@@ -271,11 +295,22 @@ export const MealSession: React.FC<MealSessionProps> = ({ route, navigation }) =
               {meal.items.map((item, index) => (
                 <Card
                   key={index}
-                  style={[
-                    styles.stepOverviewCard,
-                    index === currentStep && styles.currentStepOverview,
-                    completedSteps[index] && styles.completedStepOverview,
-                  ]}
+                  style={
+                    index === currentStep && completedSteps[index]
+                      ? [
+                          styles.stepOverviewCard,
+                          styles.currentStepOverview,
+                          styles.completedStepOverview,
+                        ]
+                      : index === currentStep
+                        ? [styles.stepOverviewCard, styles.currentStepOverview]
+                        : completedSteps[index]
+                          ? [
+                              styles.stepOverviewCard,
+                              styles.completedStepOverview,
+                            ]
+                          : styles.stepOverviewCard
+                  }
                 >
                   <View style={styles.stepOverviewContent}>
                     <View style={styles.stepOverviewLeft}>
@@ -313,9 +348,9 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     backgroundColor: THEME.colors.surface,
@@ -331,11 +366,11 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
   },
   headerSubtitle: {
@@ -358,16 +393,16 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: THEME.colors.border,
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
   },
   progressText: {
     fontSize: 12,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: THEME.spacing.xs,
   },
   content: {
@@ -381,17 +416,17 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
   },
   mealHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
   mealIconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: THEME.colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: THEME.colors.primary + "15",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: THEME.spacing.md,
   },
   mealIcon: {
@@ -402,7 +437,7 @@ const styles = StyleSheet.create({
   },
   mealName: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
@@ -412,18 +447,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   mealStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingTop: THEME.spacing.md,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statValue: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
   },
   statLabel: {
@@ -436,7 +471,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
@@ -444,23 +479,23 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
   },
   ingredientHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.xs,
   },
   ingredientName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
     color: THEME.colors.text,
   },
   ingredientQuantity: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.primary,
   },
   ingredientDetails: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.md,
   },
   ingredientCalories: {
@@ -470,7 +505,7 @@ const styles = StyleSheet.create({
   ingredientCategory: {
     fontSize: 12,
     color: THEME.colors.textSecondary,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
   startButton: {
     marginTop: THEME.spacing.lg,
@@ -487,25 +522,25 @@ const styles = StyleSheet.create({
   stepNumber: {
     fontSize: 14,
     color: THEME.colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: THEME.spacing.xs,
   },
   stepTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
   },
   stepContent: {
     marginBottom: THEME.spacing.md,
   },
   stepDetails: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.md,
     marginBottom: THEME.spacing.md,
   },
   stepQuantity: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.primary,
   },
   stepCalories: {
@@ -523,7 +558,7 @@ const styles = StyleSheet.create({
   },
   instructionsTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
@@ -546,16 +581,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   completedStepOverview: {
-    backgroundColor: THEME.colors.success + '10',
+    backgroundColor: THEME.colors.success + "10",
   },
   stepOverviewContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   stepOverviewLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   stepOverviewNumber: {
@@ -563,11 +598,11 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     backgroundColor: THEME.colors.primary,
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
     lineHeight: 24,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
     marginRight: THEME.spacing.md,
   },
   stepOverviewInfo: {
@@ -575,7 +610,7 @@ const styles = StyleSheet.create({
   },
   stepOverviewName: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     color: THEME.colors.text,
   },
   stepOverviewQuantity: {

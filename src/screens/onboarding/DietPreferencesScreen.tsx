@@ -1,15 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
-import { MultiSelect } from '../../components/advanced/MultiSelect';
-import { MultiSelectWithCustom } from '../../components/advanced/MultiSelectWithCustom';
-import { useEditMode, useEditData, useEditActions } from '../../contexts/EditContext';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card, THEME } from "../../components/ui";
+import { MultiSelect } from "../../components/advanced/MultiSelect";
+import { MultiSelectWithCustom } from "../../components/advanced/MultiSelectWithCustom";
+import {
+  useEditMode,
+  useEditData,
+  useEditActions,
+} from "../../contexts/EditContext";
 
 export interface DietPreferences {
-  dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
+  dietType: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
   allergies: string[];
   cuisinePreferences: string[];
   restrictions: string[];
@@ -65,12 +75,16 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
   };
 
   const data = getInitialData();
-  const [dietType, setDietType] = useState<DietPreferences['dietType']>(data.dietType || 'non-veg');
+  const [dietType, setDietType] = useState<DietPreferences["dietType"]>(
+    data.dietType || "non-veg",
+  );
   const [allergies, setAllergies] = useState<string[]>(data.allergies || []);
   const [cuisinePreferences, setCuisinePreferences] = useState<string[]>(
-    data.cuisinePreferences || []
+    data.cuisinePreferences || [],
   );
-  const [restrictions, setRestrictions] = useState<string[]>(data.restrictions || []);
+  const [restrictions, setRestrictions] = useState<string[]>(
+    data.restrictions || [],
+  );
 
   const [errors, setErrors] = useState<{
     dietType?: string;
@@ -90,36 +104,36 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
   // Update form data when edit context data changes (only once)
   useEffect(() => {
-    if (
-      isEditMode &&
-      editContextData?.currentData &&
-      !isDataPopulated
-    ) {
+    if (isEditMode && editContextData?.currentData && !isDataPopulated) {
       const data = editContextData.currentData;
 
       // Check if we have actual diet preferences data (not just metadata)
-      const hasActualData = data.dietType || (data.allergies && data.allergies.length > 0) ||
-                           (data.cuisinePreferences && data.cuisinePreferences.length > 0) ||
-                           (data.restrictions && data.restrictions.length > 0);
+      const hasActualData =
+        data.dietType ||
+        (data.allergies && data.allergies.length > 0) ||
+        (data.cuisinePreferences && data.cuisinePreferences.length > 0) ||
+        (data.restrictions && data.restrictions.length > 0);
 
-      console.log('🔄 DietPreferencesScreen: Loading edit data:', {
+      console.log("🔄 DietPreferencesScreen: Loading edit data:", {
         hasData: !!data,
         hasActualData,
         dataKeys: Object.keys(data),
         dietType: data.dietType,
         allergies: data.allergies,
-        cuisinePreferences: data.cuisinePreferences
+        cuisinePreferences: data.cuisinePreferences,
       });
 
       if (hasActualData) {
-        setDietType(data.dietType || 'non-veg');
+        setDietType(data.dietType || "non-veg");
         setAllergies(data.allergies || []);
         setCuisinePreferences(data.cuisinePreferences || []);
         setRestrictions(data.restrictions || []);
-        console.log('✅ DietPreferencesScreen: Data loaded successfully');
+        console.log("✅ DietPreferencesScreen: Data loaded successfully");
         setIsDataPopulated(true);
       } else {
-        console.warn('⚠️ DietPreferencesScreen: No actual diet preferences data found in currentData');
+        console.warn(
+          "⚠️ DietPreferencesScreen: No actual diet preferences data found in currentData",
+        );
       }
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
@@ -133,101 +147,284 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [dietType, allergies, cuisinePreferences, restrictions, isEditMode, isDataPopulated]);
+  }, [
+    dietType,
+    allergies,
+    cuisinePreferences,
+    restrictions,
+    isEditMode,
+    isDataPopulated,
+  ]);
 
   const dietTypeOptions = [
     {
-      id: 'non-veg',
-      title: 'Non-Vegetarian',
-      icon: '🍖',
-      description: 'Includes all types of meat and fish',
+      id: "non-veg",
+      title: "Non-Vegetarian",
+      icon: "🍖",
+      description: "Includes all types of meat and fish",
     },
     {
-      id: 'vegetarian',
-      title: 'Vegetarian',
-      icon: '🥬',
-      description: 'No meat or fish, includes dairy and eggs',
+      id: "vegetarian",
+      title: "Vegetarian",
+      icon: "🥬",
+      description: "No meat or fish, includes dairy and eggs",
     },
     {
-      id: 'vegan',
-      title: 'Vegan',
-      icon: '🌱',
-      description: 'No animal products whatsoever',
+      id: "vegan",
+      title: "Vegan",
+      icon: "🌱",
+      description: "No animal products whatsoever",
     },
     {
-      id: 'pescatarian',
-      title: 'Pescatarian',
-      icon: '🐟',
-      description: 'Vegetarian diet that includes fish',
+      id: "pescatarian",
+      title: "Pescatarian",
+      icon: "🐟",
+      description: "Vegetarian diet that includes fish",
     },
   ];
 
   const allergyOptions = [
-    { id: 'nuts', label: 'Nuts', value: 'nuts', icon: '🥜' },
-    { id: 'dairy', label: 'Dairy', value: 'dairy', icon: '🥛' },
-    { id: 'eggs', label: 'Eggs', value: 'eggs', icon: '🥚' },
-    { id: 'gluten', label: 'Gluten', value: 'gluten', icon: '🌾' },
-    { id: 'soy', label: 'Soy', value: 'soy', icon: '🫘' },
-    { id: 'shellfish', label: 'Shellfish', value: 'shellfish', icon: '🦐' },
-    { id: 'fish', label: 'Fish', value: 'fish', icon: '🐟' },
-    { id: 'sesame', label: 'Sesame', value: 'sesame', icon: '🌰' },
-    { id: 'peanuts', label: 'Peanuts', value: 'peanuts', icon: '🥜' },
-    { id: 'tree-nuts', label: 'Tree Nuts', value: 'tree-nuts', icon: '🌰' },
+    { id: "nuts", label: "Nuts", value: "nuts", icon: "🥜" },
+    { id: "dairy", label: "Dairy", value: "dairy", icon: "🥛" },
+    { id: "eggs", label: "Eggs", value: "eggs", icon: "🥚" },
+    { id: "gluten", label: "Gluten", value: "gluten", icon: "🌾" },
+    { id: "soy", label: "Soy", value: "soy", icon: "🫘" },
+    { id: "shellfish", label: "Shellfish", value: "shellfish", icon: "🦐" },
+    { id: "fish", label: "Fish", value: "fish", icon: "🐟" },
+    { id: "sesame", label: "Sesame", value: "sesame", icon: "🌰" },
+    { id: "peanuts", label: "Peanuts", value: "peanuts", icon: "🥜" },
+    { id: "tree-nuts", label: "Tree Nuts", value: "tree-nuts", icon: "🌰" },
   ];
 
   const cuisineOptions = [
     // Indian Regional
-    { id: 'north-indian', label: 'North Indian', value: 'north-indian', icon: '🍛', region: 'India' },
-    { id: 'south-indian', label: 'South Indian', value: 'south-indian', icon: '🥥', region: 'India' },
-    { id: 'east-indian', label: 'East Indian', value: 'east-indian', icon: '🐟', region: 'India' },
-    { id: 'west-indian', label: 'West Indian', value: 'west-indian', icon: '🌶️', region: 'India' },
-    { id: 'gujarati', label: 'Gujarati', value: 'gujarati', icon: '🥗', region: 'India' },
-    { id: 'punjabi', label: 'Punjabi', value: 'punjabi', icon: '🫓', region: 'India' },
+    {
+      id: "north-indian",
+      label: "North Indian",
+      value: "north-indian",
+      icon: "🍛",
+      region: "India",
+    },
+    {
+      id: "south-indian",
+      label: "South Indian",
+      value: "south-indian",
+      icon: "🥥",
+      region: "India",
+    },
+    {
+      id: "east-indian",
+      label: "East Indian",
+      value: "east-indian",
+      icon: "🐟",
+      region: "India",
+    },
+    {
+      id: "west-indian",
+      label: "West Indian",
+      value: "west-indian",
+      icon: "🌶️",
+      region: "India",
+    },
+    {
+      id: "gujarati",
+      label: "Gujarati",
+      value: "gujarati",
+      icon: "🥗",
+      region: "India",
+    },
+    {
+      id: "punjabi",
+      label: "Punjabi",
+      value: "punjabi",
+      icon: "🫓",
+      region: "India",
+    },
     // Chinese Regional
-    { id: 'szechuan', label: 'Szechuan', value: 'szechuan', icon: '🌶️', region: 'China' },
-    { id: 'cantonese', label: 'Cantonese', value: 'cantonese', icon: '🥟', region: 'China' },
-    { id: 'hunan', label: 'Hunan', value: 'hunan', icon: '🔥', region: 'China' },
-    { id: 'beijing', label: 'Beijing', value: 'beijing', icon: '🦆', region: 'China' },
+    {
+      id: "szechuan",
+      label: "Szechuan",
+      value: "szechuan",
+      icon: "🌶️",
+      region: "China",
+    },
+    {
+      id: "cantonese",
+      label: "Cantonese",
+      value: "cantonese",
+      icon: "🥟",
+      region: "China",
+    },
+    {
+      id: "hunan",
+      label: "Hunan",
+      value: "hunan",
+      icon: "🔥",
+      region: "China",
+    },
+    {
+      id: "beijing",
+      label: "Beijing",
+      value: "beijing",
+      icon: "🦆",
+      region: "China",
+    },
     // Mexican Regional
-    { id: 'tex-mex', label: 'Tex-Mex', value: 'tex-mex', icon: '🌮', region: 'Mexico' },
-    { id: 'authentic-mexican', label: 'Authentic Mexican', value: 'authentic-mexican', icon: '🇲🇽', region: 'Mexico' },
-    { id: 'coastal-mexican', label: 'Coastal Mexican', value: 'coastal-mexican', icon: '🐟', region: 'Mexico' },
+    {
+      id: "tex-mex",
+      label: "Tex-Mex",
+      value: "tex-mex",
+      icon: "🌮",
+      region: "Mexico",
+    },
+    {
+      id: "authentic-mexican",
+      label: "Authentic Mexican",
+      value: "authentic-mexican",
+      icon: "🇲🇽",
+      region: "Mexico",
+    },
+    {
+      id: "coastal-mexican",
+      label: "Coastal Mexican",
+      value: "coastal-mexican",
+      icon: "🐟",
+      region: "Mexico",
+    },
     // Other Popular Cuisines
-    { id: 'mediterranean', label: 'Mediterranean', value: 'mediterranean', icon: '🫒', region: 'Mediterranean' },
-    { id: 'italian', label: 'Italian', value: 'italian', icon: '🍝', region: 'Italy' },
-    { id: 'american', label: 'American', value: 'american', icon: '🍔', region: 'USA' },
-    { id: 'middle-eastern', label: 'Middle Eastern', value: 'middle-eastern', icon: '🥙', region: 'Middle East' },
-    { id: 'japanese', label: 'Japanese', value: 'japanese', icon: '🍣', region: 'Japan' },
-    { id: 'thai', label: 'Thai', value: 'thai', icon: '🍲', region: 'Thailand' },
-    { id: 'korean', label: 'Korean', value: 'korean', icon: '🥢', region: 'Korea' },
-    { id: 'vietnamese', label: 'Vietnamese', value: 'vietnamese', icon: '🍜', region: 'Vietnam' },
-    { id: 'french', label: 'French', value: 'french', icon: '🥐', region: 'France' },
-    { id: 'german', label: 'German', value: 'german', icon: '🥨', region: 'Germany' },
-    { id: 'spanish', label: 'Spanish', value: 'spanish', icon: '🥘', region: 'Spain' },
-    { id: 'greek', label: 'Greek', value: 'greek', icon: '🥙', region: 'Greece' },
+    {
+      id: "mediterranean",
+      label: "Mediterranean",
+      value: "mediterranean",
+      icon: "🫒",
+      region: "Mediterranean",
+    },
+    {
+      id: "italian",
+      label: "Italian",
+      value: "italian",
+      icon: "🍝",
+      region: "Italy",
+    },
+    {
+      id: "american",
+      label: "American",
+      value: "american",
+      icon: "🍔",
+      region: "USA",
+    },
+    {
+      id: "middle-eastern",
+      label: "Middle Eastern",
+      value: "middle-eastern",
+      icon: "🥙",
+      region: "Middle East",
+    },
+    {
+      id: "japanese",
+      label: "Japanese",
+      value: "japanese",
+      icon: "🍣",
+      region: "Japan",
+    },
+    {
+      id: "thai",
+      label: "Thai",
+      value: "thai",
+      icon: "🍲",
+      region: "Thailand",
+    },
+    {
+      id: "korean",
+      label: "Korean",
+      value: "korean",
+      icon: "🥢",
+      region: "Korea",
+    },
+    {
+      id: "vietnamese",
+      label: "Vietnamese",
+      value: "vietnamese",
+      icon: "🍜",
+      region: "Vietnam",
+    },
+    {
+      id: "french",
+      label: "French",
+      value: "french",
+      icon: "🥐",
+      region: "France",
+    },
+    {
+      id: "german",
+      label: "German",
+      value: "german",
+      icon: "🥨",
+      region: "Germany",
+    },
+    {
+      id: "spanish",
+      label: "Spanish",
+      value: "spanish",
+      icon: "🥘",
+      region: "Spain",
+    },
+    {
+      id: "greek",
+      label: "Greek",
+      value: "greek",
+      icon: "🥙",
+      region: "Greece",
+    },
   ];
 
   const restrictionOptions = [
-    { id: 'low-sodium', label: 'Low Sodium', value: 'low-sodium', icon: '🧂' },
-    { id: 'low-sugar', label: 'Low Sugar', value: 'low-sugar', icon: '🍯' },
-    { id: 'low-carb', label: 'Low Carb', value: 'low-carb', icon: '🥖' },
-    { id: 'high-protein', label: 'High Protein', value: 'high-protein', icon: '💪' },
-    { id: 'keto', label: 'Keto', value: 'keto', icon: '🥑' },
-    { id: 'paleo', label: 'Paleo', value: 'paleo', icon: '🦴' },
-    { id: 'whole30', label: 'Whole30', value: 'whole30', icon: '🌿' },
-    { id: 'intermittent-fasting', label: 'Intermittent Fasting', value: 'intermittent-fasting', icon: '⏰' },
-    { id: 'low-fat', label: 'Low Fat', value: 'low-fat', icon: '🥗' },
-    { id: 'high-fiber', label: 'High Fiber', value: 'high-fiber', icon: '🌾' },
-    { id: 'diabetic-friendly', label: 'Diabetic Friendly', value: 'diabetic-friendly', icon: '📊' },
-    { id: 'heart-healthy', label: 'Heart Healthy', value: 'heart-healthy', icon: '❤️' },
-    { id: 'anti-inflammatory', label: 'Anti-Inflammatory', value: 'anti-inflammatory', icon: '🍃' },
+    { id: "low-sodium", label: "Low Sodium", value: "low-sodium", icon: "🧂" },
+    { id: "low-sugar", label: "Low Sugar", value: "low-sugar", icon: "🍯" },
+    { id: "low-carb", label: "Low Carb", value: "low-carb", icon: "🥖" },
+    {
+      id: "high-protein",
+      label: "High Protein",
+      value: "high-protein",
+      icon: "💪",
+    },
+    { id: "keto", label: "Keto", value: "keto", icon: "🥑" },
+    { id: "paleo", label: "Paleo", value: "paleo", icon: "🦴" },
+    { id: "whole30", label: "Whole30", value: "whole30", icon: "🌿" },
+    {
+      id: "intermittent-fasting",
+      label: "Intermittent Fasting",
+      value: "intermittent-fasting",
+      icon: "⏰",
+    },
+    { id: "low-fat", label: "Low Fat", value: "low-fat", icon: "🥗" },
+    { id: "high-fiber", label: "High Fiber", value: "high-fiber", icon: "🌾" },
+    {
+      id: "diabetic-friendly",
+      label: "Diabetic Friendly",
+      value: "diabetic-friendly",
+      icon: "📊",
+    },
+    {
+      id: "heart-healthy",
+      label: "Heart Healthy",
+      value: "heart-healthy",
+      icon: "❤️",
+    },
+    {
+      id: "anti-inflammatory",
+      label: "Anti-Inflammatory",
+      value: "anti-inflammatory",
+      icon: "🍃",
+    },
   ];
 
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
 
     if (cuisinePreferences.length === 0) {
-      newErrors.cuisinePreferences = 'Please select at least one cuisine preference';
+      newErrors.cuisinePreferences =
+        "Please select at least one cuisine preference";
     }
 
     setErrors(newErrors);
@@ -280,10 +477,15 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>What are your diet preferences?</Text>
-          <Text style={styles.subtitle}>Help us personalize your meal recommendations</Text>
+          <Text style={styles.subtitle}>
+            Help us personalize your meal recommendations
+          </Text>
         </View>
 
         <View style={styles.content}>
@@ -295,7 +497,7 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                 <TouchableOpacity
                   key={option.id}
                   onPress={() => {
-                    setDietType(option.id as DietPreferences['dietType']);
+                    setDietType(option.id as DietPreferences["dietType"]);
                     if (errors.dietType) {
                       setErrors((prev) => ({ ...prev, dietType: undefined }));
                     }
@@ -303,10 +505,11 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                   style={styles.dietTypeItem}
                 >
                   <Card
-                    style={[
-                      styles.dietTypeCard,
-                      dietType === option.id && styles.dietTypeCardSelected,
-                    ]}
+                    style={
+                      dietType === option.id
+                        ? [styles.dietTypeCard, styles.dietTypeCardSelected]
+                        : styles.dietTypeCard
+                    }
                     variant="outlined"
                   >
                     <View style={styles.dietTypeContent}>
@@ -314,18 +517,23 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
                       <Text
                         style={[
                           styles.dietTypeTitle,
-                          dietType === option.id && styles.dietTypeTitleSelected,
+                          dietType === option.id &&
+                            styles.dietTypeTitleSelected,
                         ]}
                       >
                         {option.title}
                       </Text>
-                      <Text style={styles.dietTypeDescription}>{option.description}</Text>
+                      <Text style={styles.dietTypeDescription}>
+                        {option.description}
+                      </Text>
                     </View>
                   </Card>
                 </TouchableOpacity>
               ))}
             </View>
-            {errors.dietType && <Text style={styles.errorText}>{errors.dietType}</Text>}
+            {errors.dietType && (
+              <Text style={styles.errorText}>{errors.dietType}</Text>
+            )}
           </View>
 
           {/* Allergies */}
@@ -351,7 +559,10 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
               onSelectionChange={(values) => {
                 setCuisinePreferences(values);
                 if (errors.cuisinePreferences) {
-                  setErrors((prev) => ({ ...prev, cuisinePreferences: undefined }));
+                  setErrors((prev) => ({
+                    ...prev,
+                    cuisinePreferences: undefined,
+                  }));
                 }
               }}
               label="Cuisine Preferences"
@@ -388,13 +599,13 @@ export const DietPreferencesScreen: React.FC<DietPreferencesScreenProps> = ({
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
           <Button
-            title={isEditMode ? 'Cancel' : 'Back'}
+            title={isEditMode ? "Cancel" : "Back"}
             onPress={handleBack}
             variant="outline"
             style={styles.backButton}
           />
           <Button
-            title={isEditMode ? 'Save Changes' : 'Next'}
+            title={isEditMode ? "Save Changes" : "Next"}
             onPress={handleNext}
             variant="primary"
             style={styles.nextButton}
@@ -450,13 +661,13 @@ const styles = StyleSheet.create({
   },
 
   dietTypeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
   dietTypeItem: {
-    width: '48%',
+    width: "48%",
   },
 
   dietTypeCard: {
@@ -469,7 +680,7 @@ const styles = StyleSheet.create({
   },
 
   dietTypeContent: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -482,7 +693,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -493,7 +704,7 @@ const styles = StyleSheet.create({
   dietTypeDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   errorText: {
@@ -511,7 +722,7 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 

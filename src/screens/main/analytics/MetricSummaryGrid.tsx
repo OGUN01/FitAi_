@@ -3,35 +3,33 @@
  * 2x2 grid of animated metric summary cards
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  FadeInUp,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
-import { SectionHeader } from '../home/SectionHeader';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
+import { SectionHeader } from "../home/SectionHeader";
 
 interface MetricData {
   weight?: {
     current: number;
     change?: number;
-    trend?: 'up' | 'down' | 'stable';
+    trend?: "up" | "down" | "stable";
     target?: number;
   };
   calories?: {
     burned: number;
     target?: number;
     change?: number;
-    trend?: 'up' | 'down' | 'stable';
+    trend?: "up" | "down" | "stable";
   };
   workouts?: {
     count: number;
     change?: number;
-    trend?: 'up' | 'down' | 'stable';
+    trend?: "up" | "down" | "stable";
   };
   streak?: {
     days: number;
@@ -46,7 +44,7 @@ interface MetricData {
 
 interface MetricSummaryGridProps {
   data: MetricData;
-  period: 'week' | 'month' | 'year';
+  period: "week" | "month" | "year";
   onMetricPress?: (metric: string) => void;
 }
 
@@ -57,7 +55,7 @@ const MetricCard: React.FC<{
   subtitle?: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: "up" | "down" | "stable";
   trendValue?: string;
   delay?: number;
   onPress?: () => void;
@@ -74,22 +72,36 @@ const MetricCard: React.FC<{
 }) => {
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
-      case 'up': return 'trending-up';
-      case 'down': return 'trending-down';
-      default: return 'remove';
+      case "up":
+        return "trending-up";
+      case "down":
+        return "trending-down";
+      default:
+        return "remove";
     }
   };
 
   const getTrendColor = () => {
     // For weight, down is good. For others, up is good.
-    if (title.toLowerCase().includes('weight')) {
-      return trend === 'down' ? '#4CAF50' : trend === 'up' ? '#F44336' : '#9E9E9E';
+    if (title.toLowerCase().includes("weight")) {
+      return trend === "down"
+        ? "#4CAF50"
+        : trend === "up"
+          ? "#F44336"
+          : "#9E9E9E";
     }
-    return trend === 'up' ? '#4CAF50' : trend === 'down' ? '#F44336' : '#9E9E9E';
+    return trend === "up"
+      ? "#4CAF50"
+      : trend === "down"
+        ? "#F44336"
+        : "#9E9E9E";
   };
 
   return (
-    <Animated.View entering={FadeInUp.delay(delay).springify()} style={styles.cardWrapper}>
+    <Animated.View
+      entering={FadeInUp.delay(delay).springify()}
+      style={styles.cardWrapper}
+    >
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.97}
@@ -97,15 +109,33 @@ const MetricCard: React.FC<{
         hapticType="light"
         style={styles.cardPressable}
       >
-        <GlassCard elevation={2} blurIntensity="light" padding="sm" borderRadius="lg" style={styles.cardGlass}>
+        <GlassCard
+          elevation={2}
+          blurIntensity="light"
+          padding="sm"
+          borderRadius="lg"
+          style={styles.cardGlass}
+        >
           <View style={styles.cardContent}>
             {/* Icon */}
-            <View style={[styles.iconCircle, { backgroundColor: `${color}20` }]}>
+            <View
+              style={[styles.iconCircle, { backgroundColor: `${color}20` }]}
+            >
               <Ionicons name={icon} size={rf(16)} color={color} />
             </View>
 
             {/* Value */}
-            <Text style={[styles.metricValue, { color: value === '--' ? ResponsiveTheme.colors.textMuted : ResponsiveTheme.colors.text }]}>
+            <Text
+              style={[
+                styles.metricValue,
+                {
+                  color:
+                    value === "--"
+                      ? ResponsiveTheme.colors.textMuted
+                      : ResponsiveTheme.colors.text,
+                },
+              ]}
+            >
               {value}
             </Text>
 
@@ -115,8 +145,14 @@ const MetricCard: React.FC<{
             {/* Subtitle or Trend */}
             {trend && trendValue ? (
               <View style={styles.trendRow}>
-                <Ionicons name={getTrendIcon()} size={rf(12)} color={getTrendColor()} />
-                <Text style={[styles.trendText, { color: getTrendColor() }]}>{trendValue}</Text>
+                <Ionicons
+                  name={getTrendIcon()}
+                  size={rf(12)}
+                  color={getTrendColor()}
+                />
+                <Text style={[styles.trendText, { color: getTrendColor() }]}>
+                  {trendValue}
+                </Text>
               </View>
             ) : subtitle ? (
               <Text style={styles.subtitleText}>{subtitle}</Text>
@@ -134,30 +170,35 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   onMetricPress,
 }) => {
   const formatWeight = (weight?: number) => {
-    if (!weight) return '--';
+    if (!weight) return "--";
     return weight.toFixed(1);
   };
 
   const formatCalories = (calories?: number) => {
-    if (!calories) return '--';
-    return calories >= 1000 ? `${(calories / 1000).toFixed(1)}K` : calories.toString();
+    if (!calories) return "--";
+    return calories >= 1000
+      ? `${(calories / 1000).toFixed(1)}K`
+      : calories.toString();
   };
 
   // Determine streak message based on actual streak days
   const getStreakMessage = () => {
     const days = data.streak?.days; // NO FALLBACK
-    if (days === 0) return 'Start today!';
-    if (days >= 30) return 'On fire!';
-    if (days >= 14) return 'Amazing!';
-    if (days >= 7) return 'Keep it up!';
-    if (days >= 3) return 'Great start!';
-    return 'Building!';
+    if (days === undefined) return "No data";
+    if (days === 0) return "Start today!";
+    if (days >= 30) return "On fire!";
+    if (days >= 14) return "Amazing!";
+    if (days >= 7) return "Keep it up!";
+    if (days >= 3) return "Great start!";
+    return "Building!";
   };
-  
+
   // Only show sparklines if we have real data
   const hasWeightHistory = data.weight?.current !== undefined;
-  const hasCaloriesData = data.calories?.burned !== undefined && data.calories.burned > 0;
-  const hasWorkoutsData = data.workouts?.count !== undefined && data.workouts.count > 0;
+  const hasCaloriesData =
+    data.calories?.burned !== undefined && data.calories.burned > 0;
+  const hasWorkoutsData =
+    data.workouts?.count !== undefined && data.workouts.count > 0;
 
   return (
     <View style={styles.container}>
@@ -167,7 +208,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
         icon="stats-chart"
         iconColor="#667eea"
       />
-      
+
       {/* Row 1: Weight + Calories */}
       <View style={styles.row}>
         <MetricCard
@@ -176,9 +217,13 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="scale-outline"
           color="#9C27B0"
           trend={hasWeightHistory ? data.weight?.trend : undefined}
-          trendValue={hasWeightHistory && data.weight?.change ? `${data.weight.change > 0 ? '+' : ''}${data.weight.change.toFixed(1)} kg` : undefined}
+          trendValue={
+            hasWeightHistory && data.weight?.change
+              ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
+              : undefined
+          }
           delay={0}
-          onPress={() => onMetricPress?.('weight')}
+          onPress={() => onMetricPress?.("weight")}
         />
 
         <MetricCard
@@ -187,9 +232,13 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="flame-outline"
           color="#FF9800"
           trend={hasCaloriesData ? data.calories?.trend : undefined}
-          trendValue={hasCaloriesData && data.calories?.change ? `${data.calories.change > 0 ? '+' : ''}${data.calories.change}%` : undefined}
+          trendValue={
+            hasCaloriesData && data.calories?.change
+              ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`
+              : undefined
+          }
           delay={100}
-          onPress={() => onMetricPress?.('calories')}
+          onPress={() => onMetricPress?.("calories")}
         />
       </View>
 
@@ -197,24 +246,28 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <View style={styles.row}>
         <MetricCard
           title="Workouts"
-          value={data.workouts?.count?.toString() || '0'}
+          value={data.workouts?.count?.toString() || "0"}
           subtitle={`this ${period}`}
           icon="barbell-outline"
           color="#2196F3"
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
-          trendValue={hasWorkoutsData && data.workouts?.change ? `${data.workouts.change > 0 ? '+' : ''}${data.workouts.change}` : undefined}
+          trendValue={
+            hasWorkoutsData && data.workouts?.change
+              ? `${data.workouts.change > 0 ? "+" : ""}${data.workouts.change}`
+              : undefined
+          }
           delay={200}
-          onPress={() => onMetricPress?.('workouts')}
+          onPress={() => onMetricPress?.("workouts")}
         />
 
         <MetricCard
           title="Day Streak"
-          value={data.streak?.days?.toString() ?? '--'}
+          value={data.streak?.days?.toString() ?? "--"}
           subtitle={getStreakMessage()}
           icon="flame"
           color="#FF6B6B"
           delay={300}
-          onPress={() => onMetricPress?.('streak')}
+          onPress={() => onMetricPress?.("streak")}
         />
       </View>
 
@@ -226,27 +279,37 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
             icon="fitness-outline"
             iconColor="#10B981"
           />
-          
+
           {/* Row 3: BMI + BMR */}
           <View style={styles.row}>
             <MetricCard
               title="BMI"
-              value={data.bmi ? data.bmi.toFixed(1) : '--'}
-              subtitle={data.bmi ? (data.bmi < 18.5 ? 'Underweight' : data.bmi < 25 ? 'Normal' : data.bmi < 30 ? 'Overweight' : 'Obese') : undefined}
+              value={data.bmi ? data.bmi.toFixed(1) : "--"}
+              subtitle={
+                data.bmi
+                  ? data.bmi < 18.5
+                    ? "Underweight"
+                    : data.bmi < 25
+                      ? "Normal"
+                      : data.bmi < 30
+                        ? "Overweight"
+                        : "Obese"
+                  : undefined
+              }
               icon="body-outline"
               color="#8B5CF6"
               delay={400}
-              onPress={() => onMetricPress?.('bmi')}
+              onPress={() => onMetricPress?.("bmi")}
             />
 
             <MetricCard
               title="BMR"
-              value={data.bmr ? `${Math.round(data.bmr)}` : '--'}
+              value={data.bmr ? `${Math.round(data.bmr)}` : "--"}
               subtitle="cal/day"
               icon="pulse-outline"
               color="#EC4899"
               delay={500}
-              onPress={() => onMetricPress?.('bmr')}
+              onPress={() => onMetricPress?.("bmr")}
             />
           </View>
 
@@ -254,22 +317,26 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           <View style={styles.row}>
             <MetricCard
               title="TDEE"
-              value={data.tdee ? `${Math.round(data.tdee)}` : '--'}
+              value={data.tdee ? `${Math.round(data.tdee)}` : "--"}
               subtitle="cal/day"
               icon="flash-outline"
               color="#F59E0B"
               delay={600}
-              onPress={() => onMetricPress?.('tdee')}
+              onPress={() => onMetricPress?.("tdee")}
             />
 
             <MetricCard
               title="Water Goal"
-              value={data.dailyWater ? `${(data.dailyWater / 1000).toFixed(1)}L` : '--'}
+              value={
+                data.dailyWater
+                  ? `${(data.dailyWater / 1000).toFixed(1)}L`
+                  : "--"
+              }
               subtitle="daily target"
               icon="water-outline"
               color="#06B6D4"
               delay={700}
-              onPress={() => onMetricPress?.('water')}
+              onPress={() => onMetricPress?.("water")}
             />
           </View>
         </>
@@ -285,7 +352,7 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
   cardWrapper: {
@@ -299,27 +366,27 @@ const styles = StyleSheet.create({
     minHeight: rh(105),
   },
   cardContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     flex: 1,
   },
   iconCircle: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   metricValue: {
     fontSize: rf(22),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
     marginBottom: 2,
   },
   metricLabel: {
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -328,15 +395,14 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
   },
   trendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
   },
   trendText: {
     fontSize: rf(10),
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 
 export default MetricSummaryGrid;
-

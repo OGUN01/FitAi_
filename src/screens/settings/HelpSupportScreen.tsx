@@ -1,6 +1,6 @@
 /**
  * HelpSupportScreen - Help & Support Center
- * 
+ *
  * Redesigned following UI/UX Methodology:
  * - GlassCard for all cards
  * - Ionicons instead of emojis
@@ -9,7 +9,7 @@
  * - FadeInDown entry animations
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,21 +17,25 @@ import {
   ScrollView,
   Alert,
   Linking,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeIn, FadeInUp } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  FadeInDown,
+  FadeIn,
+  FadeInUp,
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 // UI Components
-import { GlassCard } from '../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
-import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
+import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 
 // Theme & Utils
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 interface FAQItem {
   id: string;
@@ -62,7 +66,7 @@ const QuickAction: React.FC<QuickActionProps> = ({
   animationDelay,
 }) => {
   return (
-    <Animated.View 
+    <Animated.View
       entering={FadeInDown.delay(animationDelay).duration(400)}
       style={styles.quickActionWrapper}
     >
@@ -74,10 +78,10 @@ const QuickAction: React.FC<QuickActionProps> = ({
         scaleValue={0.95}
         hapticFeedback={false}
       >
-        <GlassCard 
-          elevation={1} 
-          padding="md" 
-          blurIntensity="light" 
+        <GlassCard
+          elevation={1}
+          padding="md"
+          blurIntensity="light"
           borderRadius="lg"
           style={styles.quickActionCard}
         >
@@ -121,25 +125,30 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
         scaleValue={0.98}
         hapticFeedback={false}
       >
-        <GlassCard 
-          elevation={1} 
-          padding="md" 
-          blurIntensity="light" 
+        <GlassCard
+          elevation={1}
+          padding="md"
+          blurIntensity="light"
           borderRadius="lg"
           style={styles.resourceCard}
         >
           <View style={styles.resourceContent}>
-            <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+            <View
+              style={[
+                styles.iconContainer,
+                { backgroundColor: `${iconColor}15` },
+              ]}
+            >
               <Ionicons name={icon} size={rf(18)} color={iconColor} />
             </View>
             <View style={styles.resourceTextContainer}>
               <Text style={styles.resourceTitle}>{title}</Text>
               <Text style={styles.resourceDescription}>{description}</Text>
             </View>
-            <Ionicons 
-              name="chevron-forward" 
-              size={rf(18)} 
-              color={ResponsiveTheme.colors.textMuted} 
+            <Ionicons
+              name="chevron-forward"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.textMuted}
             />
           </View>
         </GlassCard>
@@ -148,102 +157,132 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
   );
 };
 
-export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) => {
+export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
+  onBack,
+}) => {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
   const faqs: FAQItem[] = [
     {
-      id: '1',
-      question: 'How do I track my workouts?',
-      answer: 'Go to the Fitness tab and tap "Start Workout". Choose your workout type and follow the guided exercises. The app will automatically track your progress, reps, and time.',
-      icon: 'barbell-outline',
+      id: "1",
+      question: "How do I track my workouts?",
+      answer:
+        'Go to the Fitness tab and tap "Start Workout". Choose your workout type and follow the guided exercises. The app will automatically track your progress, reps, and time.',
+      icon: "barbell-outline",
     },
     {
-      id: '2',
-      question: 'Can I customize my meal plans?',
-      answer: 'Yes! Go to the Diet tab and tap "Customize Meals". You can adjust portion sizes, swap ingredients, and set dietary preferences. The AI will generate personalized meal suggestions based on your goals.',
-      icon: 'restaurant-outline',
+      id: "2",
+      question: "Can I customize my meal plans?",
+      answer:
+        'Yes! Go to the Diet tab and tap "Customize Meals". You can adjust portion sizes, swap ingredients, and set dietary preferences. The AI will generate personalized meal suggestions based on your goals.',
+      icon: "restaurant-outline",
     },
     {
-      id: '3',
-      question: 'How does the AI personalization work?',
-      answer: 'FitAI uses your personal information, fitness goals, and activity history to create 100% personalized content. The more you use the app, the better it gets at understanding your preferences and needs.',
-      icon: 'sparkles-outline',
+      id: "3",
+      question: "How does the AI personalization work?",
+      answer:
+        "FitAI uses your personal information, fitness goals, and activity history to create 100% personalized content. The more you use the app, the better it gets at understanding your preferences and needs.",
+      icon: "sparkles-outline",
     },
     {
-      id: '4',
-      question: 'Can I sync with other fitness apps?',
-      answer: "Currently, FitAI works as a standalone app with its own comprehensive tracking. We're working on integrations with popular fitness devices and apps for future updates.",
-      icon: 'sync-outline',
+      id: "4",
+      question: "Can I sync with other fitness apps?",
+      answer:
+        "Currently, FitAI works as a standalone app with its own comprehensive tracking. We're working on integrations with popular fitness devices and apps for future updates.",
+      icon: "sync-outline",
     },
     {
-      id: '5',
-      question: 'How do I reset my progress?',
-      answer: 'Go to Profile > Edit Profile > Personal Information and update your goals. Or contact support if you need to completely reset your account data.',
-      icon: 'refresh-outline',
+      id: "5",
+      question: "How do I reset my progress?",
+      answer:
+        "Go to Profile > Edit Profile > Personal Information and update your goals. Or contact support if you need to completely reset your account data.",
+      icon: "refresh-outline",
     },
     {
-      id: '6',
-      question: 'Is my data secure?',
-      answer: 'Yes, we use industry-standard encryption and security measures. Your personal data is never shared without your consent. Check our Privacy Policy for detailed information.',
-      icon: 'shield-checkmark-outline',
+      id: "6",
+      question: "Is my data secure?",
+      answer:
+        "Yes, we use industry-standard encryption and security measures. Your personal data is never shared without your consent. Check our Privacy Policy for detailed information.",
+      icon: "shield-checkmark-outline",
     },
   ];
 
   const toggleFaq = useCallback((id: string) => {
     haptics.light();
-    setExpandedFaq(prev => prev === id ? null : id);
+    setExpandedFaq((prev) => (prev === id ? null : id));
   }, []);
 
   const handleContactSupport = useCallback(() => {
-    Alert.alert('Contact Support', "Choose how you'd like to contact our support team:", [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Email',
-        onPress: () => {
-          Linking.openURL('mailto:support@fitai.app?subject=FitAI Support Request');
+    Alert.alert(
+      "Contact Support",
+      "Choose how you'd like to contact our support team:",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Email",
+          onPress: () => {
+            Linking.openURL(
+              "mailto:support@fitai.app?subject=FitAI Support Request",
+            );
+          },
         },
-      },
-      {
-        text: 'Live Chat',
-        onPress: () => {
-          Alert.alert('Live Chat', 'Live chat support will be available in the next update!');
+        {
+          text: "Live Chat",
+          onPress: () => {
+            Alert.alert(
+              "Live Chat",
+              "Live chat support will be available in the next update!",
+            );
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, []);
 
   const handleReportBug = useCallback(() => {
-    Alert.alert('Report a Bug', 'Help us improve FitAI by reporting any issues you encounter.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Report Bug',
-        onPress: () => {
-          Linking.openURL('mailto:bugs@fitai.app?subject=Bug Report - FitAI');
+    Alert.alert(
+      "Report a Bug",
+      "Help us improve FitAI by reporting any issues you encounter.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Report Bug",
+          onPress: () => {
+            Linking.openURL("mailto:bugs@fitai.app?subject=Bug Report - FitAI");
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, []);
 
   const handleFeatureRequest = useCallback(() => {
-    Alert.alert('Feature Request', "We'd love to hear your ideas for improving FitAI!", [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Send Request',
-        onPress: () => {
-          Linking.openURL('mailto:features@fitai.app?subject=Feature Request - FitAI');
+    Alert.alert(
+      "Feature Request",
+      "We'd love to hear your ideas for improving FitAI!",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Send Request",
+          onPress: () => {
+            Linking.openURL(
+              "mailto:features@fitai.app?subject=Feature Request - FitAI",
+            );
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, []);
 
   const handleTutorials = useCallback(() => {
-    Alert.alert('Getting Started', 'Interactive tutorials will be available in the next update!');
+    Alert.alert(
+      "Getting Started",
+      "Interactive tutorials will be available in the next update!",
+    );
   }, []);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         {/* Header */}
         <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
           <AnimatedPressable
@@ -259,21 +298,29 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
             </View>
           </AnimatedPressable>
           <View style={styles.headerCenter}>
-            <Ionicons name="help-circle-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="help-circle-outline"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.primary}
+            />
             <Text style={styles.headerTitle}>Help & Support</Text>
           </View>
           <View style={styles.headerSpacer} />
         </Animated.View>
 
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Quick Actions */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="flash-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Ionicons
+                name="flash-outline"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.textSecondary}
+              />
               <Text style={styles.sectionTitle}>Quick Actions</Text>
             </View>
 
@@ -281,7 +328,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               <QuickAction
                 icon="chatbubbles-outline"
                 iconColor="#fff"
-                gradientColors={['#667eea', '#764ba2']}
+                gradientColors={["#667eea", "#764ba2"]}
                 title="Contact Support"
                 onPress={handleContactSupport}
                 animationDelay={100}
@@ -289,7 +336,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               <QuickAction
                 icon="bug-outline"
                 iconColor="#fff"
-                gradientColors={['#FF6B6B', '#FF8E53']}
+                gradientColors={["#FF6B6B", "#FF8E53"]}
                 title="Report Bug"
                 onPress={handleReportBug}
                 animationDelay={150}
@@ -297,7 +344,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               <QuickAction
                 icon="bulb-outline"
                 iconColor="#fff"
-                gradientColors={['#4CAF50', '#8BC34A']}
+                gradientColors={["#4CAF50", "#8BC34A"]}
                 title="Feature Request"
                 onPress={handleFeatureRequest}
                 animationDelay={200}
@@ -305,7 +352,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               <QuickAction
                 icon="school-outline"
                 iconColor="#fff"
-                gradientColors={['#2196F3', '#00BCD4']}
+                gradientColors={["#2196F3", "#00BCD4"]}
                 title="Tutorials"
                 onPress={handleTutorials}
                 animationDelay={250}
@@ -316,12 +363,18 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
           {/* FAQs */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="help-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
-              <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+              <Ionicons
+                name="help-outline"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.textSecondary}
+              />
+              <Text style={styles.sectionTitle}>
+                Frequently Asked Questions
+              </Text>
             </View>
 
             {faqs.map((faq, index) => (
-              <Animated.View 
+              <Animated.View
                 key={faq.id}
                 entering={FadeInDown.delay(300 + index * 50).duration(400)}
               >
@@ -330,30 +383,49 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
                   scaleValue={0.98}
                   hapticFeedback={false}
                 >
-                  <GlassCard 
-                    elevation={1} 
-                    padding="md" 
-                    blurIntensity="light" 
+                  <GlassCard
+                    elevation={1}
+                    padding="md"
+                    blurIntensity="light"
                     borderRadius="lg"
-                    style={[
-                      styles.faqCard,
-                      expandedFaq === faq.id && styles.faqCardExpanded,
-                    ]}
+                    style={
+                      expandedFaq === faq.id
+                        ? [styles.faqCard, styles.faqCardExpanded]
+                        : styles.faqCard
+                    }
                   >
                     <View style={styles.faqHeader}>
-                      <View style={[styles.faqIcon, { backgroundColor: 'rgba(102, 126, 234, 0.15)' }]}>
-                        <Ionicons name={faq.icon} size={rf(16)} color="#667eea" />
+                      <View
+                        style={[
+                          styles.faqIcon,
+                          { backgroundColor: "rgba(102, 126, 234, 0.15)" },
+                        ]}
+                      >
+                        <Ionicons
+                          name={faq.icon}
+                          size={rf(16)}
+                          color="#667eea"
+                        />
                       </View>
                       <Text style={styles.faqQuestion}>{faq.question}</Text>
-                      <View style={[styles.expandIcon, expandedFaq === faq.id && styles.expandIconExpanded]}>
-                        <Ionicons 
-                          name={expandedFaq === faq.id ? "chevron-up" : "chevron-down"} 
-                          size={rf(16)} 
-                          color={ResponsiveTheme.colors.textSecondary} 
+                      <View
+                        style={[
+                          styles.expandIcon,
+                          expandedFaq === faq.id && styles.expandIconExpanded,
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            expandedFaq === faq.id
+                              ? "chevron-up"
+                              : "chevron-down"
+                          }
+                          size={rf(16)}
+                          color={ResponsiveTheme.colors.textSecondary}
                         />
                       </View>
                     </View>
-                    
+
                     {expandedFaq === faq.id && (
                       <View style={styles.faqAnswer}>
                         <Text style={styles.faqAnswerText}>{faq.answer}</Text>
@@ -368,7 +440,11 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
           {/* Resources */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="book-outline" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+              <Ionicons
+                name="book-outline"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.textSecondary}
+              />
               <Text style={styles.sectionTitle}>Resources</Text>
             </View>
 
@@ -377,7 +453,12 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               iconColor="#4CAF50"
               title="User Guide"
               description="Complete guide to using all FitAI features"
-              onPress={() => Alert.alert('User Guide', 'Comprehensive user guide will be available soon!')}
+              onPress={() =>
+                Alert.alert(
+                  "User Guide",
+                  "Comprehensive user guide will be available soon!",
+                )
+              }
               animationDelay={600}
             />
 
@@ -386,7 +467,12 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               iconColor="#FF6B6B"
               title="Video Tutorials"
               description="Step-by-step video guides for beginners"
-              onPress={() => Alert.alert('Video Tutorials', 'Video tutorials will be available soon!')}
+              onPress={() =>
+                Alert.alert(
+                  "Video Tutorials",
+                  "Video tutorials will be available soon!",
+                )
+              }
               animationDelay={650}
             />
 
@@ -395,7 +481,12 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               iconColor="#667eea"
               title="Community Forum"
               description="Connect with other FitAI users"
-              onPress={() => Alert.alert('Join Our Community', 'Community forum will be available soon!')}
+              onPress={() =>
+                Alert.alert(
+                  "Join Our Community",
+                  "Community forum will be available soon!",
+                )
+              }
               animationDelay={700}
             />
 
@@ -404,27 +495,32 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
               iconColor="#FF9800"
               title="System Status"
               description="Check if all FitAI services are running smoothly"
-              onPress={() => Alert.alert('System Status', 'All systems operational!')}
+              onPress={() =>
+                Alert.alert("System Status", "All systems operational!")
+              }
               animationDelay={750}
             />
           </View>
 
           {/* Contact Card */}
           <Animated.View entering={FadeInDown.delay(800).duration(400)}>
-            <GlassCard 
-              elevation={2} 
-              padding="lg" 
-              blurIntensity="medium" 
+            <GlassCard
+              elevation={2}
+              padding="lg"
+              blurIntensity="medium"
               borderRadius="xl"
               style={styles.contactCard}
             >
               <LinearGradient
-                colors={['rgba(102, 126, 234, 0.15)', 'rgba(118, 75, 162, 0.1)']}
+                colors={[
+                  "rgba(102, 126, 234, 0.15)",
+                  "rgba(118, 75, 162, 0.1)",
+                ]}
                 style={StyleSheet.absoluteFill}
               />
               <View style={styles.contactIconContainer}>
                 <LinearGradient
-                  colors={['#667eea', '#764ba2']}
+                  colors={["#667eea", "#764ba2"]}
                   style={styles.contactIcon}
                 >
                   <Ionicons name="headset-outline" size={rf(24)} color="#fff" />
@@ -439,15 +535,21 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({ onBack }) 
                 <AnimatedPressable
                   onPress={() => {
                     haptics.light();
-                    Linking.openURL('mailto:support@fitai.app');
+                    Linking.openURL("mailto:support@fitai.app");
                   }}
                   scaleValue={0.95}
                   hapticFeedback={false}
                   style={styles.contactMethodButton}
                 >
                   <View style={styles.contactMethod}>
-                    <Ionicons name="mail-outline" size={rf(16)} color={ResponsiveTheme.colors.primary} />
-                    <Text style={styles.contactMethodText}>support@fitai.app</Text>
+                    <Ionicons
+                      name="mail-outline"
+                      size={rf(16)}
+                      color={ResponsiveTheme.colors.primary}
+                    />
+                    <Text style={styles.contactMethodText}>
+                      support@fitai.app
+                    </Text>
                   </View>
                 </AnimatedPressable>
               </View>
@@ -467,9 +569,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.md,
   },
@@ -477,19 +579,19 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   headerTitle: {
     fontSize: rf(18),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   headerSpacer: {
     width: rw(40),
@@ -505,81 +607,81 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
     marginLeft: ResponsiveTheme.spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(12),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
   // Quick Actions
   quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
   quickActionWrapper: {
-    width: '48.5%',
+    width: "48.5%",
   },
   quickActionCard: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   quickActionIcon: {
     width: rw(48),
     height: rw(48),
     borderRadius: rw(24),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   quickActionTitle: {
     fontSize: rf(13),
-    fontWeight: '600',
-    color: '#fff',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
   },
   // FAQ
   faqCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   faqCardExpanded: {
-    backgroundColor: 'rgba(102, 126, 234, 0.08)',
+    backgroundColor: "rgba(102, 126, 234, 0.08)",
   },
   faqHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   faqIcon: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.sm,
   },
   faqQuestion: {
     flex: 1,
     fontSize: rf(14),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     marginRight: ResponsiveTheme.spacing.sm,
   },
   expandIcon: {
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   expandIconExpanded: {
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
@@ -588,7 +690,7 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: "rgba(255, 255, 255, 0.06)",
   },
   faqAnswerText: {
     fontSize: rf(13),
@@ -598,18 +700,18 @@ const styles = StyleSheet.create({
   // Resources
   resourceCard: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   resourceContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   iconContainer: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(12),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
   },
   resourceTextContainer: {
@@ -618,8 +720,8 @@ const styles = StyleSheet.create({
   },
   resourceTitle: {
     fontSize: rf(15),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     marginBottom: 2,
   },
   resourceDescription: {
@@ -628,9 +730,9 @@ const styles = StyleSheet.create({
   },
   // Contact Card
   contactCard: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   contactIconContainer: {
     marginBottom: ResponsiveTheme.spacing.md,
@@ -639,41 +741,41 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(28),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   contactTitle: {
     fontSize: rf(18),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: ResponsiveTheme.spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   contactDescription: {
     fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
     lineHeight: rf(18),
   },
   contactMethods: {
-    width: '100%',
+    width: "100%",
   },
   contactMethodButton: {
-    width: '100%',
+    width: "100%",
   },
   contactMethod: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
   contactMethodText: {
     fontSize: rf(14),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.primary,
   },
   bottomSpacing: {

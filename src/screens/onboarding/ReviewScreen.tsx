@@ -1,13 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
-import { PersonalInfo, FitnessGoals } from '../../types/user';
-import { DietPreferences } from './DietPreferencesScreen';
-import { WorkoutPreferences } from './WorkoutPreferencesScreen';
-import { BodyAnalysis } from './BodyAnalysisScreen';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card, THEME } from "../../components/ui";
+import { PersonalInfo, FitnessGoals } from "../../types/user";
+import { DietPreferences } from "./DietPreferencesScreen";
+import { WorkoutPreferences } from "./WorkoutPreferencesScreen";
+import { BodyAnalysis } from "./BodyAnalysisScreen";
 
 export interface OnboardingReviewData {
   personalInfo: PersonalInfo;
@@ -31,9 +37,9 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
   onEditSection,
 }) => {
   const formatArray = (arr: string[]): string => {
-    if (arr.length === 0) return 'None selected';
-    if (arr.length <= 3) return arr.join(', ');
-    return `${arr.slice(0, 3).join(', ')} +${arr.length - 3} more`;
+    if (arr.length === 0) return "None selected";
+    if (arr.length <= 3) return arr.join(", ");
+    return `${arr.slice(0, 3).join(", ")} +${arr.length - 3} more`;
   };
 
   const formatTime = (minutes: number): string => {
@@ -59,7 +65,10 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
     }
 
     // Fitness Goals (required)
-    if (data.fitnessGoals.primaryGoals && data.fitnessGoals.primaryGoals.length > 0) {
+    if (
+      data.fitnessGoals.primaryGoals &&
+      data.fitnessGoals.primaryGoals.length > 0
+    ) {
       completed++;
     }
 
@@ -72,12 +81,18 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
     }
 
     // Workout Preferences (required)
-    if (data.workoutPreferences.workoutTypes && data.workoutPreferences.workoutTypes.length > 0) {
+    if (
+      data.workoutPreferences.workoutTypes &&
+      data.workoutPreferences.workoutTypes.length > 0
+    ) {
       completed++;
     }
 
     // Body Analysis (optional)
-    if (data.bodyAnalysis.photos && Object.keys(data.bodyAnalysis.photos).length > 0) {
+    if (
+      data.bodyAnalysis.photos &&
+      Object.keys(data.bodyAnalysis.photos).length > 0
+    ) {
       completed++;
     }
 
@@ -88,58 +103,87 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Review Your Profile</Text>
-          <Text style={styles.subtitle}>Check your information and complete your setup</Text>
+          <Text style={styles.subtitle}>
+            Check your information and complete your setup
+          </Text>
 
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${completionPercentage}%` }]} />
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${completionPercentage}%` },
+                ]}
+              />
             </View>
-            <Text style={styles.progressText}>{completionPercentage}% Complete</Text>
+            <Text style={styles.progressText}>
+              {completionPercentage}% Complete
+            </Text>
           </View>
         </View>
 
         <View style={styles.content}>
           {/* Personal Information */}
-          <TouchableOpacity onPress={() => onEditSection('personalInfo')}>
+          <TouchableOpacity onPress={() => onEditSection("personalInfo")}>
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={styles.sectionTitle}>👤 Personal Information</Text>
+                  <Text style={styles.sectionTitle}>
+                    👤 Personal Information
+                  </Text>
                   <Text style={styles.sectionStatus}>
-                    {data.personalInfo.name ? 'Complete' : 'Incomplete'}
+                    {data.personalInfo.name ? "Complete" : "Incomplete"}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
               </View>
               <View style={styles.sectionContent}>
-                <Text style={styles.dataItem}>Name: {data.personalInfo.name || 'Not set'}</Text>
-                <Text style={styles.dataItem}>Age: {data.personalInfo.age || 'Not set'}</Text>
-                <Text style={styles.dataItem}>Gender: {data.personalInfo.gender || 'Not set'}</Text>
                 <Text style={styles.dataItem}>
-                  Height: {data.personalInfo.height ? `${data.personalInfo.height} cm` : 'Not set'}
+                  Name: {data.personalInfo.name || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Weight: {data.personalInfo.weight ? `${data.personalInfo.weight} kg` : 'Not set'}
+                  Age: {data.personalInfo.age || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Activity Level: {data.personalInfo.activityLevel || 'Not set'}
+                  Gender: {data.personalInfo.gender || "Not set"}
+                </Text>
+                <Text style={styles.dataItem}>
+                  Height:{" "}
+                  {data.personalInfo.height
+                    ? `${data.personalInfo.height} cm`
+                    : "Not set"}
+                </Text>
+                <Text style={styles.dataItem}>
+                  Weight:{" "}
+                  {data.personalInfo.weight
+                    ? `${data.personalInfo.weight} kg`
+                    : "Not set"}
+                </Text>
+                <Text style={styles.dataItem}>
+                  Activity Level: {data.personalInfo.activityLevel || "Not set"}
                 </Text>
               </View>
             </Card>
           </TouchableOpacity>
 
           {/* Fitness Goals */}
-          <TouchableOpacity onPress={() => onEditSection('fitnessGoals')}>
+          <TouchableOpacity onPress={() => onEditSection("fitnessGoals")}>
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={styles.sectionTitle}>🎯 Fitness Goals</Text>
                   <Text style={styles.sectionStatus}>
-                    {data.fitnessGoals.primaryGoals?.length > 0 ? 'Complete' : 'Incomplete'}
+                    {data.fitnessGoals.primaryGoals &&
+                    data.fitnessGoals.primaryGoals.length > 0
+                      ? "Complete"
+                      : "Incomplete"}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
@@ -149,98 +193,108 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
                   Goals: {formatArray(data.fitnessGoals.primaryGoals || [])}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Time Commitment: {data.fitnessGoals.timeCommitment || 'Not set'}
+                  Time Commitment:{" "}
+                  {data.fitnessGoals.timeCommitment || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Experience: {data.fitnessGoals.experience || 'Not set'}
+                  Experience: {data.fitnessGoals.experience || "Not set"}
                 </Text>
               </View>
             </Card>
           </TouchableOpacity>
 
           {/* Diet Preferences */}
-          <TouchableOpacity onPress={() => onEditSection('dietPreferences')}>
+          <TouchableOpacity onPress={() => onEditSection("dietPreferences")}>
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={styles.sectionTitle}>🍽️ Diet Preferences</Text>
                   <Text style={styles.sectionStatus}>
                     {data.dietPreferences.cuisinePreferences?.length > 0
-                      ? 'Complete'
-                      : 'Incomplete'}
+                      ? "Complete"
+                      : "Incomplete"}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.dataItem}>
-                  Diet Type: {data.dietPreferences.dietType || 'Not set'}
+                  Diet Type: {data.dietPreferences.dietType || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Cuisines: {formatArray(data.dietPreferences.cuisinePreferences || [])}
+                  Cuisines:{" "}
+                  {formatArray(data.dietPreferences.cuisinePreferences || [])}
                 </Text>
                 <Text style={styles.dataItem}>
                   Allergies: {formatArray(data.dietPreferences.allergies || [])}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Restrictions: {formatArray(data.dietPreferences.restrictions || [])}
+                  Restrictions:{" "}
+                  {formatArray(data.dietPreferences.restrictions || [])}
                 </Text>
               </View>
             </Card>
           </TouchableOpacity>
 
           {/* Workout Preferences */}
-          <TouchableOpacity onPress={() => onEditSection('workoutPreferences')}>
+          <TouchableOpacity onPress={() => onEditSection("workoutPreferences")}>
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <View>
-                  <Text style={styles.sectionTitle}>💪 Workout Preferences</Text>
+                  <Text style={styles.sectionTitle}>
+                    💪 Workout Preferences
+                  </Text>
                   <Text style={styles.sectionStatus}>
-                    {data.workoutPreferences.workoutTypes?.length > 0 ? 'Complete' : 'Incomplete'}
+                    {data.workoutPreferences.workoutTypes?.length > 0
+                      ? "Complete"
+                      : "Incomplete"}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.dataItem}>
-                  Location: {data.workoutPreferences.location || 'Not set'}
+                  Location: {data.workoutPreferences.location || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Duration:{' '}
+                  Duration:{" "}
                   {data.workoutPreferences.timePreference
                     ? formatTime(data.workoutPreferences.timePreference)
-                    : 'Not set'}
+                    : "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Intensity: {data.workoutPreferences.intensity || 'Not set'}
+                  Intensity: {data.workoutPreferences.intensity || "Not set"}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Types: {formatArray(data.workoutPreferences.workoutTypes || [])}
+                  Types:{" "}
+                  {formatArray(data.workoutPreferences.workoutTypes || [])}
                 </Text>
                 <Text style={styles.dataItem}>
-                  Equipment: {formatArray(data.workoutPreferences.equipment || [])}
+                  Equipment:{" "}
+                  {formatArray(data.workoutPreferences.equipment || [])}
                 </Text>
               </View>
             </Card>
           </TouchableOpacity>
 
           {/* Body Analysis */}
-          <TouchableOpacity onPress={() => onEditSection('bodyAnalysis')}>
+          <TouchableOpacity onPress={() => onEditSection("bodyAnalysis")}>
             <Card style={styles.sectionCard}>
               <View style={styles.sectionHeader}>
                 <View>
                   <Text style={styles.sectionTitle}>📸 Body Analysis</Text>
                   <Text style={styles.sectionStatus}>
                     {Object.keys(data.bodyAnalysis.photos || {}).length > 0
-                      ? 'Complete'
-                      : 'Optional'}
+                      ? "Complete"
+                      : "Optional"}
                   </Text>
                 </View>
                 <Text style={styles.editIcon}>✏️</Text>
               </View>
               <View style={styles.sectionContent}>
                 <Text style={styles.dataItem}>
-                  Photos: {Object.keys(data.bodyAnalysis.photos || {}).length}/3 uploaded
+                  Photos: {Object.keys(data.bodyAnalysis.photos || {}).length}/3
+                  uploaded
                 </Text>
                 {data.bodyAnalysis.analysis && (
                   <>
@@ -279,7 +333,12 @@ export const ReviewScreen: React.FC<ReviewScreenProps> = ({
 
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button title="Back" onPress={onBack} variant="outline" style={styles.backButton} />
+          <Button
+            title="Back"
+            onPress={onBack}
+            variant="outline"
+            style={styles.backButton}
+          />
           <Button
             title="Complete Setup"
             onPress={onComplete}
@@ -330,12 +389,12 @@ const styles = StyleSheet.create({
     height: rh(8),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
@@ -343,7 +402,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   content: {
@@ -356,9 +415,9 @@ const styles = StyleSheet.create({
   },
 
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -391,7 +450,7 @@ const styles = StyleSheet.create({
 
   completionCard: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: `${ResponsiveTheme.colors.success}10`,
     borderColor: ResponsiveTheme.colors.success,
     borderWidth: 1,
@@ -412,12 +471,12 @@ const styles = StyleSheet.create({
   completionText: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   incompleteCard: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: `${ResponsiveTheme.colors.warning}10`,
     borderColor: ResponsiveTheme.colors.warning,
     borderWidth: 1,
@@ -438,7 +497,7 @@ const styles = StyleSheet.create({
   incompleteText: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   footer: {
@@ -450,7 +509,7 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 

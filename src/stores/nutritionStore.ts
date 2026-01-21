@@ -680,7 +680,7 @@ export const useNutritionStore = create<NutritionState>()(
           });
 
           // Complete the meal
-          get().completeMeal(currentSession.mealId, logId);
+          await get().completeMeal(currentSession.mealId, logId);
 
           set({ currentMealSession: null });
 

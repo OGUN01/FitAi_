@@ -1,23 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
   interpolate,
-} from 'react-native-reanimated';
-import { rf, rp, rh, rw } from '../../../utils/responsive';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Card, Slider } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, ProgressRing } from '../../../components/ui/aurora';
-import { gradients, toLinearGradientProps } from '../../../theme/gradients';
-import { MultiSelect } from '../../../components/advanced/MultiSelect';
-import { MultiSelectWithCustom } from '../../../components/advanced/MultiSelectWithCustom';
-import { DietPreferencesData, TabValidationResult, HealthHabits } from '../../../types/onboarding';
+} from "react-native-reanimated";
+import { rf, rp, rh, rw } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { Button, Card, Slider } from "../../../components/ui";
+import {
+  GlassCard,
+  AnimatedPressable,
+  AnimatedSection,
+  HeroSection,
+  ProgressRing,
+} from "../../../components/ui/aurora";
+import { gradients, toLinearGradientProps } from "../../../theme/gradients";
+import { MultiSelect } from "../../../components/advanced/MultiSelect";
+import { MultiSelectWithCustom } from "../../../components/advanced/MultiSelectWithCustom";
+import {
+  DietPreferencesData,
+  TabValidationResult,
+  HealthHabits,
+} from "../../../types/onboarding";
 
 // ============================================================================
 // TYPES
@@ -43,245 +61,290 @@ interface DietPreferencesTabProps {
 
 const DIET_TYPE_OPTIONS = [
   {
-    id: 'non-veg',
-    title: 'Non-Vegetarian',
-    iconName: 'nutrition-outline',
-    description: 'Includes all types of meat and fish',
+    id: "non-veg",
+    title: "Non-Vegetarian",
+    iconName: "nutrition-outline",
+    description: "Includes all types of meat and fish",
   },
   {
-    id: 'vegetarian',
-    title: 'Vegetarian',
-    iconName: 'leaf-outline',
-    description: 'No meat or fish, includes dairy and eggs',
+    id: "vegetarian",
+    title: "Vegetarian",
+    iconName: "leaf-outline",
+    description: "No meat or fish, includes dairy and eggs",
   },
   {
-    id: 'vegan',
-    title: 'Vegan',
-    iconName: 'flower-outline',
-    description: 'No animal products whatsoever',
+    id: "vegan",
+    title: "Vegan",
+    iconName: "flower-outline",
+    description: "No animal products whatsoever",
   },
   {
-    id: 'pescatarian',
-    title: 'Pescatarian',
-    iconName: 'fish-outline',
-    description: 'Vegetarian diet that includes fish',
+    id: "pescatarian",
+    title: "Pescatarian",
+    iconName: "fish-outline",
+    description: "Vegetarian diet that includes fish",
   },
 ];
 
 const DIET_READINESS_OPTIONS = [
   {
-    key: 'keto_ready',
-    title: 'Ketogenic Diet',
-    iconName: 'leaf-outline',
-    description: 'High fat, very low carb diet (5% carbs, 70% fat, 25% protein)',
-    benefits: ['Rapid weight loss', 'Mental clarity', 'Reduced appetite'],
+    key: "keto_ready",
+    title: "Ketogenic Diet",
+    iconName: "leaf-outline",
+    description:
+      "High fat, very low carb diet (5% carbs, 70% fat, 25% protein)",
+    benefits: ["Rapid weight loss", "Mental clarity", "Reduced appetite"],
   },
   {
-    key: 'intermittent_fasting_ready',
-    title: 'Intermittent Fasting',
-    iconName: 'time-outline',
-    description: 'Time-restricted eating patterns (16:8, 18:6, etc.)',
-    benefits: ['Improved metabolism', 'Weight management', 'Cellular repair'],
+    key: "intermittent_fasting_ready",
+    title: "Intermittent Fasting",
+    iconName: "time-outline",
+    description: "Time-restricted eating patterns (16:8, 18:6, etc.)",
+    benefits: ["Improved metabolism", "Weight management", "Cellular repair"],
   },
   {
-    key: 'paleo_ready',
-    title: 'Paleo Diet',
-    iconName: 'flame-outline',
-    description: 'Whole foods based on paleolithic era eating',
-    benefits: ['Natural nutrition', 'Reduced inflammation', 'Better digestion'],
+    key: "paleo_ready",
+    title: "Paleo Diet",
+    iconName: "flame-outline",
+    description: "Whole foods based on paleolithic era eating",
+    benefits: ["Natural nutrition", "Reduced inflammation", "Better digestion"],
   },
   {
-    key: 'mediterranean_ready',
-    title: 'Mediterranean Diet',
-    iconName: 'heart-outline',
-    description: 'Rich in olive oil, fish, vegetables, and whole grains',
-    benefits: ['Heart health', 'Brain function', 'Longevity'],
+    key: "mediterranean_ready",
+    title: "Mediterranean Diet",
+    iconName: "heart-outline",
+    description: "Rich in olive oil, fish, vegetables, and whole grains",
+    benefits: ["Heart health", "Brain function", "Longevity"],
   },
   {
-    key: 'low_carb_ready',
-    title: 'Low Carb Diet',
-    iconName: 'restaurant-outline',
-    description: 'Reduced carbohydrate intake (under 100g daily)',
-    benefits: ['Blood sugar control', 'Weight loss', 'Energy stability'],
+    key: "low_carb_ready",
+    title: "Low Carb Diet",
+    iconName: "restaurant-outline",
+    description: "Reduced carbohydrate intake (under 100g daily)",
+    benefits: ["Blood sugar control", "Weight loss", "Energy stability"],
   },
   {
-    key: 'high_protein_ready',
-    title: 'High Protein Diet',
-    iconName: 'barbell-outline',
-    description: 'Increased protein intake for muscle building',
-    benefits: ['Muscle growth', 'Satiety', 'Recovery'],
+    key: "high_protein_ready",
+    title: "High Protein Diet",
+    iconName: "barbell-outline",
+    description: "Increased protein intake for muscle building",
+    benefits: ["Muscle growth", "Satiety", "Recovery"],
   },
 ];
 
 const COOKING_SKILL_LEVELS = [
   {
-    level: 'beginner',
-    title: 'Beginner',
-    iconName: 'restaurant-outline',
-    description: 'Simple recipes, basic cooking skills',
-    timeRange: '15-30 minutes',
+    level: "beginner",
+    title: "Beginner",
+    iconName: "restaurant-outline",
+    description: "Simple recipes, basic cooking skills",
+    timeRange: "15-30 minutes",
   },
   {
-    level: 'intermediate',
-    title: 'Intermediate',
-    iconName: 'pizza-outline',
-    description: 'Comfortable with various techniques',
-    timeRange: '30-60 minutes',
+    level: "intermediate",
+    title: "Intermediate",
+    iconName: "pizza-outline",
+    description: "Comfortable with various techniques",
+    timeRange: "30-60 minutes",
   },
   {
-    level: 'advanced',
-    title: 'Advanced',
-    iconName: 'flame-outline',
-    description: 'Complex recipes, professional techniques',
-    timeRange: '60+ minutes',
+    level: "advanced",
+    title: "Advanced",
+    iconName: "flame-outline",
+    description: "Complex recipes, professional techniques",
+    timeRange: "60+ minutes",
   },
   {
-    level: 'not_applicable',
-    title: 'Not Applicable',
-    iconName: 'home-outline',
-    description: 'Made/home food prepared by others',
-    timeRange: 'N/A',
+    level: "not_applicable",
+    title: "Not Applicable",
+    iconName: "home-outline",
+    description: "Made/home food prepared by others",
+    timeRange: "N/A",
   },
 ];
 
 const BUDGET_LEVELS = [
   {
-    level: 'low',
-    title: 'Budget-Friendly',
-    iconName: 'cash-outline',
-    description: 'Cost-effective ingredients and meals',
-    range: '$50-100/week',
+    level: "low",
+    title: "Budget-Friendly",
+    iconName: "cash-outline",
+    description: "Cost-effective ingredients and meals",
+    range: "$50-100/week",
   },
   {
-    level: 'medium',
-    title: 'Moderate',
-    iconName: 'wallet-outline',
-    description: 'Balance of quality and affordability',
-    range: '$100-200/week',
+    level: "medium",
+    title: "Moderate",
+    iconName: "wallet-outline",
+    description: "Balance of quality and affordability",
+    range: "$100-200/week",
   },
   {
-    level: 'high',
-    title: 'Premium',
-    iconName: 'diamond-outline',
-    description: 'High-quality, organic ingredients',
-    range: '$200+/week',
+    level: "high",
+    title: "Premium",
+    iconName: "diamond-outline",
+    description: "High-quality, organic ingredients",
+    range: "$200+/week",
   },
 ];
 
 const HEALTH_HABITS = {
   hydration: [
     {
-      key: 'drinks_enough_water',
-      title: 'Drinks 3-4L Water Daily',
-      iconName: 'water-outline',
-      description: 'Maintains proper hydration levels',
+      key: "drinks_enough_water",
+      title: "Drinks 3-4L Water Daily",
+      iconName: "water-outline",
+      description: "Maintains proper hydration levels",
     },
     {
-      key: 'limits_sugary_drinks',
-      title: 'Limits Sugary Drinks',
-      iconName: 'warning-outline',
-      description: 'Avoids sodas, juices with added sugar',
+      key: "limits_sugary_drinks",
+      title: "Limits Sugary Drinks",
+      iconName: "warning-outline",
+      description: "Avoids sodas, juices with added sugar",
     },
   ],
   eating_patterns: [
     {
-      key: 'eats_regular_meals',
-      title: 'Eats Regular Meals',
-      iconName: 'fast-food-outline',
-      description: 'Consistent meal timing throughout day',
+      key: "eats_regular_meals",
+      title: "Eats Regular Meals",
+      iconName: "fast-food-outline",
+      description: "Consistent meal timing throughout day",
     },
     {
-      key: 'avoids_late_night_eating',
-      title: 'Avoids Late Night Eating',
-      iconName: 'moon-outline',
-      description: 'No eating 3 hours before bedtime',
+      key: "avoids_late_night_eating",
+      title: "Avoids Late Night Eating",
+      iconName: "moon-outline",
+      description: "No eating 3 hours before bedtime",
     },
     {
-      key: 'controls_portion_sizes',
-      title: 'Controls Portion Sizes',
-      iconName: 'scale-outline',
-      description: 'Mindful of serving sizes',
+      key: "controls_portion_sizes",
+      title: "Controls Portion Sizes",
+      iconName: "scale-outline",
+      description: "Mindful of serving sizes",
     },
     {
-      key: 'reads_nutrition_labels',
-      title: 'Reads Nutrition Labels',
-      iconName: 'document-text-outline',
-      description: 'Checks food labels before purchasing',
+      key: "reads_nutrition_labels",
+      title: "Reads Nutrition Labels",
+      iconName: "document-text-outline",
+      description: "Checks food labels before purchasing",
     },
   ],
   food_choices: [
     {
-      key: 'eats_processed_foods',
-      title: 'Eats Processed Foods',
-      iconName: 'cube-outline',
-      description: 'Regularly consumes packaged/processed foods',
+      key: "eats_processed_foods",
+      title: "Eats Processed Foods",
+      iconName: "cube-outline",
+      description: "Regularly consumes packaged/processed foods",
     },
     {
-      key: 'eats_5_servings_fruits_veggies',
-      title: 'Eats 5+ Servings Fruits/Vegetables',
-      iconName: 'nutrition-outline',
-      description: 'Daily fruit and vegetable intake',
+      key: "eats_5_servings_fruits_veggies",
+      title: "Eats 5+ Servings Fruits/Vegetables",
+      iconName: "nutrition-outline",
+      description: "Daily fruit and vegetable intake",
     },
     {
-      key: 'limits_refined_sugar',
-      title: 'Limits Refined Sugar',
-      iconName: 'close-circle-outline',
-      description: 'Reduces added sugars in diet',
+      key: "limits_refined_sugar",
+      title: "Limits Refined Sugar",
+      iconName: "close-circle-outline",
+      description: "Reduces added sugars in diet",
     },
     {
-      key: 'includes_healthy_fats',
-      title: 'Includes Healthy Fats',
-      iconName: 'leaf-outline',
-      description: 'Nuts, avocado, olive oil, etc.',
+      key: "includes_healthy_fats",
+      title: "Includes Healthy Fats",
+      iconName: "leaf-outline",
+      description: "Nuts, avocado, olive oil, etc.",
     },
   ],
   substances: [
     {
-      key: 'drinks_alcohol',
-      title: 'Drinks Alcohol',
-      iconName: 'wine-outline',
-      description: 'Regular alcohol consumption',
+      key: "drinks_alcohol",
+      title: "Drinks Alcohol",
+      iconName: "wine-outline",
+      description: "Regular alcohol consumption",
     },
     {
-      key: 'smokes_tobacco',
-      title: 'Smokes Tobacco',
-      iconName: 'ban-outline',
-      description: 'Tobacco use (any form)',
+      key: "smokes_tobacco",
+      title: "Smokes Tobacco",
+      iconName: "ban-outline",
+      description: "Tobacco use (any form)",
     },
     {
-      key: 'drinks_coffee',
-      title: 'Drinks Coffee',
-      iconName: 'cafe-outline',
-      description: 'Daily caffeine intake',
+      key: "drinks_coffee",
+      title: "Drinks Coffee",
+      iconName: "cafe-outline",
+      description: "Daily caffeine intake",
     },
     {
-      key: 'takes_supplements',
-      title: 'Takes Supplements',
-      iconName: 'medkit-outline',
-      description: 'Vitamins, protein powder, etc.',
+      key: "takes_supplements",
+      title: "Takes Supplements",
+      iconName: "medkit-outline",
+      description: "Vitamins, protein powder, etc.",
     },
   ],
 };
 
 const ALLERGY_OPTIONS = [
-  { id: 'nuts', label: 'Nuts', value: 'nuts', iconName: 'warning-outline' },
-  { id: 'dairy', label: 'Dairy', value: 'dairy', iconName: 'warning-outline' },
-  { id: 'eggs', label: 'Eggs', value: 'eggs', iconName: 'warning-outline' },
-  { id: 'gluten', label: 'Gluten', value: 'gluten', iconName: 'warning-outline' },
-  { id: 'soy', label: 'Soy', value: 'soy', iconName: 'warning-outline' },
-  { id: 'shellfish', label: 'Shellfish', value: 'shellfish', iconName: 'warning-outline' },
-  { id: 'fish', label: 'Fish', value: 'fish', iconName: 'warning-outline' },
-  { id: 'sesame', label: 'Sesame', value: 'sesame', iconName: 'warning-outline' },
+  { id: "nuts", label: "Nuts", value: "nuts", iconName: "warning-outline" },
+  { id: "dairy", label: "Dairy", value: "dairy", iconName: "warning-outline" },
+  { id: "eggs", label: "Eggs", value: "eggs", iconName: "warning-outline" },
+  {
+    id: "gluten",
+    label: "Gluten",
+    value: "gluten",
+    iconName: "warning-outline",
+  },
+  { id: "soy", label: "Soy", value: "soy", iconName: "warning-outline" },
+  {
+    id: "shellfish",
+    label: "Shellfish",
+    value: "shellfish",
+    iconName: "warning-outline",
+  },
+  { id: "fish", label: "Fish", value: "fish", iconName: "warning-outline" },
+  {
+    id: "sesame",
+    label: "Sesame",
+    value: "sesame",
+    iconName: "warning-outline",
+  },
 ];
 
-
 const RESTRICTION_OPTIONS = [
-  { id: 'low-sodium', label: 'Low Sodium', value: 'low-sodium', iconName: 'remove-circle-outline' },
-  { id: 'low-sugar', label: 'Low Sugar', value: 'low-sugar', iconName: 'close-circle-outline' },
-  { id: 'low-carb', label: 'Low Carb', value: 'low-carb', iconName: 'restaurant-outline' },
-  { id: 'high-protein', label: 'High Protein', value: 'high-protein', iconName: 'barbell-outline' },
-  { id: 'diabetic-friendly', label: 'Diabetic Friendly', value: 'diabetic-friendly', iconName: 'pulse-outline' },
-  { id: 'heart-healthy', label: 'Heart Healthy', value: 'heart-healthy', iconName: 'heart-outline' },
+  {
+    id: "low-sodium",
+    label: "Low Sodium",
+    value: "low-sodium",
+    iconName: "remove-circle-outline",
+  },
+  {
+    id: "low-sugar",
+    label: "Low Sugar",
+    value: "low-sugar",
+    iconName: "close-circle-outline",
+  },
+  {
+    id: "low-carb",
+    label: "Low Carb",
+    value: "low-carb",
+    iconName: "restaurant-outline",
+  },
+  {
+    id: "high-protein",
+    label: "High Protein",
+    value: "high-protein",
+    iconName: "barbell-outline",
+  },
+  {
+    id: "diabetic-friendly",
+    label: "Diabetic Friendly",
+    value: "diabetic-friendly",
+    iconName: "pulse-outline",
+  },
+  {
+    id: "heart-healthy",
+    label: "Heart Healthy",
+    value: "heart-healthy",
+    iconName: "heart-outline",
+  },
 ];
 
 // ============================================================================
@@ -293,7 +356,10 @@ interface AnimatedGlowCardProps {
   children: React.ReactNode;
 }
 
-const AnimatedGlowCard: React.FC<AnimatedGlowCardProps> = ({ isSelected, children }) => {
+const AnimatedGlowCard: React.FC<AnimatedGlowCardProps> = ({
+  isSelected,
+  children,
+}) => {
   const glowAnimation = useSharedValue(0);
 
   useEffect(() => {
@@ -312,13 +378,15 @@ const AnimatedGlowCard: React.FC<AnimatedGlowCardProps> = ({ isSelected, childre
   });
 
   // Static glow styles based on selection state
-  const glowStyle = isSelected ? {
-    shadowColor: ResponsiveTheme.colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
-  } : {};
+  const glowStyle = isSelected
+    ? {
+        shadowColor: ResponsiveTheme.colors.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 6,
+      }
+    : {};
 
   return (
     <Animated.View style={[glowStyle, animatedGlowStyle]}>
@@ -336,7 +404,10 @@ interface AnimatedToggleProps {
   disabled?: boolean;
 }
 
-const AnimatedToggle: React.FC<AnimatedToggleProps> = ({ isActive, disabled = false }) => {
+const AnimatedToggle: React.FC<AnimatedToggleProps> = ({
+  isActive,
+  disabled = false,
+}) => {
   const toggleAnimation = useSharedValue(0);
 
   useEffect(() => {
@@ -347,19 +418,17 @@ const AnimatedToggle: React.FC<AnimatedToggleProps> = ({ isActive, disabled = fa
 
   const animatedSwitchStyle = useAnimatedStyle(() => {
     // Interpolate background color from gray to primary
-    const backgroundColor = interpolate(
-      toggleAnimation.value,
-      [0, 1],
-      [0, 1]
-    );
+    const backgroundColor = interpolate(toggleAnimation.value, [0, 1], [0, 1]);
 
     return {
-      backgroundColor: backgroundColor === 1
-        ? ResponsiveTheme.colors.primary
-        : ResponsiveTheme.colors.backgroundTertiary,
-      borderColor: backgroundColor === 1
-        ? ResponsiveTheme.colors.primary
-        : ResponsiveTheme.colors.border,
+      backgroundColor:
+        backgroundColor === 1
+          ? ResponsiveTheme.colors.primary
+          : ResponsiveTheme.colors.backgroundTertiary,
+      borderColor:
+        backgroundColor === 1
+          ? ResponsiveTheme.colors.primary
+          : ResponsiveTheme.colors.border,
     };
   });
 
@@ -368,7 +437,7 @@ const AnimatedToggle: React.FC<AnimatedToggleProps> = ({ isActive, disabled = fa
     const translateX = interpolate(
       toggleAnimation.value,
       [0, 1],
-      [0, 20] // Full width (44) minus thumb width (20) minus padding (4)
+      [0, 20], // Full width (44) minus thumb width (20) minus padding (4)
     );
 
     return {
@@ -377,15 +446,14 @@ const AnimatedToggle: React.FC<AnimatedToggleProps> = ({ isActive, disabled = fa
   });
 
   return (
-    <Animated.View style={[
-      styles.toggleSwitch,
-      animatedSwitchStyle,
-      disabled && styles.toggleSwitchDisabled,
-    ]}>
-      <Animated.View style={[
-        styles.toggleThumb,
-        animatedThumbStyle,
-      ]} />
+    <Animated.View
+      style={[
+        styles.toggleSwitch,
+        animatedSwitchStyle,
+        disabled && styles.toggleSwitchDisabled,
+      ]}
+    >
+      <Animated.View style={[styles.toggleThumb, animatedThumbStyle]} />
     </Animated.View>
   );
 };
@@ -421,7 +489,11 @@ const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-              <Ionicons name="close-circle" size={rf(24)} color={ResponsiveTheme.colors.textSecondary} />
+              <Ionicons
+                name="close-circle"
+                size={rf(24)}
+                color={ResponsiveTheme.colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
           <Text style={styles.modalDescription}>{description}</Text>
@@ -430,7 +502,11 @@ const InfoTooltipModal: React.FC<InfoTooltipModalProps> = ({
               <Text style={styles.modalBenefitsTitle}>Benefits:</Text>
               {benefits.map((benefit, index) => (
                 <View key={index} style={styles.modalBenefitItem}>
-                  <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={rf(16)}
+                    color={ResponsiveTheme.colors.success}
+                  />
                   <Text style={styles.modalBenefitText}>{benefit}</Text>
                 </View>
               ))}
@@ -451,14 +527,21 @@ interface InfoIconButtonProps {
   size?: number;
 }
 
-const InfoIconButton: React.FC<InfoIconButtonProps> = ({ onPress, size = rf(16) }) => {
+const InfoIconButton: React.FC<InfoIconButtonProps> = ({
+  onPress,
+  size = rf(16),
+}) => {
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
+    <TouchableOpacity
+      onPress={onPress}
       style={styles.infoIconButton}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
-      <Ionicons name="information-circle" size={size} color={ResponsiveTheme.colors.primary} />
+      <Ionicons
+        name="information-circle"
+        size={size}
+        color={ResponsiveTheme.colors.primary}
+      />
     </TouchableOpacity>
   );
 };
@@ -492,9 +575,10 @@ const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
 
   const animatedSwitchStyle = useAnimatedStyle(() => {
     return {
-      backgroundColor: toggleAnimation.value === 1
-        ? ResponsiveTheme.colors.primary
-        : ResponsiveTheme.colors.backgroundTertiary,
+      backgroundColor:
+        toggleAnimation.value === 1
+          ? ResponsiveTheme.colors.primary
+          : ResponsiveTheme.colors.backgroundTertiary,
     };
   });
 
@@ -511,30 +595,34 @@ const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
       style={styles.compactPillContainer}
       scaleValue={0.98}
     >
-      <View style={[
-        styles.compactPill,
-        isActive && styles.compactPillActive,
-      ]}>
+      <View style={[styles.compactPill, isActive && styles.compactPillActive]}>
         {/* Single row layout: Icon + Title + Info + Toggle */}
         <View style={styles.compactPillRow}>
           {/* Icon */}
           <View style={styles.compactPillIconWrap}>
-            <Ionicons 
-              name={iconName as any} 
-              size={rf(16)} 
-              color={isActive ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} 
+            <Ionicons
+              name={iconName as any}
+              size={rf(16)}
+              color={
+                isActive
+                  ? ResponsiveTheme.colors.primary
+                  : ResponsiveTheme.colors.textSecondary
+              }
             />
           </View>
-          
+
           {/* Title - takes remaining space */}
-          <Text 
-            style={[styles.compactPillTitle, isActive && styles.compactPillTitleActive]}
+          <Text
+            style={[
+              styles.compactPillTitle,
+              isActive && styles.compactPillTitleActive,
+            ]}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
             {title}
           </Text>
-          
+
           {/* Info button */}
           <TouchableOpacity
             onPress={(e) => {
@@ -544,12 +632,20 @@ const CompactTogglePill: React.FC<CompactTogglePillProps> = ({
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={styles.compactPillInfoBtn}
           >
-            <Ionicons name="information-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.textMuted} />
+            <Ionicons
+              name="information-circle-outline"
+              size={rf(16)}
+              color={ResponsiveTheme.colors.textMuted}
+            />
           </TouchableOpacity>
-          
+
           {/* Toggle */}
-          <Animated.View style={[styles.compactToggleSwitch, animatedSwitchStyle]}>
-            <Animated.View style={[styles.compactToggleThumb, animatedThumbStyle]} />
+          <Animated.View
+            style={[styles.compactToggleSwitch, animatedSwitchStyle]}
+          >
+            <Animated.View
+              style={[styles.compactToggleThumb, animatedThumbStyle]}
+            />
           </Animated.View>
         </View>
       </View>
@@ -574,7 +670,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   onReturnToReview,
 }) => {
   // No longer creating separate state instances - using props from parent
-  
+
   // Tooltip modal state
   const [tooltipModal, setTooltipModal] = useState<{
     visible: boolean;
@@ -583,12 +679,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     benefits?: string[];
   }>({
     visible: false,
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     benefits: [],
   });
 
-  const showInfoTooltip = (title: string, description: string, benefits?: string[]) => {
+  const showInfoTooltip = (
+    title: string,
+    description: string,
+    benefits?: string[],
+  ) => {
     setTooltipModal({
       visible: true,
       title,
@@ -598,16 +698,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   };
 
   const hideInfoTooltip = () => {
-    setTooltipModal(prev => ({ ...prev, visible: false }));
+    setTooltipModal((prev) => ({ ...prev, visible: false }));
   };
-  
+
   // Form state - initialize with data or defaults
   const [formData, setFormData] = useState<DietPreferencesData>({
     // Existing diet data
-    diet_type: data?.diet_type || 'non-veg',
+    diet_type: data?.diet_type || "non-veg",
     allergies: data?.allergies || [],
     restrictions: data?.restrictions || [],
-    
+
     // NEW: Diet readiness toggles
     keto_ready: data?.keto_ready || false,
     intermittent_fasting_ready: data?.intermittent_fasting_ready || false,
@@ -615,18 +715,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     mediterranean_ready: data?.mediterranean_ready || false,
     low_carb_ready: data?.low_carb_ready || false,
     high_protein_ready: data?.high_protein_ready || false,
-    
+
     // NEW: Meal preferences
     breakfast_enabled: data?.breakfast_enabled ?? true,
     lunch_enabled: data?.lunch_enabled ?? true,
     dinner_enabled: data?.dinner_enabled ?? true,
     snacks_enabled: data?.snacks_enabled ?? true,
-    
+
     // NEW: Cooking preferences
-    cooking_skill_level: data?.cooking_skill_level || 'beginner',
+    cooking_skill_level: data?.cooking_skill_level || "beginner",
     max_prep_time_minutes: data?.max_prep_time_minutes ?? 30,
-    budget_level: data?.budget_level || 'medium',
-    
+    budget_level: data?.budget_level || "medium",
+
     // NEW: Health habits (14 boolean fields)
     drinks_enough_water: data?.drinks_enough_water || false,
     limits_sugary_drinks: data?.limits_sugary_drinks || false,
@@ -635,7 +735,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     controls_portion_sizes: data?.controls_portion_sizes || false,
     reads_nutrition_labels: data?.reads_nutrition_labels || false,
     eats_processed_foods: data?.eats_processed_foods ?? true,
-    eats_5_servings_fruits_veggies: data?.eats_5_servings_fruits_veggies || false,
+    eats_5_servings_fruits_veggies:
+      data?.eats_5_servings_fruits_veggies || false,
     limits_refined_sugar: data?.limits_refined_sugar || false,
     includes_healthy_fats: data?.includes_healthy_fats || false,
     drinks_alcohol: data?.drinks_alcohol || false,
@@ -643,7 +744,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     drinks_coffee: data?.drinks_coffee || false,
     takes_supplements: data?.takes_supplements || false,
   });
-  
+
   // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
   // Use a ref to track if we're syncing from props to avoid circular updates
   const isSyncingFromProps = useRef(false);
@@ -651,7 +752,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        diet_type: data.diet_type || 'non-veg',
+        diet_type: data.diet_type || "non-veg",
         allergies: data.allergies || [],
         restrictions: data.restrictions || [],
         keto_ready: data.keto_ready || false,
@@ -664,9 +765,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         lunch_enabled: data.lunch_enabled ?? true,
         dinner_enabled: data.dinner_enabled ?? true,
         snacks_enabled: data.snacks_enabled ?? true,
-        cooking_skill_level: data.cooking_skill_level || 'beginner',
+        cooking_skill_level: data.cooking_skill_level || "beginner",
         max_prep_time_minutes: data.max_prep_time_minutes ?? 30,
-        budget_level: data.budget_level || 'medium',
+        budget_level: data.budget_level || "medium",
         drinks_enough_water: data.drinks_enough_water || false,
         limits_sugary_drinks: data.limits_sugary_drinks || false,
         eats_regular_meals: data.eats_regular_meals || false,
@@ -674,7 +775,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         controls_portion_sizes: data.controls_portion_sizes || false,
         reads_nutrition_labels: data.reads_nutrition_labels || false,
         eats_processed_foods: data.eats_processed_foods ?? true,
-        eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies || false,
+        eats_5_servings_fruits_veggies:
+          data.eats_5_servings_fruits_veggies || false,
         limits_refined_sugar: data.limits_refined_sugar || false,
         includes_healthy_fats: data.includes_healthy_fats || false,
         drinks_alcohol: data.drinks_alcohol || false,
@@ -697,10 +799,10 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       };
     }
   }, [data]); // ONLY depend on data prop, NOT formData!
-  
+
   // Note: We no longer auto-update parent on every formData change to avoid infinite loops
   // Updates happen via onUpdate in the Next button handler
-  
+
   // Validate when formData changes to enable/disable Next button
   // Memoize onUpdate callback to prevent unnecessary re-renders
   const stableOnUpdate = React.useCallback(() => {
@@ -721,16 +823,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       };
     }
   }, [formData, validationResult, stableOnUpdate]);
-  
+
   // ============================================================================
   // FORM HANDLERS
   // ============================================================================
-  
+
   const updateField = <K extends keyof DietPreferencesData>(
     field: K,
-    value: DietPreferencesData[K]
+    value: DietPreferencesData[K],
   ) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newData = { ...prev, [field]: value };
       // Log only final value changes
       console.log(`Updated ${String(field)}:`, value);
@@ -739,7 +841,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   };
 
   const toggleHealthHabit = (habitKey: keyof DietPreferencesData) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newValue = !prev[habitKey];
       return {
         ...prev,
@@ -749,7 +851,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   };
 
   const toggleDietReadiness = (dietKey: keyof DietPreferencesData) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const newValue = !prev[dietKey];
       return {
         ...prev,
@@ -762,34 +864,39 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     const newValue = !formData[mealKey];
 
     // Ensure at least one meal is enabled
-    const otherMeals = ['breakfast_enabled', 'lunch_enabled', 'dinner_enabled', 'snacks_enabled']
-      .filter(key => key !== mealKey)
-      .some(key => formData[key as keyof DietPreferencesData]);
+    const otherMeals = [
+      "breakfast_enabled",
+      "lunch_enabled",
+      "dinner_enabled",
+      "snacks_enabled",
+    ]
+      .filter((key) => key !== mealKey)
+      .some((key) => formData[key as keyof DietPreferencesData]);
 
     if (!newValue && !otherMeals) {
       return;
     }
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [mealKey]: newValue,
     }));
   };
-  
+
   // ============================================================================
   // VALIDATION HELPERS
   // ============================================================================
-  
+
   const getFieldError = (fieldName: string): string | undefined => {
-    return validationResult?.errors.find(error => 
-      error.toLowerCase().includes(fieldName.toLowerCase())
+    return validationResult?.errors.find((error) =>
+      error.toLowerCase().includes(fieldName.toLowerCase()),
     );
   };
-  
+
   const hasFieldError = (fieldName: string): boolean => {
     return !!getFieldError(fieldName);
   };
-  
+
   const getEnabledMealsCount = (): number => {
     return [
       formData.breakfast_enabled,
@@ -798,11 +905,11 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       formData.snacks_enabled,
     ].filter(Boolean).length;
   };
-  
+
   // ============================================================================
   // RENDER HELPERS
   // ============================================================================
-  
+
   const renderCurrentDietSection = () => (
     <GlassCard
       style={styles.sectionEdgeToEdge}
@@ -813,10 +920,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     >
       {/* Title with padding */}
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Current Diet Type</Text>
-        <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">What best describes your current eating habits?</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Current Diet Type
+        </Text>
+        <Text
+          style={styles.sectionSubtitle}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          What best describes your current eating habits?
+        </Text>
       </View>
-      
+
       {/* Scroll container - inset from card edges */}
       <View style={styles.scrollContainerInset}>
         <ScrollView
@@ -827,57 +942,80 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           snapToInterval={rw(105) + rw(10)}
           snapToAlignment="start"
         >
-        {DIET_TYPE_OPTIONS.map((option) => {
-          const isSelected = formData.diet_type === option.id;
-          return (
-            <AnimatedPressable
-              key={option.id}
-              onPress={() => updateField('diet_type', option.id as DietPreferencesData['diet_type'])}
-              style={styles.consistentCardItem}
-              scaleValue={0.97}
-            >
-              <View style={[
-                styles.consistentCard,
-                isSelected && styles.consistentCardSelected,
-              ]}>
-                {/* Icon + Info row */}
-                <View style={styles.consistentCardHeader}>
-                  <Ionicons 
-                    name={option.iconName as any} 
-                    size={rf(22)} 
-                    color={isSelected ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} 
-                  />
-                  <TouchableOpacity
-                    onPress={() => showInfoTooltip(option.title, option.description)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="information-circle-outline" size={rf(14)} color={ResponsiveTheme.colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
-                {/* Title */}
-                <Text
+          {DIET_TYPE_OPTIONS.map((option) => {
+            const isSelected = formData.diet_type === option.id;
+            return (
+              <AnimatedPressable
+                key={option.id}
+                onPress={() =>
+                  updateField(
+                    "diet_type",
+                    option.id as DietPreferencesData["diet_type"],
+                  )
+                }
+                style={styles.consistentCardItem}
+                scaleValue={0.97}
+              >
+                <View
                   style={[
-                    styles.consistentCardTitle,
-                    isSelected && styles.consistentCardTitleSelected,
+                    styles.consistentCard,
+                    isSelected && styles.consistentCardSelected,
                   ]}
-                  numberOfLines={2}
                 >
-                  {option.title}
-                </Text>
-                {/* Selection indicator */}
-                <View style={[
-                  styles.consistentCardIndicator,
-                  isSelected && styles.consistentCardIndicatorSelected,
-                ]}>
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={rf(12)} color={ResponsiveTheme.colors.white} />
-                  )}
+                  {/* Icon + Info row */}
+                  <View style={styles.consistentCardHeader}>
+                    <Ionicons
+                      name={option.iconName as any}
+                      size={rf(22)}
+                      color={
+                        isSelected
+                          ? ResponsiveTheme.colors.primary
+                          : ResponsiveTheme.colors.textSecondary
+                      }
+                    />
+                    <TouchableOpacity
+                      onPress={() =>
+                        showInfoTooltip(option.title, option.description)
+                      }
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons
+                        name="information-circle-outline"
+                        size={rf(14)}
+                        color={ResponsiveTheme.colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {/* Title */}
+                  <Text
+                    style={[
+                      styles.consistentCardTitle,
+                      isSelected && styles.consistentCardTitleSelected,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {option.title}
+                  </Text>
+                  {/* Selection indicator */}
+                  <View
+                    style={[
+                      styles.consistentCardIndicator,
+                      isSelected && styles.consistentCardIndicatorSelected,
+                    ]}
+                  >
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={rf(12)}
+                        color={ResponsiveTheme.colors.white}
+                      />
+                    )}
+                  </View>
                 </View>
-              </View>
-            </AnimatedPressable>
+              </AnimatedPressable>
             );
           })}
-          </ScrollView>
+        </ScrollView>
       </View>
       {/* Bottom padding inside card */}
       <View style={styles.sectionBottomPad} />
@@ -893,16 +1031,24 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Diet Readiness</Text>
-        <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Diet Readiness
+        </Text>
+        <Text
+          style={styles.sectionSubtitle}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           Are you ready to try any of these specialized diets? (Optional)
         </Text>
       </View>
-      
+
       <View style={styles.edgeToEdgeContentPadded}>
         {DIET_READINESS_OPTIONS.map((option) => {
-          const isReady = formData[option.key as keyof DietPreferencesData] as boolean;
-          
+          const isReady = formData[
+            option.key as keyof DietPreferencesData
+          ] as boolean;
+
           return (
             <CompactTogglePill
               key={option.key}
@@ -910,8 +1056,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               iconName={option.iconName}
               title={option.title}
               description={option.description}
-              onToggle={() => toggleDietReadiness(option.key as keyof DietPreferencesData)}
-              onInfoPress={() => showInfoTooltip(option.title, option.description, option.benefits)}
+              onToggle={() =>
+                toggleDietReadiness(option.key as keyof DietPreferencesData)
+              }
+              onInfoPress={() =>
+                showInfoTooltip(
+                  option.title,
+                  option.description,
+                  option.benefits,
+                )
+              }
             />
           );
         })}
@@ -932,9 +1086,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         borderRadius="none"
       >
         <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>Meal Preferences</Text>
-          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
-            Which meals would you like us to plan for you? ({enabledCount}/4 enabled)
+          <Text style={styles.sectionTitle} numberOfLines={1}>
+            Meal Preferences
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            Which meals would you like us to plan for you? ({enabledCount}/4
+            enabled)
           </Text>
         </View>
 
@@ -948,8 +1109,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               style={styles.warningCardInline}
             >
               <View style={styles.warningContent}>
-                <Ionicons name="alert-circle-outline" size={rf(18)} color={ResponsiveTheme.colors.warning} />
-                <Text style={styles.warningText} numberOfLines={2} ellipsizeMode="tail">
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.warning}
+                />
+                <Text
+                  style={styles.warningText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   At least one meal type must remain enabled
                 </Text>
               </View>
@@ -967,65 +1136,108 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             snapToAlignment="start"
             pagingEnabled={false}
           >
-          {[
-            { key: 'breakfast_enabled', title: 'Breakfast', iconName: 'sunny-outline', description: 'Start your day right' },
-            { key: 'lunch_enabled', title: 'Lunch', iconName: 'partly-sunny-outline', description: 'Midday fuel' },
-            { key: 'dinner_enabled', title: 'Dinner', iconName: 'moon-outline', description: 'Evening nourishment' },
-            { key: 'snacks_enabled', title: 'Snacks', iconName: 'fast-food-outline', description: 'Healthy snacking' },
-          ].map((meal) => {
-            const isEnabled = formData[meal.key as keyof DietPreferencesData] as boolean;
-            const isLastEnabled = enabledCount === 1 && isEnabled;
+            {[
+              {
+                key: "breakfast_enabled",
+                title: "Breakfast",
+                iconName: "sunny-outline",
+                description: "Start your day right",
+              },
+              {
+                key: "lunch_enabled",
+                title: "Lunch",
+                iconName: "partly-sunny-outline",
+                description: "Midday fuel",
+              },
+              {
+                key: "dinner_enabled",
+                title: "Dinner",
+                iconName: "moon-outline",
+                description: "Evening nourishment",
+              },
+              {
+                key: "snacks_enabled",
+                title: "Snacks",
+                iconName: "fast-food-outline",
+                description: "Healthy snacking",
+              },
+            ].map((meal) => {
+              const isEnabled = formData[
+                meal.key as keyof DietPreferencesData
+              ] as boolean;
+              const isLastEnabled = enabledCount === 1 && isEnabled;
 
-            return (
-              <AnimatedPressable
-                key={meal.key}
-                onPress={() => !isLastEnabled && toggleMealPreference(meal.key as keyof DietPreferencesData)}
-                style={[
-                  styles.consistentCardItem,
-                  isLastEnabled && styles.consistentCardItemDisabled,
-                ]}
-                disabled={isLastEnabled}
-                scaleValue={0.97}
-              >
-                <View style={[
-                  styles.consistentCard,
-                  isEnabled && styles.consistentCardSelected,
-                  isLastEnabled && styles.consistentCardDisabled,
-                ]}>
-                  {/* Icon + Toggle row */}
-                  <View style={styles.consistentCardHeader}>
-                    <Ionicons name={meal.iconName as any} size={rf(22)} color={isEnabled ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
-                    <View style={[
-                      styles.miniToggle,
-                      isEnabled && styles.miniToggleActive,
-                    ]}>
-                      <View style={[
-                        styles.miniToggleThumb,
-                        isEnabled && styles.miniToggleThumbActive,
-                      ]} />
-                    </View>
-                  </View>
-                  {/* Title */}
-                  <Text
+              return (
+                <AnimatedPressable
+                  key={meal.key}
+                  onPress={() =>
+                    !isLastEnabled &&
+                    toggleMealPreference(meal.key as keyof DietPreferencesData)
+                  }
+                  style={
+                    isLastEnabled
+                      ? [
+                          styles.consistentCardItem,
+                          styles.consistentCardItemDisabled,
+                        ]
+                      : styles.consistentCardItem
+                  }
+                  disabled={isLastEnabled}
+                  scaleValue={0.97}
+                >
+                  <View
                     style={[
-                      styles.consistentCardTitle,
-                      isEnabled && styles.consistentCardTitleSelected,
+                      styles.consistentCard,
+                      isEnabled && styles.consistentCardSelected,
+                      isLastEnabled && styles.consistentCardDisabled,
                     ]}
-                    numberOfLines={1}
                   >
-                    {meal.title}
-                  </Text>
-                  {/* Description */}
-                  <Text style={styles.consistentCardDesc} numberOfLines={2}>
-                    {meal.description}
-                  </Text>
-                </View>
-              </AnimatedPressable>
-            );
-          })}
+                    {/* Icon + Toggle row */}
+                    <View style={styles.consistentCardHeader}>
+                      <Ionicons
+                        name={meal.iconName as any}
+                        size={rf(22)}
+                        color={
+                          isEnabled
+                            ? ResponsiveTheme.colors.primary
+                            : ResponsiveTheme.colors.textSecondary
+                        }
+                      />
+                      <View
+                        style={[
+                          styles.miniToggle,
+                          isEnabled && styles.miniToggleActive,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.miniToggleThumb,
+                            isEnabled && styles.miniToggleThumbActive,
+                          ]}
+                        />
+                      </View>
+                    </View>
+                    {/* Title */}
+                    <Text
+                      style={[
+                        styles.consistentCardTitle,
+                        isEnabled && styles.consistentCardTitleSelected,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {meal.title}
+                    </Text>
+                    {/* Description */}
+                    <Text style={styles.consistentCardDesc} numberOfLines={2}>
+                      {meal.description}
+                    </Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
           </ScrollView>
         </View>
-        
+
         {!formData.breakfast_enabled && (
           <View style={styles.edgeToEdgeContentPadded}>
             <GlassCard
@@ -1036,8 +1248,16 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               style={styles.infoCardInline}
             >
               <View style={styles.infoContent}>
-                <Ionicons name="bulb-outline" size={rf(18)} color={ResponsiveTheme.colors.primary} />
-                <Text style={styles.infoText} numberOfLines={2} ellipsizeMode="tail">
+                <Ionicons
+                  name="bulb-outline"
+                  size={rf(18)}
+                  color={ResponsiveTheme.colors.primary}
+                />
+                <Text
+                  style={styles.infoText}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   Meal plans will only include lunch and dinner
                 </Text>
               </View>
@@ -1058,13 +1278,23 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Cooking Preferences</Text>
-        <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">Help us suggest recipes that match your cooking style</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Cooking Preferences
+        </Text>
+        <Text
+          style={styles.sectionSubtitle}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          Help us suggest recipes that match your cooking style
+        </Text>
       </View>
-      
+
       {/* Cooking Skill Level */}
       <View style={styles.edgeToEdgeContentPadded}>
-        <Text style={styles.fieldLabel} numberOfLines={1}>Cooking Skill Level</Text>
+        <Text style={styles.fieldLabel} numberOfLines={1}>
+          Cooking Skill Level
+        </Text>
       </View>
       <View style={styles.scrollContainerInset}>
         <ScrollView
@@ -1082,42 +1312,68 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
               <AnimatedPressable
                 key={skill.level}
                 onPress={() => {
-                  updateField('cooking_skill_level', skill.level as DietPreferencesData['cooking_skill_level']);
-                  if (skill.level === 'not_applicable') {
-                    updateField('max_prep_time_minutes', null);
+                  updateField(
+                    "cooking_skill_level",
+                    skill.level as DietPreferencesData["cooking_skill_level"],
+                  );
+                  if (skill.level === "not_applicable") {
+                    updateField("max_prep_time_minutes", null);
                   } else if (formData.max_prep_time_minutes === null) {
-                    updateField('max_prep_time_minutes', 30);
+                    updateField("max_prep_time_minutes", 30);
                   }
                 }}
                 style={styles.consistentCardItem}
                 scaleValue={0.97}
               >
-                <View style={[
-                  styles.consistentCard,
-                  isSelected && styles.consistentCardSelected,
-                ]}>
+                <View
+                  style={[
+                    styles.consistentCard,
+                    isSelected && styles.consistentCardSelected,
+                  ]}
+                >
                   {/* Icon */}
                   <View style={styles.consistentCardIconCenter}>
-                    <Ionicons name={skill.iconName as any} size={rf(22)} color={isSelected ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary} />
+                    <Ionicons
+                      name={skill.iconName as any}
+                      size={rf(22)}
+                      color={
+                        isSelected
+                          ? ResponsiveTheme.colors.primary
+                          : ResponsiveTheme.colors.textSecondary
+                      }
+                    />
                   </View>
                   {/* Title */}
-                  <Text style={[
-                    styles.consistentCardTitle,
-                    isSelected && styles.consistentCardTitleSelected,
-                  ]} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.consistentCardTitle,
+                      isSelected && styles.consistentCardTitleSelected,
+                    ]}
+                    numberOfLines={1}
+                  >
                     {skill.title}
                   </Text>
                   {/* Description */}
-                  <Text style={styles.consistentCardDesc} numberOfLines={2} ellipsizeMode="tail">
+                  <Text
+                    style={styles.consistentCardDesc}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
                     {skill.description}
                   </Text>
                   {/* Selection indicator */}
-                  <View style={[
-                    styles.consistentCardIndicator,
-                    isSelected && styles.consistentCardIndicatorSelected,
-                  ]}>
+                  <View
+                    style={[
+                      styles.consistentCardIndicator,
+                      isSelected && styles.consistentCardIndicatorSelected,
+                    ]}
+                  >
                     {isSelected && (
-                      <Ionicons name="checkmark" size={rf(12)} color={ResponsiveTheme.colors.white} />
+                      <Ionicons
+                        name="checkmark"
+                        size={rf(12)}
+                        color={ResponsiveTheme.colors.white}
+                      />
                     )}
                   </View>
                 </View>
@@ -1126,15 +1382,15 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           })}
         </ScrollView>
       </View>
-      
+
       {/* Max Prep Time */}
       <View style={styles.edgeToEdgeContentPadded}>
         <Text style={styles.fieldLabel}>
-          {formData.cooking_skill_level === 'not_applicable' 
-            ? 'Maximum Cooking Time: Not Applicable'
+          {formData.cooking_skill_level === "not_applicable"
+            ? "Maximum Cooking Time: Not Applicable"
             : `Maximum Cooking Time: ${formData.max_prep_time_minutes ?? 30} minutes`}
         </Text>
-        {formData.cooking_skill_level === 'not_applicable' ? (
+        {formData.cooking_skill_level === "not_applicable" ? (
           <GlassCard
             elevation={1}
             blurIntensity="light"
@@ -1143,17 +1399,28 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             style={styles.disabledCardInline}
           >
             <View style={styles.disabledContent}>
-              <Ionicons name="information-circle-outline" size={rf(16)} color={ResponsiveTheme.colors.textSecondary} />
-              <Text style={styles.disabledText} numberOfLines={3} ellipsizeMode="tail">
-                This field is not applicable since your meals are prepared by others.
-                We'll suggest meals based on your dietary preferences without cooking time constraints.
+              <Ionicons
+                name="information-circle-outline"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.textSecondary}
+              />
+              <Text
+                style={styles.disabledText}
+                numberOfLines={3}
+                ellipsizeMode="tail"
+              >
+                This field is not applicable since your meals are prepared by
+                others. We'll suggest meals based on your dietary preferences
+                without cooking time constraints.
               </Text>
             </View>
           </GlassCard>
         ) : (
           <Slider
             value={formData.max_prep_time_minutes}
-            onValueChange={(value) => updateField('max_prep_time_minutes', value)}
+            onValueChange={(value) =>
+              updateField("max_prep_time_minutes", value)
+            }
             minimumValue={15}
             maximumValue={120}
             step={15}
@@ -1162,14 +1429,24 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           />
         )}
       </View>
-      
+
       {/* Budget Level */}
       <View style={styles.edgeToEdgeContentPadded}>
         <Slider
-          value={formData.budget_level === 'low' ? 1 : formData.budget_level === 'medium' ? 2 : 3}
+          value={
+            formData.budget_level === "low"
+              ? 1
+              : formData.budget_level === "medium"
+                ? 2
+                : 3
+          }
           onValueChange={(value) => {
-            const budgetLevel = value === 1 ? 'low' : value === 2 ? 'medium' : 'high';
-            updateField('budget_level', budgetLevel as DietPreferencesData['budget_level']);
+            const budgetLevel =
+              value === 1 ? "low" : value === 2 ? "medium" : "high";
+            updateField(
+              "budget_level",
+              budgetLevel as DietPreferencesData["budget_level"],
+            );
           }}
           minimumValue={1}
           maximumValue={3}
@@ -1177,9 +1454,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           label="Food Budget"
           showTooltip={true}
           formatValue={(val) => {
-            if (val === 1) return 'Budget ($50-100/wk)';
-            if (val === 2) return 'Moderate ($100-200/wk)';
-            return 'Premium ($200+/wk)';
+            if (val === 1) return "Budget ($50-100/wk)";
+            if (val === 2) return "Moderate ($100-200/wk)";
+            return "Premium ($200+/wk)";
           }}
         />
       </View>
@@ -1191,9 +1468,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     // Helper to format category title
     const formatCategoryTitle = (category: string) => {
       return category
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+        .split("_")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
     };
 
     return (
@@ -1205,24 +1482,32 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         borderRadius="none"
       >
         <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>Health Habits</Text>
-          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.sectionTitle} numberOfLines={1}>
+            Health Habits
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             Tap to toggle your current habits
           </Text>
         </View>
-        
+
         <View style={styles.edgeToEdgeContentPadded}>
           {Object.entries(HEALTH_HABITS).map(([category, habits]) => (
             <View key={category} style={styles.habitCategoryCompact}>
               <Text style={styles.habitCategoryTitleCompact}>
                 {formatCategoryTitle(category)}
               </Text>
-              
+
               {/* 2-Column Grid */}
               <View style={styles.habitPillGrid}>
                 {habits.map((habit) => {
-                  const isActive = formData[habit.key as keyof DietPreferencesData] as boolean;
-                  
+                  const isActive = formData[
+                    habit.key as keyof DietPreferencesData
+                  ] as boolean;
+
                   return (
                     <CompactTogglePill
                       key={habit.key}
@@ -1230,8 +1515,14 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
                       iconName={habit.iconName}
                       title={habit.title}
                       description={habit.description}
-                      onToggle={() => toggleHealthHabit(habit.key as keyof DietPreferencesData)}
-                      onInfoPress={() => showInfoTooltip(habit.title, habit.description)}
+                      onToggle={() =>
+                        toggleHealthHabit(
+                          habit.key as keyof DietPreferencesData,
+                        )
+                      }
+                      onInfoPress={() =>
+                        showInfoTooltip(habit.title, habit.description)
+                      }
                     />
                   );
                 })}
@@ -1253,16 +1544,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Allergies & Dietary Restrictions</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Allergies & Dietary Restrictions
+        </Text>
       </View>
-      
+
       <View style={styles.edgeToEdgeContentPadded}>
         {/* Allergies */}
         <View style={styles.allergyFieldInline}>
           <MultiSelectWithCustom
             options={ALLERGY_OPTIONS}
             selectedValues={formData.allergies}
-            onSelectionChange={(values) => updateField('allergies', values)}
+            onSelectionChange={(values) => updateField("allergies", values)}
             label="Food Allergies"
             placeholder="Select any food allergies"
             searchable={true}
@@ -1271,13 +1564,13 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             customPlaceholder="Enter your specific allergy"
           />
         </View>
-        
+
         {/* Dietary Restrictions */}
         <View style={styles.allergyFieldInline}>
           <MultiSelectWithCustom
             options={RESTRICTION_OPTIONS}
             selectedValues={formData.restrictions}
-            onSelectionChange={(values) => updateField('restrictions', values)}
+            onSelectionChange={(values) => updateField("restrictions", values)}
             label="Dietary Restrictions (Optional)"
             placeholder="Select any dietary restrictions"
             searchable={true}
@@ -1294,7 +1587,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
-  
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Info Tooltip Modal */}
@@ -1305,17 +1598,24 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         benefits={tooltipModal.benefits}
         onClose={hideInfoTooltip}
       />
-      
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Hero Section with Background Image */}
         <HeroSection
-          image={{ uri: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80' }}
+          image={{
+            uri: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
+          }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
           minHeight={160}
           maxHeight={240}
         >
-          <Text style={styles.title} numberOfLines={1}>What are your diet preferences?</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            What are your diet preferences?
+          </Text>
           <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
             Help us personalize your meal recommendations and nutrition plan
           </Text>
@@ -1323,12 +1623,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
-              <Text style={styles.autoSaveText} numberOfLines={1}>Saving...</Text>
+              <Ionicons
+                name="cloud-upload-outline"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.success}
+              />
+              <Text style={styles.autoSaveText} numberOfLines={1}>
+                Saving...
+              </Text>
             </View>
           )}
         </HeroSection>
-        
+
         {/* Form Sections */}
         <View style={styles.content}>
           <AnimatedSection delay={0}>
@@ -1355,7 +1661,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             {renderAllergiesAndRestrictionsSection()}
           </AnimatedSection>
         </View>
-        
+
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
@@ -1368,12 +1674,22 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             >
               <View style={styles.validationTitleContainer}>
                 <Ionicons
-                  name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
+                  name={
+                    validationResult.is_valid
+                      ? "checkmark-circle"
+                      : "alert-circle"
+                  }
                   size={rf(20)}
-                  color={validationResult.is_valid ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                  color={
+                    validationResult.is_valid
+                      ? ResponsiveTheme.colors.success
+                      : ResponsiveTheme.colors.warning
+                  }
                 />
                 <Text style={styles.validationTitle} numberOfLines={1}>
-                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                  {validationResult.is_valid
+                    ? "Ready to Continue"
+                    : "Please Complete"}
                 </Text>
               </View>
               <Text style={styles.validationPercentage} numberOfLines={1}>
@@ -1393,7 +1709,9 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
 
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>Recommendations:</Text>
+                  <Text style={styles.validationWarningTitle}>
+                    Recommendations:
+                  </Text>
                   {validationResult.warnings.map((warning) => (
                     <Text key={warning} style={styles.validationWarningText}>
                       • {warning}
@@ -1405,7 +1723,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </View>
         )}
       </ScrollView>
-      
+
       {/* Footer Navigation */}
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
@@ -1414,10 +1732,14 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             onPress={onBack}
             scaleValue={0.96}
           >
-            <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="chevron-back"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.primary}
+            />
             <Text style={styles.backButtonText}>Back</Text>
           </AnimatedPressable>
-          
+
           <AnimatedPressable
             style={styles.nextButtonCompact}
             onPress={() => {
@@ -1433,8 +1755,18 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
             }}
             scaleValue={0.96}
           >
-            <Text style={styles.nextButtonText}>{isEditingFromReview ? 'Review' : 'Next'}</Text>
-            <Ionicons name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"} size={rf(18)} color="#FFFFFF" />
+            <Text style={styles.nextButtonText}>
+              {isEditingFromReview ? "Review" : "Next"}
+            </Text>
+            <Ionicons
+              name={
+                isEditingFromReview
+                  ? "checkmark-circle-outline"
+                  : "chevron-forward"
+              }
+              size={rf(18)}
+              color="#FFFFFF"
+            />
           </AnimatedPressable>
         </View>
       </View>
@@ -1449,7 +1781,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
 
   scrollView: {
@@ -1470,26 +1802,26 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xxl,
-    fontWeight: '700' as const,
+    fontWeight: "700" as const,
     color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
     letterSpacing: -0.5,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: "rgba(255, 255, 255, 0.85)",
     lineHeight: ResponsiveTheme.fontSize.md * 1.5,
     marginBottom: ResponsiveTheme.spacing.md,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
 
   autoSaveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -1575,8 +1907,8 @@ const styles = StyleSheet.create({
 
   // Container that clips the scroll content within the card bounds
   scrollClipContainer: {
-    width: '100%',
-    overflow: 'hidden',
+    width: "100%",
+    overflow: "hidden",
     marginTop: ResponsiveTheme.spacing.sm,
     // Adding a tiny borderRadius ensures overflow: hidden works on Android
     borderRadius: 1,
@@ -1593,7 +1925,7 @@ const styles = StyleSheet.create({
   scrollContainerInset: {
     marginHorizontal: ResponsiveTheme.spacing.lg,
     marginTop: ResponsiveTheme.spacing.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -1621,9 +1953,9 @@ const styles = StyleSheet.create({
   // Info Tooltip Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
@@ -1631,16 +1963,16 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     padding: ResponsiveTheme.spacing.xl,
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
 
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -1676,8 +2008,8 @@ const styles = StyleSheet.create({
   },
 
   modalBenefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -1691,7 +2023,7 @@ const styles = StyleSheet.create({
   // ============================================================================
   // CONSISTENT CARD STYLES - Used for Diet Type, Meal Preferences, Cooking Skill
   // ============================================================================
-  
+
   consistentScroll: {
     marginTop: ResponsiveTheme.spacing.sm,
     marginHorizontal: -ResponsiveTheme.spacing.md,
@@ -1715,10 +2047,10 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     padding: ResponsiveTheme.spacing.sm,
     minHeight: rh(12),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   consistentCardSelected: {
@@ -1732,15 +2064,15 @@ const styles = StyleSheet.create({
   },
 
   consistentCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   consistentCardIconCenter: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -1748,7 +2080,7 @@ const styles = StyleSheet.create({
     fontSize: rf(11),
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -1759,7 +2091,7 @@ const styles = StyleSheet.create({
   consistentCardDesc: {
     fontSize: rf(9),
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(12),
   },
 
@@ -1768,10 +2100,10 @@ const styles = StyleSheet.create({
     height: rf(18),
     borderRadius: rf(9),
     borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "transparent",
+    backgroundColor: "transparent",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: ResponsiveTheme.spacing.xs,
   },
 
@@ -1787,8 +2119,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: 'transparent',
-    justifyContent: 'center',
+    borderColor: "transparent",
+    justifyContent: "center",
     paddingHorizontal: 2,
   },
 
@@ -1805,7 +2137,7 @@ const styles = StyleSheet.create({
   },
 
   miniToggleThumbActive: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
 
   // Diet Readiness Compact Grid
@@ -1839,17 +2171,17 @@ const styles = StyleSheet.create({
   },
 
   dietTypeContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
 
   dietTypeInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: ResponsiveTheme.spacing.xs,
-    width: '100%',
+    width: "100%",
   },
 
   dietTypeIcon: {
@@ -1860,7 +2192,7 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
 
@@ -1871,7 +2203,7 @@ const styles = StyleSheet.create({
   dietTypeDescription: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(14),
     flexShrink: 1,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
@@ -1897,20 +2229,20 @@ const styles = StyleSheet.create({
 
   dietReadinessContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
   },
 
   dietReadinessProgressContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
     flexShrink: 0,
   },
 
   dietReadinessProgressIconContainer: {
-    position: 'absolute',
+    position: "absolute",
   },
 
   dietReadinessContentContainer: {
@@ -1919,8 +2251,8 @@ const styles = StyleSheet.create({
   },
 
   dietReadinessTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -1994,24 +2326,24 @@ const styles = StyleSheet.create({
   },
 
   mealPreferenceCardContent: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
 
   mealPreferenceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
     marginBottom: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
   },
 
   mealPreferenceTitle: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: rh(0.5),
   },
 
@@ -2023,7 +2355,7 @@ const styles = StyleSheet.create({
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(14),
-    textAlign: 'center',
+    textAlign: "center",
     paddingHorizontal: ResponsiveTheme.spacing.xs,
   },
 
@@ -2057,9 +2389,9 @@ const styles = StyleSheet.create({
   },
 
   skillLevelContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
 
@@ -2069,9 +2401,9 @@ const styles = StyleSheet.create({
 
   skillLevelTitle: {
     fontSize: rf(13),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2083,7 +2415,7 @@ const styles = StyleSheet.create({
   skillLevelDescription: {
     fontSize: rf(10),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(14),
     paddingHorizontal: ResponsiveTheme.spacing.xs,
   },
@@ -2094,12 +2426,12 @@ const styles = StyleSheet.create({
   },
 
   prepTimeSlider: {
-    width: '100%',
+    width: "100%",
     marginTop: ResponsiveTheme.spacing.sm,
   },
 
   budgetSlider: {
-    width: '100%',
+    width: "100%",
     marginTop: ResponsiveTheme.spacing.sm,
   },
 
@@ -2109,9 +2441,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   prepTimeOptionSelected: {
@@ -2131,25 +2463,25 @@ const styles = StyleSheet.create({
   },
   disabledCard: {
     padding: rp(15),
-    backgroundColor: '#F5F5F5',
-    borderColor: '#E0E0E0',
+    backgroundColor: "#F5F5F5",
+    borderColor: "#E0E0E0",
     marginTop: rp(10),
   },
   disabledContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: ResponsiveTheme.spacing.xs,
   },
   disabledText: {
     flex: 1,
     fontSize: rf(14),
-    color: '#666666',
+    color: "#666666",
     lineHeight: rp(20),
   },
 
   // Budget Section
   budgetGrid: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -2167,7 +2499,7 @@ const styles = StyleSheet.create({
   },
 
   budgetContent: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   budgetIcon: {
@@ -2189,14 +2521,14 @@ const styles = StyleSheet.create({
   budgetDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   budgetRange: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   // Health Habits Section - Compact Single Column Layout
@@ -2209,7 +2541,7 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
 
@@ -2219,14 +2551,14 @@ const styles = StyleSheet.create({
 
   // Compact Toggle Pill Styles - Full width, single row
   compactPillContainer: {
-    width: '100%',
+    width: "100%",
   },
 
   compactPill: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
@@ -2237,8 +2569,8 @@ const styles = StyleSheet.create({
   },
 
   compactPillRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -2246,9 +2578,9 @@ const styles = StyleSheet.create({
     width: rf(24),
     height: rf(24),
     borderRadius: rf(12),
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   compactPillTitle: {
@@ -2274,10 +2606,10 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
 
   compactToggleThumb: {
@@ -2289,16 +2621,16 @@ const styles = StyleSheet.create({
 
   // Legacy - kept for reference
   compactPillHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   compactPillToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   compactPillStatus: {
@@ -2317,7 +2649,7 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
 
   habitsList: {
@@ -2342,9 +2674,9 @@ const styles = StyleSheet.create({
   },
 
   habitHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -2380,8 +2712,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
-    borderColor: 'transparent',
-    justifyContent: 'center',
+    borderColor: "transparent",
+    justifyContent: "center",
     paddingHorizontal: 2,
   },
 
@@ -2401,11 +2733,11 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 10,
     backgroundColor: ResponsiveTheme.colors.white,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
 
   toggleThumbActive: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
   },
 
   // Allergies Section
@@ -2423,10 +2755,10 @@ const styles = StyleSheet.create({
   },
 
   warningContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
   warningText: {
@@ -2444,10 +2776,10 @@ const styles = StyleSheet.create({
   },
 
   infoContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
   infoText: {
@@ -2467,8 +2799,8 @@ const styles = StyleSheet.create({
   },
 
   validationTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2537,15 +2869,15 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: ResponsiveTheme.spacing.md,
   },
 
   backButtonCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -2560,8 +2892,8 @@ const styles = StyleSheet.create({
   },
 
   nextButtonCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -2572,7 +2904,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 
   nextButtonDisabled: {

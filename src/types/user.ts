@@ -8,7 +8,7 @@ export interface PersonalInfo {
 
   email?: string; // Optional for existing users, required for new signups
   age: number; // INTEGER type to match database
-  gender: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  gender: "male" | "female" | "other" | "prefer_not_to_say";
 
   // Location (3-tier system)
   country: string; // REQUIRED
@@ -20,12 +20,17 @@ export interface PersonalInfo {
   sleep_time: string; // TIME format "HH:MM" - REQUIRED
 
   // Occupation (for activity level guidance)
-  occupation_type: 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active'; // REQUIRED
+  occupation_type:
+    | "desk_job"
+    | "light_active"
+    | "moderate_active"
+    | "heavy_labor"
+    | "very_active"; // REQUIRED
 
   // Legacy/UI preferences
   profile_picture?: string;
   dark_mode?: boolean;
-  units?: 'metric' | 'imperial';
+  units?: "metric" | "imperial";
   notifications_enabled?: boolean;
 
   // Backward compatibility - height/weight (now in BodyMetrics)
@@ -57,7 +62,7 @@ export interface BodyMetrics {
 
   // AI analysis results (only if photos provided)
   ai_estimated_body_fat?: number; // DECIMAL(4,2)
-  ai_body_type?: 'ectomorph' | 'mesomorph' | 'endomorph';
+  ai_body_type?: "ectomorph" | "mesomorph" | "endomorph";
   ai_confidence_score?: number; // INTEGER, 0-100
 
   // Medical information
@@ -71,7 +76,7 @@ export interface BodyMetrics {
   breastfeeding_status: boolean; // REQUIRED
 
   // Stress level (affects deficit limits and recovery)
-  stress_level?: 'low' | 'moderate' | 'high';
+  stress_level?: "low" | "moderate" | "high";
 
   // Calculated values (auto-computed)
   bmi?: number; // DECIMAL(4,2)
@@ -104,7 +109,7 @@ export interface FitnessGoals {
 
   // Optional extended fields used by exercise filtering
   preferred_equipment?: string[];
-  target_areas?: ('full_body' | 'upper_body' | 'lower_body' | 'core')[];
+  target_areas?: ("full_body" | "upper_body" | "lower_body" | "core")[];
 
   // Backward compatibility - computed from snake_case fields
   primaryGoals?: string[];
@@ -114,7 +119,7 @@ export interface FitnessGoals {
 // Diet Preferences (from diet_preferences table)
 export interface DietPreferences {
   // Basic diet info
-  diet_type: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian'; // REQUIRED (snake_case)
+  diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian"; // REQUIRED (snake_case)
   allergies: string[]; // TEXT[] - REQUIRED (can be empty array)
   restrictions: string[]; // TEXT[] - REQUIRED (can be empty array)
 
@@ -133,9 +138,13 @@ export interface DietPreferences {
   snacks_enabled: boolean;
 
   // Cooking preferences
-  cooking_skill_level: 'beginner' | 'intermediate' | 'advanced' | 'not_applicable';
+  cooking_skill_level:
+    | "beginner"
+    | "intermediate"
+    | "advanced"
+    | "not_applicable";
   max_prep_time_minutes: number | null; // 5-180, null when not_applicable
-  budget_level: 'low' | 'medium' | 'high';
+  budget_level: "low" | "medium" | "high";
 
   // Health habits (14 boolean fields)
   // Hydration
@@ -163,15 +172,16 @@ export interface DietPreferences {
 
 export interface WorkoutPreferences {
   // ✅ Fixed: Use database field names (snake_case) to match workout_preferences table
-  location: 'home' | 'gym' | 'both';
+  location: "home" | "gym" | "both";
   equipment: string[];
   time_preference: number; // INTEGER (minutes) - database field name
-  intensity: 'beginner' | 'intermediate' | 'advanced';
+  intensity: "beginner" | "intermediate" | "advanced";
   workout_types: string[]; // TEXT[] - database field name
   primary_goals: string[]; // TEXT[] - database field name
   activity_level: string; // TEXT - database field name
   workout_frequency_per_week?: number; // INTEGER - how many days per week
   preferred_workout_times?: string[]; // TEXT[] - e.g., ['monday', 'wednesday', 'friday']
+  prefers_variety?: boolean; // Whether user prefers variety in workouts
 
   // Backward compatibility - computed from snake_case fields
   timePreference?: number;
@@ -199,7 +209,7 @@ export interface User {
 export interface UserProfile extends User {
   profilePicture?: string;
   preferences: {
-    units: 'metric' | 'imperial';
+    units: "metric" | "imperial";
     notifications: boolean;
     darkMode: boolean;
   };
@@ -208,6 +218,7 @@ export interface UserProfile extends User {
     totalCaloriesBurned: number;
     currentStreak: number;
     longestStreak: number;
+    achievements?: any[];
   };
   // ✅ NEW: Body metrics from body_analysis table
   bodyMetrics?: BodyMetrics;
@@ -238,16 +249,16 @@ export interface OnboardingData {
   personalInfo: PersonalInfo;
   fitnessGoals: FitnessGoals;
   dietPreferences?: {
-    dietType: 'vegetarian' | 'vegan' | 'non-veg' | 'pescatarian';
+    dietType: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
     allergies: string[];
     cuisinePreferences: string[];
     restrictions: string[];
   };
   workoutPreferences?: {
-    location: 'home' | 'gym' | 'both';
+    location: "home" | "gym" | "both";
     equipment: string[];
     time_preference: number;
-    intensity: 'beginner' | 'intermediate' | 'advanced';
+    intensity: "beginner" | "intermediate" | "advanced";
     workout_types: string[];
     primary_goals: string[];
     activity_level: string;
@@ -270,25 +281,30 @@ export interface OnboardingData {
 }
 
 // Activity levels
-export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'extreme';
+export type ActivityLevel =
+  | "sedentary"
+  | "light"
+  | "moderate"
+  | "active"
+  | "extreme";
 
 // Gender options
-export type Gender = 'male' | 'female' | 'other';
+export type Gender = "male" | "female" | "other";
 
 // Experience levels
-export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
+export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 
 // Fitness goals
 export type FitnessGoal =
-  | 'weight_loss'
-  | 'muscle_gain'
-  | 'strength'
-  | 'endurance'
-  | 'flexibility'
-  | 'general_fitness';
+  | "weight_loss"
+  | "muscle_gain"
+  | "strength"
+  | "endurance"
+  | "flexibility"
+  | "general_fitness";
 
 // Time commitment options
-export type TimeCommitment = '15-30' | '30-45' | '45-60' | '60+';
+export type TimeCommitment = "15-30" | "30-45" | "45-60" | "60+";
 
 // API request types used by userProfile service/store
 export interface CreateProfileRequest extends PersonalInfo {}

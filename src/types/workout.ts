@@ -83,6 +83,8 @@ export interface Workout {
   periodizationWeek?: number; // For progressive programs
   // Additional properties used in FitnessScreen
   dayOfWeek?: string; // 'monday', 'tuesday', etc.
+  isRestDay?: boolean;
+  completed?: boolean;
 }
 
 export interface WorkoutPlan {

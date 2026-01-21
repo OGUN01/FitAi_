@@ -2,19 +2,13 @@
 // This file exports all components for easy importing throughout the app
 
 // UI Components
-export * from './ui';
-
-// Form Components
-export * from './forms';
+export * from "./ui";
 
 // Chart Components
-export * from './charts';
-
-// Workout Components
-export * from './workout';
+export * from "./charts";
 
 // Diet Components
-export * from './diet';
+export * from "./diet";
 
-// Common Components
-export * from './common';
+// Note: Form, workout, and common component barrel exports removed
+// Import directly from specific component files instead
