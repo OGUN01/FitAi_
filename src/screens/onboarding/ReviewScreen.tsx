@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
 
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     alignItems: "flex-start",
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
 
   completionCard: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: `${ResponsiveTheme.colors.success}10`,
     borderColor: ResponsiveTheme.colors.success,
     borderWidth: 1,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
 
   incompleteCard: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: `${ResponsiveTheme.colors.warning}10`,
     borderColor: ResponsiveTheme.colors.warning,
     borderWidth: 1,

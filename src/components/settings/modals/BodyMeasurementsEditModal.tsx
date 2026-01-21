@@ -45,8 +45,8 @@ export const BodyMeasurementsEditModal: React.FC<
   useEffect(() => {
     if (visible && profile?.personalInfo) {
       const info = profile.personalInfo;
-      setWeight(info.weight || "");
-      setHeight(info.height || "");
+      setWeight(String(info.weight || ""));
+      setHeight(String(info.height || ""));
       setErrors({});
     }
   }, [visible, profile]);
@@ -109,12 +109,24 @@ export const BodyMeasurementsEditModal: React.FC<
       // Merge with existing personal info
       const updatedInfo: PersonalInfo = {
         ...profile?.personalInfo,
-        name: profile?.personalInfo?.name || "",
-        age: profile?.personalInfo?.age || "",
-        gender: profile?.personalInfo?.gender || "",
-        activityLevel: profile?.personalInfo?.activityLevel || "",
-        height,
-        weight,
+        first_name: profile?.personalInfo?.first_name || "",
+        last_name: profile?.personalInfo?.last_name || "",
+        age:
+          typeof profile?.personalInfo?.age === "number"
+            ? profile.personalInfo.age
+            : 18,
+        gender: (profile?.personalInfo?.gender || "male") as
+          | "male"
+          | "female"
+          | "other"
+          | "prefer_not_to_say",
+        country: profile?.personalInfo?.country || "",
+        state: profile?.personalInfo?.state || "",
+        wake_time: profile?.personalInfo?.wake_time || "07:00",
+        sleep_time: profile?.personalInfo?.sleep_time || "23:00",
+        occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
+        height: parseFloat(height),
+        weight: parseFloat(weight),
       };
 
       updatePersonalInfo(updatedInfo);
@@ -131,7 +143,10 @@ export const BodyMeasurementsEditModal: React.FC<
   const hasChanges = useCallback(() => {
     if (!profile?.personalInfo) return true;
     const info = profile.personalInfo;
-    return height !== (info.height || "") || weight !== (info.weight || "");
+    return (
+      height !== String(info.height || "") ||
+      weight !== String(info.weight || "")
+    );
   }, [height, weight, profile]);
 
   return (
@@ -286,21 +301,21 @@ const styles = StyleSheet.create({
   },
   bmiContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   bmiLeft: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
   bmiIcon: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   bmiLabel: {
     fontSize: rf(12),
@@ -336,7 +351,7 @@ const styles = StyleSheet.create({
   },
   bmiScaleLabels: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     marginTop: 4,
     paddingHorizontal: 2,
   },

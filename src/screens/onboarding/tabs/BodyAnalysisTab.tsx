@@ -164,9 +164,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   // Form state
   const [formData, setFormData] = useState<BodyAnalysisData>({
     // Basic measurements (required) - NO DEFAULT VALUES, user must enter
-    height_cm: data?.height_cm,
-    current_weight_kg: data?.current_weight_kg,
-    target_weight_kg: data?.target_weight_kg,
+    height_cm: data?.height_cm ?? 0,
+    current_weight_kg: data?.current_weight_kg ?? 0,
+    target_weight_kg: data?.target_weight_kg ?? 0,
     target_timeline_weeks: data?.target_timeline_weeks ?? 12, // 12 weeks is reasonable default
 
     // Body composition (optional)
@@ -608,7 +608,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -827,7 +827,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -869,7 +869,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1036,7 +1036,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1203,7 +1203,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1559,7 +1559,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1652,7 +1652,12 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
           {/* Body Silhouette with Measurement Points */}
           <View style={styles.silhouetteContainer}>
             <BodySilhouette
-              gender={personalInfoData?.gender} // NO DEFAULT - require from PersonalInfoTab
+              gender={
+                personalInfoData?.gender === "other" ||
+                personalInfoData?.gender === "prefer_not_to_say"
+                  ? undefined
+                  : personalInfoData?.gender
+              } // NO DEFAULT - require from PersonalInfoTab
               measurements={{
                 height: formData.height_cm,
                 chest: formData.chest_cm,
@@ -1873,8 +1878,8 @@ const styles = StyleSheet.create({
   },
 
   silhouetteContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -1884,7 +1889,7 @@ const styles = StyleSheet.create({
 
   autoSaveIndicator: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     alignSelf: "flex-start",
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
@@ -2019,7 +2024,7 @@ const styles = StyleSheet.create({
   },
 
   bmiContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   bmiTitle: {
@@ -2031,7 +2036,7 @@ const styles = StyleSheet.create({
 
   bmiCategory: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -2063,8 +2068,8 @@ const styles = StyleSheet.create({
 
   weightLossRateRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -2076,7 +2081,7 @@ const styles = StyleSheet.create({
 
   measurementGuideContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -2128,7 +2133,7 @@ const styles = StyleSheet.create({
   ratioCard: {
     padding: ResponsiveTheme.spacing.md,
     marginTop: ResponsiveTheme.spacing.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   ratioTitle: {
@@ -2145,7 +2150,7 @@ const styles = StyleSheet.create({
 
   ratioStatusRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.xs,
   },
@@ -2161,7 +2166,7 @@ const styles = StyleSheet.create({
 
   instructionTitleContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -2181,13 +2186,13 @@ const styles = StyleSheet.create({
   // Compact Photo Analysis styles
   photoTitleRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
   },
 
   analyzeButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -2215,7 +2220,7 @@ const styles = StyleSheet.create({
 
   photoCardCompact: {
     width: rw(100),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   photoCardCompactInner: {
@@ -2227,8 +2232,8 @@ const styles = StyleSheet.create({
     borderColor: `${ResponsiveTheme.colors.primary}40`,
     borderStyle: "dashed",
     overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   photoCardCompactHasPhoto: {
@@ -2260,13 +2265,13 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.full,
     width: rw(22),
     height: rw(22),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   photoPlaceholderCompact: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     width: "100%",
     height: "100%",
   },
@@ -2302,7 +2307,7 @@ const styles = StyleSheet.create({
   // AI Results Compact styles
   aiResultsCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: `${ResponsiveTheme.colors.success}15`,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
@@ -2312,7 +2317,7 @@ const styles = StyleSheet.create({
 
   aiResultItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   aiResultLabel: {
@@ -2376,8 +2381,8 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.full,
     width: rw(24),
     height: rh(24),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   removePhotoText: {
@@ -2401,7 +2406,7 @@ const styles = StyleSheet.create({
 
   aiBadgeGradient: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingHorizontal: rp(8),
     paddingVertical: rp(4),
   },
@@ -2418,8 +2423,8 @@ const styles = StyleSheet.create({
   },
 
   photoPlaceholder: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     padding: ResponsiveTheme.spacing.md,
     minHeight: 120,
   },
@@ -2461,7 +2466,7 @@ const styles = StyleSheet.create({
 
   // AI Analysis
   analysisButtonContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginVertical: ResponsiveTheme.spacing.md,
   },
 
@@ -2479,8 +2484,8 @@ const styles = StyleSheet.create({
 
   analysisResultsTitleContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -2505,7 +2510,7 @@ const styles = StyleSheet.create({
   },
 
   analysisItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   analysisLabel: {
@@ -2536,7 +2541,7 @@ const styles = StyleSheet.create({
 
   reanalyzeButton: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     alignSelf: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
@@ -2578,7 +2583,7 @@ const styles = StyleSheet.create({
 
   medicalWarningTitleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -2604,7 +2609,7 @@ const styles = StyleSheet.create({
 
   checkbox: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   checkboxBox: {
@@ -2614,8 +2619,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginRight: ResponsiveTheme.spacing.sm,
   },
 
@@ -2695,7 +2700,7 @@ const styles = StyleSheet.create({
   },
 
   stressLevelContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   stressLevelIcon: {
@@ -2720,6 +2725,11 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
     textAlign: "center",
     lineHeight: rf(16),
+  },
+
+  stressSlider: {
+    width: "100%",
+    marginVertical: ResponsiveTheme.spacing.md,
   },
 
   infoCard: {
@@ -2774,7 +2784,7 @@ const styles = StyleSheet.create({
 
   metricCardCompact: {
     width: rw(100),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   metricCardInner: {
@@ -2783,8 +2793,8 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
@@ -2793,8 +2803,8 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -2832,7 +2842,7 @@ const styles = StyleSheet.create({
     minWidth: "45%",
     maxWidth: "48%",
     padding: ResponsiveTheme.spacing.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   resultLabel: {
@@ -2866,7 +2876,7 @@ const styles = StyleSheet.create({
 
   validationTitleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2939,14 +2949,14 @@ const styles = StyleSheet.create({
 
   buttonRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     gap: ResponsiveTheme.spacing.md,
   },
 
   backButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -2962,7 +2972,7 @@ const styles = StyleSheet.create({
 
   nextButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,

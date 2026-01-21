@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, TextInput, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface MetricInputProps {
   label: string;
@@ -33,7 +33,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
   unit,
   step = 1,
   showScale = true,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   style,
 }) => {
   const progress = useSharedValue(0);
@@ -58,7 +58,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
       progress.value,
       [0, 100],
       [0, rw(100) - rw(20) - rp(32)], // Total width minus indicator width minus padding
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
@@ -95,7 +95,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
   const markerStep = (maxValue - minValue) / (markerCount - 1);
 
   for (let i = 0; i < markerCount; i++) {
-    const markerValue = minValue + (markerStep * i);
+    const markerValue = minValue + markerStep * i;
     scaleMarkers.push({
       value: Math.round(markerValue),
       position: (i / (markerCount - 1)) * 100,
@@ -126,7 +126,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           {/* Scale Track */}
           <View style={styles.scaleTrack}>
             <LinearGradient
-              colors={['#E0E0E0', '#BDBDBD']}
+              colors={["#E0E0E0", "#BDBDBD"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.scaleTrackGradient}
@@ -134,9 +134,9 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           </View>
 
           {/* Progress Fill */}
-          <View style={[styles.scaleFill, { width: `${percentage}%` }]}>
+          <View style={[styles.scaleFill, { width: `${percentage}%` } as any]}>
             <LinearGradient
-              colors={gradient}
+              colors={gradient as any}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.scaleFillGradient}
@@ -146,7 +146,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
           {/* Animated Indicator */}
           <Animated.View style={[styles.indicator, animatedIndicatorStyle]}>
             <LinearGradient
-              colors={gradient}
+              colors={gradient as any}
               style={styles.indicatorGradient}
             />
             <View style={styles.indicatorTriangle} />
@@ -157,10 +157,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
             {scaleMarkers.map((marker, index) => (
               <View
                 key={index}
-                style={[
-                  styles.marker,
-                  { left: `${marker.position}%` },
-                ]}
+                style={[styles.marker, { left: `${marker.position}%` }]}
               >
                 <View style={styles.markerLine} />
                 <Text style={styles.markerText}>{marker.value}</Text>
@@ -183,7 +180,7 @@ export const MetricInput: React.FC<MetricInputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   label: {
@@ -194,8 +191,8 @@ const styles = StyleSheet.create({
   },
 
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -220,19 +217,19 @@ const styles = StyleSheet.create({
   },
 
   scaleContainer: {
-    position: 'relative',
+    position: "relative",
     height: rp(60),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   scaleTrack: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(20),
     left: rp(16),
     right: rp(16),
     height: rp(8),
     borderRadius: rp(4),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   scaleTrackGradient: {
@@ -240,12 +237,12 @@ const styles = StyleSheet.create({
   },
 
   scaleFill: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(20),
     left: rp(16),
     height: rp(8),
     borderRadius: rp(4),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   scaleFillGradient: {
@@ -253,19 +250,19 @@ const styles = StyleSheet.create({
   },
 
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(12),
     left: rp(16),
     width: rw(20),
     height: rp(24),
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 
   indicatorGradient: {
     width: rw(20),
     height: rp(20),
     borderRadius: rp(10),
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -275,28 +272,28 @@ const styles = StyleSheet.create({
   indicatorTriangle: {
     width: 0,
     height: 0,
-    backgroundColor: 'transparent',
-    borderStyle: 'solid',
+    backgroundColor: "transparent",
+    borderStyle: "solid",
     borderLeftWidth: rp(6),
     borderRightWidth: rp(6),
     borderTopWidth: rp(8),
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#4CAF50',
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#4CAF50",
     marginTop: -rp(2),
   },
 
   markersContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(40),
     left: rp(16),
     right: rp(16),
-    flexDirection: 'row',
+    flexDirection: "row",
   },
 
   marker: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center" as const,
     transform: [{ translateX: -rp(15) }],
   },
 
@@ -314,9 +311,9 @@ const styles = StyleSheet.create({
   },
 
   valueDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,

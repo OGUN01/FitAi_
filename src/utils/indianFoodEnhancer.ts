@@ -1,7 +1,10 @@
-import { RecognizedFood } from '../services/foodRecognitionService';
-import { INDIAN_FOOD_DATABASE, IndianFoodData } from '../data/indianFoodDatabase';
-import { REGIONAL_CUISINE_DATA } from '../data/regionalCuisineData';
-import { TRADITIONAL_SERVING_SIZES } from '../data/traditionalServingSizes';
+import { RecognizedFood } from "../services/foodRecognitionService";
+import {
+  INDIAN_FOOD_DATABASE,
+  IndianFoodData,
+} from "../data/indianFoodDatabase";
+import { REGIONAL_CUISINE_DATA } from "../data/regionalCuisineData";
+import { TRADITIONAL_SERVING_SIZES } from "../data/traditionalServingSizes";
 
 /**
  * Indian Food Enhancer
@@ -31,14 +34,19 @@ export class IndianFoodEnhancer {
       }
     }
 
-    console.log(`✅ Enhanced ${enhancedFoods.length} Indian foods with specialized database`);
+    console.log(
+      `✅ Enhanced ${enhancedFoods.length} Indian foods with specialized database`,
+    );
     return enhancedFoods;
   }
 
   /**
    * Enhance individual Indian food item
    */
-  private async enhanceIndividualFood(geminiFood: any, foodType: any): Promise<RecognizedFood> {
+  private async enhanceIndividualFood(
+    geminiFood: any,
+    foodType: any,
+  ): Promise<RecognizedFood> {
     const foodName = geminiFood.name.toLowerCase();
 
     // Step 1: Match against static Indian food database
@@ -52,11 +60,15 @@ export class IndianFoodEnhancer {
     const spiceLevel = this.detectSpiceLevel(geminiFood, region);
 
     // Step 4: Calculate traditional serving size
-    const traditionalServing = this.calculateTraditionalServing(foodName, region);
+    const traditionalServing = this.calculateTraditionalServing(
+      foodName,
+      region,
+    );
 
     // Step 5: Apply regional and cooking corrections
     const correctedNutrition = this.applyCorrections({
-      baseNutrition: dbMatch?.nutritionPer100g || this.extractGeminiNutrition(geminiFood),
+      baseNutrition:
+        dbMatch?.nutritionPer100g || this.extractGeminiNutrition(geminiFood),
       region,
       cookingMethod,
       spiceLevel,
@@ -67,22 +79,56 @@ export class IndianFoodEnhancer {
     const enhancedFood: RecognizedFood = {
       id: `indian_food_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: this.standardizeFoodName(geminiFood.name),
-      hindiName: dbMatch?.hindiName,
-      regionalName: dbMatch?.regionalName,
+      localName: dbMatch?.hindiName,
       category: this.categorizeFood(foodName),
-      cuisine: 'indian',
-      region,
-      spiceLevel,
-      cookingMethod,
-      portionSize: {
-        estimatedGrams: geminiFood.estimatedGrams || traditionalServing,
-        confidence: dbMatch ? 90 : geminiFood.confidence || 70,
-        servingType: this.determineServingType(geminiFood.estimatedGrams || traditionalServing),
+      cuisine: "indian",
+      estimatedGrams: geminiFood.estimatedGrams || traditionalServing,
+      servingDescription: this.determineServingType(
+        geminiFood.estimatedGrams || traditionalServing,
+      ),
+      nutrition: {
+        calories: correctedNutrition.calories,
+        protein: correctedNutrition.protein,
+        carbs: correctedNutrition.carbs,
+        fat: correctedNutrition.fat,
+        fiber: correctedNutrition.fiber,
       },
-      nutrition: correctedNutrition,
-      ingredients: this.enhanceIngredients(geminiFood.ingredients || [], foodName, region),
+      nutritionPer100g: {
+        calories: Math.round(
+          (correctedNutrition.calories /
+            (geminiFood.estimatedGrams || traditionalServing)) *
+            100,
+        ),
+        protein:
+          Math.round(
+            (correctedNutrition.protein /
+              (geminiFood.estimatedGrams || traditionalServing)) *
+              100 *
+              10,
+          ) / 10,
+        carbs:
+          Math.round(
+            (correctedNutrition.carbs /
+              (geminiFood.estimatedGrams || traditionalServing)) *
+              100 *
+              10,
+          ) / 10,
+        fat:
+          Math.round(
+            (correctedNutrition.fat /
+              (geminiFood.estimatedGrams || traditionalServing)) *
+              100 *
+              10,
+          ) / 10,
+        fiber:
+          Math.round(
+            (correctedNutrition.fiber /
+              (geminiFood.estimatedGrams || traditionalServing)) *
+              100 *
+              10,
+          ) / 10,
+      },
       confidence: this.calculateConfidence(dbMatch, geminiFood, region),
-      enhancementSource: dbMatch ? 'indian_db' : 'gemini',
     };
 
     return enhancedFood;
@@ -121,20 +167,20 @@ export class IndianFoodEnhancer {
 
     // Remove common prefixes/suffixes
     const cleanName = foodName
-      .replace(/\b(chicken|mutton|paneer|veg|vegetable)\s*/gi, '')
-      .replace(/\s*(curry|masala|fry|dry|gravy)\b/gi, '')
+      .replace(/\b(chicken|mutton|paneer|veg|vegetable)\s*/gi, "")
+      .replace(/\s*(curry|masala|fry|dry|gravy)\b/gi, "")
       .trim();
 
     variations.push(cleanName);
 
     // Add common variations
     const commonVariations = {
-      biriyani: 'biryani',
-      daal: 'dal',
-      roti: 'chapati',
-      sabzi: 'sabji',
-      aloo: 'potato',
-      palak: 'spinach',
+      biriyani: "biryani",
+      daal: "dal",
+      roti: "chapati",
+      sabzi: "sabji",
+      aloo: "potato",
+      palak: "spinach",
     };
 
     for (const [from, to] of Object.entries(commonVariations)) {
@@ -153,8 +199,8 @@ export class IndianFoodEnhancer {
    * Check if two food names are partial matches
    */
   private isPartialMatch(name1: string, name2: string): boolean {
-    const words1 = name1.split(' ');
-    const words2 = name2.split(' ');
+    const words1 = name1.split(" ");
+    const words2 = name2.split(" ");
 
     // Check if any significant word matches
     for (const word1 of words1) {
@@ -174,88 +220,127 @@ export class IndianFoodEnhancer {
   /**
    * Classify regional cuisine
    */
-  private classifyRegion(foodName: string): 'north' | 'south' | 'east' | 'west' {
+  private classifyRegion(
+    foodName: string,
+  ): "north" | "south" | "east" | "west" {
     const name = foodName.toLowerCase();
 
     // North Indian indicators
     if (
       this.containsAny(name, [
-        'naan',
-        'tandoori',
-        'butter',
-        'paneer',
-        'rajma',
-        'chole',
-        'kulcha',
-        'paratha',
+        "naan",
+        "tandoori",
+        "butter",
+        "paneer",
+        "rajma",
+        "chole",
+        "kulcha",
+        "paratha",
       ])
     ) {
-      return 'north';
+      return "north";
     }
 
     // South Indian indicators
     if (
       this.containsAny(name, [
-        'dosa',
-        'idli',
-        'sambar',
-        'rasam',
-        'vada',
-        'uttapam',
-        'coconut',
-        'curry leaf',
+        "dosa",
+        "idli",
+        "sambar",
+        "rasam",
+        "vada",
+        "uttapam",
+        "coconut",
+        "curry leaf",
       ])
     ) {
-      return 'south';
+      return "south";
     }
 
     // East Indian indicators
     if (
-      this.containsAny(name, ['fish', 'prawn', 'mishti', 'doi', 'rosogolla', 'rasgulla', 'bengali'])
+      this.containsAny(name, [
+        "fish",
+        "prawn",
+        "mishti",
+        "doi",
+        "rosogolla",
+        "rasgulla",
+        "bengali",
+      ])
     ) {
-      return 'east';
+      return "east";
     }
 
     // West Indian indicators
     if (
-      this.containsAny(name, ['dhokla', 'thepla', 'pav bhaji', 'vada pav', 'gujarati', 'undhiyu'])
+      this.containsAny(name, [
+        "dhokla",
+        "thepla",
+        "pav bhaji",
+        "vada pav",
+        "gujarati",
+        "undhiyu",
+      ])
     ) {
-      return 'west';
+      return "west";
     }
 
     // Default to north (most common)
-    return 'north';
+    return "north";
   }
 
   /**
    * Detect cooking method from food description
    */
   private detectCookingMethod(
-    geminiFood: any
-  ): 'fried' | 'steamed' | 'baked' | 'curry' | 'grilled' | 'raw' {
-    const description = (geminiFood.name + ' ' + (geminiFood.analysisNotes || '')).toLowerCase();
+    geminiFood: any,
+  ): "fried" | "steamed" | "baked" | "curry" | "grilled" | "raw" {
+    const description = (
+      geminiFood.name +
+      " " +
+      (geminiFood.analysisNotes || "")
+    ).toLowerCase();
 
-    if (this.containsAny(description, ['fried', 'pakora', 'bhaji', 'samosa', 'kachori'])) {
-      return 'fried';
+    if (
+      this.containsAny(description, [
+        "fried",
+        "pakora",
+        "bhaji",
+        "samosa",
+        "kachori",
+      ])
+    ) {
+      return "fried";
     }
 
-    if (this.containsAny(description, ['steamed', 'idli', 'dhokla', 'modak'])) {
-      return 'steamed';
+    if (this.containsAny(description, ["steamed", "idli", "dhokla", "modak"])) {
+      return "steamed";
     }
 
-    if (this.containsAny(description, ['tandoori', 'baked', 'naan', 'kulcha'])) {
-      return 'baked';
+    if (
+      this.containsAny(description, ["tandoori", "baked", "naan", "kulcha"])
+    ) {
+      return "baked";
     }
 
-    if (this.containsAny(description, ['grilled', 'tikka', 'kebab', 'seekh'])) {
-      return 'grilled';
+    if (this.containsAny(description, ["grilled", "tikka", "kebab", "seekh"])) {
+      return "grilled";
     }
 
-    if (this.containsAny(description, ['curry', 'gravy', 'masala', 'dal', 'sabji'])) {
-      return 'curry';
+    if (
+      this.containsAny(description, [
+        "curry",
+        "gravy",
+        "masala",
+        "dal",
+        "sabji",
+      ])
+    ) {
+      return "curry";
     }
 
-    return 'curry'; // Default for Indian food
+    return "curry"; // Default for Indian food
   }
 
   /**
@@ -263,44 +348,45 @@ export class IndianFoodEnhancer {
    */
   private detectSpiceLevel(
     geminiFood: any,
-    region: string
-  ): 'mild' | 'medium' | 'hot' | 'extra_hot' {
+    region: string,
+  ): "mild" | "medium" | "hot" | "extra_hot" {
     const name = geminiFood.name.toLowerCase();
 
     // Specific spice level indicators
-    if (this.containsAny(name, ['vindaloo', 'madras', 'chettinad'])) {
-      return 'extra_hot';
+    if (this.containsAny(name, ["vindaloo", "madras", "chettinad"])) {
+      return "extra_hot";
     }
 
-    if (this.containsAny(name, ['pepper', 'chili', 'spicy', 'hot'])) {
-      return 'hot';
+    if (this.containsAny(name, ["pepper", "chili", "spicy", "hot"])) {
+      return "hot";
     }
 
-    if (this.containsAny(name, ['korma', 'malai', 'makhani', 'shahi'])) {
-      return 'mild';
+    if (this.containsAny(name, ["korma", "malai", "makhani", "shahi"])) {
+      return "mild";
     }
 
     // Regional defaults
     const regionalDefaults = {
-      south: 'hot',
-      north: 'medium',
-      west: 'medium',
-      east: 'medium',
+      south: "hot",
+      north: "medium",
+      west: "medium",
+      east: "medium",
     };
 
-    return (regionalDefaults[region as keyof typeof regionalDefaults] || 'medium') as
-      | 'mild'
-      | 'medium'
-      | 'hot'
-      | 'extra_hot';
+    return (regionalDefaults[region as keyof typeof regionalDefaults] ||
+      "medium") as "mild" | "medium" | "hot" | "extra_hot";
   }
 
   /**
    * Calculate traditional Indian serving size
    */
-  private calculateTraditionalServing(foodName: string, region: string): number {
+  private calculateTraditionalServing(
+    foodName: string,
+    region: string,
+  ): number {
     const servingSizes =
-      (TRADITIONAL_SERVING_SIZES as any)[region] || TRADITIONAL_SERVING_SIZES.general;
+      (TRADITIONAL_SERVING_SIZES as any)[region] ||
+      TRADITIONAL_SERVING_SIZES.general;
 
     // Check for specific food in serving sizes
     for (const [pattern, size] of Object.entries(servingSizes)) {
@@ -310,10 +396,11 @@ export class IndianFoodEnhancer {
     }
 
     // Default based on food category
-    if (this.containsAny(foodName, ['rice', 'biryani', 'pulao'])) return 150;
-    if (this.containsAny(foodName, ['dal', 'curry', 'sabji'])) return 100;
-    if (this.containsAny(foodName, ['roti', 'naan', 'chapati'])) return 50;
-    if (this.containsAny(foodName, ['sweet', 'dessert', 'halwa', 'kheer'])) return 75;
+    if (this.containsAny(foodName, ["rice", "biryani", "pulao"])) return 150;
+    if (this.containsAny(foodName, ["dal", "curry", "sabji"])) return 100;
+    if (this.containsAny(foodName, ["roti", "naan", "chapati"])) return 50;
+    if (this.containsAny(foodName, ["sweet", "dessert", "halwa", "kheer"]))
+      return 75;
 
     return 100; // Default serving
   }
@@ -327,8 +414,9 @@ export class IndianFoodEnhancer {
     cookingMethod: string;
     spiceLevel: string;
     portionSize: number;
-  }): RecognizedFood['nutrition'] {
-    const { baseNutrition, region, cookingMethod, spiceLevel, portionSize } = params;
+  }): RecognizedFood["nutrition"] {
+    const { baseNutrition, region, cookingMethod, spiceLevel, portionSize } =
+      params;
 
     // Start with base nutrition (per 100g)
     const nutrition = {
@@ -349,7 +437,9 @@ export class IndianFoodEnhancer {
       west: { calories: 1.08, fat: 1.15 }, // Some fried items
     };
 
-    const regionMultiplier = regionalMultipliers[region as keyof typeof regionalMultipliers] || {
+    const regionMultiplier = regionalMultipliers[
+      region as keyof typeof regionalMultipliers
+    ] || {
       calories: 1.0,
       fat: 1.0,
     };
@@ -380,7 +470,8 @@ export class IndianFoodEnhancer {
       extra_hot: 1.08,
     };
 
-    const spiceMultiplier = spiceMultipliers[spiceLevel as keyof typeof spiceMultipliers] || 1.0;
+    const spiceMultiplier =
+      spiceMultipliers[spiceLevel as keyof typeof spiceMultipliers] || 1.0;
     nutrition.calories *= spiceMultiplier;
 
     // Scale to actual portion size
@@ -400,8 +491,6 @@ export class IndianFoodEnhancer {
       carbs: Math.round(nutrition.carbs * 10) / 10,
       fat: Math.round(nutrition.fat * 10) / 10,
       fiber: Math.round(nutrition.fiber * 10) / 10,
-      sugar: Math.round(nutrition.sugar * 10) / 10,
-      sodium: Math.round(nutrition.sodium),
     };
   }
 
@@ -415,8 +504,6 @@ export class IndianFoodEnhancer {
       carbs: geminiFood.carbs || 20,
       fat: geminiFood.fat || 5,
       fiber: geminiFood.fiber || 3,
-      sugar: geminiFood.sugar || 2,
-      sodium: geminiFood.sodium || 400,
     };
   }
 
@@ -426,36 +513,53 @@ export class IndianFoodEnhancer {
   private enhanceIngredients(
     originalIngredients: string[],
     foodName: string,
-    region: string
+    region: string,
   ): string[] {
     const ingredients = [...originalIngredients];
 
     // Add common Indian spices based on dish type
     const spiceMap = {
-      biryani: ['basmati rice', 'saffron', 'cardamom', 'cinnamon', 'bay leaves', 'fried onions'],
-      dal: ['lentils', 'turmeric', 'cumin', 'mustard seeds', 'curry leaves'],
-      curry: ['onions', 'tomatoes', 'ginger', 'garlic', 'garam masala'],
-      tandoori: ['yogurt', 'red chili powder', 'tandoori masala', 'lemon juice'],
+      biryani: [
+        "basmati rice",
+        "saffron",
+        "cardamom",
+        "cinnamon",
+        "bay leaves",
+        "fried onions",
+      ],
+      dal: ["lentils", "turmeric", "cumin", "mustard seeds", "curry leaves"],
+      curry: ["onions", "tomatoes", "ginger", "garlic", "garam masala"],
+      tandoori: [
+        "yogurt",
+        "red chili powder",
+        "tandoori masala",
+        "lemon juice",
+      ],
     };
 
     // Add region-specific ingredients
     const regionalIngredients = {
-      south: ['coconut', 'curry leaves', 'tamarind', 'mustard seeds'],
-      north: ['ghee', 'cream', 'cashews', 'cardamom'],
-      east: ['mustard oil', 'panch phoron', 'poppy seeds'],
-      west: ['jaggery', 'kokum', 'peanuts', 'sesame seeds'],
+      south: ["coconut", "curry leaves", "tamarind", "mustard seeds"],
+      north: ["ghee", "cream", "cashews", "cardamom"],
+      east: ["mustard oil", "panch phoron", "poppy seeds"],
+      west: ["jaggery", "kokum", "peanuts", "sesame seeds"],
     };
 
     // Enhance based on food name
     for (const [pattern, spices] of Object.entries(spiceMap)) {
       if (foodName.includes(pattern)) {
-        ingredients.push(...spices.filter((spice) => !ingredients.includes(spice)));
+        ingredients.push(
+          ...spices.filter((spice) => !ingredients.includes(spice)),
+        );
       }
     }
 
     // Add regional ingredients
-    const regionSpices = regionalIngredients[region as keyof typeof regionalIngredients] || [];
-    ingredients.push(...regionSpices.filter((spice) => !ingredients.includes(spice)));
+    const regionSpices =
+      regionalIngredients[region as keyof typeof regionalIngredients] || [];
+    ingredients.push(
+      ...regionSpices.filter((spice) => !ingredients.includes(spice)),
+    );
 
     return [...new Set(ingredients)]; // Remove duplicates
   }
@@ -466,7 +570,7 @@ export class IndianFoodEnhancer {
   private calculateConfidence(
     dbMatch: IndianFoodData | null,
     geminiFood: any,
-    region: string
+    region: string,
   ): number {
     let confidence = geminiFood.confidence || 70;
 
@@ -494,66 +598,108 @@ export class IndianFoodEnhancer {
   private standardizeFoodName(name: string): string {
     // Standardize common variations
     return name
-      .replace(/biriyani/gi, 'biryani')
-      .replace(/daal/gi, 'dal')
-      .replace(/\bchana\b/gi, 'chana')
+      .replace(/biriyani/gi, "biryani")
+      .replace(/daal/gi, "dal")
+      .replace(/\bchana\b/gi, "chana")
       .trim();
   }
 
-  private categorizeFood(foodName: string): 'main' | 'side' | 'snack' | 'sweet' | 'beverage' {
-    if (this.containsAny(foodName, ['biryani', 'curry', 'dal', 'sabji', 'rice', 'roti', 'naan'])) {
-      return 'main';
-    }
-
-    if (this.containsAny(foodName, ['raita', 'pickle', 'chutney', 'papad', 'salad'])) {
-      return 'side';
-    }
-
-    if (this.containsAny(foodName, ['samosa', 'pakora', 'chaat', 'bhaji', 'tikki'])) {
-      return 'snack';
+  private categorizeFood(
+    foodName: string,
+  ): "main" | "side" | "snack" | "sweet" | "beverage" {
+    if (
+      this.containsAny(foodName, [
+        "biryani",
+        "curry",
+        "dal",
+        "sabji",
+        "rice",
+        "roti",
+        "naan",
+      ])
+    ) {
+      return "main";
     }
 
     if (
-      this.containsAny(foodName, ['sweet', 'dessert', 'halwa', 'kheer', 'gulab', 'jalebi', 'laddu'])
+      this.containsAny(foodName, [
+        "raita",
+        "pickle",
+        "chutney",
+        "papad",
+        "salad",
+      ])
     ) {
-      return 'sweet';
+      return "side";
     }
 
-    if (this.containsAny(foodName, ['lassi', 'chai', 'juice', 'drink', 'water'])) {
-      return 'beverage';
+    if (
+      this.containsAny(foodName, [
+        "samosa",
+        "pakora",
+        "chaat",
+        "bhaji",
+        "tikki",
+      ])
+    ) {
+      return "snack";
     }
 
-    return 'main';
+    if (
+      this.containsAny(foodName, [
+        "sweet",
+        "dessert",
+        "halwa",
+        "kheer",
+        "gulab",
+        "jalebi",
+        "laddu",
+      ])
+    ) {
+      return "sweet";
+    }
+
+    if (
+      this.containsAny(foodName, ["lassi", "chai", "juice", "drink", "water"])
+    ) {
+      return "beverage";
+    }
+
+    return "main";
   }
 
-  private determineServingType(grams: number): 'small' | 'medium' | 'large' | 'traditional' {
-    if (grams < 75) return 'small';
-    if (grams < 150) return 'medium';
-    if (grams < 250) return 'large';
-    return 'traditional';
+  private determineServingType(
+    grams: number,
+  ): "small" | "medium" | "large" | "traditional" {
+    if (grams < 75) return "small";
+    if (grams < 150) return "medium";
+    if (grams < 250) return "large";
+    return "traditional";
   }
 
   /**
    * Create basic Indian food when database match fails
    */
   private createBasicIndianFood(geminiFood: any): RecognizedFood {
+    const grams = geminiFood.estimatedGrams || 100;
+    const nutrition = this.extractGeminiNutrition(geminiFood);
+
     return {
       id: `basic_indian_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: this.standardizeFoodName(geminiFood.name),
       category: this.categorizeFood(geminiFood.name),
-      cuisine: 'indian',
-      region: this.classifyRegion(geminiFood.name),
-      spiceLevel: 'medium',
-      cookingMethod: 'curry',
-      portionSize: {
-        estimatedGrams: geminiFood.estimatedGrams || 100,
-        confidence: 60,
-        servingType: this.determineServingType(geminiFood.estimatedGrams || 100),
+      cuisine: "indian",
+      estimatedGrams: grams,
+      servingDescription: this.determineServingType(grams),
+      nutrition: nutrition,
+      nutritionPer100g: {
+        calories: Math.round((nutrition.calories / grams) * 100),
+        protein: Math.round((nutrition.protein / grams) * 100 * 10) / 10,
+        carbs: Math.round((nutrition.carbs / grams) * 100 * 10) / 10,
+        fat: Math.round((nutrition.fat / grams) * 100 * 10) / 10,
+        fiber: Math.round((nutrition.fiber / grams) * 100 * 10) / 10,
       },
-      nutrition: this.extractGeminiNutrition(geminiFood),
-      ingredients: geminiFood.ingredients || [],
       confidence: 60,
-      enhancementSource: 'gemini',
     };
   }
 }

@@ -91,10 +91,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     if (visible && profile?.personalInfo) {
       const info = profile.personalInfo;
       setName(info.name || "");
-      setAge(info.age || "");
+      setAge(String(info.age || ""));
       setGender(info.gender || "");
-      setHeight(info.height || "");
-      setWeight(info.weight || "");
+      setHeight(String(info.height || ""));
+      setWeight(String(info.weight || ""));
       setActivityLevel(info.activityLevel || "");
       setErrors({});
     }
@@ -153,19 +153,21 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     try {
       const updatedInfo: PersonalInfo = {
         name: name.trim(),
-        age,
-        gender,
-        height,
-        weight,
+        first_name: profile?.personalInfo?.first_name || "",
+        last_name: profile?.personalInfo?.last_name || "",
+        age: parseFloat(age),
+        gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
+        height: parseFloat(height),
+        weight: parseFloat(weight),
         activityLevel,
+        country: profile?.personalInfo?.country || "",
+        state: profile?.personalInfo?.state || "",
+        wake_time: profile?.personalInfo?.wake_time || "07:00",
+        sleep_time: profile?.personalInfo?.sleep_time || "23:00",
+        occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
         // Preserve existing optional fields
-        email: profile?.personalInfo?.email,
-        country: profile?.personalInfo?.country,
-        state: profile?.personalInfo?.state,
-        region: profile?.personalInfo?.region,
-        wake_time: profile?.personalInfo?.wake_time,
-        sleep_time: profile?.personalInfo?.sleep_time,
-        occupation_type: profile?.personalInfo?.occupation_type,
+        email: profile?.personalInfo?.email ?? undefined,
+        region: profile?.personalInfo?.region ?? undefined,
       };
 
       updatePersonalInfo(updatedInfo);
@@ -195,10 +197,10 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     const info = profile.personalInfo;
     return (
       name !== (info.name || "") ||
-      age !== (info.age || "") ||
+      age !== String(info.age || "") ||
       gender !== (info.gender || "") ||
-      height !== (info.height || "") ||
-      weight !== (info.weight || "") ||
+      height !== String(info.height || "") ||
+      weight !== String(info.weight || "") ||
       activityLevel !== (info.activityLevel || "")
     );
   }, [name, age, gender, height, weight, activityLevel, profile]);

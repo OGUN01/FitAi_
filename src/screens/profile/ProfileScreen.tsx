@@ -155,7 +155,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           // Small delay to ensure component is fully mounted
           setTimeout(async () => {
             try {
-              await startEdit(intent.section);
+              await startEdit(intent.section, undefined);
             } catch (error) {
               console.error("Failed to auto-start edit:", error);
               Alert.alert("Error", "Failed to open editor. Please try again.");
@@ -285,21 +285,19 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     {
       id: 5,
       title: "Subscription",
-      subtitle:
-        subscriptionStatus === "active"
-          ? "Manage your premium subscription"
-          : subscriptionStatus === "trialing"
-            ? `${Math.ceil(trialInfo?.daysRemaining || 0)} days left in trial`
-            : "Upgrade to Premium",
-      icon:
-        subscriptionStatus === "active"
-          ? "crown-outline"
-          : subscriptionStatus === "trialing"
-            ? "time-outline"
-            : "diamond-outline",
+      subtitle: subscriptionStatus.isPremium
+        ? "Manage your premium subscription"
+        : subscriptionStatus.isTrialActive
+          ? `${Math.ceil(trialInfo?.daysRemaining || 0)} days left in trial`
+          : "Upgrade to Premium",
+      icon: subscriptionStatus.isPremium
+        ? "crown-outline"
+        : subscriptionStatus.isTrialActive
+          ? "time-outline"
+          : "diamond-outline",
       hasArrow: true,
       isPremium:
-        subscriptionStatus === "active" || subscriptionStatus === "trialing",
+        subscriptionStatus.isPremium || subscriptionStatus.isTrialActive,
     },
     {
       id: 6,
@@ -381,7 +379,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
 
   const cancelLogout = () => {
     setShowLogoutConfirmation(false);
-    haptics.impact("light");
+    haptics.light();
   };
 
   const handleEditProfile = () => {
@@ -430,16 +428,16 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
     try {
       switch (item.id) {
         case 1: // Personal Information
-          await startEdit("personalInfo");
+          await startEdit("personalInfo", undefined);
           break;
         case 2: // Diet Preferences
-          await startEdit("dietPreferences");
+          await startEdit("dietPreferences", undefined);
           break;
         case 3: // Body Analysis
           Alert.alert(item.title, "Please use the new comprehensive edit mode");
           break;
         case 4: // Workout Preferences
-          await startEdit("workoutPreferences");
+          await startEdit("workoutPreferences", undefined);
           break;
         case 5: // Health Metrics
           Alert.alert(item.title, "View-only calculated health metrics");
@@ -669,7 +667,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                 {/* Streak Badge (Floating) */}
                 <GlassCard
                   elevation={2}
-                  blurIntensity="medium"
+                  blurIntensity="default"
                   padding="sm"
                   borderRadius="lg"
                   style={styles.streakBadge}
@@ -1384,7 +1382,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
             <View style={styles.confirmationDialog}>
               <GlassCard
                 elevation={5}
-                blurIntensity="strong"
+                blurIntensity="heavy"
                 padding="lg"
                 borderRadius="xl"
               >
@@ -1476,7 +1474,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                   <Text style={styles.modalSectionTitle}>Current Plan</Text>
                   <GlassCard
                     style={
-                      subscriptionStatus === "active"
+                      subscriptionStatus.isPremium
                         ? [
                             styles.subscriptionStatusCard,
                             styles.activeSubscriptionCard,
@@ -1492,9 +1490,9 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                       <View style={styles.subscriptionStatusHeader}>
                         <Ionicons
                           name={
-                            subscriptionStatus === "active"
+                            subscriptionStatus.isPremium
                               ? "crown-outline"
-                              : subscriptionStatus === "trialing"
+                              : subscriptionStatus.isTrialActive
                                 ? "time-outline"
                                 : "diamond-outline"
                           }
@@ -1504,23 +1502,23 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                         />
                         <View style={styles.subscriptionStatusInfo}>
                           <Text style={styles.subscriptionStatusTitle}>
-                            {subscriptionStatus === "active"
+                            {subscriptionStatus.isPremium
                               ? "FitAI Premium"
-                              : subscriptionStatus === "trialing"
+                              : subscriptionStatus.isTrialActive
                                 ? "Premium Trial"
                                 : "FitAI Free"}
                           </Text>
                           <Text style={styles.subscriptionStatusSubtitle}>
-                            {subscriptionStatus === "active"
+                            {subscriptionStatus.isPremium
                               ? "Active subscription"
-                              : subscriptionStatus === "trialing"
+                              : subscriptionStatus.isTrialActive
                                 ? `${Math.ceil(trialInfo?.daysRemaining || 0)} days remaining`
                                 : "Limited features"}
                           </Text>
                         </View>
                       </View>
 
-                      {subscriptionStatus !== "free" &&
+                      {subscriptionStatus.plan !== "free" &&
                         trialInfo?.nextBillingDate && (
                           <View style={styles.subscriptionBillingInfo}>
                             <Text style={styles.subscriptionBillingText}>
@@ -1541,7 +1539,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                 {/* Premium Features Preview */}
                 <View style={styles.modalSection}>
                   <Text style={styles.modalSectionTitle}>
-                    {subscriptionStatus === "free"
+                    {subscriptionStatus.plan === "free"
                       ? "Premium Features"
                       : "Your Premium Features"}
                   </Text>
@@ -1596,7 +1594,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
 
                 {/* Action Buttons */}
                 <View style={styles.modalSection}>
-                  {subscriptionStatus === "free" ? (
+                  {subscriptionStatus.plan === "free" ? (
                     <Button
                       title="Upgrade to Premium - $9.99/month"
                       onPress={() => {
@@ -1624,7 +1622,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
                       />
                       <Button
                         title={
-                          subscriptionStatus === "trialing"
+                          subscriptionStatus.isTrialActive
                             ? "Cancel Trial"
                             : "Cancel Subscription"
                         }
@@ -1727,8 +1725,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
@@ -1745,8 +1743,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   editIcon: {
@@ -1771,7 +1769,7 @@ const styles = StyleSheet.create({
 
   profileHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
@@ -1785,8 +1783,8 @@ const styles = StyleSheet.create({
     height: rh(64),
     borderRadius: rs(32),
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   avatarText: {
@@ -1832,14 +1830,14 @@ const styles = StyleSheet.create({
   profileStats: {
     flexDirection: "row",
     justifyContent: "space-around",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingTop: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
   },
 
   statItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   statValue: {
@@ -1869,7 +1867,7 @@ const styles = StyleSheet.create({
   quickStatCard: {
     width: "47%",
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   quickStatIcon: {
@@ -1894,7 +1892,7 @@ const styles = StyleSheet.create({
 
   menuContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -1903,8 +1901,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1936,7 +1934,7 @@ const styles = StyleSheet.create({
 
   appInfoContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   appLogo: {
@@ -1944,8 +1942,8 @@ const styles = StyleSheet.create({
     height: rh(48),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1983,8 +1981,8 @@ const styles = StyleSheet.create({
 
   logoutContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -2009,7 +2007,7 @@ const styles = StyleSheet.create({
   },
 
   guestPromptContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -2045,8 +2043,8 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
@@ -2058,8 +2056,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   modalCloseText: {
@@ -2095,7 +2093,7 @@ const styles = StyleSheet.create({
   },
 
   profilePictureEdit: {
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -2171,7 +2169,7 @@ const styles = StyleSheet.create({
 
   subscriptionStatusHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -2197,8 +2195,8 @@ const styles = StyleSheet.create({
 
   subscriptionBillingInfo: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
@@ -2223,7 +2221,7 @@ const styles = StyleSheet.create({
 
   featureContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   featureIcon: {
@@ -2251,8 +2249,8 @@ const styles = StyleSheet.create({
     height: rh(24),
     borderRadius: rs(12),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginLeft: ResponsiveTheme.spacing.sm,
   },
 
@@ -2281,11 +2279,11 @@ const styles = StyleSheet.create({
   heroSection: {
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.xxl,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   heroContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   largeAvatarContainer: {
@@ -2298,8 +2296,8 @@ const styles = StyleSheet.create({
     height: rh(120),
     borderRadius: rs(60),
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderWidth: 4,
     borderColor: "rgba(255, 255, 255, 0.3)",
   },
@@ -2318,8 +2316,8 @@ const styles = StyleSheet.create({
     height: rh(36),
     borderRadius: rs(18),
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderWidth: 3,
     borderColor: ResponsiveTheme.colors.background,
   },
@@ -2339,7 +2337,7 @@ const styles = StyleSheet.create({
 
   streakBadge: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
@@ -2359,7 +2357,7 @@ const styles = StyleSheet.create({
   // Setting Row Styles (for Account/Preferences/App/Data sections)
   settingRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
@@ -2393,8 +2391,8 @@ const styles = StyleSheet.create({
   // Logout Confirmation Dialog Styles
   blurContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
@@ -2404,7 +2402,7 @@ const styles = StyleSheet.create({
   },
 
   confirmationIconContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -2438,8 +2436,8 @@ const styles = StyleSheet.create({
   confirmationButtonCancel: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     padding: ResponsiveTheme.spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   confirmationButtonConfirm: {
@@ -2448,8 +2446,8 @@ const styles = StyleSheet.create({
 
   confirmationButtonGradient: {
     padding: ResponsiveTheme.spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   confirmationButtonTextCancel: {

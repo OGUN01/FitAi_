@@ -1,9 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, Dimensions, ImageBackground } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, THEME } from '../../components/ui';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ImageBackground,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, THEME } from "../../components/ui";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
 // const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -13,7 +19,10 @@ interface WelcomeScreenProps {
   onLogin?: () => void;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGetStarted, onLogin }) => {
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
+  onGetStarted,
+  onLogin,
+}) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundGradient}>
@@ -25,10 +34,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onGetStarted, onLo
             </View>
           </View>
 
-          <Text style={styles.title}>Your AI-Powered{'\n'}Fitness Journey</Text>
+          <Text style={styles.title}>Your AI-Powered{"\n"}Fitness Journey</Text>
 
           <Text style={styles.subtitle}>
-            Transform your body with personalized workouts,{'\n'}
+            Transform your body with personalized workouts,{"\n"}
             smart nutrition plans, and AI-driven insights
           </Text>
         </View>
@@ -91,7 +100,11 @@ interface FeatureItemProps {
   description: string;
 }
 
-const FeatureItem: React.FC<FeatureItemProps> = ({ icon, title, description }) => (
+const FeatureItem: React.FC<FeatureItemProps> = ({
+  icon,
+  title,
+  description,
+}) => (
   <View style={styles.featureItem}>
     <View style={styles.featureIcon}>
       <Text style={styles.featureIconText}>{icon}</Text>
@@ -117,8 +130,8 @@ const styles = StyleSheet.create({
 
   heroSection: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xxl,
   },
@@ -132,8 +145,8 @@ const styles = StyleSheet.create({
     height: rh(80),
     borderRadius: ResponsiveTheme.borderRadius.xxl,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     ...THEME.shadows.lg,
   },
 
@@ -144,10 +157,10 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.md,
     lineHeight: rf(40),
   },
@@ -155,7 +168,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(24),
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
@@ -166,8 +179,8 @@ const styles = StyleSheet.create({
   },
 
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
@@ -177,8 +190,8 @@ const styles = StyleSheet.create({
     height: rh(48),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -219,7 +232,7 @@ const styles = StyleSheet.create({
   termsText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(16),
   },
 });

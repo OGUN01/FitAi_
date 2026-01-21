@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,10 +7,10 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface PulseButtonProps {
   title: string;
@@ -25,7 +25,7 @@ interface PulseButtonProps {
 export const PulseButton: React.FC<PulseButtonProps> = ({
   title,
   onPress,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   disabled = false,
   loading = false,
   pulseEnabled = true,
@@ -39,20 +39,26 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       // Continuous pulse animation
       pulseScale.value = withRepeat(
         withSequence(
-          withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          withTiming(1.05, {
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+          }),
+          withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
         ),
         -1,
-        false
+        false,
       );
 
       pulseOpacity.value = withRepeat(
         withSequence(
           withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-          withTiming(0.7, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+          withTiming(0.7, {
+            duration: 1000,
+            easing: Easing.inOut(Easing.ease),
+          }),
         ),
         -1,
-        false
+        false,
       );
     } else {
       pulseScale.value = withTiming(1, { duration: 200 });
@@ -79,7 +85,7 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {pulseEnabled && !disabled && !loading && (
         <Animated.View style={[styles.glow, animatedGlowStyle]}>
           <LinearGradient
-            colors={[...gradient, 'transparent']}
+            colors={[...gradient, "transparent"] as any}
             style={styles.glowGradient}
             start={{ x: 0.5, y: 0.5 }}
             end={{ x: 1, y: 1 }}
@@ -90,13 +96,15 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
       {/* Button */}
       <Animated.View style={[styles.button, animatedButtonStyle]}>
         <LinearGradient
-          colors={disabled ? ['#BDBDBD', '#9E9E9E'] : gradient}
+          colors={(disabled ? ["#BDBDBD", "#9E9E9E"] : gradient) as any}
           style={styles.buttonGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
-            {loading ? 'Loading...' : title}
+          <Text
+            style={[styles.buttonText, disabled && styles.buttonTextDisabled]}
+          >
+            {loading ? "Loading..." : title}
           </Text>
         </LinearGradient>
       </Animated.View>
@@ -106,17 +114,17 @@ export const PulseButton: React.FC<PulseButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   glow: {
-    position: 'absolute',
-    width: '110%',
-    height: '110%',
+    position: "absolute",
+    width: "110%",
+    height: "110%",
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   glowGradient: {
@@ -124,10 +132,10 @@ const styles = StyleSheet.create({
   },
 
   button: {
-    width: '100%',
+    width: "100%",
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -137,8 +145,8 @@ const styles = StyleSheet.create({
   buttonGradient: {
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   buttonText: {

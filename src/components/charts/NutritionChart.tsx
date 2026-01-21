@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.md,
   },
 
@@ -231,13 +231,13 @@ const styles = StyleSheet.create({
   },
 
   chartContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginVertical: THEME.spacing.md,
   },
 
   noDataContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: THEME.spacing.xxl,
   },
 
@@ -255,18 +255,18 @@ const styles = StyleSheet.create({
 
   macroStats: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     marginTop: THEME.spacing.md,
   },
 
   macroItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   macroHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.xs,
   },
 

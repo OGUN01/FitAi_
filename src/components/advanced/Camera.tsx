@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
 
   permissionContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     backgroundColor: THEME.colors.background,
     paddingHorizontal: THEME.spacing.lg,
   },
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     paddingTop: THEME.spacing.lg,
@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   closeIcon: {
@@ -413,8 +413,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   flashIcon: {
@@ -445,8 +445,8 @@ const styles = StyleSheet.create({
 
   overlay: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   foodFrame: {
@@ -498,8 +498,8 @@ const styles = StyleSheet.create({
   progressFrame: {
     width: 200,
     height: 400,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   bodyOutline: {
@@ -513,8 +513,8 @@ const styles = StyleSheet.create({
 
   controls: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.lg,
   },
@@ -524,8 +524,8 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: THEME.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   flipIcon: {
@@ -537,8 +537,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: THEME.colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     borderWidth: 4,
     borderColor: THEME.colors.white,
   },
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
 
   tipItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: THEME.colors.surface,
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
@@ -585,8 +585,8 @@ const styles = StyleSheet.create({
 
   errorContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     backgroundColor: THEME.colors.background,
     padding: THEME.spacing.xl,
   },
@@ -611,15 +611,15 @@ const styles = StyleSheet.create({
     width: 280,
     height: 160,
     position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   scanningArea: {
     width: "100%",
     height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderWidth: 2,
     borderColor: THEME.colors.primary,
     borderRadius: THEME.borderRadius.md,
@@ -693,8 +693,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: THEME.colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     borderWidth: 2,
     borderColor: THEME.colors.primary,
   },

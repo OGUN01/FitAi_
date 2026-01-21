@@ -4,7 +4,7 @@
  * Provides size variants and theme-aware colors
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Animated,
@@ -12,14 +12,14 @@ import {
   StyleProp,
   ViewStyle,
   Easing,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl';
+export type SpinnerSize = "sm" | "md" | "lg" | "xl";
 
 export interface AuroraSpinnerProps {
   /**
@@ -74,10 +74,10 @@ const SIZE_CONFIG: Record<SpinnerSize, { size: number; thickness: number }> = {
 // ============================================================================
 
 const DEFAULT_AURORA_COLORS = [
-  '#4ECDC4', // Teal
-  '#FF6B6B', // Coral
-  '#FFC107', // Amber
-  '#4ECDC4', // Teal (loop)
+  "#4ECDC4", // Teal
+  "#FF6B6B", // Coral
+  "#FFC107", // Amber
+  "#4ECDC4", // Teal (loop)
 ];
 
 // ============================================================================
@@ -85,7 +85,7 @@ const DEFAULT_AURORA_COLORS = [
 // ============================================================================
 
 export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
-  size = 'md',
+  size = "md",
   customSize,
   duration = 1200,
   colors = DEFAULT_AURORA_COLORS,
@@ -109,7 +109,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
         duration,
         easing: Easing.linear,
         useNativeDriver: true,
-      })
+      }),
     );
 
     rotateAnimation.start();
@@ -131,10 +131,11 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
 
   const rotation = rotateValue.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ["0deg", "360deg"],
   });
 
-  if (!visible && fadeValue.__getValue() === 0) {
+  // Remove direct __getValue() call - let React handle visibility
+  if (!visible) {
     return null;
   }
 
@@ -161,7 +162,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
         ]}
       >
         <LinearGradient
-          colors={colors}
+          colors={colors as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
@@ -197,30 +198,30 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
 /**
  * Small Aurora Spinner
  */
-export const AuroraSpinnerSmall: React.FC<
-  Omit<AuroraSpinnerProps, 'size'>
-> = (props) => <AuroraSpinner {...props} size="sm" />;
+export const AuroraSpinnerSmall: React.FC<Omit<AuroraSpinnerProps, "size">> = (
+  props,
+) => <AuroraSpinner {...props} size="sm" />;
 
 /**
  * Medium Aurora Spinner (default)
  */
-export const AuroraSpinnerMedium: React.FC<
-  Omit<AuroraSpinnerProps, 'size'>
-> = (props) => <AuroraSpinner {...props} size="md" />;
+export const AuroraSpinnerMedium: React.FC<Omit<AuroraSpinnerProps, "size">> = (
+  props,
+) => <AuroraSpinner {...props} size="md" />;
 
 /**
  * Large Aurora Spinner
  */
-export const AuroraSpinnerLarge: React.FC<
-  Omit<AuroraSpinnerProps, 'size'>
-> = (props) => <AuroraSpinner {...props} size="lg" />;
+export const AuroraSpinnerLarge: React.FC<Omit<AuroraSpinnerProps, "size">> = (
+  props,
+) => <AuroraSpinner {...props} size="lg" />;
 
 /**
  * Extra Large Aurora Spinner
  */
-export const AuroraSpinnerXLarge: React.FC<
-  Omit<AuroraSpinnerProps, 'size'>
-> = (props) => <AuroraSpinner {...props} size="xl" />;
+export const AuroraSpinnerXLarge: React.FC<Omit<AuroraSpinnerProps, "size">> = (
+  props,
+) => <AuroraSpinner {...props} size="xl" />;
 
 // ============================================================================
 // LOADING OVERLAY
@@ -259,8 +260,8 @@ export interface LoadingOverlayProps {
 export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   visible,
   message,
-  spinnerSize = 'lg',
-  backgroundColor = 'rgba(0, 0, 0, 0.7)',
+  spinnerSize = "lg",
+  backgroundColor = "rgba(0, 0, 0, 0.7)",
   style,
 }) => {
   const fadeValue = useRef(new Animated.Value(0)).current;
@@ -274,7 +275,8 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     }).start();
   }, [visible, fadeValue]);
 
-  if (!visible && fadeValue.__getValue() === 0) {
+  // Remove direct __getValue() call - let React handle visibility
+  if (!visible) {
     return null;
   }
 
@@ -288,7 +290,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
         },
         style,
       ]}
-      pointerEvents={visible ? 'auto' : 'none'}
+      pointerEvents={visible ? "auto" : "none"}
     >
       <View style={styles.overlayContent}>
         <AuroraSpinner size={spinnerSize} />
@@ -346,7 +348,7 @@ export interface InlineLoadingProps {
 export const InlineLoading: React.FC<InlineLoadingProps> = ({
   loading,
   children,
-  spinnerSize = 'md',
+  spinnerSize = "md",
   message,
   style,
 }) => {
@@ -354,9 +356,13 @@ export const InlineLoading: React.FC<InlineLoadingProps> = ({
     return (
       <View style={[styles.inlineContainer, style]}>
         <AuroraSpinner size={spinnerSize} />
-        {message && <View style={styles.messageContainer}>
-          <Animated.Text style={styles.inlineMessage}>{message}</Animated.Text>
-        </View>}
+        {message && (
+          <View style={styles.messageContainer}>
+            <Animated.Text style={styles.inlineMessage}>
+              {message}
+            </Animated.Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -370,40 +376,40 @@ export const InlineLoading: React.FC<InlineLoadingProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   spinner: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   gradient: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   innerCircle: {
-    backgroundColor: '#0A0A0A', // Match dark background
+    backgroundColor: "#0A0A0A", // Match dark background
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     zIndex: 9999,
   },
   overlayContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   overlayMessage: {
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    textAlign: 'center',
+    fontWeight: "500",
+    color: "#FFFFFF",
+    textAlign: "center",
   },
   inlineContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     padding: 20,
   },
   messageContainer: {
@@ -411,9 +417,9 @@ const styles = StyleSheet.create({
   },
   inlineMessage: {
     fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
   },
 });
 
@@ -422,12 +428,3 @@ const styles = StyleSheet.create({
 // ============================================================================
 
 export default AuroraSpinner;
-
-export {
-  AuroraSpinnerSmall,
-  AuroraSpinnerMedium,
-  AuroraSpinnerLarge,
-  AuroraSpinnerXLarge,
-  LoadingOverlay,
-  InlineLoading,
-};

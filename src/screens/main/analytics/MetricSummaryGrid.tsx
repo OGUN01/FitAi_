@@ -366,16 +366,16 @@ const styles = StyleSheet.create({
     minHeight: rh(105),
   },
   cardContent: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     flex: 1,
   },
   iconCircle: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   metricValue: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   },
   trendRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: 3,
   },
   trendText: {

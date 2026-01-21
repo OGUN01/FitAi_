@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     borderRadius: THEME.borderRadius.lg,
     padding: THEME.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
     borderWidth: 1,
     borderColor: THEME.colors.border,
   },

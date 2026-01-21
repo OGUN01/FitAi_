@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Modal as RNModal,
   View,
@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Dimensions,
   ViewStyle,
-} from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 // REMOVED: Module-level Dimensions.get() causes crash - use rw/rh functions instead
 // const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -18,7 +18,8 @@ interface ModalProps {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  animationType?: 'none' | 'slide' | 'fade';
+  title?: string;
+  animationType?: "none" | "slide" | "fade";
   transparent?: boolean;
   style?: ViewStyle;
   overlayStyle?: ViewStyle;
@@ -30,7 +31,7 @@ export const Modal: React.FC<ModalProps> = ({
   visible,
   onClose,
   children,
-  animationType = 'fade',
+  animationType = "fade",
   transparent = true,
   style,
   overlayStyle,
@@ -73,7 +74,8 @@ export const Modal: React.FC<ModalProps> = ({
 };
 
 // Bottom Sheet Modal variant
-interface BottomSheetModalProps extends Omit<ModalProps, 'style' | 'contentStyle'> {
+interface BottomSheetModalProps
+  extends Omit<ModalProps, "style" | "contentStyle"> {
   height?: number | string;
 }
 
@@ -81,7 +83,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
   visible,
   onClose,
   children,
-  height = '50%',
+  height = "50%",
   overlayStyle,
   closeOnOverlayPress = true,
 }) => {
@@ -108,10 +110,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
           <View style={styles.bottomSheetContainer}>
             <TouchableOpacity
               activeOpacity={1}
-              style={[
-                styles.bottomSheetContent,
-                { height: typeof height === 'string' ? height : height },
-              ]}
+              style={[styles.bottomSheetContent, { height: height as any }]}
               onPress={(e) => e.stopPropagation()}
             >
               <View style={styles.bottomSheetHandle} />
@@ -127,7 +126,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
 
   overlayTouchable: {
@@ -136,8 +135,8 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
@@ -145,15 +144,15 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.xl,
     padding: ResponsiveTheme.spacing.lg,
-    width: '90%', // Use percentage instead of screenWidth calculation
-    maxHeight: '80%', // Use percentage instead of screenHeight calculation
+    width: "90%", // Use percentage instead of screenWidth calculation
+    maxHeight: "80%", // Use percentage instead of screenHeight calculation
     ...THEME.shadows.lg,
   },
 
   // Bottom Sheet styles
   bottomSheetContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end" as const,
   },
 
   bottomSheetContent: {
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
     height: rh(4),
     backgroundColor: ResponsiveTheme.colors.textMuted,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 });

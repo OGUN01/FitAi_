@@ -1,5 +1,11 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,10 +14,10 @@ import Animated, {
   interpolate,
   interpolateColor,
   Extrapolate,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface ToggleCardProps {
   title: string;
@@ -30,7 +36,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
   isActive,
   onToggle,
   icon,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   disabled = false,
   style,
 }) => {
@@ -49,7 +55,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
     const backgroundColor = interpolateColor(
       toggleAnimation.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundSecondary, `${gradient[0]}15`]
+      [ResponsiveTheme.colors.backgroundSecondary, `${gradient[0]}15`],
     );
 
     return {
@@ -64,7 +70,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
     const backgroundColor = interpolateColor(
       toggleAnimation.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]]
+      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]],
     );
 
     return {
@@ -79,7 +85,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
       toggleAnimation.value,
       [0, 1],
       [rp(2), rw(40) - rw(16) - rp(4)],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
@@ -110,7 +116,13 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
       disabled={disabled}
       style={style}
     >
-      <Animated.View style={[styles.card, animatedCardStyle, disabled && styles.cardDisabled]}>
+      <Animated.View
+        style={[
+          styles.card,
+          animatedCardStyle,
+          disabled && styles.cardDisabled,
+        ]}
+      >
         <View style={styles.content}>
           {/* Icon */}
           {icon && <View style={styles.iconContainer}>{icon}</View>}
@@ -121,7 +133,12 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
               {title}
             </Text>
             {description && (
-              <Text style={[styles.description, disabled && styles.descriptionDisabled]}>
+              <Text
+                style={[
+                  styles.description,
+                  disabled && styles.descriptionDisabled,
+                ]}
+              >
                 {description}
               </Text>
             )}
@@ -131,7 +148,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
           <Animated.View style={[styles.toggleSwitch, animatedSwitchStyle]}>
             <Animated.View style={[styles.toggleThumb, animatedThumbStyle]}>
               <LinearGradient
-                colors={['#FFFFFF', '#F5F5F5']}
+                colors={["#FFFFFF", "#F5F5F5"]}
                 style={styles.thumbGradient}
               />
             </Animated.View>
@@ -142,7 +159,7 @@ export const ToggleCard: React.FC<ToggleCardProps> = ({
         {isActive && (
           <View style={styles.activeIndicator}>
             <LinearGradient
-              colors={gradient}
+              colors={gradient as any}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.activeIndicatorGradient}
@@ -159,12 +176,12 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     borderWidth: 2,
     padding: ResponsiveTheme.spacing.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   cardDisabled: {
@@ -172,16 +189,16 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
   },
 
   iconContainer: {
     marginRight: ResponsiveTheme.spacing.md,
     width: rf(40),
     height: rf(40),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   textContent: {
@@ -215,7 +232,7 @@ const styles = StyleSheet.create({
     height: rp(20),
     borderRadius: rp(10),
     borderWidth: 1,
-    justifyContent: 'center',
+    justifyContent: "center" as const,
     paddingHorizontal: rp(2),
   },
 
@@ -223,8 +240,8 @@ const styles = StyleSheet.create({
     width: rw(16),
     height: rp(16),
     borderRadius: rp(8),
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
@@ -236,12 +253,12 @@ const styles = StyleSheet.create({
   },
 
   activeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     height: rp(4),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   activeIndicatorGradient: {

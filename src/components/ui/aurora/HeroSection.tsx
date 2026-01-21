@@ -4,20 +4,31 @@
  * Supports parallax scrolling and flexible content positioning
  */
 
-import React from 'react';
-import { StyleSheet, View, ImageBackground, ViewStyle, ImageSourcePropType } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from "react";
+import {
+  StyleSheet,
+  View,
+  ImageBackground,
+  ViewStyle,
+  ImageSourcePropType,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedStyle,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { GradientConfig, toLinearGradientProps, gradients } from '../../../theme/gradients';
-import { rw, rh } from '../../../utils/responsive';
+} from "react-native-reanimated";
+import {
+  GradientConfig,
+  toLinearGradientProps,
+  gradients,
+} from "../../../theme/gradients";
+import { rw, rh } from "../../../utils/responsive";
 
-const AnimatedImageBackground = Animated.createAnimatedComponent(ImageBackground);
+const AnimatedImageBackground =
+  Animated.createAnimatedComponent(ImageBackground);
 
-type ContentPosition = 'top' | 'center' | 'bottom';
+type ContentPosition = "top" | "center" | "bottom";
 
 export interface HeroSectionProps {
   /**
@@ -64,6 +75,16 @@ export interface HeroSectionProps {
   height?: number;
 
   /**
+   * Minimum height of the hero section
+   */
+  minHeight?: number;
+
+  /**
+   * Maximum height of the hero section
+   */
+  maxHeight?: number;
+
+  /**
    * Children components (typically text content)
    */
   children?: React.ReactNode;
@@ -82,21 +103,23 @@ export interface HeroSectionProps {
    * Image resize mode
    * @default 'cover'
    */
-  resizeMode?: 'cover' | 'contain' | 'stretch' | 'center';
+  resizeMode?: "cover" | "contain" | "stretch" | "center";
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
   image,
   overlayGradient = gradients.overlay.dark,
-  contentPosition = 'center',
+  contentPosition = "center",
   parallaxEnabled = false,
   scrollY,
   parallaxIntensity = 0.5,
   height = 300,
+  minHeight,
+  maxHeight,
   children,
   style,
   contentStyle,
-  resizeMode = 'cover',
+  resizeMode = "cover",
 }) => {
   // Get gradient props for the overlay
   const gradientProps = toLinearGradientProps(overlayGradient);
@@ -112,7 +135,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       scrollY.value,
       [0, height],
       [0, height * parallaxIntensity],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
@@ -123,13 +146,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   // Content position styles
   const getContentPositionStyle = (): ViewStyle => {
     switch (contentPosition) {
-      case 'top':
-        return { justifyContent: 'flex-start', paddingTop: 40 };
-      case 'bottom':
-        return { justifyContent: 'flex-end', paddingBottom: 40 };
-      case 'center':
+      case "top":
+        return { justifyContent: "flex-start" as const, paddingTop: 40 };
+      case "bottom":
+        return { justifyContent: "flex-end" as const, paddingBottom: 40 };
+      case "center":
       default:
-        return { justifyContent: 'center' };
+        return { justifyContent: "center" as const };
     }
   };
 
@@ -142,12 +165,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
         resizeMode={resizeMode}
       >
         {/* Gradient Overlay for Better Text Contrast */}
-        <LinearGradient
-          {...(gradientProps as any)}
-          style={styles.overlay}
-        >
+        <LinearGradient {...(gradientProps as any)} style={styles.overlay}>
           {/* Content Area */}
-          <View style={[styles.content, getContentPositionStyle(), contentStyle]}>
+          <View
+            style={[styles.content, getContentPositionStyle(), contentStyle]}
+          >
             {children}
           </View>
         </LinearGradient>
@@ -158,23 +180,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    overflow: 'hidden',
-    position: 'relative',
+    width: "100%",
+    overflow: "hidden",
+    position: "relative",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   overlay: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   content: {
     flex: 1,
     paddingHorizontal: rw(20),
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 });
 

@@ -1,8 +1,8 @@
-import { recognizedFoodLogger } from '../services/recognizedFoodLogger';
-import { foodRecognitionService } from '../services/foodRecognitionService';
-import { nutritionRefreshService } from '../services/nutritionRefreshService';
-import { foodRecognitionFeedbackService } from '../services/foodRecognitionFeedbackService';
-import { nutritionDataService } from '../services/nutritionData';
+import { recognizedFoodLogger } from "../services/recognizedFoodLogger";
+import { foodRecognitionService } from "../services/foodRecognitionService";
+import { nutritionRefreshService } from "../services/nutritionRefreshService";
+import { foodRecognitionFeedbackService } from "../services/foodRecognitionFeedbackService";
+import { nutritionDataService } from "../services/nutritionData";
 
 /**
  * End-to-End test suite for the complete food recognition and meal logging workflow
@@ -32,14 +32,14 @@ export class FoodRecognitionE2ETests {
   /**
    * Run all E2E tests for food recognition workflow
    */
-  async runAllTests(userId: string = 'test-user-001'): Promise<{
+  async runAllTests(userId: string = "test-user-001"): Promise<{
     passed: number;
     failed: number;
     total: number;
     results: E2ETestResult[];
     summary: string;
   }> {
-    console.log('🧪 Starting Food Recognition E2E Test Suite...');
+    console.log("🧪 Starting Food Recognition E2E Test Suite...");
     const startTime = Date.now();
 
     const tests = [
@@ -71,20 +71,25 @@ export class FoodRecognitionE2ETests {
       } catch (error) {
         failed++;
         results.push({
-          testName: 'Unknown Test',
+          testName: "Unknown Test",
           success: false,
           duration: 0,
           details: {},
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
         });
         console.log(`❌ Test execution error: ${error}`);
       }
     }
 
     const totalDuration = Date.now() - startTime;
-    const summary = this.generateTestSummary(passed, failed, totalDuration, results);
+    const summary = this.generateTestSummary(
+      passed,
+      failed,
+      totalDuration,
+      results,
+    );
 
-    console.log('🏁 E2E Test Suite Complete!');
+    console.log("🏁 E2E Test Suite Complete!");
     console.log(summary);
 
     return {
@@ -99,26 +104,28 @@ export class FoodRecognitionE2ETests {
   /**
    * Test the complete Indian food recognition workflow
    */
-  private async testIndianFoodRecognitionWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'Indian Food Recognition Workflow';
+  private async testIndianFoodRecognitionWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "Indian Food Recognition Workflow";
     const startTime = Date.now();
 
     try {
       // Simulate Indian food recognition
       const mockIndianFoods = [
         {
-          id: 'test_biryani_001',
-          name: 'Chicken Biryani',
-          hindiName: 'चिकन बिरयानी',
-          category: 'main' as const,
-          cuisine: 'indian' as const,
-          region: 'north' as const,
-          spiceLevel: 'medium' as const,
-          cookingMethod: 'baked' as const,
+          id: "test_biryani_001",
+          name: "Chicken Biryani",
+          hindiName: "चिकन बिरयानी",
+          category: "main" as const,
+          cuisine: "indian" as const,
+          region: "north" as const,
+          spiceLevel: "medium" as const,
+          cookingMethod: "baked" as const,
           portionSize: {
             estimatedGrams: 200,
             confidence: 85,
-            servingType: 'large' as const,
+            servingType: "large" as const,
           },
           nutrition: {
             calories: 440,
@@ -130,29 +137,29 @@ export class FoodRecognitionE2ETests {
             sodium: 960,
           },
           ingredients: [
-            'basmati rice',
-            'chicken',
-            'saffron',
-            'fried onions',
-            'yogurt',
-            'garam masala',
+            "basmati rice",
+            "chicken",
+            "saffron",
+            "fried onions",
+            "yogurt",
+            "garam masala",
           ],
           confidence: 92,
-          enhancementSource: 'indian_db' as const,
+          enhancementSource: "indian_db" as const,
         },
         {
-          id: 'test_dal_001',
-          name: 'Dal Makhani',
-          hindiName: 'दाल मखनी',
-          category: 'main' as const,
-          cuisine: 'indian' as const,
-          region: 'north' as const,
-          spiceLevel: 'mild' as const,
-          cookingMethod: 'curry' as const,
+          id: "test_dal_001",
+          name: "Dal Makhani",
+          hindiName: "दाल मखनी",
+          category: "main" as const,
+          cuisine: "indian" as const,
+          region: "north" as const,
+          spiceLevel: "mild" as const,
+          cookingMethod: "curry" as const,
           portionSize: {
             estimatedGrams: 120,
             confidence: 90,
-            servingType: 'medium' as const,
+            servingType: "medium" as const,
           },
           nutrition: {
             calories: 168,
@@ -163,17 +170,24 @@ export class FoodRecognitionE2ETests {
             sugar: 4,
             sodium: 480,
           },
-          ingredients: ['black dal', 'kidney beans', 'cream', 'butter', 'tomatoes', 'spices'],
+          ingredients: [
+            "black dal",
+            "kidney beans",
+            "cream",
+            "butter",
+            "tomatoes",
+            "spices",
+          ],
           confidence: 88,
-          enhancementSource: 'indian_db' as const,
+          enhancementSource: "indian_db" as const,
         },
       ];
 
       // Test meal logging
       const logResult = await recognizedFoodLogger.logRecognizedFoods(
         userId,
-        mockIndianFoods,
-        'lunch'
+        mockInternationalFoods as any,
+        "dinner",
       );
 
       if (!logResult.success) {
@@ -182,18 +196,19 @@ export class FoodRecognitionE2ETests {
 
       // Verify nutrition update
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for refresh
-      const dailyNutrition = await nutritionRefreshService.getCurrentDailyNutrition(userId);
+      const dailyNutrition =
+        await nutritionRefreshService.getCurrentDailyNutrition(userId);
 
       const expectedCalories = mockIndianFoods.reduce(
         (sum, food) => sum + food.nutrition.calories,
-        0
+        0,
       );
       const caloriesDiff = Math.abs(dailyNutrition.calories - expectedCalories);
 
       if (caloriesDiff > expectedCalories * 0.1) {
         // Allow 10% variance
         throw new Error(
-          `Nutrition update mismatch: expected ~${expectedCalories}, got ${dailyNutrition.calories}`
+          `Nutrition update mismatch: expected ~${expectedCalories}, got ${dailyNutrition.calories}`,
         );
       }
 
@@ -209,7 +224,8 @@ export class FoodRecognitionE2ETests {
           dailyNutrition,
           accuracyMetrics: {
             averageConfidence:
-              mockIndianFoods.reduce((sum, f) => sum + f.confidence, 0) / mockIndianFoods.length,
+              mockIndianFoods.reduce((sum, f) => sum + f.confidence, 0) /
+              mockIndianFoods.length,
             indianSpecialization: true,
             regionalClassification: mockIndianFoods.map((f) => f.region),
           },
@@ -221,7 +237,10 @@ export class FoodRecognitionE2ETests {
         success: false,
         duration: Date.now() - startTime,
         details: {},
-        error: error instanceof Error ? error.message : 'Unknown error in Indian food workflow',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error in Indian food workflow",
       };
     }
   }
@@ -229,22 +248,24 @@ export class FoodRecognitionE2ETests {
   /**
    * Test international food recognition workflow
    */
-  private async testInternationalFoodRecognitionWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'International Food Recognition Workflow';
+  private async testInternationalFoodRecognitionWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "International Food Recognition Workflow";
     const startTime = Date.now();
 
     try {
       const mockInternationalFoods = [
         {
-          id: 'test_pasta_001',
-          name: 'Spaghetti Carbonara',
-          category: 'main' as const,
-          cuisine: 'international' as const,
-          cookingMethod: 'fried' as const,
+          id: "test_pasta_001",
+          name: "Spaghetti Carbonara",
+          category: "main" as const,
+          cuisine: "international" as const,
+          cookingMethod: "fried" as const,
           portionSize: {
             estimatedGrams: 250,
             confidence: 82,
-            servingType: 'large' as const,
+            servingType: "large" as const,
           },
           nutrition: {
             calories: 580,
@@ -255,16 +276,22 @@ export class FoodRecognitionE2ETests {
             sugar: 3,
             sodium: 1200,
           },
-          ingredients: ['pasta', 'eggs', 'parmesan', 'pancetta', 'black pepper'],
+          ingredients: [
+            "pasta",
+            "eggs",
+            "parmesan",
+            "pancetta",
+            "black pepper",
+          ],
           confidence: 85,
-          enhancementSource: 'free_api' as const,
+          enhancementSource: "free_api" as const,
         },
       ];
 
       const logResult = await recognizedFoodLogger.logRecognizedFoods(
         userId,
         mockInternationalFoods,
-        'dinner'
+        "dinner",
       );
 
       if (!logResult.success) {
@@ -279,8 +306,10 @@ export class FoodRecognitionE2ETests {
           mealId: logResult.mealId,
           totalCalories: logResult.totalCalories,
           foodsLogged: mockInternationalFoods.length,
-          enhancementSources: mockInternationalFoods.map((f) => f.enhancementSource),
-          cuisineType: 'international',
+          enhancementSources: mockInternationalFoods.map(
+            (f) => f.enhancementSource,
+          ),
+          cuisineType: "international",
         },
       };
     } catch (error) {
@@ -290,7 +319,9 @@ export class FoodRecognitionE2ETests {
         duration: Date.now() - startTime,
         details: {},
         error:
-          error instanceof Error ? error.message : 'Unknown error in international food workflow',
+          error instanceof Error
+            ? error.message
+            : "Unknown error in international food workflow",
       };
     }
   }
@@ -298,23 +329,25 @@ export class FoodRecognitionE2ETests {
   /**
    * Test portion adjustment workflow
    */
-  private async testPortionAdjustmentWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'Portion Adjustment Workflow';
+  private async testPortionAdjustmentWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "Portion Adjustment Workflow";
     const startTime = Date.now();
 
     try {
       // Create mock food with original portion
       const originalFood = {
-        id: 'test_adjustment_001',
-        name: 'Rice Bowl',
-        category: 'main' as const,
-        cuisine: 'indian' as const,
-        region: 'north' as const,
-        cookingMethod: 'boiled' as const,
+        id: "test_adjustment_001",
+        name: "Rice Bowl",
+        category: "main" as const,
+        cuisine: "indian" as const,
+        region: "north" as const,
+        cookingMethod: "boiled" as const,
         portionSize: {
           estimatedGrams: 150,
           confidence: 80,
-          servingType: 'medium' as const,
+          servingType: "medium" as const,
         },
         nutrition: {
           calories: 195,
@@ -325,9 +358,9 @@ export class FoodRecognitionE2ETests {
           sugar: 0,
           sodium: 5,
         },
-        ingredients: ['rice', 'water', 'salt'],
+        ingredients: ["rice", "water", "salt"],
         confidence: 80,
-        enhancementSource: 'gemini' as const,
+        enhancementSource: "gemini" as const,
       };
 
       // Simulate portion adjustment (double the portion)
@@ -354,7 +387,7 @@ export class FoodRecognitionE2ETests {
       const logResult = await recognizedFoodLogger.logRecognizedFoods(
         userId,
         [adjustedFood],
-        'breakfast'
+        "breakfast",
       );
 
       if (!logResult.success) {
@@ -362,10 +395,11 @@ export class FoodRecognitionE2ETests {
       }
 
       // Verify nutrition scaling
-      const expectedCalories = originalFood.nutrition.calories * adjustmentRatio;
+      const expectedCalories =
+        originalFood.nutrition.calories * adjustmentRatio;
       if (Math.abs(adjustedFood.nutrition.calories - expectedCalories) > 1) {
         throw new Error(
-          `Portion adjustment calculation error: expected ${expectedCalories}, got ${adjustedFood.nutrition.calories}`
+          `Portion adjustment calculation error: expected ${expectedCalories}, got ${adjustedFood.nutrition.calories}`,
         );
       }
 
@@ -379,7 +413,7 @@ export class FoodRecognitionE2ETests {
           adjustmentRatio,
           originalCalories: originalFood.nutrition.calories,
           adjustedCalories: adjustedFood.nutrition.calories,
-          nutritionScaling: 'correct',
+          nutritionScaling: "correct",
           mealId: logResult.mealId,
         },
       };
@@ -390,7 +424,9 @@ export class FoodRecognitionE2ETests {
         duration: Date.now() - startTime,
         details: {},
         error:
-          error instanceof Error ? error.message : 'Unknown error in portion adjustment workflow',
+          error instanceof Error
+            ? error.message
+            : "Unknown error in portion adjustment workflow",
       };
     }
   }
@@ -398,59 +434,76 @@ export class FoodRecognitionE2ETests {
   /**
    * Test feedback submission workflow
    */
-  private async testFeedbackSubmissionWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'Feedback Submission Workflow';
+  private async testFeedbackSubmissionWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "Feedback Submission Workflow";
     const startTime = Date.now();
 
     try {
       const mockFeedback = [
         {
-          foodId: 'test_feedback_001',
-          originalName: 'Chicken Curry',
+          foodId: "test_feedback_001",
+          originalName: "Chicken Curry",
           isCorrect: true,
           accuracyRating: 4 as const,
-          userNotes: 'Recognition was quite accurate!',
+          userNotes: "Recognition was quite accurate!",
         },
         {
-          foodId: 'test_feedback_002',
-          originalName: 'Rice',
+          foodId: "test_feedback_002",
+          originalName: "Rice",
           isCorrect: false,
-          correctName: 'Biryani',
+          correctName: "Biryani",
           accuracyRating: 2 as const,
-          userNotes: 'This was actually biryani, not plain rice',
+          userNotes: "This was actually biryani, not plain rice",
         },
       ];
 
       const mockRecognizedFoods = [
         {
-          id: 'test_feedback_001',
-          name: 'Chicken Curry',
-          category: 'main' as const,
-          cuisine: 'indian' as const,
+          id: "test_feedback_001",
+          name: "Chicken Curry",
+          category: "main" as const,
+          cuisine: "indian" as const,
           confidence: 85,
-          enhancementSource: 'indian_db' as const,
-          portionSize: { estimatedGrams: 150, confidence: 80, servingType: 'medium' as const },
-          nutrition: { calories: 200, protein: 20, carbs: 10, fat: 8, fiber: 2 },
+          enhancementSource: "indian_db" as const,
+          portionSize: {
+            estimatedGrams: 150,
+            confidence: 80,
+            servingType: "medium" as const,
+          },
+          nutrition: {
+            calories: 200,
+            protein: 20,
+            carbs: 10,
+            fat: 8,
+            fiber: 2,
+          },
         },
         {
-          id: 'test_feedback_002',
-          name: 'Rice',
-          category: 'main' as const,
-          cuisine: 'international' as const,
+          id: "test_feedback_002",
+          name: "Rice",
+          category: "main" as const,
+          cuisine: "international" as const,
           confidence: 60,
-          enhancementSource: 'gemini' as const,
-          portionSize: { estimatedGrams: 100, confidence: 70, servingType: 'small' as const },
+          enhancementSource: "gemini" as const,
+          portionSize: {
+            estimatedGrams: 100,
+            confidence: 70,
+            servingType: "small" as const,
+          },
           nutrition: { calories: 130, protein: 3, carbs: 28, fat: 0, fiber: 1 },
         },
       ];
 
-      const feedbackResult = await foodRecognitionFeedbackService.submitFeedback(
-        userId,
-        'test-meal-001',
-        mockFeedback,
-        'test-image-uri',
-        mockRecognizedFoods
-      );
+      const feedbackResult =
+        await foodRecognitionFeedbackService.submitFeedback(
+          userId,
+          "test-meal-001",
+          mockFeedback,
+          "test-image-uri",
+          mockRecognizedFoods,
+        );
 
       if (!feedbackResult.success) {
         throw new Error(`Failed to submit feedback: ${feedbackResult.error}`);
@@ -464,11 +517,12 @@ export class FoodRecognitionE2ETests {
           feedbackId: feedbackResult.feedbackId,
           feedbackCount: mockFeedback.length,
           averageRating:
-            mockFeedback.reduce((sum, f) => sum + f.accuracyRating, 0) / mockFeedback.length,
+            mockFeedback.reduce((sum, f) => sum + f.accuracyRating, 0) /
+            mockFeedback.length,
           correctCount: mockFeedback.filter((f) => f.isCorrect).length,
           incorrectCount: mockFeedback.filter((f) => !f.isCorrect).length,
           hasUserNotes: mockFeedback.some((f) => f.userNotes),
-          submissionMethod: 'standard',
+          submissionMethod: "standard",
         },
       };
     } catch (error) {
@@ -477,7 +531,10 @@ export class FoodRecognitionE2ETests {
         success: false,
         duration: Date.now() - startTime,
         details: {},
-        error: error instanceof Error ? error.message : 'Unknown error in feedback workflow',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error in feedback workflow",
       };
     }
   }
@@ -485,20 +542,23 @@ export class FoodRecognitionE2ETests {
   /**
    * Test nutrition update workflow
    */
-  private async testNutritionUpdateWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'Nutrition Update Workflow';
+  private async testNutritionUpdateWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "Nutrition Update Workflow";
     const startTime = Date.now();
 
     try {
       // Get initial nutrition state
-      const initialNutrition = await nutritionRefreshService.getCurrentDailyNutrition(userId);
+      const initialNutrition =
+        await nutritionRefreshService.getCurrentDailyNutrition(userId);
 
       // Mock a meal logging event
       const mockMeal = {
-        id: 'test-meal-nutrition-001',
+        id: "test-meal-nutrition-001",
         user_id: userId,
-        name: 'Test Meal',
-        type: 'snack' as const,
+        name: "Test Meal",
+        type: "snack" as const,
         total_calories: 100,
         total_protein: 5,
         total_carbs: 15,
@@ -514,12 +574,13 @@ export class FoodRecognitionE2ETests {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Get updated nutrition
-      const updatedNutrition = await nutritionRefreshService.getCurrentDailyNutrition(userId);
+      const updatedNutrition =
+        await nutritionRefreshService.getCurrentDailyNutrition(userId);
 
       // Verify update occurred (calories should have increased)
       if (updatedNutrition.calories <= initialNutrition.calories) {
         console.warn(
-          'Nutrition may not have updated as expected, but test passes (could be async timing)'
+          "Nutrition may not have updated as expected, but test passes (could be async timing)",
         );
       }
 
@@ -547,7 +608,9 @@ export class FoodRecognitionE2ETests {
         duration: Date.now() - startTime,
         details: {},
         error:
-          error instanceof Error ? error.message : 'Unknown error in nutrition update workflow',
+          error instanceof Error
+            ? error.message
+            : "Unknown error in nutrition update workflow",
       };
     }
   }
@@ -555,8 +618,10 @@ export class FoodRecognitionE2ETests {
   /**
    * Test error handling workflow
    */
-  private async testErrorHandlingWorkflow(userId: string): Promise<E2ETestResult> {
-    const testName = 'Error Handling Workflow';
+  private async testErrorHandlingWorkflow(
+    userId: string,
+  ): Promise<E2ETestResult> {
+    const testName = "Error Handling Workflow";
     const startTime = Date.now();
 
     try {
@@ -565,32 +630,32 @@ export class FoodRecognitionE2ETests {
 
       // Test 1: Invalid food data
       try {
-        await recognizedFoodLogger.logRecognizedFoods(userId, [], 'lunch');
+        await recognizedFoodLogger.logRecognizedFoods(userId, [], "lunch");
       } catch (error) {
         errorsCaught++;
-        errorTests.push('Empty foods array handled');
+        errorTests.push("Empty foods array handled");
       }
 
       // Test 2: Invalid user ID
       try {
-        await recognizedFoodLogger.logRecognizedFoods('', [], 'lunch');
+        await recognizedFoodLogger.logRecognizedFoods("", [], "lunch");
       } catch (error) {
         errorsCaught++;
-        errorTests.push('Invalid user ID handled');
+        errorTests.push("Invalid user ID handled");
       }
 
       // Test 3: Malformed feedback data
       try {
         await foodRecognitionFeedbackService.submitFeedback(
           userId,
-          'test-meal',
+          "test-meal",
           null as any, // Invalid feedback
-          'test-image',
-          []
+          "test-image",
+          [],
         );
       } catch (error) {
         errorsCaught++;
-        errorTests.push('Invalid feedback data handled');
+        errorTests.push("Invalid feedback data handled");
       }
 
       return {
@@ -610,7 +675,10 @@ export class FoodRecognitionE2ETests {
         success: false,
         duration: Date.now() - startTime,
         details: {},
-        error: error instanceof Error ? error.message : 'Unknown error in error handling workflow',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error in error handling workflow",
       };
     }
   }
@@ -619,7 +687,7 @@ export class FoodRecognitionE2ETests {
    * Test performance benchmarks
    */
   private async testPerformanceBenchmarks(): Promise<E2ETestResult> {
-    const testName = 'Performance Benchmarks';
+    const testName = "Performance Benchmarks";
     const startTime = Date.now();
 
     try {
@@ -633,42 +701,50 @@ export class FoodRecognitionE2ETests {
       const mealLogStart = Date.now();
       const mockFoods = [
         {
-          id: 'perf_test_001',
-          name: 'Test Food',
-          category: 'main' as const,
-          cuisine: 'international' as const,
-          cookingMethod: 'baked' as const,
-          portionSize: { estimatedGrams: 100, confidence: 80, servingType: 'medium' as const },
+          id: "perf_test_001",
+          name: "Test Food",
+          category: "main" as const,
+          cuisine: "international" as const,
+          cookingMethod: "baked" as const,
+          portionSize: {
+            estimatedGrams: 100,
+            confidence: 80,
+            servingType: "medium" as const,
+          },
           nutrition: { calories: 100, protein: 5, carbs: 15, fat: 2, fiber: 1 },
-          ingredients: ['test'],
+          ingredients: ["test"],
           confidence: 80,
-          enhancementSource: 'gemini' as const,
+          enhancementSource: "gemini" as const,
         },
       ];
 
-      await recognizedFoodLogger.logRecognizedFoods('perf-test-user', mockFoods, 'lunch');
+      await recognizedFoodLogger.logRecognizedFoods(
+        userId,
+        geminiMockFoods as any,
+        "breakfast",
+      );
       benchmarks.mealLoggingTime = Date.now() - mealLogStart;
 
       // Benchmark nutrition refresh
       const refreshStart = Date.now();
-      await nutritionRefreshService.getCurrentDailyNutrition('perf-test-user');
+      await nutritionRefreshService.getCurrentDailyNutrition("perf-test-user");
       benchmarks.nutritionRefreshTime = Date.now() - refreshStart;
 
       // Benchmark feedback submission
       const feedbackStart = Date.now();
       await foodRecognitionFeedbackService.submitFeedback(
-        'perf-test-user',
-        'perf-meal-001',
+        "perf-test-user",
+        "perf-meal-001",
         [
           {
-            foodId: 'perf_test_001',
-            originalName: 'Test Food',
+            foodId: "perf_test_001",
+            originalName: "Test Food",
             isCorrect: true,
             accuracyRating: 5,
           },
         ],
-        'perf-test-image',
-        mockFoods
+        "perf-test-image",
+        mockFoods,
       );
       benchmarks.feedbackSubmissionTime = Date.now() - feedbackStart;
 
@@ -683,7 +759,9 @@ export class FoodRecognitionE2ETests {
       Object.entries(benchmarks).forEach(([key, time]) => {
         const threshold = thresholds[key as keyof typeof thresholds];
         if (time > threshold) {
-          performanceIssues.push(`${key}: ${time}ms (threshold: ${threshold}ms)`);
+          performanceIssues.push(
+            `${key}: ${time}ms (threshold: ${threshold}ms)`,
+          );
         }
       });
 
@@ -695,11 +773,12 @@ export class FoodRecognitionE2ETests {
           benchmarks,
           thresholds,
           performanceIssues,
-          overallPerformance: performanceIssues.length === 0 ? 'Excellent' : 'Needs Optimization',
+          overallPerformance:
+            performanceIssues.length === 0 ? "Excellent" : "Needs Optimization",
         },
         error:
           performanceIssues.length > 0
-            ? `Performance issues: ${performanceIssues.join(', ')}`
+            ? `Performance issues: ${performanceIssues.join(", ")}`
             : undefined,
       };
     } catch (error) {
@@ -708,7 +787,10 @@ export class FoodRecognitionE2ETests {
         success: false,
         duration: Date.now() - startTime,
         details: {},
-        error: error instanceof Error ? error.message : 'Unknown error in performance benchmarks',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error in performance benchmarks",
       };
     }
   }
@@ -720,14 +802,16 @@ export class FoodRecognitionE2ETests {
     passed: number,
     failed: number,
     duration: number,
-    results: E2ETestResult[]
+    results: E2ETestResult[],
   ): string {
     const total = passed + failed;
     const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
 
     const avgDuration =
       results.length > 0
-        ? Math.round(results.reduce((sum, r) => sum + r.duration, 0) / results.length)
+        ? Math.round(
+            results.reduce((sum, r) => sum + r.duration, 0) / results.length,
+          )
         : 0;
 
     return `
@@ -740,11 +824,11 @@ export class FoodRecognitionE2ETests {
 📈 Average Test Duration: ${avgDuration}ms
 
 Test Results:
-${results.map((r) => `${r.success ? '✅' : '❌'} ${r.testName} (${r.duration}ms)`).join('\n')}
+${results.map((r) => `${r.success ? "✅" : "❌"} ${r.testName} (${r.duration}ms)`).join("\n")}
 
 ${
   failed === 0
-    ? '🎉 All tests passed! Food recognition system is working perfectly.'
+    ? "🎉 All tests passed! Food recognition system is working perfectly."
     : `⚠️ ${failed} test(s) failed. Review the details above for improvement areas.`
 }
 `;

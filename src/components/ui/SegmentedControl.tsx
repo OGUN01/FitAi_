@@ -1,15 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LayoutChangeEvent, ViewStyle } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  LayoutChangeEvent,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 export interface SegmentOption {
   id: string;
@@ -29,7 +36,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   options,
   selectedId,
   onSelect,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   style,
 }) => {
   const [segmentWidths, setSegmentWidths] = useState<number[]>([]);
@@ -37,12 +44,14 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
   const translateX = useSharedValue(0);
   const indicatorWidth = useSharedValue(0);
 
-  const selectedIndex = options.findIndex(opt => opt.id === selectedId);
+  const selectedIndex = options.findIndex((opt) => opt.id === selectedId);
 
   useEffect(() => {
     if (segmentWidths.length === options.length && selectedIndex >= 0) {
       // Calculate position for the sliding indicator
-      const position = segmentWidths.slice(0, selectedIndex).reduce((sum, width) => sum + width, 0);
+      const position = segmentWidths
+        .slice(0, selectedIndex)
+        .reduce((sum, width) => sum + width, 0);
       const width = segmentWidths[selectedIndex] || 0;
 
       translateX.value = withSpring(position, {
@@ -68,7 +77,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
 
   const handleSegmentLayout = (index: number, event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
-    setSegmentWidths(prev => {
+    setSegmentWidths((prev) => {
       const newWidths = [...prev];
       newWidths[index] = width;
       return newWidths;
@@ -80,7 +89,7 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
       {/* Sliding Indicator */}
       <Animated.View style={[styles.indicator, animatedIndicatorStyle]}>
         <LinearGradient
-          colors={gradient}
+          colors={gradient as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.indicatorGradient}
@@ -116,23 +125,23 @@ export const SegmentedControl: React.FC<SegmentedControlProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    flexDirection: 'row',
+    position: "relative",
+    flexDirection: "row",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.full,
     padding: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 4,
     bottom: 4,
     left: 4,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
     zIndex: 1,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -144,7 +153,7 @@ const styles = StyleSheet.create({
   },
 
   segmentsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     flex: 1,
     zIndex: 2,
   },
@@ -153,8 +162,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     minWidth: 0,
   },
 
@@ -162,7 +171,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
 

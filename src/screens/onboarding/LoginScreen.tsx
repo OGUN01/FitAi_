@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   title: {
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
 
   googleButtonContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
 
   dividerContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginVertical: ResponsiveTheme.spacing.lg,
   },
 

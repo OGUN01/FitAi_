@@ -1079,7 +1079,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1291,7 +1291,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1341,7 +1341,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "center" as const,
                       marginTop: ResponsiveTheme.spacing.xs,
                     }}
                   >
@@ -1507,7 +1507,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
                   if (val <= 8) return "Good";
                   return "Excellent";
                 }}
-                style={styles.flexibilitySlider}
+                style={styles.flexibilityGrid}
               />
             </View>
           </View>
@@ -1521,7 +1521,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1825,7 +1825,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1912,7 +1912,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -2075,7 +2075,7 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
               <View
                 style={{
                   flexDirection: "row",
-                  alignItems: "center",
+                  alignItems: "center" as const,
                   marginBottom: ResponsiveTheme.spacing.xs,
                 }}
               >
@@ -2211,7 +2211,7 @@ const styles = StyleSheet.create({
 
   autoSaveIndicator: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     alignSelf: "flex-start",
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -2296,7 +2296,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     padding: ResponsiveTheme.spacing.sm,
     minHeight: rh(12),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   consistentCardSelected: {
@@ -2306,14 +2306,14 @@ const styles = StyleSheet.create({
 
   consistentCardHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     width: "100%",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   consistentCardIconCenter: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -2343,8 +2343,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginTop: ResponsiveTheme.spacing.xs,
   },
 
@@ -2365,7 +2365,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     minWidth: rw(70),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   durationPillSelected: {
@@ -2408,7 +2408,7 @@ const styles = StyleSheet.create({
 
   compactPillRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -2417,8 +2417,8 @@ const styles = StyleSheet.create({
     height: rf(24),
     borderRadius: rf(12),
     backgroundColor: "rgba(255,255,255,0.1)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   compactPillTitle: {
@@ -2444,7 +2444,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
+    justifyContent: "center" as const,
     paddingHorizontal: 2,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
@@ -2468,8 +2468,8 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
@@ -2485,8 +2485,8 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -2523,7 +2523,7 @@ const styles = StyleSheet.create({
 
   modalBenefitItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2554,14 +2554,14 @@ const styles = StyleSheet.create({
 
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   readOnlyBadge: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: `${ResponsiveTheme.colors.warning}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -2603,7 +2603,7 @@ const styles = StyleSheet.create({
 
   autoSuggestText: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
     padding: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -2639,7 +2639,7 @@ const styles = StyleSheet.create({
   },
 
   goalContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -2684,7 +2684,7 @@ const styles = StyleSheet.create({
 
   activityContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -2743,8 +2743,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   experienceOptionSelected: {
@@ -2861,7 +2861,7 @@ const styles = StyleSheet.create({
 
   flexibilityCard: {
     padding: ResponsiveTheme.spacing.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   flexibilityCardSelected: {
@@ -2908,7 +2908,7 @@ const styles = StyleSheet.create({
   },
 
   locationContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   locationIcon: {
@@ -2977,7 +2977,7 @@ const styles = StyleSheet.create({
 
   intensityHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -3021,7 +3021,7 @@ const styles = StyleSheet.create({
   },
 
   workoutTimeContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   workoutTimeIcon: {
@@ -3070,8 +3070,8 @@ const styles = StyleSheet.create({
 
   stylePreferenceHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -3108,7 +3108,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.xxs,
   },
 
@@ -3139,13 +3139,13 @@ const styles = StyleSheet.create({
 
   weightGoalsContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   weightGoalItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   weightGoalLabel: {
@@ -3166,7 +3166,7 @@ const styles = StyleSheet.create({
   },
 
   weeklyRateInfo: {
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
@@ -3254,14 +3254,14 @@ const styles = StyleSheet.create({
 
   buttonRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     gap: ResponsiveTheme.spacing.md,
   },
 
   backButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -3277,7 +3277,7 @@ const styles = StyleSheet.create({
 
   nextButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -3317,7 +3317,7 @@ const styles = StyleSheet.create({
   },
 
   gymEquipmentContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   gymEquipmentIcon: {
@@ -3344,13 +3344,13 @@ const styles = StyleSheet.create({
   gymEquipmentList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
 
   gymEquipmentItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -3380,7 +3380,7 @@ const styles = StyleSheet.create({
 
   calculatedLevelContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   calculatedLevelIcon: {
@@ -3423,7 +3423,7 @@ const styles = StyleSheet.create({
 
   recommendedTypesHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -3453,7 +3453,7 @@ const styles = StyleSheet.create({
 
   recommendedTypeItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,

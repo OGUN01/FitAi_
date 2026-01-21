@@ -128,8 +128,19 @@ export class HealthScoreCalculator {
 
     return {
       totalScore: Math.round(finalScore),
-      grade: this.getGrade(finalScore),
-      factors,
+      components: {
+        bmiScore:
+          factors.find((f) => f.category === "BMI/Body Composition")?.score ||
+          0,
+        activityScore:
+          factors.find((f) => f.category === "Physical Activity")?.score || 0,
+        nutritionScore:
+          factors.find((f) => f.category === "Nutrition Quality")?.score || 0,
+        vo2maxScore: factors.find(
+          (f) => f.category === "Cardiovascular Fitness",
+        )?.score,
+      },
+      rating: this.getRating(finalScore),
       recommendations: this.getRecommendations(factors, user),
     };
   }
@@ -285,14 +296,16 @@ export class HealthScoreCalculator {
   }
 
   /**
-   * Convert score to letter grade
+   * Convert score to rating
    */
-  private getGrade(score: number): string {
-    if (score >= 90) return "A (Excellent)";
-    if (score >= 80) return "B (Good)";
-    if (score >= 70) return "C (Fair)";
-    if (score >= 60) return "D (Needs Improvement)";
-    return "F (Poor)";
+  private getRating(
+    score: number,
+  ): "poor" | "fair" | "good" | "very_good" | "excellent" {
+    if (score >= 90) return "excellent";
+    if (score >= 80) return "very_good";
+    if (score >= 70) return "good";
+    if (score >= 60) return "fair";
+    return "poor";
   }
 
   /**

@@ -914,7 +914,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1026,7 +1026,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1081,7 +1081,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1273,7 +1273,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1417,7 +1417,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           </GlassCard>
         ) : (
           <Slider
-            value={formData.max_prep_time_minutes}
+            value={formData.max_prep_time_minutes ?? 30}
             onValueChange={(value) =>
               updateField("max_prep_time_minutes", value)
             }
@@ -1477,7 +1477,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
@@ -1539,7 +1539,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
@@ -1819,7 +1819,7 @@ const styles = StyleSheet.create({
 
   autoSaveIndicator: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     alignSelf: "flex-start",
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
@@ -1954,8 +1954,8 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
 
@@ -1971,8 +1971,8 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -2009,7 +2009,7 @@ const styles = StyleSheet.create({
 
   modalBenefitItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2050,7 +2050,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
     padding: ResponsiveTheme.spacing.sm,
     minHeight: rh(12),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   consistentCardSelected: {
@@ -2065,14 +2065,14 @@ const styles = StyleSheet.create({
 
   consistentCardHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     width: "100%",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   consistentCardIconCenter: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -2102,8 +2102,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginTop: ResponsiveTheme.spacing.xs,
   },
 
@@ -2120,7 +2120,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     paddingHorizontal: 2,
   },
 
@@ -2171,15 +2171,15 @@ const styles = StyleSheet.create({
   },
 
   dietTypeContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
 
   dietTypeInfoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     width: "100%",
   },
@@ -2230,14 +2230,14 @@ const styles = StyleSheet.create({
   dietReadinessContent: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.md,
   },
 
   dietReadinessProgressContainer: {
     position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     flexShrink: 0,
   },
 
@@ -2252,7 +2252,7 @@ const styles = StyleSheet.create({
 
   dietReadinessTitleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -2326,14 +2326,14 @@ const styles = StyleSheet.create({
   },
 
   mealPreferenceCardContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     width: "100%",
   },
 
   mealPreferenceHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     width: "100%",
     marginBottom: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
@@ -2389,8 +2389,8 @@ const styles = StyleSheet.create({
   },
 
   skillLevelContent: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     width: "100%",
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
@@ -2443,7 +2443,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   prepTimeOptionSelected: {
@@ -2499,7 +2499,7 @@ const styles = StyleSheet.create({
   },
 
   budgetContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   budgetIcon: {
@@ -2570,7 +2570,7 @@ const styles = StyleSheet.create({
 
   compactPillRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -2579,8 +2579,8 @@ const styles = StyleSheet.create({
     height: rf(24),
     borderRadius: rf(12),
     backgroundColor: "rgba(255,255,255,0.1)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   compactPillTitle: {
@@ -2606,7 +2606,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
+    justifyContent: "center" as const,
     paddingHorizontal: 2,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
@@ -2622,15 +2622,15 @@ const styles = StyleSheet.create({
   // Legacy - kept for reference
   compactPillHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   compactPillToggleRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
   },
 
   compactPillStatus: {
@@ -2675,8 +2675,8 @@ const styles = StyleSheet.create({
 
   habitHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -2713,7 +2713,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderWidth: 1,
     borderColor: "transparent",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     paddingHorizontal: 2,
   },
 
@@ -2756,9 +2756,9 @@ const styles = StyleSheet.create({
 
   warningContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
-    justifyContent: "center",
+    justifyContent: "center" as const,
   },
 
   warningText: {
@@ -2777,9 +2777,9 @@ const styles = StyleSheet.create({
 
   infoContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
-    justifyContent: "center",
+    justifyContent: "center" as const,
   },
 
   infoText: {
@@ -2800,7 +2800,7 @@ const styles = StyleSheet.create({
 
   validationTitleContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -2870,14 +2870,14 @@ const styles = StyleSheet.create({
 
   buttonRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     gap: ResponsiveTheme.spacing.md,
   },
 
   backButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -2893,7 +2893,7 @@ const styles = StyleSheet.create({
 
   nextButtonCompact: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,

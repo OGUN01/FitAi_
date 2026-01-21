@@ -4,7 +4,7 @@
  * Loads tiny blurred thumbnail first, then fades in full-resolution image
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Image,
@@ -16,8 +16,8 @@ import {
   ImageSourcePropType,
   ImageResizeMode,
   Easing,
-} from 'react-native';
-import { AuroraSpinner } from './AuroraSpinner';
+} from "react-native";
+import { AuroraSpinner } from "./AuroraSpinner";
 
 // ============================================================================
 // TYPES
@@ -98,7 +98,7 @@ export interface ProgressiveImageProps {
 export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   source,
   thumbnailSource,
-  resizeMode = 'cover',
+  resizeMode = "cover",
   thumbnailBlurRadius = 20,
   fadeDuration = 400,
   showSpinner = true,
@@ -248,8 +248,7 @@ export const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 // PROGRESSIVE IMAGE BACKGROUND
 // ============================================================================
 
-export interface ProgressiveImageBackgroundProps
-  extends ProgressiveImageProps {
+export interface ProgressiveImageBackgroundProps extends ProgressiveImageProps {
   /**
    * Children to render over the background image
    */
@@ -324,11 +323,12 @@ export const ProgressiveAvatar: React.FC<ProgressiveAvatarProps> = ({
   size = 48,
   borderRadius,
   borderWidth = 0,
-  borderColor = '#FFFFFF',
+  borderColor = "#FFFFFF",
   style,
   accessibilityLabel,
 }) => {
-  const avatarBorderRadius = borderRadius !== undefined ? borderRadius : size / 2;
+  const avatarBorderRadius =
+    borderRadius !== undefined ? borderRadius : size / 2;
 
   return (
     <View
@@ -392,31 +392,31 @@ export const CachedProgressiveImage: React.FC<CachedImageProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   imageContainer: {
     ...StyleSheet.absoluteFillObject,
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   spinnerContainer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'transparent',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    backgroundColor: "transparent",
   },
   errorContainer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   errorContent: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
   errorIcon: {
     fontSize: 32,
@@ -424,18 +424,18 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.5)',
-    textAlign: 'center',
+    color: "rgba(255, 255, 255, 0.5)",
+    textAlign: "center",
   },
   backgroundChildren: {
     ...StyleSheet.absoluteFillObject,
   },
   avatarContainer: {
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    overflow: "hidden",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   avatarImage: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });
 
@@ -444,9 +444,3 @@ const styles = StyleSheet.create({
 // ============================================================================
 
 export default ProgressiveImage;
-
-export {
-  ProgressiveImageBackground,
-  ProgressiveAvatar,
-  CachedProgressiveImage,
-};

@@ -493,7 +493,7 @@ export type NutritionTipCategory =
 // ============================================================================
 
 export interface FoodScanResult {
-  confidence: number; // 0-100
+  confidence?: number; // 0-100
   recognizedFoods: RecognizedFood[];
   nutritionEstimate?: NutritionInfo;
   suggestions: string[];
@@ -504,6 +504,7 @@ export interface FoodScanResult {
 export interface FoodRecognitionResult extends FoodScanResult {
   foods?: RecognizedFood[]; // Alternative name for recognizedFoods
   data?: RecognizedFood[]; // Alternative name for recognizedFoods
+  confidence?: number; // Overall confidence 0-100
 }
 
 export interface RecognizedFood {
@@ -524,4 +525,30 @@ export interface RecognizedFood {
     unit: string;
   };
   enhancementSource?: "ai" | "manual" | "database";
+  // Additional properties from foodRecognitionService.ts
+  id?: string;
+  localName?: string;
+  category?: "main" | "side" | "snack" | "sweet" | "beverage";
+  cuisine?: string;
+  estimatedGrams?: number;
+  servingDescription?: string;
+  userGrams?: number;
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    sugar?: number;
+    sodium?: number;
+  };
+  nutritionPer100g?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    fiber: number;
+    sugar?: number;
+    sodium?: number;
+  };
 }

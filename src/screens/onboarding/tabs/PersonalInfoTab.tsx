@@ -1,15 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rp, rh, rw } from '../../../utils/responsive';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { Button, Input, Card, SegmentedControl, FeatureGrid, type SegmentOption, type FeatureItem } from '../../../components/ui';
-import { GlassCard, AnimatedPressable, AnimatedSection, HeroSection, AnimatedIcon } from '../../../components/ui/aurora';
-import { gradients, toLinearGradientProps } from '../../../theme/gradients';
-import { PersonalInfoData, TabValidationResult } from '../../../types/onboarding';
-import TimePicker from '../../../components/onboarding/TimePicker';
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rh, rw } from "../../../utils/responsive";
+import { ResponsiveTheme } from "../../../utils/constants";
+import {
+  Button,
+  Input,
+  Card,
+  SegmentedControl,
+  FeatureGrid,
+  type SegmentOption,
+  type FeatureItem,
+} from "../../../components/ui";
+import {
+  GlassCard,
+  AnimatedPressable,
+  AnimatedSection,
+  HeroSection,
+  AnimatedIcon,
+} from "../../../components/ui/aurora";
+import { gradients, toLinearGradientProps } from "../../../theme/gradients";
+import {
+  PersonalInfoData,
+  TabValidationResult,
+} from "../../../types/onboarding";
+import TimePicker from "../../../components/onboarding/TimePicker";
 
 // ============================================================================
 // TYPES
@@ -41,74 +65,129 @@ interface CountryState {
 // Top countries with their states (simplified for production app)
 const COUNTRIES_WITH_STATES: CountryState[] = [
   {
-    name: 'United States',
-    states: ['California', 'Texas', 'Florida', 'New York', 'Pennsylvania', 'Illinois', 'Ohio', 'Georgia', 'North Carolina', 'Michigan']
+    name: "United States",
+    states: [
+      "California",
+      "Texas",
+      "Florida",
+      "New York",
+      "Pennsylvania",
+      "Illinois",
+      "Ohio",
+      "Georgia",
+      "North Carolina",
+      "Michigan",
+    ],
   },
   {
-    name: 'India', 
-    states: ['Maharashtra', 'Gujarat', 'Karnataka', 'Tamil Nadu', 'Uttar Pradesh', 'West Bengal', 'Rajasthan', 'Madhya Pradesh', 'Andhra Pradesh', 'Kerala']
+    name: "India",
+    states: [
+      "Maharashtra",
+      "Gujarat",
+      "Karnataka",
+      "Tamil Nadu",
+      "Uttar Pradesh",
+      "West Bengal",
+      "Rajasthan",
+      "Madhya Pradesh",
+      "Andhra Pradesh",
+      "Kerala",
+    ],
   },
   {
-    name: 'Canada',
-    states: ['Ontario', 'Quebec', 'British Columbia', 'Alberta', 'Manitoba', 'Saskatchewan', 'Nova Scotia', 'New Brunswick', 'Newfoundland and Labrador', 'Prince Edward Island']
+    name: "Canada",
+    states: [
+      "Ontario",
+      "Quebec",
+      "British Columbia",
+      "Alberta",
+      "Manitoba",
+      "Saskatchewan",
+      "Nova Scotia",
+      "New Brunswick",
+      "Newfoundland and Labrador",
+      "Prince Edward Island",
+    ],
   },
   {
-    name: 'United Kingdom',
-    states: ['England', 'Scotland', 'Wales', 'Northern Ireland']
+    name: "United Kingdom",
+    states: ["England", "Scotland", "Wales", "Northern Ireland"],
   },
   {
-    name: 'Australia',
-    states: ['New South Wales', 'Victoria', 'Queensland', 'Western Australia', 'South Australia', 'Tasmania', 'Australian Capital Territory', 'Northern Territory']
+    name: "Australia",
+    states: [
+      "New South Wales",
+      "Victoria",
+      "Queensland",
+      "Western Australia",
+      "South Australia",
+      "Tasmania",
+      "Australian Capital Territory",
+      "Northern Territory",
+    ],
   },
   {
-    name: 'Germany',
-    states: ['North Rhine-Westphalia', 'Bavaria', 'Baden-Württemberg', 'Lower Saxony', 'Hesse', 'Saxony', 'Rhineland-Palatinate', 'Berlin']
+    name: "Germany",
+    states: [
+      "North Rhine-Westphalia",
+      "Bavaria",
+      "Baden-Württemberg",
+      "Lower Saxony",
+      "Hesse",
+      "Saxony",
+      "Rhineland-Palatinate",
+      "Berlin",
+    ],
   },
 ];
 
 const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male', iconName: 'man-outline' },
-  { value: 'female', label: 'Female', iconName: 'woman-outline' },
-  { value: 'other', label: 'Other', iconName: 'people-outline' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say', iconName: 'lock-closed-outline' },
+  { value: "male", label: "Male", iconName: "man-outline" },
+  { value: "female", label: "Female", iconName: "woman-outline" },
+  { value: "other", label: "Other", iconName: "people-outline" },
+  {
+    value: "prefer_not_to_say",
+    label: "Prefer not to say",
+    iconName: "lock-closed-outline",
+  },
 ] as const;
 
 const OCCUPATION_OPTIONS = [
   {
-    value: 'desk_job',
-    label: 'Desk Job',
-    iconName: 'laptop-outline',
-    gradient: ['#6366F1', '#8B5CF6'],
-    description: 'Office worker, programmer, student - mostly sitting'
+    value: "desk_job",
+    label: "Desk Job",
+    iconName: "laptop-outline",
+    gradient: ["#6366F1", "#8B5CF6"],
+    description: "Office worker, programmer, student - mostly sitting",
   },
   {
-    value: 'light_active',
-    label: 'Light Activity',
-    iconName: 'walk-outline',
-    gradient: ['#3B82F6', '#06B6D4'],
-    description: 'Teacher, retail, light housework - some movement'
+    value: "light_active",
+    label: "Light Activity",
+    iconName: "walk-outline",
+    gradient: ["#3B82F6", "#06B6D4"],
+    description: "Teacher, retail, light housework - some movement",
   },
   {
-    value: 'moderate_active',
-    label: 'Moderate Activity',
-    iconName: 'fitness-outline',
-    gradient: ['#10B981', '#14B8A6'],
-    description: 'Nurse, server, active parent - regular movement'
+    value: "moderate_active",
+    label: "Moderate Activity",
+    iconName: "fitness-outline",
+    gradient: ["#10B981", "#14B8A6"],
+    description: "Nurse, server, active parent - regular movement",
   },
   {
-    value: 'heavy_labor',
-    label: 'Heavy Labor',
-    iconName: 'construct-outline',
-    gradient: ['#F59E0B', '#EF4444'],
-    description: 'Construction, farming, warehouse - physical work'
+    value: "heavy_labor",
+    label: "Heavy Labor",
+    iconName: "construct-outline",
+    gradient: ["#F59E0B", "#EF4444"],
+    description: "Construction, farming, warehouse - physical work",
   },
   {
-    value: 'very_active',
-    label: 'Very Active',
-    iconName: 'barbell-outline',
-    gradient: ['#EF4444', '#DC2626'],
-    description: 'Athlete, trainer, manual labor - constant activity'
-  }
+    value: "very_active",
+    label: "Very Active",
+    iconName: "barbell-outline",
+    gradient: ["#EF4444", "#DC2626"],
+    description: "Athlete, trainer, manual labor - constant activity",
+  },
 ] as const;
 
 // ============================================================================
@@ -128,29 +207,29 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   onReturnToReview,
 }) => {
   // No longer creating separate state instances - using props from parent
-  
+
   // Form state - NO BIASED DEFAULTS for required fields like gender
   const [formData, setFormData] = useState<PersonalInfoData>({
-    first_name: data?.first_name ?? '',
-    last_name: data?.last_name ?? '',
+    first_name: data?.first_name ?? "",
+    last_name: data?.last_name ?? "",
     age: data?.age ?? 0, // Start with 0 to require user input
-    gender: data?.gender, // NO DEFAULT - user must explicitly select
-    country: data?.country ?? '',
-    state: data?.state ?? '',
-    region: data?.region ?? '',
-    wake_time: data?.wake_time ?? '07:00',
-    sleep_time: data?.sleep_time ?? '23:00',
-    occupation_type: data?.occupation_type ?? 'desk_job',
+    gender: data?.gender ?? "prefer_not_to_say", // Default to prefer_not_to_say if not specified
+    country: data?.country ?? "",
+    state: data?.state ?? "",
+    region: data?.region ?? "",
+    wake_time: data?.wake_time ?? "07:00",
+    sleep_time: data?.sleep_time ?? "23:00",
+    occupation_type: data?.occupation_type ?? "desk_job",
   });
-  
+
   const [availableStates, setAvailableStates] = useState<string[]>([]);
   const [showCustomCountry, setShowCustomCountry] = useState(false);
-  const [customCountry, setCustomCountry] = useState('');
-  
+  const [customCountry, setCustomCountry] = useState("");
+
   // Time picker state
   const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
   const [showSleepTimePicker, setShowSleepTimePicker] = useState(false);
-  
+
   // Sync formData with data prop when it changes (e.g., when navigating back to this tab)
   // Use a ref to track if we're syncing from props to avoid circular updates
   const isSyncingFromProps = useRef(false);
@@ -158,16 +237,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
   useEffect(() => {
     if (data && !isSyncingFromProps.current) {
       const newFormData = {
-        first_name: data.first_name ?? '',
-        last_name: data.last_name ?? '',
+        first_name: data.first_name ?? "",
+        last_name: data.last_name ?? "",
         age: data.age ?? 0,
         gender: data.gender, // NO DEFAULT - preserve user's selection
-        country: data.country ?? '',
-        state: data.state ?? '',
-        region: data.region ?? '',
-        wake_time: data.wake_time ?? '07:00',
-        sleep_time: data.sleep_time ?? '23:00',
-        occupation_type: data.occupation_type ?? 'desk_job',
+        country: data.country ?? "",
+        state: data.state ?? "",
+        region: data.region ?? "",
+        wake_time: data.wake_time ?? "07:00",
+        sleep_time: data.sleep_time ?? "23:00",
+        occupation_type: data.occupation_type ?? "desk_job",
       };
 
       // Only sync if data has actually changed (deep comparison)
@@ -184,7 +263,10 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         formData.occupation_type !== newFormData.occupation_type;
 
       if (hasChanged) {
-        console.log('[SYNC] PersonalInfoTab: Data changed, syncing form data with prop data:', data);
+        console.log(
+          "[SYNC] PersonalInfoTab: Data changed, syncing form data with prop data:",
+          data,
+        );
         isSyncingFromProps.current = true;
         setFormData(newFormData);
         // Reset flag after state update completes
@@ -194,14 +276,16 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       }
     }
   }, [data]); // ONLY depend on data prop, NOT formData!
-  
+
   // Update available states when country changes
   useEffect(() => {
-    const selectedCountry = COUNTRIES_WITH_STATES.find(c => c.name === formData.country);
+    const selectedCountry = COUNTRIES_WITH_STATES.find(
+      (c) => c.name === formData.country,
+    );
     if (selectedCountry) {
       setAvailableStates(selectedCountry.states);
       setShowCustomCountry(false);
-    } else if (formData.country === 'Other') {
+    } else if (formData.country === "Other") {
       setAvailableStates([]);
       setShowCustomCountry(true);
     } else {
@@ -209,99 +293,121 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       setShowCustomCountry(false);
     }
   }, [formData.country]); // No need to add setAvailableStates or setShowCustomCountry - they're stable
-  
+
   // Note: We no longer auto-update parent on every formData change to avoid infinite loops
   // Updates happen via onUpdate in the Next button handler
-  
+
   // Memoize onUpdate callback to avoid recreating it
-  const onUpdateMemo = React.useCallback((data: Partial<PersonalInfoData>) => {
-    onUpdate(data);
-  }, [onUpdate]);
+  const onUpdateMemo = React.useCallback(
+    (data: Partial<PersonalInfoData>) => {
+      onUpdate(data);
+    },
+    [onUpdate],
+  );
 
   // Validate when formData changes to show real-time validation feedback
   useEffect(() => {
     // Only trigger validation if validationResult exists (means we're tracking validation)
     if (validationResult !== undefined) {
-      console.log('🔄 [TAB1-SYNC] Form data changed, debouncing onUpdate call (500ms)');
+      console.log(
+        "🔄 [TAB1-SYNC] Form data changed, debouncing onUpdate call (500ms)",
+      );
       // Debounce validation to avoid excessive calls
       const timer = setTimeout(() => {
-        const finalData = showCustomCountry && customCountry
-          ? { ...formData, country: customCountry }
-          : formData;
-        console.log('🔄 [TAB1-SYNC] Debounce timer fired, calling onUpdate with:', finalData);
+        const finalData =
+          showCustomCountry && customCountry
+            ? { ...formData, country: customCountry }
+            : formData;
+        console.log(
+          "🔄 [TAB1-SYNC] Debounce timer fired, calling onUpdate with:",
+          finalData,
+        );
         onUpdateMemo(finalData);
       }, 500);
       return () => {
-        console.log('🔄 [TAB1-SYNC] Debounce timer cleared');
+        console.log("🔄 [TAB1-SYNC] Debounce timer cleared");
         clearTimeout(timer);
       };
     }
-  }, [formData, showCustomCountry, customCountry, validationResult, onUpdateMemo]);
-  
+  }, [
+    formData,
+    showCustomCountry,
+    customCountry,
+    validationResult,
+    onUpdateMemo,
+  ]);
+
   // ============================================================================
   // VALIDATION
   // ============================================================================
-  
+
   const validateFormData = (data: PersonalInfoData): string[] => {
     const errors: string[] = [];
-    
+
     if (!data.first_name.trim()) {
-      errors.push('First name is required');
+      errors.push("First name is required");
     }
-    
+
     if (!data.last_name.trim()) {
-      errors.push('Last name is required');
+      errors.push("Last name is required");
     }
-    
+
     if (!data.age || data.age < 13 || data.age > 120) {
-      errors.push('Valid age (13-120) is required');
+      errors.push("Valid age (13-120) is required");
     }
-    
+
     if (!data.country.trim()) {
-      errors.push('Country is required');
+      errors.push("Country is required");
     }
-    
+
     if (!data.state.trim()) {
-      errors.push('State is required');
+      errors.push("State is required");
     }
-    
+
     if (!data.occupation_type) {
-      errors.push('Occupation type is required');
+      errors.push("Occupation type is required");
     }
-    
+
     return errors;
   };
-  
+
   // ============================================================================
   // FORM HANDLERS
   // ============================================================================
-  
+
   const updateField = <K extends keyof PersonalInfoData>(
     field: K,
-    value: PersonalInfoData[K]
+    value: PersonalInfoData[K],
   ) => {
-    console.log(`✏️ [TAB1-INPUT] updateField called - field: "${field}", value:`, value);
-    setFormData(prev => {
+    console.log(
+      `✏️ [TAB1-INPUT] updateField called - field: "${field}", value:`,
+      value,
+    );
+    setFormData((prev) => {
       const newData = { ...prev, [field]: value };
       console.log(`✏️ [TAB1-INPUT] Form data updated:`, newData);
       return newData;
     });
   };
-  
+
   const handleCountryChange = (country: string) => {
-    console.log(`🌍 [TAB1-INPUT] handleCountryChange called - country: "${country}"`);
-    updateField('country', country);
-    updateField('state', ''); // Reset state when country changes
-    updateField('region', ''); // Reset region when country changes
+    console.log(
+      `🌍 [TAB1-INPUT] handleCountryChange called - country: "${country}"`,
+    );
+    updateField("country", country);
+    updateField("state", ""); // Reset state when country changes
+    updateField("region", ""); // Reset region when country changes
     console.log(`🌍 [TAB1-INPUT] Country changed, state and region reset`);
   };
-  
+
   const handleAgeChange = (ageText: string) => {
-    console.log(`🎂 [TAB1-INPUT] handleAgeChange called - ageText: "${ageText}"`);
+    console.log(
+      `🎂 [TAB1-INPUT] handleAgeChange called - ageText: "${ageText}"`,
+    );
     // Allow empty string for better user experience while typing
-    if (ageText === '') {
+    if (ageText === "") {
       console.log(`🎂 [TAB1-INPUT] Age text empty, setting age to 0`);
-      setFormData(prev => ({ ...prev, age: 0 })); // Use 0 to indicate empty field
+      setFormData((prev) => ({ ...prev, age: 0 })); // Use 0 to indicate empty field
       return;
     }
 
@@ -310,72 +416,79 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
     // Only update if it's a valid number
     if (!isNaN(age) && age >= 0) {
       console.log(`🎂 [TAB1-INPUT] Valid age, updating formData`);
-      setFormData(prev => ({ ...prev, age }));
+      setFormData((prev) => ({ ...prev, age }));
     } else {
       console.log(`🎂 [TAB1-INPUT] Invalid age, ignoring input`);
     }
   };
-  
+
   const formatTimeForDisplay = (time: string): string => {
     // Convert 24h format to 12h format for display
-    const [hours, minutes] = time.split(':');
+    const [hours, minutes] = time.split(":");
     const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const ampm = hour >= 12 ? "PM" : "AM";
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     return `${displayHour}:${minutes} ${ampm}`;
   };
-  
-  const handleTimeChange = (field: 'wake_time' | 'sleep_time', time: string) => {
-    console.log(`⏰ [TAB1-INPUT] handleTimeChange called - field: "${field}", time: "${time}"`);
+
+  const handleTimeChange = (
+    field: "wake_time" | "sleep_time",
+    time: string,
+  ) => {
+    console.log(
+      `⏰ [TAB1-INPUT] handleTimeChange called - field: "${field}", time: "${time}"`,
+    );
     updateField(field, time);
   };
-  
+
   const calculateSleepDuration = (): string => {
-    if (!formData.wake_time || !formData.sleep_time) return '';
-    
-    const [wakeHour, wakeMin] = formData.wake_time.split(':').map(Number);
-    const [sleepHour, sleepMin] = formData.sleep_time.split(':').map(Number);
-    
+    if (!formData.wake_time || !formData.sleep_time) return "";
+
+    const [wakeHour, wakeMin] = formData.wake_time.split(":").map(Number);
+    const [sleepHour, sleepMin] = formData.sleep_time.split(":").map(Number);
+
     const wakeMinutes = wakeHour * 60 + wakeMin;
     const sleepMinutes = sleepHour * 60 + sleepMin;
-    
+
     let duration = wakeMinutes - sleepMinutes;
     if (duration <= 0) duration += 24 * 60; // Handle overnight sleep
-    
+
     const hours = Math.floor(duration / 60);
     const minutes = duration % 60;
-    
+
     return `${hours}h ${minutes}m`;
   };
-  
+
   // ============================================================================
   // VALIDATION HELPERS
   // ============================================================================
-  
+
   const getFieldError = (fieldName: string): string | undefined => {
-    return validationResult?.errors.find(error => 
-      error.toLowerCase().includes(fieldName.toLowerCase())
+    return validationResult?.errors.find((error) =>
+      error.toLowerCase().includes(fieldName.toLowerCase()),
     );
   };
-  
+
   const hasFieldError = (fieldName: string): boolean => {
     return !!getFieldError(fieldName);
   };
-  
+
   // ============================================================================
   // RENDER HELPERS
   // ============================================================================
-  
+
   const renderNameSection = () => (
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Full Name</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Full Name
+        </Text>
       </View>
       <View style={styles.edgeToEdgeContentPadded}>
         <View style={styles.row}>
@@ -384,8 +497,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               label="First Name"
               placeholder="John"
               value={formData.first_name}
-              onChangeText={(value) => updateField('first_name', value)}
-              error={hasFieldError('first name') ? getFieldError('first name') : undefined}
+              onChangeText={(value) => updateField("first_name", value)}
+              error={
+                hasFieldError("first name")
+                  ? getFieldError("first name")
+                  : undefined
+              }
             />
           </View>
           <View style={styles.halfWidth}>
@@ -393,8 +510,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               label="Last Name"
               placeholder="Doe"
               value={formData.last_name}
-              onChangeText={(value) => updateField('last_name', value)}
-              error={hasFieldError('last name') ? getFieldError('last name') : undefined}
+              onChangeText={(value) => updateField("last_name", value)}
+              error={
+                hasFieldError("last name")
+                  ? getFieldError("last name")
+                  : undefined
+              }
             />
           </View>
         </View>
@@ -402,19 +523,21 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
-  
+
   const renderDemographicsSection = () => (
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Demographics</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Demographics
+        </Text>
       </View>
-      
+
       <View style={styles.edgeToEdgeContentPadded}>
         {/* Age Field - Compact width */}
         <View style={styles.ageRow}>
@@ -422,60 +545,70 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <Input
               label="Age"
               placeholder="25"
-              value={formData.age > 0 ? formData.age.toString() : ''}
+              value={formData.age > 0 ? formData.age.toString() : ""}
               onChangeText={handleAgeChange}
               keyboardType="numeric"
-              error={hasFieldError('age') ? getFieldError('age') : undefined}
+              error={hasFieldError("age") ? getFieldError("age") : undefined}
             />
           </View>
         </View>
-        
+
         {/* Gender Field - Full width for all options */}
         <View style={styles.genderField}>
-          <Text style={styles.inputLabel} numberOfLines={1}>Gender *</Text>
+          <Text style={styles.inputLabel} numberOfLines={1}>
+            Gender *
+          </Text>
           <SegmentedControl
-            options={GENDER_OPTIONS.map(opt => ({
+            options={GENDER_OPTIONS.map((opt) => ({
               id: opt.value,
               label: opt.label,
-              value: opt.value
+              value: opt.value,
             }))}
             selectedId={formData.gender}
-            onSelect={(id) => updateField('gender', id as PersonalInfoData['gender'])}
-            gradient={['#6366F1', '#8B5CF6']}
+            onSelect={(id) =>
+              updateField("gender", id as PersonalInfoData["gender"])
+            }
+            gradient={["#6366F1", "#8B5CF6"]}
             style={styles.genderSegmentedControl}
           />
-          {hasFieldError('gender') && (
-            <Text style={styles.errorText}>{getFieldError('gender')}</Text>
+          {hasFieldError("gender") && (
+            <Text style={styles.errorText}>{getFieldError("gender")}</Text>
           )}
         </View>
       </View>
       <View style={styles.sectionBottomPad} />
     </GlassCard>
   );
-  
+
   const renderLocationSection = () => (
     <GlassCard
       style={styles.sectionEdgeToEdge}
       elevation={2}
-      blurIntensity="medium"
+      blurIntensity="default"
       padding="none"
       borderRadius="none"
     >
       <View style={styles.sectionTitlePadded}>
-        <Text style={styles.sectionTitle} numberOfLines={1}>Location</Text>
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          Location
+        </Text>
       </View>
-      
+
       <View style={styles.edgeToEdgeContentPadded}>
         {/* Country Selection */}
         <View style={styles.locationField}>
-          <Text style={styles.inputLabel} numberOfLines={1}>Country *</Text>
+          <Text style={styles.inputLabel} numberOfLines={1}>
+            Country *
+          </Text>
           <View style={styles.countryGrid}>
             {COUNTRIES_WITH_STATES.map((country) => (
               <AnimatedPressable
                 key={country.name}
                 style={[
                   styles.countryOption,
-                  ...(formData.country === country.name ? [styles.countryOptionSelected] : []),
+                  ...(formData.country === country.name
+                    ? [styles.countryOptionSelected]
+                    : []),
                 ]}
                 onPress={() => handleCountryChange(country.name)}
                 scaleValue={0.95}
@@ -483,7 +616,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 <Text
                   style={[
                     styles.countryOptionText,
-                    formData.country === country.name && styles.countryOptionTextSelected,
+                    formData.country === country.name &&
+                      styles.countryOptionTextSelected,
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
@@ -495,15 +629,18 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             <AnimatedPressable
               style={[
                 styles.countryOption,
-                ...(formData.country === 'Other' ? [styles.countryOptionSelected] : []),
+                ...(formData.country === "Other"
+                  ? [styles.countryOptionSelected]
+                  : []),
               ]}
-              onPress={() => handleCountryChange('Other')}
+              onPress={() => handleCountryChange("Other")}
               scaleValue={0.95}
             >
               <Text
                 style={[
                   styles.countryOptionText,
-                  formData.country === 'Other' && styles.countryOptionTextSelected,
+                  formData.country === "Other" &&
+                    styles.countryOptionTextSelected,
                 ]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -512,11 +649,11 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               </Text>
             </AnimatedPressable>
           </View>
-          {hasFieldError('country') && (
-            <Text style={styles.errorText}>{getFieldError('country')}</Text>
+          {hasFieldError("country") && (
+            <Text style={styles.errorText}>{getFieldError("country")}</Text>
           )}
         </View>
-        
+
         {/* Custom Country Input */}
         {showCustomCountry && (
           <View style={styles.locationField}>
@@ -528,26 +665,31 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             />
           </View>
         )}
-        
+
         {/* State Selection */}
         {availableStates.length > 0 && (
           <View style={styles.locationField}>
-            <Text style={styles.inputLabel} numberOfLines={1}>State/Province *</Text>
+            <Text style={styles.inputLabel} numberOfLines={1}>
+              State/Province *
+            </Text>
             <View style={styles.stateGrid}>
               {availableStates.map((state) => (
                 <AnimatedPressable
                   key={state}
                   style={[
                     styles.stateOption,
-                    ...(formData.state === state ? [styles.stateOptionSelected] : []),
+                    ...(formData.state === state
+                      ? [styles.stateOptionSelected]
+                      : []),
                   ]}
-                  onPress={() => updateField('state', state)}
+                  onPress={() => updateField("state", state)}
                   scaleValue={0.95}
                 >
                   <Text
                     style={[
                       styles.stateOptionText,
-                      formData.state === state && styles.stateOptionTextSelected,
+                      formData.state === state &&
+                        styles.stateOptionTextSelected,
                     ]}
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -557,12 +699,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                 </AnimatedPressable>
               ))}
             </View>
-            {hasFieldError('state') && (
-              <Text style={styles.errorText}>{getFieldError('state')}</Text>
+            {hasFieldError("state") && (
+              <Text style={styles.errorText}>{getFieldError("state")}</Text>
             )}
           </View>
         )}
-        
+
         {/* Custom State Input for Other Countries */}
         {showCustomCountry && (
           <View style={styles.locationField}>
@@ -570,18 +712,18 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               label="State/Province"
               placeholder="Enter your state or province"
               value={formData.state}
-              onChangeText={(value) => updateField('state', value)}
+              onChangeText={(value) => updateField("state", value)}
             />
           </View>
         )}
-        
+
         {/* Region (Optional) */}
         <View style={styles.locationField}>
           <Input
             label="Region/City (Optional)"
             placeholder="e.g., Mumbai, Los Angeles, London"
-            value={formData.region || ''}
-            onChangeText={(value) => updateField('region', value)}
+            value={formData.region || ""}
+            onChangeText={(value) => updateField("region", value)}
           />
         </View>
       </View>
@@ -594,13 +736,19 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
         <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>Daily Activity</Text>
-          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.sectionTitle} numberOfLines={1}>
+            Daily Activity
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             This helps us understand your daily movement beyond exercise
           </Text>
         </View>
@@ -617,29 +765,42 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           >
             {OCCUPATION_OPTIONS.map((option) => {
               const isSelected = formData.occupation_type === option.value;
-              
+
               return (
                 <AnimatedPressable
                   key={option.value}
                   style={styles.activityCardItem}
-                  onPress={() => updateField('occupation_type', option.value as PersonalInfoData['occupation_type'])}
+                  onPress={() =>
+                    updateField(
+                      "occupation_type",
+                      option.value as PersonalInfoData["occupation_type"],
+                    )
+                  }
                   scaleValue={0.95}
                 >
-                  <View style={[
-                    styles.activityCard,
-                    isSelected && styles.activityCardSelected,
-                  ]}>
-                    <View style={[
-                      styles.activityIconContainer,
-                      isSelected && styles.activityIconContainerSelected,
-                    ]}>
+                  <View
+                    style={[
+                      styles.activityCard,
+                      isSelected && styles.activityCardSelected,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.activityIconContainer,
+                        isSelected && styles.activityIconContainerSelected,
+                      ]}
+                    >
                       <Ionicons
                         name={option.iconName as any}
                         size={rf(24)}
-                        color={isSelected ? ResponsiveTheme.colors.primary : ResponsiveTheme.colors.textSecondary}
+                        color={
+                          isSelected
+                            ? ResponsiveTheme.colors.primary
+                            : ResponsiveTheme.colors.textSecondary
+                        }
                       />
                     </View>
-                    <Text 
+                    <Text
                       style={[
                         styles.activityCardTitle,
                         isSelected && styles.activityCardTitleSelected,
@@ -657,8 +818,8 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
         </View>
 
         <View style={styles.edgeToEdgeContentPadded}>
-          {hasFieldError('occupation') && (
-            <Text style={styles.errorText}>{getFieldError('occupation')}</Text>
+          {hasFieldError("occupation") && (
+            <Text style={styles.errorText}>{getFieldError("occupation")}</Text>
           )}
         </View>
         <View style={styles.sectionBottomPad} />
@@ -668,34 +829,47 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
   const renderSleepScheduleSection = () => {
     const sleepDuration = calculateSleepDuration();
-    const sleepHours = parseFloat(sleepDuration.split('h')[0]) || 0;
+    const sleepHours = parseFloat(sleepDuration.split("h")[0]) || 0;
     const isHealthySleep = sleepHours >= 7 && sleepHours <= 9;
-    
+
     return (
       <GlassCard
         style={styles.sectionEdgeToEdge}
         elevation={2}
-        blurIntensity="medium"
+        blurIntensity="default"
         padding="none"
         borderRadius="none"
       >
         <View style={styles.sectionTitlePadded}>
-          <Text style={styles.sectionTitle} numberOfLines={1}>Sleep Schedule</Text>
-          <Text style={styles.sectionSubtitle} numberOfLines={2} ellipsizeMode="tail">
-            Help us understand your daily routine for personalized recommendations
+          <Text style={styles.sectionTitle} numberOfLines={1}>
+            Sleep Schedule
+          </Text>
+          <Text
+            style={styles.sectionSubtitle}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            Help us understand your daily routine for personalized
+            recommendations
           </Text>
         </View>
-        
+
         <View style={styles.edgeToEdgeContentPadded}>
           <View style={styles.row}>
             <View style={styles.halfWidth}>
-              <Text style={styles.inputLabel} numberOfLines={1}>Wake Up Time *</Text>
+              <Text style={styles.inputLabel} numberOfLines={1}>
+                Wake Up Time *
+              </Text>
               <TouchableOpacity
                 style={styles.timeSelector}
                 onPress={() => setShowWakeTimePicker(true)}
               >
                 <View style={styles.timeIconContainer}>
-                  <Ionicons name="sunny-outline" size={rf(20)} color="#F59E0B" />
+                  <Ionicons
+                    name="sunny-outline"
+                    size={rf(20)}
+                    color="#F59E0B"
+                  />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.wake_time)}
                   </Text>
@@ -704,7 +878,9 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             </View>
 
             <View style={styles.halfWidth}>
-              <Text style={styles.inputLabel} numberOfLines={1}>Sleep Time *</Text>
+              <Text style={styles.inputLabel} numberOfLines={1}>
+                Sleep Time *
+              </Text>
               <TouchableOpacity
                 style={styles.timeSelector}
                 onPress={() => setShowSleepTimePicker(true)}
@@ -718,7 +894,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-          
+
           {/* Sleep Duration Display */}
           {sleepDuration && (
             <GlassCard
@@ -728,57 +904,71 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
               borderRadius="lg"
               style={StyleSheet.flatten([
                 styles.sleepDurationCardInline,
-                isHealthySleep ? styles.sleepDurationHealthy : styles.sleepDurationWarning
+                isHealthySleep
+                  ? styles.sleepDurationHealthy
+                  : styles.sleepDurationWarning,
               ])}
             >
               <View style={styles.sleepDurationContent}>
                 <View style={styles.sleepDurationIconContainer}>
                   <Ionicons
-                    name={isHealthySleep ? 'checkmark-circle' : 'alert-circle'}
+                    name={isHealthySleep ? "checkmark-circle" : "alert-circle"}
                     size={rf(24)}
-                    color={isHealthySleep ? ResponsiveTheme.colors.success : ResponsiveTheme.colors.warning}
+                    color={
+                      isHealthySleep
+                        ? ResponsiveTheme.colors.success
+                        : ResponsiveTheme.colors.warning
+                    }
                   />
                 </View>
                 <View style={styles.sleepDurationText}>
                   <Text style={styles.sleepDurationTitle} numberOfLines={1}>
                     Sleep Duration: {sleepDuration}
                   </Text>
-                  <Text style={styles.sleepDurationSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                  <Text
+                    style={styles.sleepDurationSubtitle}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
                     {isHealthySleep
-                      ? 'Great! This is within the recommended 7-9 hours.'
+                      ? "Great! This is within the recommended 7-9 hours."
                       : sleepHours < 7
-                        ? 'Consider getting more sleep for better fitness results.'
-                        : 'Very long sleep duration detected.'
-                    }
+                        ? "Consider getting more sleep for better fitness results."
+                        : "Very long sleep duration detected."}
                   </Text>
                 </View>
               </View>
             </GlassCard>
           )}
-          
-          {hasFieldError('wake') && (
-            <Text style={styles.errorText}>{getFieldError('wake')}</Text>
+
+          {hasFieldError("wake") && (
+            <Text style={styles.errorText}>{getFieldError("wake")}</Text>
           )}
-          {hasFieldError('sleep') && (
-            <Text style={styles.errorText}>{getFieldError('sleep')}</Text>
+          {hasFieldError("sleep") && (
+            <Text style={styles.errorText}>{getFieldError("sleep")}</Text>
           )}
         </View>
         <View style={styles.sectionBottomPad} />
       </GlassCard>
     );
   };
-  
+
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
-  
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header with Gradient */}
         {/* Hero Section with Background Image */}
         <HeroSection
-          image={{ uri: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80' }}
+          image={{
+            uri: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
+          }}
           overlayGradient={gradients.overlay.dark}
           contentPosition="center"
           minHeight={180}
@@ -799,7 +989,9 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             />
           </View>
 
-          <Text style={styles.title} numberOfLines={1}>Tell us about yourself</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            Tell us about yourself
+          </Text>
           <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
             This helps us create a personalized fitness plan just for you
           </Text>
@@ -807,17 +999,21 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           {/* Auto-save Indicator */}
           {isAutoSaving && (
             <View style={styles.autoSaveIndicator}>
-              <Ionicons name="cloud-upload-outline" size={rf(16)} color={ResponsiveTheme.colors.success} />
-              <Text style={styles.autoSaveText} numberOfLines={1}>Saving...</Text>
+              <Ionicons
+                name="cloud-upload-outline"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.success}
+              />
+              <Text style={styles.autoSaveText} numberOfLines={1}>
+                Saving...
+              </Text>
             </View>
           )}
         </HeroSection>
-        
+
         {/* Form Sections */}
         <View style={styles.content}>
-          <AnimatedSection delay={0}>
-            {renderNameSection()}
-          </AnimatedSection>
+          <AnimatedSection delay={0}>{renderNameSection()}</AnimatedSection>
 
           <AnimatedSection delay={100}>
             {renderDemographicsSection()}
@@ -835,7 +1031,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             {renderSleepScheduleSection()}
           </AnimatedSection>
         </View>
-        
+
         {/* Validation Summary */}
         {validationResult && (
           <View style={styles.validationSummary}>
@@ -848,39 +1044,58 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             >
               <View style={styles.validationTitleRow}>
                 <Ionicons
-                  name={validationResult.is_valid ? 'checkmark-circle' : 'alert-circle'}
+                  name={
+                    validationResult.is_valid
+                      ? "checkmark-circle"
+                      : "alert-circle"
+                  }
                   size={rf(20)}
-                  color={validationResult.is_valid ? ResponsiveTheme.colors.secondary : ResponsiveTheme.colors.warning}
+                  color={
+                    validationResult.is_valid
+                      ? ResponsiveTheme.colors.secondary
+                      : ResponsiveTheme.colors.warning
+                  }
                 />
-                <Text style={[
-                  styles.validationTitle,
-                  validationResult.is_valid && styles.validationTitleSuccess
-                ]}>
-                  {validationResult.is_valid ? 'Ready to Continue' : 'Please Complete'}
+                <Text
+                  style={[
+                    styles.validationTitle,
+                    validationResult.is_valid && styles.validationTitleSuccess,
+                  ]}
+                >
+                  {validationResult.is_valid
+                    ? "Ready to Continue"
+                    : "Please Complete"}
                 </Text>
               </View>
               <Text style={styles.validationPercentage} numberOfLines={1}>
                 {validationResult.completion_percentage}% Complete
               </Text>
-              
+
               {/* DEBUG: Show current form data */}
               {__DEV__ && (
                 <View style={styles.debugInfo}>
                   <Text style={styles.debugTitle}>Debug Info:</Text>
-                  <Text style={styles.debugText}>Name: {formData.first_name} {formData.last_name}</Text>
+                  <Text style={styles.debugText}>
+                    Name: {formData.first_name} {formData.last_name}
+                  </Text>
                   <Text style={styles.debugText}>Age: {formData.age}</Text>
-                  <Text style={styles.debugText}>Country: {formData.country}</Text>
+                  <Text style={styles.debugText}>
+                    Country: {formData.country}
+                  </Text>
                   <Text style={styles.debugText}>State: {formData.state}</Text>
-                  <Text style={styles.debugText}>Valid: {validationResult.is_valid ? 'YES' : 'NO'}</Text>
-                  <TouchableOpacity 
+                  <Text style={styles.debugText}>
+                    Valid: {validationResult.is_valid ? "YES" : "NO"}
+                  </Text>
+                  <TouchableOpacity
                     style={styles.debugButton}
                     onPress={() => {
-                      console.log('[DEBUG] Manual validation trigger');
-                      console.log('[DEBUG] Current formData:', formData);
+                      console.log("[DEBUG] Manual validation trigger");
+                      console.log("[DEBUG] Current formData:", formData);
                       // Force update parent state
-                      const finalData = showCustomCountry && customCountry 
-                        ? { ...formData, country: customCountry }
-                        : formData;
+                      const finalData =
+                        showCustomCountry && customCountry
+                          ? { ...formData, country: customCountry }
+                          : formData;
                       onUpdate(finalData);
                     }}
                   >
@@ -888,7 +1103,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   </TouchableOpacity>
                 </View>
               )}
-              
+
               {validationResult.errors.length > 0 && (
                 <View style={styles.validationErrors}>
                   <Text style={styles.validationErrorTitle}>Required:</Text>
@@ -899,10 +1114,12 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                   ))}
                 </View>
               )}
-              
+
               {validationResult.warnings.length > 0 && (
                 <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>Recommendations:</Text>
+                  <Text style={styles.validationWarningTitle}>
+                    Recommendations:
+                  </Text>
                   {validationResult.warnings.map((warning, index) => (
                     <Text key={index} style={styles.validationWarningText}>
                       • {warning}
@@ -914,7 +1131,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
           </View>
         )}
       </ScrollView>
-      
+
       {/* Footer Navigation */}
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
@@ -923,16 +1140,21 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             onPress={onBack}
             scaleValue={0.96}
           >
-            <Ionicons name="chevron-back" size={rf(18)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="chevron-back"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.primary}
+            />
             <Text style={styles.backButtonText}>Back</Text>
           </AnimatedPressable>
-          
+
           <AnimatedPressable
             style={styles.nextButtonCompact}
             onPress={() => {
-              const finalData = showCustomCountry && customCountry
-                ? { ...formData, country: customCountry }
-                : formData;
+              const finalData =
+                showCustomCountry && customCountry
+                  ? { ...formData, country: customCountry }
+                  : formData;
               onUpdate(finalData);
               // If editing from Review, return directly to Review tab
               if (isEditingFromReview && onReturnToReview) {
@@ -943,30 +1165,40 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
             }}
             scaleValue={0.96}
           >
-            <Text style={styles.nextButtonText}>{isEditingFromReview ? 'Review' : 'Next'}</Text>
-            <Ionicons name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"} size={rf(18)} color="#FFFFFF" />
+            <Text style={styles.nextButtonText}>
+              {isEditingFromReview ? "Review" : "Next"}
+            </Text>
+            <Ionicons
+              name={
+                isEditingFromReview
+                  ? "checkmark-circle-outline"
+                  : "chevron-forward"
+              }
+              size={rf(18)}
+              color="#FFFFFF"
+            />
           </AnimatedPressable>
         </View>
       </View>
-      
+
       {/* Time Picker Modals */}
       <TimePicker
         visible={showWakeTimePicker}
         initialTime={formData.wake_time}
         onTimeSelect={(time) => {
-          handleTimeChange('wake_time', time);
+          handleTimeChange("wake_time", time);
           setShowWakeTimePicker(false);
         }}
         onClose={() => setShowWakeTimePicker(false)}
         title="Select Wake Up Time"
         is24Hour={true}
       />
-      
+
       <TimePicker
         visible={showSleepTimePicker}
         initialTime={formData.sleep_time}
         onTimeSelect={(time) => {
-          handleTimeChange('sleep_time', time);
+          handleTimeChange("sleep_time", time);
           setShowSleepTimePicker(false);
         }}
         onClose={() => setShowSleepTimePicker(false)}
@@ -984,7 +1216,7 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
 
   scrollView: {
@@ -1008,25 +1240,25 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
     letterSpacing: -0.5,
     flexShrink: 1,
   },
 
   subtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: "rgba(255, 255, 255, 0.9)",
     lineHeight: ResponsiveTheme.fontSize.md * 1.5,
     marginBottom: ResponsiveTheme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
 
   autoSaveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     backgroundColor: `${ResponsiveTheme.colors.success}20`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -1047,11 +1279,11 @@ const styles = StyleSheet.create({
     width: rf(80),
     height: rf(80),
     borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
 
   content: {
@@ -1104,7 +1336,7 @@ const styles = StyleSheet.create({
   },
 
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -1118,7 +1350,7 @@ const styles = StyleSheet.create({
   },
 
   ageField: {
-    width: '50%',
+    width: "50%",
   },
 
   genderField: {
@@ -1143,13 +1375,13 @@ const styles = StyleSheet.create({
   },
 
   genderOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -1183,8 +1415,8 @@ const styles = StyleSheet.create({
   },
 
   countryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -1193,11 +1425,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    minWidth: '30%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: "30%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   countryOptionSelected: {
@@ -1209,7 +1441,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
 
@@ -1219,8 +1451,8 @@ const styles = StyleSheet.create({
   },
 
   stateGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -1229,11 +1461,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     marginBottom: ResponsiveTheme.spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   stateOptionSelected: {
@@ -1245,7 +1477,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
     fontWeight: ResponsiveTheme.fontWeight.medium,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
 
@@ -1257,8 +1489,8 @@ const styles = StyleSheet.create({
   // Occupation Selection - FeatureGrid
   // Scrollable activity cards container
   scrollClipContainer: {
-    width: '100%',
-    overflow: 'hidden',
+    width: "100%",
+    overflow: "hidden",
     marginTop: ResponsiveTheme.spacing.sm,
   },
 
@@ -1266,7 +1498,7 @@ const styles = StyleSheet.create({
   scrollContainerInset: {
     marginHorizontal: ResponsiveTheme.spacing.lg,
     marginTop: ResponsiveTheme.spacing.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -1290,11 +1522,11 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     padding: ResponsiveTheme.spacing.sm,
     minHeight: rh(12),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   activityCardSelected: {
@@ -1307,8 +1539,8 @@ const styles = StyleSheet.create({
     height: rf(44),
     borderRadius: rf(22),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -1320,7 +1552,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: ResponsiveTheme.fontWeight.medium,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(14),
   },
 
@@ -1334,13 +1566,13 @@ const styles = StyleSheet.create({
   },
 
   occupationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -1354,15 +1586,15 @@ const styles = StyleSheet.create({
     width: rf(56),
     height: rf(56),
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginRight: ResponsiveTheme.spacing.md,
   },
 
   occupationIconGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   occupationTextContainer: {
@@ -1401,14 +1633,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   timeIconContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -1437,8 +1669,8 @@ const styles = StyleSheet.create({
   },
 
   sleepDurationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   sleepDurationIconContainer: {
@@ -1475,8 +1707,8 @@ const styles = StyleSheet.create({
   },
 
   validationTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -1549,15 +1781,15 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: ResponsiveTheme.spacing.md,
   },
 
   backButtonCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -1572,8 +1804,8 @@ const styles = StyleSheet.create({
   },
 
   nextButtonCompact: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -1584,7 +1816,7 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
 
   nextButtonDisabled: {
@@ -1622,7 +1854,7 @@ const styles = StyleSheet.create({
   debugText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
 
   debugButton: {
@@ -1630,7 +1862,7 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.sm,
     marginTop: ResponsiveTheme.spacing.sm,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
 
   debugButtonText: {

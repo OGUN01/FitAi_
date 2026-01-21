@@ -430,8 +430,8 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   modalContainer: {
     width: "90%",
@@ -443,8 +443,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: rh(20),
   },
   title: {
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.surface,
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   typeButtonActive: {
     backgroundColor: ResponsiveTheme.colors.primary,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   },
   ingredientRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: rf(12),
     padding: rp(12),
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   },
   quantityControl: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginVertical: rh(4),
   },
   quantityButton: {
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: rf(12),
     padding: rp(12),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   nutritionLabel: {
     fontSize: rf(12),
@@ -573,8 +573,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: rh(14),
     borderRadius: rf(12),
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   cancelButton: {
     backgroundColor: ResponsiveTheme.colors.surface,

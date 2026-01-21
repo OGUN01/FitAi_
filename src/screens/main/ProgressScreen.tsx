@@ -583,7 +583,7 @@ export const ProgressScreen: React.FC = () => {
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "center" as const,
                       gap: rp(8),
                       marginBottom: ResponsiveTheme.spacing.md,
                     }}
@@ -617,7 +617,7 @@ export const ProgressScreen: React.FC = () => {
                   <View
                     style={{
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "center" as const,
                       gap: rp(8),
                     }}
                   >
@@ -647,7 +647,7 @@ export const ProgressScreen: React.FC = () => {
                     <View
                       style={{
                         flexDirection: "row",
-                        alignItems: "center",
+                        alignItems: "center" as const,
                         gap: rp(8),
                         marginBottom: ResponsiveTheme.spacing.md,
                       }}
@@ -911,13 +911,13 @@ export const ProgressScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.statChange,
-                        stats.weight.change < 0
+                        (stats.weight.change ?? 0) < 0
                           ? styles.statChangePositive
                           : styles.statChangeNegative,
                       ]}
                     >
-                      {stats.weight.change > 0 ? "+" : ""}
-                      {stats.weight.change} {stats.weight.unit}
+                      {(stats.weight.change ?? 0) > 0 ? "+" : ""}
+                      {stats.weight.change ?? 0} {stats.weight.unit}
                     </Text>
                     <View style={styles.goalProgress}>
                       <Text style={styles.goalText}>
@@ -963,13 +963,13 @@ export const ProgressScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.statChange,
-                        stats.bodyFat.change < 0
+                        (stats.bodyFat.change ?? 0) < 0
                           ? styles.statChangePositive
                           : styles.statChangeNegative,
                       ]}
                     >
-                      {stats.bodyFat.change > 0 ? "+" : ""}
-                      {stats.bodyFat.change}
+                      {(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}
+                      {stats.bodyFat.change ?? 0}
                       {stats.bodyFat.unit}
                     </Text>
                   </GlassCard>
@@ -989,13 +989,13 @@ export const ProgressScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.statChange,
-                        stats.muscle.change > 0
+                        (stats.muscle.change ?? 0) > 0
                           ? styles.statChangePositive
                           : styles.statChangeNegative,
                       ]}
                     >
-                      {stats.muscle.change > 0 ? "+" : ""}
-                      {stats.muscle.change} {stats.muscle.unit}
+                      {(stats.muscle.change ?? 0) > 0 ? "+" : ""}
+                      {stats.muscle.change ?? 0} {stats.muscle.unit}
                     </Text>
                   </GlassCard>
 
@@ -1012,13 +1012,13 @@ export const ProgressScreen: React.FC = () => {
                     <Text
                       style={[
                         styles.statChange,
-                        stats.bmi.change < 0
+                        (stats.bmi.change ?? 0) < 0
                           ? styles.statChangePositive
                           : styles.statChangeNegative,
                       ]}
                     >
-                      {stats.bmi.change > 0 ? "+" : ""}
-                      {stats.bmi.change}
+                      {(stats.bmi.change ?? 0) > 0 ? "+" : ""}
+                      {stats.bmi.change ?? 0}
                     </Text>
                   </GlassCard>
                 </View>
@@ -1470,8 +1470,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
@@ -1488,8 +1488,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   shareIcon: {
@@ -1518,7 +1518,7 @@ const styles = StyleSheet.create({
   periodButton: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
-    alignItems: "center",
+    alignItems: "center" as const,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -1545,7 +1545,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   statValue: {
@@ -1602,14 +1602,14 @@ const styles = StyleSheet.create({
 
   chart: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     alignItems: "flex-end",
     height: rh(100),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   chartDay: {
-    alignItems: "center",
+    alignItems: "center" as const,
     flex: 1,
   },
 
@@ -1641,13 +1641,13 @@ const styles = StyleSheet.create({
 
   chartLegend: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.lg,
   },
 
   legendItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   legendDot: {
@@ -1668,7 +1668,7 @@ const styles = StyleSheet.create({
 
   achievementContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -1677,8 +1677,8 @@ const styles = StyleSheet.create({
     height: rh(48),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -1749,7 +1749,7 @@ const styles = StyleSheet.create({
 
   summaryItem: {
     width: "45%",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   summaryValue: {
@@ -1773,7 +1773,7 @@ const styles = StyleSheet.create({
   statHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -1808,7 +1808,7 @@ const styles = StyleSheet.create({
   // Enhanced achievement styles
   achievementHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     alignItems: "flex-start",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -1839,7 +1839,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(2),
     borderRadius: rs(8),
     minWidth: rw(50),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   rarityCommon: {
@@ -1866,7 +1866,7 @@ const styles = StyleSheet.create({
 
   headerButtons: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: rp(12),
   },
 
@@ -1875,8 +1875,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   statusIcon: {
@@ -1888,8 +1888,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   addIcon: {
@@ -1902,8 +1902,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   analyticsButtonActive: {
@@ -1915,7 +1915,7 @@ const styles = StyleSheet.create({
   },
 
   loadingContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
@@ -1928,7 +1928,7 @@ const styles = StyleSheet.create({
   errorCard: {
     padding: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   errorText: {
@@ -1971,7 +1971,7 @@ const styles = StyleSheet.create({
   },
 
   todaysStat: {
-    alignItems: "center",
+    alignItems: "center" as const,
     flex: 1,
   },
 
@@ -1981,7 +1981,7 @@ const styles = StyleSheet.create({
   },
 
   todaysStatContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   todaysStatLabel: {
@@ -2011,7 +2011,7 @@ const styles = StyleSheet.create({
 
   activityContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   activityIcon: {
@@ -2019,8 +2019,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -2055,8 +2055,8 @@ const styles = StyleSheet.create({
     height: rh(24),
     borderRadius: rs(12),
     backgroundColor: ResponsiveTheme.colors.success,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   activityBadgeText: {
@@ -2067,7 +2067,7 @@ const styles = StyleSheet.create({
 
   emptyCard: {
     padding: ResponsiveTheme.spacing.xl,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   emptyText: {
@@ -2086,7 +2086,7 @@ const styles = StyleSheet.create({
   // Wearable data styles
   wearableHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: rp(8),
     marginBottom: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.sm,
@@ -2103,8 +2103,8 @@ const styles = StyleSheet.create({
   // Section header styles
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -2122,8 +2122,8 @@ const styles = StyleSheet.create({
 
   modalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
@@ -2141,8 +2141,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: rs(16),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   modalCloseText: {
@@ -2162,8 +2162,8 @@ const styles = StyleSheet.create({
   // Loading and end states
   loadingFooter: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -2175,7 +2175,7 @@ const styles = StyleSheet.create({
 
   endFooter: {
     paddingVertical: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   endText: {
@@ -2186,8 +2186,8 @@ const styles = StyleSheet.create({
 
   emptyModalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.xxl,
   },
 

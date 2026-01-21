@@ -239,7 +239,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({ onBack }) =>
             <GlassCard 
               elevation={2} 
               padding="lg" 
-              blurIntensity="medium" 
+              blurIntensity="default" 
               borderRadius="xl"
               style={styles.missionCard}
             >

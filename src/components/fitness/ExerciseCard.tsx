@@ -89,9 +89,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   return (
     <Card
       style={
-        isCompleted
+        (isCompleted
           ? [styles.card, styles.cardCompleted, style]
-          : [styles.card, style]
+          : [styles.card, style]) as any
       }
       variant="outlined"
     >
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.sm,
   },
 
@@ -313,8 +313,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: THEME.spacing.md,
   },
 
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
 
   metaRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   metaText: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   statusSection: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   completedBadge: {
@@ -358,8 +358,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.success,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   completedIcon: {
@@ -373,8 +373,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   playIcon: {
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
 
   timerSection: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.md,
   },
 
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
 
   detailRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.xs,
   },
 
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   },
 
   actionButtons: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginTop: THEME.spacing.md,
   },
 
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   },
 
   expandIndicator: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginTop: THEME.spacing.sm,
   },
 

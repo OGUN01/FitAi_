@@ -125,7 +125,7 @@ class CompletionTrackingService {
       if (workout) {
         // Calculate actual calories using MET-based formula with user's weight
         const actualCaloriesBurned = this.calculateActualCalories(
-          workout,
+          workout as any,
           sessionData,
         );
 
@@ -505,7 +505,7 @@ class CompletionTrackingService {
         );
         if (!workout) return total;
         // Use MET-based calculation for accurate calories
-        return total + this.calculateActualCalories(workout);
+        return total + this.calculateActualCalories(workout as any);
       }, 0);
 
     const caloriesConsumed = Object.values(nutritionStore.mealProgress)

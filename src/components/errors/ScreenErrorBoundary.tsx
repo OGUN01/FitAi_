@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     padding: THEME.spacing.lg,
   },
 
   content: {
-    alignItems: "center",
+    alignItems: "center" as const,
     maxWidth: 400,
   },
 

@@ -340,13 +340,13 @@ export const SmartCoaching: React.FC<SmartCoachingProps> = (props) => {
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   aiIconContainer: {
@@ -354,8 +354,8 @@ const styles = StyleSheet.create({
     height: rw(24),
     borderRadius: rw(12),
     backgroundColor: "rgba(255, 215, 0, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   headerTitle: {
     fontSize: rf(14),
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.sm,
     gap: ResponsiveTheme.spacing.sm,
   },
@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
     width: rw(36),
     height: rw(36),
     borderRadius: rw(10),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   textContent: {
     flex: 1,
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
   actionContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: 2,
   },
   actionText: {

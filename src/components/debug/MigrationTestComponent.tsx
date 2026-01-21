@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
-    alignItems: "center",
+    alignItems: "center" as const,
     minWidth: 100,
   },
 
@@ -359,8 +359,8 @@ const styles = StyleSheet.create({
 
   resultHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.xs,
   },
 

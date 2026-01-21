@@ -1,10 +1,10 @@
 // Backup and Recovery Service for Track B Infrastructure
 // Provides automatic local data backup, cloud backup to Supabase storage, and data recovery mechanisms
 
-import { enhancedLocalStorage } from './localStorage';
-import { dataBridge } from './DataBridge';
-import { validationService } from '../utils/validation';
-import { LocalStorageSchema } from '../types/localData';
+import { enhancedLocalStorage } from "./localStorage";
+import { dataBridge } from "./DataBridge";
+import { validationService } from "../utils/validation";
+import { LocalStorageSchema } from "../types/localData";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -24,8 +24,8 @@ export interface BackupConfig {
 
 export interface BackupMetadata {
   id: string;
-  type: 'full' | 'incremental';
-  location: 'local' | 'cloud' | 'both';
+  type: "full" | "incremental";
+  location: "local" | "cloud" | "both";
   createdAt: Date;
   size: number; // bytes
   checksum: string;
@@ -46,7 +46,7 @@ export interface BackupData {
 
 export interface IncrementalChange {
   id: string;
-  type: 'create' | 'update' | 'delete';
+  type: "create" | "update" | "delete";
   table: string;
   recordId: string;
   timestamp: Date;
@@ -56,9 +56,9 @@ export interface IncrementalChange {
 
 export interface RecoveryOptions {
   backupId: string;
-  recoveryType: 'full' | 'selective';
+  recoveryType: "full" | "selective";
   selectedDataTypes?: string[];
-  mergeStrategy: 'replace' | 'merge' | 'skip_existing';
+  mergeStrategy: "replace" | "merge" | "skip_existing";
   validateData: boolean;
   createRecoveryPoint: boolean;
 }
@@ -83,7 +83,7 @@ export interface RecoveryResult {
 
 export interface RecoveryError {
   id: string;
-  type: 'validation' | 'conflict' | 'corruption' | 'permission' | 'unknown';
+  type: "validation" | "conflict" | "corruption" | "permission" | "unknown";
   message: string;
   details: any;
   timestamp: Date;
@@ -97,14 +97,14 @@ export interface BackupStatus {
   nextBackupTime: Date | null;
   availableBackups: BackupMetadata[];
   totalBackupSize: number;
-  backupHealth: 'excellent' | 'good' | 'warning' | 'critical';
+  backupHealth: "excellent" | "good" | "warning" | "critical";
 }
 
 export interface BackupResult {
   success: boolean;
   backupId: string;
-  type: 'full' | 'incremental';
-  location: 'local' | 'cloud' | 'both';
+  type: "full" | "incremental";
+  location: "local" | "cloud" | "both";
   startTime: Date;
   endTime: Date;
   duration: number;
@@ -115,7 +115,13 @@ export interface BackupResult {
 
 export interface BackupError {
   id: string;
-  type: 'storage' | 'network' | 'encryption' | 'compression' | 'validation' | 'unknown';
+  type:
+    | "storage"
+    | "network"
+    | "encryption"
+    | "compression"
+    | "validation"
+    | "unknown";
   message: string;
   details: any;
   timestamp: Date;
@@ -155,7 +161,7 @@ export class BackupRecoveryService {
       nextBackupTime: null,
       availableBackups: [],
       totalBackupSize: 0,
-      backupHealth: 'good',
+      backupHealth: "good",
     };
   }
 
@@ -171,7 +177,7 @@ export class BackupRecoveryService {
 
     try {
       await this.loadBackupStatus();
-      await this.loadAvailableBackups();
+      await this.updateAvailableBackups();
 
       if (this.config.enableAutoBackup) {
         this.startAutoBackup();
@@ -181,9 +187,9 @@ export class BackupRecoveryService {
       await this.cleanupOldBackups();
 
       this.isInitialized = true;
-      console.log('Backup and recovery service initialized');
+      console.log("Backup and recovery service initialized");
     } catch (error) {
-      console.error('Failed to initialize backup service:', error);
+      console.error("Failed to initialize backup service:", error);
       throw error;
     }
   }
@@ -192,11 +198,11 @@ export class BackupRecoveryService {
    * Create a manual backup
    */
   async createBackup(
-    type: 'full' | 'incremental' = 'full',
-    description = ''
+    type: "full" | "incremental" = "full",
+    description = "",
   ): Promise<BackupResult> {
     if (this.status.isBackingUp) {
-      throw new Error('Backup is already in progress');
+      throw new Error("Backup is already in progress");
     }
 
     const backupId = this.generateBackupId();
@@ -208,21 +214,22 @@ export class BackupRecoveryService {
       // Get data to backup
       const data = await dataBridge.exportAllData();
       if (!data) {
-        throw new Error('No data available for backup');
+        throw new Error("No data available for backup");
       }
 
       // Create backup metadata
       const metadata: BackupMetadata = {
         id: backupId,
         type,
-        location: this.config.enableCloudBackup ? 'both' : 'local',
+        location: this.config.enableCloudBackup ? "both" : "local",
         createdAt: startTime,
         size: 0, // Will be calculated
-        checksum: '',
+        checksum: "",
         version: data.version,
         deviceId: await this.getDeviceId(),
-        userId: data.user?.profile?.id || 'unknown',
-        description: description || `${type} backup created on ${startTime.toISOString()}`,
+        userId: data.user?.profile?.id || "unknown",
+        description:
+          description || `${type} backup created on ${startTime.toISOString()}`,
         dataTypes: this.getDataTypes(data),
         isEncrypted: this.config.encryptionEnabled,
         isCompressed: this.config.compressionEnabled,
@@ -232,7 +239,10 @@ export class BackupRecoveryService {
       const backupData: BackupData = {
         metadata,
         data,
-        incrementalChanges: type === 'incremental' ? await this.getIncrementalChanges() : undefined,
+        incrementalChanges:
+          type === "incremental"
+            ? await this.getIncrementalChanges()
+            : undefined,
       };
 
       // Process and store backup
@@ -270,7 +280,7 @@ export class BackupRecoveryService {
         success: false,
         backupId,
         type,
-        location: 'local',
+        location: "local",
         startTime,
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
@@ -278,8 +288,8 @@ export class BackupRecoveryService {
         errors: [
           {
             id: this.generateErrorId(),
-            type: 'unknown',
-            message: error.message,
+            type: "unknown",
+            message: error instanceof Error ? error.message : String(error),
             details: error,
             timestamp: new Date(),
             retryable: true,
@@ -315,17 +325,22 @@ export class BackupRecoveryService {
 
       // Validate backup data
       if (options.validateData) {
-        const validation = validationService.validateLocalStorageSchema(backup.data);
+        const validation = validationService.validateLocalStorageSchema(
+          backup.data,
+        );
         if (!validation.isValid) {
           throw new Error(
-            `Backup data validation failed: ${validation.errors.map((e) => e.message).join(', ')}`
+            `Backup data validation failed: ${validation.errors.map((e) => e.message).join(", ")}`,
           );
         }
       }
 
       // Create recovery point if requested
       if (options.createRecoveryPoint) {
-        await this.createBackup('full', `Recovery point before restoring ${options.backupId}`);
+        await this.createBackup(
+          "full",
+          `Recovery point before restoring ${options.backupId}`,
+        );
       }
 
       // Perform recovery
@@ -347,25 +362,26 @@ export class BackupRecoveryService {
       return result;
     } catch (error) {
       const endTime = new Date();
-      const result: RecoveryResult = {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const result: BackupResult = {
         success: false,
-        recoveryId,
+        timestamp: new Date(),
         startTime,
         endTime,
         duration: endTime.getTime() - startTime.getTime(),
-        recoveredItems: { users: 0, workouts: 0, meals: 0, progress: 0, total: 0 },
+        size: 0,
         errors: [
           {
             id: this.generateErrorId(),
-            type: 'unknown',
-            message: error.message,
+            type: "unknown",
+            message: errorMessage,
             details: error,
             timestamp: new Date(),
-            recoverable: false,
+            retryable: true,
           },
         ],
         warnings: [],
-        backupInfo: {} as BackupMetadata,
       };
 
       throw error;
@@ -375,12 +391,12 @@ export class BackupRecoveryService {
   /**
    * List available backups
    */
-  async listBackups(location?: 'local' | 'cloud'): Promise<BackupMetadata[]> {
+  async listBackups(location?: "local" | "cloud"): Promise<BackupMetadata[]> {
     await this.updateAvailableBackups();
 
     if (location) {
       return this.status.availableBackups.filter(
-        (backup) => backup.location === location || backup.location === 'both'
+        (backup) => backup.location === location || backup.location === "both",
       );
     }
 
@@ -439,7 +455,7 @@ export class BackupRecoveryService {
     this.stopAutoBackup();
     await this.saveBackupStatus();
     this.isInitialized = false;
-    console.log('Backup and recovery service stopped');
+    console.log("Backup and recovery service stopped");
   }
 
   // ============================================================================
@@ -481,10 +497,12 @@ export class BackupRecoveryService {
 
     this.backupTimer = setInterval(async () => {
       try {
-        const type = this.config.enableIncrementalBackup ? 'incremental' : 'full';
-        await this.createBackup(type, 'Automatic backup');
+        const type = this.config.enableIncrementalBackup
+          ? "incremental"
+          : "full";
+        await this.createBackup(type, "Automatic backup");
       } catch (error) {
-        console.error('Auto backup failed:', error);
+        console.error("Auto backup failed:", error);
       }
     }, this.config.backupIntervalMs);
 
@@ -556,34 +574,50 @@ export class BackupRecoveryService {
 
   private async performRecovery(
     backup: BackupData,
-    options: RecoveryOptions
-  ): Promise<RecoveryResult['recoveredItems']> {
-    const recoveredItems = { users: 0, workouts: 0, meals: 0, progress: 0, total: 0 };
+    options: RecoveryOptions,
+  ): Promise<RecoveryResult["recoveredItems"]> {
+    const recoveredItems = {
+      users: 0,
+      workouts: 0,
+      meals: 0,
+      progress: 0,
+      total: 0,
+    };
 
-    if (options.recoveryType === 'full') {
+    if (options.recoveryType === "full") {
       // Full recovery - replace all data
       await dataBridge.importAllData(backup.data);
       recoveredItems.total = 1;
     } else {
       // Selective recovery
-      if (options.selectedDataTypes?.includes('user') && backup.data.user) {
+      if (options.selectedDataTypes?.includes("user") && backup.data.user) {
         await dataBridge.importUserData(backup.data.user);
         recoveredItems.users = 1;
       }
 
-      if (options.selectedDataTypes?.includes('fitness') && backup.data.fitness) {
+      if (
+        options.selectedDataTypes?.includes("fitness") &&
+        backup.data.fitness
+      ) {
         await dataBridge.importFitnessData(backup.data.fitness);
         recoveredItems.workouts = backup.data.fitness.workouts?.length || 0;
       }
 
-      if (options.selectedDataTypes?.includes('nutrition') && backup.data.nutrition) {
+      if (
+        options.selectedDataTypes?.includes("nutrition") &&
+        backup.data.nutrition
+      ) {
         await dataBridge.importNutritionData(backup.data.nutrition);
         recoveredItems.meals = backup.data.nutrition.meals?.length || 0;
       }
 
-      if (options.selectedDataTypes?.includes('progress') && backup.data.progress) {
+      if (
+        options.selectedDataTypes?.includes("progress") &&
+        backup.data.progress
+      ) {
         await dataBridge.importProgressData(backup.data.progress);
-        recoveredItems.progress = backup.data.progress.measurements?.length || 0;
+        recoveredItems.progress =
+          backup.data.progress.measurements?.length || 0;
       }
 
       recoveredItems.total =
@@ -599,7 +633,9 @@ export class BackupRecoveryService {
   private async updateAvailableBackups(): Promise<void> {
     try {
       const localBackups = await this.getLocalBackups();
-      const cloudBackups = this.config.enableCloudBackup ? await this.getCloudBackups() : [];
+      const cloudBackups = this.config.enableCloudBackup
+        ? await this.getCloudBackups()
+        : [];
 
       // Merge and deduplicate backups
       const allBackups = [...localBackups, ...cloudBackups];
@@ -608,18 +644,24 @@ export class BackupRecoveryService {
         if (!existing) {
           acc.push(backup);
         } else if (
-          backup.location === 'both' ||
-          (existing.location !== 'both' && backup.location !== existing.location)
+          backup.location === "both" ||
+          (existing.location !== "both" &&
+            backup.location !== existing.location)
         ) {
-          existing.location = 'both';
+          existing.location = "both";
         }
         return acc;
       }, [] as BackupMetadata[]);
 
       // Sort by creation date (newest first)
-      uniqueBackups.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      uniqueBackups.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
 
-      const totalSize = uniqueBackups.reduce((sum, backup) => sum + backup.size, 0);
+      const totalSize = uniqueBackups.reduce(
+        (sum, backup) => sum + backup.size,
+        0,
+      );
       const health = this.assessBackupHealth(uniqueBackups);
 
       this.updateStatus({
@@ -628,22 +670,25 @@ export class BackupRecoveryService {
         backupHealth: health,
       });
     } catch (error) {
-      console.error('Failed to update available backups:', error);
+      console.error("Failed to update available backups:", error);
     }
   }
 
-  private assessBackupHealth(backups: BackupMetadata[]): BackupStatus['backupHealth'] {
-    if (backups.length === 0) return 'critical';
+  private assessBackupHealth(
+    backups: BackupMetadata[],
+  ): BackupStatus["backupHealth"] {
+    if (backups.length === 0) return "critical";
 
     const now = new Date();
     const latestBackup = backups[0];
     const daysSinceLastBackup =
-      (now.getTime() - latestBackup.createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      (now.getTime() - latestBackup.createdAt.getTime()) /
+      (1000 * 60 * 60 * 24);
 
-    if (daysSinceLastBackup > 7) return 'critical';
-    if (daysSinceLastBackup > 3) return 'warning';
-    if (daysSinceLastBackup > 1) return 'good';
-    return 'excellent';
+    if (daysSinceLastBackup > 7) return "critical";
+    if (daysSinceLastBackup > 3) return "warning";
+    if (daysSinceLastBackup > 1) return "good";
+    return "excellent";
   }
 
   private updateStatus(updates: Partial<BackupStatus>): void {
@@ -656,7 +701,7 @@ export class BackupRecoveryService {
       try {
         callback(status);
       } catch (error) {
-        console.error('Error in status callback:', error);
+        console.error("Error in status callback:", error);
       }
     });
   }
@@ -666,7 +711,7 @@ export class BackupRecoveryService {
       try {
         callback(result);
       } catch (error) {
-        console.error('Error in result callback:', error);
+        console.error("Error in result callback:", error);
       }
     });
   }
@@ -690,16 +735,16 @@ export class BackupRecoveryService {
 
   private getDataTypes(data: LocalStorageSchema): string[] {
     const types: string[] = [];
-    if (data.user) types.push('user');
-    if (data.fitness) types.push('fitness');
-    if (data.nutrition) types.push('nutrition');
-    if (data.progress) types.push('progress');
+    if (data.user) types.push("user");
+    if (data.fitness) types.push("fitness");
+    if (data.nutrition) types.push("nutrition");
+    if (data.progress) types.push("progress");
     return types;
   }
 
   // Placeholder methods for actual implementation
   private async getDeviceId(): Promise<string> {
-    return 'device_123';
+    return "device_123";
   }
 
   private async getIncrementalChanges(): Promise<IncrementalChange[]> {
@@ -718,7 +763,7 @@ export class BackupRecoveryService {
 
   private async calculateChecksum(data: string): Promise<string> {
     // Implement checksum calculation
-    return 'checksum_' + data.length;
+    return "checksum_" + data.length;
   }
 
   private async storeCloudBackup(backupData: BackupData): Promise<void> {

@@ -1,10 +1,13 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import exerciseVisualService, { ExerciseData, ExerciseMatchResult } from './exerciseVisualService';
-// REMOVED: import { geminiService } from '../ai/MIGRATION_STUB' - no longer needed
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import exerciseVisualService, {
+  ExerciseData,
+  ExerciseMatchResult,
+} from "./exerciseVisualService";
+import { aiService as geminiService } from "../ai";
 
 // Enhanced matching types
 export interface AdvancedMatchResult extends ExerciseMatchResult {
-  tier: 'exact' | 'fuzzy' | 'semantic' | 'classification' | 'generated';
+  tier: "exact" | "fuzzy" | "semantic" | "classification" | "generated";
   processingTime: number;
   fallbackData?: GeneratedExerciseData;
 }
@@ -21,10 +24,17 @@ export interface GeneratedExerciseData {
 }
 
 export interface ExerciseClassification {
-  primaryMovement: 'push' | 'pull' | 'squat' | 'hinge' | 'carry' | 'rotation' | 'isolation';
-  muscleGroup: 'upper' | 'lower' | 'core' | 'full-body';
-  equipment: 'bodyweight' | 'weights' | 'cardio' | 'flexibility';
-  intensity: 'low' | 'moderate' | 'high' | 'explosive';
+  primaryMovement:
+    | "push"
+    | "pull"
+    | "squat"
+    | "hinge"
+    | "carry"
+    | "rotation"
+    | "isolation";
+  muscleGroup: "upper" | "lower" | "core" | "full-body";
+  equipment: "bodyweight" | "weights" | "cardio" | "flexibility";
+  intensity: "low" | "moderate" | "high" | "explosive";
 }
 
 interface ExercisePattern {
@@ -38,74 +48,74 @@ interface ExercisePattern {
 const EXERCISE_PATTERNS: ExercisePattern[] = [
   // Push movements
   {
-    keywords: ['push', 'press', 'chest', 'shoulder', 'tricep'],
+    keywords: ["push", "press", "chest", "shoulder", "tricep"],
     classification: {
-      primaryMovement: 'push',
-      muscleGroup: 'upper',
-      equipment: 'weights',
-      intensity: 'moderate',
+      primaryMovement: "push",
+      muscleGroup: "upper",
+      equipment: "weights",
+      intensity: "moderate",
     },
-    fallbackExercise: 'push up',
+    fallbackExercise: "push up",
   },
 
   // Pull movements
   {
-    keywords: ['pull', 'row', 'lat', 'back', 'bicep', 'chin'],
+    keywords: ["pull", "row", "lat", "back", "bicep", "chin"],
     classification: {
-      primaryMovement: 'pull',
-      muscleGroup: 'upper',
-      equipment: 'weights',
-      intensity: 'moderate',
+      primaryMovement: "pull",
+      muscleGroup: "upper",
+      equipment: "weights",
+      intensity: "moderate",
     },
-    fallbackExercise: 'pull up',
+    fallbackExercise: "pull up",
   },
 
   // Squat patterns
   {
-    keywords: ['squat', 'quad', 'glute', 'leg', 'thigh'],
+    keywords: ["squat", "quad", "glute", "leg", "thigh"],
     classification: {
-      primaryMovement: 'squat',
-      muscleGroup: 'lower',
-      equipment: 'weights',
-      intensity: 'moderate',
+      primaryMovement: "squat",
+      muscleGroup: "lower",
+      equipment: "weights",
+      intensity: "moderate",
     },
-    fallbackExercise: 'squat',
+    fallbackExercise: "squat",
   },
 
   // Hinge patterns
   {
-    keywords: ['deadlift', 'hinge', 'hamstring', 'hip', 'posterior'],
+    keywords: ["deadlift", "hinge", "hamstring", "hip", "posterior"],
     classification: {
-      primaryMovement: 'hinge',
-      muscleGroup: 'lower',
-      equipment: 'weights',
-      intensity: 'moderate',
+      primaryMovement: "hinge",
+      muscleGroup: "lower",
+      equipment: "weights",
+      intensity: "moderate",
     },
-    fallbackExercise: 'deadlift',
+    fallbackExercise: "deadlift",
   },
 
   // Core/Rotation
   {
-    keywords: ['plank', 'core', 'abs', 'rotation', 'twist', 'crunch'],
+    keywords: ["plank", "core", "abs", "rotation", "twist", "crunch"],
     classification: {
-      primaryMovement: 'rotation',
-      muscleGroup: 'core',
-      equipment: 'bodyweight',
-      intensity: 'moderate',
+      primaryMovement: "rotation",
+      muscleGroup: "core",
+      equipment: "bodyweight",
+      intensity: "moderate",
     },
-    fallbackExercise: 'plank',
+    fallbackExercise: "plank",
   },
 
   // Cardio movements
   {
-    keywords: ['jump', 'cardio', 'hiit', 'explosive', 'plyometric', 'burpee'],
+    keywords: ["jump", "cardio", "hiit", "explosive", "plyometric", "burpee"],
     classification: {
-      primaryMovement: 'carry',
-      muscleGroup: 'full-body',
-      equipment: 'cardio',
-      intensity: 'explosive',
+      primaryMovement: "carry",
+      muscleGroup: "full-body",
+      equipment: "cardio",
+      intensity: "explosive",
     },
-    fallbackExercise: 'jumping jacks',
+    fallbackExercise: "jumping jacks",
   },
 ];
 
@@ -131,7 +141,9 @@ class AdvancedExerciseMatchingService {
    * Main matching function with multi-tier system
    * Target: 100% coverage with <100ms average response
    */
-  async findExerciseWithFullCoverage(exerciseName: string): Promise<AdvancedMatchResult> {
+  async findExerciseWithFullCoverage(
+    exerciseName: string,
+  ): Promise<AdvancedMatchResult> {
     const startTime = Date.now();
     this.performanceMetrics.totalRequests++;
 
@@ -139,49 +151,60 @@ class AdvancedExerciseMatchingService {
       // TIER 1: Exact Match (0-10ms)
       const exactMatch = await this.tryExactMatch(exerciseName);
       if (exactMatch) {
-        return this.createResult(exactMatch, 'exact', startTime);
+        return this.createResult(exactMatch, "exact", startTime);
       }
 
       // TIER 2: Fuzzy Matching (50-200ms)
       const fuzzyMatch = await this.tryFuzzyMatch(exerciseName);
       if (fuzzyMatch && fuzzyMatch.confidence >= 0.75) {
-        return this.createResult(fuzzyMatch, 'fuzzy', startTime);
+        return this.createResult(fuzzyMatch, "fuzzy", startTime);
       }
 
       // TIER 3: AI-Powered Semantic Matching (200-500ms)
       const semanticMatch = await this.trySemanticMatch(exerciseName);
       if (semanticMatch) {
-        return this.createResult(semanticMatch, 'semantic', startTime);
+        return this.createResult(semanticMatch, "semantic", startTime);
       }
 
       // TIER 4: Exercise Classification (10-50ms)
-      const classificationMatch = await this.tryClassificationMatch(exerciseName);
+      const classificationMatch =
+        await this.tryClassificationMatch(exerciseName);
       if (classificationMatch) {
-        return this.createResult(classificationMatch, 'classification', startTime);
+        return this.createResult(
+          classificationMatch,
+          "classification",
+          startTime,
+        );
       }
 
       // TIER 5: AI-Generated Exercise Data (500-1000ms)
       const generatedMatch = await this.generateExerciseData(exerciseName);
-      return this.createResult(generatedMatch, 'generated', startTime);
+      return this.createResult(generatedMatch, "generated", startTime);
     } catch (error) {
       console.error(`Advanced matching failed for ${exerciseName}:`, error);
 
       // Ultimate fallback - return basic classification
       const fallback = await this.tryClassificationMatch(exerciseName);
-      return this.createResult(fallback, 'classification', startTime);
+      return this.createResult(fallback, "classification", startTime);
     }
   }
 
   /**
    * TIER 1: Exact Match - Instant cache lookup
    */
-  private async tryExactMatch(exerciseName: string): Promise<ExerciseMatchResult | null> {
+  private async tryExactMatch(
+    exerciseName: string,
+  ): Promise<ExerciseMatchResult | null> {
     const cleanName = exerciseName.toLowerCase().trim();
 
     // Check existing cache first
-    const exactMatch = await exerciseVisualService.findExercise(cleanName, false, true);
+    const exactMatch = await exerciseVisualService.findExercise(
+      cleanName,
+      false,
+      true,
+    );
 
-    if (exactMatch && exactMatch.matchType === 'exact') {
+    if (exactMatch && exactMatch.matchType === "exact") {
       this.performanceMetrics.tierUsage.exact++;
       return exactMatch;
     }
@@ -192,9 +215,15 @@ class AdvancedExerciseMatchingService {
   /**
    * TIER 2: Fuzzy Matching - Enhanced with better threshold
    */
-  private async tryFuzzyMatch(exerciseName: string): Promise<ExerciseMatchResult | null> {
+  private async tryFuzzyMatch(
+    exerciseName: string,
+  ): Promise<ExerciseMatchResult | null> {
     try {
-      const fuzzyMatch = await exerciseVisualService.findExercise(exerciseName, false, true);
+      const fuzzyMatch = await exerciseVisualService.findExercise(
+        exerciseName,
+        false,
+        true,
+      );
 
       if (fuzzyMatch && fuzzyMatch.confidence >= 0.75) {
         this.performanceMetrics.tierUsage.fuzzy++;
@@ -211,7 +240,9 @@ class AdvancedExerciseMatchingService {
   /**
    * TIER 3: AI-Powered Semantic Matching
    */
-  private async trySemanticMatch(exerciseName: string): Promise<ExerciseMatchResult | null> {
+  private async trySemanticMatch(
+    exerciseName: string,
+  ): Promise<ExerciseMatchResult | null> {
     try {
       // Check semantic cache first
       const cached = this.semanticCache.get(exerciseName.toLowerCase());
@@ -219,14 +250,14 @@ class AdvancedExerciseMatchingService {
         const standardMatch = await exerciseVisualService.findExercise(
           cached.alternatives[0],
           false,
-          true
+          true,
         );
         if (standardMatch) {
           this.performanceMetrics.tierUsage.semantic++;
           return {
             ...standardMatch,
             confidence: 0.85,
-            matchType: 'fuzzy',
+            matchType: "fuzzy",
           };
         }
       }
@@ -236,7 +267,11 @@ class AdvancedExerciseMatchingService {
       if (semanticData && semanticData.alternatives.length > 0) {
         // Try to find match for the best alternative
         for (const alternative of semanticData.alternatives) {
-          const match = await exerciseVisualService.findExercise(alternative, false, true);
+          const match = await exerciseVisualService.findExercise(
+            alternative,
+            false,
+            true,
+          );
           if (match && match.confidence >= 0.7) {
             // Cache the semantic mapping
             this.semanticCache.set(exerciseName.toLowerCase(), semanticData);
@@ -246,7 +281,7 @@ class AdvancedExerciseMatchingService {
             return {
               ...match,
               confidence: Math.min(match.confidence + 0.1, 1.0), // Boost confidence
-              matchType: 'fuzzy',
+              matchType: "fuzzy",
             };
           }
         }
@@ -262,7 +297,9 @@ class AdvancedExerciseMatchingService {
   /**
    * TIER 4: Exercise Classification - Fast pattern matching
    */
-  private async tryClassificationMatch(exerciseName: string): Promise<ExerciseMatchResult | null> {
+  private async tryClassificationMatch(
+    exerciseName: string,
+  ): Promise<ExerciseMatchResult | null> {
     try {
       const classification = this.classifyExercise(exerciseName);
       if (!classification) return null;
@@ -271,7 +308,7 @@ class AdvancedExerciseMatchingService {
       const fallbackMatch = await exerciseVisualService.findExercise(
         classification.fallbackExercise,
         false,
-        true
+        true,
       );
 
       if (fallbackMatch) {
@@ -288,13 +325,16 @@ class AdvancedExerciseMatchingService {
             ],
           },
           confidence: 0.6,
-          matchType: 'partial',
+          matchType: "partial",
         };
       }
 
       return null;
     } catch (error) {
-      console.warn(`Classification matching failed for ${exerciseName}:`, error);
+      console.warn(
+        `Classification matching failed for ${exerciseName}:`,
+        error,
+      );
       return null;
     }
   }
@@ -302,16 +342,23 @@ class AdvancedExerciseMatchingService {
   /**
    * TIER 5: AI-Generated Exercise Data - Last resort but comprehensive
    */
-  private async generateExerciseData(exerciseName: string): Promise<ExerciseMatchResult> {
+  private async generateExerciseData(
+    exerciseName: string,
+  ): Promise<ExerciseMatchResult> {
     try {
-      const generatedData = await this.generateComprehensiveExerciseData(exerciseName);
+      const generatedData =
+        await this.generateComprehensiveExerciseData(exerciseName);
       const classification = this.classifyExercise(exerciseName);
 
       // Try to find a similar exercise for visual
       let visualExercise = null;
       if (generatedData.alternatives.length > 0) {
         for (const alt of generatedData.alternatives) {
-          const match = await exerciseVisualService.findExercise(alt, false, true);
+          const match = await exerciseVisualService.findExercise(
+            alt,
+            false,
+            true,
+          );
           if (match) {
             visualExercise = match.exercise;
             break;
@@ -324,7 +371,7 @@ class AdvancedExerciseMatchingService {
         const fallbackMatch = await exerciseVisualService.findExercise(
           classification.fallbackExercise,
           false,
-          true
+          true,
         );
         if (fallbackMatch) {
           visualExercise = fallbackMatch.exercise;
@@ -335,17 +382,19 @@ class AdvancedExerciseMatchingService {
 
       return {
         exercise: visualExercise || {
-          exerciseId: exerciseName.toLowerCase().replace(/\s+/g, '_'),
+          exerciseId: exerciseName.toLowerCase().replace(/\s+/g, "_"),
           name: generatedData.name,
-          gifUrl: '', // No visual available
+          gifUrl: "", // No visual available
           targetMuscles: generatedData.targetMuscles,
-          bodyParts: this.mapMuscleGroupsToBodyParts(generatedData.targetMuscles),
+          bodyParts: this.mapMuscleGroupsToBodyParts(
+            generatedData.targetMuscles,
+          ),
           equipments: generatedData.equipment,
           secondaryMuscles: [],
           instructions: generatedData.instructions,
         },
         confidence: 0.8, // High confidence in AI-generated data
-        matchType: 'fuzzy',
+        matchType: "fuzzy",
       };
     } catch (error) {
       console.error(`Exercise generation failed for ${exerciseName}:`, error);
@@ -353,23 +402,23 @@ class AdvancedExerciseMatchingService {
       // Ultimate fallback
       return {
         exercise: {
-          exerciseId: exerciseName.toLowerCase().replace(/\s+/g, '_'),
+          exerciseId: exerciseName.toLowerCase().replace(/\s+/g, "_"),
           name: exerciseName,
-          gifUrl: '',
-          targetMuscles: ['full body'],
-          bodyParts: ['full body'],
-          equipments: ['body weight'],
+          gifUrl: "",
+          targetMuscles: ["full body"],
+          bodyParts: ["full body"],
+          equipments: ["body weight"],
           secondaryMuscles: [],
           instructions: [
-            'This is a custom exercise generated by AI.',
-            'Follow proper form and technique.',
-            'Start with light weight or bodyweight.',
-            'Focus on controlled movements.',
-            'Stop if you feel any pain or discomfort.',
+            "This is a custom exercise generated by AI.",
+            "Follow proper form and technique.",
+            "Start with light weight or bodyweight.",
+            "Focus on controlled movements.",
+            "Stop if you feel any pain or discomfort.",
           ],
         },
         confidence: 0.4,
-        matchType: 'partial',
+        matchType: "partial",
       };
     }
   }
@@ -378,7 +427,7 @@ class AdvancedExerciseMatchingService {
    * Generate semantic mapping using Gemini
    */
   private async generateSemanticMapping(
-    exerciseName: string
+    exerciseName: string,
   ): Promise<GeneratedExerciseData | null> {
     try {
       const prompt = `
@@ -395,182 +444,61 @@ class AdvancedExerciseMatchingService {
         }
       `;
 
-      const response = await geminiService.generateResponse(
-        prompt,
-        {},
-        {
-          type: 'OBJECT',
-          properties: {
-            alternatives: {
-              type: 'ARRAY',
-              items: {
-                type: 'OBJECT',
-                properties: {
-                  name: { type: 'STRING' },
-                  confidence: { type: 'NUMBER' },
-                  reason: { type: 'STRING' },
-                },
-                required: ['name', 'confidence', 'reason'],
-              },
-            },
-          },
-          required: ['alternatives'],
-        }
+      // TODO: Restore AI-powered exercise matching when UnifiedAIService supports it
+      // For now, return null without AI assistance
+      console.warn(
+        "[advancedExerciseMatching] AI semantic mapping disabled - returning null",
       );
-
-      if (!response.success || !response.data) {
-        throw new Error('Failed to generate semantic mapping');
-      }
-
-      const data = response.data;
-
-      if (data.alternatives && Array.isArray(data.alternatives)) {
-        return {
-          name: exerciseName,
-          description: `AI-matched variation of ${data.alternatives[0]}`,
-          instructions: [],
-          equipment: data.alternatives?.[0]?.equipment || [],
-          targetMuscles: [],
-          safetyTips: [],
-          alternatives: data.alternatives,
-          classification: {
-            primaryMovement: data.primaryMovement || 'isolation',
-            muscleGroup: 'full-body',
-            equipment: 'weights',
-            intensity: 'moderate',
-          },
-        };
-      }
-
       return null;
     } catch (error) {
       console.warn(`Semantic mapping generation failed:`, error);
       return null;
     }
+
+    /* DISABLED CODE - needs UnifiedAIService.generateResponse()
+    const response = await geminiService.generateResponse(...);
+    End of disabled code */
   }
 
   /**
    * Generate comprehensive exercise data using Gemini
+   * DISABLED: Needs UnifiedAIService.generateResponse() method
    */
   private async generateComprehensiveExerciseData(
-    exerciseName: string
+    exerciseName: string,
   ): Promise<GeneratedExerciseData> {
-    const prompt = `
-      Exercise: "${exerciseName}"
-      
-      Generate comprehensive exercise information in JSON format:
-      {
-        "name": "formatted exercise name",
-        "description": "brief description",
-        "instructions": ["step1", "step2", "step3", "step4", "step5", "step6"],
-        "equipment": ["equipment needed"],
-        "targetMuscles": ["primary muscles"],
-        "safetyTips": ["safety tip1", "safety tip2", "safety tip3"],
-        "alternatives": ["similar exercise1", "similar exercise2", "similar exercise3"]
-      }
-      
-      Make alternatives use common exercise names found in standard databases.
-    `;
+    // TODO: Restore when UnifiedAIService supports generateResponse
+    console.warn(
+      "[advancedExerciseMatching] AI exercise data generation disabled",
+    );
 
-    try {
-      const response = await geminiService.generateResponse(
-        prompt,
-        {},
-        {
-          type: 'OBJECT',
-          properties: {
-            exerciseDetails: {
-              type: 'OBJECT',
-              properties: {
-                name: { type: 'STRING' },
-                description: { type: 'STRING' },
-                muscleGroups: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' },
-                },
-                equipment: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' },
-                },
-                difficulty: { type: 'STRING' },
-                instructions: {
-                  type: 'ARRAY',
-                  items: { type: 'STRING' },
-                },
-              },
-              required: [
-                'name',
-                'description',
-                'muscleGroups',
-                'equipment',
-                'difficulty',
-                'instructions',
-              ],
-            },
-          },
-          required: ['exerciseDetails'],
-        }
-      );
-
-      if (!response.success || !response.data) {
-        throw new Error('Failed to generate exercise details');
-      }
-
-      const data = response.data;
-
-      return {
-        name: data.exerciseDetails?.name || exerciseName,
-        description: data.exerciseDetails?.description || `Custom variation: ${exerciseName}`,
-        instructions: data.exerciseDetails?.instructions || [
-          'Follow proper form and technique',
-          'Start with appropriate weight or resistance',
-          'Control the movement throughout the range of motion',
-          'Breathe properly during the exercise',
-          'Stop if you experience pain or discomfort',
-          'Focus on quality over quantity',
-        ],
-        equipment: data.exerciseDetails?.equipment || ['body weight'],
-        targetMuscles: data.exerciseDetails?.muscleGroups || ['full body'],
-        safetyTips: data.exerciseDetails?.safetyTips || [
-          'Warm up properly before exercising',
-          'Use proper form to prevent injury',
-          'Start with lighter weight and progress gradually',
-        ],
-        alternatives: data.alternatives || [],
-        classification: this.classifyExercise(exerciseName) || {
-          primaryMovement: 'isolation',
-          muscleGroup: 'full-body',
-          equipment: 'bodyweight',
-          intensity: 'moderate',
-        },
-      };
-    } catch (error) {
-      console.error('Comprehensive data generation failed:', error);
-
-      // Return basic generated data
-      return {
-        name: exerciseName,
-        description: `AI-generated exercise: ${exerciseName}`,
-        instructions: [
-          'This is a custom exercise variation',
-          'Follow proper form and technique',
-          'Start with appropriate resistance',
-          'Control the movement',
-          'Breathe properly',
-          'Stop if you feel pain',
-        ],
-        equipment: ['body weight'],
-        targetMuscles: ['full body'],
-        safetyTips: ['Warm up before exercising', 'Use proper form', 'Progress gradually'],
-        alternatives: [],
-        classification: {
-          primaryMovement: 'isolation',
-          muscleGroup: 'full-body',
-          equipment: 'bodyweight',
-          intensity: 'moderate',
-        },
-      };
-    }
+    // Return basic generated data as fallback
+    return {
+      name: exerciseName,
+      description: `Custom exercise: ${exerciseName}`,
+      instructions: [
+        "This is a custom exercise variation",
+        "Follow proper form and technique",
+        "Start with appropriate resistance",
+        "Control the movement",
+        "Breathe properly",
+        "Stop if you feel pain",
+      ],
+      equipment: ["body weight"],
+      targetMuscles: ["full body"],
+      safetyTips: [
+        "Warm up before exercising",
+        "Use proper form",
+        "Progress gradually",
+      ],
+      alternatives: [],
+      classification: {
+        primaryMovement: "isolation",
+        muscleGroup: "full-body",
+        equipment: "bodyweight",
+        intensity: "moderate",
+      },
+    };
   }
 
   /**
@@ -593,8 +521,8 @@ class AdvancedExerciseMatchingService {
    */
   private createResult(
     baseResult: ExerciseMatchResult | null,
-    tier: AdvancedMatchResult['tier'],
-    startTime: number
+    tier: AdvancedMatchResult["tier"],
+    startTime: number,
   ): AdvancedMatchResult {
     const processingTime = Date.now() - startTime;
     this.updatePerformanceMetrics(processingTime);
@@ -603,17 +531,17 @@ class AdvancedExerciseMatchingService {
       // Should not happen, but provide fallback
       return {
         exercise: {
-          exerciseId: 'unknown',
-          name: 'Unknown Exercise',
-          gifUrl: '',
-          targetMuscles: ['full body'],
-          bodyParts: ['full body'],
-          equipments: ['body weight'],
+          exerciseId: "unknown",
+          name: "Unknown Exercise",
+          gifUrl: "",
+          targetMuscles: ["full body"],
+          bodyParts: ["full body"],
+          equipments: ["body weight"],
           secondaryMuscles: [],
-          instructions: ['Custom exercise - use proper form'],
+          instructions: ["Custom exercise - use proper form"],
         },
         confidence: 0.1,
-        matchType: 'partial',
+        matchType: "partial",
         tier,
         processingTime,
       };
@@ -629,23 +557,26 @@ class AdvancedExerciseMatchingService {
   private updatePerformanceMetrics(processingTime: number): void {
     const total = this.performanceMetrics.totalRequests;
     const current = this.performanceMetrics.averageResponseTime;
-    this.performanceMetrics.averageResponseTime = (current * (total - 1) + processingTime) / total;
+    this.performanceMetrics.averageResponseTime =
+      (current * (total - 1) + processingTime) / total;
   }
 
   private mapMuscleGroupsToBodyParts(muscles: string[]): string[] {
     const mapping: Record<string, string> = {
-      chest: 'chest',
-      back: 'back',
-      shoulders: 'shoulders',
-      biceps: 'upper arms',
-      triceps: 'upper arms',
-      legs: 'lower body',
-      glutes: 'lower body',
-      core: 'waist',
-      abs: 'waist',
+      chest: "chest",
+      back: "back",
+      shoulders: "shoulders",
+      biceps: "upper arms",
+      triceps: "upper arms",
+      legs: "lower body",
+      glutes: "lower body",
+      core: "waist",
+      abs: "waist",
     };
 
-    return muscles.map((muscle) => mapping[muscle.toLowerCase()] || 'full body');
+    return muscles.map(
+      (muscle) => mapping[muscle.toLowerCase()] || "full body",
+    );
   }
 
   /**
@@ -653,23 +584,28 @@ class AdvancedExerciseMatchingService {
    */
   private async loadSemanticCache(): Promise<void> {
     try {
-      const cached = await AsyncStorage.getItem('semantic_exercise_cache');
+      const cached = await AsyncStorage.getItem("semantic_exercise_cache");
       if (cached) {
         const data = JSON.parse(cached);
         this.semanticCache = new Map(Object.entries(data));
-        console.log(`📚 Loaded ${this.semanticCache.size} semantic mappings from cache`);
+        console.log(
+          `📚 Loaded ${this.semanticCache.size} semantic mappings from cache`,
+        );
       }
     } catch (error) {
-      console.warn('Failed to load semantic cache:', error);
+      console.warn("Failed to load semantic cache:", error);
     }
   }
 
   private async saveSemanticCache(): Promise<void> {
     try {
       const data = Object.fromEntries(this.semanticCache);
-      await AsyncStorage.setItem('semantic_exercise_cache', JSON.stringify(data));
+      await AsyncStorage.setItem(
+        "semantic_exercise_cache",
+        JSON.stringify(data),
+      );
     } catch (error) {
-      console.warn('Failed to save semantic cache:', error);
+      console.warn("Failed to save semantic cache:", error);
     }
   }
 
@@ -694,8 +630,8 @@ class AdvancedExerciseMatchingService {
    */
   async clearCaches(): Promise<void> {
     this.semanticCache.clear();
-    await AsyncStorage.removeItem('semantic_exercise_cache');
-    console.log('🧹 Advanced matching caches cleared');
+    await AsyncStorage.removeItem("semantic_exercise_cache");
+    console.log("🧹 Advanced matching caches cleared");
   }
 }
 

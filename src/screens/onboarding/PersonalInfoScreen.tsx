@@ -19,6 +19,16 @@ import {
   useEditActions,
 } from "../../contexts/EditContext";
 
+// Form state type for PersonalInfo (uses string for inputs)
+type PersonalInfoFormState = Omit<
+  PersonalInfo,
+  "activityLevel" | "age" | "height" | "weight"
+> & {
+  age: string;
+  height: string;
+  weight: string;
+};
+
 interface PersonalInfoScreenProps {
   onNext?: (data: PersonalInfo) => void;
   onBack?: () => void;
@@ -68,25 +78,27 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     return initialData;
   };
 
-  const [formData, setFormData] = useState<Omit<PersonalInfo, "activityLevel">>(
-    () => {
-      const data = getInitialData();
-      return {
-        name: data.name || "",
-        email: data.email || "",
-        age: data.age || "",
-        gender: data.gender || "",
-        height: data.height || "",
-        weight: data.weight || "",
-        country: data.country || "",
-        state: data.state || "",
-        region: data.region || "",
-        wake_time: data.wake_time || "07:00",
-        sleep_time: data.sleep_time || "23:00",
-        occupation_type: data.occupation_type || "desk_job",
-      };
-    },
-  );
+  const [formData, setFormData] = useState<PersonalInfoFormState>(() => {
+    const data = getInitialData();
+    return {
+      name: data.name || "",
+      first_name: data.first_name || "",
+      last_name: data.last_name || "",
+      email: data.email || "",
+      age: data.age ? String(data.age) : "",
+      gender:
+        data.gender ||
+        ("male" as "male" | "female" | "other" | "prefer_not_to_say"),
+      height: data.height ? String(data.height) : "",
+      weight: data.weight ? String(data.weight) : "",
+      country: data.country || "",
+      state: data.state || "",
+      region: data.region || "",
+      wake_time: data.wake_time || "07:00",
+      sleep_time: data.sleep_time || "23:00",
+      occupation_type: data.occupation_type || "desk_job",
+    };
+  });
 
   // Time picker state
   const [showWakeTimePicker, setShowWakeTimePicker] = useState(false);
@@ -96,7 +108,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   const [customCountry, setCustomCountry] = useState("");
 
   const [errors, setErrors] = useState<
-    Partial<Omit<PersonalInfo, "activityLevel">>
+    Partial<Record<keyof Omit<PersonalInfo, "activityLevel">, string>>
   >({});
 
   // Track if data has been populated to prevent loops
@@ -121,11 +133,15 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
       });
 
       if (hasActualData) {
-        const newFormData = {
+        const newFormData: PersonalInfoFormState = {
           name: data.name || "",
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
           email: data.email || "",
           age: data.age ? String(data.age) : "",
-          gender: data.gender || "",
+          gender:
+            data.gender ||
+            ("male" as "male" | "female" | "other" | "prefer_not_to_say"),
           height: data.height ? String(data.height) : "",
           weight: data.weight ? String(data.weight) : "",
           country: data.country || "",
@@ -159,7 +175,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
   }, [formData, isEditMode, isDataPopulated]); // Removed editContextData?.updateData from deps
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Omit<PersonalInfo, "activityLevel">> = {};
+    const newErrors: Partial<Record<keyof PersonalInfoFormState, string>> = {};
 
     if (!formData.name || !formData.name.trim()) {
       newErrors.name = "Name is required";
@@ -168,46 +184,48 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     // Email is optional during onboarding - users can add it later
 
     // Improved age validation - use parseInt for consistency with backend
-    const age = parseInt(formData.age ?? "");
+    const age = parseInt(String(formData.age || ""));
     if (
       !formData.age ||
-      !formData.age.trim() ||
+      String(formData.age).trim() === "" ||
       isNaN(age) ||
       age < 13 ||
       age > 120
     ) {
-      newErrors.age = "Please enter a valid age (13-120)";
+      newErrors.age = "Please enter a valid age (13-120)" as any;
     }
 
-    if (!formData.gender) {
-      newErrors.gender = "Please select your gender";
+    // Gender validation
+    const validGenders = ["male", "female", "other", "prefer_not_to_say"];
+    if (!formData.gender || !validGenders.includes(formData.gender)) {
+      newErrors.gender = "Please select your gender" as any;
     }
 
     // Improved height validation
-    const height = parseFloat(formData.height ?? "");
+    const height = parseFloat(String(formData.height || ""));
     if (
       !formData.height ||
-      !formData.height.trim() ||
+      String(formData.height).trim() === "" ||
       isNaN(height) ||
       height < 100 ||
       height > 250
     ) {
-      newErrors.height = "Please enter a valid height (100-250 cm)";
+      newErrors.height = "Please enter a valid height (100-250 cm)" as any;
     }
 
     // Improved weight validation
-    const weight = parseFloat(formData.weight ?? "");
+    const weight = parseFloat(String(formData.weight || ""));
     if (
       !formData.weight ||
-      !formData.weight.trim() ||
+      String(formData.weight).trim() === "" ||
       isNaN(weight) ||
       weight < 30 ||
       weight > 300
     ) {
-      newErrors.weight = "Please enter a valid weight (30-300 kg)";
+      newErrors.weight = "Please enter a valid weight (30-300 kg)" as any;
     }
 
-    setErrors(newErrors);
+    setErrors(newErrors as any);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -227,8 +245,15 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
     } else {
       // In onboarding mode, proceed to next step
       if (onNext) {
-        // Add placeholder activityLevel for backward compatibility
-        onNext({ ...formData, activityLevel: "" } as PersonalInfo);
+        // Convert string values to numbers for PersonalInfo
+        const personalInfoData: PersonalInfo = {
+          ...formData,
+          age: parseInt(String(formData.age)),
+          height: parseFloat(String(formData.height)),
+          weight: parseFloat(String(formData.weight)),
+          activityLevel: "",
+        };
+        onNext(personalInfoData);
       }
     }
   };
@@ -431,7 +456,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
           <Input
             label="Full Name"
             placeholder="Enter your full name"
-            value={formData.name}
+            value={formData.name || ""}
             onChangeText={(value) => updateField("name", value)}
             error={errors.name}
           />
@@ -441,7 +466,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               <Input
                 label="Age"
                 placeholder="25"
-                value={formData.age}
+                value={String(formData.age || "")}
                 onChangeText={(value) => updateField("age", value)}
                 keyboardType="numeric"
                 error={errors.age}
@@ -484,7 +509,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               <Input
                 label="Height (cm)"
                 placeholder="170"
-                value={formData.height}
+                value={String(formData.height || "")}
                 onChangeText={(value) => updateField("height", value)}
                 keyboardType="numeric"
                 error={errors.height}
@@ -495,7 +520,7 @@ export const PersonalInfoScreen: React.FC<PersonalInfoScreenProps> = ({
               <Input
                 label="Weight (kg)"
                 placeholder="70"
-                value={formData.weight}
+                value={String(formData.weight || "")}
                 onChangeText={(value) => updateField("weight", value)}
                 keyboardType="numeric"
                 error={errors.weight}
@@ -795,7 +820,7 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -824,7 +849,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   genderOptionSelected: {
@@ -994,7 +1019,7 @@ const styles = StyleSheet.create({
   // Occupation styles
   occupationOption: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -1047,7 +1072,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -1067,7 +1092,7 @@ const styles = StyleSheet.create({
 
   sleepDurationContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   sleepDurationIcon: {

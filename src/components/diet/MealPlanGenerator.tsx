@@ -4,16 +4,16 @@
  * Fixes Issue #8 - Clean, single call-to-action for meal plan generation
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { AuroraSpinner } from '../ui/aurora/AuroraSpinner';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { AuroraSpinner } from "../ui/aurora/AuroraSpinner";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
 
 interface MealPlanGeneratorProps {
   onGenerate: () => void;
@@ -31,7 +31,10 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
   totalMeals,
 }) => {
   return (
-    <Animated.View entering={FadeIn.duration(400).delay(600)} style={styles.container}>
+    <Animated.View
+      entering={FadeIn.duration(400).delay(600)}
+      style={styles.container}
+    >
       {/* Section Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.headerLeft}>
@@ -53,9 +56,14 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
         hapticFeedback={true}
         hapticType="medium"
       >
-        <GlassCard elevation={2} blurIntensity="medium" padding="none" borderRadius="lg">
+        <GlassCard
+          elevation={2}
+          blurIntensity="default"
+          padding="none"
+          borderRadius="lg"
+        >
           <LinearGradient
-            colors={['rgba(102, 126, 234, 0.15)', 'rgba(118, 75, 162, 0.1)']}
+            colors={["rgba(102, 126, 234, 0.15)", "rgba(118, 75, 162, 0.1)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBg}
@@ -75,7 +83,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
                 {hasPlan ? (
                   <>
                     <Text style={styles.planName} numberOfLines={1}>
-                      {planName || 'Weekly Meal Plan'}
+                      {planName || "Weekly Meal Plan"}
                     </Text>
                     <Text style={styles.planDetails}>
                       {totalMeals || 21} meals planned • Tap to regenerate
@@ -94,7 +102,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
               {/* Action Arrow */}
               <View style={styles.arrowContainer}>
                 <Ionicons
-                  name={isGenerating ? 'hourglass-outline' : 'chevron-forward'}
+                  name={isGenerating ? "hourglass-outline" : "chevron-forward"}
                   size={rf(20)}
                   color={ResponsiveTheme.colors.textSecondary}
                 />
@@ -117,12 +125,16 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
 };
 
 // Feature Tag Component
-const FeatureTag: React.FC<{ icon: keyof typeof Ionicons.glyphMap; text: string }> = ({
-  icon,
-  text,
-}) => (
+const FeatureTag: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+}> = ({ icon, text }) => (
   <View style={styles.featureTag}>
-    <Ionicons name={icon} size={rf(12)} color={ResponsiveTheme.colors.textSecondary} />
+    <Ionicons
+      name={icon}
+      size={rf(12)}
+      color={ResponsiveTheme.colors.textSecondary}
+    />
     <Text style={styles.featureText}>{text}</Text>
   </View>
 );
@@ -133,25 +145,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(18),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   activeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(76, 175, 80, 0.15)',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    backgroundColor: "rgba(76, 175, 80, 0.15)",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -161,27 +173,27 @@ const styles = StyleSheet.create({
     width: rw(6),
     height: rw(6),
     borderRadius: rw(3),
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   activeText: {
     fontSize: rf(11),
-    fontWeight: '600',
-    color: '#4CAF50',
+    fontWeight: "600",
+    color: "#4CAF50",
   },
   gradientBg: {
     padding: ResponsiveTheme.spacing.md,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
   },
   iconContainer: {
     width: rw(56),
     height: rw(56),
     borderRadius: rw(16),
-    backgroundColor: 'rgba(102, 126, 234, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
   info: {
@@ -189,7 +201,7 @@ const styles = StyleSheet.create({
   },
   planName: {
     fontSize: rf(15),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     marginBottom: 2,
   },
@@ -199,7 +211,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(15),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     marginBottom: 2,
   },
@@ -212,23 +224,23 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.05)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   features: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: "rgba(255,255,255,0.05)",
   },
   featureTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255,255,255,0.05)",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: 4,
     borderRadius: ResponsiveTheme.borderRadius.sm,
@@ -236,10 +248,9 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: rf(10),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
 });
 
 export default MealPlanGenerator;
-

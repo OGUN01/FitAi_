@@ -507,7 +507,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
             <GlassCard
               elevation={2}
               padding="lg"
-              blurIntensity="medium"
+              blurIntensity="default"
               borderRadius="xl"
               style={styles.contactCard}
             >
@@ -570,8 +570,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.md,
   },
@@ -580,12 +580,12 @@ const styles = StyleSheet.create({
     height: rw(40),
     borderRadius: rw(20),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
   headerTitle: {
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
     marginLeft: ResponsiveTheme.spacing.xs,
@@ -630,7 +630,7 @@ const styles = StyleSheet.create({
     width: "48.5%",
   },
   quickActionCard: {
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.lg,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
@@ -638,8 +638,8 @@ const styles = StyleSheet.create({
     width: rw(48),
     height: rw(48),
     borderRadius: rw(24),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   quickActionTitle: {
@@ -658,14 +658,14 @@ const styles = StyleSheet.create({
   },
   faqHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   faqIcon: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(8),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.sm,
   },
   faqQuestion: {
@@ -680,8 +680,8 @@ const styles = StyleSheet.create({
     height: rw(28),
     borderRadius: rw(14),
     backgroundColor: "rgba(255, 255, 255, 0.06)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   expandIconExpanded: {
     backgroundColor: `${ResponsiveTheme.colors.primary}20`,
@@ -704,14 +704,14 @@ const styles = StyleSheet.create({
   },
   resourceContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   iconContainer: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(12),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
   resourceTextContainer: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   },
   // Contact Card
   contactCard: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.lg,
     overflow: "hidden",
   },
@@ -741,8 +741,8 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(28),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   contactTitle: {
     fontSize: rf(18),
@@ -766,8 +766,8 @@ const styles = StyleSheet.create({
   },
   contactMethod: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.md,
     backgroundColor: "rgba(255, 255, 255, 0.08)",

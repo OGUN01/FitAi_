@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,12 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card } from '../ui';
-import { RecognizedFood } from '../../services/foodRecognitionService';
-import { rf, rh, rw } from '../../utils/responsive';
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card } from "../ui";
+import { RecognizedFood } from "../../services/foodRecognitionService";
+import { rf, rh, rw } from "../../utils/responsive";
 
 interface FoodRecognitionFeedbackProps {
   visible: boolean;
@@ -40,7 +40,9 @@ export interface FoodFeedback {
   accuracyRating: 1 | 2 | 3 | 4 | 5; // 1 = Very Poor, 5 = Excellent
 }
 
-export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = ({
+export const FoodRecognitionFeedback: React.FC<
+  FoodRecognitionFeedbackProps
+> = ({
   visible,
   recognizedFoods,
   onClose,
@@ -60,14 +62,16 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
           originalName: food.name,
           isCorrect: true, // Default to correct
           accuracyRating: 4, // Default to good rating
-        }))
+        })),
       );
       setCurrentFoodIndex(0);
     }
   }, [recognizedFoods]);
 
   const updateFeedback = (index: number, updates: Partial<FoodFeedback>) => {
-    setFeedback((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
+    setFeedback((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, ...updates } : item)),
+    );
   };
 
   const handleSubmit = async () => {
@@ -76,14 +80,14 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
       await onSubmitFeedback(feedback);
 
       Alert.alert(
-        '🙏 Thank You!',
-        'Your feedback helps improve our food recognition accuracy for everyone!',
-        [{ text: "You're Welcome!" }]
+        "🙏 Thank You!",
+        "Your feedback helps improve our food recognition accuracy for everyone!",
+        [{ text: "You're Welcome!" }],
       );
 
       onClose();
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      Alert.alert("Error", "Failed to submit feedback. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +100,10 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
     return null;
   }
 
-  const renderAccuracyStars = (rating: number, onPress: (rating: 1 | 2 | 3 | 4 | 5) => void) => {
+  const renderAccuracyStars = (
+    rating: number,
+    onPress: (rating: 1 | 2 | 3 | 4 | 5) => void,
+  ) => {
     return (
       <View style={styles.starsContainer}>
         {[1, 2, 3, 4, 5].map((star) => (
@@ -105,7 +112,14 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             onPress={() => onPress(star as 1 | 2 | 3 | 4 | 5)}
             style={styles.starButton}
           >
-            <Text style={[styles.star, { color: star <= rating ? '#fbbf24' : '#d1d5db' }]}>⭐</Text>
+            <Text
+              style={[
+                styles.star,
+                { color: star <= rating ? "#fbbf24" : "#d1d5db" },
+              ]}
+            >
+              ⭐
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -135,7 +149,9 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             <View
               style={[
                 styles.progressFill,
-                { width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%` },
+                {
+                  width: `${((currentFoodIndex + 1) / recognizedFoods.length) * 100}%`,
+                },
               ]}
             />
           </View>
@@ -146,18 +162,24 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
             <View style={styles.foodHeader}>
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.confidenceBadge}>
-                <Text style={styles.confidenceText}>{currentFood.confidence}% confidence</Text>
+                <Text style={styles.confidenceText}>
+                  {currentFood.confidence}% confidence
+                </Text>
               </View>
             </View>
 
             <View style={styles.detailsGrid}>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Calories</Text>
-                <Text style={styles.detailValue}>{Math.round(currentFood.nutrition.calories)}</Text>
+                <Text style={styles.detailValue}>
+                  {Math.round(currentFood.nutrition.calories)}
+                </Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Portion</Text>
-                <Text style={styles.detailValue}>{currentFood.portionSize.estimatedGrams}g</Text>
+                <Text style={styles.detailValue}>
+                  {currentFood.estimatedGrams}g
+                </Text>
               </View>
               <View style={styles.detailItem}>
                 <Text style={styles.detailLabel}>Cuisine</Text>
@@ -172,16 +194,20 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
 
           {/* Accuracy Rating */}
           <Card style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>How accurate is this recognition?</Text>
+            <Text style={styles.sectionTitle}>
+              How accurate is this recognition?
+            </Text>
             {renderAccuracyStars(currentFeedback.accuracyRating, (rating) =>
-              updateFeedback(currentFoodIndex, { accuracyRating: rating })
+              updateFeedback(currentFoodIndex, { accuracyRating: rating }),
             )}
             <Text style={styles.ratingLabel}>
-              {currentFeedback.accuracyRating === 1 && 'Very Poor - Completely wrong'}
-              {currentFeedback.accuracyRating === 2 && 'Poor - Mostly wrong'}
-              {currentFeedback.accuracyRating === 3 && 'Fair - Some mistakes'}
-              {currentFeedback.accuracyRating === 4 && 'Good - Mostly correct'}
-              {currentFeedback.accuracyRating === 5 && 'Excellent - Perfect recognition'}
+              {currentFeedback.accuracyRating === 1 &&
+                "Very Poor - Completely wrong"}
+              {currentFeedback.accuracyRating === 2 && "Poor - Mostly wrong"}
+              {currentFeedback.accuracyRating === 3 && "Fair - Some mistakes"}
+              {currentFeedback.accuracyRating === 4 && "Good - Mostly correct"}
+              {currentFeedback.accuracyRating === 5 &&
+                "Excellent - Perfect recognition"}
             </Text>
           </Card>
 
@@ -204,7 +230,8 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                 <Text
                   style={[
                     styles.correctnessButtonText,
-                    currentFeedback.isCorrect && styles.correctnessButtonTextActive,
+                    currentFeedback.isCorrect &&
+                      styles.correctnessButtonTextActive,
                   ]}
                 >
                   ✅ Correct
@@ -216,12 +243,15 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
                   styles.correctnessButton,
                   !currentFeedback.isCorrect && styles.correctnessButtonActive,
                 ]}
-                onPress={() => updateFeedback(currentFoodIndex, { isCorrect: false })}
+                onPress={() =>
+                  updateFeedback(currentFoodIndex, { isCorrect: false })
+                }
               >
                 <Text
                   style={[
                     styles.correctnessButtonText,
-                    !currentFeedback.isCorrect && styles.correctnessButtonTextActive,
+                    !currentFeedback.isCorrect &&
+                      styles.correctnessButtonTextActive,
                   ]}
                 >
                   ❌ Incorrect
@@ -231,12 +261,16 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
 
             {!currentFeedback.isCorrect && (
               <View style={styles.correctionSection}>
-                <Text style={styles.correctionLabel}>What should it be called?</Text>
+                <Text style={styles.correctionLabel}>
+                  What should it be called?
+                </Text>
                 <TextInput
                   style={styles.correctionInput}
                   placeholder="Enter correct food name..."
-                  value={currentFeedback.correctName || ''}
-                  onChangeText={(text) => updateFeedback(currentFoodIndex, { correctName: text })}
+                  value={currentFeedback.correctName || ""}
+                  onChangeText={(text) =>
+                    updateFeedback(currentFoodIndex, { correctName: text })
+                  }
                   multiline={false}
                 />
               </View>
@@ -245,12 +279,16 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
 
           {/* Additional Notes */}
           <Card style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Additional comments (optional)</Text>
+            <Text style={styles.sectionTitle}>
+              Additional comments (optional)
+            </Text>
             <TextInput
               style={styles.notesInput}
               placeholder="Any other feedback about this recognition..."
-              value={currentFeedback.userNotes || ''}
-              onChangeText={(text) => updateFeedback(currentFoodIndex, { userNotes: text })}
+              value={currentFeedback.userNotes || ""}
+              onChangeText={(text) =>
+                updateFeedback(currentFoodIndex, { userNotes: text })
+              }
               multiline={true}
               numberOfLines={3}
             />
@@ -277,7 +315,7 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
               />
             ) : (
               <Button
-                title={isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                title={isSubmitting ? "Submitting..." : "Submit Feedback"}
                 onPress={handleSubmit}
                 disabled={isSubmitting}
                 style={styles.navButton}
@@ -287,7 +325,10 @@ export const FoodRecognitionFeedback: React.FC<FoodRecognitionFeedbackProps> = (
 
           {isSubmitting && (
             <View style={styles.submittingIndicator}>
-              <ActivityIndicator size="small" color={ResponsiveTheme.colors.primary} />
+              <ActivityIndicator
+                size="small"
+                color={ResponsiveTheme.colors.primary}
+              />
               <Text style={styles.submittingText}>Sending feedback...</Text>
             </View>
           )}
@@ -304,9 +345,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
@@ -315,7 +356,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: ResponsiveTheme.fontSize.xl,
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
 
@@ -324,14 +365,14 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: 16,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   closeText: {
     fontSize: rf(16),
     color: ResponsiveTheme.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   progressIndicator: {
@@ -343,7 +384,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   progressBar: {
@@ -353,7 +394,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: 2,
   },
@@ -369,15 +410,15 @@ const styles = StyleSheet.create({
   },
 
   foodHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   foodName: {
     fontSize: ResponsiveTheme.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     flex: 1,
   },
@@ -392,18 +433,18 @@ const styles = StyleSheet.create({
   confidenceText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.white,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   detailsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
   },
 
   detailItem: {
     flex: 1,
-    minWidth: '45%',
+    minWidth: "45%",
   },
 
   detailLabel: {
@@ -415,7 +456,7 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   sectionCard: {
@@ -425,14 +466,14 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   starsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -447,11 +488,11 @@ const styles = StyleSheet.create({
   ratingLabel: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   correctnessButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.md,
   },
@@ -464,7 +505,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     backgroundColor: ResponsiveTheme.colors.background,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   correctnessButtonActive: {
@@ -475,7 +516,7 @@ const styles = StyleSheet.create({
   correctnessButtonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   correctnessButtonTextActive: {
@@ -490,7 +531,7 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   correctionInput: {
@@ -514,7 +555,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
     backgroundColor: ResponsiveTheme.colors.surface,
     minHeight: rh(80),
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
 
   navigationContainer: {
@@ -525,7 +566,7 @@ const styles = StyleSheet.create({
   },
 
   navigationButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -534,9 +575,9 @@ const styles = StyleSheet.create({
   },
 
   submittingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: ResponsiveTheme.spacing.md,
   },
 

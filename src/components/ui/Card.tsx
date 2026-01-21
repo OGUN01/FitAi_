@@ -1,15 +1,21 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, TouchableOpacity, Text } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
+import React from "react";
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  TouchableOpacity,
+  Text,
+} from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   onPress?: () => void;
-  variant?: 'default' | 'elevated' | 'outlined';
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  variant?: "default" | "elevated" | "outlined";
+  padding?: "none" | "sm" | "md" | "lg";
 }
 
 export const Card: React.FC<CardProps> = (props) => {
@@ -17,8 +23,8 @@ export const Card: React.FC<CardProps> = (props) => {
     children,
     style,
     onPress,
-    variant = 'default',
-    padding = 'md',
+    variant = "default",
+    padding = "md",
   } = props;
 
   const getCardStyle = (): ViewStyle => {
@@ -28,9 +34,9 @@ export const Card: React.FC<CardProps> = (props) => {
     };
 
     switch (variant) {
-      case 'elevated':
+      case "elevated":
         return { ...baseStyle, ...styles.elevated };
-      case 'outlined':
+      case "outlined":
         return { ...baseStyle, ...styles.outlined };
       default:
         return { ...baseStyle, ...styles.default };
@@ -39,32 +45,48 @@ export const Card: React.FC<CardProps> = (props) => {
 
   const cardStyle = [getCardStyle(), style];
 
-  const wrapChild = (child: React.ReactNode, index?: number): React.ReactNode => {
-    if (child === null || child === undefined || typeof child === 'boolean') {
+  const wrapChild = (
+    child: React.ReactNode,
+    index?: number,
+  ): React.ReactNode => {
+    if (child === null || child === undefined || typeof child === "boolean") {
       return child;
     }
 
-    if (typeof child === 'string' || typeof child === 'number') {
+    if (typeof child === "string" || typeof child === "number") {
       return <Text key={index}>{child}</Text>;
     }
 
     if (Array.isArray(child)) {
-      return child.map((nestedChild, nestedIndex) => wrapChild(nestedChild, nestedIndex));
+      return child.map((nestedChild, nestedIndex) =>
+        wrapChild(nestedChild, nestedIndex),
+      );
     }
 
     if (React.isValidElement(child)) {
       if (child.type === React.Fragment) {
-        const wrapped = React.Children.map(child.props.children, wrapChild);
-        return <React.Fragment key={child.key ?? index}>{wrapped}</React.Fragment>;
+        const wrapped = React.Children.map(
+          (child.props as any).children,
+          wrapChild,
+        );
+        return (
+          <React.Fragment key={child.key ?? index}>{wrapped}</React.Fragment>
+        );
       }
 
-      if (typeof child.type === 'string' && child.type.toLowerCase() === 'text') {
+      if (
+        typeof child.type === "string" &&
+        child.type.toLowerCase() === "text"
+      ) {
         return child;
       }
 
-      if (child.props && child.props.children) {
-        const wrappedChildren = React.Children.map(child.props.children, wrapChild);
-        if (wrappedChildren !== child.props.children) {
+      if (child.props && (child.props as any).children) {
+        const wrappedChildren = React.Children.map(
+          (child.props as any).children,
+          wrapChild,
+        );
+        if (wrappedChildren !== (child.props as any).children) {
           return React.cloneElement(child, child.props, wrappedChildren);
         }
       }
@@ -79,21 +101,13 @@ export const Card: React.FC<CardProps> = (props) => {
 
   if (onPress) {
     return (
-      <TouchableOpacity 
-        style={cardStyle} 
-        onPress={onPress} 
-        activeOpacity={0.8}
-      >
+      <TouchableOpacity style={cardStyle} onPress={onPress} activeOpacity={0.8}>
         {renderChildrenSafely(children)}
       </TouchableOpacity>
     );
   }
 
-  return (
-    <View style={cardStyle}>
-      {renderChildrenSafely(children)}
-    </View>
-  );
+  return <View style={cardStyle}>{renderChildrenSafely(children)}</View>;
 };
 
 const styles = StyleSheet.create({

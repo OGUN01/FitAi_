@@ -1,14 +1,14 @@
 // 🧪 FitAI Quick Actions In-App Test Suite
 // React Native compatible testing utilities
 
-import { Alert } from 'react-native';
-import { foodRecognitionService } from '../services/foodRecognitionService';
-import { APIKeyRotator } from '../utils/apiKeyRotator';
-import { foodRecognitionE2ETests } from './testFoodRecognitionE2E';
+import { Alert } from "react-native";
+import { foodRecognitionService } from "../services/foodRecognitionService";
+import { APIKeyRotator } from "../utils/apiKeyRotator";
+import { foodRecognitionE2ETests } from "./testFoodRecognitionE2E";
 
 interface TestResult {
   name: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
+  status: "PASS" | "FAIL" | "WARN";
   message?: string;
   details?: any;
 }
@@ -18,9 +18,9 @@ class QuickActionsTestSuite {
 
   private addResult(
     name: string,
-    status: 'PASS' | 'FAIL' | 'WARN',
+    status: "PASS" | "FAIL" | "WARN",
     message?: string,
-    details?: any
+    details?: any,
   ) {
     this.results.push({ name, status, message, details });
   }
@@ -30,22 +30,26 @@ class QuickActionsTestSuite {
     const results: TestResult[] = [];
 
     // Check API keys
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_KEY_1;
+    const apiKey =
+      process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+      process.env.EXPO_PUBLIC_GEMINI_KEY_1;
     results.push({
-      name: 'API Key Configuration',
-      status: apiKey ? 'PASS' : 'WARN',
-      message: apiKey ? 'API key found' : 'No API key configured - demo mode will be used',
+      name: "API Key Configuration",
+      status: apiKey ? "PASS" : "WARN",
+      message: apiKey
+        ? "API key found"
+        : "No API key configured - demo mode will be used",
       details: { hasKey: !!apiKey },
     });
 
     // Check multiple keys for rotation
     const keyCount = Object.keys(process.env).filter((key) =>
-      key.startsWith('EXPO_PUBLIC_GEMINI_KEY_')
+      key.startsWith("EXPO_PUBLIC_GEMINI_KEY_"),
     ).length;
 
     results.push({
-      name: 'API Key Rotation Setup',
-      status: keyCount >= 2 ? 'PASS' : 'WARN',
+      name: "API Key Rotation Setup",
+      status: keyCount >= 2 ? "PASS" : "WARN",
       message: `Found ${keyCount} API keys (recommended: 5+)`,
       details: { keyCount },
     });
@@ -60,18 +64,22 @@ class QuickActionsTestSuite {
     // Test Food Recognition Service
     try {
       const hasService = !!foodRecognitionService;
-      const hasMethods = hasService && typeof foodRecognitionService.recognizeFood === 'function';
+      const hasMethods =
+        hasService &&
+        typeof foodRecognitionService.recognizeFood === "function";
 
       results.push({
-        name: 'Food Recognition Service',
-        status: hasMethods ? 'PASS' : 'FAIL',
-        message: hasMethods ? 'Service loaded and ready' : 'Service not available',
+        name: "Food Recognition Service",
+        status: hasMethods ? "PASS" : "FAIL",
+        message: hasMethods
+          ? "Service loaded and ready"
+          : "Service not available",
         details: { hasService, hasMethods },
       });
     } catch (error) {
       results.push({
-        name: 'Food Recognition Service',
-        status: 'FAIL',
+        name: "Food Recognition Service",
+        status: "FAIL",
         message: `Service error: ${error}`,
         details: { error },
       });
@@ -81,18 +89,19 @@ class QuickActionsTestSuite {
     try {
       const rotator = new APIKeyRotator();
       const hasRotator = !!rotator;
-      const hasMethods = hasRotator && typeof rotator.getAvailableKey === 'function';
+      const hasMethods =
+        hasRotator && typeof rotator.getAvailableKey === "function";
 
       results.push({
-        name: 'API Key Rotator',
-        status: hasMethods ? 'PASS' : 'FAIL',
-        message: hasMethods ? 'Rotator ready' : 'Rotator not available',
+        name: "API Key Rotator",
+        status: hasMethods ? "PASS" : "FAIL",
+        message: hasMethods ? "Rotator ready" : "Rotator not available",
         details: { hasRotator, hasMethods },
       });
     } catch (error) {
       results.push({
-        name: 'API Key Rotator',
-        status: 'FAIL',
+        name: "API Key Rotator",
+        status: "FAIL",
         message: `Rotator error: ${error}`,
         details: { error },
       });
@@ -105,13 +114,15 @@ class QuickActionsTestSuite {
   private async testAPIConnection(): Promise<TestResult[]> {
     const results: TestResult[] = [];
 
-    const apiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_KEY_1;
+    const apiKey =
+      process.env.EXPO_PUBLIC_GEMINI_API_KEY ||
+      process.env.EXPO_PUBLIC_GEMINI_KEY_1;
 
     if (!apiKey) {
       results.push({
-        name: 'API Connection Test',
-        status: 'WARN',
-        message: 'Skipped - No API key configured',
+        name: "API Connection Test",
+        status: "WARN",
+        message: "Skipped - No API key configured",
         details: { skipped: true },
       });
       return results;
@@ -121,25 +132,27 @@ class QuickActionsTestSuite {
       const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       const response = await fetch(testUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: 'Test' }] }],
+          contents: [{ parts: [{ text: "Test" }] }],
         }),
       });
 
       const isWorking = response.status === 200 || response.status === 400; // 400 is OK for this test
 
       results.push({
-        name: 'Gemini API Connection',
-        status: isWorking ? 'PASS' : 'FAIL',
-        message: isWorking ? 'API is reachable' : `API returned status: ${response.status}`,
+        name: "Gemini API Connection",
+        status: isWorking ? "PASS" : "FAIL",
+        message: isWorking
+          ? "API is reachable"
+          : `API returned status: ${response.status}`,
         details: { status: response.status, isWorking },
       });
     } catch (error) {
       results.push({
-        name: 'Gemini API Connection',
-        status: 'FAIL',
+        name: "Gemini API Connection",
+        status: "FAIL",
         message: `Connection failed: ${error}`,
         details: { error: String(error) },
       });
@@ -154,33 +167,22 @@ class QuickActionsTestSuite {
 
     // Create a test image data URL (1x1 transparent PNG)
     const testImageUri =
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 
     try {
       const startTime = Date.now();
 
-      const result = await foodRecognitionService.recognizeFood(testImageUri, 'lunch', {
-        personalInfo: {
-          name: 'Test User',
-          age: '30',
-          gender: 'male',
-          height: '175',
-          weight: '70',
-          activityLevel: 'moderate',
-        },
-        fitnessGoals: {
-          primaryGoals: ['weight_loss'],
-          experience: 'intermediate',
-          experience_level: 'intermediate',
-          timeCommitment: '30-45 minutes',
-        },
-      });
+      const result = await foodRecognitionService.recognizeFood(
+        testImageUri,
+        "lunch",
+        [],
+      );
 
       const processingTime = Date.now() - startTime;
 
       results.push({
-        name: 'Food Recognition E2E Test',
-        status: result.success ? 'PASS' : 'FAIL',
+        name: "Food Recognition E2E Test",
+        status: result.success ? "PASS" : "FAIL",
         message: result.success
           ? `Recognition completed in ${processingTime}ms`
           : `Recognition failed: ${result.error}`,
@@ -193,8 +195,8 @@ class QuickActionsTestSuite {
       });
     } catch (error) {
       results.push({
-        name: 'Food Recognition E2E Test',
-        status: 'FAIL',
+        name: "Food Recognition E2E Test",
+        status: "FAIL",
         message: `Test failed: ${error}`,
         details: { error: String(error) },
       });
@@ -205,11 +207,16 @@ class QuickActionsTestSuite {
 
   // Main test runner
   async runAllTests(): Promise<{
-    summary: { passed: number; failed: number; warnings: number; total: number };
+    summary: {
+      passed: number;
+      failed: number;
+      warnings: number;
+      total: number;
+    };
     results: TestResult[];
     recommendations: string[];
   }> {
-    console.log('🚀 Starting FitAI Quick Actions Test Suite...');
+    console.log("🚀 Starting FitAI Quick Actions Test Suite...");
 
     this.results = [];
 
@@ -219,43 +226,56 @@ class QuickActionsTestSuite {
     const apiResults = await this.testAPIConnection();
     const e2eResults = await this.testFoodRecognition();
 
-    const allResults = [...envResults, ...serviceResults, ...apiResults, ...e2eResults];
+    const allResults = [
+      ...envResults,
+      ...serviceResults,
+      ...apiResults,
+      ...e2eResults,
+    ];
 
     // Calculate summary
-    const passed = allResults.filter((r) => r.status === 'PASS').length;
-    const failed = allResults.filter((r) => r.status === 'FAIL').length;
-    const warnings = allResults.filter((r) => r.status === 'WARN').length;
+    const passed = allResults.filter((r) => r.status === "PASS").length;
+    const failed = allResults.filter((r) => r.status === "FAIL").length;
+    const warnings = allResults.filter((r) => r.status === "WARN").length;
     const total = allResults.length;
 
     // Generate recommendations
     const recommendations: string[] = [];
 
     if (failed > 0) {
-      recommendations.push('❌ Some critical tests failed - check the detailed results');
+      recommendations.push(
+        "❌ Some critical tests failed - check the detailed results",
+      );
     }
 
     if (warnings > 0) {
-      const hasApiWarning = allResults.some((r) => r.name.includes('API') && r.status === 'WARN');
+      const hasApiWarning = allResults.some(
+        (r) => r.name.includes("API") && r.status === "WARN",
+      );
       if (hasApiWarning) {
         recommendations.push(
-          '🔑 Add your Gemini API key to EXPO_PUBLIC_GEMINI_API_KEY for full functionality'
+          "🔑 Add your Gemini API key to EXPO_PUBLIC_GEMINI_API_KEY for full functionality",
         );
       }
 
       const hasRotationWarning = allResults.some(
-        (r) => r.name.includes('Rotation') && r.status === 'WARN'
+        (r) => r.name.includes("Rotation") && r.status === "WARN",
       );
       if (hasRotationWarning) {
         recommendations.push(
-          '⚡ Consider adding multiple API keys (EXPO_PUBLIC_GEMINI_KEY_1, _2, etc.) for better performance'
+          "⚡ Consider adding multiple API keys (EXPO_PUBLIC_GEMINI_KEY_1, _2, etc.) for better performance",
         );
       }
     }
 
     if (passed === total) {
-      recommendations.push('🎉 All tests passed! Your Quick Actions are fully functional');
+      recommendations.push(
+        "🎉 All tests passed! Your Quick Actions are fully functional",
+      );
     } else if (failed === 0) {
-      recommendations.push('✅ Core functionality works! Warnings are about optimizations');
+      recommendations.push(
+        "✅ Core functionality works! Warnings are about optimizations",
+      );
     }
 
     return {
@@ -279,7 +299,7 @@ class QuickActionsTestSuite {
       message += `📈 Success Rate: ${Math.round((summary.passed / summary.total) * 100)}%\n\n`;
 
       // Add failed tests
-      const failedTests = results.filter((r) => r.status === 'FAIL');
+      const failedTests = results.filter((r) => r.status === "FAIL");
       if (failedTests.length > 0) {
         message += `🚨 Failed Tests:\n`;
         failedTests.forEach((test) => {
@@ -296,24 +316,34 @@ class QuickActionsTestSuite {
         });
       }
 
-      Alert.alert('🧪 Quick Actions Test Results', message, [
-        { text: 'View Details', onPress: () => this.showDetailedResults(results) },
-        { text: 'OK' },
+      Alert.alert("🧪 Quick Actions Test Results", message, [
+        {
+          text: "View Details",
+          onPress: () => this.showDetailedResults(results),
+        },
+        { text: "OK" },
       ]);
     } catch (error) {
-      Alert.alert('❌ Test Suite Error', `Failed to run tests: ${error}`, [{ text: 'OK' }]);
+      Alert.alert("❌ Test Suite Error", `Failed to run tests: ${error}`, [
+        { text: "OK" },
+      ]);
     }
   }
 
   private showDetailedResults(results: TestResult[]): void {
     const detailedMessage = results
       .map((result) => {
-        const emoji = result.status === 'PASS' ? '✅' : result.status === 'FAIL' ? '❌' : '⚠️';
+        const emoji =
+          result.status === "PASS"
+            ? "✅"
+            : result.status === "FAIL"
+              ? "❌"
+              : "⚠️";
         return `${emoji} ${result.name}: ${result.message || result.status}`;
       })
-      .join('\n');
+      .join("\n");
 
-    Alert.alert('📋 Detailed Test Results', detailedMessage, [{ text: 'OK' }]);
+    Alert.alert("📋 Detailed Test Results", detailedMessage, [{ text: "OK" }]);
   }
 }
 
@@ -328,39 +358,46 @@ export const runQuickActionsTests = () => {
 // Export E2E test runner
 export const runFoodRecognitionE2ETests = async () => {
   Alert.alert(
-    '🧪 Starting Food Recognition E2E Tests',
-    'This will test the complete food recognition and meal logging workflow. It may take 30-60 seconds.',
+    "🧪 Starting Food Recognition E2E Tests",
+    "This will test the complete food recognition and meal logging workflow. It may take 30-60 seconds.",
     [
-      { text: 'Cancel', style: 'cancel' },
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Run Tests',
+        text: "Run Tests",
         onPress: async () => {
           try {
-            const results = await foodRecognitionE2ETests.runAllTests('test-user-e2e');
+            const results =
+              await foodRecognitionE2ETests.runAllTests("test-user-e2e");
 
-            const emoji = results.failed === 0 ? '🎉' : '⚠️';
+            const emoji = results.failed === 0 ? "🎉" : "⚠️";
             Alert.alert(`${emoji} E2E Test Results`, `${results.summary}`, [
-              { text: 'OK' },
+              { text: "OK" },
               {
-                text: 'View Details',
+                text: "View Details",
                 onPress: () => {
                   const detailedResults = results.results
                     .map(
                       (r) =>
-                        `${r.success ? '✅' : '❌'} ${r.testName}\n  Duration: ${r.duration}ms\n  ${r.error || 'Success'}`
+                        `${r.success ? "✅" : "❌"} ${r.testName}\n  Duration: ${r.duration}ms\n  ${r.error || "Success"}`,
                     )
-                    .join('\n\n');
+                    .join("\n\n");
 
-                  Alert.alert('📊 Detailed E2E Results', detailedResults, [{ text: 'Close' }]);
+                  Alert.alert("📊 Detailed E2E Results", detailedResults, [
+                    { text: "Close" },
+                  ]);
                 },
               },
             ]);
           } catch (error) {
-            Alert.alert('❌ E2E Test Error', `Failed to run E2E tests: ${error}`, [{ text: 'OK' }]);
+            Alert.alert(
+              "❌ E2E Test Error",
+              `Failed to run E2E tests: ${error}`,
+              [{ text: "OK" }],
+            );
           }
         },
       },
-    ]
+    ],
   );
 };
 

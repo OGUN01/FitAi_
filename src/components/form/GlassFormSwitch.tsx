@@ -103,7 +103,7 @@ export const GlassFormSwitch: React.FC<GlassFormSwitchProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(12),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
   textContainer: {

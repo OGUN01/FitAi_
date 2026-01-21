@@ -1,21 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   nutritionDataService,
   Food,
   Meal,
   UserDietPreferences,
   NutritionGoals,
-} from '../services/nutritionData';
-import { useAuth } from './useAuth';
-import useTrackBIntegration from './useTrackBIntegration';
-import { nutritionRefreshService } from '../services/nutritionRefreshService';
+} from "../services/nutritionData";
+import { useAuth } from "./useAuth";
+import useTrackBIntegration from "./useTrackBIntegration";
+import { nutritionRefreshService } from "../services/nutritionRefreshService";
 
 interface UseNutritionDataReturn {
   // Foods
   foods: Food[];
   foodsLoading: boolean;
   foodsError: string | null;
-  loadFoods: (filters?: { category?: string; search?: string; barcode?: string }) => Promise<void>;
+  loadFoods: (filters?: {
+    category?: string;
+    search?: string;
+    barcode?: string;
+  }) => Promise<void>;
 
   // User meals
   userMeals: Meal[];
@@ -50,7 +54,7 @@ interface UseNutritionDataReturn {
   // Actions
   logMeal: (mealData: {
     name: string;
-    type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    type: "breakfast" | "lunch" | "dinner" | "snack";
     foods: {
       food_id: string;
       quantity_grams: number;
@@ -85,12 +89,15 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   const [userMealsError, setUserMealsError] = useState<string | null>(null);
 
   // Diet preferences state
-  const [dietPreferences, setDietPreferences] = useState<UserDietPreferences | null>(null);
+  const [dietPreferences, setDietPreferences] =
+    useState<UserDietPreferences | null>(null);
   const [preferencesLoading, setPreferencesLoading] = useState(false);
   const [preferencesError, setPreferencesError] = useState<string | null>(null);
 
   // Nutrition goals state
-  const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals | null>(null);
+  const [nutritionGoals, setNutritionGoals] = useState<NutritionGoals | null>(
+    null,
+  );
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState<string | null>(null);
 
@@ -114,7 +121,11 @@ export const useNutritionData = (): UseNutritionDataReturn => {
 
   // Load foods
   const loadFoods = useCallback(
-    async (filters?: { category?: string; search?: string; barcode?: string }) => {
+    async (filters?: {
+      category?: string;
+      search?: string;
+      barcode?: string;
+    }) => {
       setFoodsLoading(true);
       setFoodsError(null);
 
@@ -124,15 +135,17 @@ export const useNutritionData = (): UseNutritionDataReturn => {
         if (response.success && response.data) {
           setFoods(response.data);
         } else {
-          setFoodsError(response.error || 'Failed to load foods');
+          setFoodsError(response.error || "Failed to load foods");
         }
       } catch (error) {
-        setFoodsError(error instanceof Error ? error.message : 'Failed to load foods');
+        setFoodsError(
+          error instanceof Error ? error.message : "Failed to load foods",
+        );
       } finally {
         setFoodsLoading(false);
       }
     },
-    []
+    [],
   );
 
   // Load user meals
@@ -144,20 +157,26 @@ export const useNutritionData = (): UseNutritionDataReturn => {
       setUserMealsError(null);
 
       try {
-        const response = await nutritionDataService.getUserMeals(user.id, date, limit);
+        const response = await nutritionDataService.getUserMeals(
+          user.id,
+          date,
+          limit,
+        );
 
         if (response.success && response.data) {
           setUserMeals(response.data);
         } else {
-          setUserMealsError(response.error || 'Failed to load meals');
+          setUserMealsError(response.error || "Failed to load meals");
         }
       } catch (error) {
-        setUserMealsError(error instanceof Error ? error.message : 'Failed to load meals');
+        setUserMealsError(
+          error instanceof Error ? error.message : "Failed to load meals",
+        );
       } finally {
         setUserMealsLoading(false);
       }
     },
-    [user?.id]
+    [user?.id],
   );
 
   // Load diet preferences
@@ -168,16 +187,22 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     setPreferencesError(null);
 
     try {
-      const response = await nutritionDataService.getUserDietPreferences(user.id);
+      const response = await nutritionDataService.getUserDietPreferences(
+        user.id,
+      );
 
       if (response.success && response.data) {
         setDietPreferences(response.data);
       } else {
-        setPreferencesError(response.error || 'Failed to load diet preferences');
+        setPreferencesError(
+          response.error || "Failed to load diet preferences",
+        );
       }
     } catch (error) {
       setPreferencesError(
-        error instanceof Error ? error.message : 'Failed to load diet preferences'
+        error instanceof Error
+          ? error.message
+          : "Failed to load diet preferences",
       );
     } finally {
       setPreferencesLoading(false);
@@ -192,15 +217,21 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     setGoalsError(null);
 
     try {
-      const response = await nutritionDataService.getUserNutritionGoals(user.id);
+      const response = await nutritionDataService.getUserNutritionGoals(
+        user.id,
+      );
 
       if (response.success && response.data) {
         setNutritionGoals(response.data);
       } else {
-        setGoalsError(response.error || 'Failed to load nutrition goals');
+        setGoalsError(response.error || "Failed to load nutrition goals");
       }
     } catch (error) {
-      setGoalsError(error instanceof Error ? error.message : 'Failed to load nutrition goals');
+      setGoalsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load nutrition goals",
+      );
     } finally {
       setGoalsLoading(false);
     }
@@ -215,18 +246,38 @@ export const useNutritionData = (): UseNutritionDataReturn => {
       setStatsError(null);
 
       try {
-        const targetDate = date || new Date().toISOString().split('T')[0];
-        const response = await nutritionDataService.getUserMeals(user.id, targetDate);
+        const targetDate = date || new Date().toISOString().split("T")[0];
+        const response = await nutritionDataService.getUserMeals(
+          user.id,
+          targetDate,
+        );
 
         if (response.success && response.data) {
           const meals = response.data;
           const stats = meals.reduce(
             (acc, meal) => ({
-              // Use total_carbohydrates (Supabase column name) with fallback to total_carbs for compatibility
-              calories: acc.calories + (meal.total_calories || 0),
-              protein: acc.protein + (meal.total_protein || 0),
-              carbs: acc.carbs + (meal.total_carbohydrates || meal.total_carbs || 0),
-              fat: acc.fat + (meal.total_fat || 0),
+              // Use database column names (snake_case) with fallback for compatibility
+              calories:
+                acc.calories +
+                ((meal as any).total_calories ||
+                  (meal as any).totalCalories ||
+                  0),
+              protein:
+                acc.protein +
+                ((meal as any).total_protein ||
+                  (meal as any).totalMacros?.protein ||
+                  0),
+              carbs:
+                acc.carbs +
+                ((meal as any).total_carbohydrates ||
+                  (meal as any).total_carbs ||
+                  (meal as any).totalMacros?.carbs ||
+                  0),
+              fat:
+                acc.fat +
+                ((meal as any).total_fat ||
+                  (meal as any).totalMacros?.fat ||
+                  0),
               mealsCount: acc.mealsCount + 1,
             }),
             {
@@ -235,27 +286,31 @@ export const useNutritionData = (): UseNutritionDataReturn => {
               carbs: 0,
               fat: 0,
               mealsCount: 0,
-            }
+            },
           );
 
           setDailyNutrition(stats);
         } else {
-          setStatsError(response.error || 'Failed to load daily nutrition');
+          setStatsError(response.error || "Failed to load daily nutrition");
         }
       } catch (error) {
-        setStatsError(error instanceof Error ? error.message : 'Failed to load daily nutrition');
+        setStatsError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load daily nutrition",
+        );
       } finally {
         setStatsLoading(false);
       }
     },
-    [user?.id]
+    [user?.id],
   );
 
   // Log meal
   const logMeal = useCallback(
     async (mealData: {
       name: string;
-      type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+      type: "breakfast" | "lunch" | "dinner" | "snack";
       foods: {
         food_id: string;
         quantity_grams: number;
@@ -271,15 +326,17 @@ export const useNutritionData = (): UseNutritionDataReturn => {
           await Promise.all([loadUserMeals(), loadDailyNutrition()]);
           return true;
         } else {
-          setUserMealsError(response.error || 'Failed to log meal');
+          setUserMealsError(response.error || "Failed to log meal");
           return false;
         }
       } catch (error) {
-        setUserMealsError(error instanceof Error ? error.message : 'Failed to log meal');
+        setUserMealsError(
+          error instanceof Error ? error.message : "Failed to log meal",
+        );
         return false;
       }
     },
-    [user?.id, loadUserMeals, loadDailyNutrition]
+    [user?.id, loadUserMeals, loadDailyNutrition],
   );
 
   // Refresh all data
@@ -323,11 +380,11 @@ export const useNutritionData = (): UseNutritionDataReturn => {
   useEffect(() => {
     if (isAuthenticated && user?.id) {
       const unsubscribe = nutritionRefreshService.onRefreshNeeded(refreshAll);
-      console.log('📡 Registered nutrition data hook with refresh service');
+      console.log("📡 Registered nutrition data hook with refresh service");
 
       return () => {
         unsubscribe();
-        console.log('📡 Unregistered nutrition data hook from refresh service');
+        console.log("📡 Unregistered nutrition data hook from refresh service");
       };
     }
   }, [isAuthenticated, user?.id, refreshAll]);

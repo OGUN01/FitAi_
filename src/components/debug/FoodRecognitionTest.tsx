@@ -1,7 +1,7 @@
 // 🧪 FitAI Food Recognition Test Component
 // Simple test interface for validating the revolutionary food recognition system
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,9 +11,12 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { foodRecognitionService, MealType } from '../../services/foodRecognitionService';
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import {
+  foodRecognitionService,
+  MealType,
+} from "../../services/foodRecognitionService";
 
 interface TestResult {
   timestamp: string;
@@ -27,21 +30,21 @@ interface TestResult {
 export const FoodRecognitionTest: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [selectedMealType, setSelectedMealType] = useState<MealType>('lunch');
+  const [selectedMealType, setSelectedMealType] = useState<MealType>("lunch");
 
   const mealTypes: { type: MealType; label: string; emoji: string }[] = [
-    { type: 'breakfast', label: 'Breakfast', emoji: '🌅' },
-    { type: 'lunch', label: 'Lunch', emoji: '☀️' },
-    { type: 'dinner', label: 'Dinner', emoji: '🌙' },
-    { type: 'snack', label: 'Snack', emoji: '🍎' },
+    { type: "breakfast", label: "Breakfast", emoji: "🌅" },
+    { type: "lunch", label: "Lunch", emoji: "☀️" },
+    { type: "dinner", label: "Dinner", emoji: "🌙" },
+    { type: "snack", label: "Snack", emoji: "🍎" },
   ];
 
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    if (status !== "granted") {
       Alert.alert(
-        'Permission required',
-        'Please grant camera roll permissions to test food recognition.'
+        "Permission required",
+        "Please grant camera roll permissions to test food recognition.",
       );
       return false;
     }
@@ -68,25 +71,15 @@ export const FoodRecognitionTest: React.FC = () => {
       const startTime = Date.now();
 
       try {
-        console.log('🔍 Testing food recognition with:', { imageUri, mealType: selectedMealType });
+        console.log("🔍 Testing food recognition with:", {
+          imageUri,
+          mealType: selectedMealType,
+        });
 
         const recognitionResult = await foodRecognitionService.recognizeFood(
           imageUri,
           selectedMealType,
-          {
-            personalInfo: {
-              age: 30,
-              gender: 'male',
-              height: 175,
-              weight: 70,
-              activityLevel: 'moderate',
-            },
-            fitnessGoals: {
-              primary_goals: ['weight_loss'],
-              experience_level: 'intermediate',
-              time_commitment: '30-45 minutes',
-            },
-          }
+          [], // dietary restrictions as string array
         );
 
         const processingTime = Date.now() - startTime;
@@ -102,11 +95,11 @@ export const FoodRecognitionTest: React.FC = () => {
         setTestResults((prev) => [testResult, ...prev]);
 
         Alert.alert(
-          '✅ Test Completed',
-          `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\n\n` +
-            `Detected: ${recognitionResult.foods?.length || 0} food items\n` +
-            `Accuracy: ${recognitionResult.confidence || 0}%`,
-          [{ text: 'OK' }]
+          "✅ Test Completed",
+          `Food recognition completed in ${(processingTime / 1000).toFixed(2)}s\\n\\n` +
+            `Detected: ${recognitionResult.foods?.length || 0} food items\\n` +
+            `Accuracy: ${recognitionResult.overallConfidence || 0}%`,
+          [{ text: "OK" }],
         );
       } catch (error: any) {
         const processingTime = Date.now() - startTime;
@@ -115,21 +108,21 @@ export const FoodRecognitionTest: React.FC = () => {
           timestamp: new Date().toISOString(),
           imageUri,
           mealType: selectedMealType,
-          error: error.message || 'Unknown error',
+          error: error.message || "Unknown error",
           processingTime,
         };
 
         setTestResults((prev) => [testResult, ...prev]);
 
         Alert.alert(
-          '❌ Test Failed',
-          `Error: ${error.message || 'Unknown error'}\n\n` +
+          "❌ Test Failed",
+          `Error: ${error.message || "Unknown error"}\n\n` +
             `Processing time: ${(processingTime / 1000).toFixed(2)}s`,
-          [{ text: 'OK' }]
+          [{ text: "OK" }],
         );
       }
     } catch (error: any) {
-      Alert.alert('Error', `Failed to select image: ${error.message}`);
+      Alert.alert("Error", `Failed to select image: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -140,10 +133,13 @@ export const FoodRecognitionTest: React.FC = () => {
   };
 
   const formatResult = (result: any) => {
-    if (!result) return 'No result';
+    if (!result) return "No result";
 
     const foods = result.foods || [];
-    const totalCalories = foods.reduce((sum: number, food: any) => sum + (food.calories || 0), 0);
+    const totalCalories = foods.reduce(
+      (sum: number, food: any) => sum + (food.calories || 0),
+      0,
+    );
 
     return `${foods.length} items, ${totalCalories} cal, ${result.confidence || 0}% confidence`;
   };
@@ -153,7 +149,8 @@ export const FoodRecognitionTest: React.FC = () => {
       <View style={styles.card}>
         <Text style={styles.title}>🧪 Food Recognition Test</Text>
         <Text style={styles.subtitle}>
-          Test the revolutionary AI-powered food recognition system with 90%+ accuracy
+          Test the revolutionary AI-powered food recognition system with 90%+
+          accuracy
         </Text>
 
         {/* Meal Type Selection */}
@@ -165,13 +162,17 @@ export const FoodRecognitionTest: React.FC = () => {
               onPress={() => setSelectedMealType(type)}
               style={[
                 styles.mealTypeButton,
-                selectedMealType === type ? styles.mealTypeButtonSelected : styles.mealTypeButtonUnselected,
+                selectedMealType === type
+                  ? styles.mealTypeButtonSelected
+                  : styles.mealTypeButtonUnselected,
               ]}
             >
               <Text
                 style={[
                   styles.mealTypeText,
-                  selectedMealType === type ? styles.mealTypeTextSelected : styles.mealTypeTextUnselected,
+                  selectedMealType === type
+                    ? styles.mealTypeTextSelected
+                    : styles.mealTypeTextUnselected,
                 ]}
               >
                 {emoji} {label}
@@ -212,7 +213,10 @@ export const FoodRecognitionTest: React.FC = () => {
           {testResults.map((test, index) => (
             <View key={index} style={styles.resultItem}>
               <View style={styles.resultContent}>
-                <Image source={{ uri: test.imageUri }} style={styles.resultImage} />
+                <Image
+                  source={{ uri: test.imageUri }}
+                  style={styles.resultImage}
+                />
 
                 <View style={styles.resultDetails}>
                   <View style={styles.resultHeader}>
@@ -230,7 +234,9 @@ export const FoodRecognitionTest: React.FC = () => {
                   {test.error ? (
                     <Text style={styles.resultError}>❌ {test.error}</Text>
                   ) : (
-                    <Text style={styles.resultSuccess}>✅ {formatResult(test.result)}</Text>
+                    <Text style={styles.resultSuccess}>
+                      ✅ {formatResult(test.result)}
+                    </Text>
                   )}
 
                   {test.result?.foods && (
@@ -238,8 +244,8 @@ export const FoodRecognitionTest: React.FC = () => {
                       {test.result.foods
                         .slice(0, 2)
                         .map((food: any) => food.name)
-                        .join(', ')}
-                      {test.result.foods.length > 2 && '...'}
+                        .join(", ")}
+                      {test.result.foods.length > 2 && "..."}
                     </Text>
                   )}
                 </View>
@@ -253,10 +259,9 @@ export const FoodRecognitionTest: React.FC = () => {
       <View style={styles.statusCard}>
         <Text style={styles.statusTitle}>🚀 System Status</Text>
         <Text style={styles.statusText}>
-          • Multi-API food recognition with 90%+ accuracy{'\n'}
-          • Indian cuisine specialization (100% detection){'\n'}
-          • Zero-cost operation with API key rotation{'\n'}
-          • Real-time nutrition analysis
+          • Multi-API food recognition with 90%+ accuracy{"\n"}• Indian cuisine
+          specialization (100% detection){"\n"}• Zero-cost operation with API
+          key rotation{"\n"}• Real-time nutrition analysis
         </Text>
       </View>
     </ScrollView>
@@ -266,15 +271,15 @@ export const FoodRecognitionTest: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     padding: 16,
   },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 24,
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -282,24 +287,24 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: "bold",
+    color: "#111827",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 12,
   },
   mealTypeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
     marginBottom: 24,
   },
@@ -310,82 +315,82 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   mealTypeButtonSelected: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
+    borderColor: "#3B82F6",
   },
   mealTypeButtonUnselected: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#D1D5DB',
+    backgroundColor: "#FFFFFF",
+    borderColor: "#D1D5DB",
   },
   mealTypeText: {
-    fontWeight: '500',
+    fontWeight: "500",
   },
   mealTypeTextSelected: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   mealTypeTextUnselected: {
-    color: '#374151',
+    color: "#374151",
   },
   testButton: {
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
-    backgroundColor: '#3B82F6',
+    backgroundColor: "#3B82F6",
   },
   testButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: "#9CA3AF",
   },
   testButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    textAlign: 'center',
+    color: "#FFFFFF",
+    fontWeight: "600",
+    textAlign: "center",
     fontSize: 16,
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   resultsCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   resultsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: 16,
   },
   resultsTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: "bold",
+    color: "#111827",
   },
   clearButton: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: "#FEE2E2",
     borderRadius: 8,
   },
   clearButtonText: {
-    color: '#DC2626',
-    fontWeight: '500',
+    color: "#DC2626",
+    fontWeight: "500",
   },
   resultItem: {
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
     paddingBottom: 16,
     marginBottom: 16,
   },
   resultContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 12,
   },
   resultImage: {
@@ -397,51 +402,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   resultHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: 8,
     marginBottom: 4,
   },
   resultMealType: {
-    fontWeight: '600',
-    color: '#111827',
-    textTransform: 'capitalize',
+    fontWeight: "600",
+    color: "#111827",
+    textTransform: "capitalize",
   },
   resultTime: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 12,
   },
   resultProcessingTime: {
-    color: '#3B82F6',
+    color: "#3B82F6",
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   resultError: {
-    color: '#DC2626',
+    color: "#DC2626",
     fontSize: 12,
   },
   resultSuccess: {
-    color: '#10B981',
+    color: "#10B981",
     fontSize: 12,
   },
   resultFoods: {
-    color: '#6B7280',
+    color: "#6B7280",
     fontSize: 12,
     marginTop: 4,
   },
   statusCard: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: "#DBEAFE",
     borderRadius: 12,
     padding: 16,
     marginTop: 24,
   },
   statusTitle: {
-    color: '#1E3A8A',
-    fontWeight: '600',
+    color: "#1E3A8A",
+    fontWeight: "600",
     marginBottom: 8,
   },
   statusText: {
-    color: '#1E40AF',
+    color: "#1E40AF",
     fontSize: 12,
   },
 });

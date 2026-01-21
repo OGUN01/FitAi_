@@ -349,8 +349,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     backgroundColor: THEME.colors.surface,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   headerTitle: {
     fontSize: 18,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   },
   mealHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.md,
   },
   mealIconContainer: {
@@ -425,8 +425,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: THEME.colors.primary + "15",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginRight: THEME.spacing.md,
   },
   mealIcon: {
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     borderTopColor: THEME.colors.border,
   },
   statItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   statValue: {
     fontSize: 18,
@@ -480,8 +480,8 @@ const styles = StyleSheet.create({
   },
   ingredientHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.xs,
   },
   ingredientName: {
@@ -585,12 +585,12 @@ const styles = StyleSheet.create({
   },
   stepOverviewContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
   },
   stepOverviewLeft: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     flex: 1,
   },
   stepOverviewNumber: {

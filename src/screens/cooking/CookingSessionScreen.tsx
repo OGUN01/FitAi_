@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -11,15 +11,21 @@ import {
   ActivityIndicator,
   Linking,
   Image,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { youtubeVideoService, CookingVideo } from '../../services/youtubeVideoService';
-import { DayMeal } from '../../types/ai';
-import { completionTrackingService } from '../../services/completionTracking';
-import { cookingFlowGenerator, CookingFlow } from '../../utils/cookingFlowGenerator';
-import { mealMotivationService } from '../../features/nutrition/MealMotivation';
-import MacroDashboard from '../../components/nutrition/MacroDashboard';
-import IngredientDetailModal from '../../components/nutrition/IngredientDetailModal';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  youtubeVideoService,
+  CookingVideo,
+} from "../../services/youtubeVideoService";
+import { DayMeal } from "../../types/ai";
+import { completionTrackingService } from "../../services/completionTracking";
+import {
+  cookingFlowGenerator,
+  CookingFlow,
+} from "../../utils/cookingFlowGenerator";
+import { mealMotivationService } from "../../features/nutrition/MealMotivation";
+import MacroDashboard from "../../components/nutrition/MacroDashboard";
+import IngredientDetailModal from "../../components/nutrition/IngredientDetailModal";
 
 interface CookingSessionScreenProps {
   route: {
@@ -37,9 +43,12 @@ interface CookingStep {
   completed: boolean;
 }
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-export default function CookingSessionScreen({ route, navigation }: CookingSessionScreenProps) {
+export default function CookingSessionScreen({
+  route,
+  navigation,
+}: CookingSessionScreenProps) {
   const { meal } = route.params;
 
   // Enhanced state for premium cooking experience
@@ -49,8 +58,12 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
   const [isLoadingVideo, setIsLoadingVideo] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [cookingTimer, setCookingTimer] = useState<number | null>(null);
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
-  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(
+    null,
+  );
   const [showIngredientModal, setShowIngredientModal] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
@@ -75,8 +88,8 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
     // Generate smart cooking flow instead of using generic steps
     const flow = cookingFlowGenerator.generateCookingFlow(meal);
     setCookingFlow(flow);
-    
-    console.log('🍽️ Generated cooking flow:', {
+
+    console.log("🍽️ Generated cooking flow:", {
       totalSteps: flow.steps.length,
       totalTime: flow.totalTime,
       difficulty: flow.difficulty,
@@ -94,18 +107,18 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
       if (result.success && result.video) {
         setCookingVideo(result.video);
       } else {
-        setVideoError(result.error || 'No cooking video found');
+        setVideoError(result.error || "No cooking video found");
       }
     } catch (error) {
-      console.error('Error searching cooking video:', error);
-      setVideoError('Failed to load cooking video');
+      console.error("Error searching cooking video:", error);
+      setVideoError("Failed to load cooking video");
     } finally {
       setIsLoadingVideo(false);
     }
   };
 
   const toggleStepCompletion = (stepIndex: number) => {
-    setCompletedSteps(prev => {
+    setCompletedSteps((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(stepIndex)) {
         newSet.delete(stepIndex);
@@ -118,7 +131,7 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
 
   const goToNextStep = () => {
     if (!cookingFlow) return;
-    
+
     if (currentStepIndex < cookingFlow.steps.length - 1) {
       // Mark current step as completed
       toggleStepCompletion(currentStepIndex);
@@ -150,7 +163,7 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         if (prev === null || prev <= 1) {
           clearInterval(interval);
           setTimerInterval(null);
-          Alert.alert('⏰ Timer Complete!', 'Your cooking step is ready.');
+          Alert.alert("⏰ Timer Complete!", "Your cooking step is ready.");
           return null;
         }
         return prev - 1;
@@ -171,30 +184,30 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
   const formatTimer = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const completeCooking = async () => {
     if (!cookingFlow) return;
-    
+
     try {
       // Mark meal as completed in the tracking service
-      console.log('🍽️ Marking meal as completed:', meal.name, 'ID:', meal.id);
+      console.log("🍽️ Marking meal as completed:", meal.name, "ID:", meal.id);
       const success = await completionTrackingService.completeMeal(meal.id, {
         completedAt: new Date().toISOString(),
-        source: 'cooking_session',
+        source: "cooking_session",
         allStepsCompleted: completedSteps.size === cookingFlow.steps.length,
         totalSteps: cookingFlow.steps.length,
         completedSteps: completedSteps.size,
       });
 
       if (success) {
-        console.log('✅ Meal completion tracked successfully');
+        console.log("✅ Meal completion tracked successfully");
       } else {
-        console.warn('⚠️ Failed to track meal completion, but continuing...');
+        console.warn("⚠️ Failed to track meal completion, but continuing...");
       }
     } catch (error) {
-      console.error('❌ Error tracking meal completion:', error);
+      console.error("❌ Error tracking meal completion:", error);
     }
 
     // Use dynamic completion message
@@ -202,24 +215,20 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
       // Could include user profile data here
     });
 
-    Alert.alert(
-      '🎉 Cooking Complete!',
-      completionMessage,
-      [
-        {
-          text: 'Enjoy Your Meal! 🍽️',
-          onPress: () => {
-            console.log('🔙 Navigating back to diet screen with completion flag');
-            // Navigate back with parameters to trigger refresh
-            navigation.navigate('Diet', { 
-              mealCompleted: true, 
-              completedMealId: meal.id,
-              timestamp: Date.now() 
-            });
-          },
+    Alert.alert("🎉 Cooking Complete!", completionMessage, [
+      {
+        text: "Enjoy Your Meal! 🍽️",
+        onPress: () => {
+          console.log("🔙 Navigating back to diet screen with completion flag");
+          // Navigate back with parameters to trigger refresh
+          navigation.navigate("Diet", {
+            mealCompleted: true,
+            completedMealId: meal.id,
+            timestamp: Date.now(),
+          });
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderVideoSection = () => (
@@ -233,7 +242,11 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         <View style={styles.videoContainer}>
           <TouchableOpacity
             style={styles.videoPreview}
-            onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${cookingVideo.id}`)}
+            onPress={() =>
+              Linking.openURL(
+                `https://www.youtube.com/watch?v=${cookingVideo.id}`,
+              )
+            }
             activeOpacity={0.8}
           >
             {cookingVideo.thumbnails && cookingVideo.thumbnails.length > 0 ? (
@@ -253,7 +266,7 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
             <View style={styles.videoDuration}>
               <Text style={styles.videoDurationText}>
                 {Math.floor(cookingVideo.lengthSeconds / 60)}:
-                {(cookingVideo.lengthSeconds % 60).toString().padStart(2, '0')}
+                {(cookingVideo.lengthSeconds % 60).toString().padStart(2, "0")}
               </Text>
             </View>
           </TouchableOpacity>
@@ -261,7 +274,11 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
           <Text style={styles.videoAuthor}>by {cookingVideo.author}</Text>
           <TouchableOpacity
             style={styles.watchVideoButton}
-            onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${cookingVideo.id}`)}
+            onPress={() =>
+              Linking.openURL(
+                `https://www.youtube.com/watch?v=${cookingVideo.id}`,
+              )
+            }
           >
             <Ionicons name="play-circle" size={20} color="#4F46E5" />
             <Text style={styles.watchVideoText}>Watch Cooking Tutorial</Text>
@@ -271,7 +288,10 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         <View style={styles.videoError}>
           <Ionicons name="videocam-off" size={48} color="#6B7280" />
           <Text style={styles.errorText}>{videoError}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={searchForCookingVideo}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={searchForCookingVideo}
+          >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
@@ -283,28 +303,32 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
   const renderIngredientsSection = () => (
     <View style={styles.ingredientsSection}>
       <Text style={styles.sectionTitle}>Ingredients & Nutrition</Text>
-      
+
       {/* Macro Dashboard */}
-      <MacroDashboard 
+      <MacroDashboard
         meal={meal}
         compact={true}
         showTitle={false}
         style={styles.macroDashboard}
       />
-      
+
       {/* Interactive Ingredients List */}
       <View style={styles.ingredientsList}>
-        <Text style={styles.ingredientsTitle}>Tap ingredients for details:</Text>
+        <Text style={styles.ingredientsTitle}>
+          Tap ingredients for details:
+        </Text>
         <View style={styles.ingredientsGrid}>
           {meal.items?.map((item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.ingredientChip}
-              onPress={() => handleIngredientPress(item.name || '')}
+              onPress={() => handleIngredientPress(item.name || "")}
               activeOpacity={0.7}
             >
               <Text style={styles.ingredientText}>🥘 {item.name}</Text>
-              <Text style={styles.ingredientCalories}>{Math.round(item.calories)} cal</Text>
+              <Text style={styles.ingredientCalories}>
+                {Math.round(item.calories)} cal
+              </Text>
               <Ionicons name="information-circle" size={16} color="#6B7280" />
             </TouchableOpacity>
           )) || []}
@@ -320,7 +344,10 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
     if (!currentStep) return null;
 
     const progress = ((currentStepIndex + 1) / cookingFlow.steps.length) * 100;
-    const encouragement = mealMotivationService.getCookingProgressMessage(progress, meal);
+    const encouragement = mealMotivationService.getCookingProgressMessage(
+      progress,
+      meal,
+    );
 
     return (
       <View style={styles.currentStepSection}>
@@ -336,7 +363,8 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         <View style={styles.stepHeader}>
           <View style={styles.stepInfo}>
             <Text style={styles.stepCounter}>
-              {currentStep.icon} Step {currentStep.step} of {cookingFlow.steps.length}
+              {currentStep.icon} Step {currentStep.step} of{" "}
+              {cookingFlow.steps.length}
             </Text>
             <Text style={styles.stepTitle}>{currentStep.instruction}</Text>
           </View>
@@ -346,7 +374,9 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
               onPress={() => startTimer(currentStep.timeRequired!)}
             >
               <Ionicons name="timer-outline" size={20} color="#4F46E5" />
-              <Text style={styles.timerButtonText}>{currentStep.timeRequired}m</Text>
+              <Text style={styles.timerButtonText}>
+                {currentStep.timeRequired}m
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -373,11 +403,15 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
 
   const renderStepsList = () => {
     if (!cookingFlow) return null;
-    
+
     return (
       <View style={styles.stepsListSection}>
         <Text style={styles.sectionTitle}>Cooking Steps</Text>
-        <ScrollView ref={scrollViewRef} style={styles.stepsList} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.stepsList}
+          showsVerticalScrollIndicator={false}
+        >
           {cookingFlow.steps.map((step, index) => (
             <TouchableOpacity
               key={index}
@@ -423,13 +457,15 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
             </TouchableOpacity>
           ))}
         </ScrollView>
-        
+
         {/* Pro Tips Section */}
         {cookingFlow.proTips.length > 0 && (
           <View style={styles.proTipsSection}>
             <Text style={styles.proTipsTitle}>💡 Pro Tips</Text>
             {cookingFlow.proTips.map((tip, index) => (
-              <Text key={index} style={styles.proTipText}>• {tip}</Text>
+              <Text key={index} style={styles.proTipText}>
+                • {tip}
+              </Text>
             ))}
           </View>
         )}
@@ -439,23 +475,31 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
 
   const renderNavigationButtons = () => {
     if (!cookingFlow) return null;
-    
+
     const isLastStep = currentStepIndex === cookingFlow.steps.length - 1;
     const isCurrentStepCompleted = completedSteps.has(currentStepIndex);
-    
+
     return (
       <View style={styles.navigationSection}>
         <TouchableOpacity
-          style={[styles.navButton, currentStepIndex === 0 && styles.disabledButton]}
+          style={[
+            styles.navButton,
+            currentStepIndex === 0 && styles.disabledButton,
+          ]}
           onPress={goToPreviousStep}
           disabled={currentStepIndex === 0}
         >
           <Ionicons
             name="chevron-back"
             size={24}
-            color={currentStepIndex === 0 ? '#9CA3AF' : '#FFFFFF'}
+            color={currentStepIndex === 0 ? "#9CA3AF" : "#FFFFFF"}
           />
-          <Text style={[styles.navButtonText, currentStepIndex === 0 && styles.disabledButtonText]}>
+          <Text
+            style={[
+              styles.navButtonText,
+              currentStepIndex === 0 && styles.disabledButtonText,
+            ]}
+          >
             Previous
           </Text>
         </TouchableOpacity>
@@ -463,32 +507,33 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         <TouchableOpacity
           style={[
             styles.completeStepButton,
-            isCurrentStepCompleted && styles.completedStepButton
+            isCurrentStepCompleted && styles.completedStepButton,
           ]}
           onPress={() => toggleStepCompletion(currentStepIndex)}
         >
           <Ionicons
-            name={isCurrentStepCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'}
+            name={
+              isCurrentStepCompleted
+                ? "checkmark-circle"
+                : "checkmark-circle-outline"
+            }
             size={24}
             color="#FFFFFF"
           />
           <Text style={styles.completeButtonText}>
-            {isCurrentStepCompleted ? 'Step Done ✓' : 'Mark Complete'}
+            {isCurrentStepCompleted ? "Step Done ✓" : "Mark Complete"}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.navButton,
-            isLastStep && styles.finishButton,
-          ]}
+          style={[styles.navButton, isLastStep && styles.finishButton]}
           onPress={isLastStep ? completeCooking : goToNextStep}
         >
           <Text style={styles.navButtonText}>
-            {isLastStep ? '🎉 Finish Cooking' : 'Next Step'}
+            {isLastStep ? "🎉 Finish Cooking" : "Next Step"}
           </Text>
           <Ionicons
-            name={isLastStep ? 'checkmark' : 'chevron-forward'}
+            name={isLastStep ? "checkmark" : "chevron-forward"}
             size={24}
             color="#FFFFFF"
           />
@@ -507,7 +552,8 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
         <View style={styles.headerContent}>
           <Text style={styles.mealName}>{meal.name}</Text>
           <Text style={styles.mealMeta}>
-            Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m • {meal.difficulty}
+            Prep: {meal.preparationTime}m • Cook: {meal.cookingTime || 10}m •{" "}
+            {meal.difficulty}
           </Text>
         </View>
       </View>
@@ -527,16 +573,19 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
       <IngredientDetailModal
         visible={showIngredientModal}
         onClose={() => setShowIngredientModal(false)}
-        ingredientName={selectedIngredient || ''}
+        ingredientName={selectedIngredient || ""}
         meal={meal}
         onMealComplete={(mealId) => {
-          console.log('🍽️ CookingSessionScreen: Meal completed from ingredient modal:', mealId);
-          
+          console.log(
+            "🍽️ CookingSessionScreen: Meal completed from ingredient modal:",
+            mealId,
+          );
+
           // Navigate back to diet screen with completion flag
-          navigation.navigate('Diet', { 
-            mealCompleted: true, 
+          navigation.navigate("Diet", {
+            mealCompleted: true,
             completedMealId: mealId,
-            timestamp: Date.now() 
+            timestamp: Date.now(),
           });
         }}
         mealProgress={(() => {
@@ -554,16 +603,16 @@ export default function CookingSessionScreen({ route, navigation }: CookingSessi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: "#E5E7EB",
   },
   headerContent: {
     flex: 1,
@@ -571,19 +620,19 @@ const styles = StyleSheet.create({
   },
   mealName: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
   },
   mealMeta: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 2,
   },
   content: {
     flex: 1,
   },
   videoSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginBottom: 16,
   },
   videoContainer: {
@@ -592,52 +641,52 @@ const styles = StyleSheet.create({
   videoPreview: {
     height: 200,
     borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    overflow: "hidden",
+    backgroundColor: "#000000",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
     marginBottom: 12,
   },
   videoThumbnail: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   videoPlaceholderThumb: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
   },
   playButton: {
-    position: 'absolute',
+    position: "absolute",
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   videoDuration: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   videoDurationText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   watchVideoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EEF2FF',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EEF2FF",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
@@ -645,120 +694,120 @@ const styles = StyleSheet.create({
   },
   watchVideoText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4F46E5',
+    fontWeight: "600",
+    color: "#4F46E5",
     marginLeft: 8,
   },
   videoPlaceholder: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6B7280',
+    color: "#6B7280",
   },
   videoError: {
     height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: "#6B7280",
+    textAlign: "center",
     marginTop: 8,
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: "#4F46E5",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   videoTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginTop: 12,
   },
   videoAuthor: {
     fontSize: 14,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 4,
   },
   currentStepSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 20,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#4F46E5',
+    borderColor: "#4F46E5",
   },
   stepHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   stepCounter: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4F46E5',
+    fontWeight: "600",
+    color: "#4F46E5",
   },
   timerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EEF2FF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EEF2FF",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   timerButtonText: {
     fontSize: 14,
-    color: '#4F46E5',
+    color: "#4F46E5",
     marginLeft: 4,
   },
   stepInstruction: {
     fontSize: 18,
     lineHeight: 26,
-    color: '#111827',
+    color: "#111827",
   },
   activeTimer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 16,
     padding: 12,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     borderRadius: 8,
   },
   timerDisplay: {
     fontSize: 24,
-    fontWeight: '700',
-    color: '#D97706',
+    fontWeight: "700",
+    color: "#D97706",
   },
   stepsListSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     padding: 16,
     paddingBottom: 8,
   },
@@ -769,101 +818,101 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: "#F3F4F6",
   },
   currentStepItem: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: "#EEF2FF",
   },
   completedStepItem: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: "#F0FDF4",
   },
   stepItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   stepNumber: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E5E7EB',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#E5E7EB",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   stepNumberText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
+    fontWeight: "600",
+    color: "#6B7280",
   },
   currentStepText: {
-    color: '#4F46E5',
+    color: "#4F46E5",
   },
   completedStepText: {
-    color: '#10B981',
+    color: "#10B981",
   },
   stepItemText: {
     flex: 1,
     fontSize: 16,
-    color: '#374151',
+    color: "#374151",
   },
   navigationSection: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: "#E5E7EB",
   },
   navButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6B7280',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6B7280",
     paddingVertical: 14,
     borderRadius: 8,
     marginHorizontal: 4,
   },
   disabledButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: "#F3F4F6",
   },
   finishButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
   completeStepButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#4F46E5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#4F46E5",
     paddingVertical: 14,
     borderRadius: 8,
     marginHorizontal: 4,
   },
   navButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginHorizontal: 4,
   },
   disabledButtonText: {
-    color: '#9CA3AF',
+    color: "#9CA3AF",
   },
   completeButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontWeight: "600",
+    color: "#FFFFFF",
     marginLeft: 8,
   },
 
   // Enhanced UI Styles
   ingredientsSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 20,
   },
-  
+
   macroDashboard: {
     marginBottom: 16,
   },
@@ -874,32 +923,38 @@ const styles = StyleSheet.create({
 
   ingredientsTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 12,
   },
 
   ingredientsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
 
   ingredientChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
   },
 
   ingredientText: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
     marginRight: 6,
+  },
+
+  ingredientCalories: {
+    fontSize: 12,
+    color: "#6B7280",
+    marginRight: 8,
   },
 
   progressHeader: {
@@ -908,22 +963,22 @@ const styles = StyleSheet.create({
 
   encouragementText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#4F46E5',
-    textAlign: 'center',
+    fontWeight: "600",
+    color: "#4F46E5",
+    textAlign: "center",
     marginBottom: 12,
   },
 
   progressBarContainer: {
     height: 8,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   progressBar: {
-    height: '100%',
-    backgroundColor: '#4F46E5',
+    height: "100%",
+    backgroundColor: "#4F46E5",
     borderRadius: 4,
   },
 
@@ -933,14 +988,14 @@ const styles = StyleSheet.create({
 
   stepTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     lineHeight: 24,
     marginTop: 4,
   },
 
   tipsContainer: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
@@ -948,7 +1003,7 @@ const styles = StyleSheet.create({
 
   tipText: {
     fontSize: 14,
-    color: '#92400E',
+    color: "#92400E",
     lineHeight: 20,
   },
 
@@ -959,12 +1014,12 @@ const styles = StyleSheet.create({
 
   stepTimeText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: "#6B7280",
     marginTop: 4,
   },
 
   proTipsSection: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: "#F0FDF4",
     padding: 16,
     borderRadius: 12,
     marginTop: 16,
@@ -972,19 +1027,19 @@ const styles = StyleSheet.create({
 
   proTipsTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#166534',
+    fontWeight: "700",
+    color: "#166534",
     marginBottom: 8,
   },
 
   proTipText: {
     fontSize: 14,
-    color: '#166534',
+    color: "#166534",
     lineHeight: 20,
     marginBottom: 4,
   },
 
   completedStepButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
 });

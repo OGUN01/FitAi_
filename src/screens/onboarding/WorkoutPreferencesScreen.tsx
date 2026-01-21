@@ -24,6 +24,8 @@ export interface WorkoutPreferences {
   timePreference: number; // minutes
   intensity: "beginner" | "intermediate" | "advanced";
   workoutTypes: string[];
+  primaryGoals?: string[]; // User's primary fitness goals
+  activityLevel?: string; // User's activity level
 }
 
 interface WorkoutPreferencesScreenProps {
@@ -96,6 +98,7 @@ export const WorkoutPreferencesScreen: React.FC<
 
   const [errors, setErrors] = useState<{
     workoutTypes?: string;
+    location?: string;
   }>({});
 
   // Track if data has been populated to prevent loops
@@ -622,7 +625,7 @@ const styles = StyleSheet.create({
   },
 
   goalContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -698,7 +701,7 @@ const styles = StyleSheet.create({
   },
 
   locationContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
   },
 
@@ -744,7 +747,7 @@ const styles = StyleSheet.create({
 
   intensityHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 

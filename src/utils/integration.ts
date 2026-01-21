@@ -178,7 +178,7 @@ export const useOnboardingIntegration = () => {
       // If user is authenticated, also try to save to remote
       if (isAuthenticated && authUser) {
         // Update local state immediately
-        updateFitnessGoalsLocal(fitnessGoals);
+        updateFitnessGoalsLocal(fitnessGoals as any);
 
         // Try to update fitness goals first, create if they don't exist
         const goalsData = {

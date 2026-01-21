@@ -496,8 +496,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.md,
   },
@@ -506,12 +506,12 @@ const styles = StyleSheet.create({
     height: rw(40),
     borderRadius: rw(20),
     backgroundColor: "rgba(255, 255, 255, 0.08)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   headerCenter: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
   headerTitle: {
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
     marginLeft: ResponsiveTheme.spacing.xs,
@@ -555,14 +555,14 @@ const styles = StyleSheet.create({
   },
   toggleContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   iconContainer: {
     width: rw(40),
     height: rw(40),
     borderRadius: rw(12),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,
   },
   textContainer: {
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
   },
   actionContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   actionTitle: {
     fontSize: rf(15),
@@ -611,8 +611,8 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.lg,

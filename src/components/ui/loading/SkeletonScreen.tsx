@@ -4,7 +4,7 @@
  * Preserves layout dimensions and provides smooth fade-in transition
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Animated,
@@ -12,8 +12,8 @@ import {
   ViewStyle,
   Easing,
   StyleProp,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 // ============================================================================
 // TYPES
@@ -38,7 +38,7 @@ export interface SkeletonProps {
   /**
    * Variant of skeleton
    */
-  variant?: 'rect' | 'circle' | 'text' | 'card';
+  variant?: "rect" | "circle" | "text" | "card";
 
   /**
    * Animation speed in milliseconds
@@ -93,13 +93,13 @@ export interface SkeletonGroupProps {
 // ============================================================================
 
 export const Skeleton: React.FC<SkeletonProps> = ({
-  width = '100%',
+  width = "100%",
   height = 20,
   borderRadius = 4,
-  variant = 'rect',
+  variant = "rect",
   animationDuration = 1500,
-  baseColor = 'rgba(255, 255, 255, 0.08)',
-  highlightColor = 'rgba(255, 255, 255, 0.15)',
+  baseColor = "rgba(255, 255, 255, 0.08)",
+  highlightColor = "rgba(255, 255, 255, 0.15)",
   style,
   animated = true,
 }) => {
@@ -114,7 +114,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
         duration: animationDuration,
         easing: Easing.linear,
         useNativeDriver: true,
-      })
+      }),
     );
 
     shimmerAnimation.start();
@@ -127,30 +127,30 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   // Calculate dimensions based on variant
   const getDimensions = (): ViewStyle => {
     switch (variant) {
-      case 'circle':
-        const size = typeof width === 'number' ? width : 40;
+      case "circle":
+        const size = typeof width === "number" ? width : 40;
         return {
           width: size,
           height: size,
           borderRadius: size / 2,
         };
-      case 'text':
+      case "text":
         return {
-          width,
+          width: width as any,
           height: 16,
           borderRadius: 4,
         };
-      case 'card':
+      case "card":
         return {
-          width,
-          height: height || 200,
+          width: width as any,
+          height: (height || 200) as any,
           borderRadius: 12,
         };
-      case 'rect':
+      case "rect":
       default:
         return {
-          width,
-          height,
+          width: width as any,
+          height: height as any,
           borderRadius,
         };
     }
@@ -174,11 +174,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
           ]}
         >
           <LinearGradient
-            colors={[
-              'transparent',
-              highlightColor,
-              'transparent',
-            ]}
+            colors={["transparent", highlightColor, "transparent"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.shimmerGradient}
@@ -284,7 +280,7 @@ export const SkeletonText: React.FC<{
       <Skeleton
         key={index}
         variant="text"
-        width={index === lines - 1 ? '60%' : '100%'}
+        width={index === lines - 1 ? "60%" : "100%"}
         style={index > 0 ? { marginTop: 8 } : undefined}
       />
     ))}
@@ -304,10 +300,7 @@ export const SkeletonGrid: React.FC<{
     {Array.from({ length: rows }).map((_, rowIndex) => (
       <View key={rowIndex} style={[styles.gridRow, { gap }]}>
         {Array.from({ length: columns }).map((_, colIndex) => (
-          <View
-            key={colIndex}
-            style={[styles.gridItem, { flex: 1 / columns }]}
-          >
+          <View key={colIndex} style={[styles.gridItem, { flex: 1 / columns }]}>
             <Skeleton variant="card" width="100%" height={150} />
           </View>
         ))}
@@ -322,18 +315,18 @@ export const SkeletonGrid: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
+    overflow: "hidden",
+    backgroundColor: "transparent",
   },
   base: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   shimmerContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -341,36 +334,36 @@ const styles = StyleSheet.create({
   },
   shimmerGradient: {
     width: 300,
-    height: '100%',
+    height: "100%",
   },
   groupContainer: {
-    width: '100%',
+    width: "100%",
   },
   card: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardContent: {
     marginTop: 12,
   },
   listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
   },
   listItemContent: {
     flex: 1,
     marginLeft: 12,
   },
   profile: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
   textBlock: {
-    width: '100%',
+    width: "100%",
   },
   grid: {
-    width: '100%',
+    width: "100%",
   },
   gridRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   gridItem: {
     flex: 1,
@@ -382,11 +375,3 @@ const styles = StyleSheet.create({
 // ============================================================================
 
 export default Skeleton;
-
-export {
-  SkeletonCard,
-  SkeletonListItem,
-  SkeletonProfile,
-  SkeletonText,
-  SkeletonGrid,
-};

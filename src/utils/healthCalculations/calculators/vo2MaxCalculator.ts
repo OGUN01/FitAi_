@@ -15,7 +15,7 @@
  * Date: 2025-12-30
  */
 
-import { UserProfile, VO2MaxEstimate, ActivityLevel } from '../types';
+import { UserProfile, VO2MaxEstimate, ActivityLevel } from "../types";
 
 export class VO2MaxCalculator {
   /**
@@ -34,7 +34,7 @@ export class VO2MaxCalculator {
    */
   estimateVO2Max(user: UserProfile, restingHR: number): VO2MaxEstimate {
     const { age, gender } = user;
-    const activityLevel = user.activityLevel || 'sedentary';
+    const activityLevel = user.activityLevel || "sedentary";
 
     // Activity index (0-7 scale based on research)
     const activityIndex = this.getActivityIndex(activityLevel);
@@ -42,29 +42,43 @@ export class VO2MaxCalculator {
     let vo2max: number;
 
     // Gender-specific formulas (Jurca et al. 2005)
-    if (gender === 'male') {
+    if (gender === "male") {
       // Male formula
-      vo2max = 56.363 + (1.921 * activityIndex) - (0.381 * age) - (0.754 * (restingHR / 10)) + (10.987 * 1);
-    } else if (gender === 'female') {
+      vo2max =
+        56.363 +
+        1.921 * activityIndex -
+        0.381 * age -
+        0.754 * (restingHR / 10) +
+        10.987 * 1;
+    } else if (gender === "female") {
       // Female formula
-      vo2max = 50.513 + (1.589 * activityIndex) - (0.289 * age) - (0.552 * (restingHR / 10));
+      vo2max =
+        50.513 + 1.589 * activityIndex - 0.289 * age - 0.552 * (restingHR / 10);
     } else {
       // Average for other/prefer_not_to_say
-      const maleEstimate = 56.363 + (1.921 * activityIndex) - (0.381 * age) - (0.754 * (restingHR / 10)) + (10.987 * 1);
-      const femaleEstimate = 50.513 + (1.589 * activityIndex) - (0.289 * age) - (0.552 * (restingHR / 10));
+      const maleEstimate =
+        56.363 +
+        1.921 * activityIndex -
+        0.381 * age -
+        0.754 * (restingHR / 10) +
+        10.987 * 1;
+      const femaleEstimate =
+        50.513 + 1.589 * activityIndex - 0.289 * age - 0.552 * (restingHR / 10);
       vo2max = (maleEstimate + femaleEstimate) / 2;
     }
 
     // Classification and percentile
-    const { classification, percentile } = this.classifyVO2Max(vo2max, age, gender);
+    const { classification, percentile } = this.classifyVO2Max(
+      vo2max,
+      age,
+      gender,
+    );
 
     return {
       vo2max: Math.round(vo2max * 10) / 10,
       classification,
       percentile,
-      method: 'Non-exercise estimation',
-      accuracy: '±5-7 ml/kg/min',
-      recommendations: this.getRecommendations(classification, activityLevel)
+      description: `VO2 max estimated at ${Math.round(vo2max * 10) / 10} ml/kg/min using non-exercise prediction (±5-7 ml/kg/min accuracy)`,
     };
   }
 
@@ -78,7 +92,7 @@ export class VO2MaxCalculator {
       light: 2,
       moderate: 4,
       active: 6,
-      very_active: 7
+      very_active: 7,
     };
 
     return activityMap[activityLevel] || 0;
@@ -91,74 +105,93 @@ export class VO2MaxCalculator {
   private classifyVO2Max(
     vo2max: number,
     age: number,
-    gender: 'male' | 'female' | 'other' | 'prefer_not_to_say'
+    gender: "male" | "female" | "other" | "prefer_not_to_say",
   ): { classification: string; percentile: number } {
     // Male classifications (ml/kg/min)
-    if (gender === 'male' || gender === 'other' || gender === 'prefer_not_to_say') {
+    if (
+      gender === "male" ||
+      gender === "other" ||
+      gender === "prefer_not_to_say"
+    ) {
       if (age < 30) {
-        if (vo2max >= 60) return { classification: 'Excellent', percentile: 95 };
-        if (vo2max >= 52) return { classification: 'Good', percentile: 75 };
-        if (vo2max >= 45) return { classification: 'Above Average', percentile: 50 };
-        if (vo2max >= 38) return { classification: 'Average', percentile: 30 };
-        return { classification: 'Below Average', percentile: 15 };
+        if (vo2max >= 60)
+          return { classification: "Excellent", percentile: 95 };
+        if (vo2max >= 52) return { classification: "Good", percentile: 75 };
+        if (vo2max >= 45)
+          return { classification: "Above Average", percentile: 50 };
+        if (vo2max >= 38) return { classification: "Average", percentile: 30 };
+        return { classification: "Below Average", percentile: 15 };
       } else if (age < 40) {
-        if (vo2max >= 56) return { classification: 'Excellent', percentile: 95 };
-        if (vo2max >= 49) return { classification: 'Good', percentile: 75 };
-        if (vo2max >= 43) return { classification: 'Above Average', percentile: 50 };
-        if (vo2max >= 36) return { classification: 'Average', percentile: 30 };
-        return { classification: 'Below Average', percentile: 15 };
+        if (vo2max >= 56)
+          return { classification: "Excellent", percentile: 95 };
+        if (vo2max >= 49) return { classification: "Good", percentile: 75 };
+        if (vo2max >= 43)
+          return { classification: "Above Average", percentile: 50 };
+        if (vo2max >= 36) return { classification: "Average", percentile: 30 };
+        return { classification: "Below Average", percentile: 15 };
       } else if (age < 50) {
-        if (vo2max >= 52) return { classification: 'Excellent', percentile: 95 };
-        if (vo2max >= 46) return { classification: 'Good', percentile: 75 };
-        if (vo2max >= 40) return { classification: 'Above Average', percentile: 50 };
-        if (vo2max >= 34) return { classification: 'Average', percentile: 30 };
-        return { classification: 'Below Average', percentile: 15 };
+        if (vo2max >= 52)
+          return { classification: "Excellent", percentile: 95 };
+        if (vo2max >= 46) return { classification: "Good", percentile: 75 };
+        if (vo2max >= 40)
+          return { classification: "Above Average", percentile: 50 };
+        if (vo2max >= 34) return { classification: "Average", percentile: 30 };
+        return { classification: "Below Average", percentile: 15 };
       } else if (age < 60) {
-        if (vo2max >= 48) return { classification: 'Excellent', percentile: 95 };
-        if (vo2max >= 43) return { classification: 'Good', percentile: 75 };
-        if (vo2max >= 37) return { classification: 'Above Average', percentile: 50 };
-        if (vo2max >= 31) return { classification: 'Average', percentile: 30 };
-        return { classification: 'Below Average', percentile: 15 };
+        if (vo2max >= 48)
+          return { classification: "Excellent", percentile: 95 };
+        if (vo2max >= 43) return { classification: "Good", percentile: 75 };
+        if (vo2max >= 37)
+          return { classification: "Above Average", percentile: 50 };
+        if (vo2max >= 31) return { classification: "Average", percentile: 30 };
+        return { classification: "Below Average", percentile: 15 };
       } else {
-        if (vo2max >= 44) return { classification: 'Excellent', percentile: 95 };
-        if (vo2max >= 39) return { classification: 'Good', percentile: 75 };
-        if (vo2max >= 34) return { classification: 'Above Average', percentile: 50 };
-        if (vo2max >= 28) return { classification: 'Average', percentile: 30 };
-        return { classification: 'Below Average', percentile: 15 };
+        if (vo2max >= 44)
+          return { classification: "Excellent", percentile: 95 };
+        if (vo2max >= 39) return { classification: "Good", percentile: 75 };
+        if (vo2max >= 34)
+          return { classification: "Above Average", percentile: 50 };
+        if (vo2max >= 28) return { classification: "Average", percentile: 30 };
+        return { classification: "Below Average", percentile: 15 };
       }
     }
 
     // Female classifications (ml/kg/min)
     if (age < 30) {
-      if (vo2max >= 56) return { classification: 'Excellent', percentile: 95 };
-      if (vo2max >= 47) return { classification: 'Good', percentile: 75 };
-      if (vo2max >= 40) return { classification: 'Above Average', percentile: 50 };
-      if (vo2max >= 33) return { classification: 'Average', percentile: 30 };
-      return { classification: 'Below Average', percentile: 15 };
+      if (vo2max >= 56) return { classification: "Excellent", percentile: 95 };
+      if (vo2max >= 47) return { classification: "Good", percentile: 75 };
+      if (vo2max >= 40)
+        return { classification: "Above Average", percentile: 50 };
+      if (vo2max >= 33) return { classification: "Average", percentile: 30 };
+      return { classification: "Below Average", percentile: 15 };
     } else if (age < 40) {
-      if (vo2max >= 52) return { classification: 'Excellent', percentile: 95 };
-      if (vo2max >= 45) return { classification: 'Good', percentile: 75 };
-      if (vo2max >= 38) return { classification: 'Above Average', percentile: 50 };
-      if (vo2max >= 31) return { classification: 'Average', percentile: 30 };
-      return { classification: 'Below Average', percentile: 15 };
+      if (vo2max >= 52) return { classification: "Excellent", percentile: 95 };
+      if (vo2max >= 45) return { classification: "Good", percentile: 75 };
+      if (vo2max >= 38)
+        return { classification: "Above Average", percentile: 50 };
+      if (vo2max >= 31) return { classification: "Average", percentile: 30 };
+      return { classification: "Below Average", percentile: 15 };
     } else if (age < 50) {
-      if (vo2max >= 48) return { classification: 'Excellent', percentile: 95 };
-      if (vo2max >= 42) return { classification: 'Good', percentile: 75 };
-      if (vo2max >= 36) return { classification: 'Above Average', percentile: 50 };
-      if (vo2max >= 29) return { classification: 'Average', percentile: 30 };
-      return { classification: 'Below Average', percentile: 15 };
+      if (vo2max >= 48) return { classification: "Excellent", percentile: 95 };
+      if (vo2max >= 42) return { classification: "Good", percentile: 75 };
+      if (vo2max >= 36)
+        return { classification: "Above Average", percentile: 50 };
+      if (vo2max >= 29) return { classification: "Average", percentile: 30 };
+      return { classification: "Below Average", percentile: 15 };
     } else if (age < 60) {
-      if (vo2max >= 44) return { classification: 'Excellent', percentile: 95 };
-      if (vo2max >= 38) return { classification: 'Good', percentile: 75 };
-      if (vo2max >= 33) return { classification: 'Above Average', percentile: 50 };
-      if (vo2max >= 27) return { classification: 'Average', percentile: 30 };
-      return { classification: 'Below Average', percentile: 15 };
+      if (vo2max >= 44) return { classification: "Excellent", percentile: 95 };
+      if (vo2max >= 38) return { classification: "Good", percentile: 75 };
+      if (vo2max >= 33)
+        return { classification: "Above Average", percentile: 50 };
+      if (vo2max >= 27) return { classification: "Average", percentile: 30 };
+      return { classification: "Below Average", percentile: 15 };
     } else {
-      if (vo2max >= 40) return { classification: 'Excellent', percentile: 95 };
-      if (vo2max >= 35) return { classification: 'Good', percentile: 75 };
-      if (vo2max >= 30) return { classification: 'Above Average', percentile: 50 };
-      if (vo2max >= 25) return { classification: 'Average', percentile: 30 };
-      return { classification: 'Below Average', percentile: 15 };
+      if (vo2max >= 40) return { classification: "Excellent", percentile: 95 };
+      if (vo2max >= 35) return { classification: "Good", percentile: 75 };
+      if (vo2max >= 30)
+        return { classification: "Above Average", percentile: 50 };
+      if (vo2max >= 25) return { classification: "Average", percentile: 30 };
+      return { classification: "Below Average", percentile: 15 };
     }
   }
 
@@ -167,44 +200,44 @@ export class VO2MaxCalculator {
    */
   private getRecommendations(
     classification: string,
-    activityLevel: ActivityLevel | string
+    activityLevel: ActivityLevel | string,
   ): string[] {
-    if (classification === 'Excellent' || classification === 'Good') {
+    if (classification === "Excellent" || classification === "Good") {
       return [
-        'Maintain current fitness level with consistent training',
-        'Consider performance-focused goals',
-        'High-intensity interval training (HIIT) to push limits',
-        'Monitor and maintain cardiovascular health',
-        'You have excellent aerobic capacity'
+        "Maintain current fitness level with consistent training",
+        "Consider performance-focused goals",
+        "High-intensity interval training (HIIT) to push limits",
+        "Monitor and maintain cardiovascular health",
+        "You have excellent aerobic capacity",
       ];
     }
 
-    if (classification === 'Above Average') {
+    if (classification === "Above Average") {
       return [
-        'Continue regular cardiovascular exercise',
-        'Aim for 150-300 minutes moderate cardio per week',
-        'Include some high-intensity intervals',
-        'Good cardiovascular foundation established'
+        "Continue regular cardiovascular exercise",
+        "Aim for 150-300 minutes moderate cardio per week",
+        "Include some high-intensity intervals",
+        "Good cardiovascular foundation established",
       ];
     }
 
-    if (classification === 'Average') {
+    if (classification === "Average") {
       return [
-        'Increase cardio frequency to 4-5 days per week',
-        'Build aerobic base with Zone 2 training',
-        'Gradual progression in intensity and duration',
-        'Consistent exercise will improve VO2 max significantly'
+        "Increase cardio frequency to 4-5 days per week",
+        "Build aerobic base with Zone 2 training",
+        "Gradual progression in intensity and duration",
+        "Consistent exercise will improve VO2 max significantly",
       ];
     }
 
     // Below Average or Poor
     return [
-      'Start with low-intensity aerobic exercise',
-      'Build base with walking, swimming, or cycling',
-      'Gradually increase duration before intensity',
-      'Consistency is key - aim for 3-4 sessions per week',
-      'Significant improvement potential with regular training',
-      'Consult healthcare provider before intense exercise'
+      "Start with low-intensity aerobic exercise",
+      "Build base with walking, swimming, or cycling",
+      "Gradually increase duration before intensity",
+      "Consistency is key - aim for 3-4 sessions per week",
+      "Significant improvement potential with regular training",
+      "Consult healthcare provider before intense exercise",
     ];
   }
 
@@ -214,7 +247,7 @@ export class VO2MaxCalculator {
    */
   estimateImprovementPotential(
     currentVO2Max: number,
-    activityLevel: ActivityLevel | string
+    activityLevel: ActivityLevel | string,
   ): {
     potential6Months: number;
     potential1Year: number;
@@ -223,13 +256,13 @@ export class VO2MaxCalculator {
     // Improvement potential decreases with higher baseline fitness
     let improvementPercent: number;
 
-    if (activityLevel === 'sedentary') {
+    if (activityLevel === "sedentary") {
       improvementPercent = 25; // Maximum improvement potential
-    } else if (activityLevel === 'light') {
+    } else if (activityLevel === "light") {
       improvementPercent = 20;
-    } else if (activityLevel === 'moderate') {
+    } else if (activityLevel === "moderate") {
       improvementPercent = 15;
-    } else if (activityLevel === 'active') {
+    } else if (activityLevel === "active") {
       improvementPercent = 10;
     } else {
       improvementPercent = 5; // Minimal improvement for very active
@@ -238,9 +271,10 @@ export class VO2MaxCalculator {
     const maxImprovement = currentVO2Max * (improvementPercent / 100);
 
     return {
-      potential6Months: Math.round((currentVO2Max + maxImprovement * 0.6) * 10) / 10,
+      potential6Months:
+        Math.round((currentVO2Max + maxImprovement * 0.6) * 10) / 10,
       potential1Year: Math.round((currentVO2Max + maxImprovement) * 10) / 10,
-      improvementPercent
+      improvementPercent,
     };
   }
 }

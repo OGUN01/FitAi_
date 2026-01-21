@@ -343,7 +343,7 @@ const styles = {
   statsGrid: {
     flexDirection: "row" as const,
     flexWrap: "wrap" as const,
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
   },
   statCard: {
     backgroundColor: "#1a1f2e",
@@ -351,7 +351,7 @@ const styles = {
     borderRadius: 12,
     width: "48%",
     marginBottom: 12,
-    alignItems: "center" as const,
+    alignItems: "center" as const as const,
   },
   statIcon: {
     fontSize: 24,
@@ -379,7 +379,7 @@ const styles = {
   },
   healthGrid: {
     flexDirection: "row" as const,
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
   },
   healthCard: {
     backgroundColor: "#1a1f2e",
@@ -387,7 +387,7 @@ const styles = {
     borderRadius: 12,
     flex: 1,
     marginHorizontal: 4,
-    alignItems: "center" as const,
+    alignItems: "center" as const as const,
   },
   healthValue: {
     fontSize: 20,
@@ -410,7 +410,7 @@ const styles = {
     backgroundColor: "#1a1f2e",
     padding: 24,
     borderRadius: 12,
-    alignItems: "center" as const,
+    alignItems: "center" as const as const,
   },
   caloriesValue: {
     fontSize: 36,
@@ -438,7 +438,7 @@ const styles = {
   },
   preferenceItem: {
     flexDirection: "row" as const,
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     paddingVertical: 8,
   },
   preferenceLabel: {

@@ -1,6 +1,6 @@
-import { supabase } from './supabase';
-import { FoodFeedback } from '../components/diet/FoodRecognitionFeedback';
-import { RecognizedFood } from './foodRecognitionService';
+import { supabase } from "./supabase";
+import { FoodFeedback } from "../components/diet/FoodRecognitionFeedback";
+import { RecognizedFood } from "./foodRecognitionService";
 
 /**
  * Service for collecting and managing user feedback on food recognition accuracy
@@ -13,7 +13,8 @@ export class FoodRecognitionFeedbackService {
 
   static getInstance(): FoodRecognitionFeedbackService {
     if (!FoodRecognitionFeedbackService.instance) {
-      FoodRecognitionFeedbackService.instance = new FoodRecognitionFeedbackService();
+      FoodRecognitionFeedbackService.instance =
+        new FoodRecognitionFeedbackService();
     }
     return FoodRecognitionFeedbackService.instance;
   }
@@ -26,18 +27,20 @@ export class FoodRecognitionFeedbackService {
     mealId: string,
     feedback: FoodFeedback[],
     originalImageUri: string,
-    recognizedFoods: RecognizedFood[]
+    recognizedFoods: RecognizedFood[],
   ): Promise<{
     success: boolean;
     feedbackId?: string;
     error?: string;
   }> {
     try {
-      console.log('📝 Submitting food recognition feedback:', {
+      console.log("📝 Submitting food recognition feedback:", {
         userId,
         mealId,
         feedbackCount: feedback.length,
-        averageRating: feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length,
+        averageRating:
+          feedback.reduce((sum, f) => sum + f.accuracyRating, 0) /
+          feedback.length,
       });
 
       // Calculate overall feedback statistics
@@ -54,14 +57,14 @@ export class FoodRecognitionFeedbackService {
             name: food.name,
             confidence: food.confidence,
             cuisine: food.cuisine,
-            enhancementSource: food.enhancementSource,
-            portionSize: food.portionSize,
+            estimatedGrams: food.estimatedGrams,
+            servingDescription: food.servingDescription,
             nutrition: food.nutrition,
           })),
           userFeedback: feedback,
           statistics: stats,
           submittedAt: new Date().toISOString(),
-          version: '1.0',
+          version: "1.0",
         },
         overall_accuracy_rating: stats.averageRating,
         foods_correct_count: stats.correctCount,
@@ -72,14 +75,14 @@ export class FoodRecognitionFeedbackService {
 
       // Store in feedback table
       const insertRes = await supabase
-        .from('food_recognition_feedback')
+        .from("food_recognition_feedback")
         .insert(feedbackData)
         .select()
         .single();
       let { data, error } = insertRes;
       if (error) {
         console.log(
-          '📝 Feedback table may not exist, attempting to store in alternative location...'
+          "📝 Feedback table may not exist, attempting to store in alternative location...",
         );
         const alt = await this.storeFeedbackAlternative(feedbackData);
         data = alt.data;
@@ -87,27 +90,31 @@ export class FoodRecognitionFeedbackService {
       }
 
       if (error) {
-        console.error('❌ Error storing feedback:', error);
+        console.error("❌ Error storing feedback:", error);
         return {
           success: false,
-          error: (error as any).message || 'Failed to submit feedback',
+          error: (error as any).message || "Failed to submit feedback",
         };
       }
 
       // Update recognition accuracy tracking
       await this.updateAccuracyMetrics(stats);
 
-      console.log('✅ Feedback submitted successfully:', data?.id || 'alternative-storage');
+      console.log(
+        "✅ Feedback submitted successfully:",
+        data?.id || "alternative-storage",
+      );
 
       return {
         success: true,
-        feedbackId: data?.id || 'stored-locally',
+        feedbackId: data?.id || "stored-locally",
       };
     } catch (error) {
-      console.error('❌ Failed to submit feedback:', error);
+      console.error("❌ Failed to submit feedback:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
       };
     }
   }
@@ -115,13 +122,15 @@ export class FoodRecognitionFeedbackService {
   /**
    * Alternative storage method when main table is not available
    */
-  private async storeFeedbackAlternative(feedbackData: any): Promise<{ data: any; error: any }> {
+  private async storeFeedbackAlternative(
+    feedbackData: any,
+  ): Promise<{ data: any; error: any }> {
     try {
       // Try storing in a generic events table
       const { data, error } = await supabase
-        .from('app_events')
+        .from("app_events")
         .insert({
-          event_type: 'food_recognition_feedback',
+          event_type: "food_recognition_feedback",
           user_id: feedbackData.user_id,
           event_data: feedbackData,
           created_at: new Date().toISOString(),
@@ -130,7 +139,7 @@ export class FoodRecognitionFeedbackService {
         .single();
       if (error) {
         // If that fails too, just log it locally and return success
-        console.log('📝 Stored feedback locally for future sync:', {
+        console.log("📝 Stored feedback locally for future sync:", {
           feedbackId: `local_${Date.now()}`,
           userId: feedbackData.user_id,
           submittedAt: feedbackData.submitted_at,
@@ -144,7 +153,9 @@ export class FoodRecognitionFeedbackService {
 
       return { data, error };
     } catch (error) {
-      console.warn('Warning: All feedback storage methods failed, storing locally');
+      console.warn(
+        "Warning: All feedback storage methods failed, storing locally",
+      );
       return {
         data: { id: `local_${Date.now()}` },
         error: null,
@@ -157,7 +168,7 @@ export class FoodRecognitionFeedbackService {
    */
   private calculateFeedbackStats(
     feedback: FoodFeedback[],
-    recognizedFoods: RecognizedFood[]
+    recognizedFoods: RecognizedFood[],
   ): {
     averageRating: number;
     correctCount: number;
@@ -166,15 +177,20 @@ export class FoodRecognitionFeedbackService {
     accuracyPercentage: number;
     improvementSuggestions: string[];
     cuisineAccuracy: Record<string, { correct: number; total: number }>;
-    enhancementSourceAccuracy: Record<string, { correct: number; total: number }>;
+    enhancementSourceAccuracy: Record<
+      string,
+      { correct: number; total: number }
+    >;
   } {
     const correctCount = feedback.filter((f) => f.isCorrect).length;
     const incorrectCount = feedback.length - correctCount;
-    const averageRating = feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length;
+    const averageRating =
+      feedback.reduce((sum, f) => sum + f.accuracyRating, 0) / feedback.length;
     const accuracyPercentage = (correctCount / feedback.length) * 100;
 
     // Calculate cuisine-specific accuracy
-    const cuisineAccuracy: Record<string, { correct: number; total: number }> = {};
+    const cuisineAccuracy: Record<string, { correct: number; total: number }> =
+      {};
     feedback.forEach((fb, index) => {
       const food = recognizedFoods[index];
       if (food) {
@@ -188,17 +204,30 @@ export class FoodRecognitionFeedbackService {
       }
     });
 
-    // Calculate enhancement source accuracy
-    const enhancementSourceAccuracy: Record<string, { correct: number; total: number }> = {};
+    // Calculate confidence-based accuracy (using confidence levels as source)
+    const enhancementSourceAccuracy: Record<
+      string,
+      { correct: number; total: number }
+    > = {};
     feedback.forEach((fb, index) => {
       const food = recognizedFoods[index];
       if (food) {
-        if (!enhancementSourceAccuracy[food.enhancementSource]) {
-          enhancementSourceAccuracy[food.enhancementSource] = { correct: 0, total: 0 };
+        // Use confidence level as enhancement source since that field doesn't exist
+        const confidenceLevel =
+          food.confidence >= 80
+            ? "high"
+            : food.confidence >= 60
+              ? "medium"
+              : "low";
+        if (!enhancementSourceAccuracy[confidenceLevel]) {
+          enhancementSourceAccuracy[confidenceLevel] = {
+            correct: 0,
+            total: 0,
+          };
         }
-        enhancementSourceAccuracy[food.enhancementSource].total++;
+        enhancementSourceAccuracy[confidenceLevel].total++;
         if (fb.isCorrect) {
-          enhancementSourceAccuracy[food.enhancementSource].correct++;
+          enhancementSourceAccuracy[confidenceLevel].correct++;
         }
       }
     });
@@ -207,11 +236,15 @@ export class FoodRecognitionFeedbackService {
     const improvementSuggestions: string[] = [];
 
     if (averageRating < 3) {
-      improvementSuggestions.push('Overall recognition quality needs significant improvement');
+      improvementSuggestions.push(
+        "Overall recognition quality needs significant improvement",
+      );
     }
 
     if (accuracyPercentage < 80) {
-      improvementSuggestions.push('Food identification accuracy below acceptable threshold');
+      improvementSuggestions.push(
+        "Food identification accuracy below acceptable threshold",
+      );
     }
 
     // Check for cuisine-specific issues
@@ -219,7 +252,7 @@ export class FoodRecognitionFeedbackService {
       const cuisineAccuracy = (stats.correct / stats.total) * 100;
       if (cuisineAccuracy < 70) {
         improvementSuggestions.push(
-          `${cuisine} cuisine recognition needs improvement (${Math.round(cuisineAccuracy)}% accuracy)`
+          `${cuisine} cuisine recognition needs improvement (${Math.round(cuisineAccuracy)}% accuracy)`,
         );
       }
     });
@@ -229,7 +262,7 @@ export class FoodRecognitionFeedbackService {
       const sourceAccuracy = (stats.correct / stats.total) * 100;
       if (sourceAccuracy < 70) {
         improvementSuggestions.push(
-          `${source} enhancement method needs improvement (${Math.round(sourceAccuracy)}% accuracy)`
+          `${source} enhancement method needs improvement (${Math.round(sourceAccuracy)}% accuracy)`,
         );
       }
     });
@@ -253,9 +286,9 @@ export class FoodRecognitionFeedbackService {
     try {
       // Try to update accuracy tracking table
       const { error: accError } = await supabase
-        .from('recognition_accuracy_metrics')
+        .from("recognition_accuracy_metrics")
         .insert({
-          date: new Date().toISOString().split('T')[0],
+          date: new Date().toISOString().split("T")[0],
           feedback_count: stats.totalCount,
           correct_count: stats.correctCount,
           average_rating: stats.averageRating,
@@ -267,12 +300,15 @@ export class FoodRecognitionFeedbackService {
         .select()
         .single();
       if (accError) {
-        console.log('📊 Accuracy metrics table not available, skipping update:', accError.message);
+        console.log(
+          "📊 Accuracy metrics table not available, skipping update:",
+          accError.message,
+        );
       }
 
-      console.log('📊 Updated accuracy metrics with new feedback');
+      console.log("📊 Updated accuracy metrics with new feedback");
     } catch (error) {
-      console.warn('Warning: Failed to update accuracy metrics:', error);
+      console.warn("Warning: Failed to update accuracy metrics:", error);
     }
   }
 
@@ -281,7 +317,7 @@ export class FoodRecognitionFeedbackService {
    */
   async getFeedbackStatistics(
     userId?: string,
-    days: number = 30
+    days: number = 30,
   ): Promise<{
     totalFeedbacks: number;
     averageRating: number;
@@ -294,19 +330,19 @@ export class FoodRecognitionFeedbackService {
       startDate.setDate(startDate.getDate() - days);
 
       let query = supabase
-        .from('food_recognition_feedback')
-        .select('*')
-        .gte('submitted_at', startDate.toISOString())
-        .order('submitted_at', { ascending: false });
+        .from("food_recognition_feedback")
+        .select("*")
+        .gte("submitted_at", startDate.toISOString())
+        .order("submitted_at", { ascending: false });
 
       if (userId) {
-        query = query.eq('user_id', userId);
+        query = query.eq("user_id", userId);
       }
 
       const { data, error } = await query;
 
       if (error || !data) {
-        console.log('📊 No feedback data available for statistics');
+        console.log("📊 No feedback data available for statistics");
         return {
           totalFeedbacks: 0,
           averageRating: 0,
@@ -319,18 +355,22 @@ export class FoodRecognitionFeedbackService {
       // Calculate statistics
       const totalFeedbacks = data.length;
       const averageRating =
-        (data as any[]).reduce((sum, feedback) => sum + feedback.overall_accuracy_rating, 0) /
-        totalFeedbacks;
+        (data as any[]).reduce(
+          (sum, feedback) => sum + feedback.overall_accuracy_rating,
+          0,
+        ) / totalFeedbacks;
 
       // Build accuracy trend
-      const dailyAccuracy: Record<string, { correct: number; total: number }> = {};
+      const dailyAccuracy: Record<string, { correct: number; total: number }> =
+        {};
       (data as any[]).forEach((feedback: any) => {
-        const date = feedback.submitted_at.split('T')[0];
+        const date = feedback.submitted_at.split("T")[0];
         if (!dailyAccuracy[date]) {
           dailyAccuracy[date] = { correct: 0, total: 0 };
         }
         dailyAccuracy[date].correct += feedback.foods_correct_count;
-        dailyAccuracy[date].total += feedback.foods_correct_count + feedback.foods_incorrect_count;
+        dailyAccuracy[date].total +=
+          feedback.foods_correct_count + feedback.foods_incorrect_count;
       });
 
       const accuracyTrend = Object.entries(dailyAccuracy)
@@ -347,18 +387,21 @@ export class FoodRecognitionFeedbackService {
       (data as any[]).forEach((feedback: any) => {
         // Extract cuisine performance from feedback_data if available
         if (feedback.feedback_data?.statistics?.cuisineAccuracy) {
-          Object.entries(feedback.feedback_data.statistics.cuisineAccuracy).forEach(
-            ([cuisine, stats]: [string, any]) => {
-              if (!cuisinePerformance[cuisine]) {
-                cuisinePerformance[cuisine] = 0;
-              }
-              cuisinePerformance[cuisine] += (stats.correct / stats.total) * 100;
+          Object.entries(
+            feedback.feedback_data.statistics.cuisineAccuracy,
+          ).forEach(([cuisine, stats]: [string, any]) => {
+            if (!cuisinePerformance[cuisine]) {
+              cuisinePerformance[cuisine] = 0;
             }
-          );
+            cuisinePerformance[cuisine] += (stats.correct / stats.total) * 100;
+          });
         }
 
         // Collect improvement suggestions
-        if (feedback.improvement_suggestions && Array.isArray(feedback.improvement_suggestions)) {
+        if (
+          feedback.improvement_suggestions &&
+          Array.isArray(feedback.improvement_suggestions)
+        ) {
           allIssues.push(...feedback.improvement_suggestions);
         }
       });
@@ -382,7 +425,7 @@ export class FoodRecognitionFeedbackService {
         commonIssues,
       };
     } catch (error) {
-      console.error('❌ Error getting feedback statistics:', error);
+      console.error("❌ Error getting feedback statistics:", error);
       return {
         totalFeedbacks: 0,
         averageRating: 0,
@@ -403,9 +446,9 @@ export class FoodRecognitionFeedbackService {
   }> {
     try {
       const { data, error } = await supabase
-        .from('food_recognition_feedback')
-        .select('*')
-        .eq('meal_id', mealId)
+        .from("food_recognition_feedback")
+        .select("*")
+        .eq("meal_id", mealId)
         .single();
 
       if (error) {
@@ -422,12 +465,16 @@ export class FoodRecognitionFeedbackService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get meal feedback',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get meal feedback",
       };
     }
   }
 }
 
 // Export singleton instance
-export const foodRecognitionFeedbackService = FoodRecognitionFeedbackService.getInstance();
+export const foodRecognitionFeedbackService =
+  FoodRecognitionFeedbackService.getInstance();
 export default foodRecognitionFeedbackService;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -7,16 +7,16 @@ import {
   ViewStyle,
   TextStyle,
   TouchableOpacity,
-} from 'react-native';
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   interpolate,
-} from 'react-native-reanimated';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface InputProps {
   label?: string;
@@ -26,7 +26,8 @@ interface InputProps {
   error?: string;
   disabled?: boolean;
   secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
   multiline?: boolean;
   numberOfLines?: number;
   style?: ViewStyle;
@@ -44,7 +45,8 @@ export const Input: React.FC<InputProps> = ({
   error,
   disabled = false,
   secureTextEntry = false,
-  keyboardType = 'default',
+  keyboardType = "default",
+  autoCapitalize = "sentences",
   multiline = false,
   numberOfLines = 1,
   style,
@@ -87,8 +89,8 @@ export const Input: React.FC<InputProps> = ({
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
+            leftIcon && (styles.inputWithLeftIcon as any),
+            rightIcon && (styles.inputWithRightIcon as any),
             multiline && styles.inputMultiline,
             inputStyle,
           ]}
@@ -101,6 +103,7 @@ export const Input: React.FC<InputProps> = ({
           editable={!disabled}
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
           multiline={multiline}
           numberOfLines={numberOfLines}
           selectionColor={THEME.colors.primary}
@@ -129,28 +132,28 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.7)",
     marginBottom: 6,
     letterSpacing: 0.3,
   },
 
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
     minHeight: 48,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   inputContainerFocused: {
-    borderColor: '#6366F1',
+    borderColor: "#6366F1",
     borderWidth: 1.5,
-    backgroundColor: 'rgba(99, 102, 241, 0.08)',
-    shadowColor: '#6366F1',
+    backgroundColor: "rgba(99, 102, 241, 0.08)",
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -169,7 +172,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
   },
 
   inputMultiline: {
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     minHeight: 80,
   },
 

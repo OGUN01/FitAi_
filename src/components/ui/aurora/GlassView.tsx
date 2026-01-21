@@ -4,13 +4,13 @@
  * Wraps content with frosted glass appearance
  */
 
-import React from 'react';
-import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { colors, glassSurface } from '../../../theme/aurora-tokens';
+import React from "react";
+import { StyleSheet, View, ViewStyle, Platform } from "react-native";
+import { BlurView } from "expo-blur";
+import { colors, glassSurface } from "../../../theme/aurora-tokens";
 
-type BlurType = 'light' | 'dark' | 'default';
-type BlurAmount = 'light' | 'default' | 'heavy';
+type BlurType = "light" | "dark" | "default";
+type BlurAmount = "light" | "default" | "heavy" | "medium" | "strong";
 
 interface GlassViewProps {
   /**
@@ -74,18 +74,22 @@ interface GlassViewProps {
 
 const getBlurAmount = (amount: BlurAmount): number => {
   switch (amount) {
-    case 'light':
+    case "light":
       return glassSurface.blur.light;
-    case 'heavy':
+    case "medium":
+      return (glassSurface.blur.default + glassSurface.blur.heavy) / 2;
+    case "heavy":
       return glassSurface.blur.heavy;
+    case "strong":
+      return glassSurface.blur.heavy * 1.2;
     default:
       return glassSurface.blur.default;
   }
 };
 
 export const GlassView: React.FC<GlassViewProps> = ({
-  blurType = 'dark',
-  blurAmount = 'default',
+  blurType = "dark",
+  blurAmount = "default",
   overlayColor = colors.glass.background,
   showBorder = false,
   borderColor = colors.glass.border,
@@ -100,7 +104,8 @@ export const GlassView: React.FC<GlassViewProps> = ({
   // On Android or Web, use a semi-transparent background as fallback
   // BlurView performance can be inconsistent on older Android devices
   // and may have issues on web platforms
-  const useFallback = (Platform.OS === 'android' && optimizeForAndroid) || Platform.OS === 'web';
+  const useFallback =
+    (Platform.OS === "android" && optimizeForAndroid) || Platform.OS === "web";
 
   if (useFallback) {
     return (
@@ -109,7 +114,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
           styles.container,
           {
             backgroundColor: overlayColor,
-            borderColor: showBorder ? borderColor : 'transparent',
+            borderColor: showBorder ? borderColor : "transparent",
             borderWidth: showBorder ? borderWidth : 0,
             borderRadius,
           },
@@ -126,10 +131,10 @@ export const GlassView: React.FC<GlassViewProps> = ({
       style={[
         styles.container,
         {
-          borderColor: showBorder ? borderColor : 'transparent',
+          borderColor: showBorder ? borderColor : "transparent",
           borderWidth: showBorder ? borderWidth : 0,
           borderRadius,
-          overflow: 'hidden',
+          overflow: "hidden",
         },
         style,
       ]}
@@ -151,7 +156,7 @@ export const GlassView: React.FC<GlassViewProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   content: {
     flex: 1,

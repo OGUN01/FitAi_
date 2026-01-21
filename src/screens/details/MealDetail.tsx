@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,10 +7,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
-import { NutritionChart } from '../../components/charts';
-import useCalculatedMetrics from '../../hooks/useCalculatedMetrics';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
+import { NutritionChart } from "../../components/charts";
+import useCalculatedMetrics from "../../hooks/useCalculatedMetrics";
 
 interface FoodItem {
   id: string;
@@ -32,26 +32,31 @@ interface MealDetailProps {
   onDelete?: () => void;
 }
 
-export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, onDelete }) => {
+export const MealDetail: React.FC<MealDetailProps> = ({
+  mealId,
+  onBack,
+  onEdit,
+  onDelete,
+}) => {
   // Get user's calorie target - NO HARDCODED VALUES
   const calculatedMetrics = useCalculatedMetrics();
-  
+
   // Mock meal data - in real app this would come from props or API
   const meal = {
     id: mealId,
-    name: 'Breakfast',
-    time: '8:30 AM',
-    date: '2025-01-19',
+    name: "Breakfast",
+    time: "8:30 AM",
+    date: "2025-01-19",
     totalCalories: 485,
     totalProtein: 28,
     totalCarbs: 45,
     totalFat: 18,
     foods: [
       {
-        id: '1',
-        name: 'Greek Yogurt',
+        id: "1",
+        name: "Greek Yogurt",
         quantity: 150,
-        unit: 'g',
+        unit: "g",
         calories: 130,
         protein: 15,
         carbs: 9,
@@ -60,10 +65,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         sugar: 9,
       },
       {
-        id: '2',
-        name: 'Blueberries',
+        id: "2",
+        name: "Blueberries",
         quantity: 80,
-        unit: 'g',
+        unit: "g",
         calories: 45,
         protein: 0.5,
         carbs: 11,
@@ -72,10 +77,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         sugar: 8,
       },
       {
-        id: '3',
-        name: 'Granola',
+        id: "3",
+        name: "Granola",
         quantity: 30,
-        unit: 'g',
+        unit: "g",
         calories: 140,
         protein: 4,
         carbs: 18,
@@ -84,10 +89,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         sugar: 5,
       },
       {
-        id: '4',
-        name: 'Almonds',
+        id: "4",
+        name: "Almonds",
         quantity: 20,
-        unit: 'g',
+        unit: "g",
         calories: 115,
         protein: 4,
         carbs: 4,
@@ -96,10 +101,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         sugar: 1,
       },
       {
-        id: '5',
-        name: 'Honey',
+        id: "5",
+        name: "Honey",
         quantity: 15,
-        unit: 'g',
+        unit: "g",
         calories: 45,
         protein: 0,
         carbs: 12,
@@ -119,25 +124,25 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
 
   const getMealIcon = (mealName: string) => {
     switch (mealName.toLowerCase()) {
-      case 'breakfast':
-        return '🌅';
-      case 'lunch':
-        return '☀️';
-      case 'dinner':
-        return '🌙';
-      case 'snack':
-        return '🍎';
+      case "breakfast":
+        return "🌅";
+      case "lunch":
+        return "☀️";
+      case "dinner":
+        return "🌙";
+      case "snack":
+        return "🍎";
       default:
-        return '🍽️';
+        return "🍽️";
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -154,7 +159,10 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Meal Info Card */}
         <Card style={styles.mealCard} variant="elevated">
           <View style={styles.mealHeader}>
@@ -196,7 +204,11 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         </Card>
 
         {/* Nutrition Chart */}
-        <NutritionChart data={nutritionData} targetCalories={calculatedMetrics?.dailyCalories} style={styles.chartContainer} />
+        <NutritionChart
+          data={nutritionData}
+          targetCalories={calculatedMetrics?.dailyCalories ?? undefined}
+          style={styles.chartContainer}
+        />
 
         {/* Food Items */}
         <View style={styles.foodSection}>
@@ -243,8 +255,9 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
         <Card style={styles.notesCard}>
           <Text style={styles.notesTitle}>📝 Meal Notes</Text>
           <Text style={styles.notesText}>
-            Healthy breakfast with good balance of protein and complex carbs. Greek yogurt provides
-            probiotics, berries add antioxidants, and nuts give healthy fats.
+            Healthy breakfast with good balance of protein and complex carbs.
+            Greek yogurt provides probiotics, berries add antioxidants, and nuts
+            give healthy fats.
           </Text>
         </Card>
 
@@ -254,15 +267,21 @@ export const MealDetail: React.FC<MealDetailProps> = ({ mealId, onBack, onEdit, 
           <View style={styles.insightsList}>
             <View style={styles.insightItem}>
               <Text style={styles.insightIcon}>✅</Text>
-              <Text style={styles.insightText}>Good protein content for muscle maintenance</Text>
+              <Text style={styles.insightText}>
+                Good protein content for muscle maintenance
+              </Text>
             </View>
             <View style={styles.insightItem}>
               <Text style={styles.insightIcon}>✅</Text>
-              <Text style={styles.insightText}>Balanced macronutrient distribution</Text>
+              <Text style={styles.insightText}>
+                Balanced macronutrient distribution
+              </Text>
             </View>
             <View style={styles.insightItem}>
               <Text style={styles.insightIcon}>⚠️</Text>
-              <Text style={styles.insightText}>Consider adding more fiber-rich foods</Text>
+              <Text style={styles.insightText}>
+                Consider adding more fiber-rich foods
+              </Text>
             </View>
           </View>
         </Card>
@@ -297,9 +316,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "space-between" as const,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: 1,
@@ -311,8 +330,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   backIcon: {
@@ -331,8 +350,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   editIcon: {
@@ -349,9 +368,9 @@ const styles = StyleSheet.create({
   },
 
   mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.md,
   },
 
@@ -360,8 +379,8 @@ const styles = StyleSheet.create({
   },
 
   mealTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.xs,
   },
 
@@ -382,13 +401,13 @@ const styles = StyleSheet.create({
   },
 
   caloriesContainer: {
-    alignItems: 'center',
-    backgroundColor: THEME.colors.primary + '20',
+    alignItems: "center" as const,
+    backgroundColor: THEME.colors.primary + "20",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.lg,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   caloriesValue: {
@@ -404,15 +423,15 @@ const styles = StyleSheet.create({
   },
 
   quickStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
     paddingTop: THEME.spacing.md,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 
   statValue: {
@@ -447,9 +466,9 @@ const styles = StyleSheet.create({
   },
 
   foodHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -476,15 +495,15 @@ const styles = StyleSheet.create({
   },
 
   foodMacros: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
     paddingTop: THEME.spacing.sm,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.border,
   },
 
   macroItem: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 
   macroValue: {
@@ -501,9 +520,9 @@ const styles = StyleSheet.create({
 
   notesCard: {
     marginBottom: THEME.spacing.md,
-    backgroundColor: THEME.colors.secondary + '10',
+    backgroundColor: THEME.colors.secondary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.secondary + '30',
+    borderColor: THEME.colors.secondary + "30",
   },
 
   notesTitle: {
@@ -521,9 +540,9 @@ const styles = StyleSheet.create({
 
   insightsCard: {
     marginBottom: THEME.spacing.xxl,
-    backgroundColor: THEME.colors.info + '10',
+    backgroundColor: THEME.colors.info + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.info + '30',
+    borderColor: THEME.colors.info + "30",
   },
 
   insightsTitle: {
@@ -538,8 +557,8 @@ const styles = StyleSheet.create({
   },
 
   insightItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
   },
 
   insightIcon: {
@@ -561,7 +580,7 @@ const styles = StyleSheet.create({
   },
 
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.sm,
   },
 

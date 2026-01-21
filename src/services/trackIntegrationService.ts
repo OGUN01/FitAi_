@@ -1,14 +1,14 @@
 // Track Integration Service for Track B Infrastructure
 // Provides seamless integration with Track A authentication and Track C features
 
-import { migrationEngine } from './migration';
-import { migrationManager } from './migrationManager';
-import { realTimeSyncService } from './syncService';
-import { syncMonitoringService } from './syncMonitoring';
-import { intelligentSyncScheduler } from './intelligentSyncScheduler';
-import { backupRecoveryService } from './backupRecoveryService';
-import { dataBridge } from './DataBridge';
-import { enhancedLocalStorage } from './localStorage';
+import { migrationEngine } from "./migration";
+import { migrationManager } from "./migrationManager";
+import { realTimeSyncService } from "./syncService";
+import { syncMonitoringService } from "./syncMonitoring";
+import { intelligentSyncScheduler } from "./intelligentSyncScheduler";
+import { backupRecoveryService } from "./backupRecoveryService";
+import { dataBridge } from "./DataBridge";
+import { enhancedLocalStorage } from "./localStorage";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -54,27 +54,27 @@ export interface IntegrationStatus {
   backupActive: boolean;
   lastIntegrationCheck: Date | null;
   services: {
-    migration: 'active' | 'inactive' | 'error';
-    sync: 'active' | 'inactive' | 'error';
-    backup: 'active' | 'inactive' | 'error';
-    monitoring: 'active' | 'inactive' | 'error';
-    scheduler: 'active' | 'inactive' | 'error';
+    migration: "active" | "inactive" | "error";
+    sync: "active" | "inactive" | "error";
+    backup: "active" | "inactive" | "error";
+    monitoring: "active" | "inactive" | "error";
+    scheduler: "active" | "inactive" | "error";
   };
 }
 
 export interface IntegrationEvent {
   type:
-    | 'auth_success'
-    | 'auth_failure'
-    | 'migration_start'
-    | 'migration_complete'
-    | 'sync_start'
-    | 'sync_complete'
-    | 'backup_complete'
-    | 'error';
+    | "auth_success"
+    | "auth_failure"
+    | "migration_start"
+    | "migration_complete"
+    | "sync_start"
+    | "sync_complete"
+    | "backup_complete"
+    | "error";
   timestamp: Date;
   data: any;
-  source: 'track_a' | 'track_b' | 'track_c';
+  source: "track_a" | "track_b" | "track_c";
 }
 
 // ============================================================================
@@ -108,11 +108,11 @@ export class TrackIntegrationService {
       backupActive: false,
       lastIntegrationCheck: null,
       services: {
-        migration: 'inactive',
-        sync: 'inactive',
-        backup: 'inactive',
-        monitoring: 'inactive',
-        scheduler: 'inactive',
+        migration: "inactive",
+        sync: "inactive",
+        backup: "inactive",
+        monitoring: "inactive",
+        scheduler: "inactive",
       },
     };
   }
@@ -128,7 +128,7 @@ export class TrackIntegrationService {
     if (this.isInitialized) return;
 
     try {
-      this.log('Initializing Track B integration...');
+      this.log("Initializing Track B integration...");
 
       // Initialize all Track B services
       await this.initializeServices();
@@ -145,16 +145,16 @@ export class TrackIntegrationService {
       });
 
       this.isInitialized = true;
-      this.log('Track B integration initialized successfully');
+      this.log("Track B integration initialized successfully");
 
       this.emitEvent({
-        type: 'migration_start',
+        type: "migration_start",
         timestamp: new Date(),
-        data: { message: 'Track B integration initialized' },
-        source: 'track_b',
+        data: { message: "Track B integration initialized" },
+        source: "track_b",
       });
     } catch (error) {
-      this.log('Failed to initialize Track B integration:', error);
+      this.log("Failed to initialize Track B integration:", error);
       throw error;
     }
   }
@@ -164,15 +164,15 @@ export class TrackIntegrationService {
    */
   async handleTrackAAuthentication(authData: TrackAAuthData): Promise<void> {
     try {
-      this.log('Handling Track A authentication for user:', authData.userId);
+      this.log("Handling Track A authentication for user:", authData.userId);
 
       this.updateStatus({ trackAConnected: true });
 
       this.emitEvent({
-        type: 'auth_success',
+        type: "auth_success",
         timestamp: new Date(),
         data: { userId: authData.userId, email: authData.email },
-        source: 'track_a',
+        source: "track_a",
       });
 
       // Store authentication data
@@ -182,10 +182,10 @@ export class TrackIntegrationService {
       const migrationStatus = await migrationManager.checkMigrationStatus();
 
       if (migrationStatus.hasLocalData && this.config.autoMigrateOnAuth) {
-        this.log('Starting automatic migration after authentication');
+        this.log("Starting automatic migration after authentication");
         await this.startMigrationFlow(authData.userId);
       } else if (!migrationStatus.hasLocalData) {
-        this.log('No local data found, setting up for new user');
+        this.log("No local data found, setting up for new user");
         await this.setupNewUser(authData);
       }
 
@@ -198,12 +198,14 @@ export class TrackIntegrationService {
         await this.startBackupServices();
       }
     } catch (error) {
-      this.log('Failed to handle Track A authentication:', error);
+      this.log("Failed to handle Track A authentication:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.emitEvent({
-        type: 'auth_failure',
+        type: "auth_failure",
         timestamp: new Date(),
-        data: { error: error.message },
-        source: 'track_a',
+        data: { error: errorMessage },
+        source: "track_a",
       });
       throw error;
     }
@@ -214,13 +216,13 @@ export class TrackIntegrationService {
    */
   async startMigrationFlow(userId: string): Promise<void> {
     try {
-      this.log('Starting migration flow for user:', userId);
+      this.log("Starting migration flow for user:", userId);
 
       this.emitEvent({
-        type: 'migration_start',
+        type: "migration_start",
         timestamp: new Date(),
         data: { userId },
-        source: 'track_b',
+        source: "track_b",
       });
 
       // Start migration
@@ -230,10 +232,10 @@ export class TrackIntegrationService {
         this.updateStatus({ migrationCompleted: true });
 
         this.emitEvent({
-          type: 'migration_complete',
+          type: "migration_complete",
           timestamp: new Date(),
           data: { result },
-          source: 'track_b',
+          source: "track_b",
         });
 
         // Start sync after successful migration
@@ -241,17 +243,19 @@ export class TrackIntegrationService {
           await this.startSyncServices();
         }
 
-        this.log('Migration completed successfully');
+        this.log("Migration completed successfully");
       } else {
         throw new Error(`Migration failed: ${result.errors[0]?.message}`);
       }
     } catch (error) {
-      this.log('Migration flow failed:', error);
+      this.log("Migration flow failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.emitEvent({
-        type: 'error',
+        type: "error",
         timestamp: new Date(),
-        data: { error: error.message, context: 'migration' },
-        source: 'track_b',
+        data: { error: errorMessage, context: "migration" },
+        source: "track_b",
       });
       throw error;
     }
@@ -262,33 +266,33 @@ export class TrackIntegrationService {
    */
   async startSyncServices(): Promise<void> {
     try {
-      this.log('Starting sync services...');
+      this.log("Starting sync services...");
 
       // Initialize sync service
       await realTimeSyncService.initialize();
-      this.updateServiceStatus('sync', 'active');
+      this.updateServiceStatus("sync", "active");
 
       // Start monitoring
       await syncMonitoringService.startMonitoring();
-      this.updateServiceStatus('monitoring', 'active');
+      this.updateServiceStatus("monitoring", "active");
 
       // Start intelligent scheduler
       await intelligentSyncScheduler.start();
-      this.updateServiceStatus('scheduler', 'active');
+      this.updateServiceStatus("scheduler", "active");
 
       this.updateStatus({ syncActive: true });
 
       this.emitEvent({
-        type: 'sync_start',
+        type: "sync_start",
         timestamp: new Date(),
-        data: { message: 'Sync services started' },
-        source: 'track_b',
+        data: { message: "Sync services started" },
+        source: "track_b",
       });
 
-      this.log('Sync services started successfully');
+      this.log("Sync services started successfully");
     } catch (error) {
-      this.log('Failed to start sync services:', error);
-      this.updateServiceStatus('sync', 'error');
+      this.log("Failed to start sync services:", error);
+      this.updateServiceStatus("sync", "error");
       throw error;
     }
   }
@@ -298,26 +302,29 @@ export class TrackIntegrationService {
    */
   async startBackupServices(): Promise<void> {
     try {
-      this.log('Starting backup services...');
+      this.log("Starting backup services...");
 
       await backupRecoveryService.initialize();
-      this.updateServiceStatus('backup', 'active');
+      this.updateServiceStatus("backup", "active");
       this.updateStatus({ backupActive: true });
 
       // Create initial backup
-      await backupRecoveryService.createBackup('full', 'Initial backup after authentication');
+      await backupRecoveryService.createBackup(
+        "full",
+        "Initial backup after authentication",
+      );
 
       this.emitEvent({
-        type: 'backup_complete',
+        type: "backup_complete",
         timestamp: new Date(),
-        data: { type: 'initial' },
-        source: 'track_b',
+        data: { type: "initial" },
+        source: "track_b",
       });
 
-      this.log('Backup services started successfully');
+      this.log("Backup services started successfully");
     } catch (error) {
-      this.log('Failed to start backup services:', error);
-      this.updateServiceStatus('backup', 'error');
+      this.log("Failed to start backup services:", error);
+      this.updateServiceStatus("backup", "error");
       throw error;
     }
   }
@@ -361,7 +368,7 @@ export class TrackIntegrationService {
         stats: intelligentSyncScheduler.getStats(),
       };
     } catch (error) {
-      this.log('Failed to get service health:', error);
+      this.log("Failed to get service health:", error);
     }
 
     return health;
@@ -372,7 +379,7 @@ export class TrackIntegrationService {
    */
   async stop(): Promise<void> {
     try {
-      this.log('Stopping Track B integration...');
+      this.log("Stopping Track B integration...");
 
       await realTimeSyncService.stop();
       await syncMonitoringService.stopMonitoring();
@@ -385,18 +392,18 @@ export class TrackIntegrationService {
         syncActive: false,
         backupActive: false,
         services: {
-          migration: 'inactive',
-          sync: 'inactive',
-          backup: 'inactive',
-          monitoring: 'inactive',
-          scheduler: 'inactive',
+          migration: "inactive",
+          sync: "inactive",
+          backup: "inactive",
+          monitoring: "inactive",
+          scheduler: "inactive",
         },
       });
 
       this.isInitialized = false;
-      this.log('Track B integration stopped');
+      this.log("Track B integration stopped");
     } catch (error) {
-      this.log('Failed to stop Track B integration:', error);
+      this.log("Failed to stop Track B integration:", error);
       throw error;
     }
   }
@@ -439,11 +446,11 @@ export class TrackIntegrationService {
     try {
       // Initialize migration manager
       await migrationManager.checkMigrationStatus();
-      this.updateServiceStatus('migration', 'active');
+      this.updateServiceStatus("migration", "active");
 
-      this.log('All Track B services initialized');
+      this.log("All Track B services initialized");
     } catch (error) {
-      this.log('Failed to initialize services:', error);
+      this.log("Failed to initialize services:", error);
       throw error;
     }
   }
@@ -452,46 +459,46 @@ export class TrackIntegrationService {
     // Migration events
     migrationManager.onProgress((progress) => {
       this.emitEvent({
-        type: 'migration_start',
+        type: "migration_start",
         timestamp: new Date(),
         data: { progress },
-        source: 'track_b',
+        source: "track_b",
       });
     });
 
     migrationManager.onResult((result) => {
       this.emitEvent({
-        type: result.success ? 'migration_complete' : 'error',
+        type: result.success ? "migration_complete" : "error",
         timestamp: new Date(),
         data: { result },
-        source: 'track_b',
+        source: "track_b",
       });
     });
 
     // Sync events
     realTimeSyncService.onSyncResult((result) => {
       this.emitEvent({
-        type: result.success ? 'sync_complete' : 'error',
+        type: result.success ? "sync_complete" : "error",
         timestamp: new Date(),
         data: { result },
-        source: 'track_b',
+        source: "track_b",
       });
     });
 
     // Backup events
     backupRecoveryService.onBackupResult((result) => {
       this.emitEvent({
-        type: result.success ? 'backup_complete' : 'error',
+        type: result.success ? "backup_complete" : "error",
         timestamp: new Date(),
         data: { result },
-        source: 'track_b',
+        source: "track_b",
       });
     });
   }
 
   private async setupNewUser(authData: TrackAAuthData): Promise<void> {
     try {
-      this.log('Setting up new user:', authData.userId);
+      this.log("Setting up new user:", authData.userId);
 
       // Store onboarding data in local storage
       if (authData.onboardingData) {
@@ -500,26 +507,29 @@ export class TrackIntegrationService {
 
       // Create initial backup
       if (this.config.enableAutoBackup) {
-        await backupRecoveryService.createBackup('full', 'Initial user setup backup');
+        await backupRecoveryService.createBackup(
+          "full",
+          "Initial user setup backup",
+        );
       }
 
-      this.log('New user setup completed');
+      this.log("New user setup completed");
     } catch (error) {
-      this.log('Failed to setup new user:', error);
+      this.log("Failed to setup new user:", error);
       throw error;
     }
   }
 
   private async storeAuthData(authData: TrackAAuthData): Promise<void> {
     try {
-      await enhancedLocalStorage.storeData('track_a_auth', {
+      await enhancedLocalStorage.storeData("track_a_auth", {
         userId: authData.userId,
         email: authData.email,
         sessionId: authData.sessionId,
         timestamp: new Date(),
       });
     } catch (error) {
-      this.log('Failed to store auth data:', error);
+      this.log("Failed to store auth data:", error);
     }
   }
 
@@ -529,8 +539,8 @@ export class TrackIntegrationService {
   }
 
   private updateServiceStatus(
-    service: keyof IntegrationStatus['services'],
-    status: IntegrationStatus['services'][keyof IntegrationStatus['services']]
+    service: keyof IntegrationStatus["services"],
+    status: IntegrationStatus["services"][keyof IntegrationStatus["services"]],
   ): void {
     this.status.services[service] = status;
     this.notifyStatusCallbacks(this.status);
@@ -541,7 +551,7 @@ export class TrackIntegrationService {
       try {
         callback(event);
       } catch (error) {
-        this.log('Error in event callback:', error);
+        this.log("Error in event callback:", error);
       }
     });
   }
@@ -551,7 +561,7 @@ export class TrackIntegrationService {
       try {
         callback(status);
       } catch (error) {
-        this.log('Error in status callback:', error);
+        this.log("Error in status callback:", error);
       }
     });
   }
@@ -559,20 +569,22 @@ export class TrackIntegrationService {
   private async loadIntegrationState(): Promise<void> {
     try {
       const savedState =
-        await enhancedLocalStorage.getData<Partial<IntegrationStatus>>('integration_state');
+        await enhancedLocalStorage.getData<Partial<IntegrationStatus>>(
+          "integration_state",
+        );
       if (savedState) {
         this.status = { ...this.status, ...savedState };
       }
     } catch (error) {
-      this.log('Failed to load integration state:', error);
+      this.log("Failed to load integration state:", error);
     }
   }
 
   private async saveIntegrationState(): Promise<void> {
     try {
-      await enhancedLocalStorage.storeData('integration_state', this.status);
+      await enhancedLocalStorage.storeData("integration_state", this.status);
     } catch (error) {
-      this.log('Failed to save integration state:', error);
+      this.log("Failed to save integration state:", error);
     }
   }
 

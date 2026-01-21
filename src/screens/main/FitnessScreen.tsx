@@ -1,15 +1,15 @@
 /**
  * FitnessScreen - World-Class Workout Tab
- * 
+ *
  * REDESIGNED: Following HomeScreen pattern with modular components
- * 
+ *
  * Layout Order:
  * 1. FitnessHeader (greeting, week number, calendar button)
  * 2. TodayWorkoutCard (primary action - today's scheduled workout)
  * 3. WeeklyPlanOverview (mini calendar + stats) OR EmptyPlanState
  * 4. WorkoutHistoryList (real data from store, swipe actions)
  * 5. SuggestedWorkouts (horizontal scroll of recommendations)
- * 
+ *
  * Key Changes:
  * - Removed useless Feature Grid (marketing fluff)
  * - Removed redundant Hero section
@@ -20,25 +20,28 @@
  * - Haptic feedback throughout
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Alert, RefreshControl } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
-import { WorkoutStartDialog } from '../../components/ui/CustomDialog';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rh } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { View, StyleSheet, Alert, RefreshControl } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { WorkoutStartDialog } from "../../components/ui/CustomDialog";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 // Stores
-import { useUserStore, useFitnessStore, useAppStateStore } from '../../stores';
-import type { DayName } from '../../stores';
-import { useAuth } from '../../hooks/useAuth';
-import { useFitnessData } from '../../hooks/useFitnessData';
+import { useUserStore, useFitnessStore, useAppStateStore } from "../../stores";
+import type { DayName } from "../../stores";
+import { useAuth } from "../../hooks/useAuth";
+import { useFitnessData } from "../../hooks/useFitnessData";
 
 // AI Service
-import { aiService } from '../../ai';
-import { DayWorkout, WeeklyWorkoutPlan } from '../../types/ai';
+import { aiService } from "../../ai";
+import { DayWorkout, WeeklyWorkoutPlan } from "../../types/ai";
 
 // Modular Components
 import {
@@ -49,8 +52,8 @@ import {
   SuggestedWorkouts,
   EmptyPlanState,
   RecoveryTipsModal,
-} from './fitness';
-import { completionTrackingService } from '../../services/completionTracking';
+} from "./fitness";
+import { completionTrackingService } from "../../services/completionTracking";
 
 interface FitnessScreenProps {
   navigation: any;
@@ -58,7 +61,7 @@ interface FitnessScreenProps {
 
 export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  
+
   // Auth & User
   const { user, isGuestMode } = useAuth();
   const { profile } = useUserStore();
@@ -80,31 +83,39 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const { createWorkout, startWorkoutSession } = useFitnessData();
 
   // SHARED UI STATE - Single Source of Truth from appStateStore
-  const { selectedDay, setSelectedDay, isSelectedDayToday: isSelectedDayTodayFn } = useAppStateStore();
-  
+  const {
+    selectedDay,
+    setSelectedDay,
+    isSelectedDayToday: isSelectedDayTodayFn,
+  } = useAppStateStore();
+
   // Local UI State
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedWorkout, setSelectedWorkout] = useState<DayWorkout | null>(null);
+  const [selectedWorkout, setSelectedWorkout] = useState<DayWorkout | null>(
+    null,
+  );
   const [showWorkoutStartDialog, setShowWorkoutStartDialog] = useState(false);
   const [showRecoveryTipsModal, setShowRecoveryTipsModal] = useState(false);
 
   // Load data on mount and subscribe to completion events
   useEffect(() => {
     loadFitnessData();
-    
+
     // Subscribe to completion events for real-time UI updates
     // This ensures FitnessScreen refreshes when workouts are completed
-    console.log('[EVENT] FitnessScreen: Setting up completion event listener');
+    console.log("[EVENT] FitnessScreen: Setting up completion event listener");
     const unsubscribe = completionTrackingService.subscribe((event) => {
-      console.log('[EVENT] FitnessScreen: Received completion event:', event);
-      if (event.type === 'workout') {
+      console.log("[EVENT] FitnessScreen: Received completion event:", event);
+      if (event.type === "workout") {
         // Refresh fitness data when a workout is completed
         loadFitnessData();
       }
     });
 
     return () => {
-      console.log('[EVENT] FitnessScreen: Unsubscribing from completion events');
+      console.log(
+        "[EVENT] FitnessScreen: Unsubscribing from completion events",
+      );
       unsubscribe();
     };
   }, [loadFitnessData]);
@@ -112,13 +123,25 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // Get selected day's workout (syncs with calendar selection)
   const selectedDayWorkout = useMemo(() => {
     if (!weeklyWorkoutPlan?.workouts) return null;
-    return weeklyWorkoutPlan.workouts.find((w) => w.dayOfWeek === selectedDay) || null;
+    return (
+      weeklyWorkoutPlan.workouts.find((w) => w.dayOfWeek === selectedDay) ||
+      null
+    );
   }, [weeklyWorkoutPlan, selectedDay]);
 
   // Check if selected day is rest day
   const isSelectedDayRestDay = useMemo(() => {
     if (!weeklyWorkoutPlan?.restDays) return false;
-    return weeklyWorkoutPlan.restDays.includes(selectedDay);
+    const dayIndex = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ].indexOf(selectedDay);
+    return weeklyWorkoutPlan.restDays.includes(dayIndex);
   }, [weeklyWorkoutPlan, selectedDay]);
 
   // Check if selected day is today - from appStateStore
@@ -144,7 +167,9 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     }> = [];
 
     Object.entries(workoutProgress).forEach(([workoutId, progress]) => {
-      const workout = weeklyWorkoutPlan?.workouts?.find((w) => w.id === workoutId);
+      const workout = weeklyWorkoutPlan?.workouts?.find(
+        (w) => w.id === workoutId,
+      );
       if (workout && progress.progress > 0) {
         completed.push({
           id: `history_${workoutId}`,
@@ -160,28 +185,39 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     });
 
     // Sort by completion date (most recent first)
-    return completed.sort((a, b) => 
-      new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    return completed.sort(
+      (a, b) =>
+        new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
     );
   }, [workoutProgress, weeklyWorkoutPlan]);
 
   // Calculate week stats
   const weekStats = useMemo(() => {
     const totalWorkouts = weeklyWorkoutPlan?.workouts?.length || 0;
-    const completedCount = Object.values(workoutProgress).filter((p) => p.progress === 100).length;
+    const completedCount = Object.values(workoutProgress).filter(
+      (p) => p.progress === 100,
+    ).length;
     return { totalWorkouts, completedCount };
   }, [weeklyWorkoutPlan, workoutProgress]);
 
   // Get suggested workouts from plan (upcoming ones)
   const suggestedWorkouts = useMemo(() => {
     if (!weeklyWorkoutPlan?.workouts) return [];
-    
+
     const today = new Date().getDay();
-    const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    
+    const dayOrder = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
+
     return weeklyWorkoutPlan.workouts
       .filter((w) => {
-        const workoutDayIndex = dayOrder.indexOf(w.dayOfWeek);
+        const workoutDayIndex = dayOrder.indexOf(w.dayOfWeek || "");
         const progress = getWorkoutProgress(w.id)?.progress ?? 0; // Use 0 for completion calc
         return workoutDayIndex > today && progress < 100;
       })
@@ -192,7 +228,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         category: w.category,
         duration: w.duration,
         estimatedCalories: w.estimatedCalories,
-        difficulty: w.difficulty as 'beginner' | 'intermediate' | 'advanced',
+        difficulty: w.difficulty as "beginner" | "intermediate" | "advanced",
       }));
   }, [weeklyWorkoutPlan, getWorkoutProgress]);
 
@@ -203,40 +239,46 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     try {
       await loadFitnessData();
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error("Refresh error:", error);
     } finally {
       setRefreshing(false);
     }
   }, [loadFitnessData]);
 
-  const handleStartWorkout = useCallback(async (workout: DayWorkout) => {
-    if (!user?.id && !isGuestMode) {
-      Alert.alert('Authentication Required', 'Please sign in to start workouts.');
-      return;
-    }
-
-    haptics.medium();
-
-    try {
-      let sessionId = '';
-      try {
-        sessionId = await startStoreWorkoutSession(workout);
-      } catch (error) {
-        sessionId = `fallback_session_${workout.id}_${Date.now()}`;
+  const handleStartWorkout = useCallback(
+    async (workout: DayWorkout) => {
+      if (!user?.id && !isGuestMode) {
+        Alert.alert(
+          "Authentication Required",
+          "Please sign in to start workouts.",
+        );
+        return;
       }
 
-      const workoutWithSession = { ...workout, sessionId };
-      setSelectedWorkout(workoutWithSession);
-      setShowWorkoutStartDialog(true);
-    } catch (error) {
-      console.error('Failed to start workout:', error);
-      Alert.alert('Error', 'Failed to start workout. Please try again.');
-    }
-  }, [user, isGuestMode, startStoreWorkoutSession]);
+      haptics.medium();
+
+      try {
+        let sessionId = "";
+        try {
+          sessionId = await startStoreWorkoutSession(workout);
+        } catch (error) {
+          sessionId = `fallback_session_${workout.id}_${Date.now()}`;
+        }
+
+        const workoutWithSession = { ...workout, sessionId };
+        setSelectedWorkout(workoutWithSession);
+        setShowWorkoutStartDialog(true);
+      } catch (error) {
+        console.error("Failed to start workout:", error);
+        Alert.alert("Error", "Failed to start workout. Please try again.");
+      }
+    },
+    [user, isGuestMode, startStoreWorkoutSession],
+  );
 
   const handleStartSelectedDayWorkout = useCallback(() => {
     if (selectedDayWorkout) {
-      handleStartWorkout(selectedDayWorkout);
+      handleStartWorkout(selectedDayWorkout as any);
     } else if (!weeklyWorkoutPlan) {
       generateWeeklyWorkoutPlan();
     }
@@ -247,7 +289,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       Alert.alert(
         selectedDayWorkout.title,
         `${selectedDayWorkout.description}\n\nDuration: ${selectedDayWorkout.duration} min\nCalories: ${selectedDayWorkout.estimatedCalories}\nExercises: ${selectedDayWorkout.exercises?.length ?? 0}`,
-        [{ text: 'OK' }]
+        [{ text: "OK" }],
       );
     }
   }, [selectedDayWorkout]);
@@ -265,9 +307,12 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     if (selectedWorkout) {
       setShowWorkoutStartDialog(false);
       haptics.success();
-      
-      navigation.navigate('WorkoutSession', {
-        workout: { ...selectedWorkout, exercises: selectedWorkout.exercises || [] },
+
+      navigation.navigate("WorkoutSession", {
+        workout: {
+          ...selectedWorkout,
+          exercises: selectedWorkout.exercises || [],
+        },
         sessionId: (selectedWorkout as any).sessionId,
       });
     }
@@ -278,40 +323,53 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
     setSelectedWorkout(null);
   }, []);
 
-  const handleRepeatWorkout = useCallback((workout: any) => {
-    const originalWorkout = weeklyWorkoutPlan?.workouts?.find((w) => w.id === workout.workoutId);
-    if (originalWorkout) {
-      handleStartWorkout(originalWorkout);
-    }
-  }, [weeklyWorkoutPlan, handleStartWorkout]);
+  const handleRepeatWorkout = useCallback(
+    (workout: any) => {
+      const originalWorkout = weeklyWorkoutPlan?.workouts?.find(
+        (w) => w.id === workout.workoutId,
+      );
+      if (originalWorkout) {
+        handleStartWorkout(originalWorkout as any);
+      }
+    },
+    [weeklyWorkoutPlan, handleStartWorkout],
+  );
 
   const handleDeleteWorkout = useCallback((workout: any) => {
     // In a real app, this would delete from the store
-    Alert.alert('Deleted', `${workout.title} has been removed from history.`);
+    Alert.alert("Deleted", `${workout.title} has been removed from history.`);
   }, []);
 
   const handleViewHistoryWorkout = useCallback((workout: any) => {
-    Alert.alert(workout.title, `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration} min\nCalories: ${workout.caloriesBurned}`);
+    Alert.alert(
+      workout.title,
+      `Completed on ${new Date(workout.completedAt).toLocaleDateString()}\n\nDuration: ${workout.duration} min\nCalories: ${workout.caloriesBurned}`,
+    );
   }, []);
 
-  const handleStartSuggestedWorkout = useCallback((suggested: any) => {
-    const workout = weeklyWorkoutPlan?.workouts?.find((w) => w.id === suggested.id);
-    if (workout) {
-      handleStartWorkout(workout);
-    }
-  }, [weeklyWorkoutPlan, handleStartWorkout]);
+  const handleStartSuggestedWorkout = useCallback(
+    (suggested: any) => {
+      const workout = weeklyWorkoutPlan?.workouts?.find(
+        (w) => w.id === suggested.id,
+      );
+      if (workout) {
+        handleStartWorkout(workout as any);
+      }
+    },
+    [weeklyWorkoutPlan, handleStartWorkout],
+  );
 
   const handleCalendarPress = useCallback(() => {
     // Could navigate to a full calendar view
-    Alert.alert('Weekly Calendar', 'Full calendar view coming soon!');
+    Alert.alert("Weekly Calendar", "Full calendar view coming soon!");
   }, []);
 
   const handleViewFullPlan = useCallback(() => {
     // Could navigate to a detailed plan view
     if (weeklyWorkoutPlan) {
       Alert.alert(
-        weeklyWorkoutPlan.planTitle,
-        `${weeklyWorkoutPlan.planDescription}\n\nTotal Workouts: ${weeklyWorkoutPlan.workouts?.length || 0}\nRest Days: ${weeklyWorkoutPlan.restDays?.length || 0}`
+        weeklyWorkoutPlan.planTitle || "",
+        `${weeklyWorkoutPlan.planDescription}\\n\\nTotal Workouts: ${weeklyWorkoutPlan.workouts?.length || 0}\\nRest Days: ${weeklyWorkoutPlan.restDays?.length || 0}`,
       );
     }
   }, [weeklyWorkoutPlan]);
@@ -319,19 +377,19 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   // Regenerate workout plan with confirmation
   const handleRegeneratePlan = useCallback(() => {
     Alert.alert(
-      'Regenerate Workout Plan',
-      'This will create a new AI-generated workout plan and replace your current one. Your workout history will be preserved.\n\nContinue?',
+      "Regenerate Workout Plan",
+      "This will create a new AI-generated workout plan and replace your current one. Your workout history will be preserved.\n\nContinue?",
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Regenerate',
-          style: 'default',
+          text: "Regenerate",
+          style: "default",
           onPress: generateWeeklyWorkoutPlan,
         },
-      ]
+      ],
     );
   }, [generateWeeklyWorkoutPlan]);
 
@@ -339,29 +397,29 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
   const generateWeeklyWorkoutPlan = useCallback(async () => {
     // AUTHENTICATION CHECK: AI generation requires authenticated user
     // Guest users only have local storage data - backend needs Supabase data
-    if (!user?.id || user.id.startsWith('guest')) {
-      console.log('[AUTH] User not authenticated for AI generation:', user?.id);
+    if (!user?.id || user.id.startsWith("guest")) {
+      console.log("[AUTH] User not authenticated for AI generation:", user?.id);
       Alert.alert(
-        'Sign Up Required',
-        'Create an account to generate personalized AI workout plans. Your fitness data will be securely stored and used for customized recommendations.',
+        "Sign Up Required",
+        "Create an account to generate personalized AI workout plans. Your fitness data will be securely stored and used for customized recommendations.",
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: "Cancel", style: "cancel" },
           {
-            text: 'Sign Up',
+            text: "Sign Up",
             onPress: () => {
               // Navigate to auth screen - navigation comes from parent
             },
           },
-        ]
+        ],
       );
       return;
     }
 
     if (!profile?.personalInfo || !profile?.fitnessGoals) {
       Alert.alert(
-        'Profile Incomplete',
-        'Please complete your profile to generate a personalized workout plan.',
-        [{ text: 'OK' }]
+        "Profile Incomplete",
+        "Please complete your profile to generate a personalized workout plan.",
+        [{ text: "OK" }],
       );
       return;
     }
@@ -373,25 +431,29 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
       const response = await aiService.generateWeeklyWorkoutPlan(
         profile.personalInfo,
         profile.fitnessGoals,
-        1
+        1,
       );
 
       if (response.success && response.data) {
         setWeeklyWorkoutPlan(response.data);
         await saveWeeklyWorkoutPlan(response.data);
-        
+
         haptics.success();
         Alert.alert(
-          'Plan Generated!',
+          "Plan Generated!",
           `Your personalized workout plan "${response.data.planTitle}" is ready with ${response.data.workouts.length} workouts.`,
-          [{ text: "Let's Go!" }]
+          [{ text: "Let's Go!" }],
         );
       } else {
-        Alert.alert('Generation Failed', response.error || 'Failed to generate workout plan');
+        Alert.alert(
+          "Generation Failed",
+          response.error || "Failed to generate workout plan",
+        );
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      Alert.alert('Error', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      Alert.alert("Error", errorMessage);
     } finally {
       setGeneratingPlan(false);
     }
@@ -401,8 +463,11 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <Animated.View entering={FadeIn.duration(300)} style={styles.animatedContainer}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <Animated.View
+          entering={FadeIn.duration(300)}
+          style={styles.animatedContainer}
+        >
           <Animated.ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
@@ -456,7 +521,9 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
                 />
               ) : (
                 <EmptyPlanState
-                  experienceLevel={profile?.fitnessGoals?.experience_level as any}
+                  experienceLevel={
+                    profile?.fitnessGoals?.experience_level as any
+                  }
                   primaryGoals={profile?.fitnessGoals?.primaryGoals}
                   isGenerating={isGeneratingPlan}
                   onGeneratePlan={generateWeeklyWorkoutPlan}
@@ -492,7 +559,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
         {/* Workout Start Dialog */}
         <WorkoutStartDialog
           visible={showWorkoutStartDialog}
-          workoutTitle={selectedWorkout?.title || ''}
+          workoutTitle={selectedWorkout?.title || ""}
           onCancel={handleWorkoutStartCancel}
           onConfirm={handleWorkoutStartConfirm}
         />

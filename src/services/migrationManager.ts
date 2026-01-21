@@ -1,11 +1,11 @@
 // Migration Manager for Track B Infrastructure
 // Coordinates migration process with UI updates and user interaction
 
-import { migrationEngine, MigrationProgress } from './migration';
-import { enhancedLocalStorage } from './localStorage';
-import { dataBridge } from './DataBridge';
-import { profileValidator } from './profileValidator';
-import { supabase } from './supabase';
+import { migrationEngine, MigrationProgress } from "./migration";
+import { enhancedLocalStorage } from "./localStorage";
+import { dataBridge } from "./DataBridge";
+import { profileValidator } from "./profileValidator";
+import { supabase } from "./supabase";
 import {
   PersonalInfo,
   FitnessGoals,
@@ -13,7 +13,7 @@ import {
   WorkoutPreferences,
   SyncConflict,
   MigrationResult,
-} from '../types/profileData';
+} from "../types/profileData";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -91,7 +91,7 @@ export class MigrationManager {
       const lastAttempt = migrationHistory[0] || null;
 
       const state: MigrationState = {
-        isActive: this.currentMigration.progress?.status === 'running',
+        isActive: this.currentMigration.progress?.status === "running",
         canStart: hasLocalData && !this.currentMigration.progress,
         hasLocalData,
         lastMigrationAttempt: lastAttempt?.startTime || null,
@@ -101,7 +101,7 @@ export class MigrationManager {
       this.notifyStateChange(state);
       return state;
     } catch (error) {
-      console.error('Failed to check migration status:', error);
+      console.error("Failed to check migration status:", error);
       return {
         isActive: false,
         canStart: false,
@@ -116,37 +116,40 @@ export class MigrationManager {
    * Start migration process
    */
   async startMigration(userId: string): Promise<void> {
-    if (this.currentMigration.progress?.status === 'running') {
-      throw new Error('Migration is already in progress');
+    if (this.currentMigration.progress?.status === "running") {
+      throw new Error("Migration is already in progress");
     }
 
     try {
       // Subscribe to migration progress
-      this.currentMigration.unsubscribe = migrationEngine.onProgress((progress) => {
-        this.currentMigration.progress = progress;
-        this.notifyProgressChange(progress);
-      });
+      this.currentMigration.unsubscribe = migrationEngine.onProgress(
+        (progress) => {
+          this.currentMigration.progress = progress;
+          this.notifyProgressChange(progress);
+        },
+      );
 
       // Start migration
       const result = await migrationEngine.migrateToSupabase(userId);
 
-      this.currentMigration.result = result;
-      this.notifyResultChange(result);
+      this.currentMigration.result = result as any;
+      this.notifyResultChange(result as any);
 
       // Save migration attempt to history
-      await this.saveMigrationAttempt(result);
+      await this.saveMigrationAttempt(result as any);
 
       // Update state
       await this.checkMigrationStatus();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       const errorResult: MigrationResult = {
         success: false,
         migrationId: `failed_${Date.now()}`,
         progress: {
           migrationId: `failed_${Date.now()}`,
-          status: 'failed',
-          currentStep: 'unknown',
+          status: "failed",
+          currentStep: "unknown",
           currentStepIndex: 0,
           totalSteps: 8,
           percentage: 0,
@@ -155,8 +158,8 @@ export class MigrationManager {
           message: `Migration failed: ${errorMessage}`,
           errors: [
             {
-              step: 'unknown',
-              code: 'MIGRATION_START_FAILED',
+              step: "unknown",
+              code: "MIGRATION_START_FAILED",
               message: errorMessage,
               timestamp: new Date(),
               retryCount: 0,
@@ -174,8 +177,8 @@ export class MigrationManager {
         },
         errors: [
           {
-            step: 'unknown',
-            code: 'MIGRATION_START_FAILED',
+            step: "unknown",
+            code: "MIGRATION_START_FAILED",
             message: errorMessage,
             timestamp: new Date(),
             retryCount: 0,
@@ -202,16 +205,16 @@ export class MigrationManager {
    */
   async cancelMigration(): Promise<void> {
     if (!this.config.allowUserCancel) {
-      throw new Error('Migration cancellation is not allowed');
+      throw new Error("Migration cancellation is not allowed");
     }
 
-    if (this.currentMigration.progress?.status !== 'running') {
+    if (this.currentMigration.progress?.status !== "running") {
       return;
     }
 
     try {
       // TODO: Implement migration cancellation in migration engine
-      console.log('Migration cancellation requested');
+      console.log("Migration cancellation requested");
 
       if (this.currentMigration.unsubscribe) {
         this.currentMigration.unsubscribe();
@@ -223,7 +226,7 @@ export class MigrationManager {
 
       await this.checkMigrationStatus();
     } catch (error) {
-      console.error('Failed to cancel migration:', error);
+      console.error("Failed to cancel migration:", error);
     }
   }
 
@@ -316,31 +319,39 @@ export class MigrationManager {
       if (!localData) return false;
 
       // Check if there's meaningful data to migrate
-      const hasUserData = localData.user && Object.keys(localData.user).length > 0;
+      const hasUserData =
+        localData.user && Object.keys(localData.user).length > 0;
       const hasFitnessData =
         localData.fitness &&
-        ((localData.fitness.workouts?.length || 0) > 0 || (localData.fitness.sessions?.length || 0) > 0);
+        ((localData.fitness.workouts?.length || 0) > 0 ||
+          (localData.fitness.sessions?.length || 0) > 0);
       const hasNutritionData =
         localData.nutrition &&
-        ((localData.nutrition.meals?.length || 0) > 0 || (localData.nutrition.logs?.length || 0) > 0);
+        ((localData.nutrition.meals?.length || 0) > 0 ||
+          (localData.nutrition.logs?.length || 0) > 0);
       const hasProgressData =
         localData.progress &&
         ((localData.progress.measurements?.length || 0) > 0 ||
           (localData.progress.achievements?.length || 0) > 0);
 
-      return hasUserData || hasFitnessData || hasNutritionData || hasProgressData;
+      return (
+        hasUserData || hasFitnessData || hasNutritionData || hasProgressData
+      );
     } catch (error) {
-      console.error('Failed to check local data:', error);
+      console.error("Failed to check local data:", error);
       return false;
     }
   }
 
   private async getMigrationHistory(): Promise<MigrationAttempt[]> {
     try {
-      const history = await enhancedLocalStorage.getData<MigrationAttempt[]>('migration_history');
+      const history =
+        await enhancedLocalStorage.getData<MigrationAttempt[]>(
+          "migration_history",
+        );
       return history || [];
     } catch (error) {
-      console.error('Failed to get migration history:', error);
+      console.error("Failed to get migration history:", error);
       return [];
     }
   }
@@ -355,9 +366,9 @@ export class MigrationManager {
         success: result.success,
         error: result.success ? undefined : result.errors[0]?.message,
         dataCount: {
-          workouts: result.migratedDataCount.workoutSessions,
-          meals: result.migratedDataCount.mealLogs,
-          measurements: result.migratedDataCount.bodyMeasurements,
+          workouts: result.migratedData?.workoutSessions?.length ?? 0,
+          meals: result.migratedData?.mealLogs?.length ?? 0,
+          measurements: result.migratedData?.bodyMeasurements?.length ?? 0,
         },
       };
 
@@ -367,9 +378,9 @@ export class MigrationManager {
         history.splice(10);
       }
 
-      await enhancedLocalStorage.storeData('migration_history', history);
+      await enhancedLocalStorage.storeData("migration_history", history);
     } catch (error) {
-      console.error('Failed to save migration attempt:', error);
+      console.error("Failed to save migration attempt:", error);
     }
   }
 
@@ -378,7 +389,7 @@ export class MigrationManager {
       try {
         callback(progress);
       } catch (error) {
-        console.error('Error in progress callback:', error);
+        console.error("Error in progress callback:", error);
       }
     });
   }
@@ -388,7 +399,7 @@ export class MigrationManager {
       try {
         callback(result);
       } catch (error) {
-        console.error('Error in result callback:', error);
+        console.error("Error in result callback:", error);
       }
     });
   }
@@ -398,7 +409,7 @@ export class MigrationManager {
       try {
         callback(state);
       } catch (error) {
-        console.error('Error in state callback:', error);
+        console.error("Error in state callback:", error);
       }
     });
   }
@@ -412,48 +423,48 @@ export class MigrationManager {
    */
   async checkProfileMigrationNeeded(userId: string): Promise<boolean> {
     try {
-      console.log('🔍 Checking profile migration for user:', userId);
+      console.log("🔍 Checking profile migration for user:", userId);
 
       // Set user ID in data manager
       dataBridge.setUserId(userId);
 
       // Debug: Check if hasLocalData method exists
-      if (typeof dataBridge.hasLocalData !== 'function') {
-        console.error('❌ hasLocalData method not found on dataManager');
+      if (typeof dataBridge.hasLocalData !== "function") {
+        console.error("❌ hasLocalData method not found on dataManager");
         return false;
       }
 
       // Check if user has local profile data
       const hasLocalData = await dataBridge.hasLocalData();
-      console.log('📊 Local data check result:', hasLocalData);
+      console.log("📊 Local data check result:", hasLocalData);
 
       if (!hasLocalData) {
-        console.log('📊 No local profile data found, migration not needed');
+        console.log("📊 No local profile data found, migration not needed");
         return false;
       }
 
       // Check if user already has remote profile data
       // Use the correct table name 'profiles' instead of 'user_profiles'
       const { data: remoteProfile, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', userId)  // profiles table uses 'id' not 'user_id'
+        .from("profiles")
+        .select("id")
+        .eq("id", userId) // profiles table uses 'id' not 'user_id'
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Error checking remote profile data:', error);
+      if (error && error.code !== "PGRST116") {
+        console.error("❌ Error checking remote profile data:", error);
         return false;
       }
 
       // If user has local data but no remote data, migration is needed
       const migrationNeeded = hasLocalData && !remoteProfile;
       console.log(
-        `📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`
+        `📊 Profile migration needed: ${migrationNeeded} (local: ${hasLocalData}, remote: ${!!remoteProfile})`,
       );
 
       return migrationNeeded;
     } catch (error) {
-      console.error('❌ Error checking profile migration status:', error);
+      console.error("❌ Error checking profile migration status:", error);
       return false;
     }
   }
@@ -462,14 +473,14 @@ export class MigrationManager {
    * Start profile data migration process
    */
   async startProfileMigration(userId: string): Promise<MigrationResult> {
-    console.log('🚀 Starting profile data migration for user:', userId);
+    console.log("🚀 Starting profile data migration for user:", userId);
 
     try {
       // Use DataBridge for the actual migration
       const result = await dataBridge.migrateGuestToUser(userId);
 
       if (result.success) {
-        console.log('✅ Profile migration completed successfully');
+        console.log("✅ Profile migration completed successfully");
 
         // Update migration history
         const attempt: MigrationAttempt = {
@@ -487,17 +498,18 @@ export class MigrationManager {
         // Store migration attempt
         await this.storeMigrationAttempt(attempt);
       } else {
-        console.error('❌ Profile migration failed:', result.errors);
+        console.error("❌ Profile migration failed:", result.errors);
       }
 
       return result;
     } catch (error) {
-      console.error('❌ Profile migration error:', error);
+      console.error("❌ Profile migration error:", error);
 
-      const errorMessage = error instanceof Error ? error.message : 'Unknown migration error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown migration error";
       const errorObj = {
-        step: 'profile_migration',
-        code: 'PROFILE_MIGRATION_FAILED',
+        step: "profile_migration",
+        code: "PROFILE_MIGRATION_FAILED",
         message: errorMessage,
         timestamp: new Date(),
         retryCount: 0,
@@ -509,8 +521,8 @@ export class MigrationManager {
         migrationId: `profile_error_${Date.now()}`,
         progress: {
           migrationId: `profile_error_${Date.now()}`,
-          status: 'failed',
-          currentStep: 'profile_migration',
+          status: "failed",
+          currentStep: "profile_migration",
           currentStepIndex: 0,
           totalSteps: 1,
           percentage: 0,
@@ -562,9 +574,12 @@ export class MigrationManager {
       // Validate diet preferences
       const dietPreferences = await dataBridge.loadDietPreferences();
       if (dietPreferences) {
-        const validation = profileValidator.validateDietPreferences(dietPreferences);
+        const validation =
+          profileValidator.validateDietPreferences(dietPreferences);
         if (!validation.isValid) {
-          errors.push(...validation.errors.map((e) => `Diet Preferences: ${e}`));
+          errors.push(
+            ...validation.errors.map((e) => `Diet Preferences: ${e}`),
+          );
         }
       }
 
@@ -575,7 +590,9 @@ export class MigrationManager {
     } catch (error) {
       return {
         isValid: false,
-        errors: [`Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`],
+        errors: [
+          `Validation error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        ],
       };
     }
   }
@@ -583,7 +600,9 @@ export class MigrationManager {
   /**
    * Store migration attempt in history
    */
-  private async storeMigrationAttempt(attempt: MigrationAttempt): Promise<void> {
+  private async storeMigrationAttempt(
+    attempt: MigrationAttempt,
+  ): Promise<void> {
     try {
       const currentState = await this.getState();
       const updatedHistory = [...currentState.migrationHistory, attempt];
@@ -600,9 +619,9 @@ export class MigrationManager {
         migrationHistory: updatedHistory,
       };
 
-      await enhancedLocalStorage.setItem('migration_state', newState);
+      await enhancedLocalStorage.setItem("migration_state", newState);
     } catch (error) {
-      console.error('❌ Failed to store migration attempt:', error);
+      console.error("❌ Failed to store migration attempt:", error);
     }
   }
 
@@ -615,29 +634,29 @@ export class MigrationManager {
    */
   async testMigrationFlow(userId: string): Promise<void> {
     try {
-      console.log('🧪 Testing complete migration flow for user:', userId);
+      console.log("🧪 Testing complete migration flow for user:", userId);
 
       // Step 0: Test localStorage methods directly
-      console.log('🧪 Step 0: Testing localStorage methods...');
+      console.log("🧪 Step 0: Testing localStorage methods...");
       await dataBridge.testLocalStorageMethods();
 
       // Step 1: Test data manager methods
-      console.log('🧪 Step 1: Testing DataManager methods...');
+      console.log("🧪 Step 1: Testing DataManager methods...");
       await dataBridge.testMigrationDetection();
 
       // Step 2: Test migration detection
-      console.log('🧪 Step 2: Testing migration detection...');
+      console.log("🧪 Step 2: Testing migration detection...");
       const migrationNeeded = await this.checkProfileMigrationNeeded(userId);
-      console.log('📊 Migration needed result:', migrationNeeded);
+      console.log("📊 Migration needed result:", migrationNeeded);
 
       // Step 3: Test profile data validation
-      console.log('🧪 Step 3: Testing profile data validation...');
+      console.log("🧪 Step 3: Testing profile data validation...");
       const validationResult = await this.validateProfileData();
-      console.log('📊 Validation result:', validationResult);
+      console.log("📊 Validation result:", validationResult);
 
-      console.log('✅ Migration flow test completed successfully');
+      console.log("✅ Migration flow test completed successfully");
     } catch (error) {
-      console.error('❌ Migration flow test failed:', error);
+      console.error("❌ Migration flow test failed:", error);
     }
   }
 
@@ -646,7 +665,7 @@ export class MigrationManager {
    */
   async setupTestEnvironment(userId: string): Promise<boolean> {
     try {
-      console.log('🧪 Setting up test environment for migration...');
+      console.log("🧪 Setting up test environment for migration...");
 
       // Set user ID
       dataBridge.setUserId(userId);
@@ -655,14 +674,14 @@ export class MigrationManager {
       const sampleCreated = await dataBridge.createSampleProfileData();
 
       if (sampleCreated) {
-        console.log('✅ Test environment setup completed');
+        console.log("✅ Test environment setup completed");
         return true;
       } else {
-        console.error('❌ Failed to create sample data');
+        console.error("❌ Failed to create sample data");
         return false;
       }
     } catch (error) {
-      console.error('❌ Test environment setup failed:', error);
+      console.error("❌ Test environment setup failed:", error);
       return false;
     }
   }
@@ -674,4 +693,4 @@ export class MigrationManager {
 
 export const migrationManager = new MigrationManager();
 export default migrationManager;
-export { MigrationProgress, MigrationStatus } from '../types/profileData';
+export { MigrationProgress, MigrationStatus } from "../types/profileData";

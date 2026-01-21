@@ -3,19 +3,25 @@
  * Animated segmented control for time period selection
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Dimensions } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  LayoutChangeEvent,
+  Dimensions,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rp } from '../../utils/responsive';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp } from "../../utils/responsive";
 
-export type Period = 'week' | 'month' | 'year';
+export type Period = "week" | "month" | "year";
 
 interface PeriodSelectorProps {
   selectedPeriod: Period;
@@ -23,9 +29,9 @@ interface PeriodSelectorProps {
 }
 
 const PERIODS: { key: Period; label: string }[] = [
-  { key: 'week', label: 'Week' },
-  { key: 'month', label: 'Month' },
-  { key: 'year', label: 'Year' },
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
+  { key: "year", label: "Year" },
 ];
 
 export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
@@ -34,14 +40,15 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const selectedIndex = PERIODS.findIndex((p) => p.key === selectedPeriod);
-  
+
   // Calculate segment width based on container
   const padding = rp(4);
-  const segmentWidth = containerWidth > 0 ? (containerWidth - padding * 2) / PERIODS.length : 0;
-  
+  const segmentWidth =
+    containerWidth > 0 ? (containerWidth - padding * 2) / PERIODS.length : 0;
+
   // Animate position
   const translateX = useSharedValue(0);
-  
+
   useEffect(() => {
     if (segmentWidth > 0) {
       translateX.value = withSpring(selectedIndex * segmentWidth, {
@@ -69,7 +76,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Sliding Indicator */}
       <Animated.View style={[styles.indicator, indicatorStyle]}>
         <LinearGradient
-          colors={['#667eea', '#764ba2']}
+          colors={["#667eea", "#764ba2"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.indicatorGradient}
@@ -101,48 +108,50 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   );
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HORIZONTAL_PADDING = ResponsiveTheme.spacing.lg * 2; // Account for parent padding
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: rp(4),
-    position: 'relative',
+    position: "relative",
     width: SCREEN_WIDTH - HORIZONTAL_PADDING,
   },
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(4),
     left: rp(4),
     bottom: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   indicatorGradient: {
+    flex: 1,
+  },
+  buttonWrapper: {
     flex: 1,
   },
   button: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     zIndex: 1,
   },
   buttonText: {
     fontSize: rf(13),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     letterSpacing: 0.3,
   },
   buttonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
 });
 
 export default PeriodSelector;
-

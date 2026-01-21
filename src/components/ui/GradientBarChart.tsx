@@ -1,15 +1,15 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withDelay,
   Easing,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 export interface BarData {
   label: string;
@@ -34,7 +34,8 @@ export const GradientBarChart: React.FC<GradientBarChartProps> = ({
   showValues = true,
   style,
 }) => {
-  const barHeight = (height - (data.length - 1) * ResponsiveTheme.spacing.md) / data.length;
+  const barHeight =
+    (height - (data.length - 1) * ResponsiveTheme.spacing.md) / data.length;
 
   return (
     <View style={[styles.container, { height }, style]}>
@@ -60,7 +61,13 @@ interface BarItemProps {
   showValue: boolean;
 }
 
-const BarItem: React.FC<BarItemProps> = ({ data, height, index, animated, showValue }) => {
+const BarItem: React.FC<BarItemProps> = ({
+  data,
+  height,
+  index,
+  animated,
+  showValue,
+}) => {
   const progress = useSharedValue(0);
   const percentage = (data.value / data.maxValue) * 100;
 
@@ -71,7 +78,7 @@ const BarItem: React.FC<BarItemProps> = ({ data, height, index, animated, showVa
         withTiming(percentage, {
           duration: 1000,
           easing: Easing.out(Easing.cubic),
-        })
+        }),
       );
     } else {
       progress.value = percentage;
@@ -88,14 +95,15 @@ const BarItem: React.FC<BarItemProps> = ({ data, height, index, animated, showVa
         <Text style={styles.barLabel}>{data.label}</Text>
         {showValue && (
           <Text style={styles.barValue}>
-            {data.value}{data.unit || 'g'}
+            {data.value}
+            {data.unit || "g"}
           </Text>
         )}
       </View>
       <View style={styles.barTrack}>
         <Animated.View style={[styles.barFill, animatedBarStyle]}>
           <LinearGradient
-            colors={data.gradient}
+            colors={data.gradient as any}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.barGradient}
@@ -108,8 +116,8 @@ const BarItem: React.FC<BarItemProps> = ({ data, height, index, animated, showVa
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    justifyContent: 'space-between',
+    width: "100%",
+    justifyContent: "space-between" as const,
   },
 
   barContainer: {
@@ -117,9 +125,9 @@ const styles = StyleSheet.create({
   },
 
   barHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -136,15 +144,15 @@ const styles = StyleSheet.create({
   },
 
   barTrack: {
-    width: '100%',
+    width: "100%",
     height: rh(20),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   barFill: {
-    height: '100%',
+    height: "100%",
   },
 
   barGradient: {

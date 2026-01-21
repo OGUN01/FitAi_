@@ -1,7 +1,7 @@
 /**
  * HealthIntelligenceHub Component
  * World-class health metrics dashboard inspired by Apple Health & Oura Ring
- * 
+ *
  * Features:
  * - Recovery Score (composite metric)
  * - Resting Heart Rate with trend
@@ -9,62 +9,87 @@
  * - Activity readiness indicator
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withDelay,
   FadeInRight,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop, Path } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient,
+  Stop,
+  Path,
+} from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Recovery score color mapping
 const getRecoveryColor = (score: number) => {
-  if (score >= 80) return { color: '#4CAF50', label: 'Optimal', gradient: ['#4CAF50', '#8BC34A'] };
-  if (score >= 60) return { color: '#FFC107', label: 'Moderate', gradient: ['#FFC107', '#FFD54F'] };
-  if (score >= 40) return { color: '#FF9800', label: 'Low', gradient: ['#FF9800', '#FFB74D'] };
-  return { color: '#F44336', label: 'Poor', gradient: ['#F44336', '#EF5350'] };
+  if (score >= 80)
+    return {
+      color: "#4CAF50",
+      label: "Optimal",
+      gradient: ["#4CAF50", "#8BC34A"],
+    };
+  if (score >= 60)
+    return {
+      color: "#FFC107",
+      label: "Moderate",
+      gradient: ["#FFC107", "#FFD54F"],
+    };
+  if (score >= 40)
+    return { color: "#FF9800", label: "Low", gradient: ["#FF9800", "#FFB74D"] };
+  return { color: "#F44336", label: "Poor", gradient: ["#F44336", "#EF5350"] };
 };
 
 // Sleep quality color mapping
 const getSleepColor = (quality: string) => {
   switch (quality) {
-    case 'excellent': return '#4CAF50';
-    case 'good': return '#8BC34A';
-    case 'fair': return '#FFC107';
-    case 'poor': return '#F44336';
-    default: return '#9E9E9E';
+    case "excellent":
+      return "#4CAF50";
+    case "good":
+      return "#8BC34A";
+    case "fair":
+      return "#FFC107";
+    case "poor":
+      return "#F44336";
+    default:
+      return "#9E9E9E";
   }
 };
 
 interface HealthIntelligenceHubProps {
   // Recovery metrics
   sleepHours?: number;
-  sleepQuality?: 'poor' | 'fair' | 'good' | 'excellent';
+  sleepQuality?: "poor" | "fair" | "good" | "excellent";
   restingHeartRate?: number;
-  hrTrend?: 'up' | 'down' | 'stable';
+  hrTrend?: "up" | "down" | "stable";
   steps?: number;
   stepsGoal?: number;
   activeCalories?: number;
-  
+
   // User data for calculations
   age?: number;
-  
+
   onPress?: () => void;
   onDetailPress?: (metric: string) => void;
 }
 
 // Recovery Score Ring Component
-const RecoveryRing: React.FC<{ score: number; size: number }> = ({ score, size }) => {
+const RecoveryRing: React.FC<{ score: number; size: number }> = ({
+  score,
+  size,
+}) => {
   const { color, gradient } = getRecoveryColor(score);
   const strokeWidth = rw(8);
   const radius = (size - strokeWidth) / 2;
@@ -119,24 +144,29 @@ const MetricItem: React.FC<{
   value: string;
   subvalue?: string;
   color: string;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: "up" | "down" | "stable";
   onPress?: () => void;
   delay?: number;
 }> = ({ icon, label, value, subvalue, color, trend, onPress, delay = 0 }) => {
   const getTrendIcon = () => {
     if (!trend) return null;
     const icons = {
-      up: 'trending-up' as const,
-      down: 'trending-down' as const,
-      stable: 'remove' as const,
+      up: "trending-up" as const,
+      down: "trending-down" as const,
+      stable: "remove" as const,
     };
     const colors = {
-      up: '#F44336', // HR going up is usually bad
-      down: '#4CAF50', // HR going down is usually good
-      stable: '#9E9E9E',
+      up: "#F44336", // HR going up is usually bad
+      down: "#4CAF50", // HR going down is usually good
+      stable: "#9E9E9E",
     };
     return (
-      <Ionicons name={icons[trend]} size={rf(12)} color={colors[trend]} style={styles.trendIcon} />
+      <Ionicons
+        name={icons[trend]}
+        size={rf(12)}
+        color={colors[trend]}
+        style={styles.trendIcon}
+      />
     );
   };
 
@@ -149,7 +179,12 @@ const MetricItem: React.FC<{
         hapticType="light"
         style={styles.metricItem}
       >
-        <View style={[styles.metricIconContainer, { backgroundColor: `${color}20` }]}>
+        <View
+          style={[
+            styles.metricIconContainer,
+            { backgroundColor: `${color}20` },
+          ]}
+        >
           <Ionicons name={icon} size={rf(16)} color={color} />
         </View>
         <View style={styles.metricContent}>
@@ -206,10 +241,11 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
     // Sleep contribution (40% of score) - guard against undefined/NaN
     const actualSleepHours = sleepHours ?? 0;
     const actualSleepQuality = sleepQuality;
-    const sleepScore = actualSleepHours > 0 ? Math.min(actualSleepHours / 8, 1) * 40 : 0;
-    if (actualSleepQuality === 'excellent') score += sleepScore * 1.2;
-    else if (actualSleepQuality === 'good') score += sleepScore;
-    else if (actualSleepQuality === 'fair') score += sleepScore * 0.7;
+    const sleepScore =
+      actualSleepHours > 0 ? Math.min(actualSleepHours / 8, 1) * 40 : 0;
+    if (actualSleepQuality === "excellent") score += sleepScore * 1.2;
+    else if (actualSleepQuality === "good") score += sleepScore;
+    else if (actualSleepQuality === "fair") score += sleepScore * 0.7;
     else score += sleepScore * 0.4;
 
     // Heart rate contribution (30% of score)
@@ -223,49 +259,94 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
     // Activity contribution (30% of score) - guard against undefined/NaN
     const actualSteps = steps ?? 0;
     const actualStepsGoal = stepsGoal ?? 10000;
-    const activityScore = actualStepsGoal > 0 ? Math.min(actualSteps / actualStepsGoal, 1) * 30 : 0;
+    const activityScore =
+      actualStepsGoal > 0 ? Math.min(actualSteps / actualStepsGoal, 1) * 30 : 0;
     score += activityScore * 0.7; // Not overdoing it is good for recovery
 
     // Ensure final score is a valid number
     const finalScore = Math.round(Math.min(Math.max(score, 0), 100));
     return Number.isFinite(finalScore) ? finalScore : 0;
-  }, [sleepHours, sleepQuality, restingHeartRate, steps, stepsGoal, hasSufficientDataForRecovery]);
+  }, [
+    sleepHours,
+    sleepQuality,
+    restingHeartRate,
+    steps,
+    stepsGoal,
+    hasSufficientDataForRecovery,
+  ]);
 
-  const { label: recoveryLabel, color: recoveryColor } = recoveryScore !== null 
-    ? getRecoveryColor(recoveryScore) 
-    : { label: 'No Data', color: ResponsiveTheme.colors.textMuted };
-  const sleepColor = getSleepColor(sleepQuality ?? 'unknown');
+  const { label: recoveryLabel, color: recoveryColor } =
+    recoveryScore !== null
+      ? getRecoveryColor(recoveryScore)
+      : { label: "No Data", color: ResponsiveTheme.colors.textMuted };
+  const sleepColor = getSleepColor(sleepQuality ?? "unknown");
   const ringSize = rw(100);
 
   // Format sleep quality
   const formatSleepQuality = (quality?: string) => {
-    if (!quality) return '--';
+    if (!quality) return "--";
     return quality.charAt(0).toUpperCase() + quality.slice(1);
   };
 
   // Show placeholder when no real health data is available
   if (!hasRealData) {
     return (
-      <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
-        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.98}
+        hapticFeedback={true}
+        hapticType="light"
+      >
+        <GlassCard
+          elevation={2}
+          blurIntensity="light"
+          padding="md"
+          borderRadius="lg"
+        >
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
-              <Ionicons name="pulse" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons
+                name="pulse"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.primary}
+              />
               <Text style={styles.headerTitle}>Health Intelligence</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: `${ResponsiveTheme.colors.textMuted}20` }]}>
-              <View style={[styles.statusDot, { backgroundColor: ResponsiveTheme.colors.textMuted }]} />
-              <Text style={[styles.statusText, { color: ResponsiveTheme.colors.textMuted }]}>No Data</Text>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: `${ResponsiveTheme.colors.textMuted}20` },
+              ]}
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: ResponsiveTheme.colors.textMuted },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: ResponsiveTheme.colors.textMuted },
+                ]}
+              >
+                No Data
+              </Text>
             </View>
           </View>
 
           {/* Placeholder Content */}
           <View style={styles.placeholderContent}>
-            <Ionicons name="fitness-outline" size={rf(48)} color={ResponsiveTheme.colors.textMuted} />
+            <Ionicons
+              name="fitness-outline"
+              size={rf(48)}
+              color={ResponsiveTheme.colors.textMuted}
+            />
             <Text style={styles.placeholderTitle}>Connect Health Data</Text>
             <Text style={styles.placeholderSubtitle}>
-              Build a development version to sync health data from Health Connect and see your recovery metrics.
+              Build a development version to sync health data from Health
+              Connect and see your recovery metrics.
             </Text>
           </View>
         </GlassCard>
@@ -274,44 +355,69 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
   }
 
   return (
-    <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+    <AnimatedPressable
+      onPress={onPress}
+      scaleValue={0.98}
+      hapticFeedback={true}
+      hapticType="light"
+    >
+      <GlassCard
+        elevation={2}
+        blurIntensity="light"
+        padding="md"
+        borderRadius="lg"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="pulse" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="pulse"
+              size={rf(16)}
+              color={ResponsiveTheme.colors.primary}
+            />
             <Text style={styles.headerTitle}>Health Intelligence</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${recoveryColor}20` }]}>
-            <View style={[styles.statusDot, { backgroundColor: recoveryColor }]} />
-            <Text style={[styles.statusText, { color: recoveryColor }]}>{recoveryLabel}</Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: `${recoveryColor}20` },
+            ]}
+          >
+            <View
+              style={[styles.statusDot, { backgroundColor: recoveryColor }]}
+            />
+            <Text style={[styles.statusText, { color: recoveryColor }]}>
+              {recoveryLabel}
+            </Text>
           </View>
         </View>
 
         {/* Main Content */}
         <View style={styles.content}>
           {/* Recovery Ring */}
-          <RecoveryRing score={recoveryScore} size={ringSize} />
+          <RecoveryRing score={recoveryScore ?? 0} size={ringSize} />
 
           {/* Metrics Grid */}
           <View style={styles.metricsGrid}>
             <MetricItem
               icon="heart"
               label="Resting HR"
-              value={restingHeartRate ? `${restingHeartRate}` : '--'}
+              value={restingHeartRate ? `${restingHeartRate}` : "--"}
               subvalue="bpm"
               color="#FF6B6B"
               trend={hrTrend}
-              onPress={() => onDetailPress?.('heart')}
+              onPress={() => onDetailPress?.("heart")}
               delay={100}
             />
             <MetricItem
               icon="moon"
               label="Sleep"
-              value={sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : '--'}
+              value={
+                sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : "--"
+              }
               subvalue="hrs"
               color="#667eea"
-              onPress={() => onDetailPress?.('sleep')}
+              onPress={() => onDetailPress?.("sleep")}
               delay={200}
             />
             <MetricItem
@@ -319,7 +425,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
               label="Quality"
               value={formatSleepQuality(sleepQuality)}
               color={sleepColor}
-              onPress={() => onDetailPress?.('quality')}
+              onPress={() => onDetailPress?.("quality")}
               delay={300}
             />
           </View>
@@ -327,17 +433,21 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
 
         {/* Bottom Insight */}
         <View style={styles.insightContainer}>
-          <Ionicons name="bulb-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons
+            name="bulb-outline"
+            size={rf(14)}
+            color={ResponsiveTheme.colors.primary}
+          />
           <Text style={styles.insightText}>
             {recoveryScore == null
               ? "Track your health data to get recovery insights."
               : recoveryScore >= 80
-              ? "You're well recovered. Great day for intense training!"
-              : recoveryScore >= 60
-              ? "Moderate recovery. Consider a balanced workout."
-              : recoveryScore >= 40
-              ? "Low recovery. Focus on light activity today."
-              : "Rest recommended. Your body needs recovery."}
+                ? "You're well recovered. Great day for intense training!"
+                : recoveryScore >= 60
+                  ? "Moderate recovery. Consider a balanced workout."
+                  : recoveryScore >= 40
+                    ? "Low recovery. Focus on light activity today."
+                    : "Rest recommended. Your body needs recovery."}
           </Text>
         </View>
       </GlassCard>
@@ -347,25 +457,25 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   headerTitle: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     letterSpacing: 0.3,
   },
   statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -378,29 +488,29 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.md,
   },
   ringContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   ringCenter: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center" as const,
   },
   ringScore: {
     fontSize: rf(28),
-    fontWeight: '800',
+    fontWeight: "800",
   },
   ringLabel: {
     fontSize: rf(10),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: -2,
   },
@@ -409,10 +519,10 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.sm,
   },
   metricItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: "rgba(255,255,255,0.03)",
     paddingVertical: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -421,73 +531,72 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   metricContent: {
     flex: 1,
   },
   metricLabel: {
     fontSize: rf(10),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
   metricValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: 2,
   },
   metricValue: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   metricSubvalue: {
     fontSize: rf(10),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
   trendIcon: {
     marginLeft: ResponsiveTheme.spacing.xs,
   },
   insightContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: "rgba(255,255,255,0.08)",
   },
   insightText: {
     flex: 1,
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(16),
   },
   // Placeholder styles when no health data available
   placeholderContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.xl,
     gap: ResponsiveTheme.spacing.sm,
   },
   placeholderTitle: {
     fontSize: rf(16),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
     marginTop: ResponsiveTheme.spacing.sm,
   },
   placeholderSubtitle: {
     fontSize: rf(12),
-    fontWeight: '400',
+    fontWeight: "400",
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     lineHeight: rf(18),
   },
 });
 
 export default HealthIntelligenceHub;
-

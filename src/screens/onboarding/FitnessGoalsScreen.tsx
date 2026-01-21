@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
-import { FitnessGoals } from '../../types/profileData';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card, THEME } from "../../components/ui";
+import { FitnessGoals } from "../../types/profileData";
 import {
   useEditMode,
   useEditData,
   useEditActions,
-} from '../../contexts/EditContext';
+} from "../../contexts/EditContext";
 
 interface FitnessGoalsScreenProps {
   onNext?: (data: FitnessGoals) => void;
@@ -23,28 +29,98 @@ interface FitnessGoalsScreenProps {
 
 // Fitness goal options
 const FITNESS_GOALS = [
-  { id: 'weight-loss', title: 'Weight Loss', icon: '🔥', description: 'Burn fat and lose weight' },
-  { id: 'weight-gain', title: 'Weight Gain', icon: '📈', description: 'Gain healthy weight' },
-  { id: 'muscle-gain', title: 'Muscle Gain', icon: '💪', description: 'Build lean muscle mass' },
-  { id: 'strength', title: 'Strength', icon: '🏋️', description: 'Increase overall strength' },
-  { id: 'endurance', title: 'Endurance', icon: '🏃', description: 'Improve cardiovascular fitness' },
-  { id: 'flexibility', title: 'Flexibility', icon: '🧘', description: 'Enhance mobility' },
-  { id: 'general_fitness', title: 'General Fitness', icon: '⚡', description: 'Overall health' },
+  {
+    id: "weight-loss",
+    title: "Weight Loss",
+    icon: "🔥",
+    description: "Burn fat and lose weight",
+  },
+  {
+    id: "weight-gain",
+    title: "Weight Gain",
+    icon: "📈",
+    description: "Gain healthy weight",
+  },
+  {
+    id: "muscle-gain",
+    title: "Muscle Gain",
+    icon: "💪",
+    description: "Build lean muscle mass",
+  },
+  {
+    id: "strength",
+    title: "Strength",
+    icon: "🏋️",
+    description: "Increase overall strength",
+  },
+  {
+    id: "endurance",
+    title: "Endurance",
+    icon: "🏃",
+    description: "Improve cardiovascular fitness",
+  },
+  {
+    id: "flexibility",
+    title: "Flexibility",
+    icon: "🧘",
+    description: "Enhance mobility",
+  },
+  {
+    id: "general_fitness",
+    title: "General Fitness",
+    icon: "⚡",
+    description: "Overall health",
+  },
 ];
 
 // Experience level options
 const EXPERIENCE_LEVELS = [
-  { value: 'beginner', label: 'Beginner', description: 'New to fitness', icon: '🌱' },
-  { value: 'intermediate', label: 'Intermediate', description: 'Some experience', icon: '💪' },
-  { value: 'advanced', label: 'Advanced', description: 'Experienced athlete', icon: '🔥' },
+  {
+    value: "beginner",
+    label: "Beginner",
+    description: "New to fitness",
+    icon: "🌱",
+  },
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    description: "Some experience",
+    icon: "💪",
+  },
+  {
+    value: "advanced",
+    label: "Advanced",
+    description: "Experienced athlete",
+    icon: "🔥",
+  },
 ];
 
 // Time commitment options
 const TIME_COMMITMENTS = [
-  { value: '30 minutes', label: '30 min/day', description: 'Quick sessions', icon: '⏱️' },
-  { value: '45 minutes', label: '45 min/day', description: 'Moderate sessions', icon: '⏰' },
-  { value: '60 minutes', label: '60 min/day', description: 'Full sessions', icon: '🕐' },
-  { value: '90 minutes', label: '90 min/day', description: 'Extended sessions', icon: '⏲️' },
+  {
+    value: "30 minutes",
+    label: "30 min/day",
+    description: "Quick sessions",
+    icon: "⏱️",
+  },
+  {
+    value: "45 minutes",
+    label: "45 min/day",
+    description: "Moderate sessions",
+    icon: "⏰",
+  },
+  {
+    value: "60 minutes",
+    label: "60 min/day",
+    description: "Full sessions",
+    icon: "🕐",
+  },
+  {
+    value: "90 minutes",
+    label: "90 min/day",
+    description: "Extended sessions",
+    icon: "⏲️",
+  },
 ];
 
 export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
@@ -87,11 +163,19 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
   };
 
   const data = getInitialData();
-  const [primaryGoals, setPrimaryGoals] = useState<string[]>(data.primaryGoals || []);
-  const [experience, setExperience] = useState<FitnessGoals['experience']>(data.experience || 'beginner');
-  const [timeCommitment, setTimeCommitment] = useState<string>(data.timeCommitment || '30 minutes');
-  const [targetWeight, setTargetWeight] = useState<string>(data.targetWeight || '');
-  const [timeframe, setTimeframe] = useState<string>(data.timeframe || '');
+  const [primaryGoals, setPrimaryGoals] = useState<string[]>(
+    data.primaryGoals || [],
+  );
+  const [experience, setExperience] = useState<FitnessGoals["experience"]>(
+    data.experience || "beginner",
+  );
+  const [timeCommitment, setTimeCommitment] = useState<string>(
+    data.timeCommitment || "30 minutes",
+  );
+  const [targetWeight, setTargetWeight] = useState<string>(
+    data.targetWeight || "",
+  );
+  const [timeframe, setTimeframe] = useState<string>(data.timeframe || "");
 
   const [errors, setErrors] = useState<{
     primaryGoals?: string;
@@ -113,35 +197,36 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
 
   // Update form data when edit context data is loaded (only once)
   useEffect(() => {
-    if (
-      isEditMode &&
-      editContextData?.currentData &&
-      !isDataPopulated
-    ) {
+    if (isEditMode && editContextData?.currentData && !isDataPopulated) {
       const data = editContextData.currentData;
 
       // Check if we have actual fitness goals data (not just metadata)
-      const hasActualData = (data.primaryGoals && data.primaryGoals.length > 0) || data.experience || data.timeCommitment;
+      const hasActualData =
+        (data.primaryGoals && data.primaryGoals.length > 0) ||
+        data.experience ||
+        data.timeCommitment;
 
-      console.log('🔄 FitnessGoalsScreen: Loading edit data:', {
+      console.log("🔄 FitnessGoalsScreen: Loading edit data:", {
         hasData: !!data,
         hasActualData,
         dataKeys: Object.keys(data),
         primaryGoals: data.primaryGoals,
         experience: data.experience,
-        timeCommitment: data.timeCommitment
+        timeCommitment: data.timeCommitment,
       });
 
       if (hasActualData) {
         setPrimaryGoals(data.primaryGoals || []);
-        setExperience(data.experience || 'beginner');
-        setTimeCommitment(data.timeCommitment || '30 minutes');
-        setTargetWeight(data.targetWeight || '');
-        setTimeframe(data.timeframe || '');
-        console.log('✅ FitnessGoalsScreen: Data loaded successfully');
+        setExperience(data.experience || "beginner");
+        setTimeCommitment(data.timeCommitment || "30 minutes");
+        setTargetWeight(data.targetWeight || "");
+        setTimeframe(data.timeframe || "");
+        console.log("✅ FitnessGoalsScreen: Data loaded successfully");
         setIsDataPopulated(true);
       } else {
-        console.warn('⚠️ FitnessGoalsScreen: No actual fitness goals data found in currentData');
+        console.warn(
+          "⚠️ FitnessGoalsScreen: No actual fitness goals data found in currentData",
+        );
       }
     }
   }, [isEditMode, editContextData?.currentData, isDataPopulated]);
@@ -155,13 +240,21 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
 
       return () => clearTimeout(timeoutId);
     }
-  }, [primaryGoals, experience, timeCommitment, targetWeight, timeframe, isEditMode, isDataPopulated]);
+  }, [
+    primaryGoals,
+    experience,
+    timeCommitment,
+    targetWeight,
+    timeframe,
+    isEditMode,
+    isDataPopulated,
+  ]);
 
   // Toggle primary goal selection
   const togglePrimaryGoal = (goalId: string) => {
-    setPrimaryGoals(prev => {
+    setPrimaryGoals((prev) => {
       if (prev.includes(goalId)) {
-        return prev.filter(id => id !== goalId);
+        return prev.filter((id) => id !== goalId);
       } else {
         return [...prev, goalId];
       }
@@ -173,7 +266,7 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
     const newErrors: typeof errors = {};
 
     if (primaryGoals.length === 0) {
-      newErrors.primaryGoals = 'Please select at least one fitness goal';
+      newErrors.primaryGoals = "Please select at least one fitness goal";
     }
 
     setErrors(newErrors);
@@ -218,12 +311,15 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>
-              {isEditMode ? 'Edit Fitness Goals' : 'Fitness Goals'}
+              {isEditMode ? "Edit Fitness Goals" : "Fitness Goals"}
             </Text>
             <Text style={styles.subtitle}>
               Tell us what you want to achieve
@@ -237,7 +333,7 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
               Select one or more goals (you can choose multiple)
             </Text>
             <View style={styles.goalsGrid}>
-              {FITNESS_GOALS.map(goal => (
+              {FITNESS_GOALS.map((goal) => (
                 <TouchableOpacity
                   key={goal.id}
                   style={[
@@ -248,10 +344,13 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <Text style={styles.goalIcon}>{goal.icon}</Text>
-                  <Text style={[
-                    styles.goalTitle,
-                    primaryGoals.includes(goal.id) && styles.goalTitleSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.goalTitle,
+                      primaryGoals.includes(goal.id) &&
+                        styles.goalTitleSelected,
+                    ]}
+                  >
                     {goal.title}
                   </Text>
                   <Text style={styles.goalDescription}>{goal.description}</Text>
@@ -270,24 +369,30 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
               What's your fitness experience?
             </Text>
             <View style={styles.optionsRow}>
-              {EXPERIENCE_LEVELS.map(level => (
+              {EXPERIENCE_LEVELS.map((level) => (
                 <TouchableOpacity
                   key={level.value}
                   style={[
                     styles.optionCard,
                     experience === level.value && styles.optionCardSelected,
                   ]}
-                  onPress={() => setExperience(level.value as FitnessGoals['experience'])}
+                  onPress={() =>
+                    setExperience(level.value as FitnessGoals["experience"])
+                  }
                   activeOpacity={0.7}
                 >
                   <Text style={styles.optionIcon}>{level.icon}</Text>
-                  <Text style={[
-                    styles.optionLabel,
-                    experience === level.value && styles.optionLabelSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      experience === level.value && styles.optionLabelSelected,
+                    ]}
+                  >
                     {level.label}
                   </Text>
-                  <Text style={styles.optionDescription}>{level.description}</Text>
+                  <Text style={styles.optionDescription}>
+                    {level.description}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -300,7 +405,7 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
               How much time can you dedicate daily?
             </Text>
             <View style={styles.optionsRow}>
-              {TIME_COMMITMENTS.map(time => (
+              {TIME_COMMITMENTS.map((time) => (
                 <TouchableOpacity
                   key={time.value}
                   style={[
@@ -311,13 +416,18 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
                   activeOpacity={0.7}
                 >
                   <Text style={styles.optionIcon}>{time.icon}</Text>
-                  <Text style={[
-                    styles.optionLabel,
-                    timeCommitment === time.value && styles.optionLabelSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.optionLabel,
+                      timeCommitment === time.value &&
+                        styles.optionLabelSelected,
+                    ]}
+                  >
                     {time.label}
                   </Text>
-                  <Text style={styles.optionDescription}>{time.description}</Text>
+                  <Text style={styles.optionDescription}>
+                    {time.description}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -368,7 +478,7 @@ export const FitnessGoalsScreen: React.FC<FitnessGoalsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background.primary,
+    backgroundColor: ResponsiveTheme.colors.background,
   },
   scrollView: {
     flex: 1,
@@ -385,13 +495,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(28),
-    fontWeight: '700',
-    color: THEME.colors.text.primary,
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
     marginBottom: rh(8),
   },
   subtitle: {
     fontSize: rf(16),
-    color: THEME.colors.text.secondary,
+    color: ResponsiveTheme.colors.textSecondary,
   },
   section: {
     marginBottom: rh(20),
@@ -399,29 +509,29 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(18),
-    fontWeight: '600',
-    color: THEME.colors.text.primary,
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.text,
     marginBottom: rh(8),
   },
   sectionDescription: {
     fontSize: rf(14),
-    color: THEME.colors.text.secondary,
+    color: ResponsiveTheme.colors.textSecondary,
     marginBottom: rh(16),
   },
   goalsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginHorizontal: -rp(6),
   },
   goalCard: {
-    width: '48%',
+    width: "48%",
     margin: rp(6),
     padding: rp(16),
     borderRadius: rs(12),
     borderWidth: 2,
     borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background.secondary,
-    alignItems: 'center',
+    backgroundColor: THEME.colors.backgroundSecondary,
+    alignItems: "center" as const,
   },
   goalCardSelected: {
     borderColor: THEME.colors.primary,
@@ -433,9 +543,9 @@ const styles = StyleSheet.create({
   },
   goalTitle: {
     fontSize: rf(14),
-    fontWeight: '600',
-    color: THEME.colors.text.primary,
-    textAlign: 'center',
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.text,
+    textAlign: "center",
     marginBottom: rh(4),
   },
   goalTitleSelected: {
@@ -443,24 +553,24 @@ const styles = StyleSheet.create({
   },
   goalDescription: {
     fontSize: rf(11),
-    color: THEME.colors.text.tertiary,
-    textAlign: 'center',
+    color: ResponsiveTheme.colors.textMuted,
+    textAlign: "center",
   },
   optionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginHorizontal: -rp(6),
   },
   optionCard: {
     flex: 1,
-    minWidth: '30%',
+    minWidth: "30%",
     margin: rp(6),
     padding: rp(12),
     borderRadius: rs(12),
     borderWidth: 2,
     borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background.secondary,
-    alignItems: 'center',
+    backgroundColor: THEME.colors.backgroundSecondary,
+    alignItems: "center" as const,
   },
   optionCardSelected: {
     borderColor: THEME.colors.primary,
@@ -472,9 +582,9 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: rf(13),
-    fontWeight: '600',
-    color: THEME.colors.text.primary,
-    textAlign: 'center',
+    fontWeight: "600",
+    color: ResponsiveTheme.colors.text,
+    textAlign: "center",
     marginBottom: rh(4),
   },
   optionLabelSelected: {
@@ -482,8 +592,8 @@ const styles = StyleSheet.create({
   },
   optionDescription: {
     fontSize: rf(10),
-    color: THEME.colors.text.tertiary,
-    textAlign: 'center',
+    color: ResponsiveTheme.colors.textMuted,
+    textAlign: "center",
   },
   errorText: {
     fontSize: rf(12),
@@ -491,8 +601,8 @@ const styles = StyleSheet.create({
     marginTop: rh(8),
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
     marginTop: rh(32),
     gap: rp(12),
   },

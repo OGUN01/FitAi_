@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   backButton: {
@@ -411,8 +411,8 @@ const styles = StyleSheet.create({
 
   googleButtonContent: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
 
   dividerContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -466,8 +466,8 @@ const styles = StyleSheet.create({
 
   footerContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginTop: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.lg,
   },

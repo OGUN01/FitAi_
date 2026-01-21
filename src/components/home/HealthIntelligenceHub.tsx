@@ -354,13 +354,13 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   headerTitle: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -388,17 +388,17 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.md,
   },
   ringContainer: {
     position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   ringCenter: {
     position: "absolute",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   ringScore: {
     fontSize: rf(28),
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   },
   metricItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     backgroundColor: "rgba(255,255,255,0.03)",
     paddingVertical: ResponsiveTheme.spacing.xs,
@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   metricContent: {
     flex: 1,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   insightContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,

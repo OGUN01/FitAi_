@@ -1,7 +1,7 @@
 // Advanced Analytics Screen
 // Comprehensive fitness analytics with insights and predictions
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,19 +11,24 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
-import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
-import { MiniProgressRing } from '../../components/ui/aurora/ProgressRing';
-import { gradients, toLinearGradientProps } from '../../theme/gradients';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { useAnalyticsStore } from '../../stores/analyticsStore';
-import { useSubscriptionStore } from '../../stores/subscriptionStore';
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { MiniProgressRing } from "../../components/ui/aurora/ProgressRing";
+import { gradients, toLinearGradientProps } from "../../theme/gradients";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { analyticsHelpers } from "../../utils/analyticsHelpers";
+import { useAnalyticsStore } from "../../stores/analyticsStore";
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import AnalyticsCard from "../../components/analytics/AnalyticsCard";
+import PremiumGate from "../../components/subscription/PremiumGate";
+import ProgressChart from "../../components/analytics/ProgressChart";
+import InsightCard from "../../components/analytics/InsightCard";
 
 const AnalyticsScreen: React.FC = () => {
   const {
@@ -45,9 +50,11 @@ const AnalyticsScreen: React.FC = () => {
   const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'overview' | 'workout' | 'nutrition' | 'wellness'>('overview');
+  const [selectedTab, setSelectedTab] = useState<
+    "overview" | "workout" | "nutrition" | "wellness"
+  >("overview");
 
-  const isPremium = checkPremiumAccess('advanced_analytics');
+  const isPremium = checkPremiumAccess("advanced_analytics");
 
   // Animation refs for micro-interactions
   const segmentIndicatorPosition = useRef(new Animated.Value(0)).current;
@@ -130,7 +137,13 @@ const AnalyticsScreen: React.FC = () => {
         useNativeDriver: false,
       }),
     ]).start();
-  }, [selectedPeriod, metricCard1Value, metricCard2Value, metricCard3Value, metricCard4Value]);
+  }, [
+    selectedPeriod,
+    metricCard1Value,
+    metricCard2Value,
+    metricCard3Value,
+    metricCard4Value,
+  ]);
 
   // Micro-interaction: Chart draw animations on mount
   useEffect(() => {
@@ -196,7 +209,7 @@ const AnalyticsScreen: React.FC = () => {
           duration: 1000,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     );
     animation.start();
 
@@ -227,18 +240,20 @@ const AnalyticsScreen: React.FC = () => {
       }),
     ]).start();
 
-    Alert.alert('Export Progress', 'Export feature coming soon!');
+    Alert.alert("Export Progress", "Export feature coming soon!");
   };
 
-  const handlePeriodChange = (period: 'week' | 'month' | 'quarter' | 'year') => {
-    if (!isPremium && (period === 'quarter' || period === 'year')) {
-      showPaywallModal('advanced_analytics');
+  const handlePeriodChange = (
+    period: "week" | "month" | "quarter" | "year",
+  ) => {
+    if (!isPremium && (period === "quarter" || period === "year")) {
+      showPaywallModal("advanced_analytics");
       return;
     }
     setPeriod(period);
 
     // Animate sliding indicator
-    const index = ['week', 'month', 'year'].indexOf(period);
+    const index = ["week", "month", "year"].indexOf(period);
     if (index !== -1) {
       Animated.spring(segmentIndicatorPosition, {
         toValue: index,
@@ -250,17 +265,17 @@ const AnalyticsScreen: React.FC = () => {
   };
 
   const periods = [
-    { key: 'week', label: 'Week', premium: false },
-    { key: 'month', label: 'Month', premium: false },
-    { key: 'quarter', label: 'Quarter', premium: true },
-    { key: 'year', label: 'Year', premium: true },
+    { key: "week", label: "Week", premium: false },
+    { key: "month", label: "Month", premium: false },
+    { key: "quarter", label: "Quarter", premium: true },
+    { key: "year", label: "Year", premium: true },
   ] as const;
 
   const tabs = [
-    { key: 'overview', label: 'Overview', iconName: 'stats-chart-outline' },
-    { key: 'workout', label: 'Workout', iconName: 'barbell-outline' },
-    { key: 'nutrition', label: 'Nutrition', iconName: 'nutrition-outline' },
-    { key: 'wellness', label: 'Wellness', iconName: 'happy-outline' },
+    { key: "overview", label: "Overview", iconName: "stats-chart-outline" },
+    { key: "workout", label: "Workout", iconName: "barbell-outline" },
+    { key: "nutrition", label: "Nutrition", iconName: "nutrition-outline" },
+    { key: "wellness", label: "Wellness", iconName: "happy-outline" },
   ] as const;
 
   if (isLoading && !currentAnalytics) {
@@ -280,13 +295,15 @@ const AnalyticsScreen: React.FC = () => {
       <View className="grid grid-cols-2 gap-4">
         <AnalyticsCard
           title="Overall Score"
-          value={currentAnalytics?.overallScore || analyticsSummary.averageScore}
+          value={
+            currentAnalytics?.overallScore || analyticsSummary.averageScore
+          }
           subtitle="out of 100"
           iconName="star-outline"
           color="purple"
           size="medium"
         />
-        
+
         <AnalyticsCard
           title="Current Streak"
           value={analyticsSummary.currentStreak}
@@ -294,27 +311,46 @@ const AnalyticsScreen: React.FC = () => {
           iconName="flame-outline"
           color="orange"
           size="medium"
-          trend={analyticsSummary.currentStreak > 7 ? 'up' : analyticsSummary.currentStreak > 3 ? 'stable' : 'down'}
+          trend={
+            analyticsSummary.currentStreak > 7
+              ? "up"
+              : analyticsSummary.currentStreak > 3
+                ? "stable"
+                : "down"
+          }
           trendValue={`${analyticsSummary.currentStreak} days`}
         />
-        
+
         <AnalyticsCard
           title="Total Workouts"
-          value={currentAnalytics?.workout.totalWorkouts || analyticsSummary.totalWorkouts}
+          value={
+            currentAnalytics?.workout.totalWorkouts ||
+            analyticsSummary.totalWorkouts
+          }
           subtitle={`${selectedPeriod} period`}
           iconName="barbell-outline"
           color="blue"
           size="medium"
         />
-        
+
         <AnalyticsCard
           title="Trend"
           value={analyticsSummary.recentTrend}
           subtitle="recent performance"
-          iconName={analyticsSummary.recentTrend === 'Improving' ? 'trending-up-outline' :
-                analyticsSummary.recentTrend === 'Declining' ? 'trending-down-outline' : 'arrow-forward-outline'}
-          color={analyticsSummary.recentTrend === 'Improving' ? 'green' : 
-                 analyticsSummary.recentTrend === 'Declining' ? 'red' : 'gray'}
+          iconName={
+            analyticsSummary.recentTrend === "Improving"
+              ? "trending-up-outline"
+              : analyticsSummary.recentTrend === "Declining"
+                ? "trending-down-outline"
+                : "arrow-forward-outline"
+          }
+          color={
+            analyticsSummary.recentTrend === "Improving"
+              ? "green"
+              : analyticsSummary.recentTrend === "Declining"
+                ? "red"
+                : "gray"
+          }
           size="medium"
         />
       </View>
@@ -332,7 +368,7 @@ const AnalyticsScreen: React.FC = () => {
           color="#8B5CF6"
           height={220}
           unit=""
-          gradientColors={['#8B5CF6', '#A78BFA']}
+          gradientColors={["#8B5CF6", "#A78BFA"]}
         />
       </PremiumGate>
 
@@ -341,30 +377,34 @@ const AnalyticsScreen: React.FC = () => {
         <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           Key Insights
         </Text>
-        
+
         <View className="space-y-3">
-          {getTopInsights().slice(0, 3).map((insight, index) => (
-            <InsightCard
-              key={index}
-              type="positive"
-              title="Great Progress!"
-              description={insight}
-              category="Performance"
-              confidence={85 + index * 5}
-            />
-          ))}
-          
-          {getImprovementAreas().slice(0, 2).map((improvement, index) => (
-            <InsightCard
-              key={`improvement-${index}`}
-              type="neutral"
-              title="Improvement Opportunity"
-              description={improvement}
-              category="Optimization"
-              actionText="Learn More"
-              onAction={() => Alert.alert('Improvement Tip', improvement)}
-            />
-          ))}
+          {getTopInsights()
+            .slice(0, 3)
+            .map((insight, index) => (
+              <InsightCard
+                key={index}
+                type="positive"
+                title="Great Progress!"
+                description={insight}
+                category="Performance"
+                confidence={85 + index * 5}
+              />
+            ))}
+
+          {getImprovementAreas()
+            .slice(0, 2)
+            .map((improvement, index) => (
+              <InsightCard
+                key={`improvement-${index}`}
+                type="neutral"
+                title="Improvement Opportunity"
+                description={improvement}
+                category="Optimization"
+                actionText="Learn More"
+                onAction={() => Alert.alert("Improvement Tip", improvement)}
+              />
+            ))}
         </View>
       </View>
 
@@ -374,7 +414,7 @@ const AnalyticsScreen: React.FC = () => {
           <Text className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             Recent Achievements
           </Text>
-          
+
           <View className="space-y-3">
             {getAchievements().map((achievement, index) => (
               <InsightCard
@@ -412,20 +452,24 @@ const AnalyticsScreen: React.FC = () => {
         <View className="grid grid-cols-2 gap-4">
           <AnalyticsCard
             title="Weekly Average"
-            value={currentAnalytics?.workout.averageWorkoutsPerWeek.toFixed(1) || '0'}
+            value={
+              currentAnalytics?.workout.averageWorkoutsPerWeek.toFixed(1) || "0"
+            }
             subtitle="workouts"
             iconName="calendar-outline"
             color="blue"
           />
-          
+
           <AnalyticsCard
             title="Avg Duration"
-            value={currentAnalytics?.workout.averageWorkoutDuration.toFixed(0) || '0'}
+            value={
+              currentAnalytics?.workout.averageWorkoutDuration.toFixed(0) || "0"
+            }
             subtitle="minutes"
             iconName="timer-outline"
             color="green"
           />
-          
+
           <AnalyticsCard
             title="Consistency"
             value={currentAnalytics?.workout.consistencyScore || 0}
@@ -433,10 +477,13 @@ const AnalyticsScreen: React.FC = () => {
             iconName="flag-outline"
             color="purple"
           />
-          
+
           <AnalyticsCard
             title="Calories Burned"
-            value={currentAnalytics?.workout.caloriesBurnedTotal?.toLocaleString() ?? '--'}
+            value={
+              currentAnalytics?.workout.caloriesBurnedTotal?.toLocaleString() ??
+              "--"
+            }
             subtitle="total"
             iconName="flame-outline"
             color="orange"
@@ -469,15 +516,17 @@ const AnalyticsScreen: React.FC = () => {
             <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Workout Type Distribution
             </Text>
-            
+
             <View className="space-y-3">
-              {Object.entries(currentAnalytics.workout.workoutTypeDistribution).map(([type, percentage]) => (
+              {Object.entries(
+                currentAnalytics.workout.workoutTypeDistribution,
+              ).map(([type, percentage]) => (
                 <View key={type} className="flex-row items-center">
                   <Text className="w-20 text-sm text-gray-600 dark:text-gray-400">
                     {type}
                   </Text>
                   <View className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3 mx-3">
-                    <View 
+                    <View
                       className="bg-blue-500 h-3 rounded-full"
                       style={{ width: `${percentage}%` }}
                     />
@@ -510,15 +559,17 @@ const AnalyticsScreen: React.FC = () => {
             iconName="nutrition-outline"
             color="green"
           />
-          
+
           <AnalyticsCard
             title="Water Intake"
-            value={currentAnalytics?.nutrition.waterIntakeAverage.toFixed(1) || '2.5'}
+            value={
+              currentAnalytics?.nutrition.waterIntakeAverage.toFixed(1) || "2.5"
+            }
             subtitle="liters/day"
             iconName="water-outline"
             color="blue"
           />
-          
+
           <AnalyticsCard
             title="Meal Consistency"
             value={currentAnalytics?.nutrition.mealLoggingConsistency || 85}
@@ -526,7 +577,7 @@ const AnalyticsScreen: React.FC = () => {
             iconName="document-text-outline"
             color="purple"
           />
-          
+
           <AnalyticsCard
             title="Variety Score"
             value={currentAnalytics?.nutrition.varietyScore || 85}
@@ -552,7 +603,7 @@ const AnalyticsScreen: React.FC = () => {
             <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Daily Macro Averages
             </Text>
-            
+
             <View className="grid grid-cols-2 gap-4">
               <View className="items-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                 <Text className="text-2xl font-bold text-red-600 dark:text-red-400">
@@ -562,7 +613,7 @@ const AnalyticsScreen: React.FC = () => {
                   Protein
                 </Text>
               </View>
-              
+
               <View className="items-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                 <Text className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                   {currentAnalytics.nutrition.averageMacros.carbs}g
@@ -571,7 +622,7 @@ const AnalyticsScreen: React.FC = () => {
                   Carbs
                 </Text>
               </View>
-              
+
               <View className="items-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <Text className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {currentAnalytics.nutrition.averageMacros.fat}g
@@ -580,7 +631,7 @@ const AnalyticsScreen: React.FC = () => {
                   Fat
                 </Text>
               </View>
-              
+
               <View className="items-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <Text className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {currentAnalytics.nutrition.averageMacros.fiber}g
@@ -607,12 +658,15 @@ const AnalyticsScreen: React.FC = () => {
         <View className="grid grid-cols-2 gap-4">
           <AnalyticsCard
             title="Avg Sleep"
-            value={currentAnalytics?.sleepWellness.averageSleepHours.toFixed(1) || '8.0'}
+            value={
+              currentAnalytics?.sleepWellness.averageSleepHours.toFixed(1) ||
+              "8.0"
+            }
             subtitle="hours/night"
             iconName="moon-outline"
             color="purple"
           />
-          
+
           <AnalyticsCard
             title="Recovery Score"
             value={currentAnalytics?.sleepWellness.recoveryScore || 75}
@@ -620,7 +674,7 @@ const AnalyticsScreen: React.FC = () => {
             iconName="flash-outline"
             color="green"
           />
-          
+
           <AnalyticsCard
             title="Sleep Consistency"
             value={currentAnalytics?.sleepWellness.sleepConsistency || 80}
@@ -628,20 +682,30 @@ const AnalyticsScreen: React.FC = () => {
             iconName="flag-outline"
             color="blue"
           />
-          
+
           <AnalyticsCard
             title="Sleep Debt"
-            value={currentAnalytics?.sleepWellness.sleepDebt.toFixed(1) || '0.0'}
+            value={
+              currentAnalytics?.sleepWellness.sleepDebt.toFixed(1) || "0.0"
+            }
             subtitle="hours"
             iconName="alarm-outline"
-            color={currentAnalytics?.sleepWellness.sleepDebt && currentAnalytics.sleepWellness.sleepDebt > 5 ? 'red' : 'gray'}
+            color={
+              currentAnalytics?.sleepWellness.sleepDebt &&
+              currentAnalytics.sleepWellness.sleepDebt > 5
+                ? "red"
+                : "gray"
+            }
           />
         </View>
 
         {/* Sleep Pattern Chart */}
         <ProgressChart
           title="Sleep Pattern"
-          data={chartData.sleepPattern.map(point => ({ x: point.date, y: point.hours }))}
+          data={chartData.sleepPattern.map((point) => ({
+            x: point.date,
+            y: point.hours,
+          }))}
           type="line"
           color="#8B5CF6"
           height={200}
@@ -653,31 +717,41 @@ const AnalyticsScreen: React.FC = () => {
           <Text className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Wellness Insights
           </Text>
-          
+
           <View className="space-y-4">
             <View className="flex-row items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <View className="flex-row items-center">
-                <Ionicons name="bed-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginRight: rp(12) }} />
+                <Ionicons
+                  name="bed-outline"
+                  size={rf(24)}
+                  color={ResponsiveTheme.colors.primary}
+                  style={{ marginRight: rp(12) }}
+                />
                 <View>
                   <Text className="font-medium text-blue-800 dark:text-blue-200">
                     Optimal Bedtime
                   </Text>
                   <Text className="text-blue-600 dark:text-blue-400 text-sm">
-                    {currentAnalytics?.sleepWellness.optimalBedtime || '22:30'}
+                    {currentAnalytics?.sleepWellness.optimalBedtime || "22:30"}
                   </Text>
                 </View>
               </View>
             </View>
-            
+
             <View className="flex-row items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <View className="flex-row items-center">
-                <Ionicons name="trending-up-outline" size={rf(24)} color={ResponsiveTheme.colors.primary} style={{ marginRight: rp(12) }} />
+                <Ionicons
+                  name="trending-up-outline"
+                  size={rf(24)}
+                  color={ResponsiveTheme.colors.primary}
+                  style={{ marginRight: rp(12) }}
+                />
                 <View>
                   <Text className="font-medium text-green-800 dark:text-green-200">
                     Sleep Quality Trend
                   </Text>
                   <Text className="text-green-600 dark:text-green-400 text-sm capitalize">
-                    {currentAnalytics?.sleepWellness.sleepQualityTrend ?? '--'}
+                    {currentAnalytics?.sleepWellness.sleepQualityTrend ?? "--"}
                   </Text>
                 </View>
               </View>
@@ -690,11 +764,11 @@ const AnalyticsScreen: React.FC = () => {
 
   const renderTabContent = () => {
     switch (selectedTab) {
-      case 'workout':
+      case "workout":
         return renderWorkoutTab();
-      case 'nutrition':
+      case "nutrition":
         return renderNutritionTab();
-      case 'wellness':
+      case "wellness":
         return renderWellnessTab();
       default:
         return renderOverviewTab();
@@ -745,11 +819,13 @@ const AnalyticsScreen: React.FC = () => {
               </Animated.View>
 
               {/* Buttons */}
-              {['Week', 'Month', 'Year'].map((period) => (
+              {["Week", "Month", "Year"].map((period) => (
                 <AnimatedPressable
                   key={period}
                   style={styles.segmentButton}
-                  onPress={() => handlePeriodChange(period.toLowerCase() as any)}
+                  onPress={() =>
+                    handlePeriodChange(period.toLowerCase() as any)
+                  }
                   scaleValue={0.95}
                   hapticFeedback={true}
                   hapticType="light"
@@ -757,7 +833,8 @@ const AnalyticsScreen: React.FC = () => {
                   <Text
                     style={[
                       styles.segmentText,
-                      selectedPeriod === period.toLowerCase() && styles.segmentTextActive,
+                      selectedPeriod === period.toLowerCase() &&
+                        styles.segmentTextActive,
                     ]}
                   >
                     {period}
@@ -771,12 +848,18 @@ const AnalyticsScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.metricGrid}>
               {/* Weight Progress Card with count-up animation */}
-              <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
+              <GlassCard
+                elevation={2}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
+                style={styles.metricCard}
+              >
                 <View style={styles.metricContent}>
                   <Animated.Text style={styles.metricValue}>
                     {metricCard1Value.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['0.0', '72.5'],
+                      outputRange: ["0.0", "72.5"],
                     })}
                   </Animated.Text>
                   <Text style={styles.metricLabel}>Weight (kg)</Text>
@@ -784,13 +867,13 @@ const AnalyticsScreen: React.FC = () => {
                     <Animated.Text
                       style={[
                         styles.trendArrow,
-                        { color: '#10b981' },
+                        { color: "#10b981" },
                         {
                           transform: [
                             {
                               rotate: trendArrowRotate.interpolate({
                                 inputRange: [0, 1],
-                                outputRange: ['0deg', '5deg'],
+                                outputRange: ["0deg", "5deg"],
                               }),
                             },
                           ],
@@ -799,24 +882,35 @@ const AnalyticsScreen: React.FC = () => {
                     >
                       ↓
                     </Animated.Text>
-                    <Text style={[styles.trendText, { color: '#10b981' }]}>-2.3 kg</Text>
+                    <Text style={[styles.trendText, { color: "#10b981" }]}>
+                      -2.3 kg
+                    </Text>
                   </View>
                   {/* Mini Sparkline - Simple bars */}
                   <View style={styles.miniChart}>
                     {[40, 55, 45, 60, 50, 70, 65].map((height, i) => (
-                      <View key={i} style={[styles.miniBar, { height: `${height}%` }]} />
+                      <View
+                        key={i}
+                        style={[styles.miniBar, { height: `${height}%` }]}
+                      />
                     ))}
                   </View>
                 </View>
               </GlassCard>
 
               {/* Calories Burned Card with count-up animation */}
-              <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
+              <GlassCard
+                elevation={2}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
+                style={styles.metricCard}
+              >
                 <View style={styles.metricContent}>
                   <Animated.Text style={styles.metricValue}>
                     {metricCard2Value.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['0K', '12.5K'],
+                      outputRange: ["0K", "12.5K"],
                     })}
                   </Animated.Text>
                   <Text style={styles.metricLabel}>Calories Burned</Text>
@@ -824,13 +918,13 @@ const AnalyticsScreen: React.FC = () => {
                     <Animated.Text
                       style={[
                         styles.trendArrow,
-                        { color: '#10b981' },
+                        { color: "#10b981" },
                         {
                           transform: [
                             {
                               rotate: trendArrowRotate.interpolate({
                                 inputRange: [0, 1],
-                                outputRange: ['0deg', '-5deg'],
+                                outputRange: ["0deg", "-5deg"],
                               }),
                             },
                           ],
@@ -839,24 +933,38 @@ const AnalyticsScreen: React.FC = () => {
                     >
                       ↑
                     </Animated.Text>
-                    <Text style={[styles.trendText, { color: '#10b981' }]}>+15%</Text>
+                    <Text style={[styles.trendText, { color: "#10b981" }]}>
+                      +15%
+                    </Text>
                   </View>
                   {/* Mini Area Chart - Simplified */}
                   <View style={styles.miniChart}>
                     {[30, 45, 35, 60, 50, 75, 70].map((height, i) => (
-                      <View key={i} style={[styles.miniBar, { height: `${height}%`, opacity: 0.7 }]} />
+                      <View
+                        key={i}
+                        style={[
+                          styles.miniBar,
+                          { height: `${height}%`, opacity: 0.7 },
+                        ]}
+                      />
                     ))}
                   </View>
                 </View>
               </GlassCard>
 
               {/* Workouts Completed Card with count-up animation */}
-              <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
+              <GlassCard
+                elevation={2}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
+                style={styles.metricCard}
+              >
                 <View style={styles.metricContent}>
                   <Animated.Text style={styles.metricValue}>
                     {metricCard3Value.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['0', '18'],
+                      outputRange: ["0", "18"],
                     })}
                   </Animated.Text>
                   <Text style={styles.metricLabel}>Workouts</Text>
@@ -864,13 +972,13 @@ const AnalyticsScreen: React.FC = () => {
                     <Animated.Text
                       style={[
                         styles.trendArrow,
-                        { color: '#10b981' },
+                        { color: "#10b981" },
                         {
                           transform: [
                             {
                               rotate: trendArrowRotate.interpolate({
                                 inputRange: [0, 1],
-                                outputRange: ['0deg', '-5deg'],
+                                outputRange: ["0deg", "-5deg"],
                               }),
                             },
                           ],
@@ -879,26 +987,37 @@ const AnalyticsScreen: React.FC = () => {
                     >
                       ↑
                     </Animated.Text>
-                    <Text style={[styles.trendText, { color: '#10b981' }]}>+3</Text>
+                    <Text style={[styles.trendText, { color: "#10b981" }]}>
+                      +3
+                    </Text>
                   </View>
                   {/* Mini Bar Chart */}
                   <View style={styles.miniChart}>
                     {[50, 60, 40, 70, 55, 80, 75].map((height, i) => (
-                      <View key={i} style={[styles.miniBar, { height: `${height}%` }]} />
+                      <View
+                        key={i}
+                        style={[styles.miniBar, { height: `${height}%` }]}
+                      />
                     ))}
                   </View>
                 </View>
               </GlassCard>
 
               {/* Active Streak Card with count-up animation */}
-              <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg" style={styles.metricCard}>
+              <GlassCard
+                elevation={2}
+                blurIntensity="light"
+                padding="md"
+                borderRadius="lg"
+                style={styles.metricCard}
+              >
                 <View style={styles.metricContent}>
                   <MiniProgressRing
                     progress={70}
                     size={60}
                     strokeWidth={5}
                     gradient={{
-                      colors: ['#FF6B6B', '#FF8E53'],
+                      colors: ["#FF6B6B", "#FF8E53"],
                       start: { x: 0, y: 0 },
                       end: { x: 1, y: 1 },
                     }}
@@ -906,7 +1025,7 @@ const AnalyticsScreen: React.FC = () => {
                     <Animated.Text style={styles.streakNumber}>
                       {metricCard4Value.interpolate({
                         inputRange: [0, 1],
-                        outputRange: ['0', '7'],
+                        outputRange: ["0", "7"],
                       })}
                     </Animated.Text>
                   </MiniProgressRing>
@@ -926,10 +1045,38 @@ const AnalyticsScreen: React.FC = () => {
               contentContainerStyle={styles.achievementsScrollContent}
             >
               {[
-                { id: 1, iconName: 'flame-outline', title: '7-Day Streak', subtitle: 'Keep going!', animation: achievementScale1 },
-                { id: 2, iconName: 'walk-outline', title: 'First 5K', subtitle: 'Completed', animation: achievementScale2 },
-                { id: 3, iconName: 'scale-outline', title: 'Weight Goal', subtitle: '-5kg reached', animation: achievementScale3 },
-                { id: 4, iconName: 'barbell-outline', title: '50 Workouts', subtitle: 'Milestone', animation: achievementScale1 },
+                {
+                  id: 1,
+                  iconName: "flame-outline",
+                  emoji: "🔥",
+                  title: "7-Day Streak",
+                  subtitle: "Keep going!",
+                  animation: achievementScale1,
+                },
+                {
+                  id: 2,
+                  iconName: "walk-outline",
+                  emoji: "🏃",
+                  title: "First 5K",
+                  subtitle: "Completed",
+                  animation: achievementScale2,
+                },
+                {
+                  id: 3,
+                  iconName: "scale-outline",
+                  emoji: "⚖️",
+                  title: "Weight Goal",
+                  subtitle: "-5kg reached",
+                  animation: achievementScale3,
+                },
+                {
+                  id: 4,
+                  iconName: "barbell-outline",
+                  emoji: "💪",
+                  title: "50 Workouts",
+                  subtitle: "Milestone",
+                  animation: achievementScale1,
+                },
               ].map((achievement) => (
                 <Animated.View
                   key={achievement.id}
@@ -939,14 +1086,20 @@ const AnalyticsScreen: React.FC = () => {
                 >
                   <GlassCard
                     elevation={2}
-                    blurIntensity="medium"
+                    blurIntensity="default"
                     padding="md"
                     borderRadius="lg"
                     style={styles.achievementCard}
                   >
-                    <Text style={styles.achievementEmoji}>{achievement.emoji}</Text>
-                    <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                    <Text style={styles.achievementSubtitle}>{achievement.subtitle}</Text>
+                    <Text style={styles.achievementEmoji}>
+                      {achievement.emoji}
+                    </Text>
+                    <Text style={styles.achievementTitle}>
+                      {achievement.title}
+                    </Text>
+                    <Text style={styles.achievementSubtitle}>
+                      {achievement.subtitle}
+                    </Text>
                   </GlassCard>
                 </Animated.View>
               ))}
@@ -990,17 +1143,30 @@ const AnalyticsScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Detailed Analytics</Text>
 
             {/* Weight Trend Chart - Interactive Line Chart */}
-            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.chartCard}>
+            <GlassCard
+              elevation={2}
+              blurIntensity="light"
+              padding="lg"
+              borderRadius="lg"
+              style={styles.chartCard}
+            >
               <Text style={styles.chartTitle}>Weight Progress</Text>
 
               {/* Chart Legend */}
               <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FF6B9D' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#FF6B9D" }]}
+                  />
                   <Text style={styles.legendText}>Current</Text>
                 </View>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4', opacity: 0.5 }]} />
+                  <View
+                    style={[
+                      styles.legendDot,
+                      { backgroundColor: "#4ECDC4", opacity: 0.5 },
+                    ]}
+                  />
                   <Text style={styles.legendText}>Target</Text>
                 </View>
               </View>
@@ -1008,48 +1174,73 @@ const AnalyticsScreen: React.FC = () => {
               {/* Line Chart Container */}
               <View style={styles.lineChartContainer}>
                 {[
-                  { x: 0, y: 76, label: 'W1' },
-                  { x: 25, y: 75.5, label: 'W2' },
-                  { x: 50, y: 74, label: 'W3' },
-                  { x: 75, y: 73.5, label: 'W4' },
-                  { x: 100, y: 72.5, label: 'W5' },
+                  { x: 0, y: 76, label: "W1" },
+                  { x: 25, y: 75.5, label: "W2" },
+                  { x: 50, y: 74, label: "W3" },
+                  { x: 75, y: 73.5, label: "W4" },
+                  { x: 100, y: 72.5, label: "W5" },
                 ].map((point, index, arr) => {
                   const yPercent = ((78 - point.y) / 9) * 100;
                   return (
-                    <View key={index} style={[styles.lineChartPoint, { left: `${point.x}%`, bottom: `${yPercent}%` }]}>
+                    <View
+                      key={index}
+                      style={[
+                        styles.lineChartPoint,
+                        { left: `${point.x}%`, bottom: `${yPercent}%` },
+                      ]}
+                    >
                       <View style={styles.lineChartDot} />
                       {index < arr.length - 1 && (
-                        <View style={[styles.lineChartLine, {
-                          width: `${arr[index + 1].x - point.x}%`,
-                          transform: [{
-                            rotate: `${Math.atan2(((78 - arr[index + 1].y) / 9) * 100 - yPercent, arr[index + 1].x - point.x)}rad`
-                          }]
-                        }]} />
+                        <View
+                          style={[
+                            styles.lineChartLine,
+                            {
+                              width: `${arr[index + 1].x - point.x}%`,
+                              transform: [
+                                {
+                                  rotate: `${Math.atan2(((78 - arr[index + 1].y) / 9) * 100 - yPercent, arr[index + 1].x - point.x)}rad`,
+                                },
+                              ],
+                            },
+                          ]}
+                        />
                       )}
                     </View>
                   );
                 })}
                 {/* X-axis labels */}
                 <View style={styles.xAxisContainer}>
-                  {['W1', 'W2', 'W3', 'W4', 'W5'].map((label, i) => (
-                    <Text key={i} style={styles.xAxisLabel}>{label}</Text>
+                  {["W1", "W2", "W3", "W4", "W5"].map((label, i) => (
+                    <Text key={i} style={styles.xAxisLabel}>
+                      {label}
+                    </Text>
                   ))}
                 </View>
               </View>
             </GlassCard>
 
             {/* Calorie Breakdown Chart - Stacked Area Chart */}
-            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.chartCard}>
+            <GlassCard
+              elevation={2}
+              blurIntensity="light"
+              padding="lg"
+              borderRadius="lg"
+              style={styles.chartCard}
+            >
               <Text style={styles.chartTitle}>Calorie Analysis</Text>
 
               {/* Chart Legend */}
               <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#10b981' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#10b981" }]}
+                  />
                   <Text style={styles.legendText}>Consumed</Text>
                 </View>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#f59e0b" }]}
+                  />
                   <Text style={styles.legendText}>Burned</Text>
                 </View>
               </View>
@@ -1057,20 +1248,38 @@ const AnalyticsScreen: React.FC = () => {
               {/* Stacked Area Chart */}
               <View style={styles.areaChartContainer}>
                 {[
-                  { day: 'Mon', consumed: 2100, burned: 2300 },
-                  { day: 'Tue', consumed: 1950, burned: 2150 },
-                  { day: 'Wed', consumed: 2250, burned: 2400 },
-                  { day: 'Thu', consumed: 2000, burned: 2200 },
-                  { day: 'Fri', consumed: 2100, burned: 2350 },
-                  { day: 'Sat', consumed: 2300, burned: 2500 },
-                  { day: 'Sun', consumed: 2050, burned: 2250 },
+                  { day: "Mon", consumed: 2100, burned: 2300 },
+                  { day: "Tue", consumed: 1950, burned: 2150 },
+                  { day: "Wed", consumed: 2250, burned: 2400 },
+                  { day: "Thu", consumed: 2000, burned: 2200 },
+                  { day: "Fri", consumed: 2100, burned: 2350 },
+                  { day: "Sat", consumed: 2300, burned: 2500 },
+                  { day: "Sun", consumed: 2050, burned: 2250 },
                 ].map((data, index) => {
                   const consumedHeight = (data.consumed / 3000) * 100;
                   const burnedHeight = (data.burned / 3000) * 100;
                   return (
                     <View key={index} style={styles.areaChartBar}>
-                      <View style={[styles.areaChartSegment, { height: `${burnedHeight}%`, backgroundColor: 'rgba(245, 158, 11, 0.5)' }]} />
-                      <View style={[styles.areaChartSegment, { height: `${consumedHeight}%`, backgroundColor: 'rgba(16, 185, 129, 0.5)', position: 'absolute', bottom: 0 }]} />
+                      <View
+                        style={[
+                          styles.areaChartSegment,
+                          {
+                            height: `${burnedHeight}%`,
+                            backgroundColor: "rgba(245, 158, 11, 0.5)",
+                          },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.areaChartSegment,
+                          {
+                            height: `${consumedHeight}%`,
+                            backgroundColor: "rgba(16, 185, 129, 0.5)",
+                            position: "absolute",
+                            bottom: 0,
+                          },
+                        ]}
+                      />
                       <Text style={styles.areaChartLabel}>{data.day}</Text>
                     </View>
                   );
@@ -1079,27 +1288,38 @@ const AnalyticsScreen: React.FC = () => {
             </GlassCard>
 
             {/* Workout Frequency Chart - Bar Chart */}
-            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.chartCard}>
+            <GlassCard
+              elevation={2}
+              blurIntensity="light"
+              padding="lg"
+              borderRadius="lg"
+              style={styles.chartCard}
+            >
               <Text style={styles.chartTitle}>Workout Consistency</Text>
 
               {/* Bar Chart */}
               <View style={styles.barChartContainer}>
                 {[
-                  { day: 'Mon', count: 1 },
-                  { day: 'Tue', count: 2 },
-                  { day: 'Wed', count: 1 },
-                  { day: 'Thu', count: 3 },
-                  { day: 'Fri', count: 2 },
-                  { day: 'Sat', count: 1 },
-                  { day: 'Sun', count: 0 },
+                  { day: "Mon", count: 1 },
+                  { day: "Tue", count: 2 },
+                  { day: "Wed", count: 1 },
+                  { day: "Thu", count: 3 },
+                  { day: "Fri", count: 2 },
+                  { day: "Sat", count: 1 },
+                  { day: "Sun", count: 0 },
                 ].map((data, index) => {
                   const height = (data.count / 3) * 100;
                   return (
                     <View key={index} style={styles.barChartItem}>
                       <View style={styles.barChartBarContainer}>
-                        <View style={[styles.barChartBar, { height: `${Math.max(height, 10)}%` }]}>
+                        <View
+                          style={[
+                            styles.barChartBar,
+                            { height: `${Math.max(height, 10)}%` },
+                          ]}
+                        >
                           <LinearGradient
-                            colors={['#FF6B9D', '#C44569']}
+                            colors={["#FF6B9D", "#C44569"]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 0, y: 1 }}
                             style={styles.barChartBarGradient}
@@ -1115,21 +1335,33 @@ const AnalyticsScreen: React.FC = () => {
             </GlassCard>
 
             {/* Body Measurements Chart - Multi-Line Chart */}
-            <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg" style={styles.chartCard}>
+            <GlassCard
+              elevation={2}
+              blurIntensity="light"
+              padding="lg"
+              borderRadius="lg"
+              style={styles.chartCard}
+            >
               <Text style={styles.chartTitle}>Body Composition Trend</Text>
 
               {/* Chart Legend */}
               <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FF6B9D' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#FF6B9D" }]}
+                  />
                   <Text style={styles.legendText}>Body Fat %</Text>
                 </View>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#4ECDC4" }]}
+                  />
                   <Text style={styles.legendText}>Muscle Mass</Text>
                 </View>
                 <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FFA726' }]} />
+                  <View
+                    style={[styles.legendDot, { backgroundColor: "#FFA726" }]}
+                  />
                   <Text style={styles.legendText}>BMI</Text>
                 </View>
               </View>
@@ -1137,28 +1369,54 @@ const AnalyticsScreen: React.FC = () => {
               {/* Multi-Line Chart */}
               <View style={styles.multiLineChartContainer}>
                 {[
-                  { week: 'W1', bodyFat: 22, muscle: 35, bmi: 24.5 },
-                  { week: 'W2', bodyFat: 21.5, muscle: 36, bmi: 24.2 },
-                  { week: 'W3', bodyFat: 21, muscle: 37, bmi: 24.0 },
-                  { week: 'W4', bodyFat: 20.5, muscle: 38, bmi: 23.8 },
-                  { week: 'W5', bodyFat: 20, muscle: 39, bmi: 23.5 },
+                  { week: "W1", bodyFat: 22, muscle: 35, bmi: 24.5 },
+                  { week: "W2", bodyFat: 21.5, muscle: 36, bmi: 24.2 },
+                  { week: "W3", bodyFat: 21, muscle: 37, bmi: 24.0 },
+                  { week: "W4", bodyFat: 20.5, muscle: 38, bmi: 23.8 },
+                  { week: "W5", bodyFat: 20, muscle: 39, bmi: 23.5 },
                 ].map((point, index) => {
                   const bodyFatY = ((25 - point.bodyFat) / 10) * 100;
                   const muscleY = ((45 - point.muscle) / 15) * 100;
                   const bmiY = ((27 - point.bmi) / 5) * 100;
                   const xPos = (index / 4) * 100;
                   return (
-                    <View key={index} style={[styles.multiLineChartPointGroup, { left: `${xPos}%` }]}>
-                      <View style={[styles.multiLineChartDot, { backgroundColor: '#FF6B9D', bottom: `${bodyFatY}%` }]} />
-                      <View style={[styles.multiLineChartDot, { backgroundColor: '#4ECDC4', bottom: `${muscleY}%` }]} />
-                      <View style={[styles.multiLineChartDot, { backgroundColor: '#FFA726', bottom: `${bmiY}%` }]} />
+                    <View
+                      key={index}
+                      style={[
+                        styles.multiLineChartPointGroup,
+                        { left: `${xPos}%` },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.multiLineChartDot,
+                          {
+                            backgroundColor: "#FF6B9D",
+                            bottom: `${bodyFatY}%`,
+                          },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.multiLineChartDot,
+                          { backgroundColor: "#4ECDC4", bottom: `${muscleY}%` },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.multiLineChartDot,
+                          { backgroundColor: "#FFA726", bottom: `${bmiY}%` },
+                        ]}
+                      />
                     </View>
                   );
                 })}
                 {/* X-axis labels */}
                 <View style={styles.xAxisContainer}>
-                  {['W1', 'W2', 'W3', 'W4', 'W5'].map((label, i) => (
-                    <Text key={i} style={styles.xAxisLabel}>{label}</Text>
+                  {["W1", "W2", "W3", "W4", "W5"].map((label, i) => (
+                    <Text key={i} style={styles.xAxisLabel}>
+                      {label}
+                    </Text>
                   ))}
                 </View>
               </View>
@@ -1195,36 +1453,36 @@ const styles = StyleSheet.create({
 
   // SegmentedControl Styles
   segmentedControl: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: rp(4),
     gap: rp(4),
-    position: 'relative',
+    position: "relative",
   },
 
   slidingIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(4),
     left: rp(4),
-    width: '31%', // Approximately 1/3 width minus gap
+    width: "31%", // Approximately 1/3 width minus gap
     bottom: rp(4),
     borderRadius: ResponsiveTheme.borderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     zIndex: 0,
   },
 
   slidingIndicatorGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
 
   segmentButton: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     zIndex: 1,
   },
 
@@ -1233,10 +1491,10 @@ const styles = StyleSheet.create({
   },
 
   segmentButtonGradient: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -1267,22 +1525,22 @@ const styles = StyleSheet.create({
 
   // Metric Cards Grid
   metricGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
   },
 
   metricCard: {
-    width: '48%',
+    width: "48%",
     minHeight: rh(140),
   },
 
   metricContent: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 
   metricValue: {
-    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
     marginBottom: ResponsiveTheme.spacing.xs,
@@ -1292,12 +1550,12 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -1312,10 +1570,10 @@ const styles = StyleSheet.create({
   },
 
   miniChart: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     height: rh(30),
-    width: '100%',
+    width: "100%",
     gap: rp(2),
     marginTop: ResponsiveTheme.spacing.sm,
   },
@@ -1347,7 +1605,7 @@ const styles = StyleSheet.create({
   achievementCard: {
     width: rw(140),
     marginRight: ResponsiveTheme.spacing.md,
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
 
   achievementEmoji: {
@@ -1360,13 +1618,13 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   achievementSubtitle: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Export Button Styles
@@ -1379,9 +1637,9 @@ const styles = StyleSheet.create({
   },
 
   exportButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   exportButtonIcon: {
@@ -1411,22 +1669,22 @@ const styles = StyleSheet.create({
   chartPlaceholder: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
   // Chart Legend Styles
   chartLegend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "center" as const,
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -1445,12 +1703,12 @@ const styles = StyleSheet.create({
   // Line Chart Styles
   lineChartContainer: {
     height: rh(200),
-    position: 'relative',
+    position: "relative",
     marginTop: ResponsiveTheme.spacing.md,
   },
 
   lineChartPoint: {
-    position: 'absolute',
+    position: "absolute",
     width: rw(10),
     height: rh(10),
   },
@@ -1459,23 +1717,23 @@ const styles = StyleSheet.create({
     width: rw(10),
     height: rh(10),
     borderRadius: ResponsiveTheme.borderRadius.full,
-    backgroundColor: '#FF6B9D',
+    backgroundColor: "#FF6B9D",
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.white,
   },
 
   lineChartLine: {
-    position: 'absolute',
+    position: "absolute",
     height: 2,
-    backgroundColor: '#FF6B9D',
+    backgroundColor: "#FF6B9D",
     top: rh(4),
     left: rw(5),
   },
 
   xAxisContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    position: 'absolute',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    position: "absolute",
     bottom: -ResponsiveTheme.spacing.lg,
     left: 0,
     right: 0,
@@ -1489,9 +1747,9 @@ const styles = StyleSheet.create({
 
   // Area Chart Styles
   areaChartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "flex-end",
     height: rh(180),
     marginTop: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.lg,
@@ -1499,14 +1757,14 @@ const styles = StyleSheet.create({
 
   areaChartBar: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    position: 'relative',
+    alignItems: "center" as const,
+    justifyContent: "flex-end" as const,
+    position: "relative",
     marginHorizontal: rp(2),
   },
 
   areaChartSegment: {
-    width: '100%',
+    width: "100%",
     borderTopLeftRadius: ResponsiveTheme.borderRadius.xs,
     borderTopRightRadius: ResponsiveTheme.borderRadius.xs,
   },
@@ -1520,9 +1778,9 @@ const styles = StyleSheet.create({
 
   // Bar Chart Styles
   barChartContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "space-between" as const,
+    alignItems: "flex-end",
     height: rh(180),
     marginTop: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.lg,
@@ -1530,28 +1788,28 @@ const styles = StyleSheet.create({
 
   barChartItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    alignItems: "center" as const,
+    justifyContent: "flex-end" as const,
     marginHorizontal: rp(2),
   },
 
   barChartBarContainer: {
-    width: '100%',
+    width: "100%",
     height: rh(140),
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    justifyContent: "flex-end" as const,
+    alignItems: "center" as const,
   },
 
   barChartBar: {
-    width: '80%',
+    width: "80%",
     borderRadius: ResponsiveTheme.borderRadius.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
     minHeight: rh(10),
   },
 
   barChartBarGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
 
   barChartLabel: {
@@ -1571,19 +1829,19 @@ const styles = StyleSheet.create({
   // Multi-Line Chart Styles
   multiLineChartContainer: {
     height: rh(200),
-    position: 'relative',
+    position: "relative",
     marginTop: ResponsiveTheme.spacing.md,
     paddingBottom: ResponsiveTheme.spacing.xl,
   },
 
   multiLineChartPointGroup: {
-    position: 'absolute',
+    position: "absolute",
     width: rw(12),
-    height: '100%',
+    height: "100%",
   },
 
   multiLineChartDot: {
-    position: 'absolute',
+    position: "absolute",
     width: rw(8),
     height: rh(8),
     borderRadius: ResponsiveTheme.borderRadius.full,

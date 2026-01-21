@@ -1,15 +1,21 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withSequence,
   interpolateColor,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 export interface ChipOption {
   id: string;
@@ -54,7 +60,7 @@ const Chip: React.FC<{
     const backgroundColor = interpolateColor(
       progress.value,
       [0, 1],
-      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]]
+      [ResponsiveTheme.colors.backgroundTertiary, gradient[0]],
     );
 
     return {
@@ -68,7 +74,7 @@ const Chip: React.FC<{
     const color = interpolateColor(
       progress.value,
       [0, 1],
-      [ResponsiveTheme.colors.text, ResponsiveTheme.colors.white]
+      [ResponsiveTheme.colors.text, ResponsiveTheme.colors.white],
     );
 
     return { color };
@@ -77,7 +83,7 @@ const Chip: React.FC<{
   const handlePress = () => {
     scale.value = withSequence(
       withSpring(0.9, { damping: 10, stiffness: 300 }),
-      withSpring(1, { damping: 10, stiffness: 300 })
+      withSpring(1, { damping: 10, stiffness: 300 }),
     );
     onPress();
   };
@@ -90,7 +96,7 @@ const Chip: React.FC<{
     >
       {isSelected && (
         <LinearGradient
-          colors={gradient}
+          colors={gradient as any}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.chipGradient}
@@ -109,14 +115,14 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
   onSelectionChange,
   multiSelect = true,
   animated = true,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   style,
 }) => {
   const handleChipPress = (id: string) => {
     if (multiSelect) {
       // Multi-select mode
       const newSelection = selectedIds.includes(id)
-        ? selectedIds.filter(selectedId => selectedId !== id)
+        ? selectedIds.filter((selectedId) => selectedId !== id)
         : [...selectedIds, id];
       onSelectionChange(newSelection);
     } else {
@@ -145,23 +151,23 @@ export const ChipSelector: React.FC<ChipSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   chipsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
   chip: {
-    position: 'relative',
+    position: "relative",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.full,
     borderWidth: 2,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -175,6 +181,6 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

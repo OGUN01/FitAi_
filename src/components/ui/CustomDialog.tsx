@@ -133,9 +133,9 @@ export const CustomDialog: React.FC<CustomDialogProps> = ({
                         onPress={action.onPress}
                         variant={getButtonVariant(action)}
                         style={
-                          index === actions.length - 1
-                            ? [styles.actionButton, styles.lastActionButton]
-                            : styles.actionButton
+                          (index === actions.length - 1
+                            ? { width: "100%" }
+                            : styles.actionButton) as any
                         }
                       />
                     ))}
@@ -175,8 +175,8 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   safeArea: {
@@ -186,15 +186,15 @@ const styles = StyleSheet.create({
 
   dialogCard: {
     padding: THEME.spacing.xl,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   iconContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginBottom: THEME.spacing.lg,
   },
 
@@ -237,6 +237,44 @@ const styles = StyleSheet.create({
 
   lastActionButton: {
     // Any special styling for the last button
+  },
+
+  // Workout complete styles
+  statsContainer: {
+    width: "100%",
+    marginBottom: THEME.spacing.xl,
+  },
+
+  statsTitle: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.text,
+    textAlign: "center",
+    marginBottom: THEME.spacing.lg,
+    lineHeight: 22,
+  },
+
+  statsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: THEME.spacing.lg,
+    backgroundColor: THEME.colors.backgroundSecondary,
+    borderRadius: THEME.borderRadius.lg,
+  },
+
+  statItem: {
+    alignItems: "center" as const,
+  },
+
+  statValue: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.primary,
+    marginBottom: THEME.spacing.xs,
+  },
+
+  statLabel: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
   },
 });
 
@@ -364,46 +402,3 @@ export const WorkoutCompleteDialog: React.FC<WorkoutCompleteDialogProps> = ({
     </Modal>
   );
 };
-
-// Additional styles for workout complete dialog
-const workoutCompleteStyles = StyleSheet.create({
-  statsContainer: {
-    width: "100%",
-    marginBottom: THEME.spacing.xl,
-  },
-
-  statsTitle: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    textAlign: "center",
-    marginBottom: THEME.spacing.lg,
-    lineHeight: 22,
-  },
-
-  statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: THEME.spacing.lg,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderRadius: THEME.borderRadius.lg,
-  },
-
-  statItem: {
-    alignItems: "center",
-  },
-
-  statValue: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.primary,
-    marginBottom: THEME.spacing.xs,
-  },
-
-  statLabel: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.textSecondary,
-  },
-});
-
-// Merge additional styles
-Object.assign(styles, workoutCompleteStyles);

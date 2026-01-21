@@ -254,8 +254,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     // Save partial data with current state
     if (onPartialSave) {
       onPartialSave({
-        personalInfo,
-        fitnessGoals,
+        personalInfo: personalInfo || undefined,
+        fitnessGoals: fitnessGoals || undefined,
         dietPreferences: data,
       });
     }
@@ -292,10 +292,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     // Save partial data with current state
     if (onPartialSave) {
       onPartialSave({
-        personalInfo: updatedPersonalInfo,
-        fitnessGoals: transformedFitnessGoals,
-        dietPreferences,
-        workoutPreferences: data,
+        personalInfo: updatedPersonalInfo || undefined,
+        fitnessGoals: transformedFitnessGoals || undefined,
+        dietPreferences: dietPreferences || undefined,
+        workoutPreferences: data || undefined,
       });
     }
 
@@ -314,10 +314,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     // Save partial data with current state
     if (onPartialSave) {
       onPartialSave({
-        personalInfo,
-        fitnessGoals,
-        dietPreferences,
-        workoutPreferences,
+        personalInfo: personalInfo || undefined,
+        fitnessGoals: fitnessGoals || undefined,
+        dietPreferences: dietPreferences || undefined,
+        workoutPreferences: workoutPreferences || undefined,
         bodyAnalysis: data,
       });
     }
@@ -337,10 +337,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     // Save partial data with current state
     if (onPartialSave) {
       onPartialSave({
-        personalInfo,
-        fitnessGoals,
-        dietPreferences,
-        workoutPreferences,
+        personalInfo: personalInfo || undefined,
+        fitnessGoals: fitnessGoals || undefined,
+        dietPreferences: dietPreferences || undefined,
+        workoutPreferences: workoutPreferences || undefined,
         bodyAnalysis: emptyBodyAnalysis,
       });
     }
@@ -378,10 +378,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       console.log(
         "💾 Saving complete onboarding data (guest or authenticated)",
       );
-      const result = await saveOnboardingData({
-        ...completeData,
-        isComplete: true,
-      });
+      const result = await saveOnboardingData(completeData);
 
       if (!result.success) {
         console.warn("Failed to save onboarding data:", result.error);

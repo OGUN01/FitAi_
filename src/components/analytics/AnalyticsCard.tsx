@@ -1,20 +1,21 @@
 // Analytics Card Component
 // Displays key metrics and insights in a beautiful card format
 
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface AnalyticsCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: "up" | "down" | "stable";
   trendValue?: string;
   icon?: string;
+  iconName?: string; // Added for compatibility with usage in AnalyticsScreen
   color?: string;
   onPress?: () => void;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
 const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
@@ -24,38 +25,38 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   trend,
   trendValue,
   icon,
-  color = 'blue',
+  color = "blue",
   onPress,
-  size = 'medium'
+  size = "medium",
 }) => {
   const getBackgroundColor = () => {
     const colors = {
       blue: THEME.colors.primary,
-      green: '#10B981',
-      purple: '#8B5CF6',
-      orange: '#F59E0B',
-      red: '#EF4444',
-      gray: '#6B7280',
+      green: "#10B981",
+      purple: "#8B5CF6",
+      orange: "#F59E0B",
+      red: "#EF4444",
+      gray: "#6B7280",
     };
     return colors[color as keyof typeof colors] || colors.blue;
   };
 
   const getTrendIcon = () => {
     switch (trend) {
-      case 'up':
-        return '📈';
-      case 'down':
-        return '📉';
-      case 'stable':
-        return '➡️';
+      case "up":
+        return "📈";
+      case "down":
+        return "📉";
+      case "stable":
+        return "➡️";
       default:
-        return '';
+        return "";
     }
   };
 
   const getSizeStyles = () => {
     switch (size) {
-      case 'small':
+      case "small":
         return {
           container: { padding: 16, minHeight: 80 },
           title: { fontSize: 14 },
@@ -63,7 +64,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
           subtitle: { fontSize: 12 },
           icon: { fontSize: 24 },
         };
-      case 'large':
+      case "large":
         return {
           container: { padding: 24, minHeight: 140 },
           title: { fontSize: 18 },
@@ -87,42 +88,34 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
   const cardStyle = [
     styles.card,
     sizeStyles.container,
-    { backgroundColor: getBackgroundColor() }
+    { backgroundColor: getBackgroundColor() },
   ];
 
   const CardContent = () => (
     <View style={cardStyle}>
       {/* Header with title and icon */}
       <View style={styles.header}>
-        <Text style={[styles.title, sizeStyles.title]}>
-          {title}
-        </Text>
-        
-        {icon && (
-          <Text style={[styles.icon, sizeStyles.icon]}>
-            {icon}
-          </Text>
-        )}
+        <Text style={[styles.title, sizeStyles.title]}>{title}</Text>
+
+        {icon && <Text style={[styles.icon, sizeStyles.icon]}>{icon}</Text>}
       </View>
 
       {/* Main value */}
       <Text style={[styles.value, sizeStyles.value]}>
-        {typeof value === 'number' && value % 1 !== 0 ? value.toFixed(1) : value}
+        {typeof value === "number" && value % 1 !== 0
+          ? value.toFixed(1)
+          : value}
       </Text>
 
       {/* Subtitle and trend */}
       <View style={styles.footer}>
         {subtitle && (
-          <Text style={[styles.subtitle, sizeStyles.subtitle]}>
-            {subtitle}
-          </Text>
+          <Text style={[styles.subtitle, sizeStyles.subtitle]}>{subtitle}</Text>
         )}
-        
+
         {trend && trendValue && (
           <View style={styles.trendContainer}>
-            <Text style={styles.trendIcon}>
-              {getTrendIcon()}
-            </Text>
+            <Text style={styles.trendIcon}>{getTrendIcon()}</Text>
             <Text style={[styles.trendValue, sizeStyles.subtitle]}>
               {trendValue}
             </Text>
@@ -146,7 +139,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -154,45 +147,45 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   title: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '500',
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "500",
   },
   icon: {
-    color: '#fff',
+    color: "#fff",
   },
   value: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     marginBottom: 4,
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   trendIcon: {
     fontSize: 14,
     marginRight: 4,
-    color: '#fff',
+    color: "#fff",
   },
   trendValue: {
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: "rgba(255, 255, 255, 0.9)",
   },
   pressable: {
     opacity: 1,

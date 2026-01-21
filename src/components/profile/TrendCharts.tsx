@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   chartTitleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -442,8 +442,8 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(8),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   chartTitle: {
     fontSize: rf(15),
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   legendItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   legendDot: {
@@ -481,12 +481,12 @@ const styles = StyleSheet.create({
   },
   barItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   barWrapper: {
     flex: 1,
     width: "65%",
-    justifyContent: "flex-end",
+    justifyContent: "flex-end" as const,
   },
   bar: {
     width: "100%",
@@ -513,8 +513,8 @@ const styles = StyleSheet.create({
   // Empty chart state
   emptyChart: {
     height: rh(120),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
   emptyChartText: {
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   },
   yAxisScale: {
     width: rw(40),
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     paddingRight: ResponsiveTheme.spacing.xs,
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: ResponsiveTheme.spacing.lg,
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
   },
   gridLine: {
     height: 1,
@@ -570,8 +570,8 @@ const styles = StyleSheet.create({
   linePointColumn: {
     flex: 1,
     height: "100%",
-    alignItems: "center",
-    justifyContent: "flex-end",
+    alignItems: "center" as const,
+    justifyContent: "flex-end" as const,
     position: "relative",
   },
   pointGuideLine: {
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   linePointWrapper: {
     position: "absolute",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   linePoint: {
     width: rw(10),
@@ -625,12 +625,12 @@ const styles = StyleSheet.create({
   },
   areaBarGroup: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   areaBarWrapper: {
     flex: 1,
     width: "70%",
-    justifyContent: "flex-end",
+    justifyContent: "flex-end" as const,
     position: "relative",
   },
   areaBar: {

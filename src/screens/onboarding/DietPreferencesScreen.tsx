@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   },
 
   dietTypeContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
   },
 

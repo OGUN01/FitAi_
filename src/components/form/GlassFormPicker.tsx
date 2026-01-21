@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   optionsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
   optionsGridSingle: {
@@ -223,14 +223,14 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.08)",
     overflow: "hidden",
     minHeight: rw(52),
-    justifyContent: "center",
+    justifyContent: "center" as const,
   },
   optionButtonSelected: {
     borderColor: "rgba(102, 126, 234, 0.4)",
   },
   optionContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
   },
@@ -239,8 +239,8 @@ const styles = StyleSheet.create({
     height: rw(32),
     borderRadius: rw(16),
     backgroundColor: "rgba(255, 255, 255, 0.06)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.sm,
   },
   optionIconSelected: {
@@ -268,12 +268,12 @@ const styles = StyleSheet.create({
     height: rw(22),
     borderRadius: rw(11),
     backgroundColor: "rgba(102, 126, 234, 0.2)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   errorContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginTop: ResponsiveTheme.spacing.sm,
     marginLeft: ResponsiveTheme.spacing.xs,

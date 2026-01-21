@@ -31,6 +31,7 @@ import { ResponsiveTheme } from "../../utils/constants";
 import { Button, THEME } from "../../components/ui";
 import { Camera } from "../../components/advanced/Camera";
 import { aiService } from "../../ai";
+import { supabase } from "../../services/supabase";
 import {
   useUserStore,
   useNutritionStore,
@@ -45,7 +46,7 @@ import Constants from "expo-constants";
 const isExpoGo =
   Constants.appOwnership === "expo" ||
   Constants.executionEnvironment === "storeClient" ||
-  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+  (__DEV__ && !Constants.isDevice && !Constants.platform?.web);
 
 let useWaterReminders: any = null;
 if (!isExpoGo) {
@@ -836,15 +837,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
       // Analyze food with the selected meal type (Workers backend handles API keys)
       console.log("[DEBUG] Calling food recognition service...");
+      const dietaryRestrictions =
+        profile?.dietPreferences?.allergies || undefined;
       const result = await foodRecognitionService.recognizeFood(
         imageUri,
         selectedMealType,
-        profile
-          ? {
-              personalInfo: profile.personalInfo,
-              fitnessGoals: profile.fitnessGoals,
-            }
-          : undefined,
+        dietaryRestrictions,
       );
       console.log("[ANALYTICS] Food recognition result:", result);
 
@@ -1277,9 +1275,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
       // Handle special action types
       let actualMealType = mealType;
-      if (["meal_prep", "goal_focused", "quick_easy"].includes(mealType)) {
+      const specialActionType = [
+        "meal_prep",
+        "goal_focused",
+        "quick_easy",
+      ].includes(mealType)
+        ? mealType
+        : undefined;
+      if (specialActionType) {
         actualMealType = "lunch"; // Default to lunch for special actions
-        preferences.specialAction = mealType;
+        // Note: specialAction is handled in the custom options if needed
+        (preferences as any).specialAction = specialActionType;
       }
 
       const response = await aiService.generateMeal(
@@ -1824,6 +1830,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     const swipePosition = getSwipePosition(mealId);
     const SWIPE_THRESHOLD = -80; // Minimum swipe distance to reveal actions
 
+    // Track current value using a ref
+    let currentValue = 0;
+    swipePosition.addListener(({ value }) => {
+      currentValue = value;
+    });
+
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
         // Only respond to horizontal swipes
@@ -1836,7 +1848,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         // Only allow left swipe (negative dx)
         if (gestureState.dx < 0) {
           swipePosition.setValue(gestureState.dx);
-        } else if (gestureState.dx > 0 && swipePosition._value < 0) {
+        } else if (gestureState.dx > 0 && currentValue < 0) {
           // Allow swiping back to original position
           swipePosition.setValue(Math.max(SWIPE_THRESHOLD, gestureState.dx));
         }
@@ -2490,7 +2502,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     <AuroraSpinner size="sm" theme="white" />
                   ) : (
                     <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center" as const,
+                      }}
                     >
                       <Ionicons
                         name="restaurant-outline"
@@ -2518,7 +2533,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     <AuroraSpinner size="sm" theme="white" />
                   ) : (
                     <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center" as const,
+                      }}
                     >
                       <Ionicons
                         name="sparkles-outline"
@@ -2536,7 +2554,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   onPress={() => setShowTestComponent(true)}
                   scaleValue={0.95}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center" as const,
+                    }}
+                  >
                     <Ionicons
                       name="flask-outline"
                       size={rf(12)}
@@ -2552,7 +2575,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   onPress={runQuickActionsTests}
                   scaleValue={0.95}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center" as const,
+                    }}
+                  >
                     <Ionicons
                       name="checkmark-outline"
                       size={rf(12)}
@@ -2568,7 +2596,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   onPress={runFoodRecognitionE2ETests}
                   scaleValue={0.95}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center" as const,
+                    }}
+                  >
                     <Ionicons
                       name="flask-outline"
                       size={rf(12)}
@@ -2592,7 +2625,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   }}
                   scaleValue={0.95}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center" as const,
+                    }}
+                  >
                     <Ionicons
                       name="flask-outline"
                       size={rf(12)}
@@ -2636,7 +2674,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 blurIntensity="light"
                 borderRadius="lg"
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="warning-outline"
                     size={rf(16)}
@@ -2665,7 +2708,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 blurIntensity="light"
                 borderRadius="lg"
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="lock-closed-outline"
                     size={rf(16)}
@@ -2689,9 +2737,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 <View style={styles.calorieOverviewCenter}>
                   <LargeProgressRing
                     progress={
-                      (nutritionTargets.calories.current /
-                        nutritionTargets.calories.target) *
-                      100
+                      nutritionTargets.calories.target
+                        ? (nutritionTargets.calories.current /
+                            nutritionTargets.calories.target) *
+                          100
+                        : 0
                     }
                     size={200}
                     strokeWidth={12}
@@ -2703,11 +2753,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   >
                     <View style={styles.calorieCenter}>
                       <Text style={styles.caloriesRemaining}>
-                        {Math.max(
-                          0,
-                          nutritionTargets.calories.target -
-                            nutritionTargets.calories.current,
-                        )}
+                        {nutritionTargets.calories.target
+                          ? Math.max(
+                              0,
+                              nutritionTargets.calories.target -
+                                nutritionTargets.calories.current,
+                            )
+                          : 0}
                       </Text>
                       <Text style={styles.caloriesLabel}>Calories left</Text>
                       <Text style={styles.caloriesTarget}>
@@ -2789,7 +2841,18 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                               : []),
                             ...(isToday ? [styles.todayDayButton] : []),
                           ]}
-                          onPress={() => setSelectedDay(day)}
+                          onPress={() =>
+                            setSelectedDay(
+                              day as
+                                | "sunday"
+                                | "monday"
+                                | "tuesday"
+                                | "wednesday"
+                                | "thursday"
+                                | "friday"
+                                | "saturday",
+                            )
+                          }
                           scaleValue={0.95}
                         >
                           <Text
@@ -2864,10 +2927,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                         onCompleteMeal={() => completeMealPreparation(meal)}
                         progress={progress?.progress}
                         macroTargets={{
-                          protein: macroTargets.protein,
-                          carbs: macroTargets.carbs,
-                          fat: macroTargets.fat,
-                          calories: calorieTarget,
+                          protein: macroTargets.protein ?? 0,
+                          carbs: macroTargets.carbs ?? 0,
+                          fat: macroTargets.fat ?? 0,
+                          calories: calorieTarget ?? 0,
                         }}
                         style={{ marginBottom: ResponsiveTheme.spacing.md }}
                       />
@@ -2978,7 +3041,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                         >
                           <GlassCard
                             elevation={3}
-                            blurIntensity="medium"
+                            blurIntensity="default"
                             padding="none"
                             borderRadius="xl"
                             style={styles.suggestionCard}
@@ -3077,7 +3140,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                         >
                           <GlassCard
                             elevation={3}
-                            blurIntensity="medium"
+                            blurIntensity="default"
                             padding="lg"
                             borderRadius="xl"
                             style={styles.suggestionCard}
@@ -3338,7 +3401,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 <View
                   style={{
                     flexDirection: "row",
-                    alignItems: "center",
+                    alignItems: "center" as const,
                     marginBottom: ResponsiveTheme.spacing.sm,
                   }}
                 >
@@ -3496,17 +3559,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                         style={[
                           styles.progressFill,
                           {
-                            width: `${Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100)}%`,
+                            width: `${nutritionTargets.calories.target ? Math.min((nutritionTargets.calories.current / nutritionTargets.calories.target) * 100, 100) : 0}%`,
                           },
                         ]}
                       />
                     </View>
                     <Text style={styles.remainingText}>
-                      {Math.max(
-                        nutritionTargets.calories.target -
-                          nutritionTargets.calories.current,
-                        0,
-                      )}{" "}
+                      {nutritionTargets.calories.target
+                        ? Math.max(
+                            nutritionTargets.calories.target -
+                              nutritionTargets.calories.current,
+                            0,
+                          )
+                        : 0}{" "}
                       cal remaining
                     </Text>
                   </View>
@@ -3839,7 +3904,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         >
           <View style={styles.testContainer}>
             <View style={styles.testHeader}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View
+                style={{ flexDirection: "row", alignItems: "center" as const }}
+              >
                 <Ionicons
                   name="flask-outline"
                   size={rf(20)}
@@ -3938,7 +4005,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 onPress={() => handleContextMenuAction("edit")}
                 scaleValue={0.95}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="pencil-outline"
                     size={rf(16)}
@@ -3955,7 +4027,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 onPress={() => handleContextMenuAction("duplicate")}
                 scaleValue={0.95}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="copy-outline"
                     size={rf(16)}
@@ -3972,7 +4049,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 onPress={() => handleContextMenuAction("details")}
                 scaleValue={0.95}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="stats-chart-outline"
                     size={rf(16)}
@@ -3989,7 +4071,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 onPress={() => handleContextMenuAction("delete")}
                 scaleValue={0.95}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                  }}
+                >
                   <Ionicons
                     name="trash-outline"
                     size={rf(16)}
@@ -4017,7 +4104,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 <>
                   <View style={styles.mealModalHeader}>
                     <View
-                      style={{ flexDirection: "row", alignItems: "center" }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center" as const,
+                      }}
                     >
                       <Ionicons
                         name="restaurant-outline"
@@ -4068,7 +4158,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     <View style={styles.mealModalDetails}>
                       <View style={styles.mealModalDetailItem}>
                         <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center" as const,
+                          }}
                         >
                           <Ionicons
                             name="time-outline"
@@ -4091,7 +4184,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
                       <View style={styles.mealModalDetailItem}>
                         <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center" as const,
+                          }}
                         >
                           <Ionicons
                             name="flame-outline"
@@ -4114,7 +4210,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
                       <View style={styles.mealModalDetailItem}>
                         <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center" as const,
+                          }}
                         >
                           <Ionicons
                             name="cart-outline"
@@ -4241,8 +4340,8 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
@@ -4256,7 +4355,7 @@ const styles = StyleSheet.create({
 
   headerButtons: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: rp(12),
   },
 
@@ -4266,7 +4365,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(8),
     borderRadius: rs(20),
     minWidth: rw(70),
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   aiButtonDisabled: {
@@ -4284,8 +4383,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   addIcon: {
@@ -4297,8 +4396,8 @@ const styles = StyleSheet.create({
   // DateSelector Styles
   dateSelector: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginTop: ResponsiveTheme.spacing.md,
     gap: ResponsiveTheme.spacing.md,
   },
@@ -4308,8 +4407,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   dateNavIcon: {
@@ -4321,7 +4420,7 @@ const styles = StyleSheet.create({
   dateBadge: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   dateText: {
@@ -4350,8 +4449,8 @@ const styles = StyleSheet.create({
 
   sectionHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -4387,7 +4486,7 @@ const styles = StyleSheet.create({
   },
 
   caloriesConsumed: {
-    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
@@ -4422,11 +4521,11 @@ const styles = StyleSheet.create({
 
   macrosGrid: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
   },
 
   macroItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
     flex: 1,
   },
 
@@ -4457,7 +4556,7 @@ const styles = StyleSheet.create({
 
   mealHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     alignItems: "flex-start",
   },
 
@@ -4467,7 +4566,7 @@ const styles = StyleSheet.create({
 
   mealTitleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
     position: "relative",
   },
@@ -4493,8 +4592,8 @@ const styles = StyleSheet.create({
     width: rw(20),
     height: rh(20),
     borderRadius: rs(10),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   mealAIText: {
@@ -4536,7 +4635,7 @@ const styles = StyleSheet.create({
   },
 
   mealCalories: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginLeft: ResponsiveTheme.spacing.md,
   },
 
@@ -4574,7 +4673,7 @@ const styles = StyleSheet.create({
   },
   quickActionPillGradient: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: rw(16),
@@ -4586,8 +4685,8 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(14),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
   quickActionPillText: {
     fontSize: rf(12),
@@ -4608,7 +4707,7 @@ const styles = StyleSheet.create({
 
   actionCard: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   actionIcon: {
@@ -4629,7 +4728,7 @@ const styles = StyleSheet.create({
 
   waterHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -4664,7 +4763,7 @@ const styles = StyleSheet.create({
 
   waterButtons: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   bottomSpacing: {
@@ -4713,7 +4812,7 @@ const styles = StyleSheet.create({
 
   searchContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -4774,7 +4873,7 @@ const styles = StyleSheet.create({
 
   foodMacros: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
   },
 
   foodMacro: {
@@ -4785,7 +4884,7 @@ const styles = StyleSheet.create({
   // Enhanced meal card styles
   mealNutrition: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginLeft: ResponsiveTheme.spacing.lg,
     marginTop: ResponsiveTheme.spacing.xs,
   },
@@ -4803,7 +4902,7 @@ const styles = StyleSheet.create({
 
   mealRating: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginLeft: ResponsiveTheme.spacing.lg,
     marginTop: ResponsiveTheme.spacing.xs,
   },
@@ -4830,8 +4929,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   statusIcon: {
@@ -4839,7 +4938,7 @@ const styles = StyleSheet.create({
   },
 
   loadingContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     paddingVertical: ResponsiveTheme.spacing.xl,
   },
 
@@ -4852,7 +4951,7 @@ const styles = StyleSheet.create({
   errorCard: {
     padding: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   errorText: {
@@ -4886,7 +4985,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
     position: "relative" as const,
-    alignItems: "center" as const,
+    alignItems: "center" as const as const,
   },
 
   todayDayButton: {
@@ -4932,7 +5031,7 @@ const styles = StyleSheet.create({
 
   emptyCard: {
     padding: ResponsiveTheme.spacing.xl,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   emptyText: {
@@ -4945,7 +5044,7 @@ const styles = StyleSheet.create({
   promptCard: {
     margin: ResponsiveTheme.spacing.md,
     padding: ResponsiveTheme.spacing.xl,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   promptTitle: {
@@ -4973,7 +5072,7 @@ const styles = StyleSheet.create({
   },
 
   aiMealContent: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   aiMealIcon: {
@@ -5000,13 +5099,13 @@ const styles = StyleSheet.create({
   mealTypeButtons: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   mealTypeButton: {
-    alignItems: "center",
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.md,
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -5066,8 +5165,8 @@ const styles = StyleSheet.create({
 
   testHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     borderBottomWidth: 1,
@@ -5085,8 +5184,8 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: rs(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   testCloseText: {
@@ -5099,8 +5198,8 @@ const styles = StyleSheet.create({
   mealModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -5118,8 +5217,8 @@ const styles = StyleSheet.create({
 
   mealModalHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
@@ -5136,8 +5235,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   mealModalCloseText: {
@@ -5164,8 +5263,8 @@ const styles = StyleSheet.create({
 
   mealModalDetailItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    justifyContent: "space-between" as const,
+    alignItems: "center" as const,
     marginBottom: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
@@ -5202,7 +5301,7 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   mealModalCancelText: {
@@ -5216,7 +5315,7 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: ResponsiveTheme.colors.primary,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   mealModalStartText: {
@@ -5227,18 +5326,18 @@ const styles = StyleSheet.create({
 
   // Aurora Calorie Overview Styles
   calorieOverviewCenter: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginBottom: ResponsiveTheme.spacing.xl,
   },
 
   calorieCenter: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   caloriesRemaining: {
-    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
   },
@@ -5260,7 +5359,7 @@ const styles = StyleSheet.create({
   },
 
   macroStat: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   macroTarget: {
@@ -5292,7 +5391,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     paddingRight: ResponsiveTheme.spacing.md,
   },
@@ -5301,8 +5400,8 @@ const styles = StyleSheet.create({
     width: rw(70),
     height: "100%",
     backgroundColor: "#4ECDC4",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -5310,8 +5409,8 @@ const styles = StyleSheet.create({
     width: rw(70),
     height: "100%",
     backgroundColor: "#FF6B6B",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
 
@@ -5345,7 +5444,7 @@ const styles = StyleSheet.create({
 
   mealTimelineContent: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   mealImageContainer: {
@@ -5357,8 +5456,8 @@ const styles = StyleSheet.create({
     height: rh(70),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: rp(3),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   mealImageInner: {
@@ -5366,8 +5465,8 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   mealImageEmoji: {
@@ -5412,8 +5511,8 @@ const styles = StyleSheet.create({
     height: rh(40),
     borderRadius: ResponsiveTheme.borderRadius.full,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     marginLeft: ResponsiveTheme.spacing.sm,
   },
 
@@ -5459,13 +5558,13 @@ const styles = StyleSheet.create({
 
   suggestionCardBack: {
     height: rh(350),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   cardBackContent: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   cardBackIcon: {
@@ -5490,8 +5589,8 @@ const styles = StyleSheet.create({
   suggestionImageContainer: {
     height: rh(150),
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     position: "relative",
   },
 
@@ -5501,8 +5600,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   suggestionImageEmoji: {
@@ -5538,7 +5637,7 @@ const styles = StyleSheet.create({
   },
 
   suggestionMacroItem: {
-    alignItems: "center",
+    alignItems: "center" as const,
   },
 
   suggestionMacroValue: {
@@ -5560,8 +5659,8 @@ const styles = StyleSheet.create({
 
   addToPlanButtonGradient: {
     paddingVertical: ResponsiveTheme.spacing.md,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
 
   addToPlanButtonText: {
@@ -5573,12 +5672,12 @@ const styles = StyleSheet.create({
   // Aurora Water Tracker Styles
   waterTrackerContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     marginTop: ResponsiveTheme.spacing.md,
   },
 
   waterGlassContainer: {
-    alignItems: "center",
+    alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.xl,
   },
 
@@ -5589,7 +5688,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(78, 205, 196, 0.1)",
     position: "relative",
     overflow: "hidden",
-    justifyContent: "flex-end",
+    justifyContent: "flex-end" as const,
   },
 
   waterFill: {
@@ -5626,7 +5725,7 @@ const styles = StyleSheet.create({
   },
 
   waterAmountConsumed: {
-    fontSize: ResponsiveTheme.fontSize.xxxl,
+    fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: "#4ECDC4",
     marginBottom: ResponsiveTheme.spacing.xs,
@@ -5650,7 +5749,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: "rgba(78, 205, 196, 0.2)",
-    alignItems: "center",
+    alignItems: "center" as const,
     borderWidth: 1,
     borderColor: "rgba(78, 205, 196, 0.3)",
     overflow: "hidden",
@@ -5698,7 +5797,7 @@ const styles = StyleSheet.create({
   // Weekly Nutrition Trends Chart Styles
   chartLegend: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "center" as const,
     gap: ResponsiveTheme.spacing.lg,
     marginTop: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -5706,7 +5805,7 @@ const styles = StyleSheet.create({
 
   legendItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -5724,7 +5823,7 @@ const styles = StyleSheet.create({
 
   weeklyNutritionChart: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-between" as const,
     alignItems: "flex-end",
     height: rh(200),
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -5733,8 +5832,8 @@ const styles = StyleSheet.create({
 
   weeklyNutritionEmptyState: {
     height: rh(200),
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -5753,7 +5852,7 @@ const styles = StyleSheet.create({
 
   emptyStateHint: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center" as const,
     gap: ResponsiveTheme.spacing.xs,
     marginTop: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
@@ -5770,8 +5869,8 @@ const styles = StyleSheet.create({
 
   chartDayColumn: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
+    alignItems: "center" as const,
+    justifyContent: "flex-end" as const,
   },
 
   barsGroup: {
@@ -5784,7 +5883,7 @@ const styles = StyleSheet.create({
   barContainer: {
     width: rw(8),
     height: rh(160),
-    justifyContent: "flex-end",
+    justifyContent: "flex-end" as const,
   },
 
   macroBar: {
@@ -5814,8 +5913,8 @@ const styles = StyleSheet.create({
 
   averageLine: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     marginTop: ResponsiveTheme.spacing.md,
   },
 
@@ -5853,8 +5952,8 @@ const styles = StyleSheet.create({
   fabGradient: {
     width: "100%",
     height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
   },
 
   fabIcon: {

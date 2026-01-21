@@ -18,7 +18,11 @@
  * Date: 2025-12-30
  */
 
-import { detectClimate, detectEthnicity, detectBestBMRFormula } from './autoDetection';
+import {
+  detectClimate,
+  detectEthnicity,
+  detectBestBMRFormula,
+} from "./autoDetection";
 import {
   getBMRCalculator,
   getBMICalculator,
@@ -30,7 +34,7 @@ import {
   heartRateCalculator,
   vo2MaxCalculator,
   healthScoreCalculator,
-} from './calculators';
+} from "./calculators";
 import type {
   UserProfile,
   ActivityLevel,
@@ -38,7 +42,7 @@ import type {
   ClimateType,
   EthnicityType,
   BMRFormula,
-} from './types';
+} from "./types";
 
 // ============================================================================
 // TYPES FOR FACADE
@@ -50,7 +54,7 @@ export interface ComprehensiveHealthMetrics {
   bmi: number;
   bmiClassification: {
     category: string;
-    healthRisk: 'low' | 'moderate' | 'high' | 'very_high';
+    healthRisk: "low" | "moderate" | "high" | "very_high";
     ethnicity: EthnicityType;
     message: string;
   };
@@ -109,7 +113,7 @@ export interface ComprehensiveHealthMetrics {
 
   fatLossValidation?: {
     valid: boolean;
-    severity: 'success' | 'warning' | 'error';
+    severity: "success" | "warning" | "error";
     message: string;
     weeklyRate: number;
   } | null;
@@ -144,7 +148,7 @@ export interface ComprehensiveHealthMetrics {
 }
 
 export interface GoalInput {
-  type: 'fat_loss' | 'muscle_gain' | 'maintenance' | 'recomp';
+  type: "fat_loss" | "muscle_gain" | "maintenance" | "recomp";
   targetWeight?: number;
   targetGain?: number;
   timelineWeeks?: number;
@@ -153,7 +157,7 @@ export interface GoalInput {
 
 export interface GoalValidationResult {
   valid: boolean;
-  severity: 'success' | 'warning' | 'error';
+  severity: "success" | "warning" | "error";
   message: string;
   suggestions?: string[];
   adjustedTimeline?: number;
@@ -170,7 +174,7 @@ export class HealthCalculatorFacade {
    * This is the main method - one call does everything
    */
   static calculateAllMetrics(user: UserProfile): ComprehensiveHealthMetrics {
-    console.log('[FACADE] Starting comprehensive health calculations for user');
+    console.log("[FACADE] Starting comprehensive health calculations for user");
 
     // ========================================================================
     // STEP 1: AUTO-DETECT CONTEXT
@@ -180,7 +184,7 @@ export class HealthCalculatorFacade {
     const ethnicityResult = detectEthnicity(user.country);
     const formulaSelection = detectBestBMRFormula(user);
 
-    console.log('[FACADE] Context detected:', {
+    console.log("[FACADE] Context detected:", {
       climate: climateResult.climate,
       ethnicity: ethnicityResult.ethnicity,
       bmrFormula: formulaSelection.formula,
@@ -192,7 +196,7 @@ export class HealthCalculatorFacade {
 
     const bmrCalc = getBMRCalculator(
       !!user.bodyFat,
-      user.fitnessLevel === 'elite'
+      user.fitnessLevel === "elite",
     );
     const bmiCalc = getBMICalculator(ethnicityResult.ethnicity as any);
 
@@ -204,26 +208,34 @@ export class HealthCalculatorFacade {
     const bmi = bmiCalc.calculate(user.weight, user.height);
     const bmiClass = bmiCalc.getClassification(bmi);
 
-    const activityLevel: ActivityLevel = user.activityLevel || 'moderate';
-    const tdee = tdeeCalculator.calculate(bmr, activityLevel, climateResult.climate);
-    const water = waterCalculator.calculate(user.weight, activityLevel, climateResult.climate);
+    const activityLevel: ActivityLevel = user.activityLevel || "moderate";
+    const tdee = tdeeCalculator.calculate(
+      bmr,
+      activityLevel,
+      climateResult.climate,
+    );
+    const water = waterCalculator.calculate(
+      user.weight,
+      activityLevel,
+      climateResult.climate,
+    );
 
-    console.log('[FACADE] Core metrics calculated:', { bmr, bmi, tdee, water });
+    console.log("[FACADE] Core metrics calculated:", { bmr, bmi, tdee, water });
 
     // ========================================================================
     // STEP 4: CALCULATE MACROS
     // ========================================================================
 
-    const dietType: DietType = user.dietType || 'omnivore';
-    const goalType = (user.goal || 'maintenance') as any;
+    const dietType: DietType = user.dietType || "omnivore";
+    const goalType = (user.goal || "maintenance") as any;
     const protein = macroCalculator.calculateProtein(
       user.weight,
       goalType,
-      dietType
+      dietType,
     );
     const macros = macroCalculator.calculateMacroSplit(tdee, protein, dietType);
 
-    console.log('[FACADE] Macros calculated:', { protein, macros });
+    console.log("[FACADE] Macros calculated:", { protein, macros });
 
     // ========================================================================
     // STEP 5: ADVANCED CALCULATIONS (OPTIONAL)
@@ -237,11 +249,11 @@ export class HealthCalculatorFacade {
         hrZones = heartRateCalculator.calculateZones(
           user.age,
           user.gender,
-          restingHR
+          restingHR,
         );
-        console.log('[FACADE] Heart rate zones calculated');
+        console.log("[FACADE] Heart rate zones calculated");
       } catch (error) {
-        console.warn('[FACADE] Failed to calculate heart rate zones:', error);
+        console.warn("[FACADE] Failed to calculate heart rate zones:", error);
       }
     }
 
@@ -250,9 +262,9 @@ export class HealthCalculatorFacade {
     if (restingHR) {
       try {
         vo2max = vo2MaxCalculator.estimateVO2Max(user, restingHR);
-        console.log('[FACADE] VO2 max estimated:', vo2max?.vo2max);
+        console.log("[FACADE] VO2 max estimated:", vo2max?.vo2max);
       } catch (error) {
-        console.warn('[FACADE] Failed to estimate VO2 max:', error);
+        console.warn("[FACADE] Failed to estimate VO2 max:", error);
       }
     }
 
@@ -268,9 +280,9 @@ export class HealthCalculatorFacade {
         proteinTarget: protein,
         vo2max: vo2max?.vo2max,
       });
-      console.log('[FACADE] Health score calculated:', healthScore.totalScore);
+      console.log("[FACADE] Health score calculated:", healthScore.totalScore);
     } catch (error) {
-      console.warn('[FACADE] Failed to calculate health score:', error);
+      console.warn("[FACADE] Failed to calculate health score:", error);
     }
 
     // ========================================================================
@@ -279,12 +291,12 @@ export class HealthCalculatorFacade {
 
     let muscleGainLimits = null;
     const userGoal = user.goal;
-    if (userGoal === 'muscle_gain') {
+    if (userGoal === "muscle_gain") {
       try {
         muscleGainLimits = muscleGainCalculator.calculateMaxGainRate(user);
-        console.log('[FACADE] Muscle gain limits calculated');
+        console.log("[FACADE] Muscle gain limits calculated");
       } catch (error) {
-        console.warn('[FACADE] Failed to calculate muscle gain limits:', error);
+        console.warn("[FACADE] Failed to calculate muscle gain limits:", error);
       }
     }
 
@@ -349,29 +361,35 @@ export class HealthCalculatorFacade {
         },
         water: {
           base_ml: user.weight * 33,
-          climate_ml: this.getClimateWaterBonus(climateResult.climate, user.weight),
+          climate_ml: this.getClimateWaterBonus(
+            climateResult.climate,
+            user.weight,
+          ),
           activity_ml: this.getActivityWaterBonus(activityLevel, user.weight),
           final_ml: water,
         },
       },
     };
 
-    console.log('[FACADE] ✅ All metrics calculated successfully');
+    console.log("[FACADE] ✅ All metrics calculated successfully");
     return result;
   }
 
   /**
    * Validate a user's fitness goal
    */
-  static validateGoal(user: UserProfile, goal: GoalInput): GoalValidationResult {
-    console.log('[FACADE] Validating goal:', goal.type);
+  static validateGoal(
+    user: UserProfile,
+    goal: GoalInput,
+  ): GoalValidationResult {
+    console.log("[FACADE] Validating goal:", goal.type);
 
-    if (goal.type === 'fat_loss') {
+    if (goal.type === "fat_loss") {
       if (!goal.targetWeight || !goal.timelineWeeks) {
         return {
           valid: false,
-          severity: 'error',
-          message: 'Fat loss goal requires target weight and timeline',
+          severity: "error",
+          message: "Fat loss goal requires target weight and timeline",
         };
       }
 
@@ -380,47 +398,47 @@ export class HealthCalculatorFacade {
         user.weight,
         goal.targetWeight,
         goal.timelineWeeks,
-        bmi
+        bmi,
       );
 
       return {
         valid: validation.valid,
         severity: validation.severity,
         message: validation.message,
-        suggestions: validation.suggestions,
+        suggestions: validation.suggestion ? [validation.suggestion] : [],
         adjustedTimeline: validation.adjustedTimeline,
         weeklyRate: validation.weeklyRate,
       };
     }
 
-    if (goal.type === 'muscle_gain') {
+    if (goal.type === "muscle_gain") {
       if (!goal.targetGain || !goal.timelineMonths) {
         return {
           valid: false,
-          severity: 'error',
-          message: 'Muscle gain goal requires target gain and timeline',
+          severity: "error",
+          message: "Muscle gain goal requires target gain and timeline",
         };
       }
 
       const validation = muscleGainCalculator.validateGoal(
         goal.targetGain,
         goal.timelineMonths,
-        user
+        user,
       );
 
       return {
         valid: validation.valid,
         severity: validation.severity,
         message: validation.message,
-        suggestions: validation.suggestions,
+        suggestions: validation.suggestion ? [validation.suggestion] : [],
       };
     }
 
     // Maintenance or recomp goals are generally valid
     return {
       valid: true,
-      severity: 'success',
-      message: 'Valid goal!',
+      severity: "success",
+      message: "Valid goal!",
     };
   }
 
@@ -429,7 +447,7 @@ export class HealthCalculatorFacade {
    * Useful when user updates their weight, activity level, etc.
    */
   static recalculateMetrics(user: UserProfile): ComprehensiveHealthMetrics {
-    console.log('[FACADE] Recalculating metrics after profile update');
+    console.log("[FACADE] Recalculating metrics after profile update");
     return this.calculateAllMetrics(user);
   }
 
@@ -437,23 +455,27 @@ export class HealthCalculatorFacade {
    * Export metrics in a shareable format
    */
   static exportMetrics(metrics: ComprehensiveHealthMetrics): string {
-    return JSON.stringify({
-      summary: {
-        dailyCalories: metrics.dailyCalories,
-        protein: metrics.protein,
-        carbs: metrics.carbs,
-        fat: metrics.fat,
-        water: `${(metrics.waterIntakeML / 1000).toFixed(1)}L`,
-        bmi: metrics.bmi.toFixed(1),
-        bmr: Math.round(metrics.bmr),
+    return JSON.stringify(
+      {
+        summary: {
+          dailyCalories: metrics.dailyCalories,
+          protein: metrics.protein,
+          carbs: metrics.carbs,
+          fat: metrics.fat,
+          water: `${(metrics.waterIntakeML / 1000).toFixed(1)}L`,
+          bmi: metrics.bmi.toFixed(1),
+          bmr: Math.round(metrics.bmr),
+        },
+        context: {
+          climate: metrics.climate,
+          ethnicity: metrics.ethnicity,
+          formula: metrics.bmrFormula,
+        },
+        calculationDate: metrics.calculationDate,
       },
-      context: {
-        climate: metrics.climate,
-        ethnicity: metrics.ethnicity,
-        formula: metrics.bmrFormula,
-      },
-      calculationDate: metrics.calculationDate,
-    }, null, 2);
+      null,
+      2,
+    );
   }
 
   // ========================================================================
@@ -481,7 +503,10 @@ export class HealthCalculatorFacade {
     return modifiers[climate] || 1.0;
   }
 
-  private static getClimateWaterBonus(climate: ClimateType, weight: number): number {
+  private static getClimateWaterBonus(
+    climate: ClimateType,
+    weight: number,
+  ): number {
     const bonuses = {
       tropical: weight * 10,
       temperate: 0,
@@ -491,7 +516,10 @@ export class HealthCalculatorFacade {
     return bonuses[climate] || 0;
   }
 
-  private static getActivityWaterBonus(level: ActivityLevel, weight: number): number {
+  private static getActivityWaterBonus(
+    level: ActivityLevel,
+    weight: number,
+  ): number {
     const bonuses = {
       sedentary: 0,
       light: weight * 5,

@@ -1,29 +1,29 @@
 /**
  * OnboardingRequired Component
- * 
+ *
  * Display component shown when calculated metrics from onboarding are not available.
  * Instead of showing hardcoded fallback values, this component prompts users
  * to complete onboarding to get their personalized targets.
- * 
+ *
  * Usage:
  * ```tsx
  * const { hasCalculatedMetrics } = useCalculatedMetrics();
- * 
+ *
  * if (!hasCalculatedMetrics) {
  *   return <OnboardingRequired feature="water goal" />;
  * }
  * ```
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rh, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { haptics } from '../../utils/haptics';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rh, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { haptics } from "../../utils/haptics";
 
 interface OnboardingRequiredProps {
   /** The feature/metric that requires onboarding */
@@ -37,7 +37,7 @@ interface OnboardingRequiredProps {
 }
 
 export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
-  feature = 'this feature',
+  feature = "this feature",
   compact = false,
   onCompleteOnboarding,
   message,
@@ -53,45 +53,71 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
         onPress={onCompleteOnboarding ? handlePress : undefined}
         style={styles.compactContainer}
       >
-        <Ionicons name="information-circle-outline" size={rf(14)} color={ResponsiveTheme.colors.textMuted} />
+        <Ionicons
+          name="information-circle-outline"
+          size={rf(14)}
+          color={ResponsiveTheme.colors.textMuted}
+        />
         <Text style={styles.compactText}>
           {message || `Complete onboarding for ${feature}`}
         </Text>
         {onCompleteOnboarding && (
-          <Ionicons name="chevron-forward" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+          <Ionicons
+            name="chevron-forward"
+            size={rf(14)}
+            color={ResponsiveTheme.colors.primary}
+          />
         )}
       </AnimatedPressable>
     );
   }
 
   return (
-    <GlassCard style={styles.container} intensity={0.1}>
+    <GlassCard style={styles.container} blurIntensity="light">
       <View style={styles.iconContainer}>
         <LinearGradient
-          colors={[ResponsiveTheme.colors.primaryFaded, ResponsiveTheme.colors.primary]}
+          colors={[
+            ResponsiveTheme.colors.primaryFaded,
+            ResponsiveTheme.colors.primary,
+          ]}
           style={styles.iconGradient}
         >
           <Ionicons name="clipboard-outline" size={rf(28)} color="#fff" />
         </LinearGradient>
       </View>
-      
+
       <Text style={styles.title}>Complete Your Profile</Text>
-      
+
       <Text style={styles.description}>
-        {message || `Your ${feature} will be calculated based on your personal information, activity level, and location.`}
+        {message ||
+          `Your ${feature} will be calculated based on your personal information, activity level, and location.`}
       </Text>
 
       <View style={styles.benefitsList}>
         <View style={styles.benefitItem}>
-          <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+          <Ionicons
+            name="checkmark-circle"
+            size={rf(16)}
+            color={ResponsiveTheme.colors.success}
+          />
           <Text style={styles.benefitText}>Personalized nutrition targets</Text>
         </View>
         <View style={styles.benefitItem}>
-          <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
-          <Text style={styles.benefitText}>Climate-adjusted hydration goals</Text>
+          <Ionicons
+            name="checkmark-circle"
+            size={rf(16)}
+            color={ResponsiveTheme.colors.success}
+          />
+          <Text style={styles.benefitText}>
+            Climate-adjusted hydration goals
+          </Text>
         </View>
         <View style={styles.benefitItem}>
-          <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+          <Ionicons
+            name="checkmark-circle"
+            size={rf(16)}
+            color={ResponsiveTheme.colors.success}
+          />
           <Text style={styles.benefitText}>BMI-specific recommendations</Text>
         </View>
       </View>
@@ -99,7 +125,11 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
       {onCompleteOnboarding && (
         <AnimatedPressable onPress={handlePress} style={styles.button}>
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark || ResponsiveTheme.colors.primary]}
+            colors={[
+              ResponsiveTheme.colors.primary,
+              ResponsiveTheme.colors.primaryDark ||
+                ResponsiveTheme.colors.primary,
+            ]}
             style={styles.buttonGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -115,16 +145,17 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
 
 /**
  * MetricPlaceholder
- * 
+ *
  * Inline placeholder for individual metrics when data is not available.
  * Shows a subtle indicator instead of a hardcoded value.
  */
 export const MetricPlaceholder: React.FC<{
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
   label?: string;
-}> = ({ size = 'medium', label }) => {
-  const fontSize = size === 'small' ? rf(14) : size === 'large' ? rf(24) : rf(18);
-  
+}> = ({ size = "medium", label }) => {
+  const fontSize =
+    size === "small" ? rf(14) : size === "large" ? rf(24) : rf(18);
+
   return (
     <View style={styles.metricPlaceholder}>
       <Text style={[styles.metricDash, { fontSize }]}>--</Text>
@@ -135,15 +166,15 @@ export const MetricPlaceholder: React.FC<{
 
 /**
  * LoadingMetric
- * 
+ *
  * Shows a loading state for metrics while data is being fetched.
  */
 export const LoadingMetric: React.FC<{
-  size?: 'small' | 'medium' | 'large';
-}> = ({ size = 'medium' }) => {
-  const width = size === 'small' ? rw(30) : size === 'large' ? rw(60) : rw(45);
-  const height = size === 'small' ? rh(16) : size === 'large' ? rh(28) : rh(20);
-  
+  size?: "small" | "medium" | "large";
+}> = ({ size = "medium" }) => {
+  const width = size === "small" ? rw(30) : size === "large" ? rw(60) : rw(45);
+  const height = size === "small" ? rh(16) : size === "large" ? rh(28) : rh(20);
+
   return (
     <View style={[styles.loadingMetric, { width, height }]}>
       <View style={styles.loadingShimmer} />
@@ -154,7 +185,7 @@ export const LoadingMetric: React.FC<{
 const styles = StyleSheet.create({
   container: {
     padding: rp(20),
-    alignItems: 'center',
+    alignItems: "center" as const,
     marginVertical: rh(10),
   },
   iconContainer: {
@@ -164,31 +195,31 @@ const styles = StyleSheet.create({
     width: rw(60),
     height: rw(60),
     borderRadius: rw(30),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
   },
   title: {
     fontSize: rf(18),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     marginBottom: rh(8),
-    textAlign: 'center',
+    textAlign: "center",
   },
   description: {
     fontSize: rf(14),
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(20),
     marginBottom: rh(16),
     paddingHorizontal: rp(10),
   },
   benefitsList: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginBottom: rh(20),
   },
   benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     marginBottom: rh(8),
     paddingHorizontal: rp(10),
   },
@@ -198,27 +229,27 @@ const styles = StyleSheet.create({
     marginLeft: rw(8),
   },
   button: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     borderRadius: rp(12),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   buttonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
     paddingVertical: rh(14),
     paddingHorizontal: rp(20),
     gap: rw(8),
   },
   buttonText: {
     fontSize: rf(15),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   // Compact styles
   compactContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center" as const,
     paddingVertical: rh(8),
     paddingHorizontal: rp(12),
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,
@@ -232,11 +263,11 @@ const styles = StyleSheet.create({
   },
   // Metric placeholder styles
   metricPlaceholder: {
-    alignItems: 'center',
+    alignItems: "center" as const,
   },
   metricDash: {
     color: ResponsiveTheme.colors.textMuted,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   metricLabel: {
     fontSize: rf(10),
@@ -247,7 +278,7 @@ const styles = StyleSheet.create({
   loadingMetric: {
     backgroundColor: `${ResponsiveTheme.colors.textMuted}20`,
     borderRadius: rp(4),
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   loadingShimmer: {
     flex: 1,
@@ -256,21 +287,3 @@ const styles = StyleSheet.create({
 });
 
 export default OnboardingRequired;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,11 +1,11 @@
 // Real-time Sync Service for Track B Infrastructure
 // Provides bidirectional data synchronization with Supabase and intelligent sync scheduling
 
-import { enhancedLocalStorage } from './localStorage';
-import { dataBridge } from './DataBridge';
-import { conflictResolutionService } from './conflictResolution';
-import { validationService } from '../utils/validation';
-import { LocalStorageSchema } from '../types/localData';
+import { enhancedLocalStorage } from "./localStorage";
+import { dataBridge } from "./DataBridge";
+import { conflictResolutionService } from "./conflictResolution";
+import { validationService } from "../utils/validation";
+import { LocalStorageSchema } from "../types/localData";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -17,7 +17,7 @@ export interface SyncConfig {
   maxRetries: number;
   retryDelayMs: number;
   batchSize: number;
-  conflictResolutionStrategy: 'auto' | 'manual' | 'local_wins' | 'remote_wins';
+  conflictResolutionStrategy: "auto" | "manual" | "local_wins" | "remote_wins";
   enableDeltaSync: boolean;
   enableBackgroundSync: boolean;
 }
@@ -31,7 +31,7 @@ export interface SyncStatus {
   queuedOperations: number;
   syncProgress: number; // 0-100
   nextSyncTime: Date | null;
-  connectionQuality: 'excellent' | 'good' | 'poor' | 'offline';
+  connectionQuality: "excellent" | "good" | "poor" | "offline";
 }
 
 export interface SyncResult {
@@ -53,7 +53,13 @@ export interface SyncResult {
 
 export interface SyncError {
   id: string;
-  type: 'network' | 'validation' | 'conflict' | 'permission' | 'quota' | 'unknown';
+  type:
+    | "network"
+    | "validation"
+    | "conflict"
+    | "permission"
+    | "quota"
+    | "unknown";
   message: string;
   details: any;
   timestamp: Date;
@@ -69,18 +75,18 @@ export interface SyncConflict {
   localValue: any;
   remoteValue: any;
   resolvedValue?: any;
-  resolution: 'pending' | 'auto' | 'manual';
+  resolution: "pending" | "auto" | "manual";
   timestamp: Date;
 }
 
 export interface SyncOperation {
   id: string;
-  type: 'create' | 'update' | 'delete';
+  type: "create" | "update" | "delete";
   table: string;
   recordId: string;
   data: any;
   timestamp: Date;
-  priority: 'low' | 'normal' | 'high' | 'critical';
+  priority: "low" | "normal" | "high" | "critical";
   retryCount: number;
   maxRetries: number;
 }
@@ -112,7 +118,7 @@ export class RealTimeSyncService {
       maxRetries: 3,
       retryDelayMs: 5000,
       batchSize: 50,
-      conflictResolutionStrategy: 'auto',
+      conflictResolutionStrategy: "auto",
       enableDeltaSync: true,
       enableBackgroundSync: true,
       ...config,
@@ -127,7 +133,7 @@ export class RealTimeSyncService {
       queuedOperations: 0,
       syncProgress: 0,
       nextSyncTime: null,
-      connectionQuality: 'good',
+      connectionQuality: "good",
     };
   }
 
@@ -157,9 +163,9 @@ export class RealTimeSyncService {
       }
 
       this.isInitialized = true;
-      console.log('Real-time sync service initialized');
+      console.log("Real-time sync service initialized");
     } catch (error) {
-      console.error('Failed to initialize sync service:', error);
+      console.error("Failed to initialize sync service:", error);
       throw error;
     }
   }
@@ -169,11 +175,11 @@ export class RealTimeSyncService {
    */
   async startSync(force = false): Promise<SyncResult> {
     if (this.status.isSyncing && !force) {
-      throw new Error('Sync is already in progress');
+      throw new Error("Sync is already in progress");
     }
 
     if (!this.status.isOnline) {
-      throw new Error('Cannot sync while offline');
+      throw new Error("Cannot sync while offline");
     }
 
     this.currentSyncId = this.generateSyncId();
@@ -220,8 +226,8 @@ export class RealTimeSyncService {
         errors: [
           {
             id: this.generateErrorId(),
-            type: 'unknown',
-            message: error.message,
+            type: "unknown",
+            message: error instanceof Error ? error.message : String(error),
             details: error,
             timestamp: new Date(),
             retryable: true,
@@ -265,14 +271,14 @@ export class RealTimeSyncService {
     await this.saveSyncQueue();
 
     this.isInitialized = false;
-    console.log('Real-time sync service stopped');
+    console.log("Real-time sync service stopped");
   }
 
   /**
    * Queue a sync operation
    */
   async queueOperation(
-    operation: Omit<SyncOperation, 'id' | 'timestamp' | 'retryCount'>
+    operation: Omit<SyncOperation, "id" | "timestamp" | "retryCount">,
   ): Promise<void> {
     const syncOperation: SyncOperation = {
       id: this.generateOperationId(),
@@ -289,7 +295,7 @@ export class RealTimeSyncService {
     await this.saveSyncQueue();
 
     // Trigger immediate sync for critical operations
-    if (operation.priority === 'critical' && this.config.autoSyncEnabled) {
+    if (operation.priority === "critical" && this.config.autoSyncEnabled) {
       setTimeout(() => this.startSync().catch(console.error), 1000);
     }
   }
@@ -355,7 +361,7 @@ export class RealTimeSyncService {
   // ============================================================================
 
   private async executeSyncPhases(): Promise<{
-    syncedItems: SyncResult['syncedItems'];
+    syncedItems: SyncResult["syncedItems"];
     errors: SyncError[];
     conflicts: SyncConflict[];
   }> {
@@ -387,10 +393,12 @@ export class RealTimeSyncService {
       await this.cleanupSyncQueue();
       this.updateSyncStatus({ syncProgress: 100 });
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       errors.push({
         id: this.generateErrorId(),
-        type: 'unknown',
-        message: error.message,
+        type: "unknown",
+        message: errorMessage,
         details: error,
         timestamp: new Date(),
         retryable: true,
@@ -402,7 +410,10 @@ export class RealTimeSyncService {
     return { syncedItems, errors, conflicts };
   }
 
-  private async uploadLocalChanges(): Promise<{ uploaded: number; errors: SyncError[] }> {
+  private async uploadLocalChanges(): Promise<{
+    uploaded: number;
+    errors: SyncError[];
+  }> {
     const errors: SyncError[] = [];
     let uploaded = 0;
 
@@ -423,10 +434,12 @@ export class RealTimeSyncService {
             }
           } catch (error) {
             operation.retryCount++;
+            const errorMessage =
+              error instanceof Error ? error.message : String(error);
             errors.push({
               id: this.generateErrorId(),
-              type: 'network',
-              message: `Failed to upload ${operation.type} operation: ${error.message}`,
+              type: "network",
+              message: `Failed to upload ${operation.type} operation: ${errorMessage}`,
               details: { operation, error },
               timestamp: new Date(),
               retryable: operation.retryCount < operation.maxRetries,
@@ -436,10 +449,12 @@ export class RealTimeSyncService {
         }
       }
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       errors.push({
         id: this.generateErrorId(),
-        type: 'unknown',
-        message: `Upload phase failed: ${error.message}`,
+        type: "unknown",
+        message: `Upload phase failed: ${errorMessage}`,
         details: error,
         timestamp: new Date(),
         retryable: true,
@@ -450,7 +465,10 @@ export class RealTimeSyncService {
     return { uploaded, errors };
   }
 
-  private async downloadRemoteChanges(): Promise<{ downloaded: number; errors: SyncError[] }> {
+  private async downloadRemoteChanges(): Promise<{
+    downloaded: number;
+    errors: SyncError[];
+  }> {
     const errors: SyncError[] = [];
     let downloaded = 0;
 
@@ -466,10 +484,12 @@ export class RealTimeSyncService {
           await this.applyRemoteChange(change);
           downloaded++;
         } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           errors.push({
             id: this.generateErrorId(),
-            type: 'validation',
-            message: `Failed to apply remote change: ${error.message}`,
+            type: "validation",
+            message: `Failed to apply remote change: ${errorMessage}`,
             details: { change, error },
             timestamp: new Date(),
             retryable: true,
@@ -481,10 +501,12 @@ export class RealTimeSyncService {
       // Update delta sync info
       await this.updateDeltaSyncInfo(deltaInfo);
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       errors.push({
         id: this.generateErrorId(),
-        type: 'network',
-        message: `Download phase failed: ${error.message}`,
+        type: "network",
+        message: `Download phase failed: ${errorMessage}`,
         details: error,
         timestamp: new Date(),
         retryable: true,
@@ -508,17 +530,18 @@ export class RealTimeSyncService {
           conflicts.push({
             ...conflict,
             resolvedValue: resolution.resolvedValue,
-            resolution: resolution.strategy === 'user_choice' ? 'manual' : 'auto',
+            resolution:
+              resolution.strategy === "user_choice" ? "manual" : "auto",
           });
         } catch (error) {
           conflicts.push({
             ...conflict,
-            resolution: 'pending',
+            resolution: "pending",
           });
         }
       }
     } catch (error) {
-      console.error('Conflict resolution phase failed:', error);
+      console.error("Conflict resolution phase failed:", error);
     }
 
     return { conflicts };
@@ -531,11 +554,15 @@ export class RealTimeSyncService {
     }
 
     this.syncTimer = setInterval(async () => {
-      if (this.status.isOnline && !this.status.isSyncing && this.syncQueue.length > 0) {
+      if (
+        this.status.isOnline &&
+        !this.status.isSyncing &&
+        this.syncQueue.length > 0
+      ) {
         try {
           await this.startSync();
         } catch (error) {
-          console.error('Auto-sync failed:', error);
+          console.error("Auto-sync failed:", error);
         }
       }
     }, this.config.syncIntervalMs);
@@ -559,7 +586,7 @@ export class RealTimeSyncService {
     // Simulate connection quality assessment
     // In real implementation, this would check actual network conditions
     const isOnline = Math.random() > 0.1; // 90% online simulation
-    const quality = isOnline ? 'good' : 'offline';
+    const quality = isOnline ? "good" : "offline";
 
     this.updateSyncStatus({
       isOnline,
@@ -577,7 +604,7 @@ export class RealTimeSyncService {
       try {
         callback(status);
       } catch (error) {
-        console.error('Error in status callback:', error);
+        console.error("Error in status callback:", error);
       }
     });
   }
@@ -587,7 +614,7 @@ export class RealTimeSyncService {
       try {
         callback(result);
       } catch (error) {
-        console.error('Error in result callback:', error);
+        console.error("Error in result callback:", error);
       }
     });
   }
@@ -634,7 +661,9 @@ export class RealTimeSyncService {
     // Save to local storage
   }
 
-  private async executeUploadOperation(operation: SyncOperation): Promise<void> {
+  private async executeUploadOperation(
+    operation: SyncOperation,
+  ): Promise<void> {
     // Execute upload using Supabase MCP tools
   }
 
@@ -667,7 +696,7 @@ export class RealTimeSyncService {
 
   private async resolveConflict(conflict: SyncConflict): Promise<any> {
     // Resolve conflict using conflict resolution service
-    return { resolvedValue: conflict.localValue, strategy: 'local_wins' };
+    return { resolvedValue: conflict.localValue, strategy: "local_wins" };
   }
 
   private async cleanupSyncQueue(): Promise<void> {

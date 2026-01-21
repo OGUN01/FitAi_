@@ -45,6 +45,10 @@ export interface BodyMetrics {
   height_cm: number; // DECIMAL(5,2), 100-250 - REQUIRED
   current_weight_kg: number; // DECIMAL(5,2), 30-300 - REQUIRED
 
+  // Backward compatibility aliases
+  height?: number; // Alias for height_cm
+  weight?: number; // Alias for current_weight_kg
+
   // Goal settings (optional but recommended)
   target_weight_kg?: number; // DECIMAL(5,2), 30-300
   target_timeline_weeks?: number; // INTEGER, 4-104
