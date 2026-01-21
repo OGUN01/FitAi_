@@ -6,13 +6,17 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { healthKitService, HealthKitData, HealthSyncResult } from '../services/healthKit';
 import { googleFitService, GoogleFitData, GoogleFitSyncResult } from '../services/googleFit';
-import { healthConnectService, HealthConnectData, HealthConnectSyncResult } from '../services/healthConnect';
+import { healthConnectService, HealthConnectData, HealthConnectSyncResult, MetricSource, DataSource } from '../services/healthConnect';
+
+// Re-export MetricSource for UI components
+export type { MetricSource, DataSource };
 
 export interface HealthMetrics {
   // Daily Activity
   steps: number;
   stepsGoal?: number; // Daily step goal - from user settings or calculated
   activeCalories: number;
+  totalCalories?: number; // Total daily calories (BMR + active) - from Health Connect
   caloriesGoal?: number; // Daily calories goal - from user settings or calculated
   distance?: number; // in kilometers
   
@@ -46,6 +50,20 @@ export interface HealthMetrics {
   
   // Timing
   lastUpdated: string;
+  
+  // Data Source Attribution - shows where each metric came from
+  sources?: {
+    steps?: MetricSource;
+    heartRate?: MetricSource;
+    activeCalories?: MetricSource;
+    totalCalories?: MetricSource;
+    distance?: MetricSource;
+    weight?: MetricSource;
+    sleep?: MetricSource;
+  };
+  
+  // All data origins that contributed to current metrics
+  dataOrigins?: string[];
 }
 
 export interface HealthIntegrationSettings {
@@ -60,6 +78,9 @@ export interface HealthIntegrationSettings {
     sleep: boolean;
     weight: boolean;
     nutrition: boolean;
+    hrv: boolean; // Heart Rate Variability
+    spo2: boolean; // Oxygen Saturation
+    bodyFat: boolean; // Body composition
   };
   exportToHealthKit: boolean; // Whether to write FitAI data to HealthKit
   backgroundSyncEnabled: boolean;
@@ -91,6 +112,7 @@ export interface HealthDataState {
   requestHealthKitPermissions: () => Promise<boolean>;
   initializeHealthConnect: () => Promise<boolean>; // Health Connect initialization
   requestHealthConnectPermissions: () => Promise<boolean>; // Health Connect permissions
+  reauthorizeHealthConnect: () => Promise<boolean>; // Re-authorize with fresh permissions (for new permission types)
   syncHealthData: (force?: boolean) => Promise<void>;
   syncFromHealthConnect: (daysBack?: number) => Promise<HealthConnectSyncResult>; // Health Connect sync
   updateHealthMetrics: (metrics: Partial<HealthMetrics>) => void;
@@ -201,6 +223,9 @@ export const useHealthDataStore = create<HealthDataState>()(
           sleep: true,
           weight: true,
           nutrition: false, // Default off for privacy
+          hrv: true, // Heart Rate Variability - useful for recovery
+          spo2: true, // Oxygen Saturation - health monitoring
+          bodyFat: true, // Body composition from smart scales
         },
         exportToHealthKit: true,
         backgroundSyncEnabled: true,
@@ -314,9 +339,46 @@ export const useHealthDataStore = create<HealthDataState>()(
         }
       },
 
+      reauthorizeHealthConnect: async (): Promise<boolean> => {
+        try {
+          console.log('🔄 Re-authorizing Health Connect from store...');
+          
+          // Reset authorization state before re-auth
+          set({ isHealthConnectAuthorized: false, syncStatus: 'syncing' });
+          
+          const success = await healthConnectService.reauthorize();
+          
+          // Update store state based on result
+          set((state) => ({
+            isHealthConnectAuthorized: success,
+            syncStatus: success ? 'idle' : 'error',
+          }));
+          
+          if (success) {
+            console.log('✅ Re-authorization successful, syncing data...');
+            // Automatically sync after successful re-authorization
+            await get().syncFromHealthConnect(7);
+          }
+          
+          return success;
+        } catch (error) {
+          console.error('❌ Failed to re-authorize Health Connect:', error);
+          set({ syncStatus: 'error', isHealthConnectAuthorized: false });
+          return false;
+        }
+      },
+
       syncFromHealthConnect: async (daysBack: number = 7): Promise<HealthConnectSyncResult> => {
         try {
           console.log('🔄 Syncing health data from Health Connect...');
+          
+          // IMPORTANT: Ensure Health Connect is initialized before syncing
+          // This fixes the race condition where sync is called before native client is ready
+          const isInitialized = await healthConnectService.initializeHealthConnect();
+          if (!isInitialized) {
+            console.warn('⚠️ Health Connect not available, skipping sync');
+            return { success: false, error: 'Health Connect not initialized' };
+          }
           
           // Update sync status to loading
           set({ syncStatus: 'syncing' });
@@ -325,24 +387,39 @@ export const useHealthDataStore = create<HealthDataState>()(
           const healthData = await healthConnectService.syncHealthData(daysBack);
           
           if (healthData.success && healthData.data) {
-            // Update store state with new health data
+            // Update store state with new health data including sources
             set((state) => ({
               metrics: {
                 ...state.metrics,
                 // Update each metric with new data, fallback to existing if not available
                 steps: healthData.data?.steps ?? state.metrics.steps,
+                stepsGoal: state.metrics.stepsGoal ?? 10000, // Default step goal if not set
                 heartRate: healthData.data?.heartRate ?? state.metrics.heartRate,
                 activeCalories: healthData.data?.activeCalories ?? state.metrics.activeCalories,
+                totalCalories: healthData.data?.totalCalories ?? state.metrics.totalCalories, // Total daily calories (BMR + active)
                 distance: healthData.data?.distance ? healthData.data.distance / 1000 : state.metrics.distance, // Convert to km
                 weight: healthData.data?.weight ?? state.metrics.weight,
                 sleepHours: healthData.data?.sleep ? 
                   healthData.data.sleep.reduce((total, sleep) => total + sleep.duration, 0) / 60 : 
                   state.metrics.sleepHours,
                 lastUpdated: new Date().toISOString(),
+                // Include data source attribution for transparency
+                sources: healthData.data?.sources ?? state.metrics.sources,
+                dataOrigins: healthData.data?.dataOrigins ?? state.metrics.dataOrigins,
               },
-              lastSyncTime: Date.now().toString(),
+              lastSyncTime: new Date().toISOString(),
               syncStatus: 'success',
             }));
+
+            // Log sources for debugging
+            if (healthData.data?.sources) {
+              console.log('📱 Data sources:');
+              Object.entries(healthData.data.sources).forEach(([metric, source]) => {
+                if (source) {
+                  console.log(`  ${metric}: ${source.name} (Tier ${source.tier}, ${source.accuracy}% accuracy)`);
+                }
+              });
+            }
 
             console.log('✅ Health Connect sync completed successfully');
           } else {

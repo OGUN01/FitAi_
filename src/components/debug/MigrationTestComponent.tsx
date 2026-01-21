@@ -4,7 +4,7 @@
  * Remove this component in production builds
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-} from 'react-native';
-import { THEME } from '../ui';
-import { dataBridge } from '../../services/DataBridge';
-import { migrationManager } from '../../services/migrationManager';
+} from "react-native";
+import { THEME } from "../ui";
+import { dataBridge } from "../../services/DataBridge";
+import { migrationManager } from "../../services/migrationManager";
 
 interface TestResult {
   test: string;
@@ -35,10 +35,13 @@ export const MigrationTestComponent: React.FC = () => {
       success,
       timestamp: new Date().toLocaleTimeString(),
     };
-    setTestResults(prev => [newResult, ...prev]);
+    setTestResults((prev) => [newResult, ...prev]);
   };
 
-  const runTest = async (testName: string, testFunction: () => Promise<any>) => {
+  const runTest = async (
+    testName: string,
+    testFunction: () => Promise<any>,
+  ) => {
     try {
       console.log(`🧪 Running test: ${testName}`);
       const result = await testFunction();
@@ -46,93 +49,122 @@ export const MigrationTestComponent: React.FC = () => {
       console.log(`✅ Test passed: ${testName}`, result);
     } catch (error) {
       console.error(`❌ Test failed: ${testName}`, error);
-      addTestResult(testName, error instanceof Error ? error.message : 'Unknown error', false);
+      addTestResult(
+        testName,
+        error instanceof Error ? error.message : "Unknown error",
+        false,
+      );
     }
   };
 
   const testHasLocalData = async () => {
-    const testUserId = 'test-user-123';
-    dataBridge.setUserId(testUserId);
-    
-    const hasData = await dataBridge.hasLocalData();
-    return { hasData, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      dataBridge.setUserId(testUserId);
+
+      const hasData = await dataBridge.hasLocalData();
+      return { hasData, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const testCreateSampleData = async () => {
-    const testUserId = 'test-user-123';
-    dataBridge.setUserId(testUserId);
-    
-    const created = await dataBridge.createSampleProfileData();
-    return { created, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      dataBridge.setUserId(testUserId);
+
+      const created = await dataBridge.createSampleProfileData();
+      return { created, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const testMigrationDetection = async () => {
-    const testUserId = 'test-user-123';
-    const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(testUserId);
-    return { migrationNeeded, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      const migrationNeeded =
+        await migrationManager.checkProfileMigrationNeeded(testUserId);
+      return { migrationNeeded, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const testProfileDataSummary = async () => {
-    const testUserId = 'test-user-123';
-    dataBridge.setUserId(testUserId);
-    
-    const summary = await dataBridge.getProfileDataSummary();
-    return summary;
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      dataBridge.setUserId(testUserId);
+
+      const summary = await dataBridge.getProfileDataSummary();
+      return summary;
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const testLocalStorageMethods = async () => {
-    const testUserId = 'test-user-123';
-    dataBridge.setUserId(testUserId);
-    await dataBridge.testLocalStorageMethods();
-    return { completed: true, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      dataBridge.setUserId(testUserId);
+      await dataBridge.testLocalStorageMethods();
+      return { completed: true, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const testCompleteFlow = async () => {
-    const testUserId = 'test-user-123';
-    await migrationManager.testMigrationFlow(testUserId);
-    return { completed: true, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      await migrationManager.testMigrationFlow(testUserId);
+      return { completed: true, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const clearTestData = async () => {
-    const testUserId = 'test-user-123';
-    dataBridge.setUserId(testUserId);
-    
-    const cleared = await dataBridge.clearLocalData();
-    return { cleared, userId: testUserId };
+    if (__DEV__) {
+      const testUserId = "test-user-123";
+      dataBridge.setUserId(testUserId);
+
+      const cleared = await dataBridge.clearLocalData();
+      return { cleared, userId: testUserId };
+    }
+    throw new Error("This test is only available in development mode");
   };
 
   const runAllTests = async () => {
     if (isRunning) return;
-    
+
     setIsRunning(true);
     setTestResults([]);
 
     try {
       // Test 0: Test localStorage methods directly
-      await runTest('Test localStorage Methods', testLocalStorageMethods);
+      await runTest("Test localStorage Methods", testLocalStorageMethods);
 
       // Test 1: Check initial state
-      await runTest('Check Initial Local Data', testHasLocalData);
+      await runTest("Check Initial Local Data", testHasLocalData);
 
       // Test 2: Create sample data
-      await runTest('Create Sample Data', testCreateSampleData);
+      await runTest("Create Sample Data", testCreateSampleData);
 
       // Test 3: Check data after creation
-      await runTest('Check Local Data After Creation', testHasLocalData);
+      await runTest("Check Local Data After Creation", testHasLocalData);
 
       // Test 4: Get profile summary
-      await runTest('Get Profile Data Summary', testProfileDataSummary);
+      await runTest("Get Profile Data Summary", testProfileDataSummary);
 
       // Test 5: Test migration detection
-      await runTest('Test Migration Detection', testMigrationDetection);
+      await runTest("Test Migration Detection", testMigrationDetection);
 
       // Test 6: Test complete flow
-      await runTest('Test Complete Migration Flow', testCompleteFlow);
+      await runTest("Test Complete Migration Flow", testCompleteFlow);
 
-      Alert.alert('Tests Complete', 'All migration tests have been completed. Check the results below.');
+      Alert.alert(
+        "Tests Complete",
+        "All migration tests have been completed. Check the results below.",
+      );
     } catch (error) {
-      console.error('❌ Test suite failed:', error);
-      Alert.alert('Test Failed', 'The test suite encountered an error.');
+      console.error("❌ Test suite failed:", error);
+      Alert.alert("Test Failed", "The test suite encountered an error.");
     } finally {
       setIsRunning(false);
     }
@@ -143,24 +175,30 @@ export const MigrationTestComponent: React.FC = () => {
   };
 
   const clearDataAndResults = async () => {
-    await runTest('Clear Test Data', clearTestData);
-    Alert.alert('Data Cleared', 'Test data has been cleared.');
+    await runTest("Clear Test Data", clearTestData);
+    Alert.alert("Data Cleared", "Test data has been cleared.");
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Migration System Test</Text>
-      <Text style={styles.subtitle}>Debug component for testing migration functionality</Text>
+      <Text style={styles.subtitle}>
+        Debug component for testing migration functionality
+      </Text>
 
       {/* Test Controls */}
       <View style={styles.controls}>
         <TouchableOpacity
-          style={[styles.button, styles.primaryButton, isRunning && styles.disabledButton]}
+          style={[
+            styles.button,
+            styles.primaryButton,
+            isRunning && styles.disabledButton,
+          ]}
           onPress={runAllTests}
           disabled={isRunning}
         >
           <Text style={styles.buttonText}>
-            {isRunning ? 'Running Tests...' : 'Run All Tests'}
+            {isRunning ? "Running Tests..." : "Run All Tests"}
           </Text>
         </TouchableOpacity>
 
@@ -181,10 +219,14 @@ export const MigrationTestComponent: React.FC = () => {
 
       {/* Test Results */}
       <ScrollView style={styles.results} showsVerticalScrollIndicator={false}>
-        <Text style={styles.resultsTitle}>Test Results ({testResults.length})</Text>
-        
+        <Text style={styles.resultsTitle}>
+          Test Results ({testResults.length})
+        </Text>
+
         {testResults.length === 0 ? (
-          <Text style={styles.noResults}>No test results yet. Run tests to see results.</Text>
+          <Text style={styles.noResults}>
+            No test results yet. Run tests to see results.
+          </Text>
         ) : (
           testResults.map((result, index) => (
             <View
@@ -198,16 +240,15 @@ export const MigrationTestComponent: React.FC = () => {
                 <Text style={styles.resultTest}>{result.test}</Text>
                 <Text style={styles.resultTime}>{result.timestamp}</Text>
               </View>
-              
+
               <Text style={styles.resultStatus}>
-                {result.success ? '✅ PASSED' : '❌ FAILED'}
+                {result.success ? "✅ PASSED" : "❌ FAILED"}
               </Text>
-              
+
               <Text style={styles.resultData}>
-                {typeof result.result === 'object' 
+                {typeof result.result === "object"
                   ? JSON.stringify(result.result, null, 2)
-                  : String(result.result)
-                }
+                  : String(result.result)}
               </Text>
             </View>
           ))
@@ -238,17 +279,17 @@ const styles = StyleSheet.create({
   },
 
   controls: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.sm,
     marginBottom: THEME.spacing.lg,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
 
   button: {
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
-    alignItems: 'center',
+    alignItems: "center",
     minWidth: 100,
   },
 
@@ -296,7 +337,7 @@ const styles = StyleSheet.create({
   noResults: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: THEME.spacing.xl,
   },
 
@@ -317,9 +358,9 @@ const styles = StyleSheet.create({
   },
 
   resultHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.xs,
   },
 
@@ -344,7 +385,7 @@ const styles = StyleSheet.create({
   resultData: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
     backgroundColor: THEME.colors.backgroundSecondary,
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.sm,

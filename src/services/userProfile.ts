@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 import {
   UserProfile,
   PersonalInfo,
@@ -7,12 +7,14 @@ import {
   UpdateProfileRequest,
   CreateFitnessGoalsRequest,
   UpdateFitnessGoalsRequest,
-} from '../types/user';
-import type { Database } from './supabase';
+} from "../types/user";
+import type { Database } from "./supabase";
+import { toDb, fromDb } from "../utils/transformers/fieldNameTransformers";
 
-type DatabaseProfile = Database['public']['Tables']['profiles']['Row'];
+type DatabaseProfile = Database["public"]["Tables"]["profiles"]["Row"];
 
-type DatabaseFitnessGoals = Database['public']['Tables']['fitness_goals']['Row'];
+type DatabaseFitnessGoals =
+  Database["public"]["Tables"]["fitness_goals"]["Row"];
 
 export interface UserProfileResponse {
   success: boolean;
@@ -41,11 +43,16 @@ class UserProfileService {
   /**
    * Create a new user profile
    */
-  async createProfile(profileData: CreateProfileRequest): Promise<UserProfileResponse> {
+  async createProfile(
+    profileData: CreateProfileRequest,
+  ): Promise<UserProfileResponse> {
     try {
+      // Transform to database format (snake_case)
+      const dbData = toDb(profileData);
+
       const { data, error } = await supabase
-        .from('profiles')
-        .insert([profileData])
+        .from("profiles")
+        .insert([dbData])
         .select()
         .single();
 
@@ -56,7 +63,9 @@ class UserProfileService {
         };
       }
 
-      const userProfile = this.mapDatabaseProfileToUserProfile(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const userProfile = this.mapDatabaseProfileToUserProfile(transformedData);
       return {
         success: true,
         data: userProfile,
@@ -64,7 +73,8 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create profile',
+        error:
+          error instanceof Error ? error.message : "Failed to create profile",
       };
     }
   }
@@ -74,7 +84,11 @@ class UserProfileService {
    */
   async getProfile(userId: string): Promise<UserProfileResponse> {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
 
       if (error) {
         return {
@@ -83,7 +97,9 @@ class UserProfileService {
         };
       }
 
-      const userProfile = this.mapDatabaseProfileToUserProfile(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const userProfile = this.mapDatabaseProfileToUserProfile(transformedData);
       return {
         success: true,
         data: userProfile,
@@ -91,7 +107,7 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get profile',
+        error: error instanceof Error ? error.message : "Failed to get profile",
       };
     }
   }
@@ -99,12 +115,18 @@ class UserProfileService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: UpdateProfileRequest): Promise<UserProfileResponse> {
+  async updateProfile(
+    userId: string,
+    updates: UpdateProfileRequest,
+  ): Promise<UserProfileResponse> {
     try {
+      // Transform to database format (snake_case)
+      const dbUpdates = toDb(updates);
+
       const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', userId)
+        .from("profiles")
+        .update(dbUpdates)
+        .eq("id", userId)
         .select()
         .single();
 
@@ -115,7 +137,9 @@ class UserProfileService {
         };
       }
 
-      const userProfile = this.mapDatabaseProfileToUserProfile(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const userProfile = this.mapDatabaseProfileToUserProfile(transformedData);
       return {
         success: true,
         data: userProfile,
@@ -123,7 +147,8 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update profile',
+        error:
+          error instanceof Error ? error.message : "Failed to update profile",
       };
     }
   }
@@ -131,11 +156,16 @@ class UserProfileService {
   /**
    * Create fitness goals for a user
    */
-  async createFitnessGoals(goalsData: CreateFitnessGoalsRequest): Promise<FitnessGoalsResponse> {
+  async createFitnessGoals(
+    goalsData: CreateFitnessGoalsRequest,
+  ): Promise<FitnessGoalsResponse> {
     try {
+      // Transform to database format (snake_case)
+      const dbData = toDb(goalsData);
+
       const { data, error } = await supabase
-        .from('fitness_goals')
-        .insert([goalsData])
+        .from("fitness_goals")
+        .insert([dbData])
         .select()
         .single();
 
@@ -146,7 +176,9 @@ class UserProfileService {
         };
       }
 
-      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(transformedData);
       return {
         success: true,
         data: fitnessGoals,
@@ -154,7 +186,10 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create fitness goals',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create fitness goals",
       };
     }
   }
@@ -165,19 +200,19 @@ class UserProfileService {
   async getFitnessGoals(userId: string): Promise<FitnessGoalsResponse> {
     try {
       const { data, error } = await supabase
-        .from('fitness_goals')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .from("fitness_goals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           // No fitness goals found
           return {
             success: false,
-            error: 'No fitness goals found',
+            error: "No fitness goals found",
           };
         }
         return {
@@ -186,7 +221,9 @@ class UserProfileService {
         };
       }
 
-      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(transformedData);
       return {
         success: true,
         data: fitnessGoals,
@@ -194,7 +231,10 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get fitness goals',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get fitness goals",
       };
     }
   }
@@ -204,22 +244,25 @@ class UserProfileService {
    */
   async updateFitnessGoals(
     userId: string,
-    updates: UpdateFitnessGoalsRequest
+    updates: UpdateFitnessGoalsRequest,
   ): Promise<FitnessGoalsResponse> {
     try {
+      // Transform to database format (snake_case)
+      const dbUpdates = toDb(updates);
+
       // Use upsert to handle update or insert
       const { data, error } = await supabase
-        .from('fitness_goals')
+        .from("fitness_goals")
         .upsert(
           {
             user_id: userId,
-            ...updates,
+            ...dbUpdates,
             updated_at: new Date().toISOString(),
           },
           {
-            onConflict: 'user_id',
+            onConflict: "user_id",
             ignoreDuplicates: false,
-          }
+          },
         )
         .select()
         .single();
@@ -231,7 +274,9 @@ class UserProfileService {
         };
       }
 
-      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(data);
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+      const fitnessGoals = this.mapDatabaseGoalsToFitnessGoals(transformedData);
       return {
         success: true,
         data: fitnessGoals,
@@ -239,7 +284,10 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update fitness goals',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update fitness goals",
       };
     }
   }
@@ -249,12 +297,13 @@ class UserProfileService {
    */
   async getCompleteProfile(userId: string): Promise<UserProfileResponse> {
     try {
-      const [profileResponse, goalsResponse, dietResponse, workoutResponse] = await Promise.all([
-        this.getProfile(userId),
-        this.getFitnessGoals(userId),
-        this.getDietPreferences(userId),
-        this.getWorkoutPreferences(userId),
-      ]);
+      const [profileResponse, goalsResponse, dietResponse, workoutResponse] =
+        await Promise.all([
+          this.getProfile(userId),
+          this.getFitnessGoals(userId),
+          this.getDietPreferences(userId),
+          this.getWorkoutPreferences(userId),
+        ]);
 
       if (!profileResponse.success) {
         return profileResponse;
@@ -284,7 +333,10 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get complete profile',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get complete profile",
       };
     }
   }
@@ -292,16 +344,18 @@ class UserProfileService {
   /**
    * Get diet preferences for a user
    */
-  async getDietPreferences(userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getDietPreferences(
+    userId: string,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('diet_preferences')
-        .select('*')
-        .eq('user_id', userId)
+        .from("diet_preferences")
+        .select("*")
+        .eq("user_id", userId)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           // No data found - this is okay
           return { success: true, data: null };
         }
@@ -311,55 +365,64 @@ class UserProfileService {
         };
       }
 
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+
       // Map all 27 fields from database to DietPreferences interface
       return {
         success: true,
         data: {
           // Basic diet info
-          diet_type: data.diet_type || 'non-veg',
-          allergies: data.allergies || [],
-          restrictions: data.restrictions || [],
+          diet_type: transformedData.dietType || "non-veg",
+          allergies: transformedData.allergies || [],
+          restrictions: transformedData.restrictions || [],
 
           // Diet readiness toggles (6 specialized diets)
-          keto_ready: data.keto_ready || false,
-          intermittent_fasting_ready: data.intermittent_fasting_ready || false,
-          paleo_ready: data.paleo_ready || false,
-          mediterranean_ready: data.mediterranean_ready || false,
-          low_carb_ready: data.low_carb_ready || false,
-          high_protein_ready: data.high_protein_ready || false,
+          keto_ready: transformedData.ketoReady || false,
+          intermittent_fasting_ready:
+            transformedData.intermittentFastingReady || false,
+          paleo_ready: transformedData.paleoReady || false,
+          mediterranean_ready: transformedData.mediterraneanReady || false,
+          low_carb_ready: transformedData.lowCarbReady || false,
+          high_protein_ready: transformedData.highProteinReady || false,
 
           // Meal preferences (at least 1 required)
-          breakfast_enabled: data.breakfast_enabled !== false,
-          lunch_enabled: data.lunch_enabled !== false,
-          dinner_enabled: data.dinner_enabled !== false,
-          snacks_enabled: data.snacks_enabled !== false,
+          breakfast_enabled: transformedData.breakfastEnabled !== false,
+          lunch_enabled: transformedData.lunchEnabled !== false,
+          dinner_enabled: transformedData.dinnerEnabled !== false,
+          snacks_enabled: transformedData.snacksEnabled !== false,
 
           // Cooking preferences
-          cooking_skill_level: data.cooking_skill_level || 'beginner',
-          max_prep_time_minutes: data.max_prep_time_minutes || null,
-          budget_level: data.budget_level || 'medium',
+          cooking_skill_level: transformedData.cookingSkillLevel || "beginner",
+          max_prep_time_minutes: transformedData.maxPrepTimeMinutes || null,
+          budget_level: transformedData.budgetLevel || "medium",
 
           // Health habits (14 boolean fields)
-          drinks_enough_water: data.drinks_enough_water || false,
-          limits_sugary_drinks: data.limits_sugary_drinks || false,
-          eats_regular_meals: data.eats_regular_meals || false,
-          avoids_late_night_eating: data.avoids_late_night_eating || false,
-          controls_portion_sizes: data.controls_portion_sizes || false,
-          reads_nutrition_labels: data.reads_nutrition_labels || false,
-          eats_processed_foods: data.eats_processed_foods !== false,
-          eats_5_servings_fruits_veggies: data.eats_5_servings_fruits_veggies || false,
-          limits_refined_sugar: data.limits_refined_sugar || false,
-          includes_healthy_fats: data.includes_healthy_fats || false,
-          drinks_alcohol: data.drinks_alcohol || false,
-          smokes_tobacco: data.smokes_tobacco || false,
-          drinks_coffee: data.drinks_coffee || false,
-          takes_supplements: data.takes_supplements || false,
+          drinks_enough_water: transformedData.drinksEnoughWater || false,
+          limits_sugary_drinks: transformedData.limitsSugaryDrinks || false,
+          eats_regular_meals: transformedData.eatsRegularMeals || false,
+          avoids_late_night_eating:
+            transformedData.avoidsLateNightEating || false,
+          controls_portion_sizes: transformedData.controlsPortionSizes || false,
+          reads_nutrition_labels: transformedData.readsNutritionLabels || false,
+          eats_processed_foods: transformedData.eatsProcessedFoods !== false,
+          eats_5_servings_fruits_veggies:
+            transformedData.eats5ServingsFruitsVeggies || false,
+          limits_refined_sugar: transformedData.limitsRefinedSugar || false,
+          includes_healthy_fats: transformedData.includesHealthyFats || false,
+          drinks_alcohol: transformedData.drinksAlcohol || false,
+          smokes_tobacco: transformedData.smokesTobacco || false,
+          drinks_coffee: transformedData.drinksCoffee || false,
+          takes_supplements: transformedData.takesSupplements || false,
         },
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get diet preferences',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get diet preferences",
       };
     }
   }
@@ -367,16 +430,18 @@ class UserProfileService {
   /**
    * Get workout preferences for a user
    */
-  async getWorkoutPreferences(userId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+  async getWorkoutPreferences(
+    userId: string,
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
       const { data, error } = await supabase
-        .from('workout_preferences')
-        .select('*')
-        .eq('user_id', userId)
+        .from("workout_preferences")
+        .select("*")
+        .eq("user_id", userId)
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
+        if (error.code === "PGRST116") {
           // No data found - this is okay
           return { success: true, data: null };
         }
@@ -386,20 +451,94 @@ class UserProfileService {
         };
       }
 
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+
       return {
         success: true,
         data: {
-          workoutTypes: data.workout_types || [],
-          equipment: data.equipment || [],
-          location: data.location || 'home',
-          timePreference: data.time_preference || 30,
-          intensity: data.intensity || 'intermediate',
+          workoutTypes: transformedData.workoutTypes || [],
+          equipment: transformedData.equipment || [],
+          location: transformedData.location || "home",
+          timePreference: transformedData.timePreference || 30,
+          intensity: transformedData.intensity || "intermediate",
+          activity_level: transformedData.activityLevel || "moderate",
         },
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to get workout preferences',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to get workout preferences",
+      };
+    }
+  }
+
+  /**
+   * Update workout preferences for a user
+   */
+  async updateWorkoutPreferences(
+    userId: string,
+    updates: {
+      workout_types?: string[];
+      equipment?: string[];
+      location?: string;
+      time_preference?: number;
+      intensity?: string;
+      activity_level?: string;
+    },
+  ): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      // Transform to database format (snake_case)
+      const dbUpdates = toDb(updates);
+
+      // Use upsert to handle update or insert
+      const { data, error } = await supabase
+        .from("workout_preferences")
+        .upsert(
+          {
+            user_id: userId,
+            ...dbUpdates,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id",
+            ignoreDuplicates: false,
+          },
+        )
+        .select()
+        .single();
+
+      if (error) {
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      // Transform from database format (camelCase)
+      const transformedData = fromDb(data);
+
+      return {
+        success: true,
+        data: {
+          workoutTypes: transformedData.workoutTypes || [],
+          equipment: transformedData.equipment || [],
+          location: transformedData.location || "home",
+          timePreference: transformedData.timePreference || 30,
+          intensity: transformedData.intensity || "intermediate",
+          activity_level: transformedData.activityLevel || "moderate",
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update workout preferences",
       };
     }
   }
@@ -407,9 +546,14 @@ class UserProfileService {
   /**
    * Delete user profile and all associated data
    */
-  async deleteProfile(userId: string): Promise<{ success: boolean; error?: string }> {
+  async deleteProfile(
+    userId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      const { error } = await supabase.from('profiles').delete().eq('id', userId);
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
 
       if (error) {
         return {
@@ -424,7 +568,8 @@ class UserProfileService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to delete profile',
+        error:
+          error instanceof Error ? error.message : "Failed to delete profile",
       };
     }
   }
@@ -432,12 +577,14 @@ class UserProfileService {
   /**
    * Map database profile to UserProfile type
    */
-  private mapDatabaseProfileToUserProfile(dbProfile: DatabaseProfile): UserProfile {
+  private mapDatabaseProfileToUserProfile(
+    dbProfile: DatabaseProfile,
+  ): UserProfile {
     // Cast to any to access new fields that might not be in generated types yet
     const profile = dbProfile as any;
 
     // Log the raw database profile
-    console.log('🔍 userProfile.ts: Raw database profile:', {
+    console.log("🔍 userProfile.ts: Raw database profile:", {
       id: profile.id,
       first_name: profile.first_name,
       last_name: profile.last_name,
@@ -448,45 +595,57 @@ class UserProfileService {
     });
 
     // Compute full name from first_name + last_name
-    const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+    const fullName =
+      `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
 
     // Map to PersonalInfo interface (matches profiles table - NO activityLevel)
     const personalInfo: PersonalInfo = {
-      first_name: profile.first_name || '',
-      last_name: profile.last_name || '',
+      first_name: profile.first_name || "",
+      last_name: profile.last_name || "",
       name: fullName,
       email: profile.email || undefined,
       age: profile.age || 0,
-      gender: (profile.gender as 'male' | 'female' | 'other' | 'prefer_not_to_say') || 'prefer_not_to_say',
-      country: profile.country || '',
-      state: profile.state || '',
+      gender:
+        (profile.gender as "male" | "female" | "other" | "prefer_not_to_say") ||
+        "prefer_not_to_say",
+      country: profile.country || "",
+      state: profile.state || "",
       region: profile.region || undefined,
-      wake_time: profile.wake_time || '',
-      sleep_time: profile.sleep_time || '',
-      occupation_type: (profile.occupation_type as 'desk_job' | 'light_active' | 'moderate_active' | 'heavy_labor' | 'very_active') || 'desk_job',
+      wake_time: profile.wake_time || "",
+      sleep_time: profile.sleep_time || "",
+      occupation_type:
+        (profile.occupation_type as
+          | "desk_job"
+          | "light_active"
+          | "moderate_active"
+          | "heavy_labor"
+          | "very_active") || "desk_job",
       profile_picture: profile.profile_picture || undefined,
       dark_mode: profile.dark_mode || false,
-      units: (profile.units as 'metric' | 'imperial') || 'metric',
+      units: (profile.units as "metric" | "imperial") || "metric",
       notifications_enabled: profile.notifications_enabled !== false,
     };
 
-    console.log('✅ userProfile.ts: Mapped PersonalInfo (NO activityLevel):', personalInfo);
+    console.log(
+      "✅ userProfile.ts: Mapped PersonalInfo (NO activityLevel):",
+      personalInfo,
+    );
 
     return {
       id: dbProfile.id,
-      email: dbProfile.email || '',
+      email: dbProfile.email || "",
       personalInfo,
       fitnessGoals: {
         primary_goals: [],
-        time_commitment: '',
-        experience: '',
-        experience_level: '',
+        time_commitment: "",
+        experience: "",
+        experience_level: "",
       },
-      createdAt: dbProfile.created_at || '',
-      updatedAt: dbProfile.updated_at || '',
+      createdAt: dbProfile.created_at || "",
+      updatedAt: dbProfile.updated_at || "",
       profilePicture: dbProfile.profile_picture || undefined,
       preferences: {
-        units: (dbProfile.units as 'metric' | 'imperial') || 'metric',
+        units: (dbProfile.units as "metric" | "imperial") || "metric",
         notifications: dbProfile.notifications_enabled !== false,
         darkMode: dbProfile.dark_mode || false,
       },
@@ -502,12 +661,17 @@ class UserProfileService {
   /**
    * Map database fitness goals to FitnessGoals type
    */
-  private mapDatabaseGoalsToFitnessGoals(dbGoals: DatabaseFitnessGoals): FitnessGoals {
+  private mapDatabaseGoalsToFitnessGoals(
+    dbGoals: DatabaseFitnessGoals,
+  ): FitnessGoals {
     return {
       primary_goals: dbGoals.primary_goals,
-      time_commitment: (dbGoals as any).time_commitment || dbGoals.preferred_workout_duration?.toString() || '',
-      experience: dbGoals.fitness_level || '',
-      experience_level: dbGoals.fitness_level || '',
+      time_commitment:
+        (dbGoals as any).time_commitment ||
+        dbGoals.preferred_workout_duration?.toString() ||
+        "",
+      experience: dbGoals.fitness_level || "",
+      experience_level: dbGoals.fitness_level || "",
     };
   }
 }

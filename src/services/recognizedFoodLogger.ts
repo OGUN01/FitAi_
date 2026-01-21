@@ -64,7 +64,7 @@ export class RecognizedFoodLogger {
         type: mealType,
         foods: foodMappings.map((mapping) => ({
           food_id: mapping.databaseFoodId,
-          quantity_grams: mapping.recognizedFood.portionSize.estimatedGrams,
+          quantity_grams: mapping.recognizedFood.userGrams ?? mapping.recognizedFood.estimatedGrams,
         })),
       };
 
@@ -205,45 +205,23 @@ export class RecognizedFoodLogger {
    */
   private async createFoodFromRecognized(recognizedFood: RecognizedFood): Promise<Food | null> {
     try {
+      // Use nutritionPer100g if available, otherwise calculate from portion
+      const per100g = recognizedFood.nutritionPer100g ?? {
+        calories: Math.round((recognizedFood.nutrition.calories / recognizedFood.estimatedGrams) * 100),
+        protein: Math.round(((recognizedFood.nutrition.protein / recognizedFood.estimatedGrams) * 100) * 10) / 10,
+        carbs: Math.round(((recognizedFood.nutrition.carbs / recognizedFood.estimatedGrams) * 100) * 10) / 10,
+        fat: Math.round(((recognizedFood.nutrition.fat / recognizedFood.estimatedGrams) * 100) * 10) / 10,
+        fiber: Math.round(((recognizedFood.nutrition.fiber / recognizedFood.estimatedGrams) * 100) * 10) / 10,
+      };
+
       const foodData = {
         name: recognizedFood.name,
         category: recognizedFood.category,
-        calories_per_100g: Math.round(
-          (recognizedFood.nutrition.calories / recognizedFood.portionSize.estimatedGrams) * 100
-        ),
-        protein_per_100g:
-          Math.round(
-            (recognizedFood.nutrition.protein / recognizedFood.portionSize.estimatedGrams) *
-              100 *
-              10
-          ) / 10,
-        carbs_per_100g:
-          Math.round(
-            (recognizedFood.nutrition.carbs / recognizedFood.portionSize.estimatedGrams) * 100 * 10
-          ) / 10,
-        fat_per_100g:
-          Math.round(
-            (recognizedFood.nutrition.fat / recognizedFood.portionSize.estimatedGrams) * 100 * 10
-          ) / 10,
-        fiber_per_100g: recognizedFood.nutrition.fiber
-          ? Math.round(
-              (recognizedFood.nutrition.fiber / recognizedFood.portionSize.estimatedGrams) *
-                100 *
-                10
-            ) / 10
-          : null,
-        sugar_per_100g: recognizedFood.nutrition.sugar
-          ? Math.round(
-              (recognizedFood.nutrition.sugar / recognizedFood.portionSize.estimatedGrams) *
-                100 *
-                10
-            ) / 10
-          : null,
-        sodium_per_100g: recognizedFood.nutrition.sodium
-          ? Math.round(
-              (recognizedFood.nutrition.sodium / recognizedFood.portionSize.estimatedGrams) * 100
-            )
-          : null,
+        calories_per_100g: per100g.calories,
+        protein_per_100g: per100g.protein,
+        carbs_per_100g: per100g.carbs,
+        fat_per_100g: per100g.fat,
+        fiber_per_100g: per100g.fiber || null,
         created_at: new Date().toISOString(),
       };
 
@@ -311,7 +289,6 @@ export class RecognizedFoodLogger {
             recognizedFoods.reduce((sum, food) => sum + food.confidence, 0) /
             recognizedFoods.length,
           cuisineTypes: [...new Set(recognizedFoods.map((food) => food.cuisine))],
-          enhancementSources: [...new Set(recognizedFoods.map((food) => food.enhancementSource))],
           newFoodsCreated: foodMappings.filter((mapping) => mapping.isNewFood).length,
           recognizedAt: new Date().toISOString(),
           foods: recognizedFoods.map((food, index) => ({
@@ -319,7 +296,8 @@ export class RecognizedFoodLogger {
             name: food.name,
             confidence: food.confidence,
             cuisine: food.cuisine,
-            enhancementSource: food.enhancementSource,
+            estimatedGrams: food.estimatedGrams,
+            userGrams: food.userGrams,
             databaseFoodId: foodMappings[index]?.databaseFoodId,
             isNewFood: foodMappings[index]?.isNewFood,
           })),

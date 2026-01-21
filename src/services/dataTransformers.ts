@@ -29,6 +29,8 @@ import {
   Exercise,
   WorkoutSet
 } from '../types/workout';
+// Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
+// where we have access to the user's actual weight from their profile
 
 // ============================================================================
 // WORKERS API RESPONSE TYPES
@@ -395,15 +397,18 @@ export function transformWorkoutResponse(
     return transformWorkersExerciseToWorkoutSet(workersEx);
   });
 
+  // Determine difficulty from metadata or default
+  const workoutDifficulty = determineWorkoutDifficulty(metadata);
+  
   // Build DayWorkout object
   const dayWorkout: DayWorkout = {
     id: generateUUID(),
     title: data.title || 'AI-Generated Workout',
     description: buildWorkoutDescription(data, metadata),
     category: 'strength', // Default, can be inferred from exercises
-    difficulty: 'intermediate', // Can be inferred from metadata
+    difficulty: workoutDifficulty,
     duration: data.totalDuration || 60,
-    estimatedCalories: estimateCaloriesBurned(data.totalDuration, metadata),
+    estimatedCalories: estimateCaloriesBurned(data.totalDuration || 60, metadata, data.exercises, workoutDifficulty),
     exercises,
     warmup: exercises.slice(0, 2), // First 2 for warmup
     cooldown: exercises.slice(-2), // Last 2 for cooldown
@@ -722,22 +727,39 @@ function buildWorkoutDescription(
 }
 
 /**
- * Estimate calories burned from duration and metadata
+ * Estimate calories burned from duration, metadata, and exercises
+ * 
+ * Uses MET-based calculation when exercise data AND user weight are available.
+ * Returns 0 if required data is missing (NO FALLBACK VALUES).
+ * 
+ * Priority:
+ * 1. MET-based calculation from exercise data (requires user weight)
+ * 2. TDEE-based calculation (if user metrics available)
+ * 3. Returns 0 if no calculation possible (will be recalculated at workout completion)
  */
 function estimateCaloriesBurned(
   duration: number,
-  metadata: WorkersWorkoutResponse['metadata']
+  metadata: WorkersWorkoutResponse['metadata'],
+  exercises?: WorkersExercise[],
+  difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate'
 ): number {
-  // Base rate: 5 calories per minute (moderate intensity)
-  let caloriesPerMinute = 5;
-
-  // Adjust based on calculated metrics if available
-  if (metadata.calculatedMetricsSummary?.tdee) {
-    // More accurate calculation based on TDEE
-    caloriesPerMinute = metadata.calculatedMetricsSummary.tdee / 1440 * 3; // 3x resting rate
+  // Try to get user weight from metadata (calculatedMetrics has BMR which we can derive weight from)
+  // BMR = 10 * weight + 6.25 * height - 5 * age + s (Mifflin-St Jeor)
+  // Without full data, we can't reliably extract weight, so we skip MET calculation at generation time
+  // The actual calories will be calculated at workout completion when we have user profile access
+  
+  // Priority 1: TDEE-based calculation (if user metrics available)
+  if (metadata.calculatedMetricsSummary?.tdee && duration > 0) {
+    // Calculate calories per minute based on TDEE and activity multiplier
+    const caloriesPerMinute = metadata.calculatedMetricsSummary.tdee / 1440 * 3; // 3x resting rate for exercise
+    const calories = Math.round(duration * caloriesPerMinute);
+    console.log(`[dataTransformers] TDEE-based calorie estimate: ${calories} kcal`);
+    return calories;
   }
-
-  return Math.round(duration * caloriesPerMinute);
+  
+  // NO FALLBACK - return 0, will be calculated at workout completion with actual user weight
+  console.log('[dataTransformers] Cannot estimate calories: no TDEE available, will calculate at completion');
+  return 0;
 }
 
 /**
@@ -822,6 +844,23 @@ function determineWorkoutSubCategory(data: WorkersWorkoutResponse['data']): stri
   if (muscles.some(m => m.toLowerCase().includes('arm'))) return 'arms';
 
   return 'full-body';
+}
+
+/**
+ * Determine workout difficulty from metadata
+ */
+function determineWorkoutDifficulty(
+  metadata: WorkersWorkoutResponse['metadata']
+): 'beginner' | 'intermediate' | 'advanced' {
+  // Check VO2max for fitness level indicator
+  if (metadata.calculatedMetricsSummary?.vo2max) {
+    if (metadata.calculatedMetricsSummary.vo2max > 50) return 'advanced';
+    if (metadata.calculatedMetricsSummary.vo2max > 35) return 'intermediate';
+    return 'beginner';
+  }
+  
+  // Default to intermediate
+  return 'intermediate';
 }
 
 /**

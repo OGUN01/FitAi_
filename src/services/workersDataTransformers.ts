@@ -10,6 +10,8 @@ import { PersonalInfo, FitnessGoals, WorkoutPreferences } from '../types/user';
 import { WorkoutGenerationRequest, DietGenerationRequest, WorkersResponse } from './fitaiWorkersClient';
 import { DayWorkout, WeeklyWorkoutPlan } from '../types/ai';
 import { BodyAnalysisData } from '../types/onboarding';
+// Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
+// where we have access to the user's actual weight from their profile
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -115,6 +117,11 @@ export function transformWorkoutResponse(
     })),
   ];
 
+  // Estimated calories = 0 at generation time
+  // Actual calories calculated at workout completion using user's real weight (completionTracking.ts)
+  // This prevents inaccurate data from fake default weights
+  const estimatedCalories = 0;
+
   return {
     id: `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     dayOfWeek: dayOfWeek || 'monday',
@@ -123,7 +130,7 @@ export function transformWorkoutResponse(
     duration: workoutResponse.duration,
     difficulty: workoutResponse.difficulty,
     category: 'strength', // Default, can be enhanced
-    estimatedCalories: Math.round(workoutResponse.duration * 5), // Rough estimate
+    estimatedCalories,
     exercises: allExercises.map((ex: any) => ({
       exerciseId: ex.exerciseId,
       sets: ex.sets || 3,

@@ -1,8 +1,8 @@
-import { supabase } from './supabase';
-import { crudOperations } from './crudOperations';
-import { dataBridge } from './DataBridge';
-import { AuthUser } from '../types/user';
-import { BodyMeasurement } from '../types/localData';
+import { supabase } from "./supabase";
+import { crudOperations } from "./crudOperations";
+import { dataBridge } from "./DataBridge";
+import { AuthUser } from "../types/user";
+import { BodyMeasurement } from "../types/localData";
 
 // Types for progress data
 export interface ProgressEntry {
@@ -87,6 +87,9 @@ export interface ProgressGoals {
     [key: string]: number;
   };
   target_date?: string;
+  weekly_workout_goal?: number;
+  daily_calorie_goal?: number;
+  daily_protein_goal?: number;
   created_at: string;
   updated_at: string;
 }
@@ -115,9 +118,9 @@ class ProgressDataService {
   async initialize(): Promise<void> {
     try {
       await crudOperations.initialize();
-      console.log('Progress Data Service initialized with Track B integration');
+      console.log("Progress Data Service initialized with Track B integration");
     } catch (error) {
-      console.error('Failed to initialize Progress Data Service:', error);
+      console.error("Failed to initialize Progress Data Service:", error);
       throw error;
     }
   }
@@ -127,15 +130,18 @@ class ProgressDataService {
    */
   async getUserProgressEntries(
     userId: string,
-    limit?: number
+    limit?: number,
   ): Promise<ProgressDataResponse<ProgressEntry[]>> {
     try {
       // First try to get from Track B's local storage
-      const localMeasurements = await crudOperations.readBodyMeasurements(limit);
+      const localMeasurements =
+        await crudOperations.readBodyMeasurements(limit);
 
       if (localMeasurements.length > 0) {
         // Convert Track B's BodyMeasurement format to our ProgressEntry format
-        const entries = localMeasurements.map(this.convertBodyMeasurementToProgressEntry);
+        const entries = localMeasurements.map((measurement) =>
+          this.convertBodyMeasurementToProgressEntry(measurement),
+        );
         return {
           success: true,
           data: entries,
@@ -144,10 +150,10 @@ class ProgressDataService {
 
       // Fallback to direct Supabase query
       let query = supabase
-        .from('progress_entries')
-        .select('*')
-        .eq('user_id', userId)
-        .order('entry_date', { ascending: false });
+        .from("progress_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("entry_date", { ascending: false });
 
       if (limit) {
         query = query.limit(limit);
@@ -156,7 +162,7 @@ class ProgressDataService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching progress entries:', error);
+        console.error("Error fetching progress entries:", error);
         return {
           success: false,
           error: error.message,
@@ -168,10 +174,13 @@ class ProgressDataService {
         data: data || [],
       };
     } catch (error) {
-      console.error('Error in getUserProgressEntries:', error);
+      console.error("Error in getUserProgressEntries:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch progress entries',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch progress entries",
       };
     }
   }
@@ -195,10 +204,10 @@ class ProgressDataService {
       };
       progress_photos?: string[];
       notes?: string;
-    }
+    },
   ): Promise<ProgressDataResponse<ProgressEntry>> {
     try {
-      const entryDate = new Date().toISOString().split('T')[0];
+      const entryDate = new Date().toISOString().split("T")[0];
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {
@@ -209,7 +218,7 @@ class ProgressDataService {
         muscleMass: entryData.muscle_mass_kg,
         photos: entryData.progress_photos || [],
         notes: entryData.notes,
-        syncStatus: 'pending',
+        syncStatus: "pending",
       } as any; // measurements assignment deferred for type compatibility
 
       // Store using Track B's CRUD operations
@@ -217,7 +226,7 @@ class ProgressDataService {
 
       // Also create in Supabase for immediate access
       const { data, error } = await supabase
-        .from('progress_entries')
+        .from("progress_entries")
         .insert({
           user_id: userId,
           entry_date: entryDate,
@@ -232,7 +241,7 @@ class ProgressDataService {
         .single();
 
       if (error) {
-        console.error('Error creating progress entry:', error);
+        console.error("Error creating progress entry:", error);
         return {
           success: false,
           error: error.message,
@@ -244,10 +253,13 @@ class ProgressDataService {
         data,
       };
     } catch (error) {
-      console.error('Error in createProgressEntry:', error);
+      console.error("Error in createProgressEntry:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create progress entry',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create progress entry",
       };
     }
   }
@@ -255,18 +267,20 @@ class ProgressDataService {
   /**
    * Get user's body analysis
    */
-  async getUserBodyAnalysis(userId: string): Promise<ProgressDataResponse<BodyAnalysis>> {
+  async getUserBodyAnalysis(
+    userId: string,
+  ): Promise<ProgressDataResponse<BodyAnalysis>> {
     try {
       const { data, error } = await supabase
-        .from('body_analysis')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .from("body_analysis")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (error) {
-        console.error('Error fetching body analysis:', error);
+        console.error("Error fetching body analysis:", error);
         return {
           success: false,
           error: error.message,
@@ -278,10 +292,13 @@ class ProgressDataService {
         data,
       };
     } catch (error) {
-      console.error('Error in getUserBodyAnalysis:', error);
+      console.error("Error in getUserBodyAnalysis:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to fetch body analysis',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch body analysis",
       };
     }
   }
@@ -291,15 +308,19 @@ class ProgressDataService {
    */
   async getProgressStats(
     userId: string,
-    timeRange: number = 30
+    timeRange: number = 30,
   ): Promise<ProgressDataResponse<ProgressStats>> {
     try {
       const entriesResponse = await this.getUserProgressEntries(userId);
 
-      if (!entriesResponse.success || !entriesResponse.data || entriesResponse.data.length < 2) {
+      if (
+        !entriesResponse.success ||
+        !entriesResponse.data ||
+        entriesResponse.data.length < 2
+      ) {
         return {
           success: false,
-          error: 'Not enough data to calculate progress statistics',
+          error: "Not enough data to calculate progress statistics",
         };
       }
 
@@ -312,14 +333,17 @@ class ProgressDataService {
         current: latest.weight_kg,
         previous: previous.weight_kg,
         change: latest.weight_kg - previous.weight_kg,
-        changePercentage: ((latest.weight_kg - previous.weight_kg) / previous.weight_kg) * 100,
+        changePercentage:
+          ((latest.weight_kg - previous.weight_kg) / previous.weight_kg) * 100,
       };
 
       // Calculate body fat change
       const bodyFatChange = {
         current: latest.body_fat_percentage || 0,
         previous: previous.body_fat_percentage || 0,
-        change: (latest.body_fat_percentage || 0) - (previous.body_fat_percentage || 0),
+        change:
+          (latest.body_fat_percentage || 0) -
+          (previous.body_fat_percentage || 0),
       };
 
       // Calculate muscle mass change
@@ -331,13 +355,20 @@ class ProgressDataService {
 
       // Calculate measurement changes
       const measurementChanges: {
-        [K in 'chest' | 'waist' | 'hips' | 'bicep' | 'thigh' | 'neck']?: {
+        [K in "chest" | "waist" | "hips" | "bicep" | "thigh" | "neck"]?: {
           current: number;
           previous: number;
           change: number;
         };
       } = {};
-      const measurementKeys = ['chest', 'waist', 'hips', 'bicep', 'thigh', 'neck'] as const;
+      const measurementKeys = [
+        "chest",
+        "waist",
+        "hips",
+        "bicep",
+        "thigh",
+        "neck",
+      ] as const;
 
       measurementKeys.forEach((key) => {
         const current = (latest as any).measurements?.[key] || 0;
@@ -363,21 +394,149 @@ class ProgressDataService {
         data: stats,
       };
     } catch (error) {
-      console.error('Error in getProgressStats:', error);
+      console.error("Error in getProgressStats:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to calculate progress statistics',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to calculate progress statistics",
       };
     }
   }
 
   /**
+   * Get user's progress goals
+   */
+  async getProgressGoals(
+    userId: string,
+  ): Promise<ProgressDataResponse<ProgressGoals>> {
+    try {
+      const { data, error } = await supabase
+        .from("progress_goals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          // No goals found - return empty goals structure
+          return {
+            success: true,
+            data: this.getDefaultGoals(userId),
+          };
+        }
+        console.error("Error fetching progress goals:", error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error("Error in getProgressGoals:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch progress goals",
+      };
+    }
+  }
+
+  /**
+   * Create or update progress goals
+   */
+  async updateProgressGoals(
+    userId: string,
+    goals: {
+      target_weight_kg?: number;
+      target_body_fat_percentage?: number;
+      target_muscle_mass_kg?: number;
+      target_measurements?: { [key: string]: number };
+      target_date?: string;
+      weekly_workout_goal?: number;
+      daily_calorie_goal?: number;
+      daily_protein_goal?: number;
+    },
+  ): Promise<ProgressDataResponse<ProgressGoals>> {
+    try {
+      const { data, error } = await supabase
+        .from("progress_goals")
+        .upsert(
+          {
+            user_id: userId,
+            ...goals,
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "user_id",
+            ignoreDuplicates: false,
+          },
+        )
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating progress goals:", error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error("Error in updateProgressGoals:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to update progress goals",
+      };
+    }
+  }
+
+  /**
+   * Get default goals structure when no goals exist
+   */
+  private getDefaultGoals(userId: string): ProgressGoals {
+    return {
+      id: "default",
+      user_id: userId,
+      target_weight_kg: undefined,
+      target_body_fat_percentage: undefined,
+      target_muscle_mass_kg: undefined,
+      target_measurements: {},
+      target_date: undefined,
+      weekly_workout_goal: 3,
+      daily_calorie_goal: 2000,
+      daily_protein_goal: 150,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Convert Track B's BodyMeasurement to our ProgressEntry format
    */
-  private convertBodyMeasurementToProgressEntry(measurement: BodyMeasurement): ProgressEntry {
+  private convertBodyMeasurementToProgressEntry(
+    measurement: BodyMeasurement,
+  ): ProgressEntry {
     return {
       id: measurement.id,
-      user_id: 'local-user',
+      user_id: "local-user",
       entry_date: measurement.date,
       weight_kg: measurement.weight ?? 0,
       body_fat_percentage: measurement.bodyFat,

@@ -21,12 +21,14 @@ import {
   BodyAnalysisService,
   PersonalInfoService,
   WorkoutPreferencesService,
+  DietPreferencesService,
 } from '../services/onboardingService';
 import {
   AdvancedReviewData,
   BodyAnalysisData,
   PersonalInfoData,
   WorkoutPreferencesData,
+  DietPreferencesData,
 } from '../types/onboarding';
 
 // ============================================================================
@@ -84,6 +86,14 @@ export interface CalculatedMetrics {
   // === Activity (from workout_preferences) ===
   activityLevel: string | null;
   primaryGoals: string[] | null;
+  
+  // === Workout Preferences (from workout_preferences) ===
+  workoutDurationMinutes: number | null; // User's preferred workout duration from onboarding
+  workoutFrequencyPerWeek: number | null; // How many days per week user wants to workout
+  
+  // === Workout Recommendations (from advanced_review) ===
+  recommendedCardioMinutes: number | null; // Daily recommended cardio minutes
+  mealsPerDay: number | null; // Number of meals per day
   
   // === Health Scores (from advanced_review) ===
   healthScore: number | null;
@@ -182,11 +192,12 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
     
     try {
       // Load all data in parallel
-      const [advancedReview, bodyAnalysis, personalInfo, workoutPreferences] = await Promise.all([
+      const [advancedReview, bodyAnalysis, personalInfo, workoutPreferences, dietPreferences] = await Promise.all([
         AdvancedReviewService.load(userId),
         BodyAnalysisService.load(userId),
         PersonalInfoService.load(userId),
         WorkoutPreferencesService.load(userId),
+        DietPreferencesService.load(userId),
       ]);
       
       console.log('📊 [useCalculatedMetrics] Data loaded:', {
@@ -194,6 +205,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
         hasBodyAnalysis: !!bodyAnalysis,
         hasPersonalInfo: !!personalInfo,
         hasWorkoutPreferences: !!workoutPreferences,
+        hasDietPreferences: !!dietPreferences,
       });
       
       // If no advanced_review data, user hasn't completed onboarding calculations
@@ -202,7 +214,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
         return null;
       }
       
-      return mapToCalculatedMetrics(advancedReview, bodyAnalysis, personalInfo, workoutPreferences);
+      return mapToCalculatedMetrics(advancedReview, bodyAnalysis, personalInfo, workoutPreferences, dietPreferences);
     } catch (err) {
       console.error('❌ [useCalculatedMetrics] Database load error:', err);
       throw err;
@@ -232,6 +244,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
       const bodyAnalysis = onboardingData.bodyAnalysis || onboardingData.body_analysis;
       const personalInfo = onboardingData.personalInfo || onboardingData.personal_info;
       const workoutPreferences = onboardingData.workoutPreferences || onboardingData.workout_preferences;
+      const dietPreferences = onboardingData.dietPreferences || onboardingData.diet_preferences;
       
       if (!advancedReview) {
         console.log('⚠️ [useCalculatedMetrics] No advancedReview in stored data');
@@ -241,7 +254,7 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
       
       console.log('✅ [useCalculatedMetrics] Found advancedReview with daily_water_ml:', advancedReview.daily_water_ml);
       
-      return mapToCalculatedMetrics(advancedReview, bodyAnalysis, personalInfo, workoutPreferences);
+      return mapToCalculatedMetrics(advancedReview, bodyAnalysis, personalInfo, workoutPreferences, dietPreferences);
     } catch (err) {
       console.error('❌ [useCalculatedMetrics] AsyncStorage load error:', err);
       throw err;
@@ -368,8 +381,20 @@ function mapToCalculatedMetrics(
   advancedReview: AdvancedReviewData | null,
   bodyAnalysis: BodyAnalysisData | null,
   personalInfo: PersonalInfoData | null,
-  workoutPreferences: WorkoutPreferencesData | null
+  workoutPreferences: WorkoutPreferencesData | null,
+  dietPreferences: DietPreferencesData | null
 ): CalculatedMetrics {
+  // Calculate meals per day from diet preferences (Tab 2)
+  const calculateMealsPerDay = (): number | null => {
+    if (!dietPreferences) return null;
+    let count = 0;
+    if (dietPreferences.breakfast_enabled) count++;
+    if (dietPreferences.lunch_enabled) count++;
+    if (dietPreferences.dinner_enabled) count++;
+    if (dietPreferences.snacks_enabled) count++; // Count snacks as 1 meal slot
+    return count > 0 ? count : null;
+  };
+
   // Parse heart rate zones if available
   let heartRateZones: CalculatedMetrics['heartRateZones'] = null;
   if (advancedReview?.target_hr_fat_burn_min && advancedReview?.target_hr_fat_burn_max) {
@@ -455,6 +480,14 @@ function mapToCalculatedMetrics(
     // Activity - NO FALLBACKS
     activityLevel: workoutPreferences?.activity_level ?? null,
     primaryGoals: workoutPreferences?.primary_goals ?? null,
+    
+    // Workout Preferences - from workout_preferences (Tab 4)
+    workoutDurationMinutes: workoutPreferences?.time_preference ?? null, // User's preferred workout duration
+    workoutFrequencyPerWeek: workoutPreferences?.workout_frequency_per_week ?? null,
+    
+    // Workout Recommendations - from advanced_review
+    recommendedCardioMinutes: advancedReview?.recommended_cardio_minutes ?? null,
+    mealsPerDay: calculateMealsPerDay(), // Calculated from diet_preferences (Tab 2)
     
     // Health Scores - NO FALLBACKS
     healthScore: (advancedReview as any)?.health_score ?? advancedReview?.overall_health_score, // DB has both columns

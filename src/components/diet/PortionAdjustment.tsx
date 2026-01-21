@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  TextInput,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -104,8 +106,8 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
       setAdjustments(
         recognizedFoods.map((food) => ({
           foodId: food.id,
-          originalGrams: food.portionSize.estimatedGrams,
-          adjustedGrams: food.portionSize.estimatedGrams,
+          originalGrams: food.userGrams ?? food.estimatedGrams,
+          adjustedGrams: food.userGrams ?? food.estimatedGrams,
           adjustmentRatio: 1.0,
         }))
       );
@@ -114,7 +116,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
   }, [recognizedFoods]);
 
   const updateAdjustment = (index: number, adjustedGrams: number) => {
-    const originalGrams = recognizedFoods[index].portionSize.estimatedGrams;
+    const originalGrams = recognizedFoods[index].userGrams ?? recognizedFoods[index].estimatedGrams;
     const adjustmentRatio = adjustedGrams / originalGrams;
 
     setAdjustments((prev) =>
@@ -159,11 +161,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
 
         return {
           ...food,
-          portionSize: {
-            ...food.portionSize,
-            estimatedGrams: adjustment.adjustedGrams,
-            confidence: Math.max(food.portionSize.confidence - 5, 60), // Slightly reduce confidence for user-adjusted portions
-          },
+          userGrams: adjustment.adjustedGrams,
           nutrition: scaledNutrition,
         } as RecognizedFood;
       });
@@ -243,8 +241,9 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
     return null;
   }
 
-  const minGrams = Math.max(20, Math.round(currentFood.portionSize.estimatedGrams * 0.3));
-  const maxGrams = Math.round(currentFood.portionSize.estimatedGrams * 3);
+  const effectiveGrams = currentFood.userGrams ?? currentFood.estimatedGrams;
+  const minGrams = Math.max(20, Math.round(effectiveGrams * 0.3));
+  const maxGrams = Math.round(effectiveGrams * 3);
   const commonPortions = getCommonPortionSizes(currentFood.name);
 
   // Calculate updated nutrition for preview
@@ -292,7 +291,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               <Text style={styles.foodName}>{currentFood.name}</Text>
               <View style={styles.originalBadge}>
                 <Text style={styles.originalText}>
-                  Original: {currentFood.portionSize.estimatedGrams}g
+                  AI Estimate: {currentFood.estimatedGrams}g
                 </Text>
               </View>
             </View>
@@ -350,6 +349,31 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
               <Text style={styles.sliderLabel}>{minGrams}g</Text>
               <Text style={styles.sliderLabel}>{maxGrams}g</Text>
             </View>
+
+            {/* Manual Gram Input - For users with weighing scales */}
+            <View style={styles.manualInputContainer}>
+              <Text style={styles.manualInputLabel}>⚖️ Have a scale? Enter exact grams:</Text>
+              <View style={styles.manualInputRow}>
+                <TextInput
+                  style={styles.manualInput}
+                  keyboardType="numeric"
+                  placeholder="Enter grams"
+                  placeholderTextColor={ResponsiveTheme.colors.textMuted}
+                  value={String(currentAdjustment.adjustedGrams)}
+                  onChangeText={(text) => {
+                    const numValue = parseInt(text.replace(/[^0-9]/g, ''), 10);
+                    if (!isNaN(numValue) && numValue >= 1 && numValue <= 2000) {
+                      updateAdjustment(currentFoodIndex, numValue);
+                    }
+                  }}
+                  onBlur={() => Keyboard.dismiss()}
+                  maxLength={4}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                />
+                <Text style={styles.manualInputUnit}>grams</Text>
+              </View>
+            </View>
           </Card>
 
           {/* Quick Portion Buttons */}
@@ -394,7 +418,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
             <TouchableOpacity
               style={styles.resetButton}
               onPress={() =>
-                updateAdjustment(currentFoodIndex, currentFood.portionSize.estimatedGrams)
+                updateAdjustment(currentFoodIndex, currentFood.estimatedGrams)
               }
               disabled={currentAdjustment.adjustmentRatio === 1.0}
             >
@@ -404,7 +428,7 @@ export const PortionAdjustment: React.FC<PortionAdjustmentProps> = ({
                   currentAdjustment.adjustmentRatio === 1.0 && styles.resetButtonTextDisabled,
                 ]}
               >
-                🔄 Reset to Original ({currentFood.portionSize.estimatedGrams}g)
+                🔄 Reset to AI Estimate ({currentFood.estimatedGrams}g)
               </Text>
             </TouchableOpacity>
           </Card>
@@ -644,6 +668,47 @@ const styles = StyleSheet.create({
   sliderLabel: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
+  },
+
+  manualInputContainer: {
+    marginTop: ResponsiveTheme.spacing.lg,
+    paddingTop: ResponsiveTheme.spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: ResponsiveTheme.colors.border,
+  },
+
+  manualInputLabel: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.textSecondary,
+    marginBottom: ResponsiveTheme.spacing.sm,
+    textAlign: 'center',
+  },
+
+  manualInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: ResponsiveTheme.spacing.sm,
+  },
+
+  manualInput: {
+    width: rw(100),
+    height: rh(48),
+    borderWidth: 2,
+    borderColor: ResponsiveTheme.colors.primary,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    fontSize: ResponsiveTheme.fontSize.lg,
+    fontWeight: '700',
+    color: ResponsiveTheme.colors.text,
+    textAlign: 'center',
+    backgroundColor: ResponsiveTheme.colors.background,
+  },
+
+  manualInputUnit: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.textSecondary,
+    fontWeight: '600',
   },
 
   quickPortionsCard: {

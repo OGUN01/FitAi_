@@ -1,13 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   progressDataService,
   ProgressEntry,
   BodyAnalysis,
   ProgressStats,
   ProgressGoals,
-} from '../services/progressData';
-import { useAuth } from './useAuth';
-import useTrackBIntegration from './useTrackBIntegration';
+} from "../services/progressData";
+import { useAuth } from "./useAuth";
+import useTrackBIntegration from "./useTrackBIntegration";
 
 interface UseProgressDataReturn {
   // Progress entries
@@ -79,12 +79,16 @@ export const useProgressData = (): UseProgressDataReturn => {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Progress statistics state
-  const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
+  const [progressStats, setProgressStats] = useState<ProgressStats | null>(
+    null,
+  );
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState<string | null>(null);
 
   // Progress goals state
-  const [progressGoals, setProgressGoals] = useState<ProgressGoals | null>(null);
+  const [progressGoals, setProgressGoals] = useState<ProgressGoals | null>(
+    null,
+  );
   const [goalsLoading, setGoalsLoading] = useState(false);
   const [goalsError, setGoalsError] = useState<string | null>(null);
 
@@ -92,7 +96,7 @@ export const useProgressData = (): UseProgressDataReturn => {
   useEffect(() => {
     if (isAuthenticated && !trackB.integration.isInitialized) {
       trackB.actions.initialize().catch((error) => {
-        console.error('Failed to initialize Track B integration:', error);
+        console.error("Failed to initialize Track B integration:", error);
       });
     }
   }, [isAuthenticated, trackB.integration.isInitialized, trackB.actions]);
@@ -106,22 +110,27 @@ export const useProgressData = (): UseProgressDataReturn => {
       setProgressError(null);
 
       try {
-        const response = await progressDataService.getUserProgressEntries(user.id, limit);
+        const response = await progressDataService.getUserProgressEntries(
+          user.id,
+          limit,
+        );
 
         if (response.success && response.data) {
           setProgressEntries(response.data);
         } else {
-          setProgressError(response.error || 'Failed to load progress entries');
+          setProgressError(response.error || "Failed to load progress entries");
         }
       } catch (error) {
         setProgressError(
-          error instanceof Error ? error.message : 'Failed to load progress entries'
+          error instanceof Error
+            ? error.message
+            : "Failed to load progress entries",
         );
       } finally {
         setProgressLoading(false);
       }
     },
-    [user?.id]
+    [user?.id],
   );
 
   // Load body analysis
@@ -137,10 +146,12 @@ export const useProgressData = (): UseProgressDataReturn => {
       if (response.success && response.data) {
         setBodyAnalysis(response.data);
       } else {
-        setAnalysisError(response.error || 'Failed to load body analysis');
+        setAnalysisError(response.error || "Failed to load body analysis");
       }
     } catch (error) {
-      setAnalysisError(error instanceof Error ? error.message : 'Failed to load body analysis');
+      setAnalysisError(
+        error instanceof Error ? error.message : "Failed to load body analysis",
+      );
     } finally {
       setAnalysisLoading(false);
     }
@@ -155,22 +166,27 @@ export const useProgressData = (): UseProgressDataReturn => {
       setStatsError(null);
 
       try {
-        const response = await progressDataService.getProgressStats(user.id, timeRange);
+        const response = await progressDataService.getProgressStats(
+          user.id,
+          timeRange,
+        );
 
         if (response.success && response.data) {
           setProgressStats(response.data);
         } else {
-          setStatsError(response.error || 'Failed to load progress statistics');
+          setStatsError(response.error || "Failed to load progress statistics");
         }
       } catch (error) {
         setStatsError(
-          error instanceof Error ? error.message : 'Failed to load progress statistics'
+          error instanceof Error
+            ? error.message
+            : "Failed to load progress statistics",
         );
       } finally {
         setStatsLoading(false);
       }
     },
-    [user?.id]
+    [user?.id],
   );
 
   // Load progress goals
@@ -181,12 +197,19 @@ export const useProgressData = (): UseProgressDataReturn => {
     setGoalsError(null);
 
     try {
-      // TODO: Implement real progress goals from database
-      // For now, set to null - no mock data
-      setProgressGoals(null);
-      setGoalsError('Progress goals not yet implemented');
+      const response = await progressDataService.getProgressGoals(user.id);
+
+      if (response.success && response.data) {
+        setProgressGoals(response.data);
+      } else {
+        setGoalsError(response.error || "Failed to load progress goals");
+      }
     } catch (error) {
-      setGoalsError(error instanceof Error ? error.message : 'Failed to load progress goals');
+      setGoalsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load progress goals",
+      );
     } finally {
       setGoalsLoading(false);
     }
@@ -212,24 +235,29 @@ export const useProgressData = (): UseProgressDataReturn => {
       if (!user?.id) return false;
 
       try {
-        const response = await progressDataService.createProgressEntry(user.id, entryData);
+        const response = await progressDataService.createProgressEntry(
+          user.id,
+          entryData,
+        );
 
         if (response.success) {
           // Refresh progress data
           await Promise.all([loadProgressEntries(), loadProgressStats()]);
           return true;
         } else {
-          setProgressError(response.error || 'Failed to create progress entry');
+          setProgressError(response.error || "Failed to create progress entry");
           return false;
         }
       } catch (error) {
         setProgressError(
-          error instanceof Error ? error.message : 'Failed to create progress entry'
+          error instanceof Error
+            ? error.message
+            : "Failed to create progress entry",
         );
         return false;
       }
     },
-    [user?.id, loadProgressEntries, loadProgressStats]
+    [user?.id, loadProgressEntries, loadProgressStats],
   );
 
   // Refresh all data
@@ -266,7 +294,7 @@ export const useProgressData = (): UseProgressDataReturn => {
     if (isAuthenticated && user?.id && trackB.integration.isInitialized) {
       refreshAll().catch((error) => {
         if (isMounted) {
-          console.error('Failed to refresh progress data:', error);
+          console.error("Failed to refresh progress data:", error);
         }
       });
     }

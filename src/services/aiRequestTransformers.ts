@@ -11,6 +11,8 @@
 import type { PersonalInfo, FitnessGoals, DietPreferences, WorkoutPreferences, BodyMetrics } from '../types/user';
 import type { DietGenerationRequest, WorkoutGenerationRequest, WorkersResponse, DietPlan, WorkoutPlan } from './fitaiWorkersClient';
 import type { WeeklyMealPlan, WeeklyWorkoutPlan, Meal, DayMeal, Workout } from '../types/ai';
+// Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
+// where we have access to the user's actual weight from their profile
 
 // ============================================================================
 // DIET REQUEST TRANSFORMERS
@@ -517,12 +519,12 @@ function mapDifficulty(difficulty?: string): 'beginner' | 'intermediate' | 'adva
   return diffMap[difficulty?.toLowerCase() || ''] || 'intermediate';
 }
 
-function calculateEstimatedCalories(workout: WorkoutPlan): number {
-  // Estimate calories based on duration and intensity
-  const durationMinutes = workout.totalDuration || workout.duration || 30;
-  const caloriesPerMinute = workout.difficulty === 'advanced' ? 12 : 
-                            workout.difficulty === 'intermediate' ? 8 : 5;
-  return Math.round(durationMinutes * caloriesPerMinute);
+function calculateEstimatedCalories(_workout: WorkoutPlan): number {
+  // NO DEFAULT VALUES - return 0 at generation time
+  // Actual calories calculated at workout completion using user's real weight from profile
+  // This prevents inaccurate data from fake default weights
+  console.log('[aiRequestTransformers] Calories set to 0 at generation, will be calculated at completion');
+  return 0;
 }
 
 function transformExercises(workout: WorkoutPlan): any[] {

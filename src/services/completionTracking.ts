@@ -1,11 +1,13 @@
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useNutritionStore } from '../stores/nutritionStore';
+import { useUserStore } from '../stores/userStore';
 import { DayWorkout, DayMeal } from '../ai';
 import crudOperations from './crudOperations';
 import { MealLog, SyncStatus } from '../types/localData';
 import { supabase } from './supabase';
 import { nutritionRefreshService } from './nutritionRefreshService';
 import { fitnessRefreshService } from './fitnessRefreshService';
+import { calculateWorkoutCalories, ExerciseCalorieInput } from './calorieCalculator';
 
 export interface CompletionEvent {
   id: string;
@@ -35,6 +37,53 @@ class CompletionTrackingService {
     this.listeners.forEach((listener) => listener(event));
   }
 
+  /**
+   * Calculate actual calories burned using MET-based formula
+   * Uses user's real weight for personalized calculation
+   * NO FALLBACK VALUES - returns 0 if weight not available
+   */
+  private calculateActualCalories(workout: DayWorkout, sessionData?: any): number {
+    // If session data has pre-calculated stats (from WorkoutSessionScreen), use those
+    if (sessionData?.stats?.caloriesBurned && sessionData.stats.caloriesBurned > 0) {
+      console.log(`[completionTracking] Using session stats calories: ${sessionData.stats.caloriesBurned} kcal`);
+      return sessionData.stats.caloriesBurned;
+    }
+    
+    // Get user's weight from profile (single source of truth)
+    const userStore = useUserStore.getState();
+    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg;
+    
+    // NO FALLBACK - if weight not available, return 0 and log warning
+    if (!userWeight || userWeight <= 0) {
+      console.warn('[completionTracking] Cannot calculate calories: user weight not set in profile');
+      console.warn('[completionTracking] User should complete onboarding with body metrics');
+      return 0;
+    }
+    
+    // Calculate from exercises using MET values
+    if (workout.exercises && workout.exercises.length > 0) {
+      const exerciseInputs: ExerciseCalorieInput[] = workout.exercises.map(ex => ({
+        exerciseId: ex.exerciseId || ex.id,
+        name: ex.exerciseName || ex.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        duration: ex.duration,
+        restTime: ex.restTime,
+      }));
+      
+      const result = calculateWorkoutCalories(exerciseInputs, userWeight);
+      
+      if (result.totalCalories > 0) {
+        console.log(`[completionTracking] MET-based calories (weight: ${userWeight}kg): ${result.totalCalories} kcal`);
+        return result.totalCalories;
+      }
+    }
+    
+    // No exercises to calculate from
+    console.warn('[completionTracking] No exercises available for MET calculation');
+    return 0;
+  }
+
   // Complete a workout
   async completeWorkout(workoutId: string, sessionData?: any, userId?: string): Promise<boolean> {
     try {
@@ -47,6 +96,9 @@ class CompletionTrackingService {
       const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find((w) => w.id === workoutId);
 
       if (workout) {
+        // Calculate actual calories using MET-based formula with user's weight
+        const actualCaloriesBurned = this.calculateActualCalories(workout, sessionData);
+        
         // Sync workout completion to Supabase (like we do for meals)
         if (userId) {
           try {
@@ -56,7 +108,7 @@ class CompletionTrackingService {
               workout_name: workout.title,
               workout_type: workout.category || 'general',
               duration_minutes: workout.duration || sessionData?.duration || null,
-              calories_burned: workout.estimatedCalories || sessionData?.stats?.caloriesBurned || null,
+              calories_burned: actualCaloriesBurned,
               exercises_completed: sessionData?.exercisesCompleted || workout.exercises?.length || 0,
               started_at: sessionData?.startedAt || new Date().toISOString(),
               completed_at: new Date().toISOString(),
@@ -67,7 +119,7 @@ class CompletionTrackingService {
               console.error(`⚠️ Supabase workout_sessions insert error:`, supabaseResult.error);
             } else {
               console.log(
-                `✅ Supabase workout_sessions synced for: ${workout.title} (${workout.estimatedCalories} cal, ${workout.duration} min)`
+                `✅ Supabase workout_sessions synced for: ${workout.title} (${actualCaloriesBurned} cal MET-based, ${workout.duration} min)`
               );
               
               // CRITICAL: Trigger refresh so fitness hooks refetch data
@@ -77,7 +129,7 @@ class CompletionTrackingService {
                   workoutId,
                   workoutName: workout.title,
                   duration: workout.duration,
-                  caloriesBurned: workout.estimatedCalories,
+                  caloriesBurned: actualCaloriesBurned,
                 });
                 console.log('🔄 Fitness refresh triggered after workout completion');
               } catch (refreshError) {
@@ -367,14 +419,16 @@ class CompletionTrackingService {
       (p) => p.progress === 100
     ).length;
 
-    // Calculate calories
+    // Calculate calories using MET-based formula for completed workouts
     const caloriesBurned = Object.values(fitnessStore.workoutProgress)
       .filter((p) => p.progress === 100)
       .reduce((total, progress) => {
         const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
           (w) => w.id === progress.workoutId
         );
-        return total + (workout?.estimatedCalories || 0);
+        if (!workout) return total;
+        // Use MET-based calculation for accurate calories
+        return total + this.calculateActualCalories(workout);
       }, 0);
 
     const caloriesConsumed = Object.values(nutritionStore.mealProgress)

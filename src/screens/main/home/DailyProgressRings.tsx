@@ -18,6 +18,7 @@ import { GlassCard } from '../../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
 import { ResponsiveTheme } from '../../../utils/constants';
 import { rf, rw } from '../../../utils/responsive';
+import type { MetricSource } from '../../../stores/healthDataStore';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -26,6 +27,7 @@ const RINGS = {
   move: { color: '#FF6B6B', gradientEnd: '#FF8E53', icon: 'flame' as const },
   exercise: { color: '#4CAF50', gradientEnd: '#8BC34A', icon: 'barbell' as const },
   nutrition: { color: '#2196F3', gradientEnd: '#03A9F4', icon: 'restaurant' as const },
+  steps: { color: '#9C27B0', gradientEnd: '#E040FB', icon: 'footsteps' as const },
 };
 
 interface DailyProgressRingsProps {
@@ -36,6 +38,11 @@ interface DailyProgressRingsProps {
   workoutGoal: number;
   mealsLogged: number;
   mealsGoal: number;
+  // Steps (from Health Connect/HealthKit)
+  steps?: number;
+  stepsGoal?: number;
+  // Data source attribution (for transparency)
+  stepsSource?: MetricSource;
   onPress?: () => void;
 }
 
@@ -96,19 +103,25 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   workoutGoal,
   mealsLogged,
   mealsGoal,
+  steps = 0,
+  stepsGoal = 10000,
+  stepsSource,
   onPress,
 }) => {
   // Calculate percentages - guard against division by zero (show 0 instead of NaN)
   const moveProgress = caloriesGoal > 0 ? Math.min((caloriesBurned / caloriesGoal) * 100, 100) : 0;
   const exerciseProgress = workoutGoal > 0 ? Math.min((workoutMinutes / workoutGoal) * 100, 100) : 0;
   const nutritionProgress = mealsGoal > 0 ? Math.min((mealsLogged / mealsGoal) * 100, 100) : 0;
-  const overallScore = Math.round((moveProgress + exerciseProgress + nutritionProgress) / 3) || 0;
+  const stepsProgress = stepsGoal > 0 ? Math.min((steps / stepsGoal) * 100, 100) : 0;
+  const overallScore = Math.round((moveProgress + exerciseProgress + nutritionProgress + stepsProgress) / 4) || 0;
   
-  // Ring sizes (compact)
-  const outerSize = rw(140);
-  const middleSize = rw(112);
-  const innerSize = rw(84);
-  const strokeWidth = rw(10);
+  // Ring sizes (compact) - 4 rings
+  const outerSize = rw(140);      // Move (calories)
+  const middleSize = rw(114);     // Exercise (workout)
+  const innerSize = rw(88);       // Nutrition (meals)
+  const innermostSize = rw(62);   // Steps
+  const strokeWidth = rw(9);      // Slightly thinner for better fit
+  const innerStrokeWidth = rw(7); // Thinner stroke for innermost ring
 
   return (
     <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
@@ -125,6 +138,10 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
             <View style={[styles.ringOverlay, { width: innerSize, height: innerSize, top: (outerSize - innerSize) / 2, left: (outerSize - innerSize) / 2 }]}>
               <Ring progress={nutritionProgress} size={innerSize} strokeWidth={strokeWidth}
                 color={RINGS.nutrition.color} gradientEnd={RINGS.nutrition.gradientEnd} gradientId="nutritionGrad" delay={160} />
+            </View>
+            <View style={[styles.ringOverlay, { width: innermostSize, height: innermostSize, top: (outerSize - innermostSize) / 2, left: (outerSize - innermostSize) / 2 }]}>
+              <Ring progress={stepsProgress} size={innermostSize} strokeWidth={innerStrokeWidth}
+                color={RINGS.steps.color} gradientEnd={RINGS.steps.gradientEnd} gradientId="stepsGrad" delay={240} />
             </View>
             <View style={styles.centerContent}>
               <Text style={styles.scoreText}>{overallScore}</Text>
@@ -151,6 +168,18 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               <Ionicons name={RINGS.nutrition.icon} size={rf(14)} color={RINGS.nutrition.color} />
               <Text style={styles.statLabel}>Meals</Text>
               <Text style={styles.statValue}>{mealsLogged}<Text style={styles.statUnit}>/{mealsGoal}</Text></Text>
+            </View>
+            {/* Steps from Health Connect/HealthKit */}
+            <View style={styles.statRow}>
+              <View style={[styles.statDot, { backgroundColor: RINGS.steps.color }]} />
+              <Ionicons name={RINGS.steps.icon} size={rf(14)} color={RINGS.steps.color} />
+              <View style={styles.statLabelContainer}>
+                <Text style={styles.statLabel}>Steps</Text>
+                {stepsSource && (
+                  <Text style={styles.sourceLabel}>via {stepsSource.name}</Text>
+                )}
+              </View>
+              <Text style={styles.statValue}>{steps.toLocaleString()}<Text style={styles.statUnit}>/{stepsGoal.toLocaleString()}</Text></Text>
             </View>
           </View>
         </View>
@@ -179,12 +208,12 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   scoreText: {
-    fontSize: rf(24),
+    fontSize: rf(18),
     fontWeight: '800',
     color: ResponsiveTheme.colors.text,
   },
   scoreLabel: {
-    fontSize: rf(12),
+    fontSize: rf(10),
     fontWeight: '600',
     color: ResponsiveTheme.colors.textSecondary,
   },
@@ -202,11 +231,20 @@ const styles = StyleSheet.create({
     height: rw(6),
     borderRadius: rw(3),
   },
+  statLabelContainer: {
+    flex: 1,
+  },
   statLabel: {
     fontSize: rf(12),
     fontWeight: '600',
     color: ResponsiveTheme.colors.text,
     flex: 1,
+  },
+  sourceLabel: {
+    fontSize: rf(9),
+    fontWeight: '500',
+    color: ResponsiveTheme.colors.textSecondary,
+    opacity: 0.7,
   },
   statValue: {
     fontSize: rf(13),

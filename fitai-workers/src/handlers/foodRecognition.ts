@@ -2,7 +2,10 @@
  * FitAI Workers - Food Recognition Handler
  *
  * Uses Gemini Vision API to recognize food from images
- * Supports both Indian and international cuisines with 90%+ accuracy
+ * Simplified schema focusing on what AI does reliably:
+ * - Food identification (name, category)
+ * - Basic nutrition estimation
+ * - Portion suggestion (user can override with exact grams)
  *
  * @endpoint POST /food/recognize
  */
@@ -16,7 +19,7 @@ import { APIError } from '../utils/errors';
 import { ErrorCode } from '../utils/errorCodes';
 
 // ============================================================================
-// TYPES & SCHEMAS
+// TYPES & SCHEMAS - SIMPLIFIED FOR RELIABILITY
 // ============================================================================
 
 // Request validation schema
@@ -24,42 +27,57 @@ const FoodRecognitionRequestSchema = z.object({
   imageBase64: z.string().min(100, 'Image data is too short'),
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']),
   userContext: z.object({
-    region: z.string().optional(),
     dietaryRestrictions: z.array(z.string()).optional(),
   }).optional(),
 });
 
 type FoodRecognitionRequest = z.infer<typeof FoodRecognitionRequestSchema>;
 
-// Response schema for Gemini Vision (Zod version for generateObject)
+// Simplified food schema - only fields AI can reliably detect
 const RecognizedFoodSchema = z.object({
-  name: z.string().describe("Specific food name (e.g., 'Chicken Biryani', not just 'rice')"),
-  hindiName: z.string().optional().describe('Hindi name for Indian foods'),
+  // Core identification (AI is good at this)
+  name: z.string().describe("Specific food name (e.g., 'Chicken Biryani', 'Caesar Salad', 'Sushi Roll')"),
+  localName: z.string().optional().describe('Local/native name if applicable (e.g., Hindi, Japanese, Spanish)'),
+  
+  // Classification (reliable)
   category: z.enum(['main', 'side', 'snack', 'sweet', 'beverage']).describe('Food category'),
-  cuisine: z.enum(['indian', 'international']).describe('Cuisine type'),
-  region: z.enum(['north', 'south', 'east', 'west', 'pan-indian']).optional().describe('Regional origin for Indian foods'),
-  spiceLevel: z.enum(['mild', 'medium', 'hot', 'extra_hot']).optional().describe('Spice level'),
-  cookingMethod: z.enum(['fried', 'steamed', 'baked', 'curry', 'grilled', 'raw', 'boiled']).optional().describe('Cooking method'),
-  estimatedGrams: z.number().describe('Estimated portion weight in grams'),
-  portionConfidence: z.number().min(0).max(100).describe('Confidence in portion estimation'),
-  servingType: z.enum(['small', 'medium', 'large', 'traditional']).describe('Serving size'),
+  cuisine: z.enum([
+    'indian',
+    'chinese', 
+    'japanese',
+    'korean',
+    'thai',
+    'vietnamese',
+    'italian',
+    'mexican',
+    'american',
+    'mediterranean',
+    'middle_eastern',
+    'african',
+    'french',
+    'other'
+  ]).describe('Cuisine type - be specific'),
+  
+  // Portion estimation (AI suggestion - user can override)
+  estimatedGrams: z.number().describe('Estimated portion weight in grams based on visual size'),
+  servingDescription: z.string().describe("Human-readable serving description (e.g., '1 bowl', '2 pieces', '1 plate')"),
+  
+  // Nutrition for estimated portion (core macros only)
   calories: z.number().describe('Calories for the estimated portion'),
   protein: z.number().describe('Protein in grams'),
   carbs: z.number().describe('Carbohydrates in grams'),
   fat: z.number().describe('Fat in grams'),
   fiber: z.number().describe('Fiber in grams'),
-  sugar: z.number().optional().describe('Sugar in grams'),
-  sodium: z.number().optional().describe('Sodium in milligrams'),
-  ingredients: z.array(z.string()).optional().describe('Visible ingredients'),
-  confidence: z.number().min(0).max(100).describe('Overall recognition confidence'),
+  
+  // Confidence (important for user trust)
+  confidence: z.number().min(0).max(100).describe('Recognition confidence (0-100). Lower if uncertain.'),
 });
 
 const FoodRecognitionResponseSchema = z.object({
   foods: z.array(RecognizedFoodSchema).describe('List of recognized food items'),
   overallConfidence: z.number().min(0).max(100).describe('Overall confidence score'),
   totalCalories: z.number().describe('Sum of all food calories'),
-  analysisNotes: z.string().optional().describe('Analysis notes or uncertainties'),
-  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).describe('Detected meal type'),
+  mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).describe('Meal type'),
 });
 
 // ============================================================================
@@ -70,47 +88,49 @@ function createAIProvider(env: Env, modelId: string) {
   const gatewayInstance = createGateway({
     apiKey: env.AI_GATEWAY_API_KEY,
   });
-  // Use gemini-2.0-flash-exp which supports vision
   const model = modelId || 'google/gemini-2.0-flash-exp';
   return gatewayInstance(model);
 }
 
 // ============================================================================
-// FOOD RECOGNITION PROMPT
+// SIMPLIFIED PROMPT - FOCUSED ON RELIABLE DETECTION
 // ============================================================================
 
 function buildFoodRecognitionPrompt(mealType: string, userContext?: FoodRecognitionRequest['userContext']): string {
-  const regionHint = userContext?.region ? `User is from ${userContext.region} region.` : '';
   const restrictionsHint = userContext?.dietaryRestrictions?.length 
     ? `User has dietary restrictions: ${userContext.dietaryRestrictions.join(', ')}.`
     : '';
 
-  return `You are an expert nutritionist and food recognition AI. Analyze this ${mealType} image and identify all food items with high accuracy.
+  return `You are an expert nutritionist analyzing a ${mealType} image. Identify all visible food items.
 
-${regionHint}
 ${restrictionsHint}
 
-For each food item visible in the image, provide:
-1. Exact food name (be specific - "Chicken Biryani" not just "rice")
-2. Food category (main, side, snack, sweet, beverage)
-3. Cuisine type (indian or international)
-4. Estimated weight in grams based on visual portion size
-5. Detailed nutrition for the estimated portion (calories, protein, carbs, fat, fiber)
-6. Visible ingredients list
-7. Cooking method if identifiable (fried, steamed, baked, curry, grilled, raw, boiled)
-8. Spice level for Indian foods (mild, medium, hot, extra_hot)
-9. Your confidence level (0-100)
+For EACH food item, provide:
+1. **Name**: Be specific (e.g., "Grilled Chicken Breast" not just "chicken")
+2. **Local Name**: If it's a regional dish, include the local name
+3. **Category**: main, side, snack, sweet, or beverage
+4. **Cuisine**: Identify the cuisine type accurately
+5. **Portion Estimate**: 
+   - Estimated grams based on visual size
+   - Human-readable description (e.g., "1 medium bowl", "2 pieces")
+6. **Nutrition**: Calories, protein, carbs, fat, fiber for the estimated portion
+7. **Confidence**: 0-100 score. Use lower scores if uncertain.
 
-Special attention to:
-- Indian regional variations (North vs South Indian preparations)
-- Traditional serving sizes vs Western portions
-- Ghee/oil content in Indian dishes (affects calories significantly)
-- Multiple dishes in single image (complete meals)
-- Cooking methods that affect nutrition (fried vs steamed)
+IMPORTANT:
+- Focus on accurate food IDENTIFICATION - this is most important
+- Portion estimates are suggestions - users can adjust with exact grams
+- Be conservative with confidence scores
+- If you can't identify something clearly, give it low confidence (below 50)
+- Support ALL cuisines: Indian, Chinese, Japanese, Italian, Mexican, American, etc.
 
-Be accurate with portion sizes. A typical Indian thali plate is 10-12 inches. Use visual cues like plate size, utensils, and food proportions to estimate grams accurately.
-
-If you cannot identify a food item clearly, indicate lower confidence. Do not guess if uncertain.`;
+Common portion references:
+- Small bowl: ~150g
+- Medium bowl: ~250g  
+- Large bowl: ~400g
+- 1 roti/tortilla: ~30g
+- 1 slice bread: ~30g
+- 1 cup rice: ~180g
+- Palm-sized meat: ~100g`;
 }
 
 // ============================================================================
@@ -154,7 +174,7 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
     // Build the prompt
     const prompt = buildFoodRecognitionPrompt(request.mealType, request.userContext);
 
-    // Create AI provider - use vision-capable model
+    // Create AI provider
     const model = createAIProvider(c.env, 'google/gemini-2.0-flash-exp');
 
     console.log('[Food Recognition] Calling Gemini Vision API...');
@@ -187,11 +207,17 @@ export async function handleFoodRecognition(c: Context<{ Bindings: Env }>) {
         foods: result.object.foods.map((food, index) => ({
           id: `food_${Date.now()}_${index}`,
           ...food,
-          enhancementSource: 'gemini-vision',
+          // Nutrition per 100g for easy scaling when user adjusts portion
+          nutritionPer100g: {
+            calories: Math.round((food.calories / food.estimatedGrams) * 100),
+            protein: Math.round(((food.protein / food.estimatedGrams) * 100) * 10) / 10,
+            carbs: Math.round(((food.carbs / food.estimatedGrams) * 100) * 10) / 10,
+            fat: Math.round(((food.fat / food.estimatedGrams) * 100) * 10) / 10,
+            fiber: Math.round(((food.fiber / food.estimatedGrams) * 100) * 10) / 10,
+          },
         })),
         overallConfidence: result.object.overallConfidence,
         totalCalories: result.object.totalCalories,
-        analysisNotes: result.object.analysisNotes,
         mealType: result.object.mealType,
       },
       metadata: {

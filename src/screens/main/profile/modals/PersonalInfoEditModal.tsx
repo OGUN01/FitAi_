@@ -1,6 +1,6 @@
 /**
  * PersonalInfoEditModal - Edit Personal Information
- * 
+ *
  * Fields:
  * - Name
  * - Age
@@ -8,22 +8,24 @@
  * - Height
  * - Weight
  * - Activity Level (picker)
- * 
+ *
  * Uses useUserStore.updatePersonalInfo() to save changes.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { SettingsModalWrapper } from '../components/SettingsModalWrapper';
-import { GlassFormInput } from '../components/GlassFormInput';
-import { GlassFormPicker } from '../components/GlassFormPicker';
-import { useUserStore } from '../../../../stores/userStore';
-import { useUser } from '../../../../hooks/useUser';
-import { ResponsiveTheme } from '../../../../utils/constants';
-import { rf } from '../../../../utils/responsive';
-import { haptics } from '../../../../utils/haptics';
-import type { PersonalInfo } from '../../../../types/user';
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
+import { GlassFormInput } from "../components/GlassFormInput";
+import { GlassFormPicker } from "../components/GlassFormPicker";
+import { useUserStore } from "../../../../stores/userStore";
+import { useUser } from "../../../../hooks/useUser";
+import { useAuth } from "../../../../hooks/useAuth";
+import { ResponsiveTheme } from "../../../../utils/constants";
+import { rf } from "../../../../utils/responsive";
+import { haptics } from "../../../../utils/haptics";
+import type { PersonalInfo } from "../../../../types/user";
+import { userProfileService } from "../../../../services/userProfile";
 
 interface PersonalInfoEditModalProps {
   visible: boolean;
@@ -31,41 +33,41 @@ interface PersonalInfoEditModalProps {
 }
 
 const GENDER_OPTIONS = [
-  { value: 'male', label: 'Male', icon: 'male' as const },
-  { value: 'female', label: 'Female', icon: 'female' as const },
-  { value: 'other', label: 'Other', icon: 'person' as const },
+  { value: "male", label: "Male", icon: "male" as const },
+  { value: "female", label: "Female", icon: "female" as const },
+  { value: "other", label: "Other", icon: "person" as const },
 ];
 
 const ACTIVITY_LEVEL_OPTIONS = [
-  { 
-    value: 'sedentary', 
-    label: 'Sedentary', 
-    icon: 'bed-outline' as const,
-    description: 'Little to no exercise',
+  {
+    value: "sedentary",
+    label: "Sedentary",
+    icon: "bed-outline" as const,
+    description: "Little to no exercise",
   },
-  { 
-    value: 'light', 
-    label: 'Lightly Active', 
-    icon: 'walk-outline' as const,
-    description: 'Light exercise 1-3 days/week',
+  {
+    value: "light",
+    label: "Lightly Active",
+    icon: "walk-outline" as const,
+    description: "Light exercise 1-3 days/week",
   },
-  { 
-    value: 'moderate', 
-    label: 'Moderately Active', 
-    icon: 'bicycle-outline' as const,
-    description: 'Moderate exercise 3-5 days/week',
+  {
+    value: "moderate",
+    label: "Moderately Active",
+    icon: "bicycle-outline" as const,
+    description: "Moderate exercise 3-5 days/week",
   },
-  { 
-    value: 'active', 
-    label: 'Very Active', 
-    icon: 'fitness-outline' as const,
-    description: 'Hard exercise 6-7 days/week',
+  {
+    value: "active",
+    label: "Very Active",
+    icon: "fitness-outline" as const,
+    description: "Hard exercise 6-7 days/week",
   },
-  { 
-    value: 'extreme', 
-    label: 'Extremely Active', 
-    icon: 'barbell-outline' as const,
-    description: 'Athlete/physical job',
+  {
+    value: "extreme",
+    label: "Extremely Active",
+    icon: "barbell-outline" as const,
+    description: "Athlete/physical job",
   },
 ];
 
@@ -74,15 +76,16 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   onClose,
 }) => {
   const { profile } = useUser();
+  const { user } = useAuth();
   const { updatePersonalInfo, setProfile } = useUserStore();
 
   // Form state
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  const [activityLevel, setActivityLevel] = useState('');
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [activityLevel, setActivityLevel] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -92,15 +95,15 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       const info = profile.personalInfo;
       const bodyMetrics = profile.bodyMetrics;
       const workoutPrefs = profile.workoutPreferences;
-      setName(info?.name || '');
+      setName(info?.name || "");
       // ✅ Convert number to string for input field
-      setAge(info?.age?.toString() || '');
-      setGender(info?.gender || '');
+      setAge(info?.age?.toString() || "");
+      setGender(info?.gender || "");
       // ✅ Get height/weight from bodyMetrics (database: body_analysis table)
-      setHeight(bodyMetrics?.height_cm?.toString() || '');
-      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? ''); // Empty string if no data
+      setHeight(bodyMetrics?.height_cm?.toString() || "");
+      setWeight(bodyMetrics?.current_weight_kg?.toString() ?? ""); // Empty string if no data
       // ✅ FIX: Get activity level from workoutPreferences, not personalInfo
-      setActivityLevel(workoutPrefs?.activity_level || '');
+      setActivityLevel(workoutPrefs?.activity_level || "");
       setErrors({});
     }
   }, [visible, profile]);
@@ -110,27 +113,37 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = "Name is required";
     }
 
     if (!age || isNaN(Number(age)) || Number(age) < 13 || Number(age) > 120) {
-      newErrors.age = 'Enter a valid age (13-120)';
+      newErrors.age = "Enter a valid age (13-120)";
     }
 
     if (!gender) {
-      newErrors.gender = 'Please select your gender';
+      newErrors.gender = "Please select your gender";
     }
 
-    if (!height || isNaN(Number(height)) || Number(height) < 100 || Number(height) > 250) {
-      newErrors.height = 'Enter valid height in cm (100-250)';
+    if (
+      !height ||
+      isNaN(Number(height)) ||
+      Number(height) < 100 ||
+      Number(height) > 250
+    ) {
+      newErrors.height = "Enter valid height in cm (100-250)";
     }
 
-    if (!weight || isNaN(Number(weight)) || Number(weight) < 30 || Number(weight) > 300) {
-      newErrors.weight = 'Enter valid weight in kg (30-300)';
+    if (
+      !weight ||
+      isNaN(Number(weight)) ||
+      Number(weight) < 30 ||
+      Number(weight) > 300
+    ) {
+      newErrors.weight = "Enter valid weight in kg (30-300)";
     }
 
     if (!activityLevel) {
-      newErrors.activityLevel = 'Please select your activity level';
+      newErrors.activityLevel = "Please select your activity level";
     }
 
     setErrors(newErrors);
@@ -148,9 +161,9 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     try {
       // ✅ PersonalInfo only includes basic profile fields (NOT height/weight, NOT activityLevel)
       // Split name into first_name and last_name
-      const nameParts = name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
 
       const updatedInfo: PersonalInfo = {
         first_name: firstName,
@@ -158,29 +171,68 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         name: name.trim(),
         // ✅ Convert age string back to number for database
         age: parseInt(age, 10),
-        gender: gender as 'male' | 'female' | 'other' | 'prefer_not_to_say',
+        gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
         // ✅ FIX: activityLevel removed from PersonalInfo - it belongs in workoutPreferences
         // Preserve existing optional fields
-        email: profile?.personalInfo?.email || '',
-        country: profile?.personalInfo?.country || '',
-        state: profile?.personalInfo?.state || '',
-        region: profile?.personalInfo?.region || '',
-        wake_time: profile?.personalInfo?.wake_time || '',
-        sleep_time: profile?.personalInfo?.sleep_time || '',
+        email: profile?.personalInfo?.email || "",
+        country: profile?.personalInfo?.country || "",
+        state: profile?.personalInfo?.state || "",
+        region: profile?.personalInfo?.region || "",
+        wake_time: profile?.personalInfo?.wake_time || "",
+        sleep_time: profile?.personalInfo?.sleep_time || "",
         occupation_type: profile?.personalInfo?.occupation_type as any,
       };
 
       updatePersonalInfo(updatedInfo);
 
       // ✅ FIX: Update activity level in workoutPreferences if changed
-      if (profile?.workoutPreferences && activityLevel !== profile.workoutPreferences.activity_level) {
+      if (
+        profile?.workoutPreferences &&
+        activityLevel !== profile.workoutPreferences.activity_level
+      ) {
         const updatedWorkoutPrefs = {
           ...profile.workoutPreferences,
           activity_level: activityLevel,
         };
+
         // Update local state
         setProfile({ ...profile, workoutPreferences: updatedWorkoutPrefs });
-        // TODO: Save to database via updateWorkoutPreferences service
+
+        // Save to database via updateWorkoutPreferences service
+        if (user?.id) {
+          try {
+            const result = await userProfileService.updateWorkoutPreferences(
+              user.id,
+              {
+                activity_level: activityLevel,
+                workout_types: profile.workoutPreferences.workoutTypes,
+                equipment: profile.workoutPreferences.equipment,
+                location: profile.workoutPreferences.location,
+                time_preference: profile.workoutPreferences.timePreference,
+                intensity: profile.workoutPreferences.intensity,
+              },
+            );
+
+            if (!result.success) {
+              console.error(
+                "Failed to update workout preferences:",
+                result.error,
+              );
+              Alert.alert(
+                "Warning",
+                "Activity level updated locally but failed to sync to database.",
+              );
+            } else {
+              console.log("✅ Workout preferences saved to database");
+            }
+          } catch (error) {
+            console.error("Error updating workout preferences:", error);
+            Alert.alert(
+              "Warning",
+              "Activity level updated locally but failed to sync to database.",
+            );
+          }
+        }
       }
 
       // TODO: If height/weight are changed, update bodyMetrics separately
@@ -189,12 +241,21 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       haptics.success();
       onClose();
     } catch (error) {
-      console.error('Error saving personal info:', error);
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      console.error("Error saving personal info:", error);
+      Alert.alert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
-  }, [name, age, gender, activityLevel, profile, updatePersonalInfo, onClose, validate]);
+  }, [
+    name,
+    age,
+    gender,
+    activityLevel,
+    profile,
+    updatePersonalInfo,
+    onClose,
+    validate,
+  ]);
 
   const hasChanges = useCallback(() => {
     if (!profile?.personalInfo) return true;
@@ -202,12 +263,12 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     const bodyMetrics = profile.bodyMetrics;
     const workoutPrefs = profile.workoutPreferences;
     return (
-      name !== (info?.name || '') ||
-      age !== (info?.age?.toString() || '') ||
-      gender !== (info?.gender || '') ||
-      height !== (bodyMetrics?.height_cm?.toString() || '') ||
-      weight !== (bodyMetrics?.current_weight_kg?.toString() ?? '') ||
-      activityLevel !== (workoutPrefs?.activity_level || '')
+      name !== (info?.name || "") ||
+      age !== (info?.age?.toString() || "") ||
+      gender !== (info?.gender || "") ||
+      height !== (bodyMetrics?.height_cm?.toString() || "") ||
+      weight !== (bodyMetrics?.current_weight_kg?.toString() ?? "") ||
+      activityLevel !== (workoutPrefs?.activity_level || "")
     );
   }, [name, age, gender, height, weight, activityLevel, profile]);
 
@@ -304,17 +365,3 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
 };
 
 export default PersonalInfoEditModal;
-
-
-
-
-
-
-
-
-
-
-
-
-
-

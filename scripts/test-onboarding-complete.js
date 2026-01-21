@@ -12,16 +12,24 @@
  * Run with: node scripts/test-onboarding-complete.js
  */
 
-const { createClient } = require('@supabase/supabase-js');
+const { createClient } = require("@supabase/supabase-js");
 
-// Initialize Supabase client with hardcoded credentials (from src/services/supabase.ts)
-const supabaseUrl = 'https://mqfrwtmkokivoxgukgsz.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xZnJ3dG1rb2tpdm94Z3VrZ3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI5MTE4ODcsImV4cCI6MjA2ODQ4Nzg4N30.8As2juloSC89Pjql1_85757e8z4uGUqQHuzhVCY7M08';
+// Load environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+// Validate required environment variables
+if (!supabaseUrl) {
+  throw new Error("SUPABASE_URL environment variable is required");
+}
+if (!supabaseAnonKey) {
+  throw new Error("SUPABASE_ANON_KEY environment variable is required");
+}
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Test user ID (use a UUID that exists in auth.users or create one)
-const TEST_USER_ID = '4447390a-d84b-4463-8f1c-e014495dee17'; // Replace with actual test user ID
+const TEST_USER_ID = "4447390a-d84b-4463-8f1c-e014495dee17"; // Replace with actual test user ID
 
 // ============================================================================
 // TEST DATA FOR EACH TAB
@@ -29,22 +37,22 @@ const TEST_USER_ID = '4447390a-d84b-4463-8f1c-e014495dee17'; // Replace with act
 
 const testData = {
   personalInfo: {
-    first_name: 'John',
-    last_name: 'Doe',
+    first_name: "John",
+    last_name: "Doe",
     age: 30,
-    gender: 'male',
-    country: 'United States',
-    state: 'California',
-    region: 'San Francisco',
-    wake_time: '07:00',
-    sleep_time: '23:00',
-    occupation_type: 'desk_job',
+    gender: "male",
+    country: "United States",
+    state: "California",
+    region: "San Francisco",
+    wake_time: "07:00",
+    sleep_time: "23:00",
+    occupation_type: "desk_job",
   },
 
   dietPreferences: {
-    diet_type: 'non-veg',
-    allergies: ['Peanuts', 'Shellfish'],
-    restrictions: ['Gluten-free'],
+    diet_type: "non-veg",
+    allergies: ["Peanuts", "Shellfish"],
+    restrictions: ["Gluten-free"],
     keto_ready: false,
     intermittent_fasting_ready: true,
     paleo_ready: false,
@@ -55,9 +63,9 @@ const testData = {
     lunch_enabled: true,
     dinner_enabled: true,
     snacks_enabled: true,
-    cooking_skill_level: 'intermediate',
+    cooking_skill_level: "intermediate",
     max_prep_time_minutes: 45,
-    budget_level: 'medium',
+    budget_level: "medium",
     drinks_enough_water: true,
     limits_sugary_drinks: true,
     eats_regular_meals: true,
@@ -83,29 +91,29 @@ const testData = {
     waist_cm: 90,
     hip_cm: 100,
     chest_cm: 105,
-    medical_conditions: ['High blood pressure'],
-    medications: ['Lisinopril'],
+    medical_conditions: ["High blood pressure"],
+    medications: ["Lisinopril"],
     physical_limitations: [],
     pregnancy_status: false,
     breastfeeding_status: false,
-    stress_level: 'moderate',
+    stress_level: "moderate",
   },
 
   workoutPreferences: {
-    location: 'both',
-    equipment: ['Dumbbells', 'Resistance bands', 'Yoga mat'],
+    location: "both",
+    equipment: ["Dumbbells", "Resistance bands", "Yoga mat"],
     time_preference: 45,
-    intensity: 'intermediate',
-    workout_types: ['Strength training', 'Cardio', 'Flexibility'],
-    primary_goals: ['Weight loss', 'Muscle gain', 'General fitness'],
-    activity_level: 'moderate',
+    intensity: "intermediate",
+    workout_types: ["Strength training", "Cardio", "Flexibility"],
+    primary_goals: ["Weight loss", "Muscle gain", "General fitness"],
+    activity_level: "moderate",
     workout_experience_years: 2,
     workout_frequency_per_week: 4,
     can_do_pushups: 20,
     can_run_minutes: 30,
-    flexibility_level: 'fair',
+    flexibility_level: "fair",
     weekly_weight_loss_goal: 0.5,
-    preferred_workout_times: ['morning', 'evening'],
+    preferred_workout_times: ["morning", "evening"],
     enjoys_cardio: true,
     enjoys_strength_training: true,
     enjoys_group_classes: false,
@@ -134,18 +142,43 @@ const testData = {
     diet_readiness_score: 85,
     fitness_readiness_score: 70,
     goal_realistic_score: 90,
-    validation_status: 'passed',
+    validation_status: "passed",
   },
 
   onboardingProgress: {
     current_tab: 5,
     completed_tabs: [1, 2, 3, 4, 5],
     tab_validation_status: {
-      1: { is_valid: true, errors: [], warnings: [], completion_percentage: 100 },
-      2: { is_valid: true, errors: [], warnings: [], completion_percentage: 100 },
-      3: { is_valid: true, errors: [], warnings: [], completion_percentage: 100 },
-      4: { is_valid: true, errors: [], warnings: [], completion_percentage: 100 },
-      5: { is_valid: true, errors: [], warnings: [], completion_percentage: 100 },
+      1: {
+        is_valid: true,
+        errors: [],
+        warnings: [],
+        completion_percentage: 100,
+      },
+      2: {
+        is_valid: true,
+        errors: [],
+        warnings: [],
+        completion_percentage: 100,
+      },
+      3: {
+        is_valid: true,
+        errors: [],
+        warnings: [],
+        completion_percentage: 100,
+      },
+      4: {
+        is_valid: true,
+        errors: [],
+        warnings: [],
+        completion_percentage: 100,
+      },
+      5: {
+        is_valid: true,
+        errors: [],
+        warnings: [],
+        completion_percentage: 100,
+      },
     },
     total_completion_percentage: 100,
   },
@@ -156,9 +189,9 @@ const testData = {
 // ============================================================================
 
 function logSection(title) {
-  console.log('\n' + '='.repeat(80));
+  console.log("\n" + "=".repeat(80));
   console.log(`  ${title}`);
-  console.log('='.repeat(80) + '\n');
+  console.log("=".repeat(80) + "\n");
 }
 
 function logSuccess(message) {
@@ -168,7 +201,7 @@ function logSuccess(message) {
 function logError(message, error) {
   console.error(`❌ ${message}`);
   if (error) {
-    console.error('   Error details:', error.message || error);
+    console.error("   Error details:", error.message || error);
   }
 }
 
@@ -181,7 +214,7 @@ function logInfo(message) {
 // ============================================================================
 
 async function testSavePersonalInfo() {
-  logSection('TEST 1: Save Personal Info (Tab 1)');
+  logSection("TEST 1: Save Personal Info (Tab 1)");
 
   try {
     const profileData = {
@@ -201,66 +234,68 @@ async function testSavePersonalInfo() {
     };
 
     const { data, error } = await supabase
-      .from('profiles')
-      .upsert(profileData, { onConflict: 'id', ignoreDuplicates: false })
+      .from("profiles")
+      .upsert(profileData, { onConflict: "id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save personal info', error);
+      logError("Failed to save personal info", error);
       return false;
     }
 
-    logSuccess('Personal info saved successfully');
+    logSuccess("Personal info saved successfully");
     logInfo(`Saved data: ${JSON.stringify(data, null, 2)}`);
     return true;
   } catch (error) {
-    logError('Unexpected error in testSavePersonalInfo', error);
+    logError("Unexpected error in testSavePersonalInfo", error);
     return false;
   }
 }
 
 async function testLoadPersonalInfo() {
-  logSection('TEST 2: Load Personal Info (Tab 1)');
+  logSection("TEST 2: Load Personal Info (Tab 1)");
 
   try {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', TEST_USER_ID)
+      .from("profiles")
+      .select("*")
+      .eq("id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load personal info', error);
+      logError("Failed to load personal info", error);
       return false;
     }
 
     if (!data) {
-      logError('No personal info found for user');
+      logError("No personal info found for user");
       return false;
     }
 
-    logSuccess('Personal info loaded successfully');
+    logSuccess("Personal info loaded successfully");
     logInfo(`Loaded data: ${JSON.stringify(data, null, 2)}`);
 
     // Verify data integrity
-    if (data.first_name === testData.personalInfo.first_name &&
-        data.last_name === testData.personalInfo.last_name &&
-        data.age === testData.personalInfo.age) {
-      logSuccess('Data integrity verified');
+    if (
+      data.first_name === testData.personalInfo.first_name &&
+      data.last_name === testData.personalInfo.last_name &&
+      data.age === testData.personalInfo.age
+    ) {
+      logSuccess("Data integrity verified");
       return true;
     } else {
-      logError('Data integrity check failed - values do not match');
+      logError("Data integrity check failed - values do not match");
       return false;
     }
   } catch (error) {
-    logError('Unexpected error in testLoadPersonalInfo', error);
+    logError("Unexpected error in testLoadPersonalInfo", error);
     return false;
   }
 }
 
 async function testSaveDietPreferences() {
-  logSection('TEST 3: Save Diet Preferences (Tab 2)');
+  logSection("TEST 3: Save Diet Preferences (Tab 2)");
 
   try {
     const dietData = {
@@ -270,64 +305,67 @@ async function testSaveDietPreferences() {
     };
 
     const { data, error } = await supabase
-      .from('diet_preferences')
-      .upsert(dietData, { onConflict: 'user_id', ignoreDuplicates: false })
+      .from("diet_preferences")
+      .upsert(dietData, { onConflict: "user_id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save diet preferences', error);
+      logError("Failed to save diet preferences", error);
       return false;
     }
 
-    logSuccess('Diet preferences saved successfully');
+    logSuccess("Diet preferences saved successfully");
     logInfo(`Saved ${Object.keys(testData.dietPreferences).length} fields`);
     return true;
   } catch (error) {
-    logError('Unexpected error in testSaveDietPreferences', error);
+    logError("Unexpected error in testSaveDietPreferences", error);
     return false;
   }
 }
 
 async function testLoadDietPreferences() {
-  logSection('TEST 4: Load Diet Preferences (Tab 2)');
+  logSection("TEST 4: Load Diet Preferences (Tab 2)");
 
   try {
     const { data, error } = await supabase
-      .from('diet_preferences')
-      .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .from("diet_preferences")
+      .select("*")
+      .eq("user_id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load diet preferences', error);
+      logError("Failed to load diet preferences", error);
       return false;
     }
 
     if (!data) {
-      logError('No diet preferences found for user');
+      logError("No diet preferences found for user");
       return false;
     }
 
-    logSuccess('Diet preferences loaded successfully');
+    logSuccess("Diet preferences loaded successfully");
 
     // Verify arrays
-    if (JSON.stringify(data.allergies) === JSON.stringify(testData.dietPreferences.allergies)) {
-      logSuccess('Allergies array verified');
+    if (
+      JSON.stringify(data.allergies) ===
+      JSON.stringify(testData.dietPreferences.allergies)
+    ) {
+      logSuccess("Allergies array verified");
     } else {
-      logError('Allergies array mismatch');
+      logError("Allergies array mismatch");
       return false;
     }
 
     return true;
   } catch (error) {
-    logError('Unexpected error in testLoadDietPreferences', error);
+    logError("Unexpected error in testLoadDietPreferences", error);
     return false;
   }
 }
 
 async function testSaveBodyAnalysis() {
-  logSection('TEST 5: Save Body Analysis (Tab 3)');
+  logSection("TEST 5: Save Body Analysis (Tab 3)");
 
   try {
     const bodyData = {
@@ -337,63 +375,66 @@ async function testSaveBodyAnalysis() {
     };
 
     const { data, error } = await supabase
-      .from('body_analysis')
-      .upsert(bodyData, { onConflict: 'user_id', ignoreDuplicates: false })
+      .from("body_analysis")
+      .upsert(bodyData, { onConflict: "user_id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save body analysis', error);
+      logError("Failed to save body analysis", error);
       return false;
     }
 
-    logSuccess('Body analysis saved successfully');
+    logSuccess("Body analysis saved successfully");
     return true;
   } catch (error) {
-    logError('Unexpected error in testSaveBodyAnalysis', error);
+    logError("Unexpected error in testSaveBodyAnalysis", error);
     return false;
   }
 }
 
 async function testLoadBodyAnalysis() {
-  logSection('TEST 6: Load Body Analysis (Tab 3)');
+  logSection("TEST 6: Load Body Analysis (Tab 3)");
 
   try {
     const { data, error } = await supabase
-      .from('body_analysis')
-      .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .from("body_analysis")
+      .select("*")
+      .eq("user_id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load body analysis', error);
+      logError("Failed to load body analysis", error);
       return false;
     }
 
     if (!data) {
-      logError('No body analysis found for user');
+      logError("No body analysis found for user");
       return false;
     }
 
-    logSuccess('Body analysis loaded successfully');
+    logSuccess("Body analysis loaded successfully");
 
     // Verify numeric fields
-    if (parseFloat(data.height_cm) === testData.bodyAnalysis.height_cm &&
-        parseFloat(data.current_weight_kg) === testData.bodyAnalysis.current_weight_kg) {
-      logSuccess('Numeric fields verified');
+    if (
+      parseFloat(data.height_cm) === testData.bodyAnalysis.height_cm &&
+      parseFloat(data.current_weight_kg) ===
+        testData.bodyAnalysis.current_weight_kg
+    ) {
+      logSuccess("Numeric fields verified");
       return true;
     } else {
-      logError('Numeric fields mismatch');
+      logError("Numeric fields mismatch");
       return false;
     }
   } catch (error) {
-    logError('Unexpected error in testLoadBodyAnalysis', error);
+    logError("Unexpected error in testLoadBodyAnalysis", error);
     return false;
   }
 }
 
 async function testSaveWorkoutPreferences() {
-  logSection('TEST 7: Save Workout Preferences (Tab 4)');
+  logSection("TEST 7: Save Workout Preferences (Tab 4)");
 
   try {
     const workoutData = {
@@ -403,62 +444,65 @@ async function testSaveWorkoutPreferences() {
     };
 
     const { data, error } = await supabase
-      .from('workout_preferences')
-      .upsert(workoutData, { onConflict: 'user_id', ignoreDuplicates: false })
+      .from("workout_preferences")
+      .upsert(workoutData, { onConflict: "user_id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save workout preferences', error);
+      logError("Failed to save workout preferences", error);
       return false;
     }
 
-    logSuccess('Workout preferences saved successfully');
+    logSuccess("Workout preferences saved successfully");
     return true;
   } catch (error) {
-    logError('Unexpected error in testSaveWorkoutPreferences', error);
+    logError("Unexpected error in testSaveWorkoutPreferences", error);
     return false;
   }
 }
 
 async function testLoadWorkoutPreferences() {
-  logSection('TEST 8: Load Workout Preferences (Tab 4)');
+  logSection("TEST 8: Load Workout Preferences (Tab 4)");
 
   try {
     const { data, error } = await supabase
-      .from('workout_preferences')
-      .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .from("workout_preferences")
+      .select("*")
+      .eq("user_id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load workout preferences', error);
+      logError("Failed to load workout preferences", error);
       return false;
     }
 
     if (!data) {
-      logError('No workout preferences found for user');
+      logError("No workout preferences found for user");
       return false;
     }
 
-    logSuccess('Workout preferences loaded successfully');
+    logSuccess("Workout preferences loaded successfully");
 
     // Verify equipment array
-    if (data.equipment && data.equipment.length === testData.workoutPreferences.equipment.length) {
-      logSuccess('Equipment array verified');
+    if (
+      data.equipment &&
+      data.equipment.length === testData.workoutPreferences.equipment.length
+    ) {
+      logSuccess("Equipment array verified");
       return true;
     } else {
-      logError('Equipment array mismatch');
+      logError("Equipment array mismatch");
       return false;
     }
   } catch (error) {
-    logError('Unexpected error in testLoadWorkoutPreferences', error);
+    logError("Unexpected error in testLoadWorkoutPreferences", error);
     return false;
   }
 }
 
 async function testSaveAdvancedReview() {
-  logSection('TEST 9: Save Advanced Review (Tab 5)');
+  logSection("TEST 9: Save Advanced Review (Tab 5)");
 
   try {
     const reviewData = {
@@ -468,55 +512,57 @@ async function testSaveAdvancedReview() {
     };
 
     const { data, error } = await supabase
-      .from('advanced_review')
-      .upsert(reviewData, { onConflict: 'user_id', ignoreDuplicates: false })
+      .from("advanced_review")
+      .upsert(reviewData, { onConflict: "user_id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save advanced review', error);
+      logError("Failed to save advanced review", error);
       return false;
     }
 
-    logSuccess('Advanced review saved successfully');
+    logSuccess("Advanced review saved successfully");
     return true;
   } catch (error) {
-    logError('Unexpected error in testSaveAdvancedReview', error);
+    logError("Unexpected error in testSaveAdvancedReview", error);
     return false;
   }
 }
 
 async function testLoadAdvancedReview() {
-  logSection('TEST 10: Load Advanced Review (Tab 5)');
+  logSection("TEST 10: Load Advanced Review (Tab 5)");
 
   try {
     const { data, error } = await supabase
-      .from('advanced_review')
-      .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .from("advanced_review")
+      .select("*")
+      .eq("user_id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load advanced review', error);
+      logError("Failed to load advanced review", error);
       return false;
     }
 
     if (!data) {
-      logError('No advanced review found for user');
+      logError("No advanced review found for user");
       return false;
     }
 
-    logSuccess('Advanced review loaded successfully');
-    logInfo(`BMI: ${data.calculated_bmi}, BMR: ${data.calculated_bmr}, TDEE: ${data.calculated_tdee}`);
+    logSuccess("Advanced review loaded successfully");
+    logInfo(
+      `BMI: ${data.calculated_bmi}, BMR: ${data.calculated_bmr}, TDEE: ${data.calculated_tdee}`,
+    );
     return true;
   } catch (error) {
-    logError('Unexpected error in testLoadAdvancedReview', error);
+    logError("Unexpected error in testLoadAdvancedReview", error);
     return false;
   }
 }
 
 async function testSaveOnboardingProgress() {
-  logSection('TEST 11: Save Onboarding Progress');
+  logSection("TEST 11: Save Onboarding Progress");
 
   try {
     const progressData = {
@@ -526,96 +572,103 @@ async function testSaveOnboardingProgress() {
     };
 
     const { data, error } = await supabase
-      .from('onboarding_progress')
-      .upsert(progressData, { onConflict: 'user_id', ignoreDuplicates: false })
+      .from("onboarding_progress")
+      .upsert(progressData, { onConflict: "user_id", ignoreDuplicates: false })
       .select()
       .single();
 
     if (error) {
-      logError('Failed to save onboarding progress', error);
+      logError("Failed to save onboarding progress", error);
       return false;
     }
 
-    logSuccess('Onboarding progress saved successfully');
+    logSuccess("Onboarding progress saved successfully");
     return true;
   } catch (error) {
-    logError('Unexpected error in testSaveOnboardingProgress', error);
+    logError("Unexpected error in testSaveOnboardingProgress", error);
     return false;
   }
 }
 
 async function testLoadOnboardingProgress() {
-  logSection('TEST 12: Load Onboarding Progress');
+  logSection("TEST 12: Load Onboarding Progress");
 
   try {
     const { data, error } = await supabase
-      .from('onboarding_progress')
-      .select('*')
-      .eq('user_id', TEST_USER_ID)
+      .from("onboarding_progress")
+      .select("*")
+      .eq("user_id", TEST_USER_ID)
       .single();
 
     if (error) {
-      logError('Failed to load onboarding progress', error);
+      logError("Failed to load onboarding progress", error);
       return false;
     }
 
     if (!data) {
-      logError('No onboarding progress found for user');
+      logError("No onboarding progress found for user");
       return false;
     }
 
-    logSuccess('Onboarding progress loaded successfully');
-    logInfo(`Completion: ${data.total_completion_percentage}%, Current tab: ${data.current_tab}`);
+    logSuccess("Onboarding progress loaded successfully");
+    logInfo(
+      `Completion: ${data.total_completion_percentage}%, Current tab: ${data.current_tab}`,
+    );
     return true;
   } catch (error) {
-    logError('Unexpected error in testLoadOnboardingProgress', error);
+    logError("Unexpected error in testLoadOnboardingProgress", error);
     return false;
   }
 }
 
 async function testUniqueConstraints() {
-  logSection('TEST 13: Verify UNIQUE Constraints');
+  logSection("TEST 13: Verify UNIQUE Constraints");
 
   try {
     // Try to insert duplicate entry - should update instead
     const duplicateData = {
       user_id: TEST_USER_ID,
-      diet_type: 'vegan', // Different value
+      diet_type: "vegan", // Different value
       allergies: [],
       restrictions: [],
       updated_at: new Date().toISOString(),
     };
 
     const { error } = await supabase
-      .from('diet_preferences')
-      .upsert(duplicateData, { onConflict: 'user_id', ignoreDuplicates: false });
+      .from("diet_preferences")
+      .upsert(duplicateData, {
+        onConflict: "user_id",
+        ignoreDuplicates: false,
+      });
 
     if (error) {
-      logError('Upsert failed', error);
+      logError("Upsert failed", error);
       return false;
     }
 
     // Verify only one record exists
     const { data: records, error: countError } = await supabase
-      .from('diet_preferences')
-      .select('*')
-      .eq('user_id', TEST_USER_ID);
+      .from("diet_preferences")
+      .select("*")
+      .eq("user_id", TEST_USER_ID);
 
     if (countError) {
-      logError('Failed to count records', countError);
+      logError("Failed to count records", countError);
       return false;
     }
 
     if (records.length === 1) {
-      logSuccess('UNIQUE constraint working - only 1 record exists');
+      logSuccess("UNIQUE constraint working - only 1 record exists");
       logSuccess(`Updated diet_type to: ${records[0].diet_type}`);
       return true;
     } else {
-      logError(`Found ${records.length} records - UNIQUE constraint not working!`);
+      logError(
+        `Found ${records.length} records - UNIQUE constraint not working!`,
+      );
       return false;
     }
   } catch (error) {
-    logError('Unexpected error in testUniqueConstraints', error);
+    logError("Unexpected error in testUniqueConstraints", error);
     return false;
   }
 }
@@ -625,7 +678,7 @@ async function testUniqueConstraints() {
 // ============================================================================
 
 async function runAllTests() {
-  console.log('\n🧪 COMPLETE ONBOARDING FLOW TEST SUITE\n');
+  console.log("\n🧪 COMPLETE ONBOARDING FLOW TEST SUITE\n");
   console.log(`Testing with user ID: ${TEST_USER_ID}\n`);
 
   const results = {
@@ -635,19 +688,19 @@ async function runAllTests() {
   };
 
   const tests = [
-    { name: 'Save Personal Info', fn: testSavePersonalInfo },
-    { name: 'Load Personal Info', fn: testLoadPersonalInfo },
-    { name: 'Save Diet Preferences', fn: testSaveDietPreferences },
-    { name: 'Load Diet Preferences', fn: testLoadDietPreferences },
-    { name: 'Save Body Analysis', fn: testSaveBodyAnalysis },
-    { name: 'Load Body Analysis', fn: testLoadBodyAnalysis },
-    { name: 'Save Workout Preferences', fn: testSaveWorkoutPreferences },
-    { name: 'Load Workout Preferences', fn: testLoadWorkoutPreferences },
-    { name: 'Save Advanced Review', fn: testSaveAdvancedReview },
-    { name: 'Load Advanced Review', fn: testLoadAdvancedReview },
-    { name: 'Save Onboarding Progress', fn: testSaveOnboardingProgress },
-    { name: 'Load Onboarding Progress', fn: testLoadOnboardingProgress },
-    { name: 'Verify UNIQUE Constraints', fn: testUniqueConstraints },
+    { name: "Save Personal Info", fn: testSavePersonalInfo },
+    { name: "Load Personal Info", fn: testLoadPersonalInfo },
+    { name: "Save Diet Preferences", fn: testSaveDietPreferences },
+    { name: "Load Diet Preferences", fn: testLoadDietPreferences },
+    { name: "Save Body Analysis", fn: testSaveBodyAnalysis },
+    { name: "Load Body Analysis", fn: testLoadBodyAnalysis },
+    { name: "Save Workout Preferences", fn: testSaveWorkoutPreferences },
+    { name: "Load Workout Preferences", fn: testLoadWorkoutPreferences },
+    { name: "Save Advanced Review", fn: testSaveAdvancedReview },
+    { name: "Load Advanced Review", fn: testLoadAdvancedReview },
+    { name: "Save Onboarding Progress", fn: testSaveOnboardingProgress },
+    { name: "Load Onboarding Progress", fn: testLoadOnboardingProgress },
+    { name: "Verify UNIQUE Constraints", fn: testUniqueConstraints },
   ];
 
   for (const test of tests) {
@@ -661,32 +714,34 @@ async function runAllTests() {
   }
 
   // Print summary
-  logSection('TEST SUMMARY');
+  logSection("TEST SUMMARY");
   console.log(`Total Tests: ${results.tests.length}`);
   console.log(`✅ Passed: ${results.passed}`);
   console.log(`❌ Failed: ${results.failed}`);
-  console.log(`Success Rate: ${((results.passed / results.tests.length) * 100).toFixed(1)}%\n`);
+  console.log(
+    `Success Rate: ${((results.passed / results.tests.length) * 100).toFixed(1)}%\n`,
+  );
 
   // Print detailed results
-  console.log('Detailed Results:');
+  console.log("Detailed Results:");
   results.tests.forEach((test, index) => {
-    const icon = test.success ? '✅' : '❌';
+    const icon = test.success ? "✅" : "❌";
     console.log(`${index + 1}. ${icon} ${test.name}`);
   });
 
-  console.log('\n' + '='.repeat(80) + '\n');
+  console.log("\n" + "=".repeat(80) + "\n");
 
   if (results.failed === 0) {
-    console.log('🎉 ALL TESTS PASSED! Onboarding flow is working correctly.\n');
+    console.log("🎉 ALL TESTS PASSED! Onboarding flow is working correctly.\n");
     process.exit(0);
   } else {
-    console.log('⚠️  SOME TESTS FAILED. Please review the errors above.\n');
+    console.log("⚠️  SOME TESTS FAILED. Please review the errors above.\n");
     process.exit(1);
   }
 }
 
 // Run tests
 runAllTests().catch((error) => {
-  console.error('💥 Fatal error running tests:', error);
+  console.error("💥 Fatal error running tests:", error);
   process.exit(1);
 });

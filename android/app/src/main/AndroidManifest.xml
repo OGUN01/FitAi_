@@ -13,10 +13,16 @@
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
   <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
+  <uses-permission android:name="android.permission.health.READ_BASAL_METABOLIC_RATE"/>
+  <uses-permission android:name="android.permission.health.READ_BODY_FAT"/>
   <uses-permission android:name="android.permission.health.READ_DISTANCE"/>
+  <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
   <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
+  <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY"/>
+  <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION"/>
   <uses-permission android:name="android.permission.health.READ_SLEEP"/>
   <uses-permission android:name="android.permission.health.READ_STEPS"/>
+  <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED"/>
   <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
   <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION"/>
   <queries>
@@ -25,6 +31,8 @@
       <category android:name="android.intent.category.BROWSABLE"/>
       <data android:scheme="https"/>
     </intent>
+    <!-- Health Connect package query - required for HC integration -->
+    <package android:name="com.google.android.apps.healthdata"/>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="false" android:theme="@style/AppTheme" android:supportsRtl="true">
     <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="default"/>
@@ -47,6 +55,29 @@
         <data android:scheme="fitai"/>
         <data android:scheme="exp+fitai"/>
       </intent-filter>
+      <!-- Health Connect permissions rationale - required for app to appear in Health Connect -->
+      <intent-filter>
+        <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+      </intent-filter>
     </activity>
+    <!-- Required for Health Connect to show app in its list (Android 14+) -->
+    <activity-alias
+        android:name="ViewPermissionUsageActivity"
+        android:exported="true"
+        android:targetActivity=".MainActivity"
+        android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+            <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+        </intent-filter>
+    </activity-alias>
+    <activity-alias
+        android:name=".PermissionsRationaleActivity"
+        android:exported="true"
+        android:targetActivity=".MainActivity">
+        <intent-filter>
+            <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+        </intent-filter>
+    </activity-alias>
   </application>
 </manifest>

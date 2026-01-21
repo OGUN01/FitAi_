@@ -1,0 +1,59 @@
+{
+  "todos": [
+    {
+      "id": "1",
+      "description": "Search for hardcoded Supabase service role keys",
+      "status": "completed"
+    },
+    {
+      "id": "2",
+      "description": "Search for hardcoded user credentials (email/password)",
+      "status": "completed"
+    },
+    {
+      "id": "3",
+      "description": "Search for hardcoded Supabase anon keys",
+      "status": "completed"
+    },
+    {
+      "id": "4",
+      "description": "Search for hardcoded URLs and project IDs",
+      "status": "completed"
+    },
+    {
+      "id": "5",
+      "description": "Replace service role keys with env vars in migration scripts",
+      "status": "completed"
+    },
+    {
+      "id": "6",
+      "description": "Replace user credentials with env vars in test scripts",
+      "status": "completed"
+    },
+    {
+      "id": "7",
+      "description": "Replace anon keys with env vars across all files",
+      "status": "completed"
+    },
+    {
+      "id": "8",
+      "description": "Replace URLs with env vars across all files",
+      "status": "completed"
+    },
+    {
+      "id": "9",
+      "description": "Create .env.example file with all required variables",
+      "status": "completed"
+    },
+    {
+      "id": "10",
+      "description": "Update .gitignore to exclude .env files",
+      "status": "completed"
+    },
+    {
+      "id": "11",
+      "description": "Generate final security remediation report",
+      "status": "completed"
+    }
+  ]
+}

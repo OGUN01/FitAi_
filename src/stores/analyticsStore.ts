@@ -186,7 +186,13 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         console.log(`✅ ${period} analytics generated - Score: ${analytics.overallScore}/100`);
         
       } catch (error) {
-        console.error('❌ Error generating analytics:', error);
+        // Handle "Insufficient data" gracefully - this is expected for new users
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Insufficient data')) {
+          console.log('📊 No analytics data yet - user needs to log workouts/meals first');
+        } else {
+          console.error('❌ Error generating analytics:', error);
+        }
         set({ 
           isLoading: false,
           currentAnalytics: null,

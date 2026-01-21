@@ -187,13 +187,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const appCaloriesBurned = useMemo(() => DataRetrievalService.getTotalCaloriesBurned(), [todaysData]);
   const wearableConnected = isHealthKitAuthorized || isHealthConnectAuthorized;
   const realCaloriesBurned = useMemo(() => {
-    // If wearable is connected, use wearable activeCalories as truth for "calories burned"
-    // Otherwise fall back to app-tracked calories
-    if (wearableConnected && healthMetrics?.activeCalories > 0) {
-      return healthMetrics.activeCalories;
+    // Google Fit writes its "Cal" value to TotalCaloriesBurned in Health Connect
+    // ActiveCaloriesBurned is often empty/0 as most apps don't write to it separately
+    if (wearableConnected) {
+      // Use totalCalories first (this is what Google Fit's "Cal" actually is)
+      if (healthMetrics?.totalCalories && healthMetrics.totalCalories > 0) {
+        return healthMetrics.totalCalories;
+      }
+      // Fall back to activeCalories if available
+      if (healthMetrics?.activeCalories && healthMetrics.activeCalories > 0) {
+        return healthMetrics.activeCalories;
+      }
     }
     return appCaloriesBurned;
-  }, [wearableConnected, healthMetrics?.activeCalories, appCaloriesBurned]);
+  }, [wearableConnected, healthMetrics?.totalCalories, healthMetrics?.activeCalories, appCaloriesBurned]);
+  
+  // Calculate actual calories goal - use healthMetrics goal or fall back to TDEE from onboarding
+  const actualCaloriesGoal = useMemo(() => {
+    // Priority: healthMetrics.caloriesGoal > calculatedMetrics.calculatedTDEE > calculatedMetrics.dailyCalories > 0
+    if (healthMetrics?.caloriesGoal && healthMetrics.caloriesGoal > 0) {
+      return healthMetrics.caloriesGoal;
+    }
+    if (calculatedMetrics?.calculatedTDEE && calculatedMetrics.calculatedTDEE > 0) {
+      return calculatedMetrics.calculatedTDEE;
+    }
+    if (calculatedMetrics?.dailyCalories && calculatedMetrics.dailyCalories > 0) {
+      return calculatedMetrics.dailyCalories;
+    }
+    return 0; // No fallback - show 0 if no goal available
+  }, [healthMetrics?.caloriesGoal, calculatedMetrics?.calculatedTDEE, calculatedMetrics?.dailyCalories]);
   // SINGLE SOURCE OF TRUTH: achievementStore.currentStreak - NO FALLBACK CHAIN
   const realStreak = achievementStreak;
   const todaysWorkoutInfo = useMemo(() => DataRetrievalService.getTodaysWorkoutForHome(), [todaysData]);
@@ -394,11 +416,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
             <View style={styles.section}>
               <DailyProgressRings
                 caloriesBurned={realCaloriesBurned}
-                caloriesGoal={healthMetrics?.caloriesGoal} // NO HARDCODED - from healthDataStore
+                caloriesGoal={actualCaloriesGoal} // From TDEE/healthMetrics - properly calculated
                 workoutMinutes={workoutMinutes}
-                workoutGoal={calculatedMetrics?.recommendedCardioMinutes} // NO HARDCODED - from advanced_review
+                workoutGoal={calculatedMetrics?.workoutDurationMinutes ?? calculatedMetrics?.recommendedCardioMinutes ?? 30} // User's preferred workout duration from onboarding
                 mealsLogged={mealsLogged}
-                mealsGoal={calculatedMetrics?.mealsPerDay} // NO HARDCODED - from user preferences
+                mealsGoal={calculatedMetrics?.mealsPerDay ?? 3} // Default 3 meals if not set
+                steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
+                stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
+                stepsSource={healthMetrics?.sources?.steps} // Data source attribution
                 onPress={() => onNavigateToTab?.('progress')}
               />
               {/* Wearable Sync Status */}

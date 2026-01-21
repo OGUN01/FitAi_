@@ -26,6 +26,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 
 import { useHealthDataStore } from '../../stores/healthDataStore';
+import { healthConnectService } from '../../services/healthConnect';
 import { GlassCard } from '../../components/ui/aurora/GlassCard';
 import { AnimatedPressable } from '../../components/ui/aurora/AnimatedPressable';
 import { AuroraBackground } from '../../components/ui/aurora/AuroraBackground';
@@ -36,7 +37,7 @@ import { gradients, toLinearGradientProps } from '../../theme/gradients';
 
 // Data types that can be synced
 interface HealthDataType {
-  key: 'steps' | 'heartRate' | 'workouts' | 'sleep' | 'weight' | 'nutrition';
+  key: 'steps' | 'heartRate' | 'workouts' | 'sleep' | 'weight' | 'nutrition' | 'hrv' | 'spo2' | 'bodyFat';
   title: string;
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
@@ -86,6 +87,27 @@ const HEALTH_DATA_TYPES: HealthDataType[] = [
     icon: 'nutrition-outline',
     color: '#00BCD4',
   },
+  {
+    key: 'hrv',
+    title: 'Heart Rate Variability',
+    description: 'HRV for recovery analysis',
+    icon: 'pulse-outline',
+    color: '#673AB7',
+  },
+  {
+    key: 'spo2',
+    title: 'Blood Oxygen (SpO2)',
+    description: 'Oxygen saturation levels',
+    icon: 'water-outline',
+    color: '#009688',
+  },
+  {
+    key: 'bodyFat',
+    title: 'Body Fat',
+    description: 'Body composition from scales',
+    icon: 'analytics-outline',
+    color: '#E91E63',
+  },
 ];
 
 // Compatible devices by platform
@@ -107,11 +129,9 @@ const COMPATIBLE_DEVICES = {
   ],
 };
 
-// Detect Expo Go environment
-const isExpoGo =
-  Constants.appOwnership === 'expo' ||
-  Constants.executionEnvironment === 'storeClient' ||
-  (__DEV__ && !Constants.isDevice && Constants.platform?.web !== true);
+// Detect Expo Go environment - only true when actually running in Expo Go app
+// appOwnership === 'expo' is the definitive check for Expo Go
+const isExpoGo = Constants.appOwnership === 'expo';
 
 interface WearableConnectionScreenProps {
   onBack?: () => void;
@@ -136,10 +156,14 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
     requestHealthKitPermissions,
     initializeHealthConnect,
     requestHealthConnectPermissions,
+    reauthorizeHealthConnect,
     syncFromHealthConnect,
     syncHealthData,
     updateSettings,
   } = useHealthDataStore();
+  
+  // State for re-authorization
+  const [isReauthorizing, setIsReauthorizing] = useState(false);
 
   // Platform detection
   const isIOS = Platform.OS === 'ios';
@@ -195,10 +219,28 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
           // Initial sync
           await syncFromHealthConnect(7);
         } else {
+          // Permissions were not granted - offer to open Health Connect settings
           Alert.alert(
             'Permission Required',
-            'Please grant Health Connect permissions to sync your wearable data. You may need to install the Health Connect app from Google Play.',
-            [{ text: 'OK' }]
+            'Health Connect permissions are needed to sync your health data.\n\nThe permission dialog may not have appeared. Please grant permissions manually in Health Connect settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Open Settings', 
+                onPress: async () => {
+                  try {
+                    await healthConnectService.openSettings();
+                  } catch (e) {
+                    console.error('Failed to open Health Connect settings:', e);
+                    Alert.alert(
+                      'Open Health Connect',
+                      'Please open the Health Connect app manually and grant FitAI permission to read your health data.',
+                      [{ text: 'OK' }]
+                    );
+                  }
+                }
+              }
+            ]
           );
         }
       } else if (isIOS) {
@@ -237,6 +279,57 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
     }
   };
 
+  // Handle re-authorization (for new permissions like TotalCaloriesBurned)
+  const handleReauthorize = async () => {
+    if (!isAndroid) {
+      Alert.alert('Info', 'Re-authorization is only needed for Android Health Connect.');
+      return;
+    }
+    
+    Alert.alert(
+      'Re-authorize Health Connect',
+      'This will reset your Health Connect permissions and request fresh authorization.\n\nUse this if:\n• Calories are showing as 0\n• Some data types are missing\n• You recently updated the app\n\nYou will need to grant all permissions again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Re-authorize',
+          style: 'destructive',
+          onPress: async () => {
+            haptics.medium();
+            setIsReauthorizing(true);
+            try {
+              const success = await reauthorizeHealthConnect();
+              if (success) {
+                Alert.alert(
+                  'Success!',
+                  'Health Connect has been re-authorized with all permissions. Your data will now sync correctly.',
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert(
+                  'Re-authorization Incomplete',
+                  'Some permissions may not have been granted. Please check Health Connect settings and grant all permissions to FitAI.',
+                  [
+                    { text: 'OK' },
+                    {
+                      text: 'Open Settings',
+                      onPress: () => healthConnectService.openSettings(),
+                    },
+                  ]
+                );
+              }
+            } catch (error) {
+              console.error('Re-authorization error:', error);
+              Alert.alert('Error', 'Re-authorization failed. Please try again.');
+            } finally {
+              setIsReauthorizing(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Pull to refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -265,12 +358,25 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
     });
   };
 
-  // Format last sync time
+  // Format last sync time - handles both ISO strings and legacy timestamp strings
   const formatLastSync = (syncTime?: string) => {
     if (!syncTime) return 'Never synced';
+    
     const now = new Date();
-    const sync = new Date(syncTime);
+    let sync: Date;
+    
+    // Handle legacy format (numeric timestamp string like "1736675000000")
+    if (/^\d+$/.test(syncTime)) {
+      sync = new Date(parseInt(syncTime, 10));
+    } else {
+      sync = new Date(syncTime);
+    }
+    
+    // Validate the date
+    if (isNaN(sync.getTime())) return 'Never synced';
+    
     const diffMinutes = Math.floor((now.getTime() - sync.getTime()) / 60000);
+    if (diffMinutes < 0) return 'Just now'; // Future date protection
     if (diffMinutes < 1) return 'Just now';
     if (diffMinutes < 60) return `${diffMinutes} min ago`;
     if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hours ago`;
@@ -361,7 +467,7 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
                 <AnimatedPressable
                   onPress={handleSyncNow}
                   style={styles.syncButton}
-                  disabled={syncStatus === 'syncing'}
+                  disabled={syncStatus === 'syncing' || isReauthorizing}
                   scaleValue={0.95}
                 >
                   {syncStatus === 'syncing' ? (
@@ -374,6 +480,28 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
                   </Text>
                 </AnimatedPressable>
               </View>
+            )}
+
+            {/* Re-authorize button - for Android only, when new permissions are needed */}
+            {isConnected && isAndroid && (
+              <AnimatedPressable
+                onPress={handleReauthorize}
+                style={styles.reauthorizeButton}
+                disabled={isReauthorizing || syncStatus === 'syncing'}
+                scaleValue={0.98}
+              >
+                {isReauthorizing ? (
+                  <ActivityIndicator size="small" color="#FF9800" />
+                ) : (
+                  <Ionicons name="key" size={rf(16)} color="#FF9800" />
+                )}
+                <Text style={styles.reauthorizeText}>
+                  {isReauthorizing ? 'Re-authorizing...' : 'Re-authorize Permissions'}
+                </Text>
+                <Text style={styles.reauthorizeHint}>
+                  Use if calories show 0 or data is missing
+                </Text>
+              </AnimatedPressable>
             )}
 
             {syncError && (
@@ -396,7 +524,9 @@ export const WearableConnectionScreen: React.FC<WearableConnectionScreenProps> =
                 </View>
                 <View style={styles.summaryItem}>
                   <Ionicons name="flame" size={rf(24)} color="#FF9800" />
-                  <Text style={styles.summaryValue}>{metrics.activeCalories}</Text>
+                  <Text style={styles.summaryValue}>
+                    {metrics.totalCalories || metrics.activeCalories || 0}
+                  </Text>
                   <Text style={styles.summaryLabel}>Calories</Text>
                 </View>
                 <View style={styles.summaryItem}>
@@ -603,6 +733,29 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     marginLeft: ResponsiveTheme.spacing.xs,
+  },
+  reauthorizeButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 152, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 152, 0, 0.3)',
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginTop: ResponsiveTheme.spacing.sm,
+  },
+  reauthorizeText: {
+    fontSize: rf(13),
+    fontWeight: '600',
+    color: '#FF9800',
+    marginTop: ResponsiveTheme.spacing.xs,
+  },
+  reauthorizeHint: {
+    fontSize: rf(11),
+    color: ResponsiveTheme.colors.textSecondary,
+    marginTop: 2,
   },
   errorBanner: {
     flexDirection: 'row',

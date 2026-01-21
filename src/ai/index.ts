@@ -619,7 +619,7 @@ function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
     category: 'strength', // Default category
     difficulty: difficulty,
     duration: workoutPlan.totalDuration || 30,
-    estimatedCalories: workoutPlan.estimatedCalories || 300,
+    estimatedCalories: workoutPlan.estimatedCalories || 0, // 0 = will be calculated at completion with user's real weight
     exercises: exercises,
     warmup: warmup,
     cooldown: cooldown,

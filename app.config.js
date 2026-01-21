@@ -59,13 +59,19 @@ export default {
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_HEART_RATE", 
         "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_TOTAL_CALORIES_BURNED",
+        "android.permission.health.READ_BASAL_METABOLIC_RATE",
         "android.permission.health.READ_DISTANCE",
         "android.permission.health.READ_WEIGHT",
-        "android.permission.health.READ_SLEEP"
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.READ_OXYGEN_SATURATION",
+        "android.permission.health.READ_BODY_FAT"
       ],
       allowBackup: false,
       googleServicesFile: "./google-services.json",
-      jsEngine: "jsc",
+      jsEngine: "hermes",
       usesCleartextTraffic: true,
       networkSecurityConfig: {
         cleartextTrafficPermitted: true,
@@ -100,6 +106,7 @@ export default {
     },
     plugins: [
       "expo-font",
+      "react-native-health-connect",
       [
         "expo-notifications",
         {

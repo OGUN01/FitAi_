@@ -1,7 +1,9 @@
 import { useFitnessStore } from '../stores/fitnessStore';
 import { useNutritionStore } from '../stores/nutritionStore';
+import { useUserStore } from '../stores/userStore';
 import { crudOperations } from './crudOperations';
 import { WeeklyWorkoutPlan, DayWorkout, WeeklyMealPlan, DayMeal } from '../ai';
+import { calculateWorkoutCalories, ExerciseCalorieInput } from './calorieCalculator';
 
 export interface TodaysData {
   workout: DayWorkout | null;
@@ -276,9 +278,20 @@ class DataRetrievalService {
     return streak;
   }
 
-  // Get calories burned from completed workouts
+  // Get calories burned from completed workouts using MET-based calculation
+  // NO FALLBACK VALUES - returns 0 if weight not available
   static getTotalCaloriesBurned(): number {
     const fitnessStore = useFitnessStore.getState();
+    const userStore = useUserStore.getState();
+    
+    // Get user's weight for personalized calculation - NO FALLBACK
+    const userWeight = userStore.profile?.bodyMetrics?.current_weight_kg;
+    
+    // If no weight, we cannot calculate calories accurately
+    if (!userWeight || userWeight <= 0) {
+      console.warn('[dataRetrieval] Cannot calculate total calories burned: user weight not available');
+      return 0;
+    }
 
     return Object.values(fitnessStore.workoutProgress)
       .filter((progress) => progress.progress === 100)
@@ -286,7 +299,28 @@ class DataRetrievalService {
         const workout = fitnessStore.weeklyWorkoutPlan?.workouts.find(
           (w) => w.id === progress.workoutId
         );
-        return total + (workout?.estimatedCalories || 0);
+        if (!workout) return total;
+        
+        // Use MET-based calculation if exercises available
+        if (workout.exercises && workout.exercises.length > 0) {
+          const exerciseInputs: ExerciseCalorieInput[] = workout.exercises.map(ex => ({
+            exerciseId: ex.exerciseId || ex.id,
+            name: ex.exerciseName || ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            duration: ex.duration,
+            restTime: ex.restTime,
+          }));
+          
+          const result = calculateWorkoutCalories(exerciseInputs, userWeight);
+          if (result.totalCalories > 0) {
+            return total + result.totalCalories;
+          }
+        }
+        
+        // No exercises - cannot calculate
+        console.warn(`[dataRetrieval] Workout ${workout.id} has no exercises for calorie calculation`);
+        return total;
       }, 0);
   }
 
