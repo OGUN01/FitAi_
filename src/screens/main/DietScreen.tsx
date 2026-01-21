@@ -848,10 +848,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       );
       console.log("[ANALYTICS] Food recognition result:", result);
 
-      if (result.success && result.data) {
-        const recognizedFoods = result.data;
+      if (result.success && result.foods) {
+        const recognizedFoods = result.foods;
         const totalCalories = recognizedFoods.reduce(
-          (sum, food) => sum + food.nutrition.calories,
+          (sum: number, food: any) => sum + food.nutrition.calories,
           0,
         );
 
@@ -859,9 +859,9 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         Alert.alert(
           "Food Recognition Complete!",
           `Recognized ${recognizedFoods.length} food item(s):\n\n` +
-            `${recognizedFoods.map((food) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
+            `${recognizedFoods.map((food: any) => `• ${food.name} (${Math.round(food.nutrition.calories)} cal)`).join("\n")}\n\n` +
             `Total: ${Math.round(totalCalories)} calories\n` +
-            `Accuracy: ${result.accuracy}% | Confidence: ${result.confidence}%`,
+            `Confidence: ${result.overallConfidence}%`,
           [
             { text: "Cancel", style: "cancel" },
             {
@@ -1297,7 +1297,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           // Convert AI meal to meal log format (simplified)
           const mealData = {
             name: response.data.name,
-            type: mealType,
+            type: mealType as "breakfast" | "lunch" | "dinner" | "snack",
             foods: response.data.ingredients
               .slice(0, 3)
               .map((ingredient: any, index: number) => ({
@@ -1486,12 +1486,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
       // Use aiService for meal plan generation (connected to Cloudflare Workers)
       const response = await aiService.generateWeeklyMealPlan(
-        profile.personalInfo,
-        profile.fitnessGoals,
+        profile!.personalInfo,
+        profile!.fitnessGoals,
         1, // weekNumber
         {
-          bodyMetrics: profile.bodyMetrics,
-          dietPreferences: profile.dietPreferences || dietPreferences,
+          bodyMetrics: profile!.bodyMetrics,
+          dietPreferences:
+            profile!.dietPreferences || dietPreferences || undefined,
           calorieTarget: userCalorieTarget, // CRITICAL: Pass calorie target from frontend
         },
       );
@@ -1521,7 +1522,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           "sunday",
         ];
         const generatedMealsByDay = allDays.map((day) => {
-          const mealsForDay = response.data.meals.filter(
+          const mealsForDay = response.data!.meals.filter(
             (meal) => meal.dayOfWeek === day,
           );
           return {
@@ -1532,7 +1533,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         });
         console.log("[ANALYTICS] Generated meals by day:", generatedMealsByDay);
 
-        const totalGenerated = response.data.meals.length;
+        const totalGenerated = response.data!.meals.length;
         const expectedTotal = 21; // 7 days × 3 meals
         console.log(
           `[ANALYTICS] Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`,

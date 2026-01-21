@@ -11,7 +11,7 @@ export interface Exercise {
   instructions: string[];
   muscleGroups: string[];
   equipment: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   sets?: number;
   reps?: number | string; // Can be "8-12" or specific number
   duration?: number; // in seconds for time-based exercises
@@ -52,8 +52,15 @@ export interface Workout {
   id: string;
   title: string;
   description: string;
-  category: 'strength' | 'cardio' | 'flexibility' | 'hiit' | 'yoga' | 'pilates' | 'hybrid';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category:
+    | "strength"
+    | "cardio"
+    | "flexibility"
+    | "hiit"
+    | "yoga"
+    | "pilates"
+    | "hybrid";
+  difficulty: "beginner" | "intermediate" | "advanced";
   duration: number; // in minutes
   estimatedCalories: number;
   exercises: WorkoutSet[];
@@ -104,8 +111,8 @@ export interface WorkoutSession {
   userId: string;
   startedAt: string;
   completedAt: string | null;
-  duration: number; // minutes
-  caloriesBurned: number;
+  duration: number | null; // minutes (null if not yet completed or missing)
+  caloriesBurned: number | null; // null if not yet completed or missing
   exercises: CompletedExercise[];
   notes: string;
   rating: number; // 1-5
@@ -139,66 +146,66 @@ export interface WorkoutGenerationPreferences {
   equipment: EquipmentType[];
   duration: number; // minutes
   frequency: number; // times per week
-  intensity: 'low' | 'moderate' | 'high';
+  intensity: "low" | "moderate" | "high";
   goals: WorkoutGoal[];
   restrictions: string[];
-  preferredTime: 'morning' | 'afternoon' | 'evening' | 'flexible';
+  preferredTime: "morning" | "afternoon" | "evening" | "flexible";
 }
 
 export type WorkoutType =
-  | 'strength'
-  | 'cardio'
-  | 'hiit'
-  | 'yoga'
-  | 'pilates'
-  | 'flexibility'
-  | 'functional'
-  | 'sports'
-  | 'dance';
+  | "strength"
+  | "cardio"
+  | "hiit"
+  | "yoga"
+  | "pilates"
+  | "flexibility"
+  | "functional"
+  | "sports"
+  | "dance";
 
 export type EquipmentType =
-  | 'none'
-  | 'dumbbells'
-  | 'barbell'
-  | 'resistance_bands'
-  | 'kettlebell'
-  | 'pull_up_bar'
-  | 'yoga_mat'
-  | 'cardio_machine'
-  | 'gym_access';
+  | "none"
+  | "dumbbells"
+  | "barbell"
+  | "resistance_bands"
+  | "kettlebell"
+  | "pull_up_bar"
+  | "yoga_mat"
+  | "cardio_machine"
+  | "gym_access";
 
 export type WorkoutGoal =
-  | 'weight_loss'
-  | 'muscle_gain'
-  | 'strength'
-  | 'endurance'
-  | 'flexibility'
-  | 'general_fitness'
-  | 'sport_specific';
+  | "weight_loss"
+  | "muscle_gain"
+  | "strength"
+  | "endurance"
+  | "flexibility"
+  | "general_fitness"
+  | "sport_specific";
 
 // ============================================================================
 // MUSCLE GROUP TYPES
 // ============================================================================
 
 export type MuscleGroup =
-  | 'chest'
-  | 'back'
-  | 'shoulders'
-  | 'biceps'
-  | 'triceps'
-  | 'forearms'
-  | 'abs'
-  | 'obliques'
-  | 'lower_back'
-  | 'glutes'
-  | 'quadriceps'
-  | 'hamstrings'
-  | 'calves'
-  | 'full_body';
+  | "chest"
+  | "back"
+  | "shoulders"
+  | "biceps"
+  | "triceps"
+  | "forearms"
+  | "abs"
+  | "obliques"
+  | "lower_back"
+  | "glutes"
+  | "quadriceps"
+  | "hamstrings"
+  | "calves"
+  | "full_body";
 
 export interface MuscleGroupTarget {
   muscleGroup: MuscleGroup;
-  priority: 'primary' | 'secondary';
+  priority: "primary" | "secondary";
   volume: number; // sets per week
 }
 
@@ -242,7 +249,7 @@ export interface WorkoutGenerationRequest {
   userId: string;
   type: WorkoutType;
   duration: number; // minutes
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   equipment: EquipmentType[];
   targetMuscleGroups: MuscleGroup[];
   goals: WorkoutGoal[];
@@ -266,8 +273,8 @@ export interface WorkoutGenerationResponse {
 export interface ExerciseFilter {
   muscleGroups?: MuscleGroup[];
   equipment?: EquipmentType[];
-  difficulty?: ('beginner' | 'intermediate' | 'advanced')[];
-  type?: ('strength' | 'cardio' | 'flexibility' | 'balance')[];
+  difficulty?: ("beginner" | "intermediate" | "advanced")[];
+  type?: ("strength" | "cardio" | "flexibility" | "balance")[];
   searchTerm?: string;
 }
 
@@ -290,7 +297,7 @@ export interface WorkoutTemplate {
   name: string;
   description: string;
   category: WorkoutType;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   duration: number; // minutes
   exercises: WorkoutSet[];
   equipment: EquipmentType[];
@@ -322,14 +329,14 @@ export interface WorkoutSchedule {
   scheduledTime: string; // HH:MM
   isRecurring: boolean;
   recurrencePattern?: RecurrencePattern;
-  status: 'scheduled' | 'completed' | 'skipped' | 'cancelled';
+  status: "scheduled" | "completed" | "skipped" | "cancelled";
   reminder: boolean;
   reminderTime: number; // minutes before
   notes: string;
 }
 
 export interface RecurrencePattern {
-  type: 'daily' | 'weekly' | 'monthly';
+  type: "daily" | "weekly" | "monthly";
   interval: number; // every N days/weeks/months
   daysOfWeek?: number[]; // 0-6, Sunday = 0
   endDate?: string; // ISO date
@@ -343,10 +350,10 @@ export interface RecurrencePattern {
 export interface WorkoutProgress {
   exerciseId: string;
   exerciseName: string;
-  progressType: 'weight' | 'reps' | 'duration' | 'distance';
+  progressType: "weight" | "reps" | "duration" | "distance";
   history: ProgressEntry[];
   personalBest: ProgressEntry;
-  trend: 'improving' | 'stable' | 'declining';
+  trend: "improving" | "stable" | "declining";
   nextTarget: ProgressTarget;
 }
 
@@ -375,8 +382,8 @@ export interface WorkoutAchievement {
   title: string;
   description: string;
   icon: string;
-  category: 'consistency' | 'strength' | 'endurance' | 'milestone';
-  difficulty: 'bronze' | 'silver' | 'gold' | 'platinum';
+  category: "consistency" | "strength" | "endurance" | "milestone";
+  difficulty: "bronze" | "silver" | "gold" | "platinum";
   criteria: AchievementCriteria;
   reward: {
     points: number;
@@ -389,9 +396,14 @@ export interface WorkoutAchievement {
 }
 
 export interface AchievementCriteria {
-  type: 'workout_count' | 'streak' | 'weight_lifted' | 'calories_burned' | 'duration';
+  type:
+    | "workout_count"
+    | "streak"
+    | "weight_lifted"
+    | "calories_burned"
+    | "duration";
   value: number;
-  timeframe?: 'day' | 'week' | 'month' | 'year' | 'all_time';
+  timeframe?: "day" | "week" | "month" | "year" | "all_time";
   conditions?: Record<string, any>;
 }
 
@@ -404,7 +416,7 @@ export interface SharedWorkout {
   workoutId: string;
   sharedBy: string;
   sharedWith?: string[]; // user IDs, empty for public
-  shareType: 'public' | 'friends' | 'private';
+  shareType: "public" | "friends" | "private";
   shareUrl: string;
   expiresAt?: string; // ISO date
   allowModifications: boolean;

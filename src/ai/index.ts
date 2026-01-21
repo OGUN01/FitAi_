@@ -16,42 +16,55 @@
 // EXPORTS
 // ============================================================================
 
-export { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
+export { MOTIVATIONAL_CONTENT_SCHEMA } from "./schemas";
 
 // Feature Engines - Keep these (they use demo data for UI)
-export { workoutEngine } from '../features/workouts/WorkoutEngine';
-export { nutritionEngine } from '../features/nutrition/NutritionEngine';
+export { workoutEngine } from "../features/workouts/WorkoutEngine";
+export { nutritionEngine } from "../features/nutrition/NutritionEngine";
 
 // AI Types
-export * from '../types/ai';
+export * from "../types/ai";
 
 // Data (static data - not AI-related)
-export * from '../data/exercises';
-export * from '../data/achievements';
+export * from "../data/exercises";
+export * from "../data/achievements";
 
 // ============================================================================
 // IMPORTS
 // ============================================================================
 
-import { MOTIVATIONAL_CONTENT_SCHEMA } from './schemas';
-import { workoutEngine } from '../features/workouts/WorkoutEngine';
-import { nutritionEngine } from '../features/nutrition/NutritionEngine';
-import { PersonalInfo, FitnessGoals, DietPreferences, WorkoutPreferences, BodyMetrics } from '../types/user';
-import { Workout, Meal, DailyMealPlan, MotivationalContent, AIResponse, WorkoutSet } from '../types/ai';
+import { MOTIVATIONAL_CONTENT_SCHEMA } from "./schemas";
+import { workoutEngine } from "../features/workouts/WorkoutEngine";
+import { nutritionEngine } from "../features/nutrition/NutritionEngine";
+import {
+  PersonalInfo,
+  FitnessGoals,
+  DietPreferences,
+  WorkoutPreferences,
+  BodyMetrics,
+} from "../types/user";
+import {
+  Workout,
+  Meal,
+  DailyMealPlan,
+  MotivationalContent,
+  AIResponse,
+  WorkoutSet,
+} from "../types/ai";
 
 // Backend client and transformers
-import { 
-  fitaiWorkersClient, 
-  AuthenticationError, 
-  WorkersAPIError, 
-  NetworkError 
-} from '../services/fitaiWorkersClient';
+import {
+  fitaiWorkersClient,
+  AuthenticationError,
+  WorkersAPIError,
+  NetworkError,
+} from "../services/fitaiWorkersClient";
 import {
   transformForDietRequest,
   transformForWorkoutRequest,
   transformDietResponseToWeeklyPlan,
   transformWorkoutResponseToWeeklyPlan,
-} from '../services/aiRequestTransformers';
+} from "../services/aiRequestTransformers";
 
 // ============================================================================
 // TYPES
@@ -76,7 +89,7 @@ export interface WeeklyMealPlan {
 
 export interface AIServiceMetadata {
   cached: boolean;
-  cacheSource?: 'kv' | 'database' | 'fresh';
+  cacheSource?: "kv" | "database" | "fresh";
   generationTime: number;
   model?: string;
   tokensUsed?: number;
@@ -122,9 +135,9 @@ class UnifiedAIService {
       focusMuscles?: string[];
       bodyMetrics?: BodyMetrics;
       workoutPreferences?: WorkoutPreferences;
-    }
+    },
   ): Promise<AIResponse<Workout>> {
-    console.log('🏋️ [aiService] generateWorkout called');
+    console.log("🏋️ [aiService] generateWorkout called");
 
     try {
       // Transform request for backend
@@ -137,10 +150,10 @@ class UnifiedAIService {
           workoutType: preferences?.workoutType,
           duration: preferences?.duration,
           focusMuscles: preferences?.focusMuscles,
-        }
+        },
       );
 
-      console.log('🏋️ [aiService] Calling backend /workout/generate');
+      console.log("🏋️ [aiService] Calling backend /workout/generate");
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
       // Store metadata
@@ -151,28 +164,32 @@ class UnifiedAIService {
       if (!response.success || !response.data) {
         return {
           success: false,
-          error: response.error || 'Failed to generate workout',
+          error: response.error || "Failed to generate workout",
         };
       }
 
       // Transform to single workout
-      const weeklyPlan = transformWorkoutResponseToWeeklyPlan(response, 1, preferences?.workoutPreferences);
+      const weeklyPlan = transformWorkoutResponseToWeeklyPlan(
+        response,
+        1,
+        preferences?.workoutPreferences,
+      );
       const workout = weeklyPlan?.workouts[0];
 
       if (!workout) {
         return {
           success: false,
-          error: 'No workout generated',
+          error: "No workout generated",
         };
       }
 
-      console.log('✅ [aiService] Workout generated successfully');
+      console.log("✅ [aiService] Workout generated successfully");
       return {
         success: true,
         data: workout,
       };
     } catch (error) {
-      return this.handleError(error, 'generateWorkout');
+      return this.handleError(error, "generateWorkout");
     }
   }
 
@@ -182,23 +199,23 @@ class UnifiedAIService {
   async generateMeal(
     personalInfo: PersonalInfo,
     fitnessGoals: FitnessGoals,
-    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack',
+    mealType: "breakfast" | "lunch" | "dinner" | "snack",
     preferences?: {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
-    }
+    },
   ): Promise<AIResponse<Meal>> {
-    console.log('🍽️ [aiService] generateMeal called for:', mealType);
+    console.log("🍽️ [aiService] generateMeal called for:", mealType);
 
     try {
       const request = transformForDietRequest(
         personalInfo,
         fitnessGoals,
         preferences?.bodyMetrics,
-        preferences?.dietPreferences
+        preferences?.dietPreferences,
       );
 
-      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
 
       if (response.metadata) {
@@ -208,13 +225,15 @@ class UnifiedAIService {
       if (!response.success || !response.data) {
         return {
           success: false,
-          error: response.error || 'Failed to generate meal',
+          error: response.error || "Failed to generate meal",
         };
       }
 
       // Find the meal of requested type
       const meal = response.data.meals?.find(
-        (m: any) => m.mealType?.toLowerCase() === mealType || m.type?.toLowerCase() === mealType
+        (m: any) =>
+          m.mealType?.toLowerCase() === mealType ||
+          m.type?.toLowerCase() === mealType,
       );
 
       if (!meal) {
@@ -224,13 +243,13 @@ class UnifiedAIService {
         };
       }
 
-      console.log('✅ [aiService] Meal generated successfully');
+      console.log("✅ [aiService] Meal generated successfully");
       return {
         success: true,
         data: meal as Meal,
       };
     } catch (error) {
-      return this.handleError(error, 'generateMeal');
+      return this.handleError(error, "generateMeal");
     }
   }
 
@@ -243,19 +262,19 @@ class UnifiedAIService {
     preferences?: {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
-    }
+    },
   ): Promise<AIResponse<DailyMealPlan>> {
-    console.log('🍽️ [aiService] generateDailyMealPlan called');
+    console.log("🍽️ [aiService] generateDailyMealPlan called");
 
     try {
       const request = transformForDietRequest(
         personalInfo,
         fitnessGoals,
         preferences?.bodyMetrics,
-        preferences?.dietPreferences
+        preferences?.dietPreferences,
       );
 
-      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
 
       if (response.metadata) {
@@ -265,13 +284,12 @@ class UnifiedAIService {
       if (!response.success || !response.data) {
         return {
           success: false,
-          error: response.error || 'Failed to generate daily meal plan',
+          error: response.error || "Failed to generate daily meal plan",
         };
       }
 
       const dailyPlan: DailyMealPlan = {
-        id: response.data.id || `daily_${Date.now()}`,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split("T")[0],
         meals: response.data.meals || [],
         totalCalories: response.data.dailyTotals?.calories || 0,
         totalMacros: {
@@ -280,15 +298,16 @@ class UnifiedAIService {
           fat: response.data.dailyTotals?.fat || 0,
           fiber: 0,
         },
+        waterIntake: 0, // Default to 0, will be tracked separately
       };
 
-      console.log('✅ [aiService] Daily meal plan generated successfully');
+      console.log("✅ [aiService] Daily meal plan generated successfully");
       return {
         success: true,
         data: dailyPlan,
       };
     } catch (error) {
-      return this.handleError(error, 'generateDailyMealPlan');
+      return this.handleError(error, "generateDailyMealPlan");
     }
   }
 
@@ -297,25 +316,59 @@ class UnifiedAIService {
    */
   async generateMotivationalContent(
     personalInfo: PersonalInfo,
-    currentStreak: number = 0
+    currentStreak: number = 0,
   ): Promise<AIResponse<MotivationalContent>> {
     // This is a non-critical feature - return placeholder content
-    console.warn('⚠️ [aiService] Motivational content uses placeholder (not yet migrated)');
+    console.warn(
+      "⚠️ [aiService] Motivational content uses placeholder (not yet migrated)",
+    );
     return {
       success: true,
       data: {
-        dailyQuote: "Every rep counts! Keep pushing toward your goals.",
-        tip: "Stay hydrated and remember to warm up before your workout.",
-        encouragement: currentStreak > 0 
-          ? `Amazing! You're on a ${currentStreak}-day streak!` 
-          : "Today is a great day to start your fitness journey!",
+        dailyTip: {
+          icon: "💡",
+          title: "Daily Fitness Tip",
+          content: "Stay hydrated and remember to warm up before your workout.",
+          category: "exercise" as const,
+        },
+        encouragement: {
+          message:
+            currentStreak > 0
+              ? `Amazing! You're on a ${currentStreak}-day streak!`
+              : "Today is a great day to start your fitness journey!",
+          emoji: "💪",
+          tone: "energetic" as const,
+        },
+        challenge: {
+          title: "Weekly Consistency Challenge",
+          description: "Complete all planned workouts this week",
+          reward: "Achievement unlocked!",
+          duration: "7 days",
+          difficulty: "medium" as const,
+        },
+        quote: {
+          text: "Every rep counts! Keep pushing toward your goals.",
+          author: "FitAI",
+          context: "fitness motivation",
+        },
+        factOfTheDay: {
+          fact: "Regular exercise can boost your mood and energy levels throughout the day.",
+          source: "Health Research",
+        },
+        personalizedMessage: {
+          content:
+            currentStreak > 0
+              ? `You're making great progress! Keep up the ${currentStreak}-day streak!`
+              : "Start today and build momentum towards your fitness goals!",
+          basedOn: "current_streak",
+        },
       },
     };
   }
 
   /**
    * Generate weekly workout plan using backend API
-   * 
+   *
    * IMPORTANT: Requires authenticated user (Supabase login)
    */
   async generateWeeklyWorkoutPlan(
@@ -325,9 +378,12 @@ class UnifiedAIService {
     options?: {
       bodyMetrics?: BodyMetrics;
       workoutPreferences?: WorkoutPreferences;
-    }
+    },
   ): Promise<AIResponse<WeeklyWorkoutPlan>> {
-    console.log('🏋️ [aiService] generateWeeklyWorkoutPlan called for week:', weekNumber);
+    console.log(
+      "🏋️ [aiService] generateWeeklyWorkoutPlan called for week:",
+      weekNumber,
+    );
 
     try {
       // ✅ NEW: Transform request with weekly plan (NO FALLBACK)
@@ -337,18 +393,20 @@ class UnifiedAIService {
         options?.bodyMetrics,
         options?.workoutPreferences,
         {
-          requestWeeklyPlan: true,  // ✅ Always request weekly plan
+          requestWeeklyPlan: true, // ✅ Always request weekly plan
           duration: options?.workoutPreferences?.time_preference || 30,
-        }
+        },
       );
 
-      console.log('🏋️ [aiService] Calling backend /workout/generate with weekly plan request');
+      console.log(
+        "🏋️ [aiService] Calling backend /workout/generate with weekly plan request",
+      );
       const response = await fitaiWorkersClient.generateWorkoutPlan(request);
 
       // Store metadata for UI display
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
-        console.log('📊 [aiService] Generation metadata:', {
+        console.log("📊 [aiService] Generation metadata:", {
           cached: response.metadata.cached,
           cacheSource: response.metadata.cacheSource,
           generationTime: response.metadata.generationTime,
@@ -357,49 +415,55 @@ class UnifiedAIService {
       }
 
       if (!response.success || !response.data) {
-        console.error('❌ [aiService] Backend returned error:', response.error);
+        console.error("❌ [aiService] Backend returned error:", response.error);
         return {
           success: false,
-          error: response.error || 'Failed to generate workout plan',
+          error: response.error || "Failed to generate workout plan",
         };
       }
 
       // ✅ Backend ALWAYS returns weekly plan (NO FALLBACK)
       const weeklyPlanData = response.data as any;
-      console.log('✅ [aiService] Received weekly plan with workouts:', weeklyPlanData.workouts?.length);
+      console.log(
+        "✅ [aiService] Received weekly plan with workouts:",
+        weeklyPlanData.workouts?.length,
+      );
 
       // Transform each workout in the weekly plan
       const workouts = weeklyPlanData.workouts.map((w: any) =>
-        transformWorkoutData(w.workout, w.dayOfWeek)
+        transformWorkoutData(w.workout, w.dayOfWeek),
       );
 
       const weeklyPlan: WeeklyWorkoutPlan = {
         id: weeklyPlanData.id || `weekly_workout_${Date.now()}`,
         weekNumber,
         workouts: workouts,
-        planTitle: weeklyPlanData.planTitle || 'Your Personalized Workout Plan',
+        planTitle: weeklyPlanData.planTitle || "Your Personalized Workout Plan",
         planDescription: weeklyPlanData.planDescription,
         restDays: weeklyPlanData.restDays || [],
         totalEstimatedCalories: weeklyPlanData.totalEstimatedCalories || 0,
       };
 
-      console.log('✅ [aiService] Weekly workout plan transformed successfully:', {
-        workouts: weeklyPlan.workouts.length,
-        title: weeklyPlan.planTitle,
-      });
+      console.log(
+        "✅ [aiService] Weekly workout plan transformed successfully:",
+        {
+          workouts: weeklyPlan.workouts.length,
+          title: weeklyPlan.planTitle,
+        },
+      );
 
       return {
         success: true,
         data: weeklyPlan,
       };
     } catch (error) {
-      return this.handleError(error, 'generateWeeklyWorkoutPlan');
+      return this.handleError(error, "generateWeeklyWorkoutPlan");
     }
   }
 
   /**
    * Generate weekly meal plan using backend API
-   * 
+   *
    * IMPORTANT: calorieTarget must be passed from frontend (from useCalculatedMetrics)
    * This ensures both guest and authenticated users have the calorie target.
    */
@@ -411,10 +475,13 @@ class UnifiedAIService {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
       calorieTarget?: number;
-    }
+    },
   ): Promise<AIResponse<WeeklyMealPlan>> {
-    console.log('🍽️ [aiService] generateWeeklyMealPlan called for week:', weekNumber);
-    console.log('🍽️ [aiService] calorieTarget:', options?.calorieTarget);
+    console.log(
+      "🍽️ [aiService] generateWeeklyMealPlan called for week:",
+      weekNumber,
+    );
+    console.log("🍽️ [aiService] calorieTarget:", options?.calorieTarget);
 
     try {
       // Transform request for backend - include calorieTarget from frontend
@@ -423,16 +490,16 @@ class UnifiedAIService {
         fitnessGoals,
         options?.bodyMetrics,
         options?.dietPreferences,
-        options?.calorieTarget
+        options?.calorieTarget,
       );
 
-      console.log('🍽️ [aiService] Calling backend /diet/generate');
+      console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
 
       // Store metadata for UI display
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
-        console.log('📊 [aiService] Generation metadata:', {
+        console.log("📊 [aiService] Generation metadata:", {
           cached: response.metadata.cached,
           cacheSource: response.metadata.cacheSource,
           generationTime: response.metadata.generationTime,
@@ -442,24 +509,27 @@ class UnifiedAIService {
       }
 
       if (!response.success || !response.data) {
-        console.error('❌ [aiService] Backend returned error:', response.error);
+        console.error("❌ [aiService] Backend returned error:", response.error);
         return {
           success: false,
-          error: response.error || 'Failed to generate meal plan',
+          error: response.error || "Failed to generate meal plan",
         };
       }
 
       // Transform backend response to frontend format
-      const weeklyPlan = transformDietResponseToWeeklyPlan(response, weekNumber);
+      const weeklyPlan = transformDietResponseToWeeklyPlan(
+        response,
+        weekNumber,
+      );
 
       if (!weeklyPlan) {
         return {
           success: false,
-          error: 'Failed to transform diet response',
+          error: "Failed to transform diet response",
         };
       }
 
-      console.log('✅ [aiService] Weekly meal plan generated successfully:', {
+      console.log("✅ [aiService] Weekly meal plan generated successfully:", {
         meals: weeklyPlan.meals.length,
         title: weeklyPlan.planTitle,
       });
@@ -469,7 +539,7 @@ class UnifiedAIService {
         data: weeklyPlan,
       };
     } catch (error) {
-      return this.handleError(error, 'generateWeeklyMealPlan');
+      return this.handleError(error, "generateWeeklyMealPlan");
     }
   }
 
@@ -477,28 +547,28 @@ class UnifiedAIService {
    * Test backend connection
    */
   async testConnection(): Promise<AIResponse<string>> {
-    console.log('🔗 [aiService] Testing backend connection...');
-    
+    console.log("🔗 [aiService] Testing backend connection...");
+
     try {
       const status = await fitaiWorkersClient.testConnection();
-      
+
       if (!status.connected) {
         return {
           success: false,
-          error: status.error || 'Backend not reachable',
-          data: 'Connection failed',
+          error: status.error || "Backend not reachable",
+          data: "Connection failed",
         };
       }
 
       if (!status.authenticated) {
         return {
           success: false,
-          error: status.error || 'User not authenticated',
-          data: 'Authentication required',
+          error: status.error || "User not authenticated",
+          data: "Authentication required",
         };
       }
 
-      console.log('✅ [aiService] Backend connection successful');
+      console.log("✅ [aiService] Backend connection successful");
       return {
         success: true,
         data: `Connected to FitAI Workers ${status.backendVersion}`,
@@ -506,8 +576,9 @@ class UnifiedAIService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Connection test failed',
-        data: 'Error during connection test',
+        error:
+          error instanceof Error ? error.message : "Connection test failed",
+        data: "Error during connection test",
       };
     }
   }
@@ -517,15 +588,16 @@ class UnifiedAIService {
    */
   getAIStatus(): {
     isAvailable: boolean;
-    mode: 'real' | 'demo';
+    mode: "real" | "demo";
     message: string;
     modelVersion?: string;
   } {
     return {
       isAvailable: true,
-      mode: 'real',
-      modelVersion: 'google/gemini-2.0-flash-exp',
-      message: '✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)',
+      mode: "real",
+      modelVersion: "google/gemini-2.0-flash-exp",
+      message:
+        "✅ Connected to FitAI Workers backend (https://fitai-workers.sharmaharsh9887.workers.dev)",
     };
   }
 
@@ -538,7 +610,7 @@ class UnifiedAIService {
     if (error instanceof AuthenticationError) {
       return {
         success: false,
-        error: 'Authentication required. Please sign in to use AI features.',
+        error: "Authentication required. Please sign in to use AI features.",
       };
     }
 
@@ -552,13 +624,14 @@ class UnifiedAIService {
     if (error instanceof NetworkError) {
       return {
         success: false,
-        error: 'Network error. Please check your connection and try again.',
+        error: "Network error. Please check your connection and try again.",
       };
     }
 
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+      error:
+        error instanceof Error ? error.message : "An unexpected error occurred",
     };
   }
 }
@@ -572,51 +645,60 @@ class UnifiedAIService {
  */
 function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
   // Map difficulty
-  const difficultyMap: Record<string, 'beginner' | 'intermediate' | 'advanced'> = {
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
+  const difficultyMap: Record<
+    string,
+    "beginner" | "intermediate" | "advanced"
+  > = {
+    beginner: "beginner",
+    intermediate: "intermediate",
+    advanced: "advanced",
   };
-  const difficulty = difficultyMap[workoutPlan.difficulty] || 'intermediate';
+  const difficulty = difficultyMap[workoutPlan.difficulty] || "intermediate";
 
   // Transform exercises
-  const exercises: WorkoutSet[] = (workoutPlan.exercises || []).map((ex: any, idx: number) => ({
-    id: `${dayOfWeek}_ex_${idx}`,
-    exerciseId: ex.exerciseId,
-    sets: ex.sets || 3,
-    reps: typeof ex.reps === 'number' ? ex.reps : 12,
-    duration: ex.duration,
-    restTime: ex.restSeconds || ex.restTime || 60,
-    notes: ex.notes,
-  }));
+  const exercises: WorkoutSet[] = (workoutPlan.exercises || []).map(
+    (ex: any, idx: number) => ({
+      id: `${dayOfWeek}_ex_${idx}`,
+      exerciseId: ex.exerciseId,
+      sets: ex.sets || 3,
+      reps: typeof ex.reps === "number" ? ex.reps : 12,
+      duration: ex.duration,
+      restTime: ex.restSeconds || ex.restTime || 60,
+      notes: ex.notes,
+    }),
+  );
 
   // Transform warmup
-  const warmup: WorkoutSet[] = (workoutPlan.warmup || []).map((ex: any, idx: number) => ({
-    id: `${dayOfWeek}_warmup_${idx}`,
-    exerciseId: ex.exerciseId,
-    sets: ex.sets || 1,
-    reps: typeof ex.reps === 'number' ? ex.reps : 10,
-    duration: ex.duration,
-    restTime: ex.restSeconds || ex.restTime || 30,
-    notes: ex.notes,
-  }));
+  const warmup: WorkoutSet[] = (workoutPlan.warmup || []).map(
+    (ex: any, idx: number) => ({
+      id: `${dayOfWeek}_warmup_${idx}`,
+      exerciseId: ex.exerciseId,
+      sets: ex.sets || 1,
+      reps: typeof ex.reps === "number" ? ex.reps : 10,
+      duration: ex.duration,
+      restTime: ex.restSeconds || ex.restTime || 30,
+      notes: ex.notes,
+    }),
+  );
 
   // Transform cooldown
-  const cooldown: WorkoutSet[] = (workoutPlan.cooldown || []).map((ex: any, idx: number) => ({
-    id: `${dayOfWeek}_cooldown_${idx}`,
-    exerciseId: ex.exerciseId,
-    sets: ex.sets || 1,
-    reps: typeof ex.reps === 'number' ? ex.reps : 10,
-    duration: ex.duration,
-    restTime: ex.restSeconds || ex.restTime || 30,
-    notes: ex.notes,
-  }));
+  const cooldown: WorkoutSet[] = (workoutPlan.cooldown || []).map(
+    (ex: any, idx: number) => ({
+      id: `${dayOfWeek}_cooldown_${idx}`,
+      exerciseId: ex.exerciseId,
+      sets: ex.sets || 1,
+      reps: typeof ex.reps === "number" ? ex.reps : 10,
+      duration: ex.duration,
+      restTime: ex.restSeconds || ex.restTime || 30,
+      notes: ex.notes,
+    }),
+  );
 
   return {
     id: `${dayOfWeek}_workout_${Date.now()}`,
-    title: workoutPlan.title || 'AI Generated Workout',
-    description: workoutPlan.description || '',
-    category: 'strength', // Default category
+    title: workoutPlan.title || "AI Generated Workout",
+    description: workoutPlan.description || "",
+    category: "strength", // Default category
     difficulty: difficulty,
     duration: workoutPlan.totalDuration || 30,
     estimatedCalories: workoutPlan.estimatedCalories || 0, // 0 = will be calculated at completion with user's real weight
@@ -625,8 +707,8 @@ function transformWorkoutData(workoutPlan: any, dayOfWeek: string): Workout {
     cooldown: cooldown,
     equipment: [], // Will be populated by exercise data
     targetMuscleGroups: [], // Will be populated by exercise data
-    icon: 'fitness',
-    tags: ['ai-generated', difficulty],
+    icon: "fitness",
+    tags: ["ai-generated", difficulty],
     isPersonalized: true,
     aiGenerated: true,
     dayOfWeek: dayOfWeek,

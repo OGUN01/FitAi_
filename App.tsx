@@ -139,7 +139,8 @@ export default function App() {
 
     // Convert goals from hyphen format to underscore format for edit modals
     // e.g., 'weight-loss' -> 'weight_loss', 'muscle-gain' -> 'muscle_gain'
-    const rawGoals = wp?.primary_goals || (wp as any)?.primaryGoals || [];
+    const rawGoals =
+      (wp as any)?.primary_goals || (wp as any)?.primaryGoals || [];
     const normalizedGoals = rawGoals.map((goal: string) =>
       goal.replace(/-/g, "_"),
     );
@@ -148,7 +149,7 @@ export default function App() {
     // Onboarding stores: 15, 30, 45, 60, 75, 90, 120
     // Modal expects: '15-30', '30-45', '45-60', '60+'
     const timeMinutes =
-      wp?.time_preference || (wp as any)?.timePreference || 30;
+      (wp as any)?.time_preference || (wp as any)?.timePreference || 30;
     const getTimeRange = (minutes: number): string => {
       if (minutes <= 30) return "15-30";
       if (minutes <= 45) return "30-45";
@@ -164,11 +165,11 @@ export default function App() {
       primary_goals:
         normalizedGoals.length > 0
           ? normalizedGoals
-          : data.fitnessGoals?.primary_goals || [],
+          : (data.fitnessGoals as any)?.primary_goals || [],
       primaryGoals:
         normalizedGoals.length > 0
           ? normalizedGoals
-          : data.fitnessGoals?.primaryGoals || [], // Legacy alias for edit modals
+          : (data.fitnessGoals as any)?.primaryGoals || [], // Legacy alias for edit modals
       time_commitment: timeRange,
       timeCommitment: timeRange, // Legacy alias for edit modals
       experience: wp?.intensity || data.fitnessGoals?.experience || "beginner",
@@ -272,12 +273,28 @@ export default function App() {
           ? {
               location: wp.location || "home",
               equipment: wp.equipment || [],
-              time_preference: wp.time_preference || wp.timePreference || 30,
+              time_preference:
+                (wp as any).time_preference || (wp as any).timePreference || 30,
               intensity: wp.intensity || "beginner",
-              workout_types: wp.workout_types || wp.workoutTypes || [],
-              primary_goals: wp.primary_goals || wp.primaryGoals || [],
+              workout_types:
+                (wp as any).workout_types || (wp as any).workoutTypes || [],
+              primary_goals:
+                (wp as any).primary_goals || (wp as any).primaryGoals || [],
               activity_level:
-                wp.activity_level || wp.activityLevel || "moderate",
+                (wp as any).activity_level ||
+                (wp as any).activityLevel ||
+                "moderate",
+              // Backward compatibility
+              timePreference:
+                (wp as any).time_preference || (wp as any).timePreference || 30,
+              workoutTypes:
+                (wp as any).workout_types || (wp as any).workoutTypes || [],
+              primaryGoals:
+                (wp as any).primary_goals || (wp as any).primaryGoals || [],
+              activityLevel:
+                (wp as any).activity_level ||
+                (wp as any).activityLevel ||
+                "moderate",
             }
           : {
               location: "home" as const,
@@ -287,6 +304,11 @@ export default function App() {
               workout_types: [],
               primary_goals: [],
               activity_level: "moderate",
+              // Backward compatibility
+              timePreference: 30,
+              workoutTypes: [],
+              primaryGoals: [],
+              activityLevel: "moderate",
             };
       })(),
       // ✅ FIX: Map bodyAnalysis from onboarding to bodyMetrics in UserProfile
