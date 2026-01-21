@@ -1,0 +1,31 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "browsermcp": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "@browsermcp/mcp@latest"]
+    },
+    "chrome_devtools": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "-y", "chrome-devtools-mcp@latest", "--headless", "--isolated"]
+    },
+    "testsprite": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "@testsprite/testsprite-mcp@latest"],
+      "environment": {
+        "API_KEY": "your-testsprite-api-key-here"
+      }
+    },
+    "supabase": {
+      "type": "local",
+      "command": ["cmd", "/c", "pnpm", "dlx", "@supabase/mcp-server-supabase@latest", "--project-ref=mqfrwtmkokivoxgukgsz"],
+      "environment": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef"
+      }
+    },
+    "rzp_mcp_server": {
+      "type": "local",
+      "command": ["cmd", "/c", "npx", "mcp-remote", "https://mcp.razorpay.com/mcp", "--header", "Authorization:Basic cnpwX2xpdmVfUm1oWmNiNHV4czkyaDc6TXhIQjI2NnpsNEVPZXhLcWRJOXVKYnNM"]
+    }
+  }
+}
