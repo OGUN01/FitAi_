@@ -1,31 +1,31 @@
 /**
  * FitAI - Vegetarian Diet Prompt
- * 
+ *
  * No meat or fish, but ALLOWS dairy and eggs.
  * Global template with dynamic placeholders.
  */
 
-import { 
-  DietPlaceholders, 
-  formatAllergies, 
-  getMedicalInstructions, 
-  formatCookingMethods,
-  getCookingSkillInstructions,
-  getPrepTimeInstructions,
-  getBudgetInstructions,
-  getPersonalizedSuggestions
+import {
+	DietPlaceholders,
+	formatAllergies,
+	getMedicalInstructions,
+	formatCookingMethods,
+	getCookingSkillInstructions,
+	getPrepTimeInstructions,
+	getBudgetInstructions,
+	getPersonalizedSuggestions,
 } from './types';
 
 /**
  * Build vegetarian diet prompt
- * 
+ *
  * Key differences from vegan:
  * - Dairy is ALLOWED (milk, cheese, yogurt, paneer, ghee)
  * - Eggs are ALLOWED
  * - Still NO meat or fish
  */
 export function buildVegetarianPrompt(p: DietPlaceholders): string {
-  return `
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 🥗 THIS IS A **VEGETARIAN** MEAL PLAN 🥗
 ═══════════════════════════════════════════════════════════════════════════════
@@ -95,12 +95,16 @@ Create authentic ${p.CUISINE} VEGETARIAN dishes using:
 - Regional flavors from ${p.COUNTRY}
 - Dairy and eggs for protein where appropriate
 
-${p.ALLERGIES.length > 0 ? `
+${
+	p.ALLERGIES.length > 0
+		? `
 ════════════════════════════════════════════════════════════════════════════════
 ⚠️ ALLERGIES - MUST AVOID:
 ════════════════════════════════════════════════════════════════════════════════
 ${formatAllergies(p.ALLERGIES)}
-` : ''}
+`
+		: ''
+}
 
 ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 
@@ -145,7 +149,7 @@ ${getPersonalizedSuggestions(p)}
 ════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
-Generate a complete daily meal plan with:
+Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
 2. All food items with exact portions (grams/cups)
 3. Accurate nutrition data (calories, protein, carbs, fat) per item
@@ -166,4 +170,3 @@ For every food item, verify:
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 }
-

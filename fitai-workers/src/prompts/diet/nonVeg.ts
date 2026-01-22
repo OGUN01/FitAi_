@@ -1,31 +1,31 @@
 /**
  * FitAI - Non-Vegetarian / Omnivore Diet Prompt
- * 
+ *
  * ALL foods allowed - meat, fish, dairy, eggs, plants.
  * Global template with dynamic placeholders.
  */
 
-import { 
-  DietPlaceholders, 
-  formatAllergies, 
-  getMedicalInstructions, 
-  formatCookingMethods,
-  getCookingSkillInstructions,
-  getPrepTimeInstructions,
-  getBudgetInstructions,
-  getPersonalizedSuggestions
+import {
+	DietPlaceholders,
+	formatAllergies,
+	getMedicalInstructions,
+	formatCookingMethods,
+	getCookingSkillInstructions,
+	getPrepTimeInstructions,
+	getBudgetInstructions,
+	getPersonalizedSuggestions,
 } from './types';
 
 /**
  * Build non-vegetarian (omnivore) diet prompt
- * 
+ *
  * Key features:
  * - All food groups allowed
  * - Emphasize lean protein sources
  * - Balanced nutrition
  */
 export function buildNonVegPrompt(p: DietPlaceholders): string {
-  return `
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 🍗 THIS IS A **NON-VEGETARIAN / OMNIVORE** MEAL PLAN 🍗
 ═══════════════════════════════════════════════════════════════════════════════
@@ -96,12 +96,16 @@ Create authentic ${p.CUISINE} dishes using:
 - Regional spices and cooking styles from ${p.COUNTRY}
 - Balance of animal and plant-based foods
 
-${p.ALLERGIES.length > 0 ? `
+${
+	p.ALLERGIES.length > 0
+		? `
 ════════════════════════════════════════════════════════════════════════════════
 ⚠️ ALLERGIES - MUST AVOID:
 ════════════════════════════════════════════════════════════════════════════════
 ${formatAllergies(p.ALLERGIES)}
-` : ''}
+`
+		: ''
+}
 
 ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 
@@ -145,7 +149,7 @@ ${getPersonalizedSuggestions(p)}
 ════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
-Generate a complete daily meal plan with:
+Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
 2. All food items with exact portions (grams/cups)
 3. Accurate nutrition data (calories, protein, carbs, fat) per item
@@ -165,4 +169,3 @@ Generate a complete daily meal plan with:
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 }
-

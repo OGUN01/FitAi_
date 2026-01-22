@@ -1,31 +1,31 @@
 /**
  * FitAI - Pescatarian Diet Prompt
- * 
+ *
  * No meat, but ALLOWS fish, seafood, dairy, and eggs.
  * Global template with dynamic placeholders.
  */
 
-import { 
-  DietPlaceholders, 
-  formatAllergies, 
-  getMedicalInstructions, 
-  formatCookingMethods,
-  getCookingSkillInstructions,
-  getPrepTimeInstructions,
-  getBudgetInstructions,
-  getPersonalizedSuggestions
+import {
+	DietPlaceholders,
+	formatAllergies,
+	getMedicalInstructions,
+	formatCookingMethods,
+	getCookingSkillInstructions,
+	getPrepTimeInstructions,
+	getBudgetInstructions,
+	getPersonalizedSuggestions,
 } from './types';
 
 /**
  * Build pescatarian diet prompt
- * 
+ *
  * Key differences:
  * - Fish and seafood ARE ALLOWED (main protein source)
  * - Dairy and eggs ARE ALLOWED
  * - NO meat from land animals
  */
 export function buildPescatarianPrompt(p: DietPlaceholders): string {
-  return `
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 🐟 THIS IS A **PESCATARIAN** MEAL PLAN 🐟
 ═══════════════════════════════════════════════════════════════════════════════
@@ -88,12 +88,16 @@ Create authentic ${p.CUISINE} PESCATARIAN dishes using:
 - Regional flavors from ${p.COUNTRY}
 - Fish as the primary animal protein source
 
-${p.ALLERGIES.length > 0 ? `
+${
+	p.ALLERGIES.length > 0
+		? `
 ════════════════════════════════════════════════════════════════════════════════
 ⚠️ ALLERGIES - MUST AVOID:
 ════════════════════════════════════════════════════════════════════════════════
 ${formatAllergies(p.ALLERGIES)}
-` : ''}
+`
+		: ''
+}
 
 ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 
@@ -140,7 +144,7 @@ ${getPersonalizedSuggestions(p)}
 ════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
-Generate a complete daily meal plan with:
+Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
 2. All food items with exact portions (grams/cups)
 3. Accurate nutrition data (calories, protein, carbs, fat) per item
@@ -164,4 +168,3 @@ For every food item, verify:
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 }
-

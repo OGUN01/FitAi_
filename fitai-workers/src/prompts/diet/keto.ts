@@ -1,37 +1,37 @@
 /**
  * FitAI - Ketogenic (Keto) Diet Prompt
- * 
+ *
  * Very low carb, high fat, moderate protein.
  * Goal: Put body into ketosis for fat burning.
  * Global template with dynamic placeholders.
  */
 
-import { 
-  DietPlaceholders, 
-  formatAllergies, 
-  getMedicalInstructions, 
-  formatCookingMethods,
-  getCookingSkillInstructions,
-  getPrepTimeInstructions,
-  getBudgetInstructions,
-  getPersonalizedSuggestions
+import {
+	DietPlaceholders,
+	formatAllergies,
+	getMedicalInstructions,
+	formatCookingMethods,
+	getCookingSkillInstructions,
+	getPrepTimeInstructions,
+	getBudgetInstructions,
+	getPersonalizedSuggestions,
 } from './types';
 
 /**
  * Build keto diet prompt
- * 
+ *
  * Key requirements:
  * - Carbs: <50g per day (ideally <20g net carbs)
  * - Fat: 70-80% of calories
  * - Protein: Moderate (20-25% of calories)
  */
 export function buildKetoPrompt(p: DietPlaceholders): string {
-  // Calculate keto-specific macros
-  const ketoCarbLimit = Math.min(p.CARBS, 50); // Cap at 50g
-  const ketoFatPercent = 70;
-  const ketoProteinPercent = 25;
-  
-  return `
+	// Calculate keto-specific macros
+	const ketoCarbLimit = Math.min(p.CARBS, 50); // Cap at 50g
+	const ketoFatPercent = 70;
+	const ketoProteinPercent = 25;
+
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 🚫🚫🚫 CRITICAL: THIS IS A **KETOGENIC (KETO)** MEAL PLAN 🚫🚫🚫
 ═══════════════════════════════════════════════════════════════════════════════
@@ -120,12 +120,16 @@ KETO ADAPTATIONS:
 - Use heavy cream instead of milk
 - Add extra fat through ghee, butter, coconut oil
 
-${p.ALLERGIES.length > 0 ? `
+${
+	p.ALLERGIES.length > 0
+		? `
 ════════════════════════════════════════════════════════════════════════════════
 ⚠️ ALLERGIES - MUST AVOID:
 ════════════════════════════════════════════════════════════════════════════════
 ${formatAllergies(p.ALLERGIES)}
-` : ''}
+`
+		: ''
+}
 
 ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 
@@ -134,7 +138,7 @@ ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 ════════════════════════════════════════════════════════════════════════════════
 - Daily Calories: ${p.CALORIES} kcal
 - Carbohydrates: MAXIMUM ${ketoCarbLimit}g (STRICT - count net carbs!)
-- Fat: ~${Math.round(p.CALORIES * 0.7 / 9)}g (${ketoFatPercent}% of calories)
+- Fat: ~${Math.round((p.CALORIES * 0.7) / 9)}g (${ketoFatPercent}% of calories)
 - Protein: ~${p.PROTEIN}g (moderate, not excessive)
 - Fiber: ${p.FIBER}g minimum (from low-carb vegetables)
 - Water: ${p.WATER_LITERS}L daily (keto increases water needs)
@@ -168,7 +172,7 @@ ${getPersonalizedSuggestions(p)}
 ════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
-Generate a complete daily keto meal plan with:
+Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} keto meal plan with:
 1. Each meal with name, description, and cooking method
 2. All food items with exact portions (grams/cups)
 3. Accurate nutrition data including NET CARBS per item
@@ -194,4 +198,3 @@ DAILY TOTAL MUST BE:
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 }
-

@@ -5,7 +5,7 @@
 // export { useCamera } from './useCamera';
 // export { useOfflineSync } from './useOfflineSync';
 // export { usePerformance } from './usePerformance';
-export { useResponsiveTheme } from './useResponsiveTheme';
+export { useResponsiveTheme } from "./useResponsiveTheme";
 
 // User Metrics - Load and access calculated health metrics
 export {
@@ -13,4 +13,12 @@ export {
   useDietGenerationParams,
   useWorkoutGenerationParams,
   type UseUserMetricsResult,
-} from './useUserMetrics';
+} from "./useUserMetrics";
+
+// Async Meal Generation - Handle long-running meal plan generation
+export {
+  useAsyncMealGeneration,
+  type AsyncMealJob,
+  type JobStatus,
+  type UseAsyncMealGenerationResult,
+} from "./useAsyncMealGeneration";

@@ -58,6 +58,9 @@ import {
   AuthenticationError,
   WorkersAPIError,
   NetworkError,
+  AsyncJobStatusResponse,
+  isDietPlanResponse,
+  isAsyncJobResponse,
 } from "../services/fitaiWorkersClient";
 import {
   transformForDietRequest,
@@ -541,6 +544,160 @@ class UnifiedAIService {
       };
     } catch (error) {
       return this.handleError(error, "generateWeeklyMealPlan");
+    }
+  }
+
+  /**
+   * Generate weekly meal plan using ASYNC mode
+   * This is designed for long-running generation (60-120 seconds)
+   * Returns either a cached result or a job ID for polling
+   *
+   * @returns { jobId: string } if async job was started, or { plan: WeeklyMealPlan } if cache hit
+   */
+  async generateWeeklyMealPlanAsync(
+    personalInfo: PersonalInfo,
+    fitnessGoals: FitnessGoals,
+    weekNumber: number = 1,
+    options?: {
+      bodyMetrics?: BodyMetrics;
+      dietPreferences?: DietPreferences;
+      calorieTarget?: number;
+    },
+  ): Promise<
+    AIResponse<
+      | { type: "cache_hit"; plan: WeeklyMealPlan }
+      | { type: "job_started"; jobId: string; estimatedTimeMinutes: number }
+    >
+  > {
+    console.log("generateWeeklyMealPlanAsync called for week:", weekNumber);
+    console.log("calorieTarget:", options?.calorieTarget);
+
+    try {
+      // Transform request for backend - include calorieTarget from frontend
+      const request = transformForDietRequest(
+        personalInfo,
+        fitnessGoals,
+        options?.bodyMetrics,
+        options?.dietPreferences,
+        options?.calorieTarget,
+      );
+
+      console.log("Calling backend /diet/generate (async mode)");
+      const response = await fitaiWorkersClient.generateDietPlanAsync(request);
+
+      if (!response.success || !response.data) {
+        console.error("Backend returned error:", response.error);
+        return {
+          success: false,
+          error: response.error || "Failed to generate meal plan",
+        };
+      }
+
+      // Check if we got a cache hit (immediate result)
+      if (isDietPlanResponse(response.data)) {
+        console.log("Cache hit - immediate result");
+
+        // Store metadata for UI display
+        if (response.metadata) {
+          this.lastMetadata = response.metadata as AIServiceMetadata;
+        }
+
+        // Transform backend response to frontend format
+        // @ts-ignore - transformDietResponseToWeeklyPlan is temporarily commented out
+        const weeklyPlan = transformDietResponseToWeeklyPlan(
+          { ...response, data: response.data },
+          weekNumber,
+        );
+
+        if (!weeklyPlan) {
+          return {
+            success: false,
+            error: "Failed to transform diet response",
+          };
+        }
+
+        return {
+          success: true,
+          data: { type: "cache_hit", plan: weeklyPlan },
+        };
+      }
+
+      // Async job was created
+      if (isAsyncJobResponse(response.data)) {
+        console.log("Async job created:", response.data.jobId);
+        return {
+          success: true,
+          data: {
+            type: "job_started",
+            jobId: response.data.jobId,
+            estimatedTimeMinutes: response.data.estimatedTimeMinutes || 2,
+          },
+        };
+      }
+
+      return {
+        success: false,
+        error: "Unexpected response format",
+      };
+    } catch (error) {
+      return this.handleError(error, "generateWeeklyMealPlanAsync");
+    }
+  }
+
+  /**
+   * Check async job status and get result when completed
+   */
+  async checkMealPlanJobStatus(
+    jobId: string,
+    weekNumber: number = 1,
+  ): Promise<
+    AIResponse<{
+      status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+      plan?: WeeklyMealPlan;
+      error?: string;
+      generationTimeMs?: number;
+    }>
+  > {
+    try {
+      const response = await fitaiWorkersClient.getJobStatus(jobId);
+
+      if (!response.success || !response.data) {
+        return {
+          success: false,
+          error: response.error || "Failed to check job status",
+        };
+      }
+
+      const jobData = response.data;
+
+      // If completed, transform the result
+      if (jobData.status === "completed" && jobData.result) {
+        // @ts-ignore - transformDietResponseToWeeklyPlan is temporarily commented out
+        const weeklyPlan = transformDietResponseToWeeklyPlan(
+          { success: true, data: jobData.result },
+          weekNumber,
+        );
+
+        return {
+          success: true,
+          data: {
+            status: "completed",
+            plan: weeklyPlan,
+            generationTimeMs: jobData.metadata?.generationTimeMs,
+          },
+        };
+      }
+
+      // Return current status
+      return {
+        success: true,
+        data: {
+          status: jobData.status,
+          error: jobData.error,
+        },
+      };
+    } catch (error) {
+      return this.handleError(error, "checkMealPlanJobStatus");
     }
   }
 

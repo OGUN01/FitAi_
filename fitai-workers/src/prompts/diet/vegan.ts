@@ -1,24 +1,24 @@
 /**
  * FitAI - Vegan Diet Prompt
- * 
+ *
  * STRICTEST diet type - NO animal products whatsoever.
  * Global template with dynamic placeholders.
  */
 
-import { 
-  DietPlaceholders, 
-  formatAllergies, 
-  getMedicalInstructions, 
-  formatCookingMethods,
-  getCookingSkillInstructions,
-  getPrepTimeInstructions,
-  getBudgetInstructions,
-  getPersonalizedSuggestions
+import {
+	DietPlaceholders,
+	formatAllergies,
+	getMedicalInstructions,
+	formatCookingMethods,
+	getCookingSkillInstructions,
+	getPrepTimeInstructions,
+	getBudgetInstructions,
+	getPersonalizedSuggestions,
 } from './types';
 
 /**
  * Build vegan diet prompt with 100% first-try accuracy
- * 
+ *
  * Structure:
  * 1. FORBIDDEN FOODS at TOP (most important)
  * 2. ALLOWED FOODS with examples
@@ -27,7 +27,7 @@ import {
  * 5. Final reminder
  */
 export function buildVeganPrompt(p: DietPlaceholders): string {
-  return `
+	return `
 ═══════════════════════════════════════════════════════════════════════════════
 🚫🚫🚫 CRITICAL: THIS IS A **VEGAN** MEAL PLAN 🚫🚫🚫
 ═══════════════════════════════════════════════════════════════════════════════
@@ -122,12 +122,16 @@ Create authentic ${p.CUISINE} VEGAN dishes using:
 - Regional flavors and preparation methods from ${p.COUNTRY}
 - Plant-based alternatives to traditional dishes
 
-${p.ALLERGIES.length > 0 ? `
+${
+	p.ALLERGIES.length > 0
+		? `
 ════════════════════════════════════════════════════════════════════════════════
 ⚠️ ALLERGIES - MUST AVOID:
 ════════════════════════════════════════════════════════════════════════════════
 ${formatAllergies(p.ALLERGIES)}
-` : ''}
+`
+		: ''
+}
 
 ${getMedicalInstructions(p.MEDICAL_CONDITIONS)}
 
@@ -169,7 +173,7 @@ ${getPersonalizedSuggestions(p)}
 ════════════════════════════════════════════════════════════════════════════════
 📋 OUTPUT REQUIREMENTS:
 ════════════════════════════════════════════════════════════════════════════════
-Generate a complete daily meal plan with:
+Generate a complete ${p.DAYS_COUNT === 1 ? 'daily' : `${p.DAYS_COUNT}-day`} meal plan with:
 1. Each meal with name, description, and cooking method
 2. All food items with exact portions (grams/cups)
 3. Accurate nutrition data (calories, protein, carbs, fat) per item
@@ -191,4 +195,3 @@ THIS IS A VEGAN MEAL PLAN. ZERO TOLERANCE FOR ANIMAL PRODUCTS.
 ═══════════════════════════════════════════════════════════════════════════════
 `;
 }
-

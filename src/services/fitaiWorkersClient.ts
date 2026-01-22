@@ -14,7 +14,7 @@
  * - Comprehensive error handling
  */
 
-import { supabase } from './supabase';
+import { supabase } from "./supabase";
 
 // ============================================================================
 // TYPES
@@ -25,7 +25,7 @@ export type APIMetadata = WorkersResponseMetadata;
 
 // Validation types from Workers API
 export interface ValidationError {
-  severity: 'CRITICAL';
+  severity: "CRITICAL";
   code: string;
   message: string;
   meal?: string;
@@ -35,18 +35,25 @@ export interface ValidationError {
   current?: number;
   target?: number;
   drift?: number;
-  type?: 'allergen' | 'diet_violation' | 'calorie_drift' | 'macro_imbalance';
+  type?: "allergen" | "diet_violation" | "calorie_drift" | "macro_imbalance";
   affectedItems?: string[];
   suggestion?: string;
   [key: string]: any;
 }
 
 export interface ValidationWarning {
-  severity: 'WARNING' | 'INFO';
+  severity: "WARNING" | "INFO";
   code: string;
   message: string;
   action?: string;
-  type?: 'low_protein' | 'low_variety' | 'high_sodium' | 'low_fiber' | 'exercise_replacement' | 'filtering_info' | 'gif_coverage';
+  type?:
+    | "low_protein"
+    | "low_variety"
+    | "high_sodium"
+    | "low_fiber"
+    | "exercise_replacement"
+    | "filtering_info"
+    | "gif_coverage";
   suggestions?: string[];
   [key: string]: any;
 }
@@ -91,7 +98,7 @@ export interface WorkersRequestMetadata {
 
 export interface WorkersResponseMetadata {
   cached: boolean;
-  cacheSource?: 'kv' | 'database' | 'fresh';
+  cacheSource?: "kv" | "database" | "fresh";
   cacheKey?: string;
   generationTime: number;
   model?: string;
@@ -139,6 +146,53 @@ export interface DietGenerationRequest {
   excludeIngredients?: string[];
   model?: string;
   temperature?: number;
+  async?: boolean; // Enable async job-based generation
+}
+
+// Async job response types
+export type AsyncJobStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface AsyncJobCreatedResponse {
+  jobId: string;
+  status: AsyncJobStatus;
+  message: string;
+  estimatedTimeMinutes: number;
+}
+
+export interface AsyncJobStatusResponse {
+  jobId: string;
+  status: AsyncJobStatus;
+  result?: DietPlan;
+  error?: string;
+  estimatedTime?: number;
+  metadata?: {
+    createdAt: string;
+    startedAt?: string;
+    completedAt?: string;
+    generationTimeMs?: number;
+  };
+}
+
+// Union type for async diet generation response
+export type AsyncDietGenerationResponse = DietPlan | AsyncJobCreatedResponse;
+
+// Type guard to check if response is a cache hit (immediate result)
+export function isDietPlanResponse(
+  data: AsyncDietGenerationResponse | undefined,
+): data is DietPlan {
+  return !!data && "meals" in data && Array.isArray((data as DietPlan).meals);
+}
+
+// Type guard to check if response is an async job
+export function isAsyncJobResponse(
+  data: AsyncDietGenerationResponse | undefined,
+): data is AsyncJobCreatedResponse {
+  return !!data && "jobId" in data && "status" in data;
 }
 
 export interface WorkoutGenerationRequest {
@@ -165,24 +219,27 @@ export class WorkersAPIError extends Error {
     message: string,
     public statusCode: number,
     public errorCode?: string,
-    public details?: any
+    public details?: any,
   ) {
     super(message);
-    this.name = 'WorkersAPIError';
+    this.name = "WorkersAPIError";
   }
 }
 
 export class NetworkError extends Error {
-  constructor(message: string, public originalError?: any) {
+  constructor(
+    message: string,
+    public originalError?: any,
+  ) {
     super(message);
-    this.name = 'NetworkError';
+    this.name = "NetworkError";
   }
 }
 
 export class AuthenticationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }
 
@@ -197,7 +254,8 @@ export class FitAIWorkersClient {
   private retryDelay: number;
 
   constructor(config: WorkersClientConfig = {}) {
-    this.baseUrl = config.baseUrl || 'https://fitai-workers.sharmaharsh9887.workers.dev';
+    this.baseUrl =
+      config.baseUrl || "https://fitai-workers.sharmaharsh9887.workers.dev";
     // AI generation can take 60-90+ seconds, so we need a longer timeout
     this.timeout = config.timeout || 120000; // 120 seconds (2 minutes)
     this.maxRetries = config.maxRetries || 3;
@@ -209,14 +267,19 @@ export class FitAIWorkersClient {
    */
   private async getAuthToken(): Promise<string> {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error) {
-        throw new AuthenticationError(`Failed to get session: ${error.message}`);
+        throw new AuthenticationError(
+          `Failed to get session: ${error.message}`,
+        );
       }
 
       if (!session?.access_token) {
-        throw new AuthenticationError('No active session found');
+        throw new AuthenticationError("No active session found");
       }
 
       return session.access_token;
@@ -224,7 +287,9 @@ export class FitAIWorkersClient {
       if (error instanceof AuthenticationError) {
         throw error;
       }
-      throw new AuthenticationError(`Authentication failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new AuthenticationError(
+        `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -234,7 +299,7 @@ export class FitAIWorkersClient {
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit,
-    retryCount = 0
+    retryCount = 0,
   ): Promise<WorkersResponse<T>> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -268,7 +333,9 @@ export class FitAIWorkersClient {
         // Check if we should retry
         if (this.shouldRetry(response.status) && retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(`[WorkersClient] Retrying request (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`);
+          console.log(
+            `[WorkersClient] Retrying request (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
+          );
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
@@ -276,13 +343,14 @@ export class FitAIWorkersClient {
         // Handle error message - could be string or object
         let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         if (responseData.error) {
-          if (typeof responseData.error === 'string') {
+          if (typeof responseData.error === "string") {
             errorMessage = responseData.error;
-          } else if (typeof responseData.error === 'object') {
+          } else if (typeof responseData.error === "object") {
             // Error is an object - extract message or stringify
-            errorMessage = responseData.error.message ||
-                          responseData.error.error ||
-                          JSON.stringify(responseData.error);
+            errorMessage =
+              responseData.error.message ||
+              responseData.error.error ||
+              JSON.stringify(responseData.error);
           }
         }
 
@@ -290,32 +358,37 @@ export class FitAIWorkersClient {
           errorMessage,
           response.status,
           responseData.errorCode,
-          responseData.details || responseData.error
+          responseData.details || responseData.error,
         );
       }
 
       return responseData;
     } catch (error) {
       // Network errors (timeout, no connection, etc.)
-      if (error instanceof TypeError || (error as any).name === 'AbortError') {
+      if (error instanceof TypeError || (error as any).name === "AbortError") {
         if (retryCount < this.maxRetries) {
           const delay = this.retryDelay * Math.pow(2, retryCount);
-          console.log(`[WorkersClient] Network error, retrying (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`);
+          console.log(
+            `[WorkersClient] Network error, retrying (${retryCount + 1}/${this.maxRetries}) after ${delay}ms`,
+          );
           await this.sleep(delay);
           return this.makeRequest(endpoint, options, retryCount + 1);
         }
-        throw new NetworkError('Network request failed', error);
+        throw new NetworkError("Network request failed", error);
       }
 
       // Re-throw API errors
-      if (error instanceof WorkersAPIError || error instanceof AuthenticationError) {
+      if (
+        error instanceof WorkersAPIError ||
+        error instanceof AuthenticationError
+      ) {
         throw error;
       }
 
       // Unknown error
       throw new NetworkError(
         `Request failed: ${error instanceof Error ? error.message : String(error)}`,
-        error
+        error,
       );
     }
   }
@@ -332,36 +405,59 @@ export class FitAIWorkersClient {
    * Sleep helper for retry delays
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
-   * Generate personalized diet plan
+   * Generate personalized diet plan (synchronous mode)
    */
-  async generateDietPlan(request: DietGenerationRequest): Promise<WorkersResponse<DietPlan>> {
+  async generateDietPlan(
+    request: DietGenerationRequest,
+  ): Promise<WorkersResponse<DietPlan>> {
     const token = await this.getAuthToken();
 
-    return this.makeRequest<DietPlan>('/diet/generate', {
-      method: 'POST',
+    return this.makeRequest<DietPlan>("/diet/generate", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(request),
     });
   }
 
   /**
-   * Generate personalized workout plan
+   * Generate personalized diet plan (async mode)
+   * Returns either cached DietPlan (cache hit) or AsyncJobCreatedResponse (new job)
    */
-  async generateWorkoutPlan(request: WorkoutGenerationRequest): Promise<WorkersResponse<WorkoutPlan>> {
+  async generateDietPlanAsync(
+    request: Omit<DietGenerationRequest, "async">,
+  ): Promise<WorkersResponse<AsyncDietGenerationResponse>> {
     const token = await this.getAuthToken();
 
-    return this.makeRequest<WorkoutPlan>('/workout/generate', {
-      method: 'POST',
+    return this.makeRequest<AsyncDietGenerationResponse>("/diet/generate", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ ...request, async: true }),
+    });
+  }
+
+  /**
+   * Generate personalized workout plan
+   */
+  async generateWorkoutPlan(
+    request: WorkoutGenerationRequest,
+  ): Promise<WorkersResponse<WorkoutPlan>> {
+    const token = await this.getAuthToken();
+
+    return this.makeRequest<WorkoutPlan>("/workout/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(request),
     });
@@ -370,11 +466,13 @@ export class FitAIWorkersClient {
   /**
    * Health check endpoint
    */
-  async healthCheck(): Promise<WorkersResponse<{ status: string; timestamp: string }>> {
-    return this.makeRequest('/health', {
-      method: 'GET',
+  async healthCheck(): Promise<
+    WorkersResponse<{ status: string; timestamp: string }>
+  > {
+    return this.makeRequest("/health", {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   }
@@ -384,7 +482,9 @@ export class FitAIWorkersClient {
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       return !!session?.access_token;
     } catch {
       return false;
@@ -396,7 +496,9 @@ export class FitAIWorkersClient {
    */
   async getCurrentUserId(): Promise<string | null> {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       return session?.user?.id || null;
     } catch {
       return null;
@@ -410,49 +512,106 @@ export class FitAIWorkersClient {
    */
   async recognizeFood(request: {
     imageBase64: string;
-    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    mealType: "breakfast" | "lunch" | "dinner" | "snack";
     userContext?: {
       region?: string;
       dietaryRestrictions?: string[];
     };
-  }): Promise<WorkersResponse<{
-    foods: Array<{
-      id: string;
-      name: string;
-      hindiName?: string;
-      category: string;
-      cuisine: string;
-      region?: string;
-      spiceLevel?: string;
-      cookingMethod?: string;
-      estimatedGrams: number;
-      portionConfidence: number;
-      servingType: string;
-      calories: number;
-      protein: number;
-      carbs: number;
-      fat: number;
-      fiber: number;
-      sugar?: number;
-      sodium?: number;
-      ingredients?: string[];
-      confidence: number;
-      enhancementSource: string;
-    }>;
-    overallConfidence: number;
-    totalCalories: number;
-    analysisNotes?: string;
-    mealType: string;
-  }>> {
+  }): Promise<
+    WorkersResponse<{
+      foods: Array<{
+        id: string;
+        name: string;
+        hindiName?: string;
+        category: string;
+        cuisine: string;
+        region?: string;
+        spiceLevel?: string;
+        cookingMethod?: string;
+        estimatedGrams: number;
+        portionConfidence: number;
+        servingType: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        fiber: number;
+        sugar?: number;
+        sodium?: number;
+        ingredients?: string[];
+        confidence: number;
+        enhancementSource: string;
+      }>;
+      overallConfidence: number;
+      totalCalories: number;
+      analysisNotes?: string;
+      mealType: string;
+    }>
+  > {
     const token = await this.getAuthToken();
 
-    return this.makeRequest('/food/recognize', {
-      method: 'POST',
+    return this.makeRequest("/food/recognize", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * Check async job status
+   * @param jobId - Job ID returned from async diet generation
+   */
+  async getJobStatus(jobId: string): Promise<
+    WorkersResponse<{
+      jobId: string;
+      status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+      result?: any;
+      error?: string;
+      estimatedTime?: number;
+      metadata?: {
+        createdAt: string;
+        startedAt?: string;
+        completedAt?: string;
+        generationTimeMs?: number;
+      };
+    }>
+  > {
+    const token = await this.getAuthToken();
+
+    return this.makeRequest(`/diet/jobs/${jobId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  /**
+   * List user's recent jobs
+   */
+  async listJobs(): Promise<
+    WorkersResponse<{
+      jobs: Array<{
+        id: string;
+        status: string;
+        created_at: string;
+        completed_at?: string;
+        generation_time_ms?: number;
+      }>;
+    }>
+  > {
+    const token = await this.getAuthToken();
+
+    return this.makeRequest("/diet/jobs", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
     });
   }
 
@@ -469,24 +628,24 @@ export class FitAIWorkersClient {
     try {
       // First check if backend is reachable (no auth required)
       const healthResponse = await this.healthCheck();
-      
+
       if (!healthResponse.success) {
         return {
           connected: false,
           authenticated: false,
-          error: 'Backend health check failed',
+          error: "Backend health check failed",
         };
       }
 
       // Now check authentication
       const isAuth = await this.isAuthenticated();
-      
+
       if (!isAuth) {
         return {
           connected: true,
           authenticated: false,
-          error: 'User not authenticated - sign up required for AI features',
-          backendVersion: 'v2.0',
+          error: "User not authenticated - sign up required for AI features",
+          backendVersion: "v2.0",
         };
       }
 
@@ -494,27 +653,29 @@ export class FitAIWorkersClient {
       try {
         const token = await this.getAuthToken();
         const authTestResponse = await fetch(`${this.baseUrl}/auth/me`, {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
         });
-        
+
         const authData = await authTestResponse.json();
-        
+
         return {
           connected: true,
           authenticated: authData.success === true,
-          error: authData.success ? undefined : 'Authentication verification failed',
-          backendVersion: 'v2.0',
+          error: authData.success
+            ? undefined
+            : "Authentication verification failed",
+          backendVersion: "v2.0",
         };
       } catch (authError) {
         return {
           connected: true,
           authenticated: false,
           error: `Auth test failed: ${authError instanceof Error ? authError.message : String(authError)}`,
-          backendVersion: 'v2.0',
+          backendVersion: "v2.0",
         };
       }
     } catch (error) {

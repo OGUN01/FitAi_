@@ -77,6 +77,7 @@ import FoodRecognitionTest from "../../components/debug/FoodRecognitionTest";
 import MealTypeSelector from "../../components/diet/MealTypeSelector";
 import AIMealsPanel from "../../components/diet/AIMealsPanel";
 import CreateRecipeModal from "../../components/diet/CreateRecipeModal";
+import JobStatusIndicator from "../../components/diet/JobStatusIndicator";
 import {
   runQuickActionsTests,
   runFoodRecognitionE2ETests,
@@ -307,6 +308,17 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [aiMeals, setAiMeals] = useState<Meal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // Async Meal Plan Generation State
+  const [asyncJob, setAsyncJob] = useState<{
+    jobId: string;
+    status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+    error?: string;
+    createdAt: string;
+    estimatedTimeRemaining?: number;
+    generationTimeMs?: number;
+  } | null>(null);
+  const asyncJobPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Guest Sign Up State
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
@@ -1425,7 +1437,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     }
   };
 
-  // Generate Weekly Meal Plan (similar to workout generation)
+  // Generate Weekly Meal Plan (ASYNC - handles 60-120 second generation time)
   const generateWeeklyMealPlan = async () => {
     console.log("[MEAL] Generate Weekly Plan button pressed!");
 
@@ -1489,12 +1501,11 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         );
       }
 
-      console.log("[MEAL] Generating weekly meal plan...");
-      console.log("[DEBUG] Profile data:", JSON.stringify(profile, null, 2));
+      console.log("[MEAL] Generating weekly meal plan (ASYNC MODE)...");
       console.log("[DEBUG] Calorie target:", userCalorieTarget);
 
-      // Use aiService for meal plan generation (connected to Cloudflare Workers)
-      const response = await aiService.generateWeeklyMealPlan(
+      // Use ASYNC aiService for meal plan generation (handles 60-120s generation)
+      const response = await aiService.generateWeeklyMealPlanAsync(
         profile!.personalInfo,
         profile!.fitnessGoals,
         1, // weekNumber
@@ -1503,78 +1514,246 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           dietPreferences: (profile!.dietPreferences ||
             dietPreferences ||
             undefined) as any,
-          calorieTarget: userCalorieTarget, // CRITICAL: Pass calorie target from frontend
+          calorieTarget: userCalorieTarget,
         },
       );
 
-      console.log("[DEBUG] Response from generator:", response);
+      console.log("[DEBUG] Response from async generator:", response);
 
-      if (response.success && response.data) {
-        console.log("[SUCCESS] Weekly meal plan generated successfully");
-        // Save to store and database
-        await saveWeeklyMealPlan(response.data);
+      if (!response.success || !response.data) {
+        throw new Error(
+          response.error || "Failed to start meal plan generation",
+        );
+      }
 
-        // Ensure state is updated (backup approach)
-        setWeeklyMealPlan(response.data);
+      // Handle cache hit - immediate result
+      if (response.data.type === "cache_hit") {
+        console.log("[SUCCESS] Cache hit - meal plan available immediately!");
+        await handleMealPlanResult(response.data.plan);
+        setGeneratingPlan(false);
+        return;
+      }
 
-        setForceUpdate((prev) => prev + 1); // Force re-render
-        console.log(`[DEBUG] Meal plan saved to store and database`);
+      // Handle async job started - begin polling
+      if (response.data.type === "job_started") {
+        console.log("[ASYNC] Job started:", response.data.jobId);
 
-        // COMPREHENSIVE GENERATION TEST
-        console.log("[TEST] COMPREHENSIVE GENERATION TEST:");
-        const allDays = [
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
-        ];
-        const generatedMealsByDay = allDays.map((day) => {
-          const mealsForDay = response.data!.meals.filter(
-            (meal) => meal.dayOfWeek === day,
-          );
-          return {
-            day,
-            mealCount: mealsForDay.length,
-            mealTypes: mealsForDay.map((m) => m.type),
-          };
+        // Set initial async job state
+        setAsyncJob({
+          jobId: response.data.jobId,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          estimatedTimeRemaining: response.data.estimatedTimeMinutes * 60,
         });
-        console.log("[ANALYTICS] Generated meals by day:", generatedMealsByDay);
 
-        const totalGenerated = response.data!.meals.length;
-        const expectedTotal = 21; // 7 days × 3 meals
-        console.log(
-          `[ANALYTICS] Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`,
-        );
+        // Start polling for job completion
+        startJobPolling(response.data.jobId);
 
-        if (totalGenerated === expectedTotal) {
-          console.log("[SUCCESS] FULL WEEK MEAL PLAN GENERATED SUCCESSFULLY!");
-        } else {
-          console.warn(
-            `[WARNING] Incomplete meal plan: Missing ${expectedTotal - totalGenerated} meals`,
-          );
-        }
-
-        Alert.alert(
-          "Meal Plan Generated!",
-          `Your personalized 7-day meal plan "${response.data.planTitle}" is ready!`,
-          [{ text: "View Plan", onPress: () => {} }],
-        );
-      } else {
-        throw new Error(response.error || "Failed to generate meal plan");
+        // Keep generating state true - UI shows JobStatusIndicator
+        return;
       }
     } catch (error) {
-      console.error("Error generating weekly meal plan:", error);
+      console.error("Error starting weekly meal plan generation:", error);
       setAiError(
         error instanceof Error ? error.message : "Failed to generate meal plan",
       );
-      Alert.alert("Error", "Failed to generate meal plan. Please try again.");
-    } finally {
+      Alert.alert(
+        "Error",
+        "Failed to start meal plan generation. Please try again.",
+      );
       setGeneratingPlan(false);
     }
   };
+
+  // Handle completed meal plan result
+  const handleMealPlanResult = async (weeklyPlan: WeeklyMealPlan) => {
+    console.log("[SUCCESS] Weekly meal plan generated successfully");
+
+    // Save to store and database
+    await saveWeeklyMealPlan(weeklyPlan);
+
+    // Ensure state is updated (backup approach)
+    setWeeklyMealPlan(weeklyPlan);
+
+    setForceUpdate((prev) => prev + 1); // Force re-render
+    console.log("[DEBUG] Meal plan saved to store and database");
+
+    // Analytics logging
+    const allDays = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    const generatedMealsByDay = allDays.map((day) => {
+      const mealsForDay = weeklyPlan.meals.filter(
+        (meal) => meal.dayOfWeek === day,
+      );
+      return {
+        day,
+        mealCount: mealsForDay.length,
+        mealTypes: mealsForDay.map((m) => m.type),
+      };
+    });
+    console.log("[ANALYTICS] Generated meals by day:", generatedMealsByDay);
+
+    const totalGenerated = weeklyPlan.meals.length;
+    const expectedTotal = 21; // 7 days × 3 meals
+    console.log(
+      `[ANALYTICS] Generation completeness: ${totalGenerated}/${expectedTotal} meals (${Math.round((totalGenerated / expectedTotal) * 100)}%)`,
+    );
+
+    Alert.alert(
+      "Meal Plan Generated!",
+      `Your personalized 7-day meal plan "${weeklyPlan.planTitle}" is ready!`,
+      [{ text: "View Plan", onPress: () => {} }],
+    );
+  };
+
+  // Poll for async job completion
+  const startJobPolling = (jobId: string) => {
+    let pollAttempt = 0;
+    const maxAttempts = 60; // ~3 minutes max
+    const initialInterval = 3000; // 3 seconds
+    const maxInterval = 15000; // 15 seconds
+
+    const poll = async () => {
+      pollAttempt++;
+      console.log(`[POLL] Checking job ${jobId} (attempt ${pollAttempt})`);
+
+      try {
+        const response = await aiService.checkMealPlanJobStatus(jobId, 1);
+
+        if (!response.success || !response.data) {
+          console.error("[POLL] Failed to check job status:", response.error);
+          // Continue polling unless max attempts reached
+          if (pollAttempt < maxAttempts) {
+            scheduleNextPoll();
+          } else {
+            handlePollTimeout();
+          }
+          return;
+        }
+
+        const { status, plan, error, generationTimeMs } = response.data;
+        console.log(`[POLL] Job status: ${status}`);
+
+        // Update async job state
+        setAsyncJob((prev) =>
+          prev
+            ? {
+                ...prev,
+                status,
+                error,
+                generationTimeMs,
+              }
+            : null,
+        );
+
+        // Handle terminal states
+        if (status === "completed" && plan) {
+          console.log(`[POLL] Job completed in ${generationTimeMs}ms`);
+          await handleMealPlanResult(plan);
+          cleanupPolling();
+          return;
+        }
+
+        if (status === "failed") {
+          console.error("[POLL] Job failed:", error);
+          setAiError(error || "Meal plan generation failed");
+          Alert.alert(
+            "Generation Failed",
+            error || "Failed to generate meal plan. Please try again.",
+          );
+          cleanupPolling();
+          return;
+        }
+
+        if (status === "cancelled") {
+          console.log("[POLL] Job was cancelled");
+          cleanupPolling();
+          return;
+        }
+
+        // Continue polling for pending/processing
+        if (pollAttempt < maxAttempts) {
+          scheduleNextPoll();
+        } else {
+          handlePollTimeout();
+        }
+      } catch (err) {
+        console.error("[POLL] Error during polling:", err);
+        if (pollAttempt < maxAttempts) {
+          scheduleNextPoll();
+        } else {
+          handlePollTimeout();
+        }
+      }
+    };
+
+    const scheduleNextPoll = () => {
+      // Exponential backoff with cap
+      const interval = Math.min(
+        initialInterval * Math.pow(1.5, Math.floor(pollAttempt / 5)),
+        maxInterval,
+      );
+      console.log(`[POLL] Next poll in ${interval}ms`);
+      asyncJobPollingRef.current = setTimeout(poll, interval);
+    };
+
+    const handlePollTimeout = () => {
+      console.error("[POLL] Polling timeout after max attempts");
+      setAiError(
+        "Generation is taking longer than expected. Please check back later.",
+      );
+      Alert.alert(
+        "Taking Longer Than Expected",
+        "Your meal plan is still being generated. You can check back later or try again.",
+        [{ text: "OK" }],
+      );
+      cleanupPolling();
+    };
+
+    const cleanupPolling = () => {
+      if (asyncJobPollingRef.current) {
+        clearTimeout(asyncJobPollingRef.current);
+        asyncJobPollingRef.current = null;
+      }
+      setGeneratingPlan(false);
+    };
+
+    // Start first poll after initial delay
+    asyncJobPollingRef.current = setTimeout(poll, initialInterval);
+  };
+
+  // Cancel ongoing async generation
+  const cancelAsyncGeneration = () => {
+    if (asyncJobPollingRef.current) {
+      clearTimeout(asyncJobPollingRef.current);
+      asyncJobPollingRef.current = null;
+    }
+    setAsyncJob(null);
+    setGeneratingPlan(false);
+    setAiError(null);
+    console.log("[ASYNC] Generation cancelled by user");
+  };
+
+  // Clear async job indicator
+  const clearAsyncJob = () => {
+    setAsyncJob(null);
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (asyncJobPollingRef.current) {
+        clearTimeout(asyncJobPollingRef.current);
+      }
+    };
+  }, []);
 
   // Get meals for selected day
   const getTodaysMeals = (): DayMeal[] => {
@@ -3943,6 +4122,45 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           profile={profile}
         />
 
+        {/* Async Job Status Indicator */}
+        {asyncJob && (
+          <Modal
+            visible={true}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={cancelAsyncGeneration}
+          >
+            <View style={styles.asyncJobModalOverlay}>
+              <View style={styles.asyncJobModalContent}>
+                <JobStatusIndicator
+                  job={{
+                    jobId: asyncJob.jobId,
+                    status:
+                      asyncJob.status === "pending"
+                        ? "pending"
+                        : asyncJob.status === "processing"
+                          ? "processing"
+                          : asyncJob.status === "completed"
+                            ? "completed"
+                            : asyncJob.status === "failed"
+                              ? "failed"
+                              : asyncJob.status === "cancelled"
+                                ? "cancelled"
+                                : "idle",
+                    result: undefined,
+                    error: asyncJob.error,
+                    createdAt: asyncJob.createdAt,
+                    estimatedTimeRemaining: asyncJob.estimatedTimeRemaining,
+                    generationTimeMs: asyncJob.generationTimeMs,
+                  }}
+                  onCancel={cancelAsyncGeneration}
+                  onDismiss={clearAsyncJob}
+                />
+              </View>
+            </View>
+          </Modal>
+        )}
+
         {/* Create Recipe Modal */}
         <CreateRecipeModal
           visible={showCreateRecipe}
@@ -5942,5 +6160,19 @@ const styles = StyleSheet.create({
     fontSize: rf(32),
     color: ResponsiveTheme.colors.white,
     fontWeight: ResponsiveTheme.fontWeight.bold,
+  },
+
+  // Async Job Modal Styles
+  asyncJobModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    padding: ResponsiveTheme.spacing.lg,
+  },
+
+  asyncJobModalContent: {
+    width: "100%",
+    maxWidth: rw(400),
   },
 });
