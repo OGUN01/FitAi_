@@ -4,13 +4,13 @@
  * Automatically handles migration prompts and user interactions
  */
 
-import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
-import { useMigration } from '../../hooks/useMigration';
-import { useAuth } from '../../hooks/useAuth';
-import { MigrationProgressModal } from './MigrationProgressModal';
-import { ConflictResolutionModal } from './ConflictResolutionModal';
-import { SyncConflict, ConflictResolution } from '../../types/profileData';
+import React, { useEffect, useState } from "react";
+import { Alert } from "react-native";
+import { useMigration } from "../../hooks/useMigration";
+import { useAuth } from "../../hooks/useAuth";
+import { MigrationProgressModal } from "./MigrationProgressModal";
+import { ConflictResolutionModal } from "./ConflictResolutionModal";
+import { SyncConflict, ConflictResolution } from "../../types/profileData";
 
 interface MigrationIntegrationProps {
   autoPrompt?: boolean;
@@ -62,21 +62,21 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const promptMigration = () => {
     Alert.alert(
-      'Sync Your Profile Data',
-      'We found profile data on your device. Would you like to sync it to the cloud so you can access it from any device?',
+      "Sync Your Profile Data",
+      "We found profile data on your device. Would you like to sync it to the cloud so you can access it from any device?",
       [
         {
-          text: 'Not Now',
-          style: 'cancel',
+          text: "Not Now",
+          style: "cancel",
           onPress: () => {
-            console.log('🚫 User declined migration');
+            console.log("🚫 User declined migration");
           },
         },
         {
-          text: 'Sync Data',
+          text: "Sync Data",
           onPress: startMigration,
         },
-      ]
+      ],
     );
   };
 
@@ -86,7 +86,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
   const startMigration = async () => {
     if (!user?.id) {
-      Alert.alert('Error', 'Please log in to sync your data');
+      Alert.alert("Error", "Please log in to sync your data");
       return;
     }
 
@@ -100,7 +100,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       // Handle migration result
       if (migration.result) {
         if (migration.result.success) {
-          console.log('✅ Migration completed successfully');
+          console.log("✅ Migration completed successfully");
           onMigrationComplete?.(true);
 
           if (showProgressModal) {
@@ -110,37 +110,37 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
             }, 2000);
           }
         } else if (migration.result.conflicts?.length > 0) {
-          console.log('⚖️ Migration conflicts detected');
+          console.log("⚖️ Migration conflicts detected");
           setConflicts(migration.result.conflicts);
           setShowProgress(false);
           setShowConflicts(true);
         } else {
-          console.error('❌ Migration failed:', migration.result.errors);
+          console.error("❌ Migration failed:", migration.result.errors);
           setShowProgress(false);
           onMigrationComplete?.(false);
 
           Alert.alert(
-            'Migration Failed',
-            `Failed to sync your data: ${migration.result.errors.join(', ')}`,
+            "Migration Failed",
+            `Failed to sync your data: ${migration.result.errors.join(", ")}`,
             [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Retry', onPress: startMigration },
-            ]
+              { text: "Cancel", style: "cancel" },
+              { text: "Retry", onPress: startMigration },
+            ],
           );
         }
       }
     } catch (error) {
-      console.error('❌ Migration error:', error);
+      console.error("❌ Migration error:", error);
       setShowProgress(false);
       onMigrationComplete?.(false);
 
       Alert.alert(
-        'Sync Error',
-        'An unexpected error occurred while syncing your data. Please try again.',
+        "Sync Error",
+        "An unexpected error occurred while syncing your data. Please try again.",
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: startMigration },
-        ]
+          { text: "Cancel", style: "cancel" },
+          { text: "Retry", onPress: startMigration },
+        ],
       );
     }
   };
@@ -149,8 +149,10 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
   // CONFLICT RESOLUTION
   // ============================================================================
 
-  const handleConflictResolution = async (resolutions: ConflictResolution[]) => {
-    console.log('🔧 Resolving conflicts:', resolutions);
+  const handleConflictResolution = async (
+    resolutions: ConflictResolution[],
+  ) => {
+    console.log("🔧 Resolving conflicts:", resolutions);
 
     setShowConflicts(false);
 
@@ -166,7 +168,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       await migration.startProfileMigration();
 
       if (migration.result?.success) {
-        console.log('✅ Migration completed after conflict resolution');
+        console.log("✅ Migration completed after conflict resolution");
         onMigrationComplete?.(true);
 
         if (showProgressModal) {
@@ -175,22 +177,26 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
           }, 2000);
         }
       } else {
-        console.error('❌ Migration failed after conflict resolution');
+        console.error("❌ Migration failed after conflict resolution");
         setShowProgress(false);
         onMigrationComplete?.(false);
 
-        Alert.alert('Migration Failed', 'Failed to complete migration after resolving conflicts.', [
-          { text: 'OK' },
-        ]);
+        Alert.alert(
+          "Migration Failed",
+          "Failed to complete migration after resolving conflicts.",
+          [{ text: "OK" }],
+        );
       }
     } catch (error) {
-      console.error('❌ Conflict resolution error:', error);
+      console.error("❌ Conflict resolution error:", error);
       setShowProgress(false);
       onMigrationComplete?.(false);
 
-      Alert.alert('Resolution Error', 'Failed to resolve conflicts. Please try again.', [
-        { text: 'OK' },
-      ]);
+      Alert.alert(
+        "Resolution Error",
+        "Failed to resolve conflicts. Please try again.",
+        [{ text: "OK" }],
+      );
     }
   };
 
@@ -204,9 +210,9 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
 
     if (!success) {
       Alert.alert(
-        'Migration Failed',
-        'Failed to sync your data. You can try again later from your profile settings.',
-        [{ text: 'OK' }]
+        "Migration Failed",
+        "Failed to sync your data. You can try again later from your profile settings.",
+        [{ text: "OK" }],
       );
     }
   };
@@ -215,19 +221,19 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
     setShowProgress(false);
 
     Alert.alert(
-      'Cancel Migration',
-      'Are you sure you want to cancel the data sync? You can start it again later.',
+      "Cancel Migration",
+      "Are you sure you want to cancel the data sync? You can start it again later.",
       [
-        { text: 'Continue Sync', style: 'cancel' },
+        { text: "Continue Sync", style: "cancel" },
         {
-          text: 'Cancel',
-          style: 'destructive',
+          text: "Cancel",
+          style: "destructive",
           onPress: () => {
             // TODO: Implement migration cancellation
-            console.log('🚫 Migration cancelled by user');
+            console.log("🚫 Migration cancelled by user");
           },
         },
-      ]
+      ],
     );
   };
 
@@ -235,9 +241,9 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
     setShowConflicts(false);
 
     Alert.alert(
-      'Skip Sync',
-      'Your data will not be synced to the cloud. You can try again later from your profile settings.',
-      [{ text: 'OK' }]
+      "Skip Sync",
+      "Your data will not be synced to the cloud. You can try again later from your profile settings.",
+      [{ text: "OK" }],
     );
   };
 
@@ -251,7 +257,7 @@ export const MigrationIntegration: React.FC<MigrationIntegrationProps> = ({
       {showProgressModal && (
         <MigrationProgressModal
           visible={showProgress}
-          userId={user?.id || ''}
+          userId={user?.id || ""}
           onComplete={handleProgressComplete}
           onCancel={handleProgressCancel}
         />
@@ -283,19 +289,19 @@ export const MigrationPrompt: React.FC<MigrationPromptProps> = ({
 }) => {
   useEffect(() => {
     Alert.alert(
-      'Sync Your Data',
-      'We found profile data on your device. Would you like to sync it to the cloud?',
+      "Sync Your Data",
+      "We found profile data on your device. Would you like to sync it to the cloud?",
       [
         {
-          text: 'Not Now',
-          style: 'cancel',
+          text: "Not Now",
+          style: "cancel",
           onPress: onDismiss,
         },
         {
-          text: 'Sync Data',
+          text: "Sync Data",
           onPress: onStartMigration,
         },
-      ]
+      ],
     );
   }, [onStartMigration, onDismiss]);
 

@@ -1,5 +1,13 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent, Platform, PanResponder, Animated as RNAnimated } from 'react-native';
+import React, { useState, useCallback, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  LayoutChangeEvent,
+  Platform,
+  PanResponder,
+  Animated as RNAnimated,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,11 +17,14 @@ import Animated, {
   runOnJS,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
-import { rf, rp, rh, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { hapticSelection } from '../../utils/haptics';
+} from "react-native-reanimated";
+import {
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+} from "react-native-gesture-handler";
+import { rf, rp, rh, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { hapticSelection } from "../../utils/haptics";
 
 interface SliderProps {
   value: number;
@@ -65,7 +76,7 @@ export const Slider: React.FC<SliderProps> = ({
       const percentage = (val - minimumValue) / (maximumValue - minimumValue);
       return percentage * sliderWidth;
     },
-    [sliderWidth, minimumValue, maximumValue]
+    [sliderWidth, minimumValue, maximumValue],
   );
 
   // Calculate value from position
@@ -82,7 +93,7 @@ export const Slider: React.FC<SliderProps> = ({
       // Clamp to min/max
       return Math.max(minimumValue, Math.min(maximumValue, newValue));
     },
-    [sliderWidth, minimumValue, maximumValue, step]
+    [sliderWidth, minimumValue, maximumValue, step],
   );
 
   // Trigger haptic feedback when value changes
@@ -110,7 +121,7 @@ export const Slider: React.FC<SliderProps> = ({
 
   // Helper to calculate value from position (worklet compatible)
   const calculateValueFromPosition = (position: number) => {
-    'worklet';
+    "worklet";
     // Guard against division by zero before layout measurement
     if (sliderWidth === 0) return minimumValue;
 
@@ -139,7 +150,10 @@ export const Slider: React.FC<SliderProps> = ({
       tooltipOpacity.value = withTiming(1, { duration: 150 });
     },
     onActive: (event, ctx) => {
-      const newPosition = Math.max(0, Math.min(sliderWidth, ctx.startX + event.translationX));
+      const newPosition = Math.max(
+        0,
+        Math.min(sliderWidth, ctx.startX + event.translationX),
+      );
       translateX.value = newPosition;
 
       // Calculate new value but only trigger haptic if it actually changed
@@ -156,10 +170,11 @@ export const Slider: React.FC<SliderProps> = ({
       // Animate thumb scale back and tooltip fade
       thumbScale.value = withSpring(1, { damping: 15, stiffness: 300 });
       tooltipOpacity.value = withTiming(0.85, { duration: 200 });
-      
+
       // Snap to nearest step
       const currentValue = calculateValueFromPosition(translateX.value);
-      const percentage = (currentValue - minimumValue) / (maximumValue - minimumValue);
+      const percentage =
+        (currentValue - minimumValue) / (maximumValue - minimumValue);
       const finalPosition = percentage * sliderWidth;
 
       translateX.value = withSpring(finalPosition, {
@@ -174,18 +189,13 @@ export const Slider: React.FC<SliderProps> = ({
 
   // Animated styles for thumb
   const thumbAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { scale: thumbScale.value },
-    ],
+    transform: [{ translateX: translateX.value }, { scale: thumbScale.value }],
   }));
 
   // Animated styles for tooltip - now shows above thumb with fade effect
   const tooltipAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { translateX: translateX.value },
-      ],
+      transform: [{ translateX: translateX.value }],
       opacity: showTooltip ? tooltipOpacity.value : 0,
     };
   });
@@ -197,11 +207,7 @@ export const Slider: React.FC<SliderProps> = ({
 
   // Animated glow effect for thumb when sliding
   const thumbGlowStyle = useAnimatedStyle(() => {
-    const glowOpacity = interpolate(
-      thumbScale.value,
-      [1, 1.15],
-      [0, 0.4]
-    );
+    const glowOpacity = interpolate(thumbScale.value, [1, 1.15], [0, 0.4]);
     return {
       opacity: glowOpacity,
       transform: [
@@ -229,7 +235,7 @@ export const Slider: React.FC<SliderProps> = ({
         <View style={styles.trackContainer} onLayout={handleLayout}>
           {/* Inactive track */}
           <View style={[styles.track, styles.inactiveTrack]} />
-          
+
           {/* Active track with gradient effect */}
           <Animated.View
             style={[
@@ -250,8 +256,8 @@ export const Slider: React.FC<SliderProps> = ({
           />
 
           {/* Thumb */}
-          <PanGestureHandler 
-            onGestureEvent={gestureHandler} 
+          <PanGestureHandler
+            onGestureEvent={gestureHandler}
             enabled={!disabled}
             activeOffsetX={[-10, 10]}
             failOffsetY={[-20, 20]}
@@ -293,20 +299,20 @@ const styles = StyleSheet.create({
   },
 
   sliderContainer: {
-    position: 'relative',
+    position: "relative",
     paddingTop: 22, // Reduced space for tooltip
   },
 
   // Minimal track container - compact height
   trackContainer: {
     height: 28, // Reduced from 32
-    justifyContent: 'center',
+    justifyContent: "center",
     marginBottom: 4, // Reduced from 6
   },
 
   // Thinner, elegant track
   track: {
-    position: 'absolute',
+    position: "absolute",
     height: 6,
     borderRadius: 3,
     left: 0,
@@ -314,7 +320,7 @@ const styles = StyleSheet.create({
   },
 
   inactiveTrack: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
   },
 
   activeTrack: {
@@ -328,19 +334,19 @@ const styles = StyleSheet.create({
 
   // Refined thumb - smaller and cleaner
   thumb: {
-    position: 'absolute',
+    position: "absolute",
     width: 22,
     height: 22,
     borderRadius: 11,
     backgroundColor: ResponsiveTheme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: -11,
     // Clean white border
     borderWidth: 3,
     borderColor: ResponsiveTheme.colors.white,
     // Subtle shadow
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -352,12 +358,12 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
 
   // Glow effect behind thumb when dragging
   thumbGlow: {
-    position: 'absolute',
+    position: "absolute",
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -370,9 +376,9 @@ const styles = StyleSheet.create({
 
   // Compact tooltip - closer to thumb, minimal design
   tooltip: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
-    alignItems: 'center',
+    alignItems: "center",
     marginLeft: -20,
     zIndex: 10,
   },
@@ -386,7 +392,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.primary,
     // Subtle shadow
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
@@ -400,8 +406,8 @@ const styles = StyleSheet.create({
   },
 
   labelsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingHorizontal: 2,
   },
 

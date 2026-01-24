@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   View,
   Text,
@@ -7,10 +7,10 @@ import {
   Animated,
   Dimensions,
   Vibration,
-} from 'react-native';
-import { THEME } from '../../utils/constants';
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 interface SwipeAction {
   id: string;
@@ -65,7 +65,8 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
 
       const { dx } = gestureState;
       const maxLeftSwipe = leftActions.length > 0 ? 80 * leftActions.length : 0;
-      const maxRightSwipe = rightActions.length > 0 ? -80 * rightActions.length : 0;
+      const maxRightSwipe =
+        rightActions.length > 0 ? -80 * rightActions.length : 0;
 
       // Constrain the movement
       const constrainedDx = Math.max(maxRightSwipe, Math.min(maxLeftSwipe, dx));
@@ -74,7 +75,10 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
 
       // Haptic feedback at thresholds
       if (hapticFeedback) {
-        if (Math.abs(dx) > swipeThreshold && Math.abs(dx) < swipeThreshold + 10) {
+        if (
+          Math.abs(dx) > swipeThreshold &&
+          Math.abs(dx) < swipeThreshold + 10
+        ) {
           Vibration.vibrate(10);
         }
       }
@@ -85,7 +89,8 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
 
       const { dx, vx } = gestureState;
       const velocity = Math.abs(vx);
-      const shouldTriggerAction = Math.abs(dx) > swipeThreshold || velocity > 0.5;
+      const shouldTriggerAction =
+        Math.abs(dx) > swipeThreshold || velocity > 0.5;
 
       translateX.flattenOffset();
       lastOffset.current = currentTranslateX.current;
@@ -150,7 +155,12 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
     if (actions.length === 0) return null;
 
     return (
-      <View style={[styles.actionsContainer, isLeft ? styles.leftActions : styles.rightActions]}>
+      <View
+        style={[
+          styles.actionsContainer,
+          isLeft ? styles.leftActions : styles.rightActions,
+        ]}
+      >
         {actions.map((action, index) => (
           <Animated.View
             key={action.id}
@@ -161,11 +171,13 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
                 transform: [
                   {
                     translateX: translateX.interpolate({
-                      inputRange: isLeft ? [0, 80 * actions.length] : [-80 * actions.length, 0],
+                      inputRange: isLeft
+                        ? [0, 80 * actions.length]
+                        : [-80 * actions.length, 0],
                       outputRange: isLeft
                         ? [-80 * (actions.length - index), 0]
                         : [0, 80 * (actions.length - index)],
-                      extrapolate: 'clamp',
+                      extrapolate: "clamp",
                     }),
                   },
                 ],
@@ -181,7 +193,7 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
                       ? [40 * (index + 1), 80 * (index + 1)]
                       : [-80 * (index + 1), -40 * (index + 1)],
                     outputRange: [0, 1],
-                    extrapolate: 'clamp',
+                    extrapolate: "clamp",
                   }),
                 },
               ]}
@@ -222,8 +234,8 @@ export const SwipeGesture: React.FC<SwipeGestureProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
   },
 
   content: {
@@ -232,11 +244,11 @@ const styles = StyleSheet.create({
   },
 
   actionsContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     zIndex: 0,
   },
 
@@ -250,14 +262,14 @@ const styles = StyleSheet.create({
 
   actionButton: {
     width: 80,
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   actionContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   actionIcon: {
@@ -269,7 +281,7 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: 12,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.medium as '500',
-    textAlign: 'center',
+    fontWeight: THEME.fontWeight.medium as "500",
+    textAlign: "center",
   },
 });

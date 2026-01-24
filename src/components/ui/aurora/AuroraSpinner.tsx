@@ -4,25 +4,29 @@
  * Matches active Aurora theme with smooth 360-degree rotation
  */
 
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { gradients, toLinearGradientProps, gradientAuroraSpace } from '../../../theme/gradients';
-import { animations } from '../../../theme/animations';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  gradients,
+  toLinearGradientProps,
+  gradientAuroraSpace,
+} from "../../../theme/gradients";
+import { animations } from "../../../theme/animations";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl';
-export type SpinnerTheme = 'primary' | 'secondary' | 'aurora' | 'white';
+export type SpinnerSize = "sm" | "md" | "lg" | "xl";
+export type SpinnerTheme = "primary" | "secondary" | "aurora" | "white";
 
 export interface AuroraSpinnerProps {
   /**
@@ -72,8 +76,8 @@ const RING_THICKNESS: Record<SpinnerSize, number> = {
 // ============================================================================
 
 export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
-  size = 'md',
-  theme = 'primary',
+  size = "md",
+  theme = "primary",
   customSize,
   duration = 1200,
 }) => {
@@ -93,7 +97,7 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
         easing: Easing.linear,
       }),
       -1, // Infinite loop
-      false // Don't reverse
+      false, // Don't reverse
     );
   }, [duration]);
 
@@ -105,15 +109,19 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
   // Select gradient based on theme
   const getGradient = () => {
     switch (theme) {
-      case 'primary':
+      case "primary":
         return gradients.primary;
-      case 'secondary':
+      case "secondary":
         return gradients.secondary;
-      case 'aurora':
+      case "aurora":
         return gradientAuroraSpace;
-      case 'white':
+      case "white":
         return {
-          colors: ['rgba(255,255,255,0.2)', 'rgba(255,255,255,1)', 'rgba(255,255,255,0.2)'],
+          colors: [
+            "rgba(255,255,255,0.2)",
+            "rgba(255,255,255,1)",
+            "rgba(255,255,255,0.2)",
+          ],
           start: { x: 0, y: 0 },
           end: { x: 1, y: 1 },
         };
@@ -150,14 +158,16 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
       >
         <LinearGradient
           {...(toLinearGradientProps(gradient) as any)}
-          style={[
-            styles.gradient,
-            {
-              width: spinnerSize,
-              height: spinnerSize,
-              borderRadius: spinnerSize / 2,
-            },
-          ] as any}
+          style={
+            [
+              styles.gradient,
+              {
+                width: spinnerSize,
+                height: spinnerSize,
+                borderRadius: spinnerSize / 2,
+              },
+            ] as any
+          }
         >
           {/* Inner transparent circle to create ring effect */}
           <View
@@ -182,19 +192,19 @@ export const AuroraSpinner: React.FC<AuroraSpinnerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   spinner: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   gradient: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   innerCircle: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     // Add dark background to create ring effect
     // This will be transparent, showing the parent background through
   },

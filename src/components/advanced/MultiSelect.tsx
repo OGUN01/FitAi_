@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   ScrollView,
   Modal,
   TextInput,
-} from 'react-native';
-import { Button, THEME } from '../ui';
+} from "react-native";
+import { Button, THEME } from "../ui";
 
 interface Option {
   id: string;
@@ -35,19 +35,21 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   selectedValues,
   onSelectionChange,
   label,
-  placeholder = 'Select options',
+  placeholder = "Select options",
   maxSelections,
   searchable = true,
   disabled = false,
   style,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [tempSelectedValues, setTempSelectedValues] = useState(selectedValues);
 
   const filteredOptions =
     searchable && searchQuery
-      ? options.filter((option) => option.label.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? options.filter((option) =>
+          option.label.toLowerCase().includes(searchQuery.toLowerCase()),
+        )
       : options;
 
   const isOptionSelected = (value: any) => {
@@ -75,13 +77,13 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   const handleConfirm = () => {
     onSelectionChange(tempSelectedValues);
     setIsVisible(false);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const handleCancel = () => {
     setTempSelectedValues(selectedValues);
     setIsVisible(false);
-    setSearchQuery('');
+    setSearchQuery("");
   };
 
   const getSelectedLabels = () => {
@@ -98,13 +100,14 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
     } else if (selectedLabels.length === 1) {
       return selectedLabels[0];
     } else if (selectedLabels.length <= 3) {
-      return selectedLabels.join(', ');
+      return selectedLabels.join(", ");
     } else {
-      return `${selectedLabels.slice(0, 2).join(', ')} +${selectedLabels.length - 2} more`;
+      return `${selectedLabels.slice(0, 2).join(", ")} +${selectedLabels.length - 2} more`;
     }
   };
 
-  const canSelectMore = !maxSelections || tempSelectedValues.length < maxSelections;
+  const canSelectMore =
+    !maxSelections || tempSelectedValues.length < maxSelections;
 
   return (
     <View style={[styles.container, style]}>
@@ -114,8 +117,11 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
       >
-        <Text 
-          style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}
+        <Text
+          style={[
+            styles.triggerText,
+            selectedValues.length === 0 && styles.placeholderText,
+          ]}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
@@ -133,17 +139,24 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         >
           {getSelectedLabels().map((label) => (
             <View key={`selected-${label}`} style={styles.selectedTag}>
-              <Text style={styles.selectedTagText} numberOfLines={1}>{label}</Text>
+              <Text style={styles.selectedTagText} numberOfLines={1}>
+                {label}
+              </Text>
             </View>
           ))}
         </ScrollView>
       )}
 
-      <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
+      <Modal
+        visible={isVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCancel}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label || 'Select Options'}</Text>
+              <Text style={styles.modalTitle}>{label || "Select Options"}</Text>
               {maxSelections && (
                 <Text style={styles.selectionCount}>
                   {tempSelectedValues.length}/{maxSelections} selected
@@ -166,10 +179,14 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             )}
 
             {/* Options List */}
-            <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.optionsContainer}
+              showsVerticalScrollIndicator={false}
+            >
               {filteredOptions.map((option) => {
                 const isSelected = isOptionSelected(option.value);
-                const isDisabled = option.disabled || (!canSelectMore && !isSelected);
+                const isDisabled =
+                  option.disabled || (!canSelectMore && !isSelected);
 
                 return (
                   <TouchableOpacity
@@ -183,7 +200,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                     disabled={isDisabled}
                   >
                     <View style={styles.optionContent}>
-                      {option.icon && <Text style={styles.optionIcon}>{option.icon}</Text>}
+                      {option.icon && (
+                        <Text style={styles.optionIcon}>{option.icon}</Text>
+                      )}
                       <Text
                         style={[
                           styles.optionText,
@@ -226,7 +245,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                 style={styles.actionButton}
               />
               <Button
-                title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? 's' : ''}`}
+                title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
                 onPress={handleConfirm}
                 variant="primary"
                 style={styles.actionButton}
@@ -246,15 +265,15 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
 
   trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     backgroundColor: THEME.colors.surface,
@@ -287,32 +306,32 @@ const styles = StyleSheet.create({
   },
 
   selectedTag: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs / 2,
     borderRadius: THEME.borderRadius.sm,
     marginRight: THEME.spacing.xs,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   selectedTagText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
 
   modalContent: {
     backgroundColor: THEME.colors.background,
     borderTopLeftRadius: THEME.borderRadius.xl,
     borderTopRightRadius: THEME.borderRadius.xl,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
 
   modalHeader: {
@@ -323,21 +342,21 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   selectionCount: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: THEME.spacing.xs / 2,
   },
 
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     margin: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
@@ -364,9 +383,9 @@ const styles = StyleSheet.create({
   },
 
   optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     marginVertical: THEME.spacing.xs / 2,
@@ -375,9 +394,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   optionItemDisabled: {
@@ -385,8 +404,8 @@ const styles = StyleSheet.create({
   },
 
   optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
 
@@ -404,7 +423,7 @@ const styles = StyleSheet.create({
 
   optionTextSelected: {
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
   },
 
   optionTextDisabled: {
@@ -417,8 +436,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     borderColor: THEME.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: THEME.colors.background,
   },
 
@@ -434,11 +453,11 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
   },
 
   noResults: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
@@ -448,7 +467,7 @@ const styles = StyleSheet.create({
   },
 
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: THEME.spacing.md,
     gap: THEME.spacing.sm,
     borderTopWidth: 1,

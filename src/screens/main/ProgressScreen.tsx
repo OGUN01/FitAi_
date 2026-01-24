@@ -561,9 +561,12 @@ export const ProgressScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Loading State */}
+              {/* Loading State - Blocks interaction with overlay */}
               {(progressLoading || statsLoading) && (
-                <View style={styles.loadingContainer}>
+                <View
+                  style={[styles.loadingContainer, StyleSheet.absoluteFill]}
+                  pointerEvents="box-only"
+                >
                   <AuroraSpinner size="lg" theme="primary" />
                   <Text style={styles.loadingText}>
                     Loading progress data...

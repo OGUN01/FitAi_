@@ -1,21 +1,21 @@
 // React Hook for HealthKit Integration
 // Provides convenient access to HealthKit functionality with automatic sync management
 
-import { useEffect, useState, useCallback } from 'react';
-import { Platform, AppState, AppStateStatus } from 'react-native';
-import { useHealthDataStore } from '../stores/healthDataStore';
-import { healthKitService } from '../services/healthKit';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Platform, AppState, AppStateStatus } from "react-native";
+import { useHealthDataStore } from "../stores/healthDataStore";
+import { healthKitService } from "../services/healthKit";
 
 export interface UseHealthKitSyncOptions {
   // Auto-initialize on hook mount
   autoInitialize?: boolean;
-  
+
   // Sync frequency in minutes (default: 60)
   syncIntervalMinutes?: number;
-  
+
   // Enable background sync when app becomes active
   syncOnAppForeground?: boolean;
-  
+
   // Enable real-time sync for specific data types
   realTimeSync?: {
     steps?: boolean;
@@ -29,14 +29,14 @@ export interface UseHealthKitSyncReturn {
   isAvailable: boolean;
   isAuthorized: boolean;
   isLoading: boolean;
-  syncStatus: 'idle' | 'syncing' | 'success' | 'error';
+  syncStatus: "idle" | "syncing" | "success" | "error";
   error?: string;
   lastSyncTime?: string;
-  
+
   // Health Data (from store)
   healthMetrics: any;
   settings: any;
-  
+
   // Actions
   initialize: () => Promise<boolean>;
   requestPermissions: () => Promise<boolean>;
@@ -56,14 +56,16 @@ export interface UseHealthKitSyncReturn {
     water?: number;
     date?: Date;
   }) => Promise<boolean>;
-  
+
   // Utility
   getHealthSummary: () => Promise<any>;
   getHealthInsights: () => string[];
   updateSettings: (settings: any) => void;
 }
 
-export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHealthKitSyncReturn => {
+export const useHealthKitSync = (
+  options: UseHealthKitSyncOptions = {},
+): UseHealthKitSyncReturn => {
   const {
     autoInitialize = true,
     syncIntervalMinutes = 60,
@@ -93,13 +95,13 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
 
   // Initialize HealthKit on mount
   useEffect(() => {
-    if (autoInitialize && Platform.OS === 'ios') {
+    if (autoInitialize && Platform.OS === "ios") {
       const init = async () => {
         setIsLoading(true);
         try {
           await initializeHealthKit();
         } catch (error) {
-          console.error('❌ Failed to auto-initialize HealthKit:', error);
+          console.error("❌ Failed to auto-initialize HealthKit:", error);
         } finally {
           setIsLoading(false);
         }
@@ -113,9 +115,9 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
     if (!syncOnAppForeground || !isHealthKitAuthorized) return;
 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        console.log('📱 App became active, checking HealthKit sync...');
-        
+      if (nextAppState === "active") {
+        console.log("📱 App became active, checking HealthKit sync...");
+
         // Sync if enough time has passed
         const checkAndSync = async () => {
           try {
@@ -127,48 +129,73 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
               const hoursSinceLastSync = (now - lastSync) / (1000 * 60 * 60);
 
               if (hoursSinceLastSync >= hoursInterval) {
-                console.log('🔄 Performing background HealthKit sync...');
+                console.log("🔄 Performing background HealthKit sync...");
                 await syncHealthData(false);
               }
             } else {
               // No previous sync, sync now
-              console.log('🔄 Performing initial background HealthKit sync...');
+              console.log("🔄 Performing initial background HealthKit sync...");
               await syncHealthData(false);
             }
           } catch (error) {
-            console.error('❌ Background sync failed:', error);
+            console.error("❌ Background sync failed:", error);
           }
         };
-        
+
         checkAndSync();
       }
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange,
+    );
     return () => subscription?.remove();
-  }, [isHealthKitAuthorized, syncIntervalMinutes, syncOnAppForeground, syncHealthData]);
+  }, [
+    isHealthKitAuthorized,
+    syncIntervalMinutes,
+    syncOnAppForeground,
+    syncHealthData,
+  ]);
 
-  // Automatic periodic sync
+  // PERF-009 FIX: Use ref to store interval ID for proper cleanup
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // PERF-009 FIX: Automatic periodic sync with proper interval management
   useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (!settings.autoSyncEnabled || !isHealthKitAuthorized) return;
 
     const intervalMs = syncIntervalMinutes * 60 * 1000;
 
     const periodicSync = async () => {
       try {
-        console.log('⏰ Performing periodic HealthKit sync...');
+        console.log("⏰ Performing periodic HealthKit sync...");
         await syncHealthData(false);
       } catch (error) {
-        console.error('❌ Periodic sync failed:', error);
+        console.error("❌ Periodic sync failed:", error);
       }
     };
 
-    const intervalId = setInterval(periodicSync, intervalMs);
+    intervalRef.current = setInterval(periodicSync, intervalMs);
 
     return () => {
-      clearInterval(intervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [settings.autoSyncEnabled, isHealthKitAuthorized, syncIntervalMinutes, syncHealthData]);
+  }, [
+    settings.autoSyncEnabled,
+    isHealthKitAuthorized,
+    syncIntervalMinutes,
+    // PERF-009 FIX: Removed syncHealthData from deps - it's a stable store function
+  ]);
 
   // Action handlers
   const initialize = useCallback(async (): Promise<boolean> => {
@@ -191,33 +218,42 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
     }
   }, [requestHealthKitPermissions]);
 
-  const syncNow = useCallback(async (force: boolean = false): Promise<void> => {
-    await syncHealthData(force);
-  }, [syncHealthData]);
+  const syncNow = useCallback(
+    async (force: boolean = false): Promise<void> => {
+      await syncHealthData(force);
+    },
+    [syncHealthData],
+  );
 
-  const exportWorkout = useCallback(async (workout: {
-    type: string;
-    startDate: Date;
-    endDate: Date;
-    calories: number;
-    distance?: number;
-  }): Promise<boolean> => {
-    return await exportWorkoutToHealthKit(workout);
-  }, [exportWorkoutToHealthKit]);
+  const exportWorkout = useCallback(
+    async (workout: {
+      type: string;
+      startDate: Date;
+      endDate: Date;
+      calories: number;
+      distance?: number;
+    }): Promise<boolean> => {
+      return await exportWorkoutToHealthKit(workout);
+    },
+    [exportWorkoutToHealthKit],
+  );
 
-  const exportNutrition = useCallback(async (nutrition: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    water?: number;
-    date?: Date;
-  }): Promise<boolean> => {
-    return await exportNutritionToHealthKit({
-      ...nutrition,
-      date: nutrition.date || new Date(),
-    });
-  }, [exportNutritionToHealthKit]);
+  const exportNutrition = useCallback(
+    async (nutrition: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      water?: number;
+      date?: Date;
+    }): Promise<boolean> => {
+      return await exportNutritionToHealthKit({
+        ...nutrition,
+        date: nutrition.date || new Date(),
+      });
+    },
+    [exportNutritionToHealthKit],
+  );
 
   const getHealthSummary = useCallback(async () => {
     // Get current health data summary from store
@@ -238,18 +274,18 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
     syncStatus,
     error: syncError,
     lastSyncTime,
-    
+
     // Data
     healthMetrics,
     settings,
-    
+
     // Actions
     initialize,
     requestPermissions,
     syncNow,
     exportWorkout,
     exportNutrition,
-    
+
     // Utility
     getHealthSummary,
     getHealthInsights,
@@ -264,23 +300,26 @@ export const useHealthKitSync = (options: UseHealthKitSyncOptions = {}): UseHeal
  */
 export const useHealthKitWorkout = () => {
   const healthKit = useHealthKitSync({ syncOnAppForeground: false });
-  
+
   const startWorkoutTracking = useCallback(async (workoutType: string) => {
     // Could implement workout session tracking here
     console.log(`🏃 Starting HealthKit workout tracking: ${workoutType}`);
   }, []);
-  
-  const finishWorkoutTracking = useCallback(async (workout: {
-    type: string;
-    startDate: Date;
-    endDate: Date;
-    calories: number;
-    distance?: number;
-  }) => {
-    console.log('🏁 Finishing workout, exporting to HealthKit...');
-    return await healthKit.exportWorkout(workout);
-  }, [healthKit]);
-  
+
+  const finishWorkoutTracking = useCallback(
+    async (workout: {
+      type: string;
+      startDate: Date;
+      endDate: Date;
+      calories: number;
+      distance?: number;
+    }) => {
+      console.log("🏁 Finishing workout, exporting to HealthKit...");
+      return await healthKit.exportWorkout(workout);
+    },
+    [healthKit],
+  );
+
   return {
     ...healthKit,
     startWorkoutTracking,
@@ -293,24 +332,27 @@ export const useHealthKitWorkout = () => {
  */
 export const useHealthKitNutrition = () => {
   const healthKit = useHealthKitSync({ syncOnAppForeground: false });
-  
-  const logDailyNutrition = useCallback(async (nutritionData: {
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    water?: number;
-  }) => {
-    if (healthKit.settings.dataTypesToSync.nutrition) {
-      console.log('🍎 Exporting daily nutrition to HealthKit...');
-      return await healthKit.exportNutrition({
-        ...nutritionData,
-        date: new Date(),
-      });
-    }
-    return false;
-  }, [healthKit]);
-  
+
+  const logDailyNutrition = useCallback(
+    async (nutritionData: {
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      water?: number;
+    }) => {
+      if (healthKit.settings.dataTypesToSync.nutrition) {
+        console.log("🍎 Exporting daily nutrition to HealthKit...");
+        return await healthKit.exportNutrition({
+          ...nutritionData,
+          date: new Date(),
+        });
+      }
+      return false;
+    },
+    [healthKit],
+  );
+
   return {
     ...healthKit,
     logDailyNutrition,
@@ -325,7 +367,7 @@ export const useHealthKitDashboard = () => {
     syncIntervalMinutes: 30, // More frequent sync for dashboard
     syncOnAppForeground: true,
   });
-  
+
   const [dashboardData, setDashboardData] = useState({
     todaySteps: 0,
     todayCalories: 0,
@@ -333,23 +375,25 @@ export const useHealthKitDashboard = () => {
     lastWeight: 0,
     sleepScore: 0,
   });
-  
+
   useEffect(() => {
     const updateDashboardData = () => {
       const { metrics } = healthKit.healthMetrics;
-      
+
       // Calculate weekly workouts
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      const weeklyWorkouts = (healthKit.healthMetrics.recentWorkouts || []).filter(
-        (workout: any) => new Date(workout.date) >= oneWeekAgo
-      ).length;
-      
+
+      const weeklyWorkouts = (
+        healthKit.healthMetrics.recentWorkouts || []
+      ).filter((workout: any) => new Date(workout.date) >= oneWeekAgo).length;
+
       // VALIDATION: No fallback for weight - null means no data available
       const lastWeight = healthKit.healthMetrics.weight;
       if (!lastWeight || lastWeight === 0) {
-        console.warn('[useHealthKitDashboard] Weight data missing from HealthKit');
+        console.warn(
+          "[useHealthKitDashboard] Weight data missing from HealthKit",
+        );
       }
 
       setDashboardData({
@@ -357,14 +401,15 @@ export const useHealthKitDashboard = () => {
         todayCalories: healthKit.healthMetrics.activeCalories,
         weeklyWorkouts,
         lastWeight: lastWeight || null, // null = show "no data" UI instead of 0
-        sleepScore: healthKit.healthMetrics.sleepHours ?
-          Math.round((healthKit.healthMetrics.sleepHours / 8) * 100) : 0,
+        sleepScore: healthKit.healthMetrics.sleepHours
+          ? Math.round((healthKit.healthMetrics.sleepHours / 8) * 100)
+          : 0,
       });
     };
-    
+
     updateDashboardData();
   }, [healthKit.healthMetrics]);
-  
+
   return {
     ...healthKit,
     dashboardData,

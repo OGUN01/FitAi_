@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,10 +7,10 @@ import Animated, {
   withSequence,
   withTiming,
   withDelay,
-} from 'react-native-reanimated';
-import Svg, { Path, Circle, Line, G, Text as SvgText } from 'react-native-svg';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface MeasurementPoint {
   id: string;
@@ -18,11 +18,11 @@ interface MeasurementPoint {
   value?: string;
   x: number;
   y: number;
-  side: 'left' | 'right';
+  side: "left" | "right";
 }
 
 interface BodySilhouetteProps {
-  gender?: 'male' | 'female';
+  gender?: "male" | "female";
   measurements?: {
     height?: string | number;
     chest?: string | number;
@@ -35,7 +35,7 @@ interface BodySilhouetteProps {
 }
 
 export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
-  gender = 'male',
+  gender = "male",
   measurements,
   showAnimations = true,
   size: rawSize = 300,
@@ -47,9 +47,11 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
   const width = size * 0.6;
 
   // Helper to safely convert measurement to string
-  const toMeasurementString = (value: string | number | undefined): string | undefined => {
+  const toMeasurementString = (
+    value: string | number | undefined,
+  ): string | undefined => {
     if (value === undefined || value === null) return undefined;
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return Number.isFinite(value) ? String(value) : undefined;
     }
     return value;
@@ -58,36 +60,36 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
   // Measurement points (positioned relative to silhouette)
   const measurementPoints: MeasurementPoint[] = [
     {
-      id: 'height',
-      label: 'Height',
+      id: "height",
+      label: "Height",
       value: toMeasurementString(measurements?.height),
       x: width + 20,
       y: height / 2,
-      side: 'right',
+      side: "right",
     },
     {
-      id: 'chest',
-      label: 'Chest',
+      id: "chest",
+      label: "Chest",
       value: toMeasurementString(measurements?.chest),
       x: -20,
       y: height * 0.35,
-      side: 'left',
+      side: "left",
     },
     {
-      id: 'waist',
-      label: 'Waist',
+      id: "waist",
+      label: "Waist",
       value: toMeasurementString(measurements?.waist),
       x: width + 20,
       y: height * 0.5,
-      side: 'right',
+      side: "right",
     },
     {
-      id: 'hips',
-      label: 'Hips',
+      id: "hips",
+      label: "Hips",
       value: toMeasurementString(measurements?.hips),
       x: -20,
       y: height * 0.55,
-      side: 'left',
+      side: "left",
     },
   ];
 
@@ -97,7 +99,7 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
     const headRadius = width * 0.12;
     const shoulderWidth = width * 0.4;
     const waistWidth = width * 0.28;
-    const hipWidth = gender === 'female' ? width * 0.35 : width * 0.32;
+    const hipWidth = gender === "female" ? width * 0.35 : width * 0.32;
 
     // Head (circle represented as path)
     const headTop = headRadius + 10;
@@ -153,13 +155,14 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
 
           {/* Measurement points and lines */}
           {measurementPoints.map((point, index) => {
-            const silhouetteX = point.id === 'height' || point.id === 'waist'
-              ? width / 2
-              : point.id === 'chest'
-              ? width * 0.7
-              : width * 0.65;
+            const silhouetteX =
+              point.id === "height" || point.id === "waist"
+                ? width / 2
+                : point.id === "chest"
+                  ? width * 0.7
+                  : width * 0.65;
 
-            const lineEndX = point.side === 'left' ? point.x + 60 : point.x;
+            const lineEndX = point.side === "left" ? point.x + 60 : point.x;
 
             return (
               <G key={point.id}>
@@ -184,24 +187,24 @@ export const BodySilhouette: React.FC<BodySilhouetteProps> = ({
 
                 {/* Label and value */}
                 <SvgText
-                  x={point.side === 'left' ? point.x + 10 : point.x + 70}
+                  x={point.side === "left" ? point.x + 10 : point.x + 70}
                   y={point.y - 8}
                   fontSize={rf(11)}
                   fontWeight="600"
                   fill={ResponsiveTheme.colors.text}
-                  textAnchor={point.side === 'left' ? 'start' : 'start'}
+                  textAnchor={point.side === "left" ? "start" : "start"}
                 >
                   {point.label}
                 </SvgText>
 
                 {point.value && (
                   <SvgText
-                    x={point.side === 'left' ? point.x + 10 : point.x + 70}
+                    x={point.side === "left" ? point.x + 10 : point.x + 70}
                     y={point.y + 8}
                     fontSize={rf(12)}
                     fontWeight="bold"
                     fill={ResponsiveTheme.colors.primary}
-                    textAnchor={point.side === 'left' ? 'start' : 'start'}
+                    textAnchor={point.side === "left" ? "start" : "start"}
                   >
                     {point.value}
                   </SvgText>
@@ -238,11 +241,11 @@ const PulsingPoint: React.FC<{
         withRepeat(
           withSequence(
             withTiming(1.3, { duration: 600 }),
-            withTiming(1, { duration: 600 })
+            withTiming(1, { duration: 600 }),
           ),
           -1,
-          true
-        )
+          true,
+        ),
       );
     }
   }, [showAnimation, delay]);
@@ -261,19 +264,14 @@ const PulsingPoint: React.FC<{
       />
 
       {/* Inner point */}
-      <Circle
-        cx={cx}
-        cy={cy}
-        r="4"
-        fill={ResponsiveTheme.colors.secondary}
-      />
+      <Circle cx={cx} cy={cy} r="4" fill={ResponsiveTheme.colors.secondary} />
     </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   legend: {
@@ -286,6 +284,6 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 });

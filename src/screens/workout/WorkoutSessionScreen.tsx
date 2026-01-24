@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   View,
   Text,
@@ -211,6 +217,11 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
   const [showNextExercisePreview, setShowNextExercisePreview] = useState(false);
   const [showExerciseSession, setShowExerciseSession] = useState(false);
 
+  // Ref for next exercise preview timeout cleanup
+  const nextExercisePreviewTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
   // Achievement system integration
   const { user } = useAuthStore();
   const {
@@ -363,6 +374,15 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  // Cleanup nextExercisePreview timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (nextExercisePreviewTimeoutRef.current) {
+        clearTimeout(nextExercisePreviewTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Enhanced animations
   useEffect(() => {
     Animated.parallel([
@@ -480,7 +500,14 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
         // Show next exercise preview if exercise is completed
         if (allSetsCompleted && currentExerciseIndex < totalExercises - 1) {
           setShowNextExercisePreview(true);
-          setTimeout(() => setShowNextExercisePreview(false), 3000);
+          // Clear any existing timeout before setting a new one
+          if (nextExercisePreviewTimeoutRef.current) {
+            clearTimeout(nextExercisePreviewTimeoutRef.current);
+          }
+          nextExercisePreviewTimeoutRef.current = setTimeout(
+            () => setShowNextExercisePreview(false),
+            3000,
+          );
         }
 
         // Track workout milestones
@@ -871,7 +898,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           </Text>
         </View>
 
-        <View style={styles.headerRight}>
+        <View style={styles.headerRight} pointerEvents="none">
           <Text style={styles.timerText}>
             {safeString(workoutStats.totalDuration)}m
           </Text>
@@ -1316,12 +1343,13 @@ const styles = StyleSheet.create({
 
   headerRight: {
     alignItems: "flex-end",
+    opacity: 0.9,
   },
 
   timerText: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.primary,
+    color: THEME.colors.textSecondary,
   },
 
   caloriesText: {

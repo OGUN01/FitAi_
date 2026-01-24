@@ -2,7 +2,7 @@
  * Progress Dashboard - Real-time tracking of FitAI reliability improvements
  */
 
-import { reliabilityTracker } from './reliabilityTracker';
+import { reliabilityTracker } from "./reliabilityTracker";
 
 interface ProgressMetrics {
   reliabilityScore: number; // 0-100
@@ -17,10 +17,10 @@ interface ProgressMetrics {
 interface TaskProgress {
   id: string;
   name: string;
-  status: 'completed' | 'in_progress' | 'pending';
+  status: "completed" | "in_progress" | "pending";
   progress: number; // 0-100
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  category: 'reliability' | 'performance' | 'security' | 'features';
+  priority: "critical" | "high" | "medium" | "low";
+  category: "reliability" | "performance" | "security" | "features";
   completedAt?: Date;
 }
 
@@ -39,98 +39,98 @@ class ProgressDashboard {
     this.tasks = [
       // Reliability tasks
       {
-        id: 'fontweight-fix',
-        name: 'Fix FontWeight Style Issues (127 instances)',
-        status: 'in_progress',
+        id: "fontweight-fix",
+        name: "Fix FontWeight Style Issues (127 instances)",
+        status: "in_progress",
         progress: 15, // Started with ErrorBoundary, AsyncInitializer
-        priority: 'critical',
-        category: 'reliability',
+        priority: "critical",
+        category: "reliability",
       },
       {
-        id: 'console-log-replacement',
-        name: 'Replace console.log with proper logging',
-        status: 'in_progress',
+        id: "console-log-replacement",
+        name: "Replace console.log with proper logging",
+        status: "in_progress",
         progress: 10, // Started with ErrorBoundary
-        priority: 'high',
-        category: 'reliability',
+        priority: "high",
+        category: "reliability",
       },
       {
-        id: 'demo-mode-implementation',
-        name: 'Implement AI Demo Mode',
-        status: 'completed',
+        id: "demo-mode-implementation",
+        name: "Implement AI Demo Mode",
+        status: "completed",
         progress: 100,
-        priority: 'critical',
-        category: 'features',
+        priority: "critical",
+        category: "features",
         completedAt: new Date(),
       },
       {
-        id: 'reliability-tracking',
-        name: 'Create Reliability Tracking System',
-        status: 'completed',
+        id: "reliability-tracking",
+        name: "Create Reliability Tracking System",
+        status: "completed",
         progress: 100,
-        priority: 'high',
-        category: 'reliability',
+        priority: "high",
+        category: "reliability",
         completedAt: new Date(),
       },
       {
-        id: 'progress-dashboard',
-        name: 'Create Progress Dashboard',
-        status: 'completed',
+        id: "progress-dashboard",
+        name: "Create Progress Dashboard",
+        status: "completed",
         progress: 100,
-        priority: 'medium',
-        category: 'reliability',
+        priority: "medium",
+        category: "reliability",
         completedAt: new Date(),
       },
       // Critical TODO resolutions
       {
-        id: 'schema-repair-logic',
-        name: 'Implement schema repair logic (dataManager)',
-        status: 'pending',
+        id: "schema-repair-logic",
+        name: "Implement schema repair logic (dataManager)",
+        status: "pending",
         progress: 0,
-        priority: 'critical',
-        category: 'reliability',
+        priority: "critical",
+        category: "reliability",
       },
       {
-        id: 'migration-cancellation',
-        name: 'Implement migration cancellation',
-        status: 'pending',
+        id: "migration-cancellation",
+        name: "Implement migration cancellation",
+        status: "pending",
         progress: 0,
-        priority: 'high',
-        category: 'features',
+        priority: "high",
+        category: "features",
       },
       {
-        id: 'time-picker-implementation',
-        name: 'Implement notification time picker',
-        status: 'pending',
+        id: "time-picker-implementation",
+        name: "Implement notification time picker",
+        status: "pending",
         progress: 0,
-        priority: 'medium',
-        category: 'features',
+        priority: "medium",
+        category: "features",
       },
       {
-        id: 'image-optimization',
-        name: 'Implement food recognition image optimization',
-        status: 'pending',
+        id: "image-optimization",
+        name: "Implement food recognition image optimization",
+        status: "pending",
         progress: 0,
-        priority: 'medium',
-        category: 'performance',
+        priority: "medium",
+        category: "performance",
       },
       // Performance improvements
       {
-        id: 'lazy-loading',
-        name: 'Implement lazy loading for exercise filters',
-        status: 'pending',
+        id: "lazy-loading",
+        name: "Implement lazy loading for exercise filters",
+        status: "pending",
         progress: 0,
-        priority: 'medium',
-        category: 'performance',
+        priority: "medium",
+        category: "performance",
       },
       // Error handling improvements
       {
-        id: 'comprehensive-error-handling',
-        name: 'Add comprehensive error handling patterns',
-        status: 'pending',
+        id: "comprehensive-error-handling",
+        name: "Add comprehensive error handling patterns",
+        status: "pending",
         progress: 0,
-        priority: 'high',
-        category: 'reliability',
+        priority: "high",
+        category: "reliability",
       },
     ];
   }
@@ -138,7 +138,11 @@ class ProgressDashboard {
   /**
    * Update task progress
    */
-  updateTaskProgress(taskId: string, progress: number, status?: TaskProgress['status']): boolean {
+  updateTaskProgress(
+    taskId: string,
+    progress: number,
+    status?: TaskProgress["status"],
+  ): boolean {
     const task = this.tasks.find((t) => t.id === taskId);
     if (task) {
       task.progress = Math.min(100, Math.max(0, progress));
@@ -146,7 +150,7 @@ class ProgressDashboard {
         task.status = status;
       }
       if (progress === 100 && !task.completedAt) {
-        task.status = 'completed';
+        task.status = "completed";
         task.completedAt = new Date();
       }
       return true;
@@ -159,19 +163,29 @@ class ProgressDashboard {
    */
   getProgressMetrics(): ProgressMetrics {
     const totalTasks = this.tasks.length;
-    const completedTasks = this.tasks.filter((t) => t.status === 'completed').length;
-    const timeSpent = (Date.now() - this.startTime.getTime()) / (1000 * 60 * 60); // hours
+    const completedTasks = this.tasks.filter(
+      (t) => t.status === "completed",
+    ).length;
+    const timeSpent =
+      (Date.now() - this.startTime.getTime()) / (1000 * 60 * 60); // hours
 
     // Calculate reliability score based on critical issues resolved
-    const criticalTasks = this.tasks.filter((t) => t.priority === 'critical');
-    const completedCriticalTasks = criticalTasks.filter((t) => t.status === 'completed');
+    const criticalTasks = this.tasks.filter((t) => t.priority === "critical");
+    const completedCriticalTasks = criticalTasks.filter(
+      (t) => t.status === "completed",
+    );
     const reliabilityScore =
       criticalTasks.length > 0
-        ? Math.round((completedCriticalTasks.length / criticalTasks.length) * 100)
+        ? Math.round(
+            (completedCriticalTasks.length / criticalTasks.length) * 100,
+          )
         : 100;
 
     // Calculate code quality score based on overall progress
-    const totalProgress = this.tasks.reduce((sum, task) => sum + task.progress, 0);
+    const totalProgress = this.tasks.reduce(
+      (sum, task) => sum + task.progress,
+      0,
+    );
     const maxProgress = this.tasks.length * 100;
     const codeQualityScore = Math.round((totalProgress / maxProgress) * 100);
 
@@ -183,10 +197,12 @@ class ProgressDashboard {
     const maxWeightedProgress = this.tasks.reduce((sum, task) => {
       return sum + 100 * priorityWeights[task.priority];
     }, 0);
-    const productionReadiness = Math.round((weightedProgress / maxWeightedProgress) * 100);
+    const productionReadiness = Math.round(
+      (weightedProgress / maxWeightedProgress) * 100,
+    );
 
     // Estimate remaining time (rough calculation)
-    const remainingTasks = this.tasks.filter((t) => t.status !== 'completed');
+    const remainingTasks = this.tasks.filter((t) => t.status !== "completed");
     const estimatedTimePerTask = {
       critical: 4, // hours
       high: 2,
@@ -212,14 +228,14 @@ class ProgressDashboard {
   /**
    * Get tasks by category
    */
-  getTasksByCategory(category: TaskProgress['category']): TaskProgress[] {
+  getTasksByCategory(category: TaskProgress["category"]): TaskProgress[] {
     return this.tasks.filter((t) => t.category === category);
   }
 
   /**
    * Get tasks by status
    */
-  getTasksByStatus(status: TaskProgress['status']): TaskProgress[] {
+  getTasksByStatus(status: TaskProgress["status"]): TaskProgress[] {
     return this.tasks.filter((t) => t.status === status);
   }
 
@@ -229,7 +245,7 @@ class ProgressDashboard {
   getNextPriorityTasks(limit: number = 3): TaskProgress[] {
     const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     return this.tasks
-      .filter((t) => t.status !== 'completed')
+      .filter((t) => t.status !== "completed")
       .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority])
       .slice(0, limit);
   }
@@ -240,9 +256,9 @@ class ProgressDashboard {
   generateProgressReport(): {
     metrics: ProgressMetrics;
     taskSummary: {
-      byStatus: Record<TaskProgress['status'], number>;
-      byPriority: Record<TaskProgress['priority'], number>;
-      byCategory: Record<TaskProgress['category'], number>;
+      byStatus: Record<TaskProgress["status"], number>;
+      byPriority: Record<TaskProgress["priority"], number>;
+      byCategory: Record<TaskProgress["category"], number>;
     };
     nextPriorityTasks: TaskProgress[];
     recentCompletions: TaskProgress[];
@@ -257,8 +273,11 @@ class ProgressDashboard {
     const metrics = this.getProgressMetrics();
     const nextPriorityTasks = this.getNextPriorityTasks(5);
     const recentCompletions = this.tasks
-      .filter((t) => t.status === 'completed')
-      .sort((a, b) => (b.completedAt?.getTime() || 0) - (a.completedAt?.getTime() || 0))
+      .filter((t) => t.status === "completed")
+      .sort(
+        (a, b) =>
+          (b.completedAt?.getTime() || 0) - (a.completedAt?.getTime() || 0),
+      )
       .slice(0, 5);
 
     const taskSummary = {
@@ -267,26 +286,26 @@ class ProgressDashboard {
           acc[task.status] = (acc[task.status] || 0) + 1;
           return acc;
         },
-        {} as Record<TaskProgress['status'], number>
+        {} as Record<TaskProgress["status"], number>,
       ),
       byPriority: this.tasks.reduce(
         (acc, task) => {
           acc[task.priority] = (acc[task.priority] || 0) + 1;
           return acc;
         },
-        {} as Record<TaskProgress['priority'], number>
+        {} as Record<TaskProgress["priority"], number>,
       ),
       byCategory: this.tasks.reduce(
         (acc, task) => {
           acc[task.category] = (acc[task.category] || 0) + 1;
           return acc;
         },
-        {} as Record<TaskProgress['category'], number>
+        {} as Record<TaskProgress["category"], number>,
       ),
     };
 
     const projectedCompletionDate = new Date(
-      Date.now() + metrics.estimatedTimeRemaining * 60 * 60 * 1000
+      Date.now() + metrics.estimatedTimeRemaining * 60 * 60 * 1000,
     );
 
     return {
@@ -299,7 +318,9 @@ class ProgressDashboard {
         currentTime: new Date(),
         totalTimeSpent: metrics.timeSpent,
         averageTimePerTask:
-          metrics.completedTasks > 0 ? metrics.timeSpent / metrics.completedTasks : 0,
+          metrics.completedTasks > 0
+            ? metrics.timeSpent / metrics.completedTasks
+            : 0,
         projectedCompletionDate,
       },
     };
@@ -327,10 +348,10 @@ class ProgressDashboard {
 • Projected Completion: ${report.timeAnalysis.projectedCompletionDate.toLocaleDateString()}
 
 ✅ RECENT COMPLETIONS:
-${report.recentCompletions.map((task) => `• ${task.name}`).join('\n')}
+${report.recentCompletions.map((task) => `• ${task.name}`).join("\n")}
 
 🎯 NEXT PRIORITY TASKS:
-${report.nextPriorityTasks.map((task) => `• ${task.name} (${task.priority})`).join('\n')}
+${report.nextPriorityTasks.map((task) => `• ${task.name} (${task.priority})`).join("\n")}
 
 📈 PROGRESS BY CATEGORY:
 • Reliability: ${report.taskSummary.byCategory.reliability || 0} tasks

@@ -7,6 +7,8 @@ import {
   Alert,
   Image,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1630,157 +1632,166 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      {/* OB-UX-006: KeyboardAvoidingView for proper keyboard handling */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Hero Section with Body Silhouette */}
-        <HeroSection
-          image={{
-            uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
-          }}
-          overlayGradient={gradients.overlay.dark}
-          contentPosition="center"
-          minHeight={280}
-          maxHeight={420}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Body Analysis & Health Profile</Text>
-          <Text style={styles.subtitle}>
-            Comprehensive body analysis with reliable AI-powered insights
-          </Text>
+          {/* Hero Section with Body Silhouette */}
+          <HeroSection
+            image={{
+              uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
+            }}
+            overlayGradient={gradients.overlay.dark}
+            contentPosition="center"
+            minHeight={280}
+            maxHeight={420}
+          >
+            <Text style={styles.title}>Body Analysis & Health Profile</Text>
+            <Text style={styles.subtitle}>
+              Comprehensive body analysis with reliable AI-powered insights
+            </Text>
 
-          {/* Body Silhouette with Measurement Points */}
-          <View style={styles.silhouetteContainer}>
-            <BodySilhouette
-              gender={
-                personalInfoData?.gender === "other" ||
-                personalInfoData?.gender === "prefer_not_to_say"
-                  ? undefined
-                  : personalInfoData?.gender
-              } // NO DEFAULT - require from PersonalInfoTab
-              measurements={{
-                height: formData.height_cm,
-                chest: formData.chest_cm,
-                waist: formData.waist_cm,
-                hips: formData.hip_cm,
-              }}
-              showAnimations={true}
-              size={rf(280)}
-            />
+            {/* Body Silhouette with Measurement Points */}
+            <View style={styles.silhouetteContainer}>
+              <BodySilhouette
+                gender={
+                  personalInfoData?.gender === "other" ||
+                  personalInfoData?.gender === "prefer_not_to_say"
+                    ? undefined
+                    : personalInfoData?.gender
+                } // NO DEFAULT - require from PersonalInfoTab
+                measurements={{
+                  height: formData.height_cm,
+                  chest: formData.chest_cm,
+                  waist: formData.waist_cm,
+                  hips: formData.hip_cm,
+                }}
+                showAnimations={true}
+                size={rf(280)}
+              />
+            </View>
+
+            {/* Auto-save Indicator */}
+            {isAutoSaving && (
+              <View style={styles.autoSaveIndicator}>
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.success}
+                />
+                <Text style={styles.autoSaveText}>Saving...</Text>
+              </View>
+            )}
+          </HeroSection>
+
+          {/* Form Sections */}
+          <View style={styles.content}>
+            <AnimatedSection delay={0}>
+              {renderBasicMeasurementsSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={50}>
+              {renderGoalVisualizationSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={100}>
+              {renderPhotoAnalysisSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={200}>
+              {renderBodyCompositionSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={300}>
+              {renderMedicalInformationSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={400}>
+              {renderCalculatedResultsSection()}
+            </AnimatedSection>
           </View>
 
-          {/* Auto-save Indicator */}
-          {isAutoSaving && (
-            <View style={styles.autoSaveIndicator}>
-              <Ionicons
-                name="cloud-upload-outline"
-                size={rf(16)}
-                color={ResponsiveTheme.colors.success}
-              />
-              <Text style={styles.autoSaveText}>Saving...</Text>
+          {/* Validation Summary */}
+          {validationResult && (
+            <View style={styles.validationSummary}>
+              <GlassCard
+                elevation={3}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={styles.validationCard}
+              >
+                <View style={styles.validationTitleRow}>
+                  <Ionicons
+                    name={
+                      validationResult.is_valid
+                        ? "checkmark-circle"
+                        : "alert-circle"
+                    }
+                    size={rf(20)}
+                    color={
+                      validationResult.is_valid
+                        ? ResponsiveTheme.colors.secondary
+                        : ResponsiveTheme.colors.warning
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.validationTitle,
+                      validationResult.is_valid &&
+                        styles.validationTitleSuccess,
+                    ]}
+                  >
+                    {validationResult.is_valid
+                      ? "Ready to Continue"
+                      : "Please Complete"}
+                  </Text>
+                </View>
+                <Text style={styles.validationPercentage}>
+                  {validationResult.completion_percentage}% Complete
+                </Text>
+
+                {validationResult.errors.length > 0 && (
+                  <View style={styles.validationErrors}>
+                    <Text style={styles.validationErrorTitle}>Required:</Text>
+                    {validationResult.errors.map((error) => (
+                      <Text
+                        key={`error-${error.substring(0, 30)}`}
+                        style={styles.validationErrorText}
+                      >
+                        • {error}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {validationResult.warnings.length > 0 && (
+                  <View style={styles.validationWarnings}>
+                    <Text style={styles.validationWarningTitle}>
+                      Recommendations:
+                    </Text>
+                    {validationResult.warnings.map((warning) => (
+                      <Text
+                        key={`warning-${warning.substring(0, 30)}`}
+                        style={styles.validationWarningText}
+                      >
+                        • {warning}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </GlassCard>
             </View>
           )}
-        </HeroSection>
-
-        {/* Form Sections */}
-        <View style={styles.content}>
-          <AnimatedSection delay={0}>
-            {renderBasicMeasurementsSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={50}>
-            {renderGoalVisualizationSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={100}>
-            {renderPhotoAnalysisSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={200}>
-            {renderBodyCompositionSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={300}>
-            {renderMedicalInformationSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={400}>
-            {renderCalculatedResultsSection()}
-          </AnimatedSection>
-        </View>
-
-        {/* Validation Summary */}
-        {validationResult && (
-          <View style={styles.validationSummary}>
-            <GlassCard
-              elevation={3}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.validationCard}
-            >
-              <View style={styles.validationTitleRow}>
-                <Ionicons
-                  name={
-                    validationResult.is_valid
-                      ? "checkmark-circle"
-                      : "alert-circle"
-                  }
-                  size={rf(20)}
-                  color={
-                    validationResult.is_valid
-                      ? ResponsiveTheme.colors.secondary
-                      : ResponsiveTheme.colors.warning
-                  }
-                />
-                <Text
-                  style={[
-                    styles.validationTitle,
-                    validationResult.is_valid && styles.validationTitleSuccess,
-                  ]}
-                >
-                  {validationResult.is_valid
-                    ? "Ready to Continue"
-                    : "Please Complete"}
-                </Text>
-              </View>
-              <Text style={styles.validationPercentage}>
-                {validationResult.completion_percentage}% Complete
-              </Text>
-
-              {validationResult.errors.length > 0 && (
-                <View style={styles.validationErrors}>
-                  <Text style={styles.validationErrorTitle}>Required:</Text>
-                  {validationResult.errors.map((error) => (
-                    <Text
-                      key={`error-${error.substring(0, 30)}`}
-                      style={styles.validationErrorText}
-                    >
-                      • {error}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {validationResult.warnings.length > 0 && (
-                <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>
-                    Recommendations:
-                  </Text>
-                  {validationResult.warnings.map((warning) => (
-                    <Text
-                      key={`warning-${warning.substring(0, 30)}`}
-                      style={styles.validationWarningText}
-                    >
-                      • {warning}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </GlassCard>
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
@@ -1845,6 +1856,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+
+  keyboardAvoidingView: {
+    flex: 1,
   },
 
   scrollView: {

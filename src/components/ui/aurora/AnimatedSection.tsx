@@ -4,14 +4,14 @@
  * Used for onboarding tab sections to create a smooth, staggered entrance effect
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withDelay,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 // ============================================================================
 // TYPES
@@ -68,7 +68,7 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
       withSpring(1, {
         damping: 20,
         stiffness: 90,
-      })
+      }),
     );
 
     translateY.value = withDelay(
@@ -76,7 +76,7 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
       withSpring(0, {
         damping: 20,
         stiffness: 90,
-      })
+      }),
     );
   }, [delay]);
 
@@ -98,6 +98,6 @@ export const AnimatedSection: React.FC<AnimatedSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 });

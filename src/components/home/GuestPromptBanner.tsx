@@ -2,17 +2,17 @@
  * GuestPromptBanner Component
  * Compact horizontal banner for guest sign-up prompt
  * Fixes Issue #1 - Guest Sign-Up Prompt Card redesign
- * 
+ *
  * Changed from large card to compact horizontal banner (similar to Diet tab)
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rp } from '../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rp } from "../../utils/responsive";
 
 interface GuestPromptBannerProps {
   onSignUpPress: () => void;
@@ -22,20 +22,20 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
   onSignUpPress,
 }) => {
   return (
-    <GlassCard 
-      elevation={2} 
-      blurIntensity="light" 
-      padding="sm" 
+    <GlassCard
+      elevation={2}
+      blurIntensity="light"
+      padding="sm"
       borderRadius="lg"
       style={styles.banner}
     >
       <View style={styles.content}>
         {/* Icon */}
         <View style={styles.iconContainer}>
-          <Ionicons 
-            name="cloud-upload-outline" 
-            size={rf(20)} 
-            color={ResponsiveTheme.colors.primary} 
+          <Ionicons
+            name="cloud-upload-outline"
+            size={rf(20)}
+            color={ResponsiveTheme.colors.primary}
           />
         </View>
 
@@ -60,9 +60,9 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
           accessibilityRole="button"
         >
           <Text style={styles.buttonText}>Sign Up</Text>
-          <Ionicons 
-            name="arrow-forward" 
-            size={rf(14)} 
+          <Ionicons
+            name="arrow-forward"
+            size={rf(14)}
             color={ResponsiveTheme.colors.white}
           />
         </AnimatedPressable>
@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
   },
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     height: rw(36),
     borderRadius: rw(18),
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.sm,
   },
   textContent: {
@@ -107,8 +107,8 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ResponsiveTheme.colors.primary,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
@@ -123,4 +123,3 @@ const styles = StyleSheet.create({
 });
 
 export default GuestPromptBanner;
-

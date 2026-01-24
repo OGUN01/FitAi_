@@ -1,25 +1,27 @@
 /**
  * GoalsPreferencesEditModal - Edit Fitness Goals & Preferences
- * 
+ *
  * Fields:
  * - Primary Goals (multi-select)
  * - Experience Level (picker)
  * - Time Commitment (picker)
- * 
+ *
  * Uses useUserStore.updateFitnessGoalsLocal() to save changes.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { SettingsModalWrapper } from '../components/SettingsModalWrapper';
-import { GlassFormPicker } from '../components/GlassFormPicker';
-import { useUserStore } from '../../../../stores/userStore';
-import { useUser } from '../../../../hooks/useUser';
-import { ResponsiveTheme } from '../../../../utils/constants';
-import { rf } from '../../../../utils/responsive';
-import { haptics } from '../../../../utils/haptics';
-import type { FitnessGoals } from '../../../../types/user';
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
+import { GlassFormPicker } from "../components/GlassFormPicker";
+import { useUserStore } from "../../../../stores/userStore";
+import { useUser } from "../../../../hooks/useUser";
+import { useAuth } from "../../../../hooks/useAuth";
+import { ResponsiveTheme } from "../../../../utils/constants";
+import { rf } from "../../../../utils/responsive";
+import { haptics } from "../../../../utils/haptics";
+import type { FitnessGoals } from "../../../../types/user";
+import { userProfileService } from "../../../../services/userProfile";
 
 interface GoalsPreferencesEditModalProps {
   visible: boolean;
@@ -27,103 +29,103 @@ interface GoalsPreferencesEditModalProps {
 }
 
 const PRIMARY_GOALS_OPTIONS = [
-  { 
-    value: 'weight_loss', 
-    label: 'Weight Loss', 
-    icon: 'trending-down-outline' as const,
-    description: 'Burn fat and lose weight',
+  {
+    value: "weight_loss",
+    label: "Weight Loss",
+    icon: "trending-down-outline" as const,
+    description: "Burn fat and lose weight",
   },
-  { 
-    value: 'muscle_gain', 
-    label: 'Muscle Gain', 
-    icon: 'barbell-outline' as const,
-    description: 'Build lean muscle mass',
+  {
+    value: "muscle_gain",
+    label: "Muscle Gain",
+    icon: "barbell-outline" as const,
+    description: "Build lean muscle mass",
   },
-  { 
-    value: 'strength', 
-    label: 'Strength', 
-    icon: 'fitness-outline' as const,
-    description: 'Increase overall strength',
+  {
+    value: "strength",
+    label: "Strength",
+    icon: "fitness-outline" as const,
+    description: "Increase overall strength",
   },
-  { 
-    value: 'endurance', 
-    label: 'Endurance', 
-    icon: 'bicycle-outline' as const,
-    description: 'Improve stamina and cardio',
+  {
+    value: "endurance",
+    label: "Endurance",
+    icon: "bicycle-outline" as const,
+    description: "Improve stamina and cardio",
   },
-  { 
-    value: 'flexibility', 
-    label: 'Flexibility', 
-    icon: 'body-outline' as const,
-    description: 'Better mobility and stretch',
+  {
+    value: "flexibility",
+    label: "Flexibility",
+    icon: "body-outline" as const,
+    description: "Better mobility and stretch",
   },
-  { 
-    value: 'general_fitness', 
-    label: 'General Fitness', 
-    icon: 'heart-outline' as const,
-    description: 'Overall health improvement',
+  {
+    value: "general_fitness",
+    label: "General Fitness",
+    icon: "heart-outline" as const,
+    description: "Overall health improvement",
   },
 ];
 
 const EXPERIENCE_OPTIONS = [
-  { 
-    value: 'beginner', 
-    label: 'Beginner', 
-    icon: 'leaf-outline' as const,
-    description: 'New to fitness',
+  {
+    value: "beginner",
+    label: "Beginner",
+    icon: "leaf-outline" as const,
+    description: "New to fitness",
   },
-  { 
-    value: 'intermediate', 
-    label: 'Intermediate', 
-    icon: 'flame-outline' as const,
-    description: '1-3 years experience',
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    icon: "flame-outline" as const,
+    description: "1-3 years experience",
   },
-  { 
-    value: 'advanced', 
-    label: 'Advanced', 
-    icon: 'trophy-outline' as const,
-    description: '3+ years experience',
+  {
+    value: "advanced",
+    label: "Advanced",
+    icon: "trophy-outline" as const,
+    description: "3+ years experience",
   },
 ];
 
 const TIME_COMMITMENT_OPTIONS = [
-  { 
-    value: '15-30', 
-    label: '15-30 min', 
-    icon: 'time-outline' as const,
-    description: 'Quick workouts',
+  {
+    value: "15-30",
+    label: "15-30 min",
+    icon: "time-outline" as const,
+    description: "Quick workouts",
   },
-  { 
-    value: '30-45', 
-    label: '30-45 min', 
-    icon: 'timer-outline' as const,
-    description: 'Moderate sessions',
+  {
+    value: "30-45",
+    label: "30-45 min",
+    icon: "timer-outline" as const,
+    description: "Moderate sessions",
   },
-  { 
-    value: '45-60', 
-    label: '45-60 min', 
-    icon: 'hourglass-outline' as const,
-    description: 'Standard workouts',
+  {
+    value: "45-60",
+    label: "45-60 min",
+    icon: "hourglass-outline" as const,
+    description: "Standard workouts",
   },
-  { 
-    value: '60+', 
-    label: '60+ min', 
-    icon: 'stopwatch-outline' as const,
-    description: 'Extended training',
+  {
+    value: "60+",
+    label: "60+ min",
+    icon: "stopwatch-outline" as const,
+    description: "Extended training",
   },
 ];
 
-export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps> = ({
-  visible,
-  onClose,
-}) => {
+export const GoalsPreferencesEditModal: React.FC<
+  GoalsPreferencesEditModalProps
+> = ({ visible, onClose }) => {
   const { profile } = useUser();
+  const { user } = useAuth();
   const { updateFitnessGoalsLocal } = useUserStore();
 
   // Form state
   const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
-  const [experience, setExperience] = useState('');
-  const [timeCommitment, setTimeCommitment] = useState('');
+  const [experience, setExperience] = useState("");
+  const [timeCommitment, setTimeCommitment] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -131,26 +133,43 @@ export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps>
   useEffect(() => {
     if (visible && profile?.fitnessGoals) {
       const goals = profile.fitnessGoals;
-      console.log('📊 [GoalsModal] Loading fitnessGoals:', JSON.stringify(goals, null, 2));
-      
+      console.log(
+        "📊 [GoalsModal] Loading fitnessGoals:",
+        JSON.stringify(goals, null, 2),
+      );
+
       // Check both camelCase and snake_case formats
       const rawGoals = goals.primaryGoals || goals.primary_goals || [];
-      
+
       // Normalize goals: convert hyphens to underscores for consistency
       // Onboarding stores 'weight-loss' but modal expects 'weight_loss'
-      const loadedGoals = rawGoals.map((goal: string) => goal.replace(/-/g, '_'));
-      
+      const loadedGoals = rawGoals.map((goal: string) =>
+        goal.replace(/-/g, "_"),
+      );
+
       // Handle time commitment - could be '30' (old format) or '15-30' (new format)
-      const rawTime = goals.timeCommitment || goals.time_commitment || '';
+      const rawTime = goals.timeCommitment || goals.time_commitment || "";
       // If it's a plain number, convert to range
-      const loadedTime = /^\d+$/.test(rawTime) ? 
-        (parseInt(rawTime) <= 30 ? '15-30' : parseInt(rawTime) <= 45 ? '30-45' : parseInt(rawTime) <= 60 ? '45-60' : '60+') 
+      const loadedTime = /^\d+$/.test(rawTime)
+        ? parseInt(rawTime) <= 30
+          ? "15-30"
+          : parseInt(rawTime) <= 45
+            ? "30-45"
+            : parseInt(rawTime) <= 60
+              ? "45-60"
+              : "60+"
         : rawTime;
-      
-      console.log('📊 [GoalsModal] Parsed values:', { rawGoals, loadedGoals, rawTime, loadedTime, experience: goals.experience || goals.experience_level });
-      
+
+      console.log("📊 [GoalsModal] Parsed values:", {
+        rawGoals,
+        loadedGoals,
+        rawTime,
+        loadedTime,
+        experience: goals.experience || goals.experience_level,
+      });
+
       setPrimaryGoals(loadedGoals);
-      setExperience(goals.experience || goals.experience_level || '');
+      setExperience(goals.experience || goals.experience_level || "");
       setTimeCommitment(loadedTime);
       setErrors({});
     }
@@ -161,15 +180,15 @@ export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps>
     const newErrors: Record<string, string> = {};
 
     if (primaryGoals.length === 0) {
-      newErrors.primaryGoals = 'Select at least one goal';
+      newErrors.primaryGoals = "Select at least one goal";
     }
 
     if (!experience) {
-      newErrors.experience = 'Please select your experience level';
+      newErrors.experience = "Please select your experience level";
     }
 
     if (!timeCommitment) {
-      newErrors.timeCommitment = 'Please select your time commitment';
+      newErrors.timeCommitment = "Please select your time commitment";
     }
 
     setErrors(newErrors);
@@ -195,30 +214,68 @@ export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps>
         target_areas: profile?.fitnessGoals?.target_areas,
       };
 
+      // Update local state
       updateFitnessGoalsLocal(updatedGoals);
+
+      // Sync to Supabase
+      if (user?.id) {
+        try {
+          const result = await userProfileService.updateFitnessGoals(user.id, {
+            primary_goals: primaryGoals,
+            time_commitment: timeCommitment,
+            experience_level: experience,
+          });
+
+          if (!result.success) {
+            console.error(
+              "Failed to sync fitness goals to database:",
+              result.error,
+            );
+            Alert.alert(
+              "Saved Locally",
+              "Your goals were saved locally but failed to sync to the server. They will sync automatically when connection is restored.",
+            );
+          } else {
+            console.log("✅ Fitness goals synced to database");
+          }
+        } catch (syncError) {
+          console.error("Error syncing fitness goals:", syncError);
+          // Don't fail the save - local update succeeded
+        }
+      }
+
       haptics.success();
       onClose();
     } catch (error) {
-      console.error('Error saving fitness goals:', error);
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      console.error("Error saving fitness goals:", error);
+      Alert.alert("Error", "Failed to save changes. Please try again.");
     } finally {
       setIsSaving(false);
     }
-  }, [primaryGoals, experience, timeCommitment, profile, updateFitnessGoalsLocal, onClose, validate]);
+  }, [
+    primaryGoals,
+    experience,
+    timeCommitment,
+    profile,
+    updateFitnessGoalsLocal,
+    onClose,
+    validate,
+  ]);
 
   const hasChanges = useCallback(() => {
     if (!profile?.fitnessGoals) return true;
     const goals = profile.fitnessGoals;
-    
+
     const currentGoalsSet = new Set(goals.primaryGoals || []);
     const newGoalsSet = new Set(primaryGoals);
-    const goalsChanged = currentGoalsSet.size !== newGoalsSet.size || 
-      [...currentGoalsSet].some(g => !newGoalsSet.has(g));
+    const goalsChanged =
+      currentGoalsSet.size !== newGoalsSet.size ||
+      [...currentGoalsSet].some((g) => !newGoalsSet.has(g));
 
     return (
       goalsChanged ||
-      experience !== (goals.experience || goals.experience_level || '') ||
-      timeCommitment !== (goals.timeCommitment || '')
+      experience !== (goals.experience || goals.experience_level || "") ||
+      timeCommitment !== (goals.timeCommitment || "")
     );
   }, [primaryGoals, experience, timeCommitment, profile]);
 
@@ -271,8 +328,3 @@ export const GoalsPreferencesEditModal: React.FC<GoalsPreferencesEditModalProps>
 };
 
 export default GoalsPreferencesEditModal;
-
-
-
-
-

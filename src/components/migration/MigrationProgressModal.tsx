@@ -4,7 +4,7 @@
  * Provides user feedback and handles migration completion/errors
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,12 +14,12 @@ import {
   Dimensions,
   SafeAreaView,
   TouchableOpacity,
-} from 'react-native';
-import { THEME } from '../ui';
-import { migrationManager } from '../../services/migrationManager';
-import { MigrationStatus } from '../../types/profileData';
+} from "react-native";
+import { THEME } from "../ui";
+import { migrationManager } from "../../services/migrationManager";
+import { MigrationStatus } from "../../types/profileData";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface MigrationStatusModalProps {
   visible: boolean;
@@ -91,16 +91,19 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
   const startMigration = async () => {
     try {
       // Set up progress callback
-      migrationManager.setProgressCallback((progress) => setProgress(progress as unknown as MigrationStatus));
+      migrationManager.setProgressCallback((progress) =>
+        setProgress(progress as unknown as MigrationStatus),
+      );
 
       // Check if migration is needed
-      const migrationNeeded = await migrationManager.checkProfileMigrationNeeded(userId);
+      const migrationNeeded =
+        await migrationManager.checkProfileMigrationNeeded(userId);
 
       if (!migrationNeeded) {
         setProgress({
           isInProgress: false,
-          step: 'complete',
-          currentStep: 'complete',
+          step: "complete",
+          currentStep: "complete",
           progress: 100,
           totalSteps: 1,
           completedSteps: 1,
@@ -118,28 +121,28 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
       if (!result.success) {
         setProgress({
           isInProgress: false,
-          step: 'error',
-          currentStep: 'error',
+          step: "error",
+          currentStep: "error",
           progress: 0,
           totalSteps: 1,
           completedSteps: 0,
           errors: result.errors,
-          message: `Migration failed: ${result.errors.join(', ')}`,
+          message: `Migration failed: ${result.errors.join(", ")}`,
           isComplete: true,
           hasErrors: true,
         });
       }
     } catch (error) {
-      console.error('❌ Migration error:', error);
+      console.error("❌ Migration error:", error);
       setProgress({
         isInProgress: false,
-        step: 'error',
-        currentStep: 'error',
+        step: "error",
+        currentStep: "error",
         progress: 0,
         totalSteps: 1,
         completedSteps: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error'],
-        message: 'Migration failed due to an unexpected error',
+        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: "Migration failed due to an unexpected error",
         isComplete: true,
         hasErrors: true,
       });
@@ -148,56 +151,61 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
 
   const getStepIcon = (step: string) => {
     switch (step) {
-      case 'validate':
-        return '🔍';
-      case 'backup':
-        return '💾';
-      case 'conflicts':
-        return '⚖️';
-      case 'personal':
-        return '👤';
-      case 'goals':
-        return '🎯';
-      case 'diet':
-        return '🥗';
-      case 'workout':
-        return '💪';
-      case 'complete':
-        return '✅';
-      case 'error':
-        return '❌';
+      case "validate":
+        return "🔍";
+      case "backup":
+        return "💾";
+      case "conflicts":
+        return "⚖️";
+      case "personal":
+        return "👤";
+      case "goals":
+        return "🎯";
+      case "diet":
+        return "🥗";
+      case "workout":
+        return "💪";
+      case "complete":
+        return "✅";
+      case "error":
+        return "❌";
       default:
-        return '⏳';
+        return "⏳";
     }
   };
 
   const getStepTitle = (step: string) => {
     switch (step) {
-      case 'validate':
-        return 'Validating Data';
-      case 'backup':
-        return 'Creating Backup';
-      case 'conflicts':
-        return 'Checking Conflicts';
-      case 'personal':
-        return 'Personal Information';
-      case 'goals':
-        return 'Fitness Goals';
-      case 'diet':
-        return 'Diet Preferences';
-      case 'workout':
-        return 'Workout Preferences';
-      case 'complete':
-        return 'Migration Complete';
-      case 'error':
-        return 'Migration Failed';
+      case "validate":
+        return "Validating Data";
+      case "backup":
+        return "Creating Backup";
+      case "conflicts":
+        return "Checking Conflicts";
+      case "personal":
+        return "Personal Information";
+      case "goals":
+        return "Fitness Goals";
+      case "diet":
+        return "Diet Preferences";
+      case "workout":
+        return "Workout Preferences";
+      case "complete":
+        return "Migration Complete";
+      case "error":
+        return "Migration Failed";
       default:
-        return 'Processing';
+        return "Processing";
     }
   };
 
   return (
-    <Modal visible={visible} transparent={true} animationType="none" onRequestClose={onCancel}>
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="none"
+      onRequestClose={onCancel}
+    >
       <Animated.View
         style={[
           styles.overlay,
@@ -222,8 +230,12 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                 <>
                   {/* Step Icon and Title */}
                   <View style={styles.stepInfo}>
-                    <Text style={styles.stepIcon}>{getStepIcon(progress.step ?? '')}</Text>
-                    <Text style={styles.stepTitle}>{getStepTitle(progress.step ?? '')}</Text>
+                    <Text style={styles.stepIcon}>
+                      {getStepIcon(progress.step ?? "")}
+                    </Text>
+                    <Text style={styles.stepTitle}>
+                      {getStepTitle(progress.step ?? "")}
+                    </Text>
                   </View>
 
                   {/* Progress Bar */}
@@ -235,7 +247,7 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                           {
                             width: progressAnim.interpolate({
                               inputRange: [0, 1],
-                              outputRange: ['0%', '100%'],
+                              outputRange: ["0%", "100%"],
                             }),
                             backgroundColor: hasErrors
                               ? THEME.colors.error
@@ -246,7 +258,9 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                         ]}
                       />
                     </View>
-                    <Text style={styles.progressText}>{Math.round(progress.progress)}%</Text>
+                    <Text style={styles.progressText}>
+                      {Math.round(progress.progress)}%
+                    </Text>
                   </View>
 
                   {/* Status Message */}
@@ -276,16 +290,21 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
                   <Text
                     style={[
                       styles.actionButtonText,
-                      hasErrors ? styles.retryButtonText : styles.continueButtonText,
+                      hasErrors
+                        ? styles.retryButtonText
+                        : styles.continueButtonText,
                     ]}
                   >
-                    {hasErrors ? 'Try Again' : 'Continue'}
+                    {hasErrors ? "Try Again" : "Continue"}
                   </Text>
                 </TouchableOpacity>
               )}
 
               {!isComplete && onCancel && (
-                <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={onCancel}
+                >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
               )}
@@ -300,15 +319,15 @@ export const MigrationProgressModal: React.FC<MigrationStatusModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: THEME.spacing.lg,
   },
 
@@ -318,7 +337,7 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.xl,
     width: SCREEN_WIDTH - THEME.spacing.lg * 2,
     maxWidth: 400,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 8,
@@ -329,7 +348,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: THEME.spacing.xl,
   },
 
@@ -338,13 +357,13 @@ const styles = StyleSheet.create({
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   subtitle: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
 
@@ -353,7 +372,7 @@ const styles = StyleSheet.create({
   },
 
   stepInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -366,7 +385,7 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   progressBarContainer: {
@@ -377,12 +396,12 @@ const styles = StyleSheet.create({
     height: 8,
     backgroundColor: THEME.colors.border,
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: THEME.spacing.sm,
   },
 
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 4,
   },
 
@@ -390,13 +409,13 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.medium,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   statusMessage: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
 
@@ -416,7 +435,7 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.lg,
     borderRadius: THEME.borderRadius.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   continueButton: {
@@ -442,7 +461,7 @@ const styles = StyleSheet.create({
 
   cancelButton: {
     paddingVertical: THEME.spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   cancelButtonText: {

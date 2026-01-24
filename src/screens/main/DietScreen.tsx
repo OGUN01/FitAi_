@@ -434,6 +434,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   // Subscribe to completion events for real-time updates
   useEffect(() => {
     console.log("[EVENT] DietScreen: Setting up completion event listener");
+    let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const unsubscribe = completionTrackingService.subscribe((event) => {
       console.log("[EVENT] DietScreen: Received completion event:", event);
@@ -445,7 +446,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         );
 
         // Force refresh the UI to show updated completion status
-        setTimeout(() => {
+        refreshTimeout = setTimeout(() => {
           console.log(
             "[REFRESH] DietScreen: Triggering refresh due to meal completion event",
           );
@@ -456,6 +457,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
     return () => {
       console.log("[EVENT] DietScreen: Cleaning up completion event listener");
+      if (refreshTimeout) clearTimeout(refreshTimeout);
       unsubscribe();
     };
   }, [forceRefresh]);
@@ -483,10 +485,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
         });
       }
     }
+    // No cleanup needed - forceRefresh is synchronous
   }, [route?.params, navigation, forceRefresh]);
 
   // Custom focus effect - refresh data when screen becomes active
   useEffect(() => {
+    let logTimeout: ReturnType<typeof setTimeout> | null = null;
+
     if (isActive) {
       console.log(
         "[REFRESH] DietScreen became active - refreshing meal data...",
@@ -502,7 +507,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           console.log("[SUCCESS] Meal data refreshed on focus");
 
           // Log meal progress after refresh
-          setTimeout(() => {
+          logTimeout = setTimeout(() => {
             const currentProgress = useNutritionStore.getState().mealProgress;
             console.log(
               "[REFRESH] DietScreen: Meal progress after refresh:",
@@ -516,6 +521,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
       refreshMealData();
     }
+
+    return () => {
+      if (logTimeout) clearTimeout(logTimeout);
+    };
   }, [isActive, loadData]);
 
   // Micro-interaction: Calorie ring and macro count-up animation on mount
@@ -605,8 +614,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     ]).start();
   }, []);
 
-  // Micro-interaction: Water wave continuous animation
+  // PERF-003 FIX: Water wave continuous animation - only when active
   useEffect(() => {
+    if (!isActive) return; // Don't run when screen not visible
+
     const waveAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(waterWaveOffset, {
@@ -623,10 +634,12 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     );
     waveAnimation.start();
     return () => waveAnimation.stop();
-  }, []);
+  }, [isActive]); // Re-run when isActive changes
 
-  // Micro-interaction: FAB scale pulse animation
+  // PERF-003 FIX: FAB scale pulse animation - only when active
   useEffect(() => {
+    if (!isActive) return; // Don't run when screen not visible
+
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(fabScale, {
@@ -643,7 +656,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     );
     pulseAnimation.start();
     return () => pulseAnimation.stop();
-  }, []);
+  }, [isActive]); // Re-run when isActive changes
 
   // Load existing meal plan on component mount
   useEffect(() => {
@@ -840,12 +853,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
       setIsGeneratingMeal(true);
       setAiError(null);
 
-      // Show processing alert
-      Alert.alert(
-        "AI Food Recognition",
-        `Analyzing your ${selectedMealType} with our advanced AI...`,
-        [{ text: "Processing...", style: "cancel" }],
-      );
+      // Note: isGeneratingMeal state controls the loading UI instead of showing blocking alert
+      // This allows users to see the loading indicator and the UI remains responsive
 
       // Analyze food with the selected meal type (Workers backend handles API keys)
       console.log("[DEBUG] Calling food recognition service...");
@@ -1077,12 +1086,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowCamera(false);
 
     try {
-      // Show processing alert
-      Alert.alert(
-        "Scanning Product",
-        "Analyzing product information and health assessment...",
-        [{ text: "Processing...", style: "cancel" }],
-      );
+      // Note: Using state-based loading UI instead of blocking Alert for better UX
+      // isProcessingBarcode state controls the loading indicator
 
       // Lookup product using barcode service
       const lookupResult = await barcodeService.lookupProduct(barcode);
@@ -1215,15 +1220,32 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setShowMealTypeSelector(true);
   };
 
+  // Ref to track camera timeout for cleanup
+  const cameraTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleMealTypeSelected = (mealType: MealType) => {
     setSelectedMealType(mealType);
     setShowMealTypeSelector(false);
 
+    // Clear any existing timeout
+    if (cameraTimeoutRef.current) {
+      clearTimeout(cameraTimeoutRef.current);
+    }
+
     // Small delay for smooth transition
-    setTimeout(() => {
+    cameraTimeoutRef.current = setTimeout(() => {
       setShowCamera(true);
     }, 300);
   };
+
+  // Cleanup camera timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraTimeoutRef.current) {
+        clearTimeout(cameraTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Enhanced AI Meal Generation Function with comprehensive options
   const generateAIMeal = async (mealType: string, options?: any) => {

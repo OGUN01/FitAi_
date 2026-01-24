@@ -1,6 +1,6 @@
 /**
  * ProfileCompletionCard - Shows profile completion progress
- * 
+ *
  * Features:
  * - Circular progress indicator
  * - Completion percentage
@@ -8,17 +8,17 @@
  * - Encouraging message based on completion
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeInRight } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle } from 'react-native-svg';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
-import { haptics } from '../../../utils/haptics';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeInRight } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Circle } from "react-native-svg";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
+import { haptics } from "../../../utils/haptics";
 
 interface ProfileSection {
   id: string;
@@ -44,14 +44,42 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
   onSectionPress,
   animationDelay = 0,
 }) => {
-  const sections: ProfileSection[] = useMemo(() => [
-    { id: 'personal', name: 'Personal Info', icon: 'person-outline', isComplete: personalInfoComplete },
-    { id: 'goals', name: 'Fitness Goals', icon: 'flag-outline', isComplete: goalsComplete },
-    { id: 'measurements', name: 'Body Stats', icon: 'body-outline', isComplete: measurementsComplete },
-    { id: 'preferences', name: 'Preferences', icon: 'settings-outline', isComplete: preferencesComplete },
-  ], [personalInfoComplete, goalsComplete, measurementsComplete, preferencesComplete]);
+  const sections: ProfileSection[] = useMemo(
+    () => [
+      {
+        id: "personal",
+        name: "Personal Info",
+        icon: "person-outline",
+        isComplete: personalInfoComplete,
+      },
+      {
+        id: "goals",
+        name: "Fitness Goals",
+        icon: "flag-outline",
+        isComplete: goalsComplete,
+      },
+      {
+        id: "measurements",
+        name: "Body Stats",
+        icon: "body-outline",
+        isComplete: measurementsComplete,
+      },
+      {
+        id: "preferences",
+        name: "Preferences",
+        icon: "settings-outline",
+        isComplete: preferencesComplete,
+      },
+    ],
+    [
+      personalInfoComplete,
+      goalsComplete,
+      measurementsComplete,
+      preferencesComplete,
+    ],
+  );
 
-  const completedCount = sections.filter(s => s.isComplete).length;
+  const completedCount = sections.filter((s) => s.isComplete).length;
   const totalCount = sections.length;
   const percentage = Math.round((completedCount / totalCount) * 100);
 
@@ -71,27 +99,27 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
   };
 
   const getColor = () => {
-    if (percentage === 100) return '#4CAF50';
-    if (percentage >= 75) return '#8BC34A';
-    if (percentage >= 50) return '#FFC107';
-    if (percentage >= 25) return '#FF9800';
-    return '#FF6B6B';
+    if (percentage === 100) return "#4CAF50";
+    if (percentage >= 75) return "#8BC34A";
+    if (percentage >= 50) return "#FFC107";
+    if (percentage >= 25) return "#FF9800";
+    return "#FF6B6B";
   };
 
-  const incompleteSections = sections.filter(s => !s.isComplete);
+  const incompleteSections = sections.filter((s) => !s.isComplete);
 
   // Don't show if profile is 100% complete
   if (percentage === 100) return null;
 
   return (
-    <Animated.View 
+    <Animated.View
       entering={FadeInRight.delay(animationDelay).duration(400)}
       style={styles.container}
     >
-      <GlassCard 
-        elevation={2} 
-        padding="md" 
-        blurIntensity="light" 
+      <GlassCard
+        elevation={2}
+        padding="md"
+        blurIntensity="light"
         borderRadius="lg"
         style={styles.card}
       >
@@ -122,7 +150,9 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
               />
             </Svg>
             <View style={styles.percentageContainer}>
-              <Text style={[styles.percentageText, { color: getColor() }]}>{percentage}</Text>
+              <Text style={[styles.percentageText, { color: getColor() }]}>
+                {percentage}
+              </Text>
               <Text style={styles.percentageSymbol}>%</Text>
             </View>
           </View>
@@ -132,7 +162,12 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
             <Text style={styles.title}>Complete Your Profile</Text>
             <Text style={styles.message}>{getMessage()}</Text>
             <View style={styles.completionBar}>
-              <View style={[styles.completionProgress, { width: `${percentage}%`, backgroundColor: getColor() }]} />
+              <View
+                style={[
+                  styles.completionProgress,
+                  { width: `${percentage}%`, backgroundColor: getColor() },
+                ]}
+              />
             </View>
             <Text style={styles.completionText}>
               {completedCount} of {totalCount} sections complete
@@ -155,10 +190,18 @@ export const ProfileCompletionCard: React.FC<ProfileCompletionCardProps> = ({
                 style={styles.sectionButton}
               >
                 <View style={styles.sectionIcon}>
-                  <Ionicons name={section.icon} size={rf(14)} color={getColor()} />
+                  <Ionicons
+                    name={section.icon}
+                    size={rf(14)}
+                    color={getColor()}
+                  />
                 </View>
                 <Text style={styles.sectionName}>{section.name}</Text>
-                <Ionicons name="add-circle-outline" size={rf(16)} color={getColor()} />
+                <Ionicons
+                  name="add-circle-outline"
+                  size={rf(16)}
+                  color={getColor()}
+                />
               </AnimatedPressable>
             ))}
           </View>
@@ -174,31 +217,31 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: 'rgba(255, 152, 0, 0.2)',
+    borderColor: "rgba(255, 152, 0, 0.2)",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   progressContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
   percentageContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "baseline",
   },
   percentageText: {
     fontSize: rf(20),
-    fontWeight: '700',
+    fontWeight: "700",
   },
   percentageSymbol: {
     fontSize: rf(10),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
   },
   infoContainer: {
@@ -207,8 +250,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(15),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: 4,
   },
   message: {
@@ -218,13 +261,13 @@ const styles = StyleSheet.create({
   },
   completionBar: {
     height: rh(4),
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: rh(2),
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: 4,
   },
   completionProgress: {
-    height: '100%',
+    height: "100%",
     borderRadius: rh(2),
   },
   completionText: {
@@ -235,15 +278,15 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.08)',
-    flexDirection: 'row',
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.sm,
   },
   sectionButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -253,37 +296,16 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rw(24),
     borderRadius: rw(12),
-    backgroundColor: 'rgba(255, 152, 0, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 152, 0, 0.15)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   sectionName: {
     flex: 1,
     fontSize: rf(11),
-    fontWeight: '500',
-    color: '#fff',
+    fontWeight: "500",
+    color: "#fff",
   },
 });
 
 export default ProfileCompletionCard;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

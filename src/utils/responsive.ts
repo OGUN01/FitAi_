@@ -1,4 +1,4 @@
-import { Dimensions, PixelRatio, Platform } from 'react-native';
+import { Dimensions, PixelRatio, Platform } from "react-native";
 
 // Base dimensions (iPhone 14 Pro as reference)
 const baseWidth = 393;
@@ -7,7 +7,8 @@ const baseHeight = 852;
 // SAFE: Lazy dimension calculation - only called when functions are used
 const getDimensions = () => {
   try {
-    const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+    const { width: screenWidth, height: screenHeight } =
+      Dimensions.get("window");
     const widthScale = screenWidth / baseWidth;
     const heightScale = screenHeight / baseHeight;
     const scale = Math.min(widthScale, heightScale);
@@ -23,7 +24,7 @@ const getDimensions = () => {
     };
   } catch (error) {
     // Fallback for when Dimensions is not available (during module loading)
-    console.warn('Dimensions not available, using fallback values:', error);
+    console.warn("Dimensions not available, using fallback values:", error);
     return {
       screenWidth: 393,
       screenHeight: 852,
@@ -89,9 +90,9 @@ export const getDeviceInfo = () => {
     isMediumDevice: screenWidth >= 375 && screenWidth < 414,
     isLargeDevice: screenWidth >= 414,
     isTablet: screenWidth >= 768,
-    hasNotch: Platform.OS === 'ios' && screenHeight >= 812,
-    isAndroid: Platform.OS === 'android',
-    isIOS: Platform.OS === 'ios',
+    hasNotch: Platform.OS === "ios" && screenHeight >= 812,
+    isAndroid: Platform.OS === "android",
+    isIOS: Platform.OS === "ios",
   };
 };
 
@@ -110,7 +111,7 @@ export const rbr = (radius: number): number => {
  * Get status bar height (for Android)
  */
 export const getStatusBarHeight = (): number => {
-  if (Platform.OS === 'android') {
+  if (Platform.OS === "android") {
     return 0; // Will be handled by SafeAreaView
   }
   return 0;
@@ -137,7 +138,9 @@ export const rlh = (fontSize: number, multiplier: number = 1.5): number => {
 /**
  * Create responsive styles object
  */
-export const createResponsiveStyles = <T extends Record<string, any>>(styles: T): T => {
+export const createResponsiveStyles = <T extends Record<string, any>>(
+  styles: T,
+): T => {
   const responsiveStyles: any = {};
 
   for (const key in styles) {
@@ -148,45 +151,45 @@ export const createResponsiveStyles = <T extends Record<string, any>>(styles: T)
       const value = style[prop];
 
       // Handle numeric values for specific properties
-      if (typeof value === 'number') {
+      if (typeof value === "number") {
         switch (prop) {
-          case 'fontSize':
+          case "fontSize":
             responsiveStyle[prop] = rf(value);
             break;
-          case 'lineHeight':
+          case "lineHeight":
             responsiveStyle[prop] = rlh(value);
             break;
-          case 'width':
-          case 'maxWidth':
-          case 'minWidth':
+          case "width":
+          case "maxWidth":
+          case "minWidth":
             responsiveStyle[prop] = rw(value);
             break;
-          case 'height':
-          case 'maxHeight':
-          case 'minHeight':
+          case "height":
+          case "maxHeight":
+          case "minHeight":
             responsiveStyle[prop] = rh(value);
             break;
-          case 'padding':
-          case 'paddingTop':
-          case 'paddingBottom':
-          case 'paddingLeft':
-          case 'paddingRight':
-          case 'paddingHorizontal':
-          case 'paddingVertical':
-          case 'margin':
-          case 'marginTop':
-          case 'marginBottom':
-          case 'marginLeft':
-          case 'marginRight':
-          case 'marginHorizontal':
-          case 'marginVertical':
+          case "padding":
+          case "paddingTop":
+          case "paddingBottom":
+          case "paddingLeft":
+          case "paddingRight":
+          case "paddingHorizontal":
+          case "paddingVertical":
+          case "margin":
+          case "marginTop":
+          case "marginBottom":
+          case "marginLeft":
+          case "marginRight":
+          case "marginHorizontal":
+          case "marginVertical":
             responsiveStyle[prop] = rp(value);
             break;
-          case 'borderRadius':
-          case 'borderTopLeftRadius':
-          case 'borderTopRightRadius':
-          case 'borderBottomLeftRadius':
-          case 'borderBottomRightRadius':
+          case "borderRadius":
+          case "borderTopLeftRadius":
+          case "borderTopRightRadius":
+          case "borderBottomLeftRadius":
+          case "borderBottomRightRadius":
             responsiveStyle[prop] = rbr(value);
             break;
           default:
@@ -224,12 +227,12 @@ export const dimensions = getDimensions_Export();
  * md: 414-767px (large phones)
  * lg: >= 768px (tablets)
  */
-export const getBreakpoint = (): 'xs' | 'sm' | 'md' | 'lg' => {
+export const getBreakpoint = (): "xs" | "sm" | "md" | "lg" => {
   const { screenWidth } = getDimensions();
-  if (screenWidth < 360) return 'xs';
-  if (screenWidth < 414) return 'sm';
-  if (screenWidth < 768) return 'md';
-  return 'lg';
+  if (screenWidth < 360) return "xs";
+  if (screenWidth < 414) return "sm";
+  if (screenWidth < 768) return "md";
+  return "lg";
 };
 
 /**
@@ -242,24 +245,24 @@ export const getBreakpoint = (): 'xs' | 'sm' | 'md' | 'lg' => {
 export const getResponsiveCardWidth = (
   columns: number = 2,
   gap: number = 16, // Default gap
-  containerPadding: number = 48 // Default container padding
+  containerPadding: number = 48, // Default container padding
 ): string => {
   const { screenWidth } = getDimensions();
   const breakpoint = getBreakpoint();
-  
+
   // Adjust columns based on breakpoint
   let adjustedColumns = columns;
-  if (breakpoint === 'xs' && columns > 2) {
+  if (breakpoint === "xs" && columns > 2) {
     adjustedColumns = 2; // Force 2 columns max on very small screens
-  } else if (breakpoint === 'lg' && columns === 2) {
+  } else if (breakpoint === "lg" && columns === 2) {
     adjustedColumns = 3; // Use 3 columns on tablets for 2-column layouts
   }
-  
+
   const totalGaps = (adjustedColumns - 1) * gap;
   const availableWidth = screenWidth - containerPadding - totalGaps;
   const cardWidth = availableWidth / adjustedColumns;
   const percentage = (cardWidth / screenWidth) * 100;
-  
+
   return `${Math.floor(percentage)}%`;
 };
 
@@ -269,13 +272,13 @@ export const getResponsiveCardWidth = (
  */
 export const getResponsiveColumns = (defaultColumns: number = 2): number => {
   const breakpoint = getBreakpoint();
-  
-  if (breakpoint === 'xs') {
+
+  if (breakpoint === "xs") {
     return Math.min(defaultColumns, 2); // Max 2 columns on very small screens
-  } else if (breakpoint === 'lg') {
+  } else if (breakpoint === "lg") {
     return Math.min(defaultColumns + 1, 4); // Add 1 column on tablets, max 4
   }
-  
+
   return defaultColumns;
 };
 
@@ -285,13 +288,13 @@ export const getResponsiveColumns = (defaultColumns: number = 2): number => {
  */
 export const getResponsiveGap = (baseGap: number): number => {
   const breakpoint = getBreakpoint();
-  
-  if (breakpoint === 'xs') {
+
+  if (breakpoint === "xs") {
     return Math.max(4, baseGap * 0.75); // Reduce gap on small screens
-  } else if (breakpoint === 'lg') {
+  } else if (breakpoint === "lg") {
     return baseGap * 1.25; // Increase gap on tablets
   }
-  
+
   return baseGap;
 };
 
@@ -300,7 +303,7 @@ export const getResponsiveGap = (baseGap: number): number => {
  */
 export const isSmallDevice = (): boolean => {
   const breakpoint = getBreakpoint();
-  return breakpoint === 'xs' || breakpoint === 'sm';
+  return breakpoint === "xs" || breakpoint === "sm";
 };
 
 /**
@@ -308,5 +311,5 @@ export const isSmallDevice = (): boolean => {
  */
 export const isLargeDevice = (): boolean => {
   const breakpoint = getBreakpoint();
-  return breakpoint === 'lg';
+  return breakpoint === "lg";
 };

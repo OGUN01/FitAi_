@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import {
   TouchableOpacity,
   Text,
@@ -7,24 +7,24 @@ import {
   TextStyle,
   ActivityIndicator,
   View,
-} from 'react-native';
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withSequence,
   withTiming,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: "primary" | "secondary" | "outline" | "ghost";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   loading?: boolean;
   style?: ViewStyle;
@@ -36,8 +36,8 @@ interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   disabled = false,
   loading = false,
   style,
@@ -53,10 +53,10 @@ export const Button: React.FC<ButtonProps> = ({
       pulseAnimation.value = withRepeat(
         withSequence(
           withTiming(1.05, { duration: 600 }),
-          withTiming(1, { duration: 600 })
+          withTiming(1, { duration: 600 }),
         ),
         -1,
-        false
+        false,
       );
     } else {
       pulseAnimation.value = withTiming(1, { duration: 200 });
@@ -74,13 +74,13 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     switch (variant) {
-      case 'primary':
+      case "primary":
         return { ...baseStyle, ...styles.primary };
-      case 'secondary':
+      case "secondary":
         return { ...baseStyle, ...styles.secondary };
-      case 'outline':
+      case "outline":
         return { ...baseStyle, ...styles.outline };
-      case 'ghost':
+      case "ghost":
         return { ...baseStyle, ...styles.ghost };
       default:
         return { ...baseStyle, ...styles.primary };
@@ -94,13 +94,13 @@ export const Button: React.FC<ButtonProps> = ({
     };
 
     switch (variant) {
-      case 'primary':
+      case "primary":
         return { ...baseTextStyle, ...styles.primaryText };
-      case 'secondary':
+      case "secondary":
         return { ...baseTextStyle, ...styles.secondaryText };
-      case 'outline':
+      case "outline":
         return { ...baseTextStyle, ...styles.outlineText };
-      case 'ghost':
+      case "ghost":
         return { ...baseTextStyle, ...styles.ghostText };
       default:
         return { ...baseTextStyle, ...styles.primaryText };
@@ -112,25 +112,36 @@ export const Button: React.FC<ButtonProps> = ({
   const buttonContent = loading ? (
     <ActivityIndicator
       color={
-        variant === 'outline' || variant === 'ghost' ? THEME.colors.primary : THEME.colors.white
+        variant === "outline" || variant === "ghost"
+          ? THEME.colors.primary
+          : THEME.colors.white
       }
       size="small"
     />
   ) : (
-    <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>{title}</Text>
+    <Text style={[getTextStyle(), disabled && styles.disabledText, textStyle]}>
+      {title}
+    </Text>
   );
 
   // Use gradient for primary variant
-  if (variant === 'primary' && !disabled) {
+  if (variant === "primary" && !disabled) {
     return (
       <AnimatedTouchable
-        style={[styles.base, styles[size], fullWidth && styles.fullWidth, disabled && styles.disabled, style, animatedStyle]}
+        style={[
+          styles.base,
+          styles[size],
+          fullWidth && styles.fullWidth,
+          disabled && styles.disabled,
+          style,
+          animatedStyle,
+        ]}
         onPress={onPress}
         disabled={disabled || loading}
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={['#6366F1', '#8B5CF6']}
+          colors={["#6366F1", "#8B5CF6"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradientContainer, styles[size]]}
@@ -143,7 +154,12 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <AnimatedTouchable
-      style={[getButtonStyle(), disabled && styles.disabled, style, animatedStyle]}
+      style={[
+        getButtonStyle(),
+        disabled && styles.disabled,
+        style,
+        animatedStyle,
+      ]}
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
@@ -156,16 +172,16 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   base: {
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    overflow: 'hidden',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    overflow: "hidden",
   },
 
   gradientContainer: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
@@ -207,7 +223,7 @@ const styles = StyleSheet.create({
   // Text styles
   baseText: {
     fontWeight: ResponsiveTheme.fontWeight.semibold,
-    textAlign: 'center',
+    textAlign: "center",
   },
   smText: {
     fontSize: ResponsiveTheme.fontSize.sm,
@@ -243,6 +259,6 @@ const styles = StyleSheet.create({
 
   // Layout
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
 });

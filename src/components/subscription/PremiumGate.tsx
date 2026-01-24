@@ -1,10 +1,13 @@
 // Premium Feature Gate Component
 // Conditionally render content based on subscription status
 
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { useSubscriptionStore, subscriptionHelpers } from '../../stores/subscriptionStore';
-import PremiumBadge from './PremiumBadge';
+import React from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import {
+  useSubscriptionStore,
+  subscriptionHelpers,
+} from "../../stores/subscriptionStore";
+import PremiumBadge from "./PremiumBadge";
 
 interface PremiumGateProps {
   feature: string;
@@ -20,8 +23,8 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   children,
   fallback,
   showUpgrade = true,
-  upgradeText = 'Upgrade to Premium',
-  upgradeDescription = 'This feature requires a premium subscription'
+  upgradeText = "Upgrade to Premium",
+  upgradeDescription = "This feature requires a premium subscription",
 }) => {
   const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
 
@@ -42,25 +45,23 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
           <Text style={styles.iconText}>👑</Text>
         </View>
 
-        <Text style={styles.title}>
-          {upgradeText}
-        </Text>
+        <Text style={styles.title}>{upgradeText}</Text>
 
-        <Text style={styles.description}>
-          {upgradeDescription}
-        </Text>
+        <Text style={styles.description}>{upgradeDescription}</Text>
 
         <Pressable
           onPress={() => showPaywallModal(feature)}
           style={styles.upgradeButton}
         >
-          <Text style={styles.upgradeButtonText}>
-            Upgrade Now
-          </Text>
+          <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
         </Pressable>
 
         <View style={styles.badgeContainer}>
-          <PremiumBadge size="small" variant="inline" onPress={() => showPaywallModal(feature)} />
+          <PremiumBadge
+            size="small"
+            variant="inline"
+            onPress={() => showPaywallModal(feature)}
+          />
         </View>
       </View>
     );
@@ -71,14 +72,14 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     borderRadius: 16,
     padding: 24,
     margin: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   iconContainer: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: "#FEF3C7",
     borderRadius: 9999,
     padding: 12,
     marginBottom: 16,
@@ -88,28 +89,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: "700",
+    color: "#111827",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   description: {
     fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
+    color: "#6B7280",
+    textAlign: "center",
     marginBottom: 24,
   },
   upgradeButton: {
-    backgroundColor: '#F97316',
+    backgroundColor: "#F97316",
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 24,
     minWidth: 120,
-    alignItems: 'center',
+    alignItems: "center",
   },
   upgradeButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    color: "#FFFFFF",
+    fontWeight: "700",
     fontSize: 16,
   },
   badgeContainer: {
@@ -117,9 +118,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export const withPremiumGate = (feature: string, upgradeProps?: Partial<PremiumGateProps>) => {
+export const withPremiumGate = (
+  feature: string,
+  upgradeProps?: Partial<PremiumGateProps>,
+) => {
   return function PremiumWrapped<T extends {}>(
-    Component: React.ComponentType<T>
+    Component: React.ComponentType<T>,
   ): React.ComponentType<T> {
     return function PremiumGatedComponent(props: T) {
       return (
@@ -138,7 +142,9 @@ export const usePremiumFeature = (feature: string) => {
 
   const requireAccess = (showPaywall = true, trackUsage = true) => {
     if (trackUsage) {
-      subscriptionHelpers.trackPremiumFeatureUsage(feature, { attempted: true });
+      subscriptionHelpers.trackPremiumFeatureUsage(feature, {
+        attempted: true,
+      });
     }
 
     const access = subscriptionHelpers.requiresPremium(feature, showPaywall);

@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Svg, { Circle, Path, G, Text as SvgText, Rect } from 'react-native-svg';
-import { rf, rp, rw, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Svg, { Circle, Path, G, Text as SvgText, Rect } from "react-native-svg";
+import { rf, rp, rw, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface CircularClockProps {
   sleepTime: string; // Format: "HH:MM" (24-hour)
@@ -27,8 +27,8 @@ export const CircularClock: React.FC<CircularClockProps> = ({
 
   // Convert time string to minutes from midnight - with NaN protection
   const timeToMinutes = (time: string): number => {
-    if (!time || typeof time !== 'string') return 0;
-    const parts = time.split(':').map(Number);
+    if (!time || typeof time !== "string") return 0;
+    const parts = time.split(":").map(Number);
     const hours = Number.isFinite(parts[0]) ? parts[0] : 0;
     const minutes = Number.isFinite(parts[1]) ? parts[1] : 0;
     return hours * 60 + minutes;
@@ -40,7 +40,12 @@ export const CircularClock: React.FC<CircularClockProps> = ({
   };
 
   // Convert angle to SVG path coordinates - round to prevent precision errors
-  const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
+  const polarToCartesian = (
+    centerX: number,
+    centerY: number,
+    radius: number,
+    angleInDegrees: number,
+  ) => {
     const angleInRadians = (angleInDegrees * Math.PI) / 180.0;
     return {
       x: Math.round(centerX + radius * Math.cos(angleInRadians)),
@@ -49,7 +54,11 @@ export const CircularClock: React.FC<CircularClockProps> = ({
   };
 
   // Create arc path for sleep duration
-  const createArcPath = (startAngle: number, endAngle: number, radius: number) => {
+  const createArcPath = (
+    startAngle: number,
+    endAngle: number,
+    radius: number,
+  ) => {
     let adjustedEndAngle = endAngle;
 
     // Handle overnight sleep (crosses midnight)
@@ -60,12 +69,21 @@ export const CircularClock: React.FC<CircularClockProps> = ({
     const start = polarToCartesian(centerX, centerY, radius, startAngle);
     const end = polarToCartesian(centerX, centerY, radius, adjustedEndAngle);
 
-    const largeArcFlag = adjustedEndAngle - startAngle <= 180 ? '0' : '1';
+    const largeArcFlag = adjustedEndAngle - startAngle <= 180 ? "0" : "1";
 
     return [
-      'M', start.x, start.y,
-      'A', radius, radius, 0, largeArcFlag, 1, end.x, end.y,
-    ].join(' ');
+      "M",
+      start.x,
+      start.y,
+      "A",
+      radius,
+      radius,
+      0,
+      largeArcFlag,
+      1,
+      end.x,
+      end.y,
+    ].join(" ");
   };
 
   const sleepMinutes = timeToMinutes(sleepTime);
@@ -86,10 +104,10 @@ export const CircularClock: React.FC<CircularClockProps> = ({
 
   // Hour markers positioned outside the ring
   const hourMarkers = [
-    { hour: 0, label: '12AM' },
-    { hour: 6, label: '6AM' },
-    { hour: 12, label: '12PM' },
-    { hour: 18, label: '6PM' },
+    { hour: 0, label: "12AM" },
+    { hour: 6, label: "6AM" },
+    { hour: 12, label: "12PM" },
+    { hour: 18, label: "6PM" },
   ].map(({ hour, label }) => {
     const angle = minutesToAngle(hour * 60);
     const pos = polarToCartesian(centerX, centerY, clockRadius + 25, angle);
@@ -98,10 +116,10 @@ export const CircularClock: React.FC<CircularClockProps> = ({
 
   // Format time for display (convert 24h to 12h with AM/PM)
   const formatTime = (time: string): string => {
-    const [hours, minutes] = time.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
+    const [hours, minutes] = time.split(":").map(Number);
+    const period = hours >= 12 ? "PM" : "AM";
     const displayHours = hours % 12 || 12;
-    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
   };
 
   return (
@@ -181,7 +199,12 @@ export const CircularClock: React.FC<CircularClockProps> = ({
       {/* Legend - improved design */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.primary }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: ResponsiveTheme.colors.primary },
+            ]}
+          />
           <View style={styles.legendTextContainer}>
             <Text style={styles.legendTime}>{formatTime(sleepTime)}</Text>
             <Text style={styles.legendLabel}>Bedtime</Text>
@@ -189,7 +212,12 @@ export const CircularClock: React.FC<CircularClockProps> = ({
         </View>
         <View style={styles.legendDivider} />
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: ResponsiveTheme.colors.warning }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: ResponsiveTheme.colors.warning },
+            ]}
+          />
           <View style={styles.legendTextContainer}>
             <Text style={styles.legendTime}>{formatTime(wakeTime)}</Text>
             <Text style={styles.legendLabel}>Wake up</Text>
@@ -202,13 +230,13 @@ export const CircularClock: React.FC<CircularClockProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: ResponsiveTheme.spacing.lg,
     backgroundColor: `${ResponsiveTheme.colors.surface}30`,
     borderRadius: ResponsiveTheme.borderRadius.lg,
@@ -217,8 +245,8 @@ const styles = StyleSheet.create({
   },
 
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
@@ -230,7 +258,7 @@ const styles = StyleSheet.create({
   },
 
   legendTextContainer: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
 
   legendTime: {

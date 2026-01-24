@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   Animated,
   Vibration,
   Dimensions,
-} from 'react-native';
-import { THEME } from '../../utils/constants';
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 interface MenuItem {
   id: string;
@@ -98,7 +98,8 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 
     // Keep menu within screen bounds
     if (adjustedX < 10) adjustedX = 10;
-    if (adjustedX + menuWidth > screenWidth - 10) adjustedX = screenWidth - menuWidth - 10;
+    if (adjustedX + menuWidth > screenWidth - 10)
+      adjustedX = screenWidth - menuWidth - 10;
     if (adjustedY < 50) adjustedY = y + 10;
 
     setMenuPosition({ x: adjustedX, y: adjustedY });
@@ -168,8 +169,17 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
         {children}
       </Animated.View>
 
-      <Modal visible={isMenuVisible} transparent animationType="none" onRequestClose={hideMenu}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={hideMenu}>
+      <Modal
+        visible={isMenuVisible}
+        transparent
+        animationType="none"
+        onRequestClose={hideMenu}
+      >
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={hideMenu}
+        >
           <Animated.View
             style={[
               styles.menu,
@@ -215,11 +225,11 @@ export const LongPressMenu: React.FC<LongPressMenuProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
   },
 
   menu: {
-    position: 'absolute',
+    position: "absolute",
     backgroundColor: THEME.colors.backgroundTertiary,
     borderRadius: THEME.borderRadius.lg,
     paddingVertical: THEME.spacing.xs,
@@ -228,8 +238,8 @@ const styles = StyleSheet.create({
   },
 
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     minHeight: 50,
@@ -253,12 +263,12 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.lg,
     marginRight: THEME.spacing.sm,
     width: 24,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   menuLabel: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
     flex: 1,
   },

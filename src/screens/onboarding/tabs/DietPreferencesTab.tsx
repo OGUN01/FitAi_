@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -1599,130 +1601,142 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
         onClose={hideInfoTooltip}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      {/* OB-UX-006: KeyboardAvoidingView for proper keyboard handling */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Hero Section with Background Image */}
-        <HeroSection
-          image={{
-            uri: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
-          }}
-          overlayGradient={gradients.overlay.dark}
-          contentPosition="center"
-          minHeight={160}
-          maxHeight={240}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title} numberOfLines={1}>
-            What are your diet preferences?
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
-            Help us personalize your meal recommendations and nutrition plan
-          </Text>
-
-          {/* Auto-save Indicator */}
-          {isAutoSaving && (
-            <View style={styles.autoSaveIndicator}>
-              <Ionicons
-                name="cloud-upload-outline"
-                size={rf(16)}
-                color={ResponsiveTheme.colors.success}
-              />
-              <Text style={styles.autoSaveText} numberOfLines={1}>
-                Saving...
-              </Text>
-            </View>
-          )}
-        </HeroSection>
-
-        {/* Form Sections */}
-        <View style={styles.content}>
-          <AnimatedSection delay={0}>
-            {renderCurrentDietSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={100}>
-            {renderDietReadinessSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={200}>
-            {renderMealPreferencesSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={300}>
-            {renderCookingPreferencesSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={400}>
-            {renderHealthHabitsSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={500}>
-            {renderAllergiesAndRestrictionsSection()}
-          </AnimatedSection>
-        </View>
-
-        {/* Validation Summary */}
-        {validationResult && (
-          <View style={styles.validationSummary}>
-            <GlassCard
-              elevation={3}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.validationCard}
+          {/* Hero Section with Background Image */}
+          <HeroSection
+            image={{
+              uri: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1200&q=80",
+            }}
+            overlayGradient={gradients.overlay.dark}
+            contentPosition="center"
+            minHeight={160}
+            maxHeight={240}
+          >
+            <Text style={styles.title} numberOfLines={1}>
+              What are your diet preferences?
+            </Text>
+            <Text
+              style={styles.subtitle}
+              numberOfLines={2}
+              ellipsizeMode="tail"
             >
-              <View style={styles.validationTitleContainer}>
+              Help us personalize your meal recommendations and nutrition plan
+            </Text>
+
+            {/* Auto-save Indicator */}
+            {isAutoSaving && (
+              <View style={styles.autoSaveIndicator}>
                 <Ionicons
-                  name={
-                    validationResult.is_valid
-                      ? "checkmark-circle"
-                      : "alert-circle"
-                  }
-                  size={rf(20)}
-                  color={
-                    validationResult.is_valid
-                      ? ResponsiveTheme.colors.success
-                      : ResponsiveTheme.colors.warning
-                  }
+                  name="cloud-upload-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.success}
                 />
-                <Text style={styles.validationTitle} numberOfLines={1}>
-                  {validationResult.is_valid
-                    ? "Ready to Continue"
-                    : "Please Complete"}
+                <Text style={styles.autoSaveText} numberOfLines={1}>
+                  Saving...
                 </Text>
               </View>
-              <Text style={styles.validationPercentage} numberOfLines={1}>
-                {validationResult.completion_percentage}% Complete
-              </Text>
+            )}
+          </HeroSection>
 
-              {validationResult.errors.length > 0 && (
-                <View style={styles.validationErrors}>
-                  <Text style={styles.validationErrorTitle}>Required:</Text>
-                  {validationResult.errors.map((error) => (
-                    <Text key={error} style={styles.validationErrorText}>
-                      • {error}
-                    </Text>
-                  ))}
-                </View>
-              )}
+          {/* Form Sections */}
+          <View style={styles.content}>
+            <AnimatedSection delay={0}>
+              {renderCurrentDietSection()}
+            </AnimatedSection>
 
-              {validationResult.warnings.length > 0 && (
-                <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>
-                    Recommendations:
-                  </Text>
-                  {validationResult.warnings.map((warning) => (
-                    <Text key={warning} style={styles.validationWarningText}>
-                      • {warning}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </GlassCard>
+            <AnimatedSection delay={100}>
+              {renderDietReadinessSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={200}>
+              {renderMealPreferencesSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={300}>
+              {renderCookingPreferencesSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={400}>
+              {renderHealthHabitsSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={500}>
+              {renderAllergiesAndRestrictionsSection()}
+            </AnimatedSection>
           </View>
-        )}
-      </ScrollView>
+
+          {/* Validation Summary */}
+          {validationResult && (
+            <View style={styles.validationSummary}>
+              <GlassCard
+                elevation={3}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={styles.validationCard}
+              >
+                <View style={styles.validationTitleContainer}>
+                  <Ionicons
+                    name={
+                      validationResult.is_valid
+                        ? "checkmark-circle"
+                        : "alert-circle"
+                    }
+                    size={rf(20)}
+                    color={
+                      validationResult.is_valid
+                        ? ResponsiveTheme.colors.success
+                        : ResponsiveTheme.colors.warning
+                    }
+                  />
+                  <Text style={styles.validationTitle} numberOfLines={1}>
+                    {validationResult.is_valid
+                      ? "Ready to Continue"
+                      : "Please Complete"}
+                  </Text>
+                </View>
+                <Text style={styles.validationPercentage} numberOfLines={1}>
+                  {validationResult.completion_percentage}% Complete
+                </Text>
+
+                {validationResult.errors.length > 0 && (
+                  <View style={styles.validationErrors}>
+                    <Text style={styles.validationErrorTitle}>Required:</Text>
+                    {validationResult.errors.map((error) => (
+                      <Text key={error} style={styles.validationErrorText}>
+                        • {error}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {validationResult.warnings.length > 0 && (
+                  <View style={styles.validationWarnings}>
+                    <Text style={styles.validationWarningTitle}>
+                      Recommendations:
+                    </Text>
+                    {validationResult.warnings.map((warning) => (
+                      <Text key={warning} style={styles.validationWarningText}>
+                        • {warning}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </GlassCard>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
@@ -1782,6 +1796,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+
+  keyboardAvoidingView: {
+    flex: 1,
   },
 
   scrollView: {

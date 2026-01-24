@@ -3,13 +3,13 @@
  * Premium header with greeting, date, weather-style summary
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh, rp } from '../../../utils/responsive';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh, rp } from "../../../utils/responsive";
 
 interface HomeHeaderProps {
   userName: string;
@@ -34,31 +34,31 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) {
       return {
-        greeting: 'Good morning',
-        icon: 'sunny' as const,
-        gradientColors: ['#FF9500', '#FF6B00'] as [string, string],
+        greeting: "Good morning",
+        icon: "sunny" as const,
+        gradientColors: ["#FF9500", "#FF6B00"] as [string, string],
       };
     }
     if (hour >= 12 && hour < 18) {
       return {
-        greeting: 'Good afternoon',
-        icon: 'partly-sunny' as const,
-        gradientColors: ['#FF6B6B', '#FF8E53'] as [string, string],
+        greeting: "Good afternoon",
+        icon: "partly-sunny" as const,
+        gradientColors: ["#FF6B6B", "#FF8E53"] as [string, string],
       };
     }
     return {
-      greeting: 'Good evening',
-      icon: 'moon' as const,
-      gradientColors: ['#667eea', '#764ba2'] as [string, string],
+      greeting: "Good evening",
+      icon: "moon" as const,
+      gradientColors: ["#667eea", "#764ba2"] as [string, string],
     };
   }, []);
 
   const todayDate = useMemo(() => {
     const date = new Date();
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
     });
   }, []);
 
@@ -87,9 +87,16 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
         <View style={styles.greetingSection}>
           <View style={styles.greetingRow}>
             <Text style={styles.greetingText}>{greeting},</Text>
-            <Ionicons name={icon} size={rf(14)} color={gradientColors[0]} style={styles.greetingIcon} />
+            <Ionicons
+              name={icon}
+              size={rf(14)}
+              color={gradientColors[0]}
+              style={styles.greetingIcon}
+            />
           </View>
-          <Text style={styles.userName} numberOfLines={1}>{userName}</Text>
+          <Text style={styles.userName} numberOfLines={1}>
+            {userName}
+          </Text>
           <Text style={styles.dateText}>{todayDate}</Text>
         </View>
 
@@ -117,11 +124,15 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             hapticType="light"
             style={styles.notificationBtn}
           >
-            <Ionicons name="notifications-outline" size={rf(20)} color={ResponsiveTheme.colors.text} />
+            <Ionicons
+              name="notifications-outline"
+              size={rf(20)}
+              color={ResponsiveTheme.colors.text}
+            />
             {notificationCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
-                  {notificationCount > 9 ? '9+' : notificationCount}
+                  {notificationCount > 9 ? "9+" : notificationCount}
                 </Text>
               </View>
             )}
@@ -139,17 +150,17 @@ const styles = StyleSheet.create({
     paddingBottom: rp(8),
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
   },
   avatarGradient: {
     width: rw(48),
     height: rw(48),
     borderRadius: rw(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -157,19 +168,19 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: rf(20),
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontWeight: "800",
+    color: "#FFFFFF",
   },
   greetingSection: {
     flex: 1,
   },
   greetingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   greetingText: {
     fontSize: rf(13),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
   greetingIcon: {
@@ -177,67 +188,67 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: rf(22),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
     letterSpacing: -0.5,
     marginTop: 2,
   },
   dateText: {
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: 2,
   },
   rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
-    backgroundColor: 'rgba(255, 107, 107, 0.15)',
+    backgroundColor: "rgba(255, 107, 107, 0.15)",
     paddingHorizontal: rp(10),
     paddingVertical: rp(6),
     borderRadius: rw(20),
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 107, 0.3)',
+    borderColor: "rgba(255, 107, 107, 0.3)",
   },
   streakNumber: {
     fontSize: rf(15),
-    fontWeight: '800',
-    color: '#FF6B6B',
+    fontWeight: "800",
+    color: "#FF6B6B",
   },
   notificationBtn: {
     width: rw(42),
     height: rw(42),
     borderRadius: rw(21),
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   notificationBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: -2,
     minWidth: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    backgroundColor: '#FF3B30',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FF3B30",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.background,
   },
   notificationBadgeText: {
     fontSize: rf(10),
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
 

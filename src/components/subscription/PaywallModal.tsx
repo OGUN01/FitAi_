@@ -1,7 +1,7 @@
 // Paywall Modal Component
 // Beautiful premium subscription upgrade modal
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,10 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  StyleSheet
-} from 'react-native';
-import { useSubscriptionStore } from '../../stores/subscriptionStore';
-import { SubscriptionPlan } from '../../services/SubscriptionService';
+  StyleSheet,
+} from "react-native";
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { SubscriptionPlan } from "../../services/SubscriptionService";
 
 interface PaywallModalProps {
   visible: boolean;
@@ -24,14 +24,14 @@ interface PaywallModalProps {
   description?: string;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 const PaywallModal: React.FC<PaywallModalProps> = ({
   visible,
   onClose,
   feature,
-  title = 'Upgrade to Premium',
-  description = 'Unlock all premium features and take your fitness journey to the next level!'
+  title = "Upgrade to Premium",
+  description = "Unlock all premium features and take your fitness journey to the next level!",
 }) => {
   const {
     availablePlans,
@@ -39,7 +39,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     purchaseError,
     trialInfo,
     purchasePlan,
-    restorePurchases
+    restorePurchases,
   } = useSubscriptionStore();
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -48,7 +48,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   useEffect(() => {
     if (availablePlans.length > 0 && !selectedPlan) {
       // Default to yearly plan (most popular)
-      const yearlyPlan = availablePlans.find(p => p.period === 'yearly');
+      const yearlyPlan = availablePlans.find((p) => p.period === "yearly");
       setSelectedPlan(yearlyPlan?.id || availablePlans[0]?.id);
     }
   }, [availablePlans, selectedPlan]);
@@ -61,72 +61,74 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 
       if (result.success) {
         Alert.alert(
-          '🎉 Welcome to Premium!',
-          'Your subscription is now active. Enjoy all premium features!',
-          [{ text: 'Get Started', onPress: onClose }]
+          "🎉 Welcome to Premium!",
+          "Your subscription is now active. Enjoy all premium features!",
+          [{ text: "Get Started", onPress: onClose }],
         );
       }
     } catch (error) {
-      console.error('Purchase error:', error);
+      console.error("Purchase error:", error);
     }
   };
 
   const handleRestore = async () => {
     await restorePurchases();
     Alert.alert(
-      'Restore Complete',
-      'Your previous purchases have been restored.',
-      [{ text: 'OK' }]
+      "Restore Complete",
+      "Your previous purchases have been restored.",
+      [{ text: "OK" }],
     );
   };
 
   const getPlanBadge = (plan: SubscriptionPlan) => {
-    if (plan.isPopular) return { text: '🔥 MOST POPULAR', color: '#f97316' };
-    if (plan.discount) return { text: `${plan.discount}% OFF`, color: '#22c55e' };
-    if (plan.period === 'lifetime') return { text: '⭐ BEST VALUE', color: '#a855f7' };
+    if (plan.isPopular) return { text: "🔥 MOST POPULAR", color: "#f97316" };
+    if (plan.discount)
+      return { text: `${plan.discount}% OFF`, color: "#22c55e" };
+    if (plan.period === "lifetime")
+      return { text: "⭐ BEST VALUE", color: "#a855f7" };
     return null;
   };
 
   const getFeatureIcon = (feature: string) => {
     const icons: Record<string, string> = {
-      'Unlimited AI workout generation': '🚀',
-      'Advanced meal planning': '🍽️',
-      'Detailed analytics': '📊',
-      'Exclusive achievements': '🏆',
-      'Personalized coaching': '💪',
-      'Advanced goal setting': '🎯',
-      'Multiple device sync': '📱',
-      'Dark mode and themes': '🌙',
-      'Export data': '📈',
-      'Smart notifications': '🔔',
-      'Premium music': '🎵',
-      'AI photo analysis': '📸',
-      'Advanced wearables': '🏃‍♂️',
-      'Premium community': '👥',
-      'Remove all ads': '❌',
+      "Unlimited AI workout generation": "🚀",
+      "Advanced meal planning": "🍽️",
+      "Detailed analytics": "📊",
+      "Exclusive achievements": "🏆",
+      "Personalized coaching": "💪",
+      "Advanced goal setting": "🎯",
+      "Multiple device sync": "📱",
+      "Dark mode and themes": "🌙",
+      "Export data": "📈",
+      "Smart notifications": "🔔",
+      "Premium music": "🎵",
+      "AI photo analysis": "📸",
+      "Advanced wearables": "🏃‍♂️",
+      "Premium community": "👥",
+      "Remove all ads": "❌",
     };
 
-    return icons[feature] || '✨';
+    return icons[feature] || "✨";
   };
 
   const getFeatureTitle = (feature?: string) => {
     const titles: Record<string, string> = {
-      'unlimited_ai': 'Unlimited AI Workouts',
-      'advanced_analytics': 'Advanced Analytics',
-      'custom_themes': 'Custom Themes',
-      'export_data': 'Export Your Data',
-      'premium_achievements': 'Premium Achievements',
-      'advanced_workouts': 'Advanced Workouts',
-      'multi_device_sync': 'Multi-Device Sync',
-      'premium_community': 'Premium Community',
+      unlimited_ai: "Unlimited AI Workouts",
+      advanced_analytics: "Advanced Analytics",
+      custom_themes: "Custom Themes",
+      export_data: "Export Your Data",
+      premium_achievements: "Premium Achievements",
+      advanced_workouts: "Advanced Workouts",
+      multi_device_sync: "Multi-Device Sync",
+      premium_community: "Premium Community",
     };
 
-    return titles[feature || ''] || title;
+    return titles[feature || ""] || title;
   };
 
   if (!visible) return null;
 
-  const selectedPlanData = availablePlans.find(p => p.id === selectedPlan);
+  const selectedPlanData = availablePlans.find((p) => p.id === selectedPlan);
 
   return (
     <Modal
@@ -145,15 +147,10 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   <Text style={styles.headerTitle}>
                     {getFeatureTitle(feature)}
                   </Text>
-                  <Text style={styles.headerDescription}>
-                    {description}
-                  </Text>
+                  <Text style={styles.headerDescription}>{description}</Text>
                 </View>
 
-                <Pressable
-                  onPress={onClose}
-                  style={styles.closeButton}
-                >
+                <Pressable onPress={onClose} style={styles.closeButton}>
                   <Text style={styles.closeButtonText}>×</Text>
                 </Pressable>
               </View>
@@ -171,12 +168,13 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               )}
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.scrollView}
+            >
               {/* Subscription Plans */}
               <View style={styles.plansSection}>
-                <Text style={styles.sectionTitle}>
-                  Choose Your Plan
-                </Text>
+                <Text style={styles.sectionTitle}>Choose Your Plan</Text>
 
                 <View style={styles.plansList}>
                   {availablePlans.map((plan) => {
@@ -189,23 +187,26 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                         onPress={() => setSelectedPlan(plan.id)}
                         style={[
                           styles.planCard,
-                          isSelected ? styles.planCardSelected : styles.planCardUnselected
+                          isSelected
+                            ? styles.planCardSelected
+                            : styles.planCardUnselected,
                         ]}
                       >
                         {/* Badge */}
                         {badge && (
-                          <View style={[styles.badge, { backgroundColor: badge.color }]}>
-                            <Text style={styles.badgeText}>
-                              {badge.text}
-                            </Text>
+                          <View
+                            style={[
+                              styles.badge,
+                              { backgroundColor: badge.color },
+                            ]}
+                          >
+                            <Text style={styles.badgeText}>{badge.text}</Text>
                           </View>
                         )}
 
                         <View style={styles.planContent}>
                           <View style={styles.planInfo}>
-                            <Text style={styles.planName}>
-                              {plan.name}
-                            </Text>
+                            <Text style={styles.planName}>{plan.name}</Text>
 
                             <Text style={styles.planDescription}>
                               {plan.description}
@@ -219,9 +220,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                           </View>
 
                           <View style={styles.planPricing}>
-                            <Text style={styles.planPrice}>
-                              {plan.price}
-                            </Text>
+                            <Text style={styles.planPrice}>{plan.price}</Text>
 
                             {plan.originalPrice && (
                               <Text style={styles.originalPrice}>
@@ -230,7 +229,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                             )}
 
                             <Text style={styles.planPeriod}>
-                              {plan.period === 'lifetime' ? 'one time' : `per ${plan.period.slice(0, -2)}`}
+                              {plan.period === "lifetime"
+                                ? "one time"
+                                : `per ${plan.period.slice(0, -2)}`}
                             </Text>
                           </View>
                         </View>
@@ -255,11 +256,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   onPress={() => setShowFeatures(!showFeatures)}
                   style={styles.featuresHeader}
                 >
-                  <Text style={styles.featuresTitle}>
-                    Premium Features
-                  </Text>
+                  <Text style={styles.featuresTitle}>Premium Features</Text>
                   <Text style={styles.featuresToggle}>
-                    {showFeatures ? '⌃' : '⌄'}
+                    {showFeatures ? "⌃" : "⌄"}
                   </Text>
                 </Pressable>
 
@@ -270,9 +269,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                         <Text style={styles.featureIcon}>
                           {getFeatureIcon(feature)}
                         </Text>
-                        <Text style={styles.featureText}>
-                          {feature}
-                        </Text>
+                        <Text style={styles.featureText}>{feature}</Text>
                       </View>
                     ))}
                   </View>
@@ -285,9 +282,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               {/* Error Message */}
               {purchaseError && (
                 <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>
-                    {purchaseError}
-                  </Text>
+                  <Text style={styles.errorText}>{purchaseError}</Text>
                 </View>
               )}
 
@@ -297,7 +292,8 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                 disabled={isPurchasing || !selectedPlan}
                 style={[
                   styles.purchaseButton,
-                  (isPurchasing || !selectedPlan) && styles.purchaseButtonDisabled
+                  (isPurchasing || !selectedPlan) &&
+                    styles.purchaseButtonDisabled,
                 ]}
               >
                 {isPurchasing ? (
@@ -306,17 +302,13 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   <Text style={styles.purchaseButtonText}>
                     {trialInfo.isEligible && selectedPlanData?.freeTrialDays
                       ? `Start ${selectedPlanData.freeTrialDays}-Day Free Trial`
-                      : `Subscribe for ${selectedPlanData?.price || ''}`
-                    }
+                      : `Subscribe for ${selectedPlanData?.price || ""}`}
                   </Text>
                 )}
               </Pressable>
 
               {/* Restore Purchases */}
-              <Pressable
-                onPress={handleRestore}
-                style={styles.restoreButton}
-              >
+              <Pressable onPress={handleRestore} style={styles.restoreButton}>
                 <Text style={styles.restoreButtonText}>
                   Restore Previous Purchases
                 </Text>
@@ -325,7 +317,8 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               {/* Terms */}
               <View style={styles.termsContainer}>
                 <Text style={styles.termsText}>
-                  Subscription automatically renews. Cancel anytime in your {'\n'}
+                  Subscription automatically renews. Cancel anytime in your{" "}
+                  {"\n"}
                   App Store or Google Play account settings.
                 </Text>
               </View>
@@ -340,14 +333,14 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '90%',
+    maxHeight: "90%",
   },
   content: {
     flex: 1,
@@ -355,12 +348,12 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: "#e5e7eb",
   },
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   headerText: {
     flex: 1,
@@ -368,42 +361,42 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: "bold",
+    color: "#111827",
     marginBottom: 8,
   },
   headerDescription: {
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
     lineHeight: 20,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeButtonText: {
     fontSize: 24,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   trialBanner: {
     marginTop: 16,
     padding: 12,
-    backgroundColor: '#dbeafe',
+    backgroundColor: "#dbeafe",
     borderRadius: 8,
   },
   trialTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e40af',
+    fontWeight: "600",
+    color: "#1e40af",
     marginBottom: 4,
   },
   trialDescription: {
     fontSize: 14,
-    color: '#1e40af',
+    color: "#1e40af",
   },
   scrollView: {
     flex: 1,
@@ -413,8 +406,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 16,
   },
   plansList: {
@@ -427,15 +420,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   planCardSelected: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#eff6ff',
+    borderColor: "#3b82f6",
+    backgroundColor: "#eff6ff",
   },
   planCardUnselected: {
-    borderColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    borderColor: "#e5e7eb",
+    backgroundColor: "#fff",
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: 16,
     paddingHorizontal: 12,
@@ -444,13 +437,13 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   planContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   planInfo: {
     flex: 1,
@@ -458,39 +451,39 @@ const styles = StyleSheet.create({
   },
   planName: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
     marginBottom: 4,
   },
   planDescription: {
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
     marginBottom: 4,
   },
   trialText: {
     fontSize: 12,
-    color: '#10b981',
-    fontWeight: '600',
+    color: "#10b981",
+    fontWeight: "600",
   },
   planPricing: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   planPrice: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: "bold",
+    color: "#111827",
   },
   originalPrice: {
     fontSize: 14,
-    color: '#9ca3af',
-    textDecorationLine: 'line-through',
+    color: "#9ca3af",
+    textDecorationLine: "line-through",
   },
   planPeriod: {
     fontSize: 12,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   selectionIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     left: 16,
     width: 24,
@@ -500,40 +493,40 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#3b82f6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#3b82f6",
+    justifyContent: "center",
+    alignItems: "center",
   },
   checkmarkText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   featuresSection: {
     padding: 20,
     paddingTop: 0,
   },
   featuresHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: 12,
   },
   featuresTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: "600",
+    color: "#111827",
   },
   featuresToggle: {
     fontSize: 24,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   featuresList: {
     marginTop: 8,
   },
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 8,
   },
   featureIcon: {
@@ -542,55 +535,55 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: '#374151',
+    color: "#374151",
     flex: 1,
   },
   bottomActions: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: "#e5e7eb",
   },
   errorContainer: {
     padding: 12,
-    backgroundColor: '#fee2e2',
+    backgroundColor: "#fee2e2",
     borderRadius: 8,
     marginBottom: 12,
   },
   errorText: {
-    color: '#dc2626',
+    color: "#dc2626",
     fontSize: 14,
   },
   purchaseButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: "#3b82f6",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
   },
   purchaseButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: "#9ca3af",
   },
   purchaseButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   restoreButton: {
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   restoreButtonText: {
-    color: '#3b82f6',
+    color: "#3b82f6",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   termsContainer: {
     marginTop: 8,
   },
   termsText: {
     fontSize: 12,
-    color: '#9ca3af',
-    textAlign: 'center',
+    color: "#9ca3af",
+    textAlign: "center",
     lineHeight: 16,
   },
 });

@@ -7,7 +7,7 @@ interface StyleFix {
   pattern: RegExp;
   replacement: string;
   description: string;
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
 }
 
 interface FixResult {
@@ -25,79 +25,82 @@ export class StyleFixHelper {
     // FontWeight fixes
     {
       pattern: /fontWeight:\s*['"]300['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.light',
+      replacement: "fontWeight: THEME.fontWeight.light",
       description: 'Replace fontWeight: "300" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]400['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.normal',
+      replacement: "fontWeight: THEME.fontWeight.normal",
       description: 'Replace fontWeight: "400" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]500['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.medium',
+      replacement: "fontWeight: THEME.fontWeight.medium",
       description: 'Replace fontWeight: "500" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]600['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.semibold',
+      replacement: "fontWeight: THEME.fontWeight.semibold",
       description: 'Replace fontWeight: "600" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]700['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.bold',
+      replacement: "fontWeight: THEME.fontWeight.bold",
       description: 'Replace fontWeight: "700" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]800['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.extrabold',
+      replacement: "fontWeight: THEME.fontWeight.extrabold",
       description: 'Replace fontWeight: "800" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]bold['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.bold',
+      replacement: "fontWeight: THEME.fontWeight.bold",
       description: 'Replace fontWeight: "bold" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
     {
       pattern: /fontWeight:\s*['"]normal['"]/g,
-      replacement: 'fontWeight: THEME.fontWeight.normal',
+      replacement: "fontWeight: THEME.fontWeight.normal",
       description: 'Replace fontWeight: "normal" with THEME constant',
-      riskLevel: 'low',
+      riskLevel: "low",
     },
 
     // LineHeight fixes (potentially dangerous - remove or convert to multipliers)
     {
       pattern: /lineHeight:\s*\d+,/g,
-      replacement: '// lineHeight: removed (causes HostFunction errors),',
-      description: 'Comment out lineHeight with fixed values',
-      riskLevel: 'high',
+      replacement: "// lineHeight: removed (causes HostFunction errors),",
+      description: "Comment out lineHeight with fixed values",
+      riskLevel: "high",
     },
 
     // FontFamily fixes (potentially dangerous)
     {
       pattern: /fontFamily:\s*['"][^'"]*['"],?/g,
-      replacement: '// fontFamily: removed (causes compatibility issues),',
-      description: 'Comment out fontFamily declarations',
-      riskLevel: 'medium',
+      replacement: "// fontFamily: removed (causes compatibility issues),",
+      description: "Comment out fontFamily declarations",
+      riskLevel: "medium",
     },
   ];
 
   /**
    * Apply style fixes to a file content
    */
-  static applyStyleFixes(content: string, riskLevel: 'low' | 'medium' | 'high' = 'low'): FixResult {
+  static applyStyleFixes(
+    content: string,
+    riskLevel: "low" | "medium" | "high" = "low",
+  ): FixResult {
     let modifiedContent = content;
     const appliedFixes: string[] = [];
     let totalFixes = 0;
 
-    const riskLevels = ['low', 'medium', 'high'];
+    const riskLevels = ["low", "medium", "high"];
     const maxRiskIndex = riskLevels.indexOf(riskLevel);
 
     for (const fix of this.STYLE_FIXES) {
@@ -107,7 +110,10 @@ export class StyleFixHelper {
       if (fixRiskIndex <= maxRiskIndex) {
         const matches = modifiedContent.match(fix.pattern);
         if (matches && matches.length > 0) {
-          modifiedContent = modifiedContent.replace(fix.pattern, fix.replacement);
+          modifiedContent = modifiedContent.replace(
+            fix.pattern,
+            fix.replacement,
+          );
           totalFixes += matches.length;
           appliedFixes.push(`${fix.description} (${matches.length} instances)`);
         }
@@ -131,24 +137,24 @@ export class StyleFixHelper {
       content.includes("from '../utils/constants'") ||
       content.includes("from '../../utils/constants'") ||
       content.includes("from '../../../utils/constants'") ||
-      (content.includes('THEME') && content.includes('import'))
+      (content.includes("THEME") && content.includes("import"))
     ) {
       return content;
     }
 
     // Check if there are any THEME.fontWeight references that would need the import
-    if (content.includes('THEME.fontWeight')) {
+    if (content.includes("THEME.fontWeight")) {
       // Find the right import path based on file structure
-      const lines = content.split('\n');
+      const lines = content.split("\n");
       const importIndex = lines.findIndex(
-        (line) => line.includes('import') && line.includes('react')
+        (line) => line.includes("import") && line.includes("react"),
       );
 
       if (importIndex >= 0) {
         // Add THEME import after React import
         const themeImport = "import { THEME } from '../utils/constants';";
         lines.splice(importIndex + 1, 0, themeImport);
-        return lines.join('\n');
+        return lines.join("\n");
       } else {
         // Add at the top of the file
         return `import { THEME } from '../utils/constants';\n${content}`;
@@ -163,7 +169,7 @@ export class StyleFixHelper {
    */
   static validateFixes(
     originalContent: string,
-    modifiedContent: string
+    modifiedContent: string,
   ): {
     isValid: boolean;
     issues: string[];
@@ -177,22 +183,26 @@ export class StyleFixHelper {
     const closeBraces = (modifiedContent.match(/\}/g) || []).length;
 
     if (openBraces !== closeBraces) {
-      issues.push('Mismatched braces detected after style fixes');
+      issues.push("Mismatched braces detected after style fixes");
     }
 
     // Check for missing THEME imports
     if (
-      modifiedContent.includes('THEME.fontWeight') &&
-      !modifiedContent.includes('THEME') &&
-      !modifiedContent.includes('import')
+      modifiedContent.includes("THEME.fontWeight") &&
+      !modifiedContent.includes("THEME") &&
+      !modifiedContent.includes("import")
     ) {
-      warnings.push('THEME constants used but import may be missing');
+      warnings.push("THEME constants used but import may be missing");
     }
 
     // Check for commented out styles that might be important
-    const commentedStyles = modifiedContent.match(/\/\/ (lineHeight|fontFamily):/g);
+    const commentedStyles = modifiedContent.match(
+      /\/\/ (lineHeight|fontFamily):/g,
+    );
     if (commentedStyles && commentedStyles.length > 0) {
-      warnings.push(`Commented out ${commentedStyles.length} potentially important styles`);
+      warnings.push(
+        `Commented out ${commentedStyles.length} potentially important styles`,
+      );
     }
 
     return {
@@ -212,9 +222,13 @@ export class StyleFixHelper {
     consoleLogIssues: number;
     totalIssues: number;
   } {
-    const fontWeightIssues = (content.match(/fontWeight:\s*['"][^'"]*['"]/g) || []).length;
+    const fontWeightIssues = (
+      content.match(/fontWeight:\s*['"][^'"]*['"]/g) || []
+    ).length;
     const lineHeightIssues = (content.match(/lineHeight:\s*\d+/g) || []).length;
-    const fontFamilyIssues = (content.match(/fontFamily:\s*['"][^'"]*['"]/g) || []).length;
+    const fontFamilyIssues = (
+      content.match(/fontFamily:\s*['"][^'"]*['"]/g) || []
+    ).length;
     const consoleLogIssues = (content.match(/console\.log/g) || []).length;
 
     return {
@@ -222,7 +236,11 @@ export class StyleFixHelper {
       lineHeightIssues,
       fontFamilyIssues,
       consoleLogIssues,
-      totalIssues: fontWeightIssues + lineHeightIssues + fontFamilyIssues + consoleLogIssues,
+      totalIssues:
+        fontWeightIssues +
+        lineHeightIssues +
+        fontFamilyIssues +
+        consoleLogIssues,
     };
   }
 }
@@ -231,13 +249,13 @@ export class StyleFixHelper {
  * Priority files that should be fixed first
  */
 export const PRIORITY_FILES = [
-  'src/components/ErrorBoundary.tsx',
-  'src/components/AsyncInitializer.tsx',
-  'src/screens/main/DietScreen.tsx',
-  'src/screens/main/FitnessScreen.tsx',
-  'src/screens/main/ProgressScreen.tsx',
-  'src/screens/workout/WorkoutSessionScreen.tsx',
-  'src/components/navigation/TabBar.tsx',
+  "src/components/ErrorBoundary.tsx",
+  "src/components/AsyncInitializer.tsx",
+  "src/screens/main/DietScreen.tsx",
+  "src/screens/main/FitnessScreen.tsx",
+  "src/screens/main/ProgressScreen.tsx",
+  "src/screens/workout/WorkoutSessionScreen.tsx",
+  "src/components/navigation/TabBar.tsx",
 ];
 
 export default StyleFixHelper;

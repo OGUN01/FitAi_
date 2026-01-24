@@ -3,8 +3,8 @@
  * 2x2 grid of animated metric summary cards
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,31 +14,36 @@ import Animated, {
   FadeInUp,
   interpolate,
   Extrapolation,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
-import { SectionHeader } from '../common/SectionHeader';
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgGradient,
+  Stop,
+} from "react-native-svg";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
+import { SectionHeader } from "../common/SectionHeader";
 
 interface MetricData {
   weight?: {
     current: number;
     change: number;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
   };
   calories?: {
     burned: number;
     change: number;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
   };
   workouts?: {
     count: number;
     change: number;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
   };
   streak?: {
     days: number;
@@ -48,12 +53,15 @@ interface MetricData {
 
 interface MetricSummaryGridProps {
   data: MetricData;
-  period: 'week' | 'month' | 'year';
+  period: "week" | "month" | "year";
   onMetricPress?: (metric: string) => void;
 }
 
 // Mini Sparkline Component
-const MiniSparkline: React.FC<{ data: number[]; color: string }> = ({ data, color }) => {
+const MiniSparkline: React.FC<{ data: number[]; color: string }> = ({
+  data,
+  color,
+}) => {
   const maxVal = Math.max(...data);
   const minVal = Math.min(...data);
   const range = maxVal - minVal || 1;
@@ -81,7 +89,10 @@ const MiniSparkline: React.FC<{ data: number[]; color: string }> = ({ data, colo
 };
 
 // Streak Ring Component
-const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({ days, maxDays = 30 }) => {
+const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
+  days,
+  maxDays = 30,
+}) => {
   const size = rw(52);
   const strokeWidth = rw(4);
   const radius = (size - strokeWidth) / 2;
@@ -90,10 +101,10 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({ days, maxDay
 
   // Get color based on streak length
   const getStreakColor = () => {
-    if (days >= 30) return ['#FFD700', '#FFA500']; // Gold for 30+
-    if (days >= 14) return ['#FF6B6B', '#FF8E53']; // Red-orange for 14+
-    if (days >= 7) return ['#4CAF50', '#8BC34A']; // Green for 7+
-    return ['#667eea', '#764ba2']; // Purple for starting
+    if (days >= 30) return ["#FFD700", "#FFA500"]; // Gold for 30+
+    if (days >= 14) return ["#FF6B6B", "#FF8E53"]; // Red-orange for 14+
+    if (days >= 7) return ["#4CAF50", "#8BC34A"]; // Green for 7+
+    return ["#667eea", "#764ba2"]; // Purple for starting
   };
 
   const gradientColors = getStreakColor();
@@ -132,7 +143,9 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({ days, maxDay
         />
       </Svg>
       <View style={styles.streakRingCenter}>
-        <Text style={[styles.streakNumber, { color: gradientColors[0] }]}>{days}</Text>
+        <Text style={[styles.streakNumber, { color: gradientColors[0] }]}>
+          {days}
+        </Text>
       </View>
     </View>
   );
@@ -145,7 +158,7 @@ const MetricCard: React.FC<{
   subtitle?: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  trend?: 'up' | 'down' | 'stable';
+  trend?: "up" | "down" | "stable";
   trendValue?: string;
   sparklineData?: number[];
   delay?: number;
@@ -166,22 +179,36 @@ const MetricCard: React.FC<{
 }) => {
   const getTrendIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (trend) {
-      case 'up': return 'trending-up';
-      case 'down': return 'trending-down';
-      default: return 'remove';
+      case "up":
+        return "trending-up";
+      case "down":
+        return "trending-down";
+      default:
+        return "remove";
     }
   };
 
   const getTrendColor = () => {
     // For weight, down is good. For others, up is good.
-    if (title.toLowerCase().includes('weight')) {
-      return trend === 'down' ? '#4CAF50' : trend === 'up' ? '#F44336' : '#9E9E9E';
+    if (title.toLowerCase().includes("weight")) {
+      return trend === "down"
+        ? "#4CAF50"
+        : trend === "up"
+          ? "#F44336"
+          : "#9E9E9E";
     }
-    return trend === 'up' ? '#4CAF50' : trend === 'down' ? '#F44336' : '#9E9E9E';
+    return trend === "up"
+      ? "#4CAF50"
+      : trend === "down"
+        ? "#F44336"
+        : "#9E9E9E";
   };
 
   return (
-    <Animated.View entering={FadeInUp.delay(delay).springify()} style={styles.cardWrapper}>
+    <Animated.View
+      entering={FadeInUp.delay(delay).springify()}
+      style={styles.cardWrapper}
+    >
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.97}
@@ -189,10 +216,17 @@ const MetricCard: React.FC<{
         hapticType="light"
         style={styles.cardPressable}
       >
-        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+        <GlassCard
+          elevation={2}
+          blurIntensity="light"
+          padding="md"
+          borderRadius="lg"
+        >
           <View style={styles.cardContent}>
             {/* Icon */}
-            <View style={[styles.iconCircle, { backgroundColor: `${color}20` }]}>
+            <View
+              style={[styles.iconCircle, { backgroundColor: `${color}20` }]}
+            >
               <Ionicons name={icon} size={rf(18)} color={color} />
             </View>
 
@@ -205,8 +239,14 @@ const MetricCard: React.FC<{
             {/* Subtitle or Trend */}
             {trend && trendValue && (
               <View style={styles.trendRow}>
-                <Ionicons name={getTrendIcon()} size={rf(14)} color={getTrendColor()} />
-                <Text style={[styles.trendText, { color: getTrendColor() }]}>{trendValue}</Text>
+                <Ionicons
+                  name={getTrendIcon()}
+                  size={rf(14)}
+                  color={getTrendColor()}
+                />
+                <Text style={[styles.trendText, { color: getTrendColor() }]}>
+                  {trendValue}
+                </Text>
               </View>
             )}
 
@@ -215,7 +255,9 @@ const MetricCard: React.FC<{
             )}
 
             {/* Sparkline or Custom Content */}
-            {sparklineData && <MiniSparkline data={sparklineData} color={color} />}
+            {sparklineData && (
+              <MiniSparkline data={sparklineData} color={color} />
+            )}
             {children}
           </View>
         </GlassCard>
@@ -230,30 +272,34 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
   onMetricPress,
 }) => {
   const formatWeight = (weight?: number) => {
-    if (!weight) return '--';
+    if (!weight) return "--";
     return weight.toFixed(1);
   };
 
   const formatCalories = (calories?: number) => {
-    if (!calories) return '--';
-    return calories >= 1000 ? `${(calories / 1000).toFixed(1)}K` : calories.toString();
+    if (!calories) return "--";
+    return calories >= 1000
+      ? `${(calories / 1000).toFixed(1)}K`
+      : calories.toString();
   };
 
   // Determine streak message based on actual streak days
   const getStreakMessage = () => {
     const days = data.streak?.days ?? 0; // Safe: 0 means no streak
-    if (days === 0) return 'Start today!';
-    if (days >= 30) return 'On fire!';
-    if (days >= 14) return 'Amazing!';
-    if (days >= 7) return 'Keep it up!';
-    if (days >= 3) return 'Great start!';
-    return 'Building!';
+    if (days === 0) return "Start today!";
+    if (days >= 30) return "On fire!";
+    if (days >= 14) return "Amazing!";
+    if (days >= 7) return "Keep it up!";
+    if (days >= 3) return "Great start!";
+    return "Building!";
   };
-  
+
   // Only show sparklines if we have real data
   const hasWeightHistory = data.weight?.current !== undefined;
-  const hasCaloriesData = data.calories?.burned !== undefined && data.calories.burned > 0;
-  const hasWorkoutsData = data.workouts?.count !== undefined && data.workouts.count > 0;
+  const hasCaloriesData =
+    data.calories?.burned !== undefined && data.calories.burned > 0;
+  const hasWorkoutsData =
+    data.workouts?.count !== undefined && data.workouts.count > 0;
 
   return (
     <View style={styles.container}>
@@ -263,7 +309,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
         icon="stats-chart"
         iconColor="#667eea"
       />
-      
+
       {/* Row 1: Weight + Calories */}
       <View style={styles.row}>
         <MetricCard
@@ -272,9 +318,13 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="scale-outline"
           color="#9C27B0"
           trend={hasWeightHistory ? data.weight?.trend : undefined}
-          trendValue={hasWeightHistory && data.weight?.change ? `${data.weight.change > 0 ? '+' : ''}${data.weight.change.toFixed(1)} kg` : undefined}
+          trendValue={
+            hasWeightHistory && data.weight?.change
+              ? `${data.weight.change > 0 ? "+" : ""}${data.weight.change.toFixed(1)} kg`
+              : undefined
+          }
           delay={0}
-          onPress={() => onMetricPress?.('weight')}
+          onPress={() => onMetricPress?.("weight")}
         />
 
         <MetricCard
@@ -283,9 +333,13 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="flame-outline"
           color="#FF9800"
           trend={hasCaloriesData ? data.calories?.trend : undefined}
-          trendValue={hasCaloriesData && data.calories?.change ? `${data.calories.change > 0 ? '+' : ''}${data.calories.change}%` : undefined}
+          trendValue={
+            hasCaloriesData && data.calories?.change
+              ? `${data.calories.change > 0 ? "+" : ""}${data.calories.change}%`
+              : undefined
+          }
           delay={100}
-          onPress={() => onMetricPress?.('calories')}
+          onPress={() => onMetricPress?.("calories")}
         />
       </View>
 
@@ -293,14 +347,18 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <View style={styles.row}>
         <MetricCard
           title="Workouts"
-          value={data.workouts?.count?.toString() ?? '--'}
+          value={data.workouts?.count?.toString() ?? "--"}
           subtitle={`this ${period}`}
           icon="barbell-outline"
           color="#2196F3"
           trend={hasWorkoutsData ? data.workouts?.trend : undefined}
-          trendValue={hasWorkoutsData && data.workouts?.change ? `${data.workouts.change > 0 ? '+' : ''}${data.workouts.change}` : undefined}
+          trendValue={
+            hasWorkoutsData && data.workouts?.change
+              ? `${data.workouts.change > 0 ? "+" : ""}${data.workouts.change}`
+              : undefined
+          }
           delay={200}
-          onPress={() => onMetricPress?.('workouts')}
+          onPress={() => onMetricPress?.("workouts")}
         />
 
         <MetricCard
@@ -309,7 +367,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           icon="flame"
           color="#FF6B6B"
           delay={300}
-          onPress={() => onMetricPress?.('streak')}
+          onPress={() => onMetricPress?.("streak")}
         >
           <View style={styles.streakContent}>
             <StreakRing days={data.streak?.days ?? 0} />
@@ -328,7 +386,7 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
   cardWrapper: {
@@ -339,26 +397,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
   iconCircle: {
     width: rw(36),
     height: rw(36),
     borderRadius: rw(18),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   metricValue: {
     fontSize: rf(24),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   metricLabel: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.xs,
   },
@@ -368,20 +426,20 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   trendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   trendText: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   sparklineContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     height: rh(20),
-    width: '100%',
+    width: "100%",
     gap: rw(2),
     marginTop: ResponsiveTheme.spacing.xs,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
@@ -392,29 +450,28 @@ const styles = StyleSheet.create({
     minHeight: 3,
   },
   streakContent: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: -ResponsiveTheme.spacing.xs,
   },
   streakRingContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   streakRingCenter: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center",
   },
   streakNumber: {
     fontSize: rf(16),
-    fontWeight: '800',
+    fontWeight: "800",
   },
   streakMessage: {
     fontSize: rf(9),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
 });
 
 export default MetricSummaryGrid;
-

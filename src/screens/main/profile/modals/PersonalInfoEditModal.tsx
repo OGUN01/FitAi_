@@ -108,7 +108,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     }
   }, [visible, profile]);
 
-  // Validation
+  // Validation - now also used for real-time validation
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -149,6 +149,94 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [name, age, gender, height, weight, activityLevel]);
+
+  // Real-time validation for individual fields
+  const validateField = useCallback((field: string, value: string) => {
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+
+      switch (field) {
+        case "name":
+          if (!value.trim()) {
+            newErrors.name = "Name is required";
+          } else {
+            delete newErrors.name;
+          }
+          break;
+        case "age":
+          if (
+            !value ||
+            isNaN(Number(value)) ||
+            Number(value) < 13 ||
+            Number(value) > 120
+          ) {
+            newErrors.age = "Enter a valid age (13-120)";
+          } else {
+            delete newErrors.age;
+          }
+          break;
+        case "height":
+          if (
+            !value ||
+            isNaN(Number(value)) ||
+            Number(value) < 100 ||
+            Number(value) > 250
+          ) {
+            newErrors.height = "Enter valid height in cm (100-250)";
+          } else {
+            delete newErrors.height;
+          }
+          break;
+        case "weight":
+          if (
+            !value ||
+            isNaN(Number(value)) ||
+            Number(value) < 30 ||
+            Number(value) > 300
+          ) {
+            newErrors.weight = "Enter valid weight in kg (30-300)";
+          } else {
+            delete newErrors.weight;
+          }
+          break;
+      }
+
+      return newErrors;
+    });
+  }, []);
+
+  // Wrapped setters with real-time validation
+  const handleNameChange = useCallback(
+    (value: string) => {
+      setName(value);
+      validateField("name", value);
+    },
+    [validateField],
+  );
+
+  const handleAgeChange = useCallback(
+    (value: string) => {
+      setAge(value);
+      validateField("age", value);
+    },
+    [validateField],
+  );
+
+  const handleHeightChange = useCallback(
+    (value: string) => {
+      setHeight(value);
+      validateField("height", value);
+    },
+    [validateField],
+  );
+
+  const handleWeightChange = useCallback(
+    (value: string) => {
+      setWeight(value);
+      validateField("weight", value);
+    },
+    [validateField],
+  );
 
   // Save handler
   const handleSave = useCallback(async () => {
@@ -290,7 +378,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         icon="person-outline"
         iconColor="#FF6B6B"
         value={name}
-        onChangeText={setName}
+        onChangeText={handleNameChange}
         placeholder="Enter your name"
         autoCapitalize="words"
         autoComplete="name"
@@ -303,7 +391,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         icon="calendar-outline"
         iconColor="#4CAF50"
         value={age}
-        onChangeText={setAge}
+        onChangeText={handleAgeChange}
         placeholder="Enter your age"
         keyboardType="numeric"
         maxLength={3}
@@ -327,7 +415,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         icon="resize-outline"
         iconColor="#2196F3"
         value={height}
-        onChangeText={setHeight}
+        onChangeText={handleHeightChange}
         placeholder="Enter your height"
         keyboardType="numeric"
         maxLength={3}
@@ -342,7 +430,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         icon="scale-outline"
         iconColor="#9C27B0"
         value={weight}
-        onChangeText={setWeight}
+        onChangeText={handleWeightChange}
         placeholder="Enter your weight"
         keyboardType="decimal-pad"
         maxLength={5}

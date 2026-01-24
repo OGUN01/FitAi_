@@ -4,13 +4,19 @@
  * Inspired by Apple Health, Fitbit, and modern fintech dashboards
  */
 
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import Animated, { 
-  FadeInUp, 
-  useSharedValue, 
-  useAnimatedProps, 
-  withTiming, 
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
+import Animated, {
+  FadeInUp,
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
   withSpring,
   withDelay,
   Easing,
@@ -18,26 +24,26 @@ import Animated, {
   useAnimatedStyle,
   FadeIn,
   SlideInRight,
-} from 'react-native-reanimated';
-import Svg, { 
-  Path, 
-  Circle, 
-  Defs, 
-  LinearGradient as SvgLinearGradient, 
-  Stop, 
-  Line, 
+} from "react-native-reanimated";
+import Svg, {
+  Path,
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+  Line,
   G,
   Rect,
   Text as SvgText,
   ClipPath,
-} from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
-import { SectionHeader } from '../home/SectionHeader';
+} from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
+import { SectionHeader } from "../home/SectionHeader";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -51,7 +57,7 @@ interface TrendChartsProps {
   weightData?: ChartData[];
   calorieData?: ChartData[];
   workoutData?: ChartData[];
-  period: 'week' | 'month' | 'year';
+  period: "week" | "month" | "year";
   onChartPress?: (chartType: string) => void;
 }
 
@@ -97,11 +103,11 @@ const LineChart: React.FC<{
   color: string;
   unit?: string;
   showValues?: boolean;
-}> = ({ data, color, unit = '', showValues = true }) => {
+}> = ({ data, color, unit = "", showValues = true }) => {
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const animationProgress = useSharedValue(0);
   const glowIntensity = useSharedValue(0);
-  
+
   // Chart dimensions
   const CHART_WIDTH = rw(280);
   const CHART_HEIGHT = rh(180);
@@ -109,7 +115,7 @@ const LineChart: React.FC<{
   const PADDING_RIGHT = rw(15);
   const PADDING_TOP = rh(25);
   const PADDING_BOTTOM = rh(35);
-  
+
   const chartAreaWidth = CHART_WIDTH - PADDING_LEFT - PADDING_RIGHT;
   const chartAreaHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
@@ -133,13 +139,17 @@ const LineChart: React.FC<{
   };
 
   const getY = (value: number) => {
-    return PADDING_TOP + chartAreaHeight - ((value - chartMin) / chartRange) * chartAreaHeight;
+    return (
+      PADDING_TOP +
+      chartAreaHeight -
+      ((value - chartMin) / chartRange) * chartAreaHeight
+    );
   };
 
   // Generate smooth bezier curve path
   const generateSmoothPath = () => {
     if (!hasData) return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight}`;
-    
+
     if (data.length < 2) {
       const x = getX(0);
       const y = getY(data[0].value);
@@ -147,41 +157,42 @@ const LineChart: React.FC<{
     }
 
     let path = `M ${getX(0)} ${getY(data[0].value)}`;
-    
+
     for (let i = 0; i < data.length - 1; i++) {
       const x0 = getX(i);
       const y0 = getY(data[i].value);
       const x1 = getX(i + 1);
       const y1 = getY(data[i + 1].value);
-      
+
       // Control point distance
       const cpDist = (x1 - x0) * 0.4;
-      
+
       // Smooth bezier curve
       path += ` C ${x0 + cpDist} ${y0}, ${x1 - cpDist} ${y1}, ${x1} ${y1}`;
     }
-    
+
     return path;
   };
 
   // Generate gradient fill area path
   const generateAreaPath = () => {
-    if (!hasData) return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight} L ${PADDING_LEFT + chartAreaWidth} ${PADDING_TOP + chartAreaHeight} Z`;
-    
+    if (!hasData)
+      return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight} L ${PADDING_LEFT + chartAreaWidth} ${PADDING_TOP + chartAreaHeight} Z`;
+
     const linePath = generateSmoothPath();
     const lastX = getX(data.length - 1);
     const firstX = getX(0);
     const bottomY = PADDING_TOP + chartAreaHeight;
-    
+
     return `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
   };
 
   // Animation - MUST be called unconditionally (before any early returns)
   useEffect(() => {
     if (hasData) {
-      animationProgress.value = withTiming(1, { 
-        duration: 1200, 
-        easing: Easing.out(Easing.cubic) 
+      animationProgress.value = withTiming(1, {
+        duration: 1200,
+        easing: Easing.out(Easing.cubic),
       });
       glowIntensity.value = withDelay(800, withSpring(1, { damping: 12 }));
     }
@@ -204,24 +215,38 @@ const LineChart: React.FC<{
       <View style={styles.emptyChart}>
         <View style={styles.emptyChartIconContainer}>
           <LinearGradient
-            colors={['rgba(156, 39, 176, 0.2)', 'rgba(156, 39, 176, 0.05)']}
+            colors={["rgba(156, 39, 176, 0.2)", "rgba(156, 39, 176, 0.05)"]}
             style={styles.emptyChartIconBg}
           />
-          <Ionicons name="analytics-outline" size={rf(36)} color="rgba(156, 39, 176, 0.6)" />
+          <Ionicons
+            name="analytics-outline"
+            size={rf(36)}
+            color="rgba(156, 39, 176, 0.6)"
+          />
         </View>
         <Text style={styles.emptyChartText}>No weight data recorded</Text>
-        <Text style={styles.emptyChartSubtext}>Log your weight to see your progress journey</Text>
+        <Text style={styles.emptyChartSubtext}>
+          Log your weight to see your progress journey
+        </Text>
         <View style={styles.emptyChartHint}>
-          <Ionicons name="add-circle-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
-          <Text style={styles.emptyChartHintText}>Tap Profile → Log Weight</Text>
+          <Ionicons
+            name="add-circle-outline"
+            size={rf(14)}
+            color={ResponsiveTheme.colors.primary}
+          />
+          <Text style={styles.emptyChartHintText}>
+            Tap Profile → Log Weight
+          </Text>
         </View>
       </View>
     );
   }
 
   // Trend calculation
-  const trend = data.length >= 2 ? data[data.length - 1].value - data[0].value : 0;
-  const trendPercent = data[0].value > 0 ? ((trend / data[0].value) * 100).toFixed(1) : '0';
+  const trend =
+    data.length >= 2 ? data[data.length - 1].value - data[0].value : 0;
+  const trendPercent =
+    data[0].value > 0 ? ((trend / data[0].value) * 100).toFixed(1) : "0";
   const isPositiveTrend = trend >= 0;
 
   return (
@@ -231,17 +256,32 @@ const LineChart: React.FC<{
         <View style={styles.currentValueContainer}>
           <Text style={styles.currentValueLabel}>Current</Text>
           <Text style={[styles.currentValue, { color }]}>
-            {data[data.length - 1].value.toFixed(1)}{unit}
+            {data[data.length - 1].value.toFixed(1)}
+            {unit}
           </Text>
         </View>
         <View style={styles.trendContainer}>
-          <View style={[styles.trendBadge, { backgroundColor: isPositiveTrend ? 'rgba(76, 175, 80, 0.15)' : 'rgba(244, 67, 54, 0.15)' }]}>
-            <Ionicons 
-              name={isPositiveTrend ? 'trending-up' : 'trending-down'} 
-              size={rf(12)} 
-              color={isPositiveTrend ? '#4CAF50' : '#F44336'} 
+          <View
+            style={[
+              styles.trendBadge,
+              {
+                backgroundColor: isPositiveTrend
+                  ? "rgba(76, 175, 80, 0.15)"
+                  : "rgba(244, 67, 54, 0.15)",
+              },
+            ]}
+          >
+            <Ionicons
+              name={isPositiveTrend ? "trending-up" : "trending-down"}
+              size={rf(12)}
+              color={isPositiveTrend ? "#4CAF50" : "#F44336"}
             />
-            <Text style={[styles.trendText, { color: isPositiveTrend ? '#4CAF50' : '#F44336' }]}>
+            <Text
+              style={[
+                styles.trendText,
+                { color: isPositiveTrend ? "#4CAF50" : "#F44336" },
+              ]}
+            >
               {Math.abs(parseFloat(trendPercent))}%
             </Text>
           </View>
@@ -253,21 +293,39 @@ const LineChart: React.FC<{
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
         <Defs>
           {/* Gradient for area fill */}
-          <SvgLinearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <SvgLinearGradient
+            id="areaGradient"
+            x1="0%"
+            y1="0%"
+            x2="0%"
+            y2="100%"
+          >
             <Stop offset="0%" stopColor={color} stopOpacity="0.4" />
             <Stop offset="50%" stopColor={color} stopOpacity="0.15" />
             <Stop offset="100%" stopColor={color} stopOpacity="0" />
           </SvgLinearGradient>
-          
+
           {/* Gradient for line stroke */}
-          <SvgLinearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <SvgLinearGradient
+            id="lineGradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="0%"
+          >
             <Stop offset="0%" stopColor={color} stopOpacity="0.6" />
             <Stop offset="50%" stopColor={color} stopOpacity="1" />
             <Stop offset="100%" stopColor={color} stopOpacity="1" />
           </SvgLinearGradient>
 
           {/* Glow filter effect */}
-          <SvgLinearGradient id="glowGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <SvgLinearGradient
+            id="glowGradient"
+            x1="0%"
+            y1="0%"
+            x2="0%"
+            y2="100%"
+          >
             <Stop offset="0%" stopColor={color} stopOpacity="0.8" />
             <Stop offset="100%" stopColor={color} stopOpacity="0.2" />
           </SvgLinearGradient>
@@ -275,7 +333,8 @@ const LineChart: React.FC<{
 
         {/* Subtle grid lines */}
         {yLabels.map((_, index) => {
-          const y = PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
+          const y =
+            PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
           return (
             <Line
               key={`grid-${index}`}
@@ -292,7 +351,8 @@ const LineChart: React.FC<{
 
         {/* Y-axis labels */}
         {yLabels.map((value, index) => {
-          const y = PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
+          const y =
+            PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
           return (
             <SvgText
               key={`y-label-${index}`}
@@ -333,7 +393,7 @@ const LineChart: React.FC<{
           const y = getY(item.value);
           const isLast = index === data.length - 1;
           const isSelected = selectedPoint === index;
-          
+
           return (
             <G key={`point-${index}`}>
               {/* Outer glow for last point */}
@@ -355,24 +415,26 @@ const LineChart: React.FC<{
                   />
                 </>
               )}
-              
+
               {/* Point circle */}
               <Circle
                 cx={x}
                 cy={y}
                 r={isLast ? rw(6) : isSelected ? rw(5) : rw(4)}
-                fill={isLast ? color : 'rgba(255,255,255,0.9)'}
+                fill={isLast ? color : "rgba(255,255,255,0.9)"}
                 stroke={color}
                 strokeWidth={isLast ? 3 : 2}
               />
-              
+
               {/* Touchable area */}
               <Circle
                 cx={x}
                 cy={y}
                 r={rw(15)}
                 fill="transparent"
-                onPress={() => setSelectedPoint(selectedPoint === index ? null : index)}
+                onPress={() =>
+                  setSelectedPoint(selectedPoint === index ? null : index)
+                }
               />
             </G>
           );
@@ -383,10 +445,14 @@ const LineChart: React.FC<{
           const x = getX(index);
           const isFirst = index === 0;
           const isLast = index === data.length - 1;
-          const showLabel = isFirst || isLast || data.length <= 5 || index % Math.ceil(data.length / 4) === 0;
-          
+          const showLabel =
+            isFirst ||
+            isLast ||
+            data.length <= 5 ||
+            index % Math.ceil(data.length / 4) === 0;
+
           if (!showLabel) return null;
-          
+
           return (
             <SvgText
               key={`x-label-${index}`}
@@ -395,7 +461,7 @@ const LineChart: React.FC<{
               fill={isLast ? color : ResponsiveTheme.colors.textMuted}
               fontSize={rf(10)}
               textAnchor="middle"
-              fontWeight={isLast ? '700' : '500'}
+              fontWeight={isLast ? "700" : "500"}
             >
               {item.label}
             </SvgText>
@@ -421,7 +487,8 @@ const LineChart: React.FC<{
               textAnchor="middle"
               fontWeight="700"
             >
-              {data[selectedPoint].value.toFixed(1)}{unit}
+              {data[selectedPoint].value.toFixed(1)}
+              {unit}
             </SvgText>
           </G>
         )}
@@ -431,12 +498,11 @@ const LineChart: React.FC<{
       <View style={styles.chartInsight}>
         <Ionicons name="sparkles" size={rf(12)} color={color} />
         <Text style={styles.chartInsightText}>
-          {trend > 0 
+          {trend > 0
             ? `Gained ${Math.abs(trend).toFixed(1)}${unit} over this period`
-            : trend < 0 
+            : trend < 0
               ? `Lost ${Math.abs(trend).toFixed(1)}${unit} over this period`
-              : 'Weight stable over this period'
-          }
+              : "Weight stable over this period"}
         </Text>
       </View>
     </View>
@@ -451,7 +517,7 @@ const StackedAreaChart: React.FC<{
   const maxValue = Math.max(
     ...consumedData.map((d) => d.value),
     ...burnedData.map((d) => d.value),
-    1
+    1,
   );
 
   return (
@@ -509,11 +575,21 @@ const ChartCard: React.FC<{
         hapticType="light"
         disabled={!onPress}
       >
-        <GlassCard elevation={2} blurIntensity="light" padding="lg" borderRadius="lg">
+        <GlassCard
+          elevation={2}
+          blurIntensity="light"
+          padding="lg"
+          borderRadius="lg"
+        >
           {/* Header */}
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleRow}>
-              <View style={[styles.chartIconContainer, { backgroundColor: `${iconColor}20` }]}>
+              <View
+                style={[
+                  styles.chartIconContainer,
+                  { backgroundColor: `${iconColor}20` },
+                ]}
+              >
                 <Ionicons name={icon} size={rf(16)} color={iconColor} />
               </View>
               <Text style={styles.chartTitle}>{title}</Text>
@@ -524,7 +600,12 @@ const ChartCard: React.FC<{
               <View style={styles.legendContainer}>
                 {legend.map((item, index) => (
                   <View key={index} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: item.color },
+                      ]}
+                    />
                     <Text style={styles.legendText}>{item.label}</Text>
                   </View>
                 ))}
@@ -552,14 +633,14 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
   // Generate period-appropriate labels
   const getPeriodLabels = () => {
     switch (period) {
-      case 'week':
-        return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      case 'month':
-        return ['W1', 'W2', 'W3', 'W4'];
-      case 'year':
-        return ['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov'];
+      case "week":
+        return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      case "month":
+        return ["W1", "W2", "W3", "W4"];
+      case "year":
+        return ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
       default:
-        return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     }
   };
 
@@ -579,17 +660,15 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           title="Weight Progress"
           icon="trending-down"
           iconColor="#9C27B0"
-          legend={weightData && weightData.length > 0 ? [
-            { color: '#9C27B0', label: 'Weight' },
-          ] : undefined}
+          legend={
+            weightData && weightData.length > 0
+              ? [{ color: "#9C27B0", label: "Weight" }]
+              : undefined
+          }
           delay={0}
-          onPress={() => onChartPress?.('weight')}
+          onPress={() => onChartPress?.("weight")}
         >
-          <LineChart
-            data={weightData || []}
-            color="#9C27B0"
-            unit="kg"
-          />
+          <LineChart data={weightData || []} color="#9C27B0" unit="kg" />
         </ChartCard>
 
         {/* Calorie Analysis Chart */}
@@ -597,24 +676,36 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           title="Calorie Analysis"
           icon="flame"
           iconColor="#FF9800"
-          legend={calorieData && calorieData.length > 0 ? [
-            { color: '#4CAF50', label: 'Consumed' },
-            { color: '#FF9800', label: 'Burned' },
-          ] : undefined}
+          legend={
+            calorieData && calorieData.length > 0
+              ? [
+                  { color: "#4CAF50", label: "Consumed" },
+                  { color: "#FF9800", label: "Burned" },
+                ]
+              : undefined
+          }
           delay={100}
-          onPress={() => onChartPress?.('calories')}
+          onPress={() => onChartPress?.("calories")}
         >
           {calorieData && calorieData.length > 0 ? (
             <BarChart
               data={calorieData}
               color="#4CAF50"
-              gradientColors={['#4CAF50', '#8BC34A']}
+              gradientColors={["#4CAF50", "#8BC34A"]}
             />
           ) : (
             <View style={styles.emptyChart}>
-              <Ionicons name="flame-outline" size={rf(32)} color={ResponsiveTheme.colors.textMuted} />
-              <Text style={styles.emptyChartText}>No calorie data recorded</Text>
-              <Text style={styles.emptyChartSubtext}>Start tracking meals to see analysis</Text>
+              <Ionicons
+                name="flame-outline"
+                size={rf(32)}
+                color={ResponsiveTheme.colors.textMuted}
+              />
+              <Text style={styles.emptyChartText}>
+                No calorie data recorded
+              </Text>
+              <Text style={styles.emptyChartSubtext}>
+                Start tracking meals to see analysis
+              </Text>
             </View>
           )}
         </ChartCard>
@@ -625,20 +716,28 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
           icon="barbell"
           iconColor="#2196F3"
           delay={200}
-          onPress={() => onChartPress?.('workouts')}
+          onPress={() => onChartPress?.("workouts")}
         >
           {workoutData && workoutData.length > 0 ? (
             <BarChart
               data={workoutData}
               color="#2196F3"
-              gradientColors={['#2196F3', '#64B5F6']}
-              maxValue={Math.max(...workoutData.map(d => d.value), 4)}
+              gradientColors={["#2196F3", "#64B5F6"]}
+              maxValue={Math.max(...workoutData.map((d) => d.value), 4)}
             />
           ) : (
             <View style={styles.emptyChart}>
-              <Ionicons name="barbell-outline" size={rf(32)} color={ResponsiveTheme.colors.textMuted} />
-              <Text style={styles.emptyChartText}>No workout data this {period}</Text>
-              <Text style={styles.emptyChartSubtext}>Complete workouts to see consistency</Text>
+              <Ionicons
+                name="barbell-outline"
+                size={rf(32)}
+                color={ResponsiveTheme.colors.textMuted}
+              />
+              <Text style={styles.emptyChartText}>
+                No workout data this {period}
+              </Text>
+              <Text style={styles.emptyChartSubtext}>
+                Complete workouts to see consistency
+              </Text>
             </View>
           )}
         </ChartCard>
@@ -662,8 +761,8 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
   chartTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
@@ -671,23 +770,23 @@ const styles = StyleSheet.create({
     width: rw(28),
     height: rw(28),
     borderRadius: rw(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   chartTitle: {
     fontSize: rf(15),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     letterSpacing: 0.2,
   },
   legendContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
   },
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
   legendDot: {
@@ -697,30 +796,30 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
 
   // Bar Chart Styles
   barChartContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     height: rh(120),
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
   barItem: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   barWrapper: {
     flex: 1,
-    width: '65%',
-    justifyContent: 'flex-end',
+    width: "65%",
+    justifyContent: "flex-end",
   },
   bar: {
-    width: '100%',
+    width: "100%",
     borderRadius: ResponsiveTheme.borderRadius.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
     minHeight: rh(6),
   },
   barGradient: {
@@ -728,13 +827,13 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     fontSize: rf(9),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
   barValue: {
     fontSize: rf(10),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     marginTop: 2,
   },
@@ -743,38 +842,38 @@ const styles = StyleSheet.create({
   // PREMIUM LINE CHART STYLES - World-class design
   // ============================================================================
   premiumChartContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   chartStatsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    width: "100%",
     marginBottom: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
   },
   currentValueContainer: {
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   currentValueLabel: {
     fontSize: rf(10),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textMuted,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   currentValue: {
     fontSize: rf(28),
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
   trendContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   trendBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: 4,
     borderRadius: rw(12),
@@ -782,35 +881,35 @@ const styles = StyleSheet.create({
   },
   trendText: {
     fontSize: rf(12),
-    fontWeight: '700',
+    fontWeight: "700",
   },
   trendPeriod: {
     fontSize: rf(9),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textMuted,
     marginTop: 4,
   },
   chartInsight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginTop: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: "rgba(255,255,255,0.03)",
     borderRadius: rw(20),
   },
   chartInsightText: {
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
 
   // Empty chart state - enhanced
   emptyChart: {
     height: rh(180),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
   },
@@ -818,13 +917,13 @@ const styles = StyleSheet.create({
     width: rw(70),
     height: rw(70),
     borderRadius: rw(35),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   emptyChartIconBg: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -832,71 +931,70 @@ const styles = StyleSheet.create({
   },
   emptyChartText: {
     fontSize: rf(15),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyChartSubtext: {
     fontSize: rf(12),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyChartHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginTop: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    backgroundColor: "rgba(102, 126, 234, 0.1)",
     borderRadius: rw(16),
   },
   emptyChartHintText: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.primary,
   },
 
   // Stacked Area Chart Styles
   areaChartContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     height: rh(120),
     paddingBottom: ResponsiveTheme.spacing.md,
   },
   areaBarGroup: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   areaBarWrapper: {
     flex: 1,
-    width: '70%',
-    justifyContent: 'flex-end',
-    position: 'relative',
+    width: "70%",
+    justifyContent: "flex-end",
+    position: "relative",
   },
   areaBar: {
-    width: '100%',
+    width: "100%",
     borderTopLeftRadius: ResponsiveTheme.borderRadius.sm,
     borderTopRightRadius: ResponsiveTheme.borderRadius.sm,
   },
   areaBarConsumed: {
-    backgroundColor: 'rgba(76,175,80,0.7)',
+    backgroundColor: "rgba(76,175,80,0.7)",
   },
   areaBarBurned: {
-    backgroundColor: 'rgba(255,152,0,0.5)',
-    position: 'absolute',
+    backgroundColor: "rgba(255,152,0,0.5)",
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
   },
   areaLabel: {
     fontSize: rf(9),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
 });
 
 export default TrendCharts;
-

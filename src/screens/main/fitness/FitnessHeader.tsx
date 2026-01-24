@@ -3,13 +3,13 @@
  * Personalized greeting with week indicator and calendar quick access
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
 
 interface FitnessHeaderProps {
   userName: string;
@@ -28,23 +28,33 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
 }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
   };
 
-  const progressPercent = totalWorkouts > 0 
-    ? Math.round((completedWorkouts / totalWorkouts) * 100) 
-    : 0;
+  const progressPercent =
+    totalWorkouts > 0
+      ? Math.round((completedWorkouts / totalWorkouts) * 100)
+      : 0;
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.container}>
+    <Animated.View
+      entering={FadeInDown.delay(100).duration(400)}
+      style={styles.container}
+    >
       {/* Left: Greeting */}
       <View style={styles.textContainer}>
-        <Text style={styles.greeting}>{getGreeting()}, {userName}</Text>
+        <Text style={styles.greeting}>
+          {getGreeting()}, {userName}
+        </Text>
         <View style={styles.subtitleRow}>
           <View style={styles.weekBadge}>
-            <Ionicons name="calendar-outline" size={rf(12)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="calendar-outline"
+              size={rf(12)}
+              color={ResponsiveTheme.colors.primary}
+            />
             <Text style={styles.weekText}>Week {weekNumber}</Text>
           </View>
           {totalWorkouts > 0 && (
@@ -64,10 +74,16 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
         style={styles.calendarButton}
       >
         <View style={styles.calendarIconContainer}>
-          <Ionicons name="calendar" size={rf(20)} color={ResponsiveTheme.colors.text} />
+          <Ionicons
+            name="calendar"
+            size={rf(20)}
+            color={ResponsiveTheme.colors.text}
+          />
           {progressPercent > 0 && progressPercent < 100 && (
             <View style={styles.progressIndicator}>
-              <Text style={styles.progressIndicatorText}>{progressPercent}%</Text>
+              <Text style={styles.progressIndicatorText}>
+                {progressPercent}%
+              </Text>
             </View>
           )}
         </View>
@@ -78,9 +94,9 @@ export const FitnessHeader: React.FC<FitnessHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: ResponsiveTheme.spacing.lg,
     paddingBottom: ResponsiveTheme.spacing.md,
@@ -90,19 +106,19 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: rf(22),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
     letterSpacing: -0.5,
   },
   subtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.xs,
   },
   weekBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
@@ -111,7 +127,7 @@ const styles = StyleSheet.create({
   },
   weekText: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.primary,
   },
   progressText: {
@@ -125,14 +141,14 @@ const styles = StyleSheet.create({
     width: rw(44),
     height: rw(44),
     borderRadius: rw(22),
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: "rgba(255,255,255,0.1)",
   },
   progressIndicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -4,
     right: -4,
     backgroundColor: ResponsiveTheme.colors.primary,
@@ -140,14 +156,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
     minWidth: 28,
-    alignItems: 'center',
+    alignItems: "center",
   },
   progressIndicatorText: {
     fontSize: rf(9),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
 });
 
 export default FitnessHeader;
-

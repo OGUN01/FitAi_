@@ -1,10 +1,16 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { ValidationResult } from '../../services/validationEngine';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { ValidationResult } from "../../services/validationEngine";
 
 // ============================================================================
 // TYPES
@@ -20,6 +26,19 @@ interface ErrorCardProps {
 // ============================================================================
 
 export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
+  // OB-UX-004: Add loading state for Fix Issues button
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleFixIssues = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      await onAdjust(errors[0]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -29,30 +48,30 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
         </View>
         <Text style={styles.headerTitle}>Action Required</Text>
       </View>
-      
+
       {/* Error Items */}
       {errors.map((error, index) => (
         <View key={index} style={styles.errorItem}>
-          <Text style={styles.errorMessage}>
-            {error.message}
-          </Text>
-          
+          <Text style={styles.errorMessage}>{error.message}</Text>
+
           {error.recommendations && error.recommendations.length > 0 && (
             <View style={styles.recommendationsContainer}>
               {error.recommendations.map((rec, i) => (
                 <View key={i} style={styles.recommendationItem}>
-                  <Ionicons name="bulb-outline" size={rf(12)} color={ResponsiveTheme.colors.textMuted} />
+                  <Ionicons
+                    name="bulb-outline"
+                    size={rf(12)}
+                    color={ResponsiveTheme.colors.textMuted}
+                  />
                   <Text style={styles.recommendationText}>{rec}</Text>
                 </View>
               ))}
             </View>
           )}
-          
+
           {error.alternatives && error.alternatives.length > 0 && (
             <View style={styles.alternativesContainer}>
-              <Text style={styles.alternativesTitle}>
-                Choose an option:
-              </Text>
+              <Text style={styles.alternativesTitle}>Choose an option:</Text>
               {error.alternatives.map((alt, i) => (
                 <TouchableOpacity
                   key={i}
@@ -61,13 +80,22 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
                   activeOpacity={0.7}
                 >
                   <LinearGradient
-                    colors={['rgba(245, 158, 11, 0.15)', 'rgba(245, 158, 11, 0.05)']}
+                    colors={[
+                      "rgba(245, 158, 11, 0.15)",
+                      "rgba(245, 158, 11, 0.05)",
+                    ]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.alternativeGradient}
                   >
-                    <Text style={styles.alternativeButtonText}>{alt.description}</Text>
-                    <Ionicons name="chevron-forward" size={rf(16)} color="#F59E0B" />
+                    <Text style={styles.alternativeButtonText}>
+                      {alt.description}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={rf(16)}
+                      color="#F59E0B"
+                    />
                   </LinearGradient>
                 </TouchableOpacity>
               ))}
@@ -78,18 +106,25 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
 
       {/* Fix Issues Button */}
       <TouchableOpacity
-        style={styles.fixButton}
-        onPress={() => onAdjust(errors[0])}
+        style={[styles.fixButton, isLoading && styles.fixButtonDisabled]}
+        onPress={handleFixIssues}
         activeOpacity={0.8}
+        disabled={isLoading}
       >
         <LinearGradient
-          colors={['#EF4444', '#DC2626']}
+          colors={isLoading ? ["#9CA3AF", "#6B7280"] : ["#EF4444", "#DC2626"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.fixButtonGradient}
         >
-          <Ionicons name="build" size={rf(16)} color="#fff" />
-          <Text style={styles.fixButtonText}>Fix Issues</Text>
+          {isLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="build" size={rf(16)} color="#fff" />
+          )}
+          <Text style={styles.fixButtonText}>
+            {isLoading ? "Processing..." : "Fix Issues"}
+          </Text>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -102,17 +137,17 @@ export const ErrorCard: React.FC<ErrorCardProps> = ({ errors, onAdjust }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: "rgba(239, 68, 68, 0.3)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -120,16 +155,16 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(16),
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(239, 68, 68, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: ResponsiveTheme.spacing.sm,
   },
 
   headerTitle: {
     fontSize: rf(16),
-    fontWeight: '700',
-    color: '#FCA5A5',
+    fontWeight: "700",
+    color: "#FCA5A5",
     letterSpacing: -0.3,
   },
 
@@ -139,7 +174,7 @@ const styles = StyleSheet.create({
 
   errorMessage: {
     fontSize: rf(13),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.text,
     lineHeight: rf(18),
   },
@@ -150,8 +185,8 @@ const styles = StyleSheet.create({
   },
 
   recommendationItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: ResponsiveTheme.spacing.xs,
   },
 
@@ -168,25 +203,25 @@ const styles = StyleSheet.create({
 
   alternativesTitle: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textMuted,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   alternativeButton: {
     borderRadius: ResponsiveTheme.borderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: ResponsiveTheme.spacing.xs,
     borderWidth: 1,
-    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderColor: "rgba(245, 158, 11, 0.3)",
   },
 
   alternativeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
@@ -194,27 +229,31 @@ const styles = StyleSheet.create({
   alternativeButtonText: {
     flex: 1,
     fontSize: rf(13),
-    color: '#FCD34D',
-    fontWeight: '500',
+    color: "#FCD34D",
+    fontWeight: "500",
   },
 
   fixButton: {
     marginTop: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
-    overflow: 'hidden',
+    overflow: "hidden",
+  },
+
+  fixButtonDisabled: {
+    opacity: 0.7,
   },
 
   fixButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: ResponsiveTheme.spacing.sm,
     gap: ResponsiveTheme.spacing.xs,
   },
 
   fixButtonText: {
     fontSize: rf(14),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
 });

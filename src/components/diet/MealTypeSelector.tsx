@@ -1,7 +1,7 @@
 // 🍽️ Meal Type Selection Overlay for Food Scanning
 // Enhanced UI component for selecting meal type before food recognition
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,10 @@ import {
   Animated,
   Dimensions,
   SafeAreaView,
-} from 'react-native';
-import { MealType } from '../../services/foodRecognitionService';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rh, rw, rs, rp } from '../../utils/responsive';
+} from "react-native";
+import { MealType } from "../../services/foodRecognitionService";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rh, rw, rs, rp } from "../../utils/responsive";
 
 interface MealTypeSelectorProps {
   visible: boolean;
@@ -33,36 +33,36 @@ interface MealTypeOption {
 
 const mealTypeOptions: MealTypeOption[] = [
   {
-    type: 'breakfast',
-    label: 'Breakfast',
-    emoji: '🌅',
-    description: 'Start your day with nutritious fuel',
-    suggestedTime: '6:00 - 10:00 AM',
-    color: '#f59e0b', // amber
+    type: "breakfast",
+    label: "Breakfast",
+    emoji: "🌅",
+    description: "Start your day with nutritious fuel",
+    suggestedTime: "6:00 - 10:00 AM",
+    color: "#f59e0b", // amber
   },
   {
-    type: 'lunch',
-    label: 'Lunch',
-    emoji: '☀️',
-    description: 'Midday energy boost and nutrients',
-    suggestedTime: '12:00 - 2:00 PM',
-    color: '#10b981', // emerald
+    type: "lunch",
+    label: "Lunch",
+    emoji: "☀️",
+    description: "Midday energy boost and nutrients",
+    suggestedTime: "12:00 - 2:00 PM",
+    color: "#10b981", // emerald
   },
   {
-    type: 'dinner',
-    label: 'Dinner',
-    emoji: '🌙',
-    description: 'Evening meal for recovery and rest',
-    suggestedTime: '6:00 - 9:00 PM',
-    color: '#8b5cf6', // violet
+    type: "dinner",
+    label: "Dinner",
+    emoji: "🌙",
+    description: "Evening meal for recovery and rest",
+    suggestedTime: "6:00 - 9:00 PM",
+    color: "#8b5cf6", // violet
   },
   {
-    type: 'snack',
-    label: 'Snack',
-    emoji: '🍎',
-    description: 'Quick bite between meals',
-    suggestedTime: 'Anytime',
-    color: '#f97316', // orange
+    type: "snack",
+    label: "Snack",
+    emoji: "🍎",
+    description: "Quick bite between meals",
+    suggestedTime: "Anytime",
+    color: "#f97316", // orange
   },
 ];
 
@@ -73,7 +73,9 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 }) => {
   const [selectedType, setSelectedType] = useState<MealType | null>(null);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [slideAnim] = useState(new Animated.Value(Dimensions.get('window').height));
+  const [slideAnim] = useState(
+    new Animated.Value(Dimensions.get("window").height),
+  );
 
   React.useEffect(() => {
     if (visible) {
@@ -97,7 +99,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
           useNativeDriver: true,
         }),
         Animated.timing(slideAnim, {
-          toValue: Dimensions.get('window').height,
+          toValue: Dimensions.get("window").height,
           duration: 200,
           useNativeDriver: true,
         }),
@@ -115,10 +117,10 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
 
   const getCurrentTimeBasedSuggestion = (): MealType => {
     const hour = new Date().getHours();
-    if (hour < 10) return 'breakfast';
-    if (hour < 16) return 'lunch';
-    if (hour < 22) return 'dinner';
-    return 'snack';
+    if (hour < 10) return "breakfast";
+    if (hour < 16) return "lunch";
+    if (hour < 22) return "dinner";
+    return "snack";
   };
 
   const suggestedMeal = getCurrentTimeBasedSuggestion();
@@ -140,7 +142,11 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             },
           ]}
         >
-          <TouchableOpacity style={styles.backdropTouchable} activeOpacity={1} onPress={onClose} />
+          <TouchableOpacity
+            style={styles.backdropTouchable}
+            activeOpacity={1}
+            onPress={onClose}
+          />
 
           <Animated.View
             style={[
@@ -168,7 +174,7 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             <View style={styles.suggestionBanner}>
               <Text style={styles.suggestionIcon}>💡</Text>
               <Text style={styles.suggestionText}>
-                Based on current time, we suggest:{' '}
+                Based on current time, we suggest:{" "}
                 <Text style={styles.suggestionMeal}>
                   {mealTypeOptions.find((m) => m.type === suggestedMeal)?.label}
                 </Text>
@@ -193,8 +199,15 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                     activeOpacity={0.7}
                   >
                     <View style={styles.optionContent}>
-                      <View style={[styles.optionEmoji, { backgroundColor: option.color + '20' }]}>
-                        <Text style={styles.optionEmojiText}>{option.emoji}</Text>
+                      <View
+                        style={[
+                          styles.optionEmoji,
+                          { backgroundColor: option.color + "20" },
+                        ]}
+                      >
+                        <Text style={styles.optionEmojiText}>
+                          {option.emoji}
+                        </Text>
                       </View>
 
                       <View style={styles.optionInfo}>
@@ -202,18 +215,32 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
                           <Text style={styles.optionLabel}>{option.label}</Text>
                           {isSuggested && (
                             <View style={styles.suggestedBadge}>
-                              <Text style={styles.suggestedBadgeText}>Suggested</Text>
+                              <Text style={styles.suggestedBadgeText}>
+                                Suggested
+                              </Text>
                             </View>
                           )}
                         </View>
-                        <Text style={styles.optionDescription}>{option.description}</Text>
-                        <Text style={styles.optionTime}>{option.suggestedTime}</Text>
+                        <Text style={styles.optionDescription}>
+                          {option.description}
+                        </Text>
+                        <Text style={styles.optionTime}>
+                          {option.suggestedTime}
+                        </Text>
                       </View>
 
-                      <View style={[styles.selectIndicator, { borderColor: option.color }]}>
+                      <View
+                        style={[
+                          styles.selectIndicator,
+                          { borderColor: option.color },
+                        ]}
+                      >
                         {isSelected && (
                           <View
-                            style={[styles.selectIndicatorInner, { backgroundColor: option.color }]}
+                            style={[
+                              styles.selectIndicatorInner,
+                              { backgroundColor: option.color },
+                            ]}
                           />
                         )}
                       </View>
@@ -227,8 +254,8 @@ export const MealTypeSelector: React.FC<MealTypeSelectorProps> = ({
             <View style={styles.footer}>
               <Text style={styles.footerIcon}>🎯</Text>
               <Text style={styles.footerText}>
-                Selecting the correct meal type helps our AI provide more accurate nutrition
-                analysis
+                Selecting the correct meal type helps our AI provide more
+                accurate nutrition analysis
               </Text>
             </View>
           </Animated.View>
@@ -245,8 +272,8 @@ const styles = StyleSheet.create({
 
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
 
   backdropTouchable: {
@@ -257,14 +284,14 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.surface,
     borderTopLeftRadius: rs(24),
     borderTopRightRadius: rs(24),
-    maxHeight: '80%',
+    maxHeight: "80%",
     paddingBottom: rh(34), // Account for home indicator
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
@@ -272,7 +299,7 @@ const styles = StyleSheet.create({
 
   headerContent: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   headerEmoji: {
@@ -290,7 +317,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(18),
   },
 
@@ -299,9 +326,9 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: rs(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
     right: ResponsiveTheme.spacing.lg,
     top: ResponsiveTheme.spacing.lg,
   },
@@ -313,9 +340,9 @@ const styles = StyleSheet.create({
   },
 
   suggestionBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef3c7', // amber-100
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fef3c7", // amber-100
     margin: ResponsiveTheme.spacing.lg,
     padding: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -328,7 +355,7 @@ const styles = StyleSheet.create({
 
   suggestionText: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: '#92400e', // amber-800
+    color: "#92400e", // amber-800
     flex: 1,
   },
 
@@ -346,7 +373,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.border,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   optionCardSelected: {
@@ -355,8 +382,8 @@ const styles = StyleSheet.create({
   },
 
   optionCardSuggested: {
-    borderColor: '#f59e0b',
-    shadowColor: '#f59e0b',
+    borderColor: "#f59e0b",
+    shadowColor: "#f59e0b",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -364,8 +391,8 @@ const styles = StyleSheet.create({
   },
 
   optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -373,8 +400,8 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rh(56),
     borderRadius: rs(16),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -387,8 +414,8 @@ const styles = StyleSheet.create({
   },
 
   optionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -400,7 +427,7 @@ const styles = StyleSheet.create({
   },
 
   suggestedBadge: {
-    backgroundColor: '#f59e0b',
+    backgroundColor: "#f59e0b",
     paddingHorizontal: rp(8),
     paddingVertical: rp(2),
     borderRadius: rs(8),
@@ -430,8 +457,8 @@ const styles = StyleSheet.create({
     height: rh(24),
     borderRadius: rs(12),
     borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: ResponsiveTheme.spacing.md,
   },
 
@@ -442,8 +469,8 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     margin: ResponsiveTheme.spacing.lg,
     padding: ResponsiveTheme.spacing.md,

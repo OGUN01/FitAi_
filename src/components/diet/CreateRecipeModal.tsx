@@ -1,7 +1,7 @@
 // 📝 Create Recipe Modal Component
 // Natural language recipe creation with AI assistance
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -14,16 +14,19 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { Card } from '../ui';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rh, rw, rs, rp } from '../../utils/responsive';
-import { RECIPE_CREATION_SCHEMA } from '../../ai/schemas/foodRecognitionSchema';
+} from "react-native";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { RECIPE_CREATION_SCHEMA } from "../../ai/schemas/foodRecognitionSchema";
 
 // Stub for deprecated AI service (migrated to Cloudflare Workers)
 const geminiService = {
   isAvailable: () => false,
-  generateResponse: async () => ({ success: false, error: 'Feature migrated to backend' }),
+  generateResponse: async () => ({
+    success: false,
+    error: "Feature migrated to backend",
+  }),
 };
 
 interface CreateRecipeModalProps {
@@ -43,47 +46,52 @@ interface RecipePrompt {
 
 const recipePrompts: RecipePrompt[] = [
   {
-    id: 'description',
-    title: 'What would you like to cook?',
-    placeholder: 'Describe the dish you want to make...',
-    icon: '🍽️',
+    id: "description",
+    title: "What would you like to cook?",
+    placeholder: "Describe the dish you want to make...",
+    icon: "🍽️",
     examples: [
-      'Healthy chicken stir-fry with vegetables',
-      'Vegan pasta with spinach and mushrooms',
-      'High-protein breakfast smoothie bowl',
-      'Low-carb cauliflower rice bowl',
+      "Healthy chicken stir-fry with vegetables",
+      "Vegan pasta with spinach and mushrooms",
+      "High-protein breakfast smoothie bowl",
+      "Low-carb cauliflower rice bowl",
     ],
   },
   {
-    id: 'dietary',
-    title: 'Any dietary preferences?',
-    placeholder: 'Dietary restrictions or preferences...',
-    icon: '🥗',
+    id: "dietary",
+    title: "Any dietary preferences?",
+    placeholder: "Dietary restrictions or preferences...",
+    icon: "🥗",
     examples: [
-      'Gluten-free and dairy-free',
-      'High protein, low carb',
-      'Vegetarian with no nuts',
-      'Keto-friendly',
+      "Gluten-free and dairy-free",
+      "High protein, low carb",
+      "Vegetarian with no nuts",
+      "Keto-friendly",
     ],
   },
   {
-    id: 'time',
-    title: 'How much time do you have?',
-    placeholder: 'Cooking and prep time...',
-    icon: '⏰',
+    id: "time",
+    title: "How much time do you have?",
+    placeholder: "Cooking and prep time...",
+    icon: "⏰",
     examples: [
-      'Under 30 minutes total',
-      'Quick 15-minute meal',
-      '1 hour including prep',
-      'Slow cooker recipe',
+      "Under 30 minutes total",
+      "Quick 15-minute meal",
+      "1 hour including prep",
+      "Slow cooker recipe",
     ],
   },
   {
-    id: 'servings',
-    title: 'How many servings?',
-    placeholder: 'Number of people or portions...',
-    icon: '👥',
-    examples: ['2 servings for dinner', 'Meal prep for 4 days', 'Family of 5', 'Single serving'],
+    id: "servings",
+    title: "How many servings?",
+    placeholder: "Number of people or portions...",
+    icon: "👥",
+    examples: [
+      "2 servings for dinner",
+      "Meal prep for 4 days",
+      "Family of 5",
+      "Single serving",
+    ],
   },
 ];
 
@@ -106,13 +114,15 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   };
 
   const validateInputs = () => {
-    const required = ['description'];
+    const required = ["description"];
     const missing = required.filter((key) => !inputs[key]?.trim());
 
     if (missing.length > 0) {
-      Alert.alert('Missing Information', 'Please describe what you want to cook.', [
-        { text: 'OK' },
-      ]);
+      Alert.alert(
+        "Missing Information",
+        "Please describe what you want to cook.",
+        [{ text: "OK" }],
+      );
       return false;
     }
 
@@ -125,9 +135,9 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     // Check if AI service is available
     if (!geminiService.isAvailable()) {
       Alert.alert(
-        'Feature Not Available',
-        'AI recipe generation is currently disabled. This feature will be available when the backend integration is complete.\n\n🔧 Using Cloudflare Workers backend for AI features.',
-        [{ text: 'OK' }]
+        "Feature Not Available",
+        "AI recipe generation is currently disabled. This feature will be available when the backend integration is complete.\n\n🔧 Using Cloudflare Workers backend for AI features.",
+        [{ text: "OK" }],
       );
       return;
     }
@@ -139,9 +149,9 @@ export const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       const prompt = `Create a detailed, personalized recipe based on the following request:
 
 DISH DESCRIPTION: ${inputs.description}
-${inputs.dietary ? `DIETARY REQUIREMENTS: ${inputs.dietary}` : ''}
-${inputs.time ? `TIME CONSTRAINT: ${inputs.time}` : ''}
-${inputs.servings ? `SERVINGS: ${inputs.servings}` : ''}
+${inputs.dietary ? `DIETARY REQUIREMENTS: ${inputs.dietary}` : ""}
+${inputs.time ? `TIME CONSTRAINT: ${inputs.time}` : ""}
+${inputs.servings ? `SERVINGS: ${inputs.servings}` : ""}
 
 ${
   profile?.personalInfo
@@ -150,9 +160,9 @@ USER PROFILE:
 - Age: ${profile.personalInfo.age}
 - Gender: ${profile.personalInfo.gender}
 - Activity Level: ${profile.personalInfo.activityLevel}
-- Fitness Goals: ${profile.fitnessGoals?.primaryGoals?.join(', ') || 'General health'}
+- Fitness Goals: ${profile.fitnessGoals?.primaryGoals?.join(", ") || "General health"}
 `
-    : ''
+    : ""
 }
 
 Requirements:
@@ -169,7 +179,7 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
       // Use structured output for 100% reliable recipe generation
       const response = await geminiService.generateResponse();
 
-      if (response.success && 'data' in response && response.data) {
+      if (response.success && "data" in response && response.data) {
         // Recipe data is already structured - no parsing needed!
         const structuredRecipe = response.data as any;
 
@@ -179,36 +189,41 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
           description: structuredRecipe.description,
           content: structuredRecipe, // Store full structured data
           createdAt: new Date().toISOString(),
-          dietary: inputs.dietary || '',
-          time: inputs.time || '',
-          servings: structuredRecipe.servings?.toString() || inputs.servings || '',
+          dietary: inputs.dietary || "",
+          time: inputs.time || "",
+          servings:
+            structuredRecipe.servings?.toString() || inputs.servings || "",
           userGenerated: true,
           structuredData: structuredRecipe, // Include structured data for advanced features
         };
 
         onRecipeCreated(recipeData);
 
-        Alert.alert('🎉 Recipe Created!', `Your custom recipe has been generated successfully!`, [
-          {
-            text: 'View Recipe',
-            onPress: () => {
-              onClose();
-              // You could navigate to a recipe detail screen here
+        Alert.alert(
+          "🎉 Recipe Created!",
+          `Your custom recipe has been generated successfully!`,
+          [
+            {
+              text: "View Recipe",
+              onPress: () => {
+                onClose();
+                // You could navigate to a recipe detail screen here
+              },
             },
-          },
-        ]);
+          ],
+        );
 
         // Reset form
         setInputs({});
       } else {
-        throw new Error(response.error || 'Failed to generate recipe');
+        throw new Error(response.error || "Failed to generate recipe");
       }
     } catch (error) {
-      console.error('Recipe creation failed:', error);
+      console.error("Recipe creation failed:", error);
       Alert.alert(
-        'Creation Failed',
-        'Failed to create recipe. Please try again with a clearer description.',
-        [{ text: 'OK' }]
+        "Creation Failed",
+        "Failed to create recipe. Please try again with a clearer description.",
+        [{ text: "OK" }],
       );
     } finally {
       setIsGenerating(false);
@@ -228,14 +243,15 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
     >
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.headerEmoji}>📝</Text>
             <Text style={styles.headerTitle}>Create Recipe</Text>
             <Text style={styles.headerSubtitle}>
-              Describe what you want to cook and AI will create a personalized recipe
+              Describe what you want to cook and AI will create a personalized
+              recipe
             </Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -249,7 +265,9 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
             <View
               style={[
                 styles.progressFill,
-                { width: `${(getFilledFields() / recipePrompts.length) * 100}%` },
+                {
+                  width: `${(getFilledFields() / recipePrompts.length) * 100}%`,
+                },
               ]}
             />
           </View>
@@ -279,12 +297,12 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
                 ]}
                 placeholder={prompt.placeholder}
                 placeholderTextColor={ResponsiveTheme.colors.textMuted}
-                value={inputs[prompt.id] || ''}
+                value={inputs[prompt.id] || ""}
                 onChangeText={(value) => handleInputChange(prompt.id, value)}
                 onFocus={() => setActiveInput(prompt.id)}
                 onBlur={() => setActiveInput(null)}
-                multiline={prompt.id === 'description'}
-                numberOfLines={prompt.id === 'description' ? 3 : 1}
+                multiline={prompt.id === "description"}
+                numberOfLines={prompt.id === "description" ? 3 : 1}
                 textAlignVertical="top"
               />
 
@@ -296,14 +314,16 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
                     key={exampleIndex}
                     style={[
                       styles.exampleChip,
-                      inputs[prompt.id] === example && styles.exampleChipSelected,
+                      inputs[prompt.id] === example &&
+                        styles.exampleChipSelected,
                     ]}
                     onPress={() => handleExamplePress(prompt.id, example)}
                   >
                     <Text
                       style={[
                         styles.exampleText,
-                        inputs[prompt.id] === example && styles.exampleTextSelected,
+                        inputs[prompt.id] === example &&
+                          styles.exampleTextSelected,
                       ]}
                     >
                       {example}
@@ -318,10 +338,16 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
           <Card style={styles.aiCard} variant="outlined">
             <Text style={styles.aiTitle}>🤖 AI Recipe Intelligence</Text>
             <View style={styles.aiFeatures}>
-              <Text style={styles.aiFeature}>• Personalized to your profile</Text>
-              <Text style={styles.aiFeature}>• Accurate nutrition calculations</Text>
+              <Text style={styles.aiFeature}>
+                • Personalized to your profile
+              </Text>
+              <Text style={styles.aiFeature}>
+                • Accurate nutrition calculations
+              </Text>
               <Text style={styles.aiFeature}>• Step-by-step instructions</Text>
-              <Text style={styles.aiFeature}>• Cooking tips and variations</Text>
+              <Text style={styles.aiFeature}>
+                • Cooking tips and variations
+              </Text>
             </View>
           </Card>
         </ScrollView>
@@ -331,14 +357,18 @@ Generate a comprehensive recipe that's practical, healthy, and aligned with the 
           <TouchableOpacity
             style={[
               styles.createButton,
-              (!inputs.description?.trim() || isGenerating) && styles.createButtonDisabled,
+              (!inputs.description?.trim() || isGenerating) &&
+                styles.createButtonDisabled,
             ]}
             onPress={handleCreateRecipe}
             disabled={!inputs.description?.trim() || isGenerating}
           >
             {isGenerating ? (
               <View style={styles.loadingContent}>
-                <ActivityIndicator size="small" color={ResponsiveTheme.colors.white} />
+                <ActivityIndicator
+                  size="small"
+                  color={ResponsiveTheme.colors.white}
+                />
                 <Text style={styles.createButtonText}>Creating Recipe...</Text>
               </View>
             ) : (
@@ -358,9 +388,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
@@ -368,7 +398,7 @@ const styles = StyleSheet.create({
 
   headerContent: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   headerEmoji: {
@@ -386,7 +416,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(18),
   },
 
@@ -395,9 +425,9 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: rs(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
     right: ResponsiveTheme.spacing.lg,
     top: ResponsiveTheme.spacing.lg,
   },
@@ -421,7 +451,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: rs(2),
   },
@@ -429,7 +459,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   scrollView: {
@@ -443,8 +473,8 @@ const styles = StyleSheet.create({
   },
 
   promptHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
@@ -483,7 +513,7 @@ const styles = StyleSheet.create({
   },
 
   textInputFilled: {
-    backgroundColor: ResponsiveTheme.colors.primary + '08',
+    backgroundColor: ResponsiveTheme.colors.primary + "08",
   },
 
   examplesLabel: {
@@ -494,8 +524,8 @@ const styles = StyleSheet.create({
   },
 
   examplesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -555,8 +585,8 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: rh(56),
   },
 
@@ -571,8 +601,8 @@ const styles = StyleSheet.create({
   },
 
   loadingContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
 });

@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -959,178 +961,193 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      {/* OB-UX-006: KeyboardAvoidingView for proper keyboard handling */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Header with Gradient */}
-        {/* Hero Section with Background Image */}
-        <HeroSection
-          image={{
-            uri: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
-          }}
-          overlayGradient={gradients.overlay.dark}
-          contentPosition="center"
-          minHeight={180}
-          maxHeight={260}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {/* Animated Avatar Placeholder */}
-          <View style={styles.avatarContainer}>
-            <AnimatedIcon
-              icon={
-                <View style={styles.avatarCircle}>
-                  <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
-                </View>
-              }
-              animationType="pulse"
-              continuous={true}
-              animationDuration={1500}
-              size={rf(80)}
-            />
-          </View>
-
-          <Text style={styles.title} numberOfLines={1}>
-            Tell us about yourself
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={2} ellipsizeMode="tail">
-            This helps us create a personalized fitness plan just for you
-          </Text>
-
-          {/* Auto-save Indicator */}
-          {isAutoSaving && (
-            <View style={styles.autoSaveIndicator}>
-              <Ionicons
-                name="cloud-upload-outline"
-                size={rf(16)}
-                color={ResponsiveTheme.colors.success}
+          {/* Header with Gradient */}
+          {/* Hero Section with Background Image */}
+          <HeroSection
+            image={{
+              uri: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&q=80",
+            }}
+            overlayGradient={gradients.overlay.dark}
+            contentPosition="center"
+            minHeight={180}
+            maxHeight={260}
+          >
+            {/* Animated Avatar Placeholder */}
+            <View style={styles.avatarContainer}>
+              <AnimatedIcon
+                icon={
+                  <View style={styles.avatarCircle}>
+                    <Ionicons name="person" size={rf(32)} color="#FFFFFF" />
+                  </View>
+                }
+                animationType="pulse"
+                continuous={true}
+                animationDuration={1500}
+                size={rf(80)}
               />
-              <Text style={styles.autoSaveText} numberOfLines={1}>
-                Saving...
-              </Text>
             </View>
-          )}
-        </HeroSection>
 
-        {/* Form Sections */}
-        <View style={styles.content}>
-          <AnimatedSection delay={0}>{renderNameSection()}</AnimatedSection>
-
-          <AnimatedSection delay={100}>
-            {renderDemographicsSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={200}>
-            {renderLocationSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={300}>
-            {renderOccupationSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={400}>
-            {renderSleepScheduleSection()}
-          </AnimatedSection>
-        </View>
-
-        {/* Validation Summary */}
-        {validationResult && (
-          <View style={styles.validationSummary}>
-            <GlassCard
-              elevation={3}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.validationCard}
+            <Text style={styles.title} numberOfLines={1}>
+              Tell us about yourself
+            </Text>
+            <Text
+              style={styles.subtitle}
+              numberOfLines={2}
+              ellipsizeMode="tail"
             >
-              <View style={styles.validationTitleRow}>
+              This helps us create a personalized fitness plan just for you
+            </Text>
+
+            {/* Auto-save Indicator */}
+            {isAutoSaving && (
+              <View style={styles.autoSaveIndicator}>
                 <Ionicons
-                  name={
-                    validationResult.is_valid
-                      ? "checkmark-circle"
-                      : "alert-circle"
-                  }
-                  size={rf(20)}
-                  color={
-                    validationResult.is_valid
-                      ? ResponsiveTheme.colors.secondary
-                      : ResponsiveTheme.colors.warning
-                  }
+                  name="cloud-upload-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.success}
                 />
-                <Text
-                  style={[
-                    styles.validationTitle,
-                    validationResult.is_valid && styles.validationTitleSuccess,
-                  ]}
-                >
-                  {validationResult.is_valid
-                    ? "Ready to Continue"
-                    : "Please Complete"}
+                <Text style={styles.autoSaveText} numberOfLines={1}>
+                  Saving...
                 </Text>
               </View>
-              <Text style={styles.validationPercentage} numberOfLines={1}>
-                {validationResult.completion_percentage}% Complete
-              </Text>
+            )}
+          </HeroSection>
 
-              {/* DEBUG: Show current form data */}
-              {__DEV__ && (
-                <View style={styles.debugInfo}>
-                  <Text style={styles.debugTitle}>Debug Info:</Text>
-                  <Text style={styles.debugText}>
-                    Name: {formData.first_name} {formData.last_name}
-                  </Text>
-                  <Text style={styles.debugText}>Age: {formData.age}</Text>
-                  <Text style={styles.debugText}>
-                    Country: {formData.country}
-                  </Text>
-                  <Text style={styles.debugText}>State: {formData.state}</Text>
-                  <Text style={styles.debugText}>
-                    Valid: {validationResult.is_valid ? "YES" : "NO"}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.debugButton}
-                    onPress={() => {
-                      console.log("[DEBUG] Manual validation trigger");
-                      console.log("[DEBUG] Current formData:", formData);
-                      // Force update parent state
-                      const finalData =
-                        showCustomCountry && customCountry
-                          ? { ...formData, country: customCountry }
-                          : formData;
-                      onUpdate(finalData);
-                    }}
-                  >
-                    <Text style={styles.debugButtonText}>Force Update</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+          {/* Form Sections */}
+          <View style={styles.content}>
+            <AnimatedSection delay={0}>{renderNameSection()}</AnimatedSection>
 
-              {validationResult.errors.length > 0 && (
-                <View style={styles.validationErrors}>
-                  <Text style={styles.validationErrorTitle}>Required:</Text>
-                  {validationResult.errors.map((error, index) => (
-                    <Text key={index} style={styles.validationErrorText}>
-                      • {error}
-                    </Text>
-                  ))}
-                </View>
-              )}
+            <AnimatedSection delay={100}>
+              {renderDemographicsSection()}
+            </AnimatedSection>
 
-              {validationResult.warnings.length > 0 && (
-                <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>
-                    Recommendations:
-                  </Text>
-                  {validationResult.warnings.map((warning, index) => (
-                    <Text key={index} style={styles.validationWarningText}>
-                      • {warning}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </GlassCard>
+            <AnimatedSection delay={200}>
+              {renderLocationSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={300}>
+              {renderOccupationSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={400}>
+              {renderSleepScheduleSection()}
+            </AnimatedSection>
           </View>
-        )}
-      </ScrollView>
+
+          {/* Validation Summary */}
+          {validationResult && (
+            <View style={styles.validationSummary}>
+              <GlassCard
+                elevation={3}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={styles.validationCard}
+              >
+                <View style={styles.validationTitleRow}>
+                  <Ionicons
+                    name={
+                      validationResult.is_valid
+                        ? "checkmark-circle"
+                        : "alert-circle"
+                    }
+                    size={rf(20)}
+                    color={
+                      validationResult.is_valid
+                        ? ResponsiveTheme.colors.secondary
+                        : ResponsiveTheme.colors.warning
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.validationTitle,
+                      validationResult.is_valid &&
+                        styles.validationTitleSuccess,
+                    ]}
+                  >
+                    {validationResult.is_valid
+                      ? "Ready to Continue"
+                      : "Please Complete"}
+                  </Text>
+                </View>
+                <Text style={styles.validationPercentage} numberOfLines={1}>
+                  {validationResult.completion_percentage}% Complete
+                </Text>
+
+                {/* DEBUG: Show current form data */}
+                {__DEV__ && (
+                  <View style={styles.debugInfo}>
+                    <Text style={styles.debugTitle}>Debug Info:</Text>
+                    <Text style={styles.debugText}>
+                      Name: {formData.first_name} {formData.last_name}
+                    </Text>
+                    <Text style={styles.debugText}>Age: {formData.age}</Text>
+                    <Text style={styles.debugText}>
+                      Country: {formData.country}
+                    </Text>
+                    <Text style={styles.debugText}>
+                      State: {formData.state}
+                    </Text>
+                    <Text style={styles.debugText}>
+                      Valid: {validationResult.is_valid ? "YES" : "NO"}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.debugButton}
+                      onPress={() => {
+                        console.log("[DEBUG] Manual validation trigger");
+                        console.log("[DEBUG] Current formData:", formData);
+                        // Force update parent state
+                        const finalData =
+                          showCustomCountry && customCountry
+                            ? { ...formData, country: customCountry }
+                            : formData;
+                        onUpdate(finalData);
+                      }}
+                    >
+                      <Text style={styles.debugButtonText}>Force Update</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {validationResult.errors.length > 0 && (
+                  <View style={styles.validationErrors}>
+                    <Text style={styles.validationErrorTitle}>Required:</Text>
+                    {validationResult.errors.map((error, index) => (
+                      <Text key={index} style={styles.validationErrorText}>
+                        • {error}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {validationResult.warnings.length > 0 && (
+                  <View style={styles.validationWarnings}>
+                    <Text style={styles.validationWarningTitle}>
+                      Recommendations:
+                    </Text>
+                    {validationResult.warnings.map((warning, index) => (
+                      <Text key={index} style={styles.validationWarningText}>
+                        • {warning}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </GlassCard>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
@@ -1217,6 +1234,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+
+  keyboardAvoidingView: {
+    flex: 1,
   },
 
   scrollView: {

@@ -1,18 +1,18 @@
-import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   interpolate,
-} from 'react-native-reanimated';
-import { rf, rw, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { TabValidationResult } from '../../types/onboarding';
-import { animations } from '../../theme/animations';
+} from "react-native-reanimated";
+import { rf, rw, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { TabValidationResult } from "../../types/onboarding";
+import { animations } from "../../theme/animations";
 
 // ============================================================================
 // TYPES
@@ -38,12 +38,15 @@ interface OnboardingTabBarProps {
 // TAB CONFIGURATION
 // ============================================================================
 
-export const ONBOARDING_TABS: Omit<TabConfig, 'isCompleted' | 'isAccessible' | 'validationResult'>[] = [
-  { id: 1, title: 'Personal', iconName: 'person' },
-  { id: 2, title: 'Diet', iconName: 'nutrition' },
-  { id: 3, title: 'Body', iconName: 'body' },
-  { id: 4, title: 'Workout', iconName: 'barbell' },
-  { id: 5, title: 'Review', iconName: 'checkmark-done' },
+export const ONBOARDING_TABS: Omit<
+  TabConfig,
+  "isCompleted" | "isAccessible" | "validationResult"
+>[] = [
+  { id: 1, title: "Personal", iconName: "person" },
+  { id: 2, title: "Diet", iconName: "nutrition" },
+  { id: 3, title: "Body", iconName: "body" },
+  { id: 4, title: "Workout", iconName: "barbell" },
+  { id: 5, title: "Review", iconName: "checkmark-done" },
 ];
 
 // ============================================================================
@@ -72,7 +75,10 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   const animValue = useSharedValue(0);
 
   useEffect(() => {
-    animValue.value = withSpring(isActive ? 1 : 0, { damping: 12, stiffness: 120 });
+    animValue.value = withSpring(isActive ? 1 : 0, {
+      damping: 12,
+      stiffness: 120,
+    });
   }, [isActive]);
 
   const animatedCircleStyle = useAnimatedStyle(() => ({
@@ -85,11 +91,13 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
     <View style={styles.stepWrapper}>
       {/* Connection Line - Left side */}
       {index > 0 && (
-        <View style={[
-          styles.connectionLine,
-          styles.connectionLineLeft,
-          (isCompleted || isActive) && styles.connectionLineActive,
-        ]} />
+        <View
+          style={[
+            styles.connectionLine,
+            styles.connectionLineLeft,
+            (isCompleted || isActive) && styles.connectionLineActive,
+          ]}
+        />
       )}
 
       <Animated.View style={animatedCircleStyle}>
@@ -110,37 +118,46 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
             </View>
           ) : isActive ? (
             <LinearGradient
-              colors={['#6366F1', '#8B5CF6']}
+              colors={["#6366F1", "#8B5CF6"]}
               style={styles.activeCircleGradient}
             >
               <Text style={styles.stepNumber}>{tab.id}</Text>
             </LinearGradient>
           ) : (
-            <Text style={[
-              styles.stepNumber,
-              isDisabled && styles.stepNumberDisabled,
-            ]}>{tab.id}</Text>
+            <Text
+              style={[
+                styles.stepNumber,
+                isDisabled && styles.stepNumberDisabled,
+              ]}
+            >
+              {tab.id}
+            </Text>
           )}
         </TouchableOpacity>
       </Animated.View>
 
       {/* Label */}
-      <Text style={[
-        styles.stepLabel,
-        isActive && styles.stepLabelActive,
-        isCompleted && styles.stepLabelCompleted,
-        isDisabled && styles.stepLabelDisabled,
-      ]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.stepLabel,
+          isActive && styles.stepLabelActive,
+          isCompleted && styles.stepLabelCompleted,
+          isDisabled && styles.stepLabelDisabled,
+        ]}
+        numberOfLines={1}
+      >
         {tab.title}
       </Text>
 
       {/* Connection Line - Right side */}
       {index < totalSteps - 1 && (
-        <View style={[
-          styles.connectionLine,
-          styles.connectionLineRight,
-          isCompleted && styles.connectionLineActive,
-        ]} />
+        <View
+          style={[
+            styles.connectionLine,
+            styles.connectionLineRight,
+            isCompleted && styles.connectionLineActive,
+          ]}
+        />
       )}
     </View>
   );
@@ -157,7 +174,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
   completionPercentage,
 }) => {
   const progressAnim = useSharedValue(0);
-  const completedCount = tabs.filter(t => t.isCompleted).length;
+  const completedCount = tabs.filter((t) => t.isCompleted).length;
 
   useEffect(() => {
     progressAnim.value = withTiming(completionPercentage, { duration: 500 });
@@ -172,9 +189,11 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
       {/* Subtle Progress Bar at Top */}
       <View style={styles.progressBarWrapper}>
         <View style={styles.progressBarBg}>
-          <Animated.View style={[styles.progressBarFill, animatedProgressStyle]}>
+          <Animated.View
+            style={[styles.progressBarFill, animatedProgressStyle]}
+          >
             <LinearGradient
-              colors={['#6366F1', '#8B5CF6', '#A855F7']}
+              colors={["#6366F1", "#8B5CF6", "#A855F7"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
@@ -197,7 +216,9 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
               isActive={isActive}
               isCompleted={isCompleted}
               isAccessible={isAccessible}
-              onPress={() => (isAccessible || isCompleted || isActive) && onTabPress(tab.id)}
+              onPress={() =>
+                (isAccessible || isCompleted || isActive) && onTabPress(tab.id)
+              }
               index={index}
               totalSteps={tabs.length}
             />
@@ -221,7 +242,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(10, 10, 25, 0.95)',
+    backgroundColor: "rgba(10, 10, 25, 0.95)",
     paddingTop: rh(6),
     paddingBottom: rh(10),
     paddingHorizontal: rw(12),
@@ -235,54 +256,54 @@ const styles = StyleSheet.create({
 
   progressBarBg: {
     height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     borderRadius: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   // Steps Row
   stepsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     paddingHorizontal: rw(4),
   },
 
   stepWrapper: {
     flex: 1,
-    alignItems: 'center',
-    position: 'relative',
+    alignItems: "center",
+    position: "relative",
   },
 
   // Connection Lines
   connectionLine: {
-    position: 'absolute',
+    position: "absolute",
     top: rw(11),
     height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
     zIndex: 0,
   },
 
   connectionLineLeft: {
     left: 0,
-    right: '50%',
+    right: "50%",
     marginRight: rw(11),
   },
 
   connectionLineRight: {
-    left: '50%',
+    left: "50%",
     right: 0,
     marginLeft: rw(11),
   },
 
   connectionLineActive: {
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
 
   // Step Circle
@@ -290,19 +311,19 @@ const styles = StyleSheet.create({
     width: rw(24),
     height: rw(24),
     borderRadius: rw(12),
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   stepCircleActive: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 0,
-    shadowColor: '#6366F1',
+    shadowColor: "#6366F1",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
@@ -310,72 +331,72 @@ const styles = StyleSheet.create({
   },
 
   stepCircleCompleted: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
+    backgroundColor: "#10B981",
+    borderColor: "#10B981",
   },
 
   stepCircleDisabled: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    borderColor: "rgba(255, 255, 255, 0.05)",
   },
 
   activeCircleGradient: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: rw(12),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   checkmarkBg: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   stepNumber: {
     fontSize: rf(10),
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.5)',
+    fontWeight: "700",
+    color: "rgba(255, 255, 255, 0.5)",
   },
 
   stepNumberDisabled: {
-    color: 'rgba(255, 255, 255, 0.2)',
+    color: "rgba(255, 255, 255, 0.2)",
   },
 
   // Step Label
   stepLabel: {
     fontSize: rf(9),
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.35)',
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.35)",
     marginTop: rh(5),
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   stepLabelActive: {
-    color: '#A78BFA',
-    fontWeight: '600',
+    color: "#A78BFA",
+    fontWeight: "600",
   },
 
   stepLabelCompleted: {
-    color: '#10B981',
+    color: "#10B981",
   },
 
   stepLabelDisabled: {
-    color: 'rgba(255, 255, 255, 0.15)',
+    color: "rgba(255, 255, 255, 0.15)",
   },
 
   // Step Counter
   stepCounter: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: rh(8),
   },
 
   stepCounterText: {
     fontSize: rf(9),
-    color: 'rgba(255, 255, 255, 0.4)',
-    fontWeight: '500',
+    color: "rgba(255, 255, 255, 0.4)",
+    fontWeight: "500",
     letterSpacing: 1,
   },
 });

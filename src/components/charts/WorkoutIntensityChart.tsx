@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface WorkoutDay {
   date: string;
@@ -14,7 +20,10 @@ interface WorkoutIntensityChartProps {
   style?: any;
 }
 
-export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ data, style }) => {
+export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({
+  data,
+  style,
+}) => {
   // Generate calendar grid for the last 12 weeks
   const generateCalendarData = () => {
     const weeks = [];
@@ -28,7 +37,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + week * 7 + day);
 
-        const dateString = currentDate.toISOString().split('T')[0];
+        const dateString = currentDate.toISOString().split("T")[0];
         const workoutData = data.find((workout) => workout.date === dateString);
 
         weekData.push({
@@ -44,7 +53,7 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
   };
 
   const calendarData = generateCalendarData();
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const dayLabels = ["S", "M", "T", "W", "T", "F", "S"];
 
   // Get intensity color
   const getIntensityColor = (intensity: number) => {
@@ -52,10 +61,10 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
 
     const colors = [
       THEME.colors.surface,
-      '#1a3d2e', // Very light green
-      '#2d5a3d', // Light green
-      '#40774c', // Medium green
-      '#53945b', // Dark green
+      "#1a3d2e", // Very light green
+      "#2d5a3d", // Light green
+      "#40774c", // Medium green
+      "#53945b", // Dark green
       THEME.colors.success, // Darkest green
     ];
 
@@ -65,8 +74,13 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
   // Calculate stats
   const totalWorkouts = data.length;
   const averageIntensity =
-    data.length > 0 ? data.reduce((sum, workout) => sum + workout.intensity, 0) / data.length : 0;
-  const totalDuration = data.reduce((sum, workout) => sum + workout.duration, 0);
+    data.length > 0
+      ? data.reduce((sum, workout) => sum + workout.intensity, 0) / data.length
+      : 0;
+  const totalDuration = data.reduce(
+    (sum, workout) => sum + workout.duration,
+    0,
+  );
 
   const [selectedDay, setSelectedDay] = React.useState<any>(null);
 
@@ -89,7 +103,9 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
           <Text style={styles.statLabel}>Avg Intensity</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{Math.round(totalDuration / 60)}h</Text>
+          <Text style={styles.statValue}>
+            {Math.round(totalDuration / 60)}h
+          </Text>
           <Text style={styles.statLabel}>Total Time</Text>
         </View>
       </View>
@@ -116,7 +132,9 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
                     style={[
                       styles.dayCell,
                       {
-                        backgroundColor: getIntensityColor(day.workout?.intensity || 0),
+                        backgroundColor: getIntensityColor(
+                          day.workout?.intensity || 0,
+                        ),
                       },
                     ]}
                     onPress={() => setSelectedDay(day)}
@@ -135,7 +153,10 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
           {[0, 1, 2, 3, 4, 5].map((intensity) => (
             <View
               key={intensity}
-              style={[styles.legendCell, { backgroundColor: getIntensityColor(intensity) }]}
+              style={[
+                styles.legendCell,
+                { backgroundColor: getIntensityColor(intensity) },
+              ]}
             />
           ))}
         </View>
@@ -146,24 +167,30 @@ export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({ da
       {selectedDay && selectedDay.workout && (
         <View style={styles.selectedDayContainer}>
           <Text style={styles.selectedDayDate}>
-            {selectedDay.date.toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'short',
-              day: 'numeric',
+            {selectedDay.date.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "short",
+              day: "numeric",
             })}
           </Text>
           <View style={styles.selectedDayStats}>
             <View style={styles.selectedDayStat}>
               <Text style={styles.selectedDayStatLabel}>Type</Text>
-              <Text style={styles.selectedDayStatValue}>{selectedDay.workout.type}</Text>
+              <Text style={styles.selectedDayStatValue}>
+                {selectedDay.workout.type}
+              </Text>
             </View>
             <View style={styles.selectedDayStat}>
               <Text style={styles.selectedDayStatLabel}>Duration</Text>
-              <Text style={styles.selectedDayStatValue}>{selectedDay.workout.duration}m</Text>
+              <Text style={styles.selectedDayStatValue}>
+                {selectedDay.workout.duration}m
+              </Text>
             </View>
             <View style={styles.selectedDayStat}>
               <Text style={styles.selectedDayStatLabel}>Intensity</Text>
-              <Text style={styles.selectedDayStatValue}>{selectedDay.workout.intensity}/5</Text>
+              <Text style={styles.selectedDayStatValue}>
+                {selectedDay.workout.intensity}/5
+              </Text>
             </View>
           </View>
         </View>
@@ -197,8 +224,8 @@ const styles = StyleSheet.create({
   },
 
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
     backgroundColor: THEME.colors.surface,
@@ -206,7 +233,7 @@ const styles = StyleSheet.create({
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {
@@ -226,7 +253,7 @@ const styles = StyleSheet.create({
   },
 
   dayLabelsContainer: {
-    flexDirection: 'column',
+    flexDirection: "column",
     marginRight: THEME.spacing.sm,
   },
 
@@ -234,19 +261,19 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textMuted,
     height: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 2,
   },
 
   calendarGrid: {
-    flexDirection: 'row',
-    position: 'absolute',
+    flexDirection: "row",
+    position: "absolute",
     left: 20,
     top: 0,
   },
 
   weekColumn: {
-    flexDirection: 'column',
+    flexDirection: "column",
     marginRight: 2,
   },
 
@@ -258,9 +285,9 @@ const styles = StyleSheet.create({
   },
 
   legendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: THEME.spacing.md,
   },
 
@@ -270,7 +297,7 @@ const styles = StyleSheet.create({
   },
 
   legendScale: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginHorizontal: THEME.spacing.sm,
   },
 
@@ -296,12 +323,12 @@ const styles = StyleSheet.create({
   },
 
   selectedDayStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 
   selectedDayStat: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   selectedDayStatLabel: {

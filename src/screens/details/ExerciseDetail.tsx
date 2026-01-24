@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 interface ExerciseDetailProps {
   exerciseId: string;
@@ -31,67 +31,78 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   // Mock exercise data
   const exercise = {
     id: exerciseId,
-    name: 'Bench Press',
+    name: "Bench Press",
     description:
-      'A compound upper body exercise that primarily targets the chest, shoulders, and triceps',
-    difficulty: 'Intermediate',
-    targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
-    equipment: ['Barbell', 'Bench'],
+      "A compound upper body exercise that primarily targets the chest, shoulders, and triceps",
+    difficulty: "Intermediate",
+    targetMuscles: ["Chest", "Triceps", "Shoulders"],
+    equipment: ["Barbell", "Bench"],
     instructions: [
       {
         step: 1,
-        title: 'Setup Position',
+        title: "Setup Position",
         description:
-          'Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.',
+          "Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.",
         tips: [
-          'Keep your back flat against the bench',
-          'Maintain a slight arch in your lower back',
+          "Keep your back flat against the bench",
+          "Maintain a slight arch in your lower back",
         ],
       },
       {
         step: 2,
-        title: 'Grip the Bar',
+        title: "Grip the Bar",
         description:
-          'Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.',
-        tips: ['Wrap your thumbs around the bar', 'Keep wrists straight and strong'],
+          "Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.",
+        tips: [
+          "Wrap your thumbs around the bar",
+          "Keep wrists straight and strong",
+        ],
       },
       {
         step: 3,
-        title: 'Unrack the Weight',
+        title: "Unrack the Weight",
         description:
-          'Lift the bar off the rack and position it directly over your chest with arms fully extended.',
-        tips: ['Move slowly and controlled', 'Engage your core for stability'],
+          "Lift the bar off the rack and position it directly over your chest with arms fully extended.",
+        tips: ["Move slowly and controlled", "Engage your core for stability"],
       },
       {
         step: 4,
-        title: 'Lower the Bar',
+        title: "Lower the Bar",
         description:
-          'Slowly lower the bar to your chest, keeping your elbows at about a 45-degree angle.',
-        tips: ['Control the descent', 'Touch your chest lightly', 'Keep your shoulders back'],
+          "Slowly lower the bar to your chest, keeping your elbows at about a 45-degree angle.",
+        tips: [
+          "Control the descent",
+          "Touch your chest lightly",
+          "Keep your shoulders back",
+        ],
       },
       {
         step: 5,
-        title: 'Press Up',
+        title: "Press Up",
         description:
-          'Drive the bar back up to the starting position, focusing on pushing through your chest.',
-        tips: ['Exhale during the press', 'Keep the bar path straight', 'Fully extend your arms'],
+          "Drive the bar back up to the starting position, focusing on pushing through your chest.",
+        tips: [
+          "Exhale during the press",
+          "Keep the bar path straight",
+          "Fully extend your arms",
+        ],
       },
     ],
     sets: 4,
-    reps: '8-10',
-    restTime: '2-3 minutes',
-    weight: '135-155 lbs',
+    reps: "8-10",
+    restTime: "2-3 minutes",
+    weight: "135-155 lbs",
     safetyTips: [
-      'Always use a spotter when lifting heavy weights',
-      'Warm up thoroughly before starting',
-      'Never bounce the bar off your chest',
-      'Keep your feet on the ground throughout the movement',
+      "Always use a spotter when lifting heavy weights",
+      "Warm up thoroughly before starting",
+      "Never bounce the bar off your chest",
+      "Keep your feet on the ground throughout the movement",
     ],
     commonMistakes: [
-      'Arching the back excessively',
-      'Flaring elbows too wide',
-      'Pressing the bar toward the face',
-      'Using too much weight too soon',
+      "Arching the back excessively",
+      "Flaring elbows too wide",
+      "Pressing the bar toward the face",
+      "Using too much weight too soon",
     ],
   };
 
@@ -126,11 +137,11 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner':
+      case "Beginner":
         return THEME.colors.success;
-      case 'Intermediate':
+      case "Intermediate":
         return THEME.colors.warning;
-      case 'Advanced':
+      case "Advanced":
         return THEME.colors.error;
       default:
         return THEME.colors.textSecondary;
@@ -150,17 +161,25 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Exercise Info */}
         <Card style={styles.exerciseCard} variant="elevated">
           <View style={styles.exerciseHeader}>
             <View style={styles.exerciseInfo}>
               <Text style={styles.exerciseName}>{exercise.name}</Text>
-              <Text style={styles.exerciseDescription}>{exercise.description}</Text>
+              <Text style={styles.exerciseDescription}>
+                {exercise.description}
+              </Text>
             </View>
             <View style={styles.difficultyBadge}>
               <Text
-                style={[styles.difficultyText, { color: getDifficultyColor(exercise.difficulty) }]}
+                style={[
+                  styles.difficultyText,
+                  { color: getDifficultyColor(exercise.difficulty) },
+                ]}
               >
                 {exercise.difficulty}
               </Text>
@@ -210,8 +229,13 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
             {/* Animation Controls */}
             <View style={styles.animationControls}>
-              <TouchableOpacity style={styles.playButton} onPress={() => setIsPlaying(!isPlaying)}>
-                <Text style={styles.playButtonText}>{isPlaying ? '⏸️' : '▶️'}</Text>
+              <TouchableOpacity
+                style={styles.playButton}
+                onPress={() => setIsPlaying(!isPlaying)}
+              >
+                <Text style={styles.playButtonText}>
+                  {isPlaying ? "⏸️" : "▶️"}
+                </Text>
               </TouchableOpacity>
 
               <View style={styles.stepIndicators}>
@@ -232,7 +256,9 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 
         {/* Instructions */}
         <Card style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>Step-by-Step Instructions</Text>
+          <Text style={styles.instructionsTitle}>
+            Step-by-Step Instructions
+          </Text>
 
           {exercise.instructions.map((instruction, index) => (
             <View
@@ -243,7 +269,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
               ]}
             >
               <View style={styles.instructionHeader}>
-                <View style={[styles.stepNumber, currentStep === index && styles.stepNumberActive]}>
+                <View
+                  style={[
+                    styles.stepNumber,
+                    currentStep === index && styles.stepNumberActive,
+                  ]}
+                >
                   <Text
                     style={[
                       styles.stepNumberText,
@@ -263,7 +294,9 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                 </Text>
               </View>
 
-              <Text style={styles.instructionDescription}>{instruction.description}</Text>
+              <Text style={styles.instructionDescription}>
+                {instruction.description}
+              </Text>
 
               {instruction.tips.length > 0 && (
                 <View style={styles.tipsContainer}>
@@ -321,9 +354,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: 1,
@@ -335,8 +368,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   backIcon: {
@@ -355,8 +388,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   favoriteIcon: {
@@ -374,9 +407,9 @@ const styles = StyleSheet.create({
   },
 
   exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.md,
   },
 
@@ -411,8 +444,8 @@ const styles = StyleSheet.create({
   },
 
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: THEME.spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
@@ -421,7 +454,7 @@ const styles = StyleSheet.create({
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {
@@ -448,18 +481,18 @@ const styles = StyleSheet.create({
   },
 
   musclesList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs,
   },
 
   muscleTag: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs / 2,
     borderRadius: THEME.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   muscleText: {
@@ -473,7 +506,7 @@ const styles = StyleSheet.create({
   },
 
   animationContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   animationPlaceholder: {
@@ -481,8 +514,8 @@ const styles = StyleSheet.create({
     height: 200,
     backgroundColor: THEME.colors.surface,
     borderRadius: THEME.borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: THEME.spacing.md,
   },
 
@@ -497,8 +530,8 @@ const styles = StyleSheet.create({
   },
 
   animationControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.md,
   },
 
@@ -507,8 +540,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     backgroundColor: THEME.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   playButtonText: {
@@ -516,7 +549,7 @@ const styles = StyleSheet.create({
   },
 
   stepIndicators: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.xs,
   },
 
@@ -547,17 +580,17 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
 
   instructionItemActive: {
-    backgroundColor: THEME.colors.primary + '10',
-    borderColor: THEME.colors.primary + '30',
+    backgroundColor: THEME.colors.primary + "10",
+    borderColor: THEME.colors.primary + "30",
   },
 
   instructionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -566,8 +599,8 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: THEME.spacing.sm,
   },
 
@@ -624,9 +657,9 @@ const styles = StyleSheet.create({
 
   safetyCard: {
     marginBottom: THEME.spacing.md,
-    backgroundColor: THEME.colors.error + '10',
+    backgroundColor: THEME.colors.error + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.error + '30',
+    borderColor: THEME.colors.error + "30",
   },
 
   safetyTitle: {
@@ -645,9 +678,9 @@ const styles = StyleSheet.create({
 
   mistakesCard: {
     marginBottom: THEME.spacing.xxl,
-    backgroundColor: THEME.colors.warning + '10',
+    backgroundColor: THEME.colors.warning + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.warning + '30',
+    borderColor: THEME.colors.warning + "30",
   },
 
   mistakesTitle: {

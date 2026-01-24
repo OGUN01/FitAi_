@@ -1,14 +1,14 @@
 // Data Validation Service for Track B Infrastructure
 // Comprehensive validation schemas and sanitization functions
 
-import { OnboardingData, MealLog } from '../types/localData';
+import { OnboardingData, MealLog } from "../types/localData";
 
-import { PersonalInfo, FitnessGoals } from '../types/user';
+import { PersonalInfo, FitnessGoals } from "../types/user";
 
-import { WorkoutSession } from '../types/workout';
+import { WorkoutSession } from "../types/workout";
 
 // Define missing types locally
-import type { LocalStorageSchema } from '../types/localData';
+import type { LocalStorageSchema } from "../types/localData";
 
 interface ValidationResult {
   isValid: boolean;
@@ -20,7 +20,7 @@ interface ValidationError {
   field: string;
   message: string;
   code: string;
-  severity?: 'error' | 'warning';
+  severity?: "error" | "warning";
 }
 
 interface ValidationWarning {
@@ -132,31 +132,31 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate version
-    if (!schema.version || typeof schema.version !== 'string') {
+    if (!schema.version || typeof schema.version !== "string") {
       errors.push({
-        field: 'version',
-        message: 'Schema version is required and must be a string',
-        code: 'INVALID_VERSION',
-        severity: 'error',
+        field: "version",
+        message: "Schema version is required and must be a string",
+        code: "INVALID_VERSION",
+        severity: "error",
       });
     }
 
     // Validate timestamps
     if (!this.isValidISODate(schema.createdAt)) {
       errors.push({
-        field: 'createdAt',
-        message: 'Invalid createdAt timestamp',
-        code: 'INVALID_TIMESTAMP',
-        severity: 'error',
+        field: "createdAt",
+        message: "Invalid createdAt timestamp",
+        code: "INVALID_TIMESTAMP",
+        severity: "error",
       });
     }
 
     if (!this.isValidISODate(schema.updatedAt)) {
       errors.push({
-        field: 'updatedAt',
-        message: 'Invalid updatedAt timestamp',
-        code: 'INVALID_TIMESTAMP',
-        severity: 'error',
+        field: "updatedAt",
+        message: "Invalid updatedAt timestamp",
+        code: "INVALID_TIMESTAMP",
+        severity: "error",
       });
     }
 
@@ -197,7 +197,9 @@ export class ValidationService {
 
     // Validate onboarding data if present
     if (userData.onboardingData) {
-      const onboardingValidation = this.validateOnboardingData(userData.onboardingData);
+      const onboardingValidation = this.validateOnboardingData(
+        userData.onboardingData,
+      );
       errors.push(...onboardingValidation.errors);
       warnings.push(...onboardingValidation.warnings);
     }
@@ -205,13 +207,15 @@ export class ValidationService {
     // Validate preferences
     if (!userData.preferences) {
       errors.push({
-        field: 'preferences',
-        message: 'User preferences are required',
-        code: 'MISSING_PREFERENCES',
-        severity: 'error',
+        field: "preferences",
+        message: "User preferences are required",
+        code: "MISSING_PREFERENCES",
+        severity: "error",
       });
     } else {
-      const preferencesValidation = this.validateUserPreferences(userData.preferences);
+      const preferencesValidation = this.validateUserPreferences(
+        userData.preferences,
+      );
       errors.push(...preferencesValidation.errors);
       warnings.push(...preferencesValidation.warnings);
     }
@@ -225,23 +229,25 @@ export class ValidationService {
 
     if (!data.personalInfo) {
       errors.push({
-        field: 'personalInfo',
-        message: 'Personal information is required',
-        code: 'MISSING_PERSONAL_INFO',
-        severity: 'error',
+        field: "personalInfo",
+        message: "Personal information is required",
+        code: "MISSING_PERSONAL_INFO",
+        severity: "error",
       });
     } else {
-      const personalInfoValidation = this.validatePersonalInfo(data.personalInfo);
+      const personalInfoValidation = this.validatePersonalInfo(
+        data.personalInfo,
+      );
       errors.push(...personalInfoValidation.errors);
       warnings.push(...personalInfoValidation.warnings);
     }
 
     if (!data.fitnessGoals) {
       errors.push({
-        field: 'fitnessGoals',
-        message: 'Fitness goals are required',
-        code: 'MISSING_FITNESS_GOALS',
-        severity: 'error',
+        field: "fitnessGoals",
+        message: "Fitness goals are required",
+        code: "MISSING_FITNESS_GOALS",
+        severity: "error",
       });
     } else {
       const goalsValidation = this.validateFitnessGoals(data.fitnessGoals);
@@ -257,88 +263,106 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate name
-    if (!info.name || !this.isValidString(info.name, VALIDATION_RULES.NAME)) {
+    const fullName = info.name || `${info.first_name} ${info.last_name}`;
+    if (!fullName || !this.isValidString(fullName, VALIDATION_RULES.NAME)) {
       errors.push({
-        field: 'name',
+        field: "name",
         message:
-          'Name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes',
-        code: 'INVALID_NAME',
-        severity: 'error',
+          "Name must be 2-50 characters and contain only letters, spaces, hyphens, and apostrophes",
+        code: "INVALID_NAME",
+        severity: "error",
       });
     }
 
     // Validate email if provided
     if (info.email && !VALIDATION_RULES.EMAIL.pattern.test(info.email)) {
       errors.push({
-        field: 'email',
-        message: 'Invalid email format',
-        code: 'INVALID_EMAIL',
-        severity: 'error',
+        field: "email",
+        message: "Invalid email format",
+        code: "INVALID_EMAIL",
+        severity: "error",
       });
     }
 
     // Validate age
-    const age = typeof info.age === 'string' ? parseInt(info.age) : info.age;
-    if (isNaN(age) || age < VALIDATION_RULES.AGE.min || age > VALIDATION_RULES.AGE.max) {
+    const age = typeof info.age === "string" ? parseInt(info.age) : info.age;
+    if (
+      isNaN(age) ||
+      age < VALIDATION_RULES.AGE.min ||
+      age > VALIDATION_RULES.AGE.max
+    ) {
       errors.push({
-        field: 'age',
+        field: "age",
         message: `Age must be between ${VALIDATION_RULES.AGE.min} and ${VALIDATION_RULES.AGE.max}`,
-        code: 'INVALID_AGE',
-        severity: 'error',
+        code: "INVALID_AGE",
+        severity: "error",
       });
     }
 
     // Validate height
-    const heightValue = (info as any).height;
-    const height = typeof heightValue === 'string' ? parseFloat(heightValue) : heightValue;
+    const heightValue = info.height;
+    const height =
+      typeof heightValue === "string" ? parseFloat(heightValue) : heightValue;
     if (
+      height === undefined ||
       isNaN(height) ||
       height < VALIDATION_RULES.HEIGHT.min ||
       height > VALIDATION_RULES.HEIGHT.max
     ) {
       errors.push({
-        field: 'height',
+        field: "height",
         message: `Height must be between ${VALIDATION_RULES.HEIGHT.min} and ${VALIDATION_RULES.HEIGHT.max} cm`,
-        code: 'INVALID_HEIGHT',
-        severity: 'error',
+        code: "INVALID_HEIGHT",
+        severity: "error",
       });
     }
 
     // Validate weight
-    const weightValue = (info as any).weight;
-    const weight = typeof weightValue === 'string' ? parseFloat(weightValue) : weightValue;
+    const weightValue = info.weight;
+    const weight =
+      typeof weightValue === "string" ? parseFloat(weightValue) : weightValue;
     if (
+      weight === undefined ||
       isNaN(weight) ||
       weight < VALIDATION_RULES.WEIGHT.min ||
       weight > VALIDATION_RULES.WEIGHT.max
     ) {
       errors.push({
-        field: 'weight',
+        field: "weight",
         message: `Weight must be between ${VALIDATION_RULES.WEIGHT.min} and ${VALIDATION_RULES.WEIGHT.max} kg`,
-        code: 'INVALID_WEIGHT',
-        severity: 'error',
+        code: "INVALID_WEIGHT",
+        severity: "error",
       });
     }
 
     // Validate gender
-    if (!info.gender || !['male', 'female', 'other'].includes(info.gender)) {
+    if (
+      !info.gender ||
+      !["male", "female", "other", "prefer_not_to_say"].includes(info.gender)
+    ) {
       errors.push({
-        field: 'gender',
-        message: 'Gender must be male, female, or other',
-        code: 'INVALID_GENDER',
-        severity: 'error',
+        field: "gender",
+        message: "Gender must be male, female, other, or prefer_not_to_say",
+        code: "INVALID_GENDER",
+        severity: "error",
       });
     }
 
     // Validate activity level
-    const validActivityLevels = ['sedentary', 'light', 'moderate', 'active', 'extreme'];
-    const activityLevel = (info as any).activityLevel;
-    if (!activityLevel || !validActivityLevels.includes(activityLevel)) {
+    const validActivityLevels = [
+      "sedentary",
+      "light",
+      "moderate",
+      "active",
+      "extreme",
+    ];
+    const activityLevel = info.activityLevel;
+    if (activityLevel && !validActivityLevels.includes(activityLevel)) {
       errors.push({
-        field: 'activityLevel',
-        message: 'Invalid activity level',
-        code: 'INVALID_ACTIVITY_LEVEL',
-        severity: 'error',
+        field: "activityLevel",
+        message: "Invalid activity level",
+        code: "INVALID_ACTIVITY_LEVEL",
+        severity: "error",
       });
     }
 
@@ -349,57 +373,61 @@ export class ValidationService {
     const errors: ValidationError[] = [];
     const warnings: ValidationWarning[] = [];
 
-    // Validate primary goals
+    // Validate primary goals - support both snake_case and camelCase
+    const primaryGoals = goals.primary_goals || goals.primaryGoals;
     if (
-      !goals.primaryGoals ||
-      !Array.isArray(goals.primaryGoals) ||
-      goals.primaryGoals.length === 0
+      !primaryGoals ||
+      !Array.isArray(primaryGoals) ||
+      primaryGoals.length === 0
     ) {
       errors.push({
-        field: 'primaryGoals',
-        message: 'At least one primary goal is required',
-        code: 'MISSING_PRIMARY_GOALS',
-        severity: 'error',
+        field: "primaryGoals",
+        message: "At least one primary goal is required",
+        code: "MISSING_PRIMARY_GOALS",
+        severity: "error",
       });
     } else {
       const validGoals = [
-        'weight_loss',
-        'muscle_gain',
-        'strength',
-        'endurance',
-        'flexibility',
-        'general_fitness',
+        "weight_loss",
+        "muscle_gain",
+        "strength",
+        "endurance",
+        "flexibility",
+        "general_fitness",
       ];
-      const invalidGoals = goals.primaryGoals.filter((goal: any) => !validGoals.includes(goal));
+      const invalidGoals = primaryGoals.filter(
+        (goal: string) => !validGoals.includes(goal),
+      );
       if (invalidGoals.length > 0) {
         errors.push({
-          field: 'primaryGoals',
-          message: `Invalid goals: ${invalidGoals.join(', ')}`,
-          code: 'INVALID_GOALS',
-          severity: 'error',
+          field: "primaryGoals",
+          message: `Invalid goals: ${invalidGoals.join(", ")}`,
+          code: "INVALID_GOALS",
+          severity: "error",
         });
       }
     }
 
-    // Validate time commitment
-    const validTimeCommitments = ['15-30', '30-45', '45-60', '60+'];
-    if (!goals.timeCommitment || !validTimeCommitments.includes(goals.timeCommitment)) {
+    // Validate time commitment - support both snake_case and camelCase
+    const timeCommitment = goals.time_commitment || goals.timeCommitment;
+    const validTimeCommitments = ["15-30", "30-45", "45-60", "60+"];
+    if (!timeCommitment || !validTimeCommitments.includes(timeCommitment)) {
       errors.push({
-        field: 'timeCommitment',
-        message: 'Invalid time commitment',
-        code: 'INVALID_TIME_COMMITMENT',
-        severity: 'error',
+        field: "timeCommitment",
+        message: "Invalid time commitment",
+        code: "INVALID_TIME_COMMITMENT",
+        severity: "error",
       });
     }
 
     // Validate experience
-    const validExperience = ['beginner', 'intermediate', 'advanced'];
+    const validExperience = ["beginner", "intermediate", "advanced"];
     if (!goals.experience || !validExperience.includes(goals.experience)) {
       errors.push({
-        field: 'experience',
-        message: 'Invalid experience level',
-        code: 'INVALID_EXPERIENCE',
-        severity: 'error',
+        field: "experience",
+        message: "Invalid experience level",
+        code: "INVALID_EXPERIENCE",
+        severity: "error",
       });
     }
 
@@ -411,38 +439,41 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate units
-    if (!preferences.units || !['metric', 'imperial'].includes(preferences.units)) {
+    if (
+      !preferences.units ||
+      !["metric", "imperial"].includes(preferences.units)
+    ) {
       errors.push({
-        field: 'units',
-        message: 'Units must be metric or imperial',
-        code: 'INVALID_UNITS',
-        severity: 'error',
+        field: "units",
+        message: "Units must be metric or imperial",
+        code: "INVALID_UNITS",
+        severity: "error",
       });
     }
 
     // Validate boolean fields
-    const booleanFields = ['notifications', 'darkMode', 'autoSync'];
+    const booleanFields = ["notifications", "darkMode", "autoSync"];
     booleanFields.forEach((field) => {
-      if (typeof preferences[field] !== 'boolean') {
+      if (typeof preferences[field] !== "boolean") {
         errors.push({
           field,
           message: `${field} must be a boolean`,
-          code: 'INVALID_BOOLEAN',
-          severity: 'error',
+          code: "INVALID_BOOLEAN",
+          severity: "error",
         });
       }
     });
 
     // Validate data retention
     if (
-      typeof preferences.dataRetention !== 'number' ||
+      typeof preferences.dataRetention !== "number" ||
       preferences.dataRetention < 30 ||
       preferences.dataRetention > 3650
     ) {
       warnings.push({
-        field: 'dataRetention',
-        message: 'Data retention should be between 30 and 3650 days',
-        code: 'INVALID_DATA_RETENTION',
+        field: "dataRetention",
+        message: "Data retention should be between 30 and 3650 days",
+        code: "INVALID_DATA_RETENTION",
       });
     }
 
@@ -458,14 +489,20 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate arrays exist
-    const requiredArrays = ['workouts', 'exercises', 'sessions', 'plans', 'customExercises'];
+    const requiredArrays = [
+      "workouts",
+      "exercises",
+      "sessions",
+      "plans",
+      "customExercises",
+    ];
     requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(fitnessData[arrayName])) {
         errors.push({
           field: arrayName,
           message: `${arrayName} must be an array`,
-          code: 'INVALID_ARRAY',
-          severity: 'error',
+          code: "INVALID_ARRAY",
+          severity: "error",
         });
       }
     });
@@ -491,68 +528,68 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate required fields
-    if (!session.id || typeof session.id !== 'string') {
+    if (!session.id || typeof session.id !== "string") {
       errors.push({
-        field: 'id',
-        message: 'Session ID is required',
-        code: 'MISSING_ID',
-        severity: 'error',
+        field: "id",
+        message: "Session ID is required",
+        code: "MISSING_ID",
+        severity: "error",
       });
     }
 
-    if (!session.workoutId || typeof session.workoutId !== 'string') {
+    if (!session.workoutId || typeof session.workoutId !== "string") {
       errors.push({
-        field: 'workoutId',
-        message: 'Workout ID is required',
-        code: 'MISSING_WORKOUT_ID',
-        severity: 'error',
+        field: "workoutId",
+        message: "Workout ID is required",
+        code: "MISSING_WORKOUT_ID",
+        severity: "error",
       });
     }
 
     // Validate timestamps
     if (!this.isValidISODate(session.startedAt)) {
       errors.push({
-        field: 'startedAt',
-        message: 'Invalid start timestamp',
-        code: 'INVALID_TIMESTAMP',
-        severity: 'error',
+        field: "startedAt",
+        message: "Invalid start timestamp",
+        code: "INVALID_TIMESTAMP",
+        severity: "error",
       });
     }
 
     if (session.completedAt && !this.isValidISODate(session.completedAt)) {
       errors.push({
-        field: 'completedAt',
-        message: 'Invalid completion timestamp',
-        code: 'INVALID_TIMESTAMP',
-        severity: 'error',
+        field: "completedAt",
+        message: "Invalid completion timestamp",
+        code: "INVALID_TIMESTAMP",
+        severity: "error",
       });
     }
 
     // Validate duration
     if (
-      typeof session.duration !== 'number' ||
+      typeof session.duration !== "number" ||
       session.duration < VALIDATION_RULES.WORKOUT_DURATION.min ||
       session.duration > VALIDATION_RULES.WORKOUT_DURATION.max
     ) {
       errors.push({
-        field: 'duration',
+        field: "duration",
         message: `Duration must be between ${VALIDATION_RULES.WORKOUT_DURATION.min} and ${VALIDATION_RULES.WORKOUT_DURATION.max} minutes`,
-        code: 'INVALID_DURATION',
-        severity: 'error',
+        code: "INVALID_DURATION",
+        severity: "error",
       });
     }
 
     // Validate calories
     if (
-      typeof session.caloriesBurned !== 'number' ||
+      typeof session.caloriesBurned !== "number" ||
       session.caloriesBurned < VALIDATION_RULES.CALORIES.min ||
       session.caloriesBurned > VALIDATION_RULES.CALORIES.max
     ) {
       errors.push({
-        field: 'caloriesBurned',
+        field: "caloriesBurned",
         message: `Calories must be between ${VALIDATION_RULES.CALORIES.min} and ${VALIDATION_RULES.CALORIES.max}`,
-        code: 'INVALID_CALORIES',
-        severity: 'error',
+        code: "INVALID_CALORIES",
+        severity: "error",
       });
     }
 
@@ -568,14 +605,21 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate arrays exist
-    const requiredArrays = ['meals', 'foods', 'logs', 'plans', 'customFoods', 'waterLogs'];
+    const requiredArrays = [
+      "meals",
+      "foods",
+      "logs",
+      "plans",
+      "customFoods",
+      "waterLogs",
+    ];
     requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(nutritionData[arrayName])) {
         errors.push({
           field: arrayName,
           message: `${arrayName} must be an array`,
-          code: 'INVALID_ARRAY',
-          severity: 'error',
+          code: "INVALID_ARRAY",
+          severity: "error",
         });
       }
     });
@@ -592,14 +636,20 @@ export class ValidationService {
     const warnings: ValidationWarning[] = [];
 
     // Validate arrays exist
-    const requiredArrays = ['measurements', 'photos', 'achievements', 'analytics', 'goals'];
+    const requiredArrays = [
+      "measurements",
+      "photos",
+      "achievements",
+      "analytics",
+      "goals",
+    ];
     requiredArrays.forEach((arrayName) => {
       if (!Array.isArray(progressData[arrayName])) {
         errors.push({
           field: arrayName,
           message: `${arrayName} must be an array`,
-          code: 'INVALID_ARRAY',
-          severity: 'error',
+          code: "INVALID_ARRAY",
+          severity: "error",
         });
       }
     });
@@ -613,7 +663,7 @@ export class ValidationService {
 
   private isValidString(
     value: string,
-    rules: { minLength: number; maxLength: number; pattern: RegExp }
+    rules: { minLength: number; maxLength: number; pattern: RegExp },
   ): boolean {
     return (
       value.length >= rules.minLength &&
@@ -624,38 +674,59 @@ export class ValidationService {
 
   private isValidISODate(dateString: string): boolean {
     const date = new Date(dateString);
-    return date instanceof Date && !isNaN(date.getTime()) && dateString === date.toISOString();
+    return (
+      date instanceof Date &&
+      !isNaN(date.getTime()) &&
+      dateString === date.toISOString()
+    );
   }
 
   // ============================================================================
   // DATA SANITIZATION
   // ============================================================================
 
-  sanitizePersonalInfo(info: any): PersonalInfo {
+  sanitizePersonalInfo(info: Partial<PersonalInfo>): PersonalInfo {
+    const firstName = this.sanitizeString(info.first_name || "");
+    const lastName = this.sanitizeString(info.last_name || "");
+
     return {
-      name: this.sanitizeString(info.name || ''),
+      first_name: firstName,
+      last_name: lastName,
+      name: this.sanitizeString(info.name || `${firstName} ${lastName}`),
       email: info.email ? this.sanitizeEmail(info.email) : undefined,
       age: this.sanitizeNumber(
         info.age,
         VALIDATION_RULES.AGE.min,
-        VALIDATION_RULES.AGE.max
-      ) as any,
-      gender: this.sanitizeGender(info.gender) as any,
-      height: this.sanitizeNumber(
-        info.height,
-        VALIDATION_RULES.HEIGHT.min,
-        VALIDATION_RULES.HEIGHT.max
-      ) as any,
-      weight: this.sanitizeNumber(
-        info.weight,
-        VALIDATION_RULES.WEIGHT.min,
-        VALIDATION_RULES.WEIGHT.max
-      ) as any,
-    } as PersonalInfo;
+        VALIDATION_RULES.AGE.max,
+      ),
+      gender: this.sanitizeGender(info.gender || "other"),
+      country: info.country || "",
+      state: info.state || "",
+      region: info.region,
+      wake_time: info.wake_time || "07:00",
+      sleep_time: info.sleep_time || "23:00",
+      occupation_type: info.occupation_type || "desk_job",
+      height:
+        info.height !== undefined
+          ? this.sanitizeNumber(
+              info.height,
+              VALIDATION_RULES.HEIGHT.min,
+              VALIDATION_RULES.HEIGHT.max,
+            )
+          : undefined,
+      weight:
+        info.weight !== undefined
+          ? this.sanitizeNumber(
+              info.weight,
+              VALIDATION_RULES.WEIGHT.min,
+              VALIDATION_RULES.WEIGHT.max,
+            )
+          : undefined,
+    };
   }
 
   private sanitizeString(value: string): string {
-    return value.trim().replace(/\s+/g, ' ');
+    return value.trim().replace(/\s+/g, " ");
   }
 
   private sanitizeEmail(email: string): string {
@@ -668,14 +739,24 @@ export class ValidationService {
     return Math.max(min, Math.min(max, num));
   }
 
-  private sanitizeGender(gender: string): 'male' | 'female' | 'other' | 'prefer_not_to_say' {
-    const validGenders: Array<'male' | 'female' | 'other' | 'prefer_not_to_say'> = ['male', 'female', 'other', 'prefer_not_to_say'];
-    return validGenders.includes(gender as any) ? (gender as any) : 'other';
+  private sanitizeGender(
+    gender: string | undefined,
+  ): "male" | "female" | "other" | "prefer_not_to_say" {
+    const validGenders: Array<
+      "male" | "female" | "other" | "prefer_not_to_say"
+    > = ["male", "female", "other", "prefer_not_to_say"];
+    if (
+      gender &&
+      validGenders.includes(gender as (typeof validGenders)[number])
+    ) {
+      return gender as (typeof validGenders)[number];
+    }
+    return "other";
   }
 
   private sanitizeActivityLevel(level: string): string {
-    const validLevels = ['sedentary', 'light', 'moderate', 'active', 'extreme'];
-    return validLevels.includes(level) ? level : 'moderate';
+    const validLevels = ["sedentary", "light", "moderate", "active", "extreme"];
+    return validLevels.includes(level) ? level : "moderate";
   }
 }
 

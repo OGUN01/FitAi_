@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,8 +9,8 @@ import Animated, {
   Easing,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { rf } from '../../utils/responsive';
+} from "react-native-reanimated";
+import { rf } from "../../utils/responsive";
 
 interface ParticleBurstProps {
   particleCount?: number;
@@ -40,36 +40,32 @@ const ParticleItem: React.FC<{
       progress.value,
       [0, 1],
       [0, Math.cos(particle.angle) * radius],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const translateY = interpolate(
       progress.value,
       [0, 1],
       [0, Math.sin(particle.angle) * radius],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const opacity = interpolate(
       progress.value,
       [0, 0.2, 0.8, 1],
       [0, 1, 1, 0],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const scale = interpolate(
       progress.value,
       [0, 0.5, 1],
       [0, 1.2, 0.5],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
-      transform: [
-        { translateX },
-        { translateY },
-        { scale },
-      ],
+      transform: [{ translateX }, { translateY }, { scale }],
       opacity,
     };
   });
@@ -92,7 +88,7 @@ const ParticleItem: React.FC<{
 
 export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   particleCount = 12,
-  colors = ['#4CAF50', '#FF6B35', '#2196F3', '#FF9800', '#9C27B0'],
+  colors = ["#4CAF50", "#FF6B35", "#2196F3", "#FF9800", "#9C27B0"],
   duration = 1500,
   radius = 100,
   autoPlay = true,
@@ -124,8 +120,8 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
             duration,
             easing: Easing.out(Easing.cubic),
           }),
-          withTiming(0, { duration: 0 })
-        )
+          withTiming(0, { duration: 0 }),
+        ),
       );
     }
   }, [autoPlay]);
@@ -146,13 +142,13 @@ export const ParticleBurst: React.FC<ParticleBurstProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'none',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
   },
 
   particle: {
-    position: 'absolute',
+    position: "absolute",
   },
 });

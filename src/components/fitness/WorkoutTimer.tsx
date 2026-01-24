@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, PropsWithChildren } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { Card, Button, THEME } from '../ui';
+import React, { useState, useEffect, useRef, PropsWithChildren } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import { Card, Button, THEME } from "../ui";
 
 interface WorkoutTimerProps {
   isVisible: boolean;
@@ -15,7 +15,7 @@ interface WorkoutTimerProps {
 export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
   isVisible,
   duration,
-  title = 'Rest Timer',
+  title = "Rest Timer",
   onComplete,
   onCancel,
   onPause,
@@ -73,7 +73,7 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   // Handle pause/resume
@@ -91,12 +91,18 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
   // Calculate progress percentage (guard against zero duration)
   const safeDuration = Math.max(1, Number.isFinite(duration) ? duration : 0);
   const progressPercentage =
-    ((safeDuration - Math.min(timeRemaining, safeDuration)) / safeDuration) * 100;
+    ((safeDuration - Math.min(timeRemaining, safeDuration)) / safeDuration) *
+    100;
 
   if (!isVisible) return null;
 
   return (
-    <Modal visible={isVisible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      visible={isVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
       <View style={styles.overlay}>
         <Card style={styles.timerCard} variant="elevated">
           <View style={styles.timerContent}>
@@ -120,16 +126,25 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
               </View>
               <View style={styles.timerDisplay}>
                 <Text style={styles.timeText}>{formatTime(timeRemaining)}</Text>
-                <Text style={styles.timeLabel}>{isPaused ? 'Paused' : 'Remaining'}</Text>
+                <Text style={styles.timeLabel}>
+                  {isPaused ? "Paused" : "Remaining"}
+                </Text>
               </View>
             </View>
 
             {/* Progress Bar */}
             <View style={styles.progressBarContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]} />
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${progressPercentage}%` },
+                  ]}
+                />
               </View>
-              <Text style={styles.progressText}>{Math.round(progressPercentage)}% Complete</Text>
+              <Text style={styles.progressText}>
+                {Math.round(progressPercentage)}% Complete
+              </Text>
             </View>
 
             {/* Controls */}
@@ -138,8 +153,10 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                 style={[styles.modernControlButton, styles.outlineButton]}
                 onPress={handlePauseResume}
               >
-                <Text style={[styles.modernControlText, styles.outlineButtonText]}>
-                  {isPaused ? 'Resume' : 'Pause'}
+                <Text
+                  style={[styles.modernControlText, styles.outlineButtonText]}
+                >
+                  {isPaused ? "Resume" : "Pause"}
                 </Text>
               </TouchableOpacity>
 
@@ -147,14 +164,22 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
                 style={[styles.modernControlButton, styles.primaryButton]}
                 onPress={onComplete}
               >
-                <Text style={[styles.modernControlText, styles.primaryButtonText]}>Skip Rest</Text>
+                <Text
+                  style={[styles.modernControlText, styles.primaryButtonText]}
+                >
+                  Skip Rest
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modernControlButton, styles.outlineButton]}
                 onPress={onCancel}
               >
-                <Text style={[styles.modernControlText, styles.outlineButtonText]}>Cancel</Text>
+                <Text
+                  style={[styles.modernControlText, styles.outlineButtonText]}
+                >
+                  Cancel
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -162,7 +187,9 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
             <View style={styles.quickAdjustments}>
               <TouchableOpacity
                 style={styles.adjustButton}
-                onPress={() => setTimeRemaining((prev) => Math.max(0, prev - 30))}
+                onPress={() =>
+                  setTimeRemaining((prev) => Math.max(0, prev - 30))
+                }
               >
                 <Text style={styles.adjustButtonText}>-30s</Text>
               </TouchableOpacity>
@@ -184,21 +211,21 @@ export const WorkoutTimer: React.FC<PropsWithChildren<WorkoutTimerProps>> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   timerCard: {
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
     padding: THEME.spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   timerContent: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
 
   timerTitle: {
@@ -206,20 +233,20 @@ const styles = StyleSheet.create({
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.lg,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   circularTimer: {
     width: 200,
     height: 200,
     marginBottom: THEME.spacing.lg,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   progressBackground: {
-    position: 'absolute',
+    position: "absolute",
     width: 200,
     height: 200,
     borderRadius: 100,
@@ -228,26 +255,26 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    position: 'absolute',
+    position: "absolute",
     width: 200,
     height: 200,
     borderRadius: 100,
     borderWidth: 8,
     borderColor: THEME.colors.primary,
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-    transform: [{ rotate: '-90deg' }],
+    borderRightColor: "transparent",
+    borderBottomColor: "transparent",
+    transform: [{ rotate: "-90deg" }],
   },
 
   timerDisplay: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   timeText: {
     fontSize: 48,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
 
   timeLabel: {
@@ -257,7 +284,7 @@ const styles = StyleSheet.create({
   },
 
   progressBarContainer: {
-    width: '100%',
+    width: "100%",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -269,7 +296,7 @@ const styles = StyleSheet.create({
   },
 
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
     borderRadius: 4,
   },
@@ -277,13 +304,13 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     marginBottom: THEME.spacing.md,
     gap: THEME.spacing.sm,
   },
@@ -292,8 +319,8 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: THEME.borderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
   },
 
@@ -303,14 +330,14 @@ const styles = StyleSheet.create({
   },
 
   outlineButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderColor: THEME.colors.border,
   },
 
   modernControlText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
 
   primaryButtonText: {
@@ -327,8 +354,8 @@ const styles = StyleSheet.create({
   },
 
   quickAdjustments: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: THEME.spacing.lg,
   },
 

@@ -4,9 +4,9 @@
  * Features progress integration and validation state indicators
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Pressable, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect } from "react";
+import { StyleSheet, View, Text, Pressable, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,11 +14,15 @@ import Animated, {
   withTiming,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { colors, typography, spacing } from '../../../theme/aurora-tokens';
-import { gradients, toLinearGradientProps } from '../../../theme/gradients';
-import { springConfig, duration, easingFunctions } from '../../../theme/animations';
-import { haptics } from '../../../utils/haptics';
+} from "react-native-reanimated";
+import { colors, typography, spacing } from "../../../theme/aurora-tokens";
+import { gradients, toLinearGradientProps } from "../../../theme/gradients";
+import {
+  springConfig,
+  duration,
+  easingFunctions,
+} from "../../../theme/animations";
+import { haptics } from "../../../utils/haptics";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -51,7 +55,7 @@ export interface TabItem {
   /**
    * Validation state
    */
-  validationState?: 'valid' | 'invalid' | 'warning' | 'none';
+  validationState?: "valid" | "invalid" | "warning" | "none";
 }
 
 export interface DynamicTabBarProps {
@@ -154,7 +158,7 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
         indicatorX.value,
         [0, tabs.length - 1],
         [0, 100 - tabWidth],
-        Extrapolate.CLAMP
+        Extrapolate.CLAMP,
       )}%`,
       width: `${tabWidth * indicatorWidth.value}%`,
     };
@@ -166,17 +170,19 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
   }));
 
   // Get validation indicator color
-  const getValidationColor = (state?: 'valid' | 'invalid' | 'warning' | 'none') => {
+  const getValidationColor = (
+    state?: "valid" | "invalid" | "warning" | "none",
+  ) => {
     switch (state) {
-      case 'valid':
+      case "valid":
         return colors.success.DEFAULT;
-      case 'invalid':
+      case "invalid":
         return colors.error.DEFAULT;
-      case 'warning':
+      case "warning":
         return colors.warning.DEFAULT;
-      case 'none':
+      case "none":
       default:
-        return 'transparent';
+        return "transparent";
     }
   };
 
@@ -229,10 +235,7 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
               key={tab.id}
               onPress={() => handleTabPress(index)}
               disabled={isDisabled}
-              style={[
-                styles.tab,
-                { width: `${100 / tabs.length}%` },
-              ]}
+              style={[styles.tab, { width: `${100 / tabs.length}%` }]}
               accessible={true}
               accessibilityRole="tab"
               accessibilityLabel={tab.title}
@@ -245,8 +248,13 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
                 {/* Icon */}
                 {tab.icon && (
                   <View style={styles.iconContainer}>
-                    {typeof tab.icon === 'string' ? (
-                      <Text style={[styles.iconEmoji, isActive && styles.iconActive]}>
+                    {typeof tab.icon === "string" ? (
+                      <Text
+                        style={[
+                          styles.iconEmoji,
+                          isActive && styles.iconActive,
+                        ]}
+                      >
                         {tab.icon}
                       </Text>
                     ) : (
@@ -268,14 +276,20 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
                 </Text>
 
                 {/* Validation Indicator */}
-                {showValidation && tab.validationState && tab.validationState !== 'none' && (
-                  <View
-                    style={[
-                      styles.validationDot,
-                      { backgroundColor: getValidationColor(tab.validationState) },
-                    ]}
-                  />
-                )}
+                {showValidation &&
+                  tab.validationState &&
+                  tab.validationState !== "none" && (
+                    <View
+                      style={[
+                        styles.validationDot,
+                        {
+                          backgroundColor: getValidationColor(
+                            tab.validationState,
+                          ),
+                        },
+                      ]}
+                    />
+                  )}
 
                 {/* Completion Checkmark */}
                 {tab.isCompleted && (
@@ -294,33 +308,33 @@ export const DynamicTabBar: React.FC<DynamicTabBarProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
     backgroundColor: colors.background.DEFAULT,
     borderBottomWidth: 1,
     borderBottomColor: colors.glass.border,
   },
   progressContainer: {
     height: 4,
-    width: '100%',
+    width: "100%",
     paddingHorizontal: spacing.md,
   },
   progressTrack: {
     height: 4,
     backgroundColor: colors.glass.background,
     borderRadius: 2,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 2,
   },
   tabsContainer: {
     flex: 1,
-    flexDirection: 'row',
-    position: 'relative',
+    flexDirection: "row",
+    position: "relative",
   },
   indicator: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     height: 3,
     borderTopLeftRadius: 3,
@@ -328,20 +342,20 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: spacing.xs,
   },
   tabContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.xs,
-    position: 'relative',
+    position: "relative",
   },
   iconContainer: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconEmoji: {
     fontSize: 20,
@@ -354,7 +368,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.caption,
     fontWeight: typography.fontWeight.medium as any,
     color: colors.text.muted,
-    textAlign: 'center',
+    textAlign: "center",
   },
   tabTextActive: {
     color: colors.text.primary,
@@ -364,7 +378,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   validationDot: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     width: 8,
@@ -374,15 +388,15 @@ const styles = StyleSheet.create({
     borderColor: colors.background.DEFAULT,
   },
   completionBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -6,
     right: -6,
     width: 16,
     height: 16,
     borderRadius: 8,
     backgroundColor: colors.success.DEFAULT,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionCheck: {
     fontSize: 10,

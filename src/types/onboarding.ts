@@ -1,5 +1,31 @@
-// 🎯 ONBOARDING TYPES - PERFECTLY SYNCED WITH DATABASE SCHEMA
-// Generated from STEP 1.1 database schema - DO NOT modify without updating database
+/**
+ * ONBOARDING TYPES - SINGLE SOURCE OF TRUTH FOR TYPE DEFINITIONS
+ *
+ * ============================================================================
+ * PERFECTLY SYNCED WITH DATABASE SCHEMA
+ * ============================================================================
+ *
+ * Generated from STEP 1.1 database schema - DO NOT modify without updating database
+ *
+ * NAMING CONVENTION:
+ *   - All fields use snake_case to match Supabase database schema
+ *   - e.g., first_name (not firstName), primary_goals (not primaryGoals)
+ *   - For camelCase conversion (legacy components), use src/utils/typeTransformers.ts
+ *
+ * RELATED FILES:
+ *   - src/stores/profileStore.ts - SSOT store using these types
+ *   - src/services/DataBridge.ts - Data sync layer using these types
+ *   - src/types/user.ts - Legacy types (being phased out, prefer these types)
+ *   - src/utils/typeTransformers.ts - snake_case/camelCase conversion utilities
+ *
+ * TYPE HIERARCHY:
+ *   - PersonalInfoData -> profiles table (Tab 1)
+ *   - DietPreferencesData -> diet_preferences table (Tab 2)
+ *   - BodyAnalysisData -> body_analysis table (Tab 3)
+ *   - WorkoutPreferencesData -> workout_preferences table (Tab 4)
+ *   - AdvancedReviewData -> advanced_review table (Tab 5)
+ *   - OnboardingProgressData -> onboarding_progress table (progress tracking)
+ */
 
 // ============================================================================
 // TAB 1: PERSONAL INFO TYPES (profiles table)

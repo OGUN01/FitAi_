@@ -1,9 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rp, rh, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { OnboardingProgressData, TabValidationResult } from '../../types/onboarding';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rh, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import {
+  OnboardingProgressData,
+  TabValidationResult,
+} from "../../types/onboarding";
 
 // ============================================================================
 // TYPES
@@ -32,11 +35,11 @@ interface ProgressStepProps {
 // ============================================================================
 
 const TAB_TITLES = {
-  1: 'Personal Info',
-  2: 'Diet Preferences',
-  3: 'Body Analysis',
-  4: 'Workout Preferences',
-  5: 'Advanced Review',
+  1: "Personal Info",
+  2: "Diet Preferences",
+  3: "Body Analysis",
+  4: "Workout Preferences",
+  5: "Advanced Review",
 };
 
 // ============================================================================
@@ -52,30 +55,30 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
   title,
 }) => {
   const getStepStatus = () => {
-    if (isCompleted) return 'completed';
-    if (isActive) return 'active';
-    if (isAccessible) return 'accessible';
-    return 'disabled';
+    if (isCompleted) return "completed";
+    if (isActive) return "active";
+    if (isAccessible) return "accessible";
+    return "disabled";
   };
 
   const getStepStyles = () => {
     const status = getStepStatus();
     switch (status) {
-      case 'completed':
+      case "completed":
         return {
           circle: styles.stepCircleCompleted,
           number: styles.stepNumberCompleted,
           title: styles.stepTitleCompleted,
           line: styles.stepLineCompleted,
         };
-      case 'active':
+      case "active":
         return {
           circle: styles.stepCircleActive,
           number: styles.stepNumberActive,
           title: styles.stepTitleActive,
           line: styles.stepLineDefault,
         };
-      case 'accessible':
+      case "accessible":
         return {
           circle: styles.stepCircleAccessible,
           number: styles.stepNumberAccessible,
@@ -93,8 +96,10 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
   };
 
   const stepStyles = getStepStyles();
-  const hasErrors = validationResult?.errors && validationResult.errors.length > 0;
-  const hasWarnings = validationResult?.warnings && validationResult.warnings.length > 0;
+  const hasErrors =
+    validationResult?.errors && validationResult.errors.length > 0;
+  const hasWarnings =
+    validationResult?.warnings && validationResult.warnings.length > 0;
 
   return (
     <View style={styles.stepContainer}>
@@ -107,7 +112,7 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
             {stepNumber}
           </Text>
         )}
-        
+
         {/* Validation Indicator */}
         {hasErrors && (
           <View style={styles.errorBadge}>
@@ -122,21 +127,21 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
       </View>
 
       {/* Step Title */}
-      <Text style={[styles.stepTitle, stepStyles.title]}>
-        {title}
-      </Text>
+      <Text style={[styles.stepTitle, stepStyles.title]}>{title}</Text>
 
       {/* Validation Details */}
       {validationResult && (hasErrors || hasWarnings) && (
         <View style={styles.validationDetails}>
           {hasErrors && validationResult.errors && (
             <Text style={styles.errorCount}>
-              {validationResult.errors.length} error{validationResult.errors.length !== 1 ? 's' : ''}
+              {validationResult.errors.length} error
+              {validationResult.errors.length !== 1 ? "s" : ""}
             </Text>
           )}
           {hasWarnings && validationResult.warnings && (
             <Text style={styles.warningCount}>
-              {validationResult.warnings.length} warning{validationResult.warnings.length !== 1 ? 's' : ''}
+              {validationResult.warnings.length} warning
+              {validationResult.warnings.length !== 1 ? "s" : ""}
             </Text>
           )}
         </View>
@@ -149,7 +154,9 @@ const ProgressStep: React.FC<ProgressStepProps> = ({
 // MAIN COMPONENT
 // ============================================================================
 
-export const OnboardingProgressIndicator: React.FC<OnboardingProgressIndicatorProps> = ({
+export const OnboardingProgressIndicator: React.FC<
+  OnboardingProgressIndicatorProps
+> = ({
   currentTab,
   totalTabs,
   completedTabs,
@@ -160,7 +167,7 @@ export const OnboardingProgressIndicator: React.FC<OnboardingProgressIndicatorPr
   const getTabAccessibility = (tabNumber: number) => {
     // Tab 1 is always accessible
     if (tabNumber === 1) return true;
-    
+
     // Other tabs are accessible if previous tab is completed or if it's the current tab
     return completedTabs.includes(tabNumber - 1) || tabNumber === currentTab;
   };
@@ -186,11 +193,11 @@ export const OnboardingProgressIndicator: React.FC<OnboardingProgressIndicatorPr
       {/* Overall Progress Bar */}
       <View style={styles.overallProgressSection}>
         <View style={styles.overallProgressBar}>
-          <View 
+          <View
             style={[
-              styles.overallProgressFill, 
-              { width: `${overallCompletion}%` }
-            ]} 
+              styles.overallProgressFill,
+              { width: `${overallCompletion}%` },
+            ]}
           />
         </View>
         <Text style={styles.overallProgressText}>
@@ -219,14 +226,16 @@ export const OnboardingProgressIndicator: React.FC<OnboardingProgressIndicatorPr
                   validationResult={validationResult}
                   title={title}
                 />
-                
+
                 {/* Connection Line */}
                 {index < totalTabs - 1 && (
-                  <View 
+                  <View
                     style={[
                       styles.connectionLine,
-                      isCompleted ? styles.connectionLineCompleted : styles.connectionLineDefault
-                    ]} 
+                      isCompleted
+                        ? styles.connectionLineCompleted
+                        : styles.connectionLineDefault,
+                    ]}
                   />
                 )}
               </View>
@@ -242,13 +251,16 @@ export const OnboardingProgressIndicator: React.FC<OnboardingProgressIndicatorPr
           <Text style={styles.statLabel}>Completed</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statValue}>{totalTabs - completedTabs.length}</Text>
+          <Text style={styles.statValue}>
+            {totalTabs - completedTabs.length}
+          </Text>
           <Text style={styles.statLabel}>Remaining</Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>
-            {Object.values(tabValidationStatus).reduce((total, result) => 
-              total + (result.errors?.length || 0), 0
+            {Object.values(tabValidationStatus).reduce(
+              (total, result) => total + (result.errors?.length || 0),
+              0,
             )}
           </Text>
           <Text style={styles.statLabel}>Errors</Text>
@@ -270,7 +282,7 @@ const styles = StyleSheet.create({
 
   // Header Section
   headerSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
@@ -284,7 +296,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Overall Progress Section
@@ -293,16 +305,16 @@ const styles = StyleSheet.create({
   },
 
   overallProgressBar: {
-    width: '100%',
+    width: "100%",
     height: rh(8),
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
+    overflow: "hidden",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
   overallProgressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: ResponsiveTheme.colors.primary,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
@@ -310,7 +322,7 @@ const styles = StyleSheet.create({
   overallProgressText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   // Steps Section
@@ -319,12 +331,12 @@ const styles = StyleSheet.create({
   },
 
   stepWrapper: {
-    position: 'relative',
+    position: "relative",
   },
 
   stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.md,
   },
 
@@ -333,10 +345,10 @@ const styles = StyleSheet.create({
     width: rw(40),
     height: rw(40),
     borderRadius: rw(20),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
-    position: 'relative',
+    position: "relative",
   },
 
   stepCircleCompleted: {
@@ -413,7 +425,7 @@ const styles = StyleSheet.create({
 
   // Connection Lines
   connectionLine: {
-    position: 'absolute',
+    position: "absolute",
     left: rw(19),
     top: rw(40) + ResponsiveTheme.spacing.md,
     width: 2,
@@ -430,15 +442,15 @@ const styles = StyleSheet.create({
 
   // Validation Badges
   errorBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -rh(4),
     right: -rw(4),
     width: rw(16),
     height: rw(16),
     borderRadius: rw(8),
     backgroundColor: ResponsiveTheme.colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   errorBadgeText: {
@@ -448,15 +460,15 @@ const styles = StyleSheet.create({
   },
 
   warningBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: -rh(4),
     right: -rw(4),
     width: rw(16),
     height: rw(16),
     borderRadius: rw(8),
     backgroundColor: ResponsiveTheme.colors.warning,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   warningBadgeText: {
@@ -484,15 +496,15 @@ const styles = StyleSheet.create({
 
   // Stats Section
   statsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingTop: ResponsiveTheme.spacing.lg,
     borderTopWidth: 1,
     borderTopColor: ResponsiveTheme.colors.border,
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {

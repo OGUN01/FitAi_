@@ -4,13 +4,13 @@
  * Fixes Issue #4 - Replaces empty placeholders with actual actions
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw, rh } from '../../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw, rh } from "../../../utils/responsive";
 
 interface QuickAction {
   id: string;
@@ -43,52 +43,55 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
 }) => {
   const actions: QuickAction[] = [
     {
-      id: 'scan-food',
-      label: 'Scan Food',
-      icon: 'camera-outline',
-      color: '#FF6B6B',
+      id: "scan-food",
+      label: "Scan Food",
+      icon: "camera-outline",
+      color: "#FF6B6B",
       onPress: onScanFood,
     },
     {
-      id: 'barcode',
-      label: 'Barcode',
-      icon: 'barcode-outline',
-      color: '#4ECDC4',
+      id: "barcode",
+      label: "Barcode",
+      icon: "barcode-outline",
+      color: "#4ECDC4",
       onPress: onScanBarcode,
     },
     {
-      id: 'log-meal',
-      label: 'Log Meal',
-      icon: 'add-circle-outline',
-      color: '#4CAF50',
+      id: "log-meal",
+      label: "Log Meal",
+      icon: "add-circle-outline",
+      color: "#4CAF50",
       onPress: onLogMeal,
     },
     {
-      id: 'ai-meal',
-      label: 'AI Meal',
-      icon: 'sparkles-outline',
-      color: '#667eea',
+      id: "ai-meal",
+      label: "AI Meal",
+      icon: "sparkles-outline",
+      color: "#667eea",
       onPress: onGenerateMeal,
       disabled: isGenerating,
     },
     {
-      id: 'water',
-      label: 'Log Water',
-      icon: 'water-outline',
-      color: '#2196F3',
+      id: "water",
+      label: "Log Water",
+      icon: "water-outline",
+      color: "#2196F3",
       onPress: onLogWater,
     },
     {
-      id: 'recipes',
-      label: 'Recipes',
-      icon: 'book-outline',
-      color: '#FF9800',
+      id: "recipes",
+      label: "Recipes",
+      icon: "book-outline",
+      color: "#FF9800",
       onPress: onViewRecipes,
     },
   ];
 
   return (
-    <Animated.View entering={FadeIn.duration(400).delay(300)} style={styles.container}>
+    <Animated.View
+      entering={FadeIn.duration(400).delay(300)}
+      style={styles.container}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -104,22 +107,34 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
             hapticFeedback={true}
             hapticType="medium"
             disabled={action.disabled}
-            style={[styles.actionItem, action.disabled && styles.actionItemDisabled].filter(Boolean) as any}
+            style={
+              [
+                styles.actionItem,
+                action.disabled && styles.actionItemDisabled,
+              ].filter(Boolean) as any
+            }
           >
             {/* Icon Circle */}
-            <View style={[styles.iconCircle, { backgroundColor: `${action.color}15` }]}>
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: `${action.color}15` },
+              ]}
+            >
               <Ionicons name={action.icon} size={rf(22)} color={action.color} />
-              
+
               {/* Badge */}
               {action.badge !== undefined && (
                 <View style={[styles.badge, { backgroundColor: action.color }]}>
                   <Text style={styles.badgeText}>
-                    {typeof action.badge === 'number' && action.badge > 9 ? '9+' : action.badge}
+                    {typeof action.badge === "number" && action.badge > 9
+                      ? "9+"
+                      : action.badge}
                   </Text>
                 </View>
               )}
             </View>
-            
+
             {/* Label */}
             <Text style={styles.label} numberOfLines={1}>
               {action.label}
@@ -140,7 +155,7 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   actionItem: {
-    alignItems: 'center',
+    alignItems: "center",
     width: rw(72),
   },
   actionItemDisabled: {
@@ -150,36 +165,35 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(28),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
-    position: 'relative',
+    position: "relative",
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -4,
     minWidth: rw(18),
     height: rw(18),
     borderRadius: rw(9),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 4,
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.background,
   },
   badgeText: {
     fontSize: rf(9),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   label: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 
 export default DietQuickActions;
-

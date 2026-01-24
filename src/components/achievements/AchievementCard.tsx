@@ -1,18 +1,18 @@
 // Achievement Card Component
 // Individual achievement display with progress and celebration
 
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Achievement, UserAchievement } from '../../services/achievementEngine';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
+import React from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { Achievement, UserAchievement } from "../../services/achievementEngine";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 
 interface AchievementCardProps {
   achievement: Achievement;
   userProgress?: UserAchievement;
   onPress?: () => void;
   showProgress?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
 const AchievementCard: React.FC<AchievementCardProps> = ({
@@ -20,58 +20,57 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   userProgress,
   onPress,
   showProgress = true,
-  size = 'medium'
+  size = "medium",
 }) => {
   const isCompleted = userProgress?.isCompleted || false;
   const progress = userProgress?.progress || 0;
-  const maxProgress = userProgress?.maxProgress || achievement.requirements[0]?.target || 1;
+  const maxProgress =
+    userProgress?.maxProgress || achievement.requirements[0]?.target || 1;
   const progressPercent = Math.min((progress / maxProgress) * 100, 100);
 
   const getTierColor = (tier: string) => {
     const colors = {
-      bronze: '#CD7F32',
-      silver: '#C0C0C0',
-      gold: '#FFD700',
-      platinum: '#E5E4E2',
-      diamond: '#B9F2FF',
-      legendary: '#FF6B6B',
+      bronze: "#CD7F32",
+      silver: "#C0C0C0",
+      gold: "#FFD700",
+      platinum: "#E5E4E2",
+      diamond: "#B9F2FF",
+      legendary: "#FF6B6B",
     };
-    return colors[tier as keyof typeof colors] || '#CD7F32';
+    return colors[tier as keyof typeof colors] || "#CD7F32";
   };
 
   const tierColor = getTierColor(achievement.tier);
-  
+
   const cardStyle = [
     styles.card,
-    size === 'small' && styles.cardSmall,
-    size === 'large' && styles.cardLarge,
-    isCompleted && styles.cardCompleted
+    size === "small" && styles.cardSmall,
+    size === "large" && styles.cardLarge,
+    isCompleted && styles.cardCompleted,
   ].filter(Boolean);
 
   const iconStyle = [
     styles.icon,
-    size === 'small' && styles.iconSmall,
-    size === 'large' && styles.iconLarge,
-    !isCompleted && styles.iconLocked
+    size === "small" && styles.iconSmall,
+    size === "large" && styles.iconLarge,
+    !isCompleted && styles.iconLocked,
   ].filter(Boolean);
 
   return (
     <Pressable
       onPress={onPress}
-      style={[cardStyle, { borderTopColor: tierColor, borderTopWidth: 3 }] as any}
+      style={
+        [cardStyle, { borderTopColor: tierColor, borderTopWidth: 3 }] as any
+      }
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={iconStyle}>
-            {isCompleted ? achievement.icon : '🔒'}
-          </Text>
+          <Text style={iconStyle}>{isCompleted ? achievement.icon : "🔒"}</Text>
           <View style={styles.info}>
             <Text style={[styles.title, !isCompleted && styles.titleLocked]}>
               {achievement.title}
             </Text>
-            <Text style={styles.tier}>
-              {achievement.tier.toUpperCase()}
-            </Text>
+            <Text style={styles.tier}>{achievement.tier.toUpperCase()}</Text>
           </View>
         </View>
 
@@ -85,10 +84,13 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
           <View style={styles.progressSection}>
             <View style={styles.progressBar}>
               <View style={styles.progressTrack}>
-                <View 
+                <View
                   style={[
                     styles.progressFill,
-                    { width: `${progressPercent}%`, backgroundColor: tierColor }
+                    {
+                      width: `${progressPercent}%`,
+                      backgroundColor: tierColor,
+                    },
                   ]}
                 />
               </View>
@@ -107,9 +109,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
 
         {isCompleted && (
           <View style={[styles.completedBadge, { backgroundColor: tierColor }]}>
-            <Text style={styles.completedText}>
-              ✓ EARNED
-            </Text>
+            <Text style={styles.completedText}>✓ EARNED</Text>
           </View>
         )}
       </View>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.sm,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -147,8 +147,8 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
 
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
 
   tier: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: ResponsiveTheme.colors.primary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
   },
 
   progressBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -213,34 +213,34 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.border,
     borderRadius: rs(3),
     marginRight: ResponsiveTheme.spacing.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: rs(3),
   },
 
   progressText: {
     fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     minWidth: rw(35),
-    textAlign: 'right',
+    textAlign: "right",
   },
 
   rewardSection: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
 
   rewardText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.primary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   completedBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: ResponsiveTheme.spacing.sm,
     right: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   completedText: {
     color: ResponsiveTheme.colors.white,
     fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   Modal,
   TextInput,
   Alert,
-} from 'react-native';
-import { Button, THEME } from '../ui';
+} from "react-native";
+import { Button, THEME } from "../ui";
 
 interface Option {
   id: string;
@@ -43,41 +43,47 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
   selectedValues,
   onSelectionChange,
   label,
-  placeholder = 'Select options',
+  placeholder = "Select options",
   maxSelections,
   searchable = true,
   disabled = false,
   style,
   allowCustom = true,
-  customLabel = 'Add Custom',
-  customPlaceholder = 'Enter custom value',
+  customLabel = "Add Custom",
+  customPlaceholder = "Enter custom value",
   onCustomAdd,
   showRegions = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [tempSelectedValues, setTempSelectedValues] = useState(selectedValues);
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [customValue, setCustomValue] = useState('');
+  const [customValue, setCustomValue] = useState("");
   const [customOptions, setCustomOptions] = useState<Option[]>([]);
 
   // Combine initial options with custom options and add custom button if allowed
   const allOptions = [
-    ...initialOptions.filter(opt => !opt.isCustom),
+    ...initialOptions.filter((opt) => !opt.isCustom),
     ...customOptions,
-    ...(allowCustom ? [{
-      id: 'add-custom',
-      label: `➕ ${customLabel}...`,
-      value: 'add-custom',
-      isCustom: true,
-    }] : []),
+    ...(allowCustom
+      ? [
+          {
+            id: "add-custom",
+            label: `➕ ${customLabel}...`,
+            value: "add-custom",
+            isCustom: true,
+          },
+        ]
+      : []),
   ];
 
   const filteredOptions =
     searchable && searchQuery
-      ? allOptions.filter((option) => 
-          option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (option.region && option.region.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? allOptions.filter(
+          (option) =>
+            option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (option.region &&
+              option.region.toLowerCase().includes(searchQuery.toLowerCase())),
         )
       : allOptions;
 
@@ -89,7 +95,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     if (option.disabled) return;
 
     // Handle custom option button
-    if (option.isCustom && option.value === 'add-custom') {
+    if (option.isCustom && option.value === "add-custom") {
       setShowCustomInput(true);
       return;
     }
@@ -102,9 +108,9 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     } else {
       if (maxSelections && tempSelectedValues.length >= maxSelections) {
         Alert.alert(
-          'Maximum Selections',
+          "Maximum Selections",
           `You can only select up to ${maxSelections} items.`,
-          [{ text: 'OK' }]
+          [{ text: "OK" }],
         );
         return;
       }
@@ -116,19 +122,23 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
 
   const handleAddCustom = () => {
     const trimmedValue = customValue.trim();
-    
+
     if (!trimmedValue) {
-      Alert.alert('Invalid Input', 'Please enter a valid value.', [{ text: 'OK' }]);
+      Alert.alert("Invalid Input", "Please enter a valid value.", [
+        { text: "OK" },
+      ]);
       return;
     }
 
     // Check if this custom value already exists
     const existingOption = allOptions.find(
-      opt => opt.label.toLowerCase() === trimmedValue.toLowerCase()
+      (opt) => opt.label.toLowerCase() === trimmedValue.toLowerCase(),
     );
 
     if (existingOption) {
-      Alert.alert('Duplicate Entry', 'This option already exists.', [{ text: 'OK' }]);
+      Alert.alert("Duplicate Entry", "This option already exists.", [
+        { text: "OK" },
+      ]);
       return;
     }
 
@@ -136,22 +146,22 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     const newCustomOption: Option = {
       id: `custom-${Date.now()}`,
       label: trimmedValue,
-      value: trimmedValue.toLowerCase().replace(/\s+/g, '-'),
-      icon: '✨',
+      value: trimmedValue.toLowerCase().replace(/\s+/g, "-"),
+      icon: "✨",
     };
 
     // Add to custom options
-    setCustomOptions(prev => [...prev, newCustomOption]);
-    
+    setCustomOptions((prev) => [...prev, newCustomOption]);
+
     // Add to selected values
     if (maxSelections && tempSelectedValues.length >= maxSelections) {
       Alert.alert(
-        'Maximum Selections',
+        "Maximum Selections",
         `You can only select up to ${maxSelections} items.`,
-        [{ text: 'OK' }]
+        [{ text: "OK" }],
       );
     } else {
-      setTempSelectedValues(prev => [...prev, newCustomOption.value]);
+      setTempSelectedValues((prev) => [...prev, newCustomOption.value]);
     }
 
     // Call custom add callback if provided
@@ -160,28 +170,28 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     }
 
     // Reset custom input
-    setCustomValue('');
+    setCustomValue("");
     setShowCustomInput(false);
   };
 
   const handleConfirm = () => {
     onSelectionChange(tempSelectedValues);
     setIsVisible(false);
-    setSearchQuery('');
+    setSearchQuery("");
     setShowCustomInput(false);
-    setCustomValue('');
+    setCustomValue("");
   };
 
   const handleCancel = () => {
     setTempSelectedValues(selectedValues);
     setIsVisible(false);
-    setSearchQuery('');
+    setSearchQuery("");
     setShowCustomInput(false);
-    setCustomValue('');
+    setCustomValue("");
   };
 
   const getSelectedLabels = () => {
-    const allOptionsWithCustom = [...allOptions.filter(opt => !opt.isCustom)];
+    const allOptionsWithCustom = [...allOptions.filter((opt) => !opt.isCustom)];
     return allOptionsWithCustom
       .filter((option) => selectedValues.includes(option.value))
       .map((option) => option.label);
@@ -195,28 +205,32 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
     } else if (selectedLabels.length === 1) {
       return selectedLabels[0];
     } else if (selectedLabels.length <= 3) {
-      return selectedLabels.join(', ');
+      return selectedLabels.join(", ");
     } else {
-      return `${selectedLabels.slice(0, 2).join(', ')} +${selectedLabels.length - 2} more`;
+      return `${selectedLabels.slice(0, 2).join(", ")} +${selectedLabels.length - 2} more`;
     }
   };
 
-  const canSelectMore = !maxSelections || tempSelectedValues.length < maxSelections;
+  const canSelectMore =
+    !maxSelections || tempSelectedValues.length < maxSelections;
 
   // Group options by region if showRegions is true
   const groupedOptions = showRegions
-    ? filteredOptions.reduce((groups, option) => {
-        if (option.isCustom) {
-          if (!groups['Custom']) groups['Custom'] = [];
-          groups['Custom'].push(option);
-        } else {
-          const region = option.region || 'Other';
-          if (!groups[region]) groups[region] = [];
-          groups[region].push(option);
-        }
-        return groups;
-      }, {} as Record<string, Option[]>)
-    : { '': filteredOptions };
+    ? filteredOptions.reduce(
+        (groups, option) => {
+          if (option.isCustom) {
+            if (!groups["Custom"]) groups["Custom"] = [];
+            groups["Custom"].push(option);
+          } else {
+            const region = option.region || "Other";
+            if (!groups[region]) groups[region] = [];
+            groups[region].push(option);
+          }
+          return groups;
+        },
+        {} as Record<string, Option[]>,
+      )
+    : { "": filteredOptions };
 
   return (
     <View style={[styles.container, style]}>
@@ -226,8 +240,11 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         style={[styles.trigger, disabled && styles.triggerDisabled]}
         onPress={() => !disabled && setIsVisible(true)}
       >
-        <Text 
-          style={[styles.triggerText, selectedValues.length === 0 && styles.placeholderText]}
+        <Text
+          style={[
+            styles.triggerText,
+            selectedValues.length === 0 && styles.placeholderText,
+          ]}
           numberOfLines={1}
           ellipsizeMode="tail"
         >
@@ -245,17 +262,24 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
         >
           {getSelectedLabels().map((label) => (
             <View key={`selected-${label}`} style={styles.selectedTag}>
-              <Text style={styles.selectedTagText} numberOfLines={1}>{label}</Text>
+              <Text style={styles.selectedTagText} numberOfLines={1}>
+                {label}
+              </Text>
             </View>
           ))}
         </ScrollView>
       )}
 
-      <Modal visible={isVisible} transparent animationType="slide" onRequestClose={handleCancel}>
+      <Modal
+        visible={isVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCancel}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label || 'Select Options'}</Text>
+              <Text style={styles.modalTitle}>{label || "Select Options"}</Text>
               {maxSelections && (
                 <Text style={styles.selectionCount}>
                   {tempSelectedValues.length}/{maxSelections} selected
@@ -280,7 +304,9 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
             {/* Custom Input Mode */}
             {showCustomInput ? (
               <View style={styles.customInputContainer}>
-                <Text style={styles.customInputLabel}>Add Custom {label?.replace('Select ', '')}</Text>
+                <Text style={styles.customInputLabel}>
+                  Add Custom {label?.replace("Select ", "")}
+                </Text>
                 <TextInput
                   style={styles.customTextInput}
                   placeholder={customPlaceholder}
@@ -294,7 +320,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                     title="Cancel"
                     onPress={() => {
                       setShowCustomInput(false);
-                      setCustomValue('');
+                      setCustomValue("");
                     }}
                     variant="outline"
                     style={styles.customActionButton}
@@ -309,63 +335,78 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
               </View>
             ) : (
               /* Options List */
-              <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
-                {Object.entries(groupedOptions).map(([region, regionOptions]) => (
-                  <View key={`region-${region}`}>
-                    {showRegions && region && (
-                      <Text style={styles.regionHeader}>{region}</Text>
-                    )}
-                    {regionOptions.map((option) => {
-                      const isSelected = isOptionSelected(option.value);
-                      const isDisabled = option.disabled || (!canSelectMore && !isSelected && !option.isCustom);
+              <ScrollView
+                style={styles.optionsContainer}
+                showsVerticalScrollIndicator={false}
+              >
+                {Object.entries(groupedOptions).map(
+                  ([region, regionOptions]) => (
+                    <View key={`region-${region}`}>
+                      {showRegions && region && (
+                        <Text style={styles.regionHeader}>{region}</Text>
+                      )}
+                      {regionOptions.map((option) => {
+                        const isSelected = isOptionSelected(option.value);
+                        const isDisabled =
+                          option.disabled ||
+                          (!canSelectMore && !isSelected && !option.isCustom);
 
-                      return (
-                        <TouchableOpacity
-                          key={option.id}
-                          style={[
-                            styles.optionItem,
-                            isSelected && styles.optionItemSelected,
-                            isDisabled && styles.optionItemDisabled,
-                            option.isCustom && styles.optionItemCustom,
-                          ]}
-                          onPress={() => toggleOption(option)}
-                          disabled={isDisabled && !option.isCustom}
-                        >
-                          <View style={styles.optionContent}>
-                            {option.icon && <Text style={styles.optionIcon}>{option.icon}</Text>}
-                            <View style={styles.optionTextContainer}>
-                              <Text
+                        return (
+                          <TouchableOpacity
+                            key={option.id}
+                            style={[
+                              styles.optionItem,
+                              isSelected && styles.optionItemSelected,
+                              isDisabled && styles.optionItemDisabled,
+                              option.isCustom && styles.optionItemCustom,
+                            ]}
+                            onPress={() => toggleOption(option)}
+                            disabled={isDisabled && !option.isCustom}
+                          >
+                            <View style={styles.optionContent}>
+                              {option.icon && (
+                                <Text style={styles.optionIcon}>
+                                  {option.icon}
+                                </Text>
+                              )}
+                              <View style={styles.optionTextContainer}>
+                                <Text
+                                  style={[
+                                    styles.optionText,
+                                    isSelected && styles.optionTextSelected,
+                                    isDisabled && styles.optionTextDisabled,
+                                    option.isCustom && styles.optionTextCustom,
+                                  ]}
+                                >
+                                  {option.label}
+                                </Text>
+                                {option.region && showRegions && (
+                                  <Text style={styles.optionRegion}>
+                                    {option.region}
+                                  </Text>
+                                )}
+                              </View>
+                            </View>
+
+                            {!option.isCustom && (
+                              <View
                                 style={[
-                                  styles.optionText,
-                                  isSelected && styles.optionTextSelected,
-                                  isDisabled && styles.optionTextDisabled,
-                                  option.isCustom && styles.optionTextCustom,
+                                  styles.checkbox,
+                                  isSelected && styles.checkboxSelected,
+                                  isDisabled && styles.checkboxDisabled,
                                 ]}
                               >
-                                {option.label}
-                              </Text>
-                              {option.region && showRegions && (
-                                <Text style={styles.optionRegion}>{option.region}</Text>
-                              )}
-                            </View>
-                          </View>
-
-                          {!option.isCustom && (
-                            <View
-                              style={[
-                                styles.checkbox,
-                                isSelected && styles.checkboxSelected,
-                                isDisabled && styles.checkboxDisabled,
-                              ]}
-                            >
-                              {isSelected && <Text style={styles.checkmark}>✓</Text>}
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                ))}
+                                {isSelected && (
+                                  <Text style={styles.checkmark}>✓</Text>
+                                )}
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ),
+                )}
 
                 {filteredOptions.length === 0 && (
                   <View style={styles.noResults}>
@@ -385,7 +426,7 @@ export const MultiSelectWithCustom: React.FC<MultiSelectWithCustomProps> = ({
                   style={styles.actionButton}
                 />
                 <Button
-                  title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? 's' : ''}`}
+                  title={`Select ${tempSelectedValues.length} item${tempSelectedValues.length !== 1 ? "s" : ""}`}
                   onPress={handleConfirm}
                   variant="primary"
                   style={styles.actionButton}
@@ -406,15 +447,15 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
 
   trigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     backgroundColor: THEME.colors.surface,
@@ -447,32 +488,32 @@ const styles = StyleSheet.create({
   },
 
   selectedTag: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs / 2,
     borderRadius: THEME.borderRadius.sm,
     marginRight: THEME.spacing.xs,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   selectedTagText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
 
   modalContent: {
     backgroundColor: THEME.colors.background,
     borderTopLeftRadius: THEME.borderRadius.xl,
     borderTopRightRadius: THEME.borderRadius.xl,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
 
   modalHeader: {
@@ -483,21 +524,21 @@ const styles = StyleSheet.create({
 
   modalTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   selectionCount: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: THEME.spacing.xs / 2,
   },
 
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     margin: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
@@ -524,7 +565,7 @@ const styles = StyleSheet.create({
 
   customInputLabel: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
@@ -542,7 +583,7 @@ const styles = StyleSheet.create({
   },
 
   customInputActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: THEME.spacing.sm,
   },
 
@@ -557,7 +598,7 @@ const styles = StyleSheet.create({
 
   regionHeader: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.textSecondary,
     marginTop: THEME.spacing.md,
     marginBottom: THEME.spacing.xs,
@@ -565,9 +606,9 @@ const styles = StyleSheet.create({
   },
 
   optionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     marginVertical: THEME.spacing.xs / 2,
@@ -576,9 +617,9 @@ const styles = StyleSheet.create({
   },
 
   optionItemSelected: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   optionItemDisabled: {
@@ -586,15 +627,15 @@ const styles = StyleSheet.create({
   },
 
   optionItemCustom: {
-    backgroundColor: THEME.colors.primary + '10',
+    backgroundColor: THEME.colors.primary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '30',
-    borderStyle: 'dashed',
+    borderColor: THEME.colors.primary + "30",
+    borderStyle: "dashed",
   },
 
   optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
 
@@ -614,7 +655,7 @@ const styles = StyleSheet.create({
 
   optionTextSelected: {
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
   },
 
   optionTextDisabled: {
@@ -623,7 +664,7 @@ const styles = StyleSheet.create({
 
   optionTextCustom: {
     color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
   },
 
   optionRegion: {
@@ -638,8 +679,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     borderColor: THEME.colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: THEME.colors.background,
   },
 
@@ -655,11 +696,11 @@ const styles = StyleSheet.create({
   checkmark: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
   },
 
   noResults: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
@@ -669,7 +710,7 @@ const styles = StyleSheet.create({
   },
 
   modalActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: THEME.spacing.md,
     gap: THEME.spacing.sm,
     borderTopWidth: 1,

@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface RatingSelectorProps {
   value: number;
   onRatingChange: (rating: number) => void;
   maxRating?: number;
-  type?: 'stars' | 'difficulty' | 'satisfaction' | 'intensity';
+  type?: "stars" | "difficulty" | "satisfaction" | "intensity";
   label?: string;
   showValue?: boolean;
   disabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   style?: any;
 }
 
@@ -18,31 +24,33 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   value,
   onRatingChange,
   maxRating = 5,
-  type = 'stars',
+  type = "stars",
   label,
   showValue = true,
   disabled = false,
-  size = 'md',
+  size = "md",
   style,
 }) => {
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [animatedValues] = useState(Array.from({ length: maxRating }, () => new Animated.Value(1)));
+  const [animatedValues] = useState(
+    Array.from({ length: maxRating }, () => new Animated.Value(1)),
+  );
 
   const getIcon = (index: number, isActive: boolean) => {
     const rating = hoveredRating || value;
     const isHighlighted = index < rating;
 
     switch (type) {
-      case 'stars':
-        return isHighlighted ? '⭐' : '☆';
-      case 'difficulty':
-        return isHighlighted ? '🔥' : '○';
-      case 'satisfaction':
-        return isHighlighted ? '😊' : '😐';
-      case 'intensity':
-        return isHighlighted ? '💪' : '○';
+      case "stars":
+        return isHighlighted ? "⭐" : "☆";
+      case "difficulty":
+        return isHighlighted ? "🔥" : "○";
+      case "satisfaction":
+        return isHighlighted ? "😊" : "😐";
+      case "intensity":
+        return isHighlighted ? "💪" : "○";
       default:
-        return isHighlighted ? '⭐' : '☆';
+        return isHighlighted ? "⭐" : "☆";
     }
   };
 
@@ -53,21 +61,21 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
     if (!isHighlighted) return THEME.colors.textMuted;
 
     switch (type) {
-      case 'stars':
+      case "stars":
         return THEME.colors.warning;
-      case 'difficulty':
+      case "difficulty":
         return rating <= 2
           ? THEME.colors.success
           : rating <= 4
             ? THEME.colors.warning
             : THEME.colors.error;
-      case 'satisfaction':
+      case "satisfaction":
         return rating <= 2
           ? THEME.colors.error
           : rating <= 4
             ? THEME.colors.warning
             : THEME.colors.success;
-      case 'intensity':
+      case "intensity":
         return rating <= 2
           ? THEME.colors.info
           : rating <= 4
@@ -80,11 +88,11 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
 
   const getSize = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return 24;
-      case 'md':
+      case "md":
         return 32;
-      case 'lg':
+      case "lg":
         return 40;
       default:
         return 32;
@@ -92,24 +100,24 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
   };
 
   const getLabel = () => {
-    if (!showValue) return '';
+    if (!showValue) return "";
 
     switch (type) {
-      case 'difficulty':
-        if (value === 0) return 'Not rated';
-        if (value <= 2) return 'Easy';
-        if (value <= 4) return 'Moderate';
-        return 'Hard';
-      case 'satisfaction':
-        if (value === 0) return 'Not rated';
-        if (value <= 2) return 'Poor';
-        if (value <= 4) return 'Good';
-        return 'Excellent';
-      case 'intensity':
-        if (value === 0) return 'Not rated';
-        if (value <= 2) return 'Light';
-        if (value <= 4) return 'Moderate';
-        return 'Intense';
+      case "difficulty":
+        if (value === 0) return "Not rated";
+        if (value <= 2) return "Easy";
+        if (value <= 4) return "Moderate";
+        return "Hard";
+      case "satisfaction":
+        if (value === 0) return "Not rated";
+        if (value <= 2) return "Poor";
+        if (value <= 4) return "Good";
+        return "Excellent";
+      case "intensity":
+        if (value === 0) return "Not rated";
+        if (value <= 2) return "Light";
+        if (value <= 4) return "Moderate";
+        return "Intense";
       default:
         return `${value}/${maxRating}`;
     }
@@ -196,12 +204,12 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
       </View>
 
       {/* Description based on type */}
-      {type !== 'stars' && (
+      {type !== "stars" && (
         <View style={styles.descriptionContainer}>
           <Text style={styles.descriptionText}>
-            {type === 'difficulty' && 'Rate how challenging this was'}
-            {type === 'satisfaction' && 'How satisfied are you?'}
-            {type === 'intensity' && 'Rate the workout intensity'}
+            {type === "difficulty" && "Rate how challenging this was"}
+            {type === "satisfaction" && "How satisfied are you?"}
+            {type === "intensity" && "Rate the workout intensity"}
           </Text>
         </View>
       )}
@@ -209,16 +217,16 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
       {/* Scale Labels */}
       <View style={styles.scaleContainer}>
         <Text style={styles.scaleText}>
-          {type === 'difficulty' && 'Easy'}
-          {type === 'satisfaction' && 'Poor'}
-          {type === 'intensity' && 'Light'}
-          {type === 'stars' && '1'}
+          {type === "difficulty" && "Easy"}
+          {type === "satisfaction" && "Poor"}
+          {type === "intensity" && "Light"}
+          {type === "stars" && "1"}
         </Text>
         <Text style={styles.scaleText}>
-          {type === 'difficulty' && 'Hard'}
-          {type === 'satisfaction' && 'Excellent'}
-          {type === 'intensity' && 'Intense'}
-          {type === 'stars' && maxRating.toString()}
+          {type === "difficulty" && "Hard"}
+          {type === "satisfaction" && "Excellent"}
+          {type === "intensity" && "Intense"}
+          {type === "stars" && maxRating.toString()}
         </Text>
       </View>
     </View>
@@ -232,25 +240,25 @@ const styles = StyleSheet.create({
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
 
   ratingContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   iconsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.xs,
     marginBottom: THEME.spacing.sm,
   },
 
   iconButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 20,
   },
 
@@ -259,17 +267,17 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   valueContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: THEME.spacing.xs / 2,
   },
 
   valueText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
   },
 
@@ -280,18 +288,18 @@ const styles = StyleSheet.create({
 
   descriptionContainer: {
     marginTop: THEME.spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   descriptionText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   scaleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.sm,
   },

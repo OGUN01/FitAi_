@@ -1,11 +1,11 @@
 /**
  * OnboardingCompleteModal - World-Class Completion Experience
- * 
+ *
  * Premium glassmorphic modal shown after completing onboarding.
  * Follows UIUX methodology: No emojis, proper icons, animations, haptics.
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -15,18 +15,15 @@ import {
   Easing,
   useWindowDimensions,
   ScrollView,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import AnimatedRN, { 
-  FadeInUp, 
-  ZoomIn,
-} from 'react-native-reanimated';
-import { GlassCard } from './aurora/GlassCard';
-import { AnimatedPressable } from './aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import AnimatedRN, { FadeInUp, ZoomIn } from "react-native-reanimated";
+import { GlassCard } from "./aurora/GlassCard";
+import { AnimatedPressable } from "./aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 interface OnboardingCompleteModalProps {
   visible: boolean;
@@ -76,7 +73,7 @@ const AnimatedCheckmark: React.FC = () => {
             {
               rotate: rotation.interpolate({
                 inputRange: [0, 1],
-                outputRange: ['-180deg', '0deg'],
+                outputRange: ["-180deg", "0deg"],
               }),
             },
           ],
@@ -84,7 +81,7 @@ const AnimatedCheckmark: React.FC = () => {
       ]}
     >
       <LinearGradient
-        colors={['#10b981', '#059669']}
+        colors={["#10b981", "#059669"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.checkmarkGradient}
@@ -96,7 +93,10 @@ const AnimatedCheckmark: React.FC = () => {
 };
 
 // Floating particle effect
-const FloatingParticle: React.FC<{ delay: number; color: string }> = ({ delay, color }) => {
+const FloatingParticle: React.FC<{ delay: number; color: string }> = ({
+  delay,
+  color,
+}) => {
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const translateX = useRef(new Animated.Value(0)).current;
@@ -142,7 +142,7 @@ const FloatingParticle: React.FC<{ delay: number; color: string }> = ({ delay, c
               useNativeDriver: true,
             }),
           ]),
-        ])
+        ]),
       ).start();
     }, delay);
 
@@ -163,35 +163,37 @@ const FloatingParticle: React.FC<{ delay: number; color: string }> = ({ delay, c
   );
 };
 
-export const OnboardingCompleteModal: React.FC<OnboardingCompleteModalProps> = ({
-  visible,
-  userName,
-  onGetStarted,
-  stats,
-}) => {
+export const OnboardingCompleteModal: React.FC<
+  OnboardingCompleteModalProps
+> = ({ visible, userName, onGetStarted, stats }) => {
   const { width: screenWidth } = useWindowDimensions();
   const modalWidth = Math.min(screenWidth - 40, 340);
-  
+
   useEffect(() => {
     if (visible) {
-      console.log('🎯 OnboardingCompleteModal: Modal visible, screenWidth:', screenWidth, 'modalWidth:', modalWidth);
+      console.log(
+        "🎯 OnboardingCompleteModal: Modal visible, screenWidth:",
+        screenWidth,
+        "modalWidth:",
+        modalWidth,
+      );
       haptics.success();
     }
   }, [visible, screenWidth, modalWidth]);
 
   const handleGetStarted = () => {
-    console.log('🎯 OnboardingCompleteModal: handleGetStarted called');
+    console.log("🎯 OnboardingCompleteModal: handleGetStarted called");
     haptics.medium();
-    console.log('🎯 OnboardingCompleteModal: Calling onGetStarted prop...');
+    console.log("🎯 OnboardingCompleteModal: Calling onGetStarted prop...");
     onGetStarted();
-    console.log('🎯 OnboardingCompleteModal: onGetStarted completed');
+    console.log("🎯 OnboardingCompleteModal: onGetStarted completed");
   };
 
   if (!visible) return null;
 
   return (
-    <Modal 
-      visible={visible} 
+    <Modal
+      visible={visible}
       transparent={false}
       animationType="fade"
       statusBarTranslucent
@@ -206,117 +208,165 @@ export const OnboardingCompleteModal: React.FC<OnboardingCompleteModalProps> = (
               <FloatingParticle
                 key={i}
                 delay={i * 200}
-                color={['#10b981', '#667eea', '#FF6B6B', '#4ECDC4'][i % 4]}
+                color={["#10b981", "#667eea", "#FF6B6B", "#4ECDC4"][i % 4]}
               />
             ))}
           </View>
 
           {/* Modal content - centered */}
           <View style={[styles.modalContainer, { width: modalWidth }]}>
-          <GlassCard elevation={5} blurIntensity="heavy" padding="lg" borderRadius="xl">
-            {/* Success Icon with Animation */}
-            <AnimatedRN.View entering={ZoomIn.delay(200).duration(400)}>
-              <AnimatedCheckmark />
-            </AnimatedRN.View>
-
-            {/* Title */}
-            <AnimatedRN.View entering={FadeInUp.delay(400).duration(400)}>
-              <Text style={styles.title}>You're All Set!</Text>
-            </AnimatedRN.View>
-
-            {/* Subtitle */}
-            <AnimatedRN.View entering={FadeInUp.delay(500).duration(400)}>
-              <Text style={styles.subtitle}>
-                Welcome to FitAI, <Text style={styles.userName}>{userName}</Text>
-              </Text>
-              <Text style={styles.description}>
-                Your personalized fitness journey begins now. We've crafted a unique experience just for you.
-              </Text>
-            </AnimatedRN.View>
-
-            {/* Stats Preview */}
-            {stats && (
-              <AnimatedRN.View 
-                entering={FadeInUp.delay(600).duration(400)}
-                style={styles.statsContainer}
-              >
-                <View style={styles.statsRow}>
-                  {stats.goal && (
-                    <View style={styles.statItem}>
-                      <View style={[styles.statIcon, { backgroundColor: 'rgba(255, 107, 107, 0.15)' }]}>
-                        <Ionicons name="flag" size={rf(18)} color="#FF6B6B" />
-                      </View>
-                      <Text style={styles.statLabel}>Goal</Text>
-                      <Text style={styles.statValue} numberOfLines={1}>{stats.goal}</Text>
-                    </View>
-                  )}
-                  {stats.workoutsPerWeek && (
-                    <View style={styles.statItem}>
-                      <View style={[styles.statIcon, { backgroundColor: 'rgba(102, 126, 234, 0.15)' }]}>
-                        <Ionicons name="barbell" size={rf(18)} color="#667eea" />
-                      </View>
-                      <Text style={styles.statLabel}>Weekly</Text>
-                      <Text style={styles.statValue}>{stats.workoutsPerWeek} workouts</Text>
-                    </View>
-                  )}
-                  {stats.calorieTarget && (
-                    <View style={styles.statItem}>
-                      <View style={[styles.statIcon, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                        <Ionicons name="flame" size={rf(18)} color="#10b981" />
-                      </View>
-                      <Text style={styles.statLabel}>Target</Text>
-                      <Text style={styles.statValue}>{stats.calorieTarget} cal</Text>
-                    </View>
-                  )}
-                </View>
+            <GlassCard
+              elevation={5}
+              blurIntensity="heavy"
+              padding="lg"
+              borderRadius="xl"
+            >
+              {/* Success Icon with Animation */}
+              <AnimatedRN.View entering={ZoomIn.delay(200).duration(400)}>
+                <AnimatedCheckmark />
               </AnimatedRN.View>
-            )}
 
-            {/* Features Preview */}
-            <AnimatedRN.View 
-              entering={FadeInUp.delay(700).duration(400)}
-              style={styles.featuresContainer}
-            >
-              {[
-                { icon: 'sparkles', text: 'AI-powered workout plans', color: '#667eea' },
-                { icon: 'nutrition', text: 'Smart meal recommendations', color: '#10b981' },
-                { icon: 'trending-up', text: 'Progress tracking & insights', color: '#FF6B6B' },
-              ].map((feature, index) => (
-                <View key={index} style={styles.featureItem}>
-                  <Ionicons 
-                    name={feature.icon as keyof typeof Ionicons.glyphMap} 
-                    size={rf(16)} 
-                    color={feature.color} 
-                  />
-                  <Text style={styles.featureText}>{feature.text}</Text>
-                </View>
-              ))}
-            </AnimatedRN.View>
+              {/* Title */}
+              <AnimatedRN.View entering={FadeInUp.delay(400).duration(400)}>
+                <Text style={styles.title}>You're All Set!</Text>
+              </AnimatedRN.View>
 
-            {/* CTA Button */}
-            <AnimatedRN.View 
-              entering={FadeInUp.delay(800).duration(400)}
-              style={styles.buttonContainer}
-            >
-              <AnimatedPressable
-                onPress={handleGetStarted}
-                scaleValue={0.96}
-                hapticFeedback={true}
-                hapticType="medium"
-                style={styles.button}
-              >
-                <LinearGradient
-                  colors={['#667eea', '#764ba2']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
+              {/* Subtitle */}
+              <AnimatedRN.View entering={FadeInUp.delay(500).duration(400)}>
+                <Text style={styles.subtitle}>
+                  Welcome to FitAI,{" "}
+                  <Text style={styles.userName}>{userName}</Text>
+                </Text>
+                <Text style={styles.description}>
+                  Your personalized fitness journey begins now. We've crafted a
+                  unique experience just for you.
+                </Text>
+              </AnimatedRN.View>
+
+              {/* Stats Preview */}
+              {stats && (
+                <AnimatedRN.View
+                  entering={FadeInUp.delay(600).duration(400)}
+                  style={styles.statsContainer}
                 >
-                  <Text style={styles.buttonText}>Start Your Journey</Text>
-                  <Ionicons name="arrow-forward" size={rf(20)} color="#fff" />
-                </LinearGradient>
-              </AnimatedPressable>
-            </AnimatedRN.View>
-          </GlassCard>
+                  <View style={styles.statsRow}>
+                    {stats.goal && (
+                      <View style={styles.statItem}>
+                        <View
+                          style={[
+                            styles.statIcon,
+                            { backgroundColor: "rgba(255, 107, 107, 0.15)" },
+                          ]}
+                        >
+                          <Ionicons name="flag" size={rf(18)} color="#FF6B6B" />
+                        </View>
+                        <Text style={styles.statLabel}>Goal</Text>
+                        <Text style={styles.statValue} numberOfLines={1}>
+                          {stats.goal}
+                        </Text>
+                      </View>
+                    )}
+                    {stats.workoutsPerWeek && (
+                      <View style={styles.statItem}>
+                        <View
+                          style={[
+                            styles.statIcon,
+                            { backgroundColor: "rgba(102, 126, 234, 0.15)" },
+                          ]}
+                        >
+                          <Ionicons
+                            name="barbell"
+                            size={rf(18)}
+                            color="#667eea"
+                          />
+                        </View>
+                        <Text style={styles.statLabel}>Weekly</Text>
+                        <Text style={styles.statValue}>
+                          {stats.workoutsPerWeek} workouts
+                        </Text>
+                      </View>
+                    )}
+                    {stats.calorieTarget && (
+                      <View style={styles.statItem}>
+                        <View
+                          style={[
+                            styles.statIcon,
+                            { backgroundColor: "rgba(16, 185, 129, 0.15)" },
+                          ]}
+                        >
+                          <Ionicons
+                            name="flame"
+                            size={rf(18)}
+                            color="#10b981"
+                          />
+                        </View>
+                        <Text style={styles.statLabel}>Target</Text>
+                        <Text style={styles.statValue}>
+                          {stats.calorieTarget} cal
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </AnimatedRN.View>
+              )}
+
+              {/* Features Preview */}
+              <AnimatedRN.View
+                entering={FadeInUp.delay(700).duration(400)}
+                style={styles.featuresContainer}
+              >
+                {[
+                  {
+                    icon: "sparkles",
+                    text: "AI-powered workout plans",
+                    color: "#667eea",
+                  },
+                  {
+                    icon: "nutrition",
+                    text: "Smart meal recommendations",
+                    color: "#10b981",
+                  },
+                  {
+                    icon: "trending-up",
+                    text: "Progress tracking & insights",
+                    color: "#FF6B6B",
+                  },
+                ].map((feature, index) => (
+                  <View key={index} style={styles.featureItem}>
+                    <Ionicons
+                      name={feature.icon as keyof typeof Ionicons.glyphMap}
+                      size={rf(16)}
+                      color={feature.color}
+                    />
+                    <Text style={styles.featureText}>{feature.text}</Text>
+                  </View>
+                ))}
+              </AnimatedRN.View>
+
+              {/* CTA Button */}
+              <AnimatedRN.View
+                entering={FadeInUp.delay(800).duration(400)}
+                style={styles.buttonContainer}
+              >
+                <AnimatedPressable
+                  onPress={handleGetStarted}
+                  scaleValue={0.96}
+                  hapticFeedback={true}
+                  hapticType="medium"
+                  style={styles.button}
+                >
+                  <LinearGradient
+                    colors={["#667eea", "#764ba2"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={styles.buttonText}>Start Your Journey</Text>
+                    <Ionicons name="arrow-forward" size={rf(20)} color="#fff" />
+                  </LinearGradient>
+                </AnimatedPressable>
+              </AnimatedRN.View>
+            </GlassCard>
           </View>
         </View>
       </View>
@@ -331,42 +381,42 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 40,
     backgroundColor: ResponsiveTheme.colors.background,
   },
   particlesContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
   particle: {
-    position: 'absolute',
+    position: "absolute",
     width: 8,
     height: 8,
     borderRadius: 4,
   },
   modalContainer: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   checkmarkContainer: {
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   checkmarkGradient: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#10b981',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#10b981",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 16,
@@ -374,25 +424,25 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(26),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   subtitle: {
     fontSize: rf(16),
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   userName: {
-    color: '#667eea',
-    fontWeight: '700',
+    color: "#667eea",
+    fontWeight: "700",
   },
   description: {
     fontSize: rf(13),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(20),
     marginBottom: ResponsiveTheme.spacing.lg,
   },
@@ -400,16 +450,16 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     gap: ResponsiveTheme.spacing.xs,
   },
   statItem: {
     flex: 1,
     minWidth: 70,
     maxWidth: 100,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.03)",
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -418,8 +468,8 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   statLabel: {
@@ -429,17 +479,17 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   featuresContainer: {
     marginBottom: ResponsiveTheme.spacing.xl,
     gap: ResponsiveTheme.spacing.sm,
   },
   featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingVertical: ResponsiveTheme.spacing.xs,
   },
@@ -448,19 +498,19 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.text,
   },
   buttonContainer: {
-    width: '100%',
+    width: "100%",
     flexShrink: 0,
     marginTop: ResponsiveTheme.spacing.sm,
   },
   button: {
-    width: '100%',
+    width: "100%",
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   buttonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -468,11 +518,10 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     letterSpacing: 0.3,
   },
 });
 
 export default OnboardingCompleteModal;
-

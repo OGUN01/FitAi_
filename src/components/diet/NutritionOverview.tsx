@@ -4,29 +4,44 @@
  * Fixes Issues #2, #3 - Single source of truth for nutrition data
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withSpring,
   withDelay,
   FadeIn,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
+} from "react-native-reanimated";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Macro ring colors
 const MACROS = {
-  protein: { color: '#FF6B6B', gradientEnd: '#FF8E53', icon: 'fitness' as const, label: 'Protein' },
-  carbs: { color: '#4ECDC4', gradientEnd: '#44A08D', icon: 'leaf' as const, label: 'Carbs' },
-  fat: { color: '#FFC107', gradientEnd: '#FF9800', icon: 'water' as const, label: 'Fat' },
+  protein: {
+    color: "#FF6B6B",
+    gradientEnd: "#FF8E53",
+    icon: "fitness" as const,
+    label: "Protein",
+  },
+  carbs: {
+    color: "#4ECDC4",
+    gradientEnd: "#44A08D",
+    icon: "leaf" as const,
+    label: "Carbs",
+  },
+  fat: {
+    color: "#FFC107",
+    gradientEnd: "#FF9800",
+    icon: "water" as const,
+    label: "Fat",
+  },
 };
 
 interface NutritionOverviewProps {
@@ -46,7 +61,15 @@ const Ring: React.FC<{
   gradientEnd: string;
   gradientId: string;
   delay?: number;
-}> = ({ progress, size, strokeWidth, color, gradientEnd, gradientId, delay = 0 }) => {
+}> = ({
+  progress,
+  size,
+  strokeWidth,
+  color,
+  gradientEnd,
+  gradientId,
+  delay = 0,
+}) => {
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -55,12 +78,13 @@ const Ring: React.FC<{
   useEffect(() => {
     animatedProgress.value = withDelay(
       delay,
-      withSpring(Math.min(progress, 100), { damping: 15, stiffness: 80 })
+      withSpring(Math.min(progress, 100), { damping: 15, stiffness: 80 }),
     );
   }, [progress]);
 
   const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: circumference - (circumference * animatedProgress.value) / 100,
+    strokeDashoffset:
+      circumference - (circumference * animatedProgress.value) / 100,
   }));
 
   return (
@@ -104,7 +128,10 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
   onPress,
 }) => {
   // Calculate percentages - guard against division by zero
-  const calorieProgress = calories.target > 0 ? Math.min((calories.current / calories.target) * 100, 100) : 0;
+  const calorieProgress =
+    calories.target > 0
+      ? Math.min((calories.current / calories.target) * 100, 100)
+      : 0;
   const caloriesRemaining = Math.max(calories.target - calories.current, 0);
 
   // Ring sizes
@@ -113,11 +140,26 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
 
   return (
     <Animated.View entering={FadeIn.duration(400).delay(100)}>
-      <AnimatedPressable onPress={onPress} scaleValue={0.98} hapticFeedback={true} hapticType="light">
-        <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+      <AnimatedPressable
+        onPress={onPress}
+        scaleValue={0.98}
+        hapticFeedback={true}
+        hapticType="light"
+      >
+        <GlassCard
+          elevation={2}
+          blurIntensity="light"
+          padding="md"
+          borderRadius="lg"
+        >
           <View style={styles.container}>
             {/* Calorie Ring */}
-            <View style={[styles.ringContainer, { width: outerSize, height: outerSize }]}>
+            <View
+              style={[
+                styles.ringContainer,
+                { width: outerSize, height: outerSize },
+              ]}
+            >
               <Ring
                 progress={calorieProgress}
                 size={outerSize}
@@ -185,12 +227,17 @@ const MacroRow: React.FC<{
   const progressAnim = useSharedValue(0);
 
   useEffect(() => {
-    progressAnim.value = withDelay(delay, withSpring(progress, { damping: 15, stiffness: 80 }));
+    progressAnim.value = withDelay(
+      delay,
+      withSpring(progress, { damping: 15, stiffness: 80 }),
+    );
   }, [progress]);
 
   return (
     <View style={styles.macroRow}>
-      <View style={[styles.macroIconContainer, { backgroundColor: `${color}15` }]}>
+      <View
+        style={[styles.macroIconContainer, { backgroundColor: `${color}15` }]}
+      >
         <Ionicons name={icon} size={rf(14)} color={color} />
       </View>
       <View style={styles.macroInfo}>
@@ -217,34 +264,34 @@ const MacroRow: React.FC<{
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.lg,
   },
   ringContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   centerContent: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center",
   },
   calorieValue: {
     fontSize: rf(28),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
   },
   calorieLabel: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: 2,
   },
   calorieTarget: {
     fontSize: rf(10),
-    fontWeight: '500',
-    color: ResponsiveTheme.colors.textMuted || 'rgba(255,255,255,0.4)',
+    fontWeight: "500",
+    color: ResponsiveTheme.colors.textMuted || "rgba(255,255,255,0.4)",
     marginTop: 2,
   },
   macrosContainer: {
@@ -252,52 +299,51 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   macroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   macroIconContainer: {
     width: rw(32),
     height: rw(32),
     borderRadius: rw(8),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   macroInfo: {
     flex: 1,
   },
   macroHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 4,
   },
   macroLabel: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
   macroValue: {
     fontSize: rf(12),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   macroUnit: {
     fontSize: rf(10),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
   progressBarBg: {
     height: rh(4),
     borderRadius: rh(2),
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
+    backgroundColor: "rgba(255,255,255,0.08)",
+    overflow: "hidden",
   },
   progressBarFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: rh(2),
   },
 });
 
 export default NutritionOverview;
-

@@ -1,18 +1,18 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface LoadingAnimationProps {
-  type?: 'spinner' | 'dots' | 'pulse' | 'wave';
-  size?: 'sm' | 'md' | 'lg';
+  type?: "spinner" | "dots" | "pulse" | "wave";
+  size?: "sm" | "md" | "lg";
   color?: string;
   text?: string;
   style?: any;
 }
 
 export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
-  type = 'spinner',
-  size = 'md',
+  type = "spinner",
+  size = "md",
   color = THEME.colors.primary,
   text,
   style,
@@ -27,11 +27,11 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
   const getSizeValue = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return 24;
-      case 'md':
+      case "md":
         return 40;
-      case 'lg':
+      case "lg":
         return 60;
       default:
         return 40;
@@ -41,20 +41,20 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   const sizeValue = getSizeValue();
 
   useEffect(() => {
-    if (type === 'spinner') {
+    if (type === "spinner") {
       const spinAnimation = Animated.loop(
         Animated.timing(animationValue, {
           toValue: 1,
           duration: 1000,
           easing: Easing.linear,
           useNativeDriver: true,
-        })
+        }),
       );
       spinAnimation.start();
       return () => spinAnimation.stop();
     }
 
-    if (type === 'pulse') {
+    if (type === "pulse") {
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseValue, {
@@ -69,13 +69,13 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
       pulseAnimation.start();
       return () => pulseAnimation.stop();
     }
 
-    if (type === 'dots') {
+    if (type === "dots") {
       const dotAnimations = dotValues.map((dotValue, index) =>
         Animated.loop(
           Animated.sequence([
@@ -92,8 +92,8 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
               easing: Easing.inOut(Easing.ease),
               useNativeDriver: true,
             }),
-          ])
-        )
+          ]),
+        ),
       );
 
       const staggeredAnimation = Animated.stagger(100, dotAnimations);
@@ -101,14 +101,14 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
       return () => staggeredAnimation.stop();
     }
 
-    if (type === 'wave') {
+    if (type === "wave") {
       const waveAnimation = Animated.loop(
         Animated.timing(animationValue, {
           toValue: 1,
           duration: 1500,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
-        })
+        }),
       );
       waveAnimation.start();
       return () => waveAnimation.stop();
@@ -118,7 +118,7 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
   const renderSpinner = () => {
     const spin = animationValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['0deg', '360deg'],
+      outputRange: ["0deg", "360deg"],
     });
 
     return (
@@ -128,7 +128,7 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
           {
             width: sizeValue,
             height: sizeValue,
-            borderColor: color + '30',
+            borderColor: color + "30",
             borderTopColor: color,
             transform: [{ rotate: spin }],
           },
@@ -193,7 +193,7 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
       const scaleY = animationValue.interpolate({
         inputRange: [0, 0.5, 1],
         outputRange: [0.3, 1, 0.3],
-        extrapolate: 'clamp',
+        extrapolate: "clamp",
       });
 
       return (
@@ -217,13 +217,13 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
   const renderAnimation = () => {
     switch (type) {
-      case 'spinner':
+      case "spinner":
         return renderSpinner();
-      case 'dots':
+      case "dots":
         return renderDots();
-      case 'pulse':
+      case "pulse":
         return renderPulse();
-      case 'wave':
+      case "wave":
         return renderWave();
       default:
         return renderSpinner();
@@ -240,19 +240,19 @@ export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   spinner: {
     borderWidth: 3,
     borderRadius: 50,
-    borderStyle: 'solid',
+    borderStyle: "solid",
   },
 
   dotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
 
@@ -265,8 +265,8 @@ const styles = StyleSheet.create({
   },
 
   waveContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 2,
   },
 
@@ -278,6 +278,6 @@ const styles = StyleSheet.create({
     marginTop: THEME.spacing.sm,
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.medium,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

@@ -4,9 +4,9 @@
  * Supports 4 theme variants with smooth color transitions
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect } from "react";
+import { StyleSheet, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,9 +14,13 @@ import Animated, {
   withTiming,
   withSequence,
   Easing,
-} from 'react-native-reanimated';
-import { gradients, type AuroraTheme, getAuroraGradient } from '../../../theme/gradients';
-import { toLinearGradientProps } from '../../../theme/gradients';
+} from "react-native-reanimated";
+import {
+  gradients,
+  type AuroraTheme,
+  getAuroraGradient,
+} from "../../../theme/gradients";
+import { toLinearGradientProps } from "../../../theme/gradients";
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -59,7 +63,7 @@ interface AuroraBackgroundProps {
 }
 
 export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
-  theme = 'space',
+  theme = "space",
   animationSpeed = 1,
   intensity = 0.3,
   animated = true,
@@ -85,10 +89,10 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
           withTiming(1, {
             duration: 3000 / animationSpeed,
             easing: Easing.inOut(Easing.ease),
-          })
+          }),
         ),
         -1, // infinite repeat
-        false // don't reverse
+        false, // don't reverse
       );
     } else {
       opacity.value = 1;
@@ -112,8 +116,8 @@ export const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
 });
 

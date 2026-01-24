@@ -1,17 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, LayoutChangeEvent } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  LayoutChangeEvent,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
-import Svg, { Path, Circle, Line, G, Text as SvgText } from 'react-native-svg';
-import { rf, rp, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import Svg, { Path, Circle, Line, G, Text as SvgText } from "react-native-svg";
+import { rf, rp, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export interface MilestonePoint {
   week: number;
@@ -48,7 +54,8 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   };
 
   // Calculate actual width - use container width if available, otherwise fallback
-  const actualWidth = containerWidth > 0 ? containerWidth : Math.round(SCREEN_WIDTH * 0.85);
+  const actualWidth =
+    containerWidth > 0 ? containerWidth : Math.round(SCREEN_WIDTH * 0.85);
 
   const padding = 40;
   const chartWidth = Math.round(actualWidth - padding * 2);
@@ -62,7 +69,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   for (let week = 0; week <= weeks; week++) {
     points.push({
       week,
-      weight: currentWeight + (weeklyChange * week),
+      weight: currentWeight + weeklyChange * week,
     });
   }
 
@@ -72,7 +79,11 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   const weightRange = maxWeight - minWeight;
 
   const getY = (weight: number) => {
-    return Math.round(padding + chartHeight - ((weight - minWeight) / weightRange) * chartHeight);
+    return Math.round(
+      padding +
+        chartHeight -
+        ((weight - minWeight) / weightRange) * chartHeight,
+    );
   };
 
   const getX = (week: number) => {
@@ -88,7 +99,7 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
       const y = getY(point.weight);
       return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
     })
-    .join(' ');
+    .join(" ");
 
   useEffect(() => {
     progress.value = withTiming(1, {
@@ -104,16 +115,18 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
   });
 
   // Milestone points
-  const milestonePoints = milestones.map(week => {
-    const point = points.find(p => p.week === week);
-    if (!point) return null;
-    return {
-      x: getX(point.week),
-      y: getY(point.weight),
-      week: point.week,
-      weight: point.weight,
-    };
-  }).filter(Boolean);
+  const milestonePoints = milestones
+    .map((week) => {
+      const point = points.find((p) => p.week === week);
+      if (!point) return null;
+      return {
+        x: getX(point.week),
+        y: getY(point.weight),
+        week: point.week,
+        weight: point.weight,
+      };
+    })
+    .filter(Boolean);
 
   // Don't render until we have a valid width
   if (containerWidth === 0) {
@@ -235,16 +248,16 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#FF6B35' }]} />
+          <View style={[styles.legendDot, { backgroundColor: "#FF6B35" }]} />
           <Text style={styles.legendText}>Current</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
+          <View style={[styles.legendDot, { backgroundColor: "#4CAF50" }]} />
           <Text style={styles.legendText}>Target</Text>
         </View>
         {milestones.length > 0 && (
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#2196F3' }]} />
+            <View style={[styles.legendDot, { backgroundColor: "#2196F3" }]} />
             <Text style={styles.legendText}>Milestone</Text>
           </View>
         )}
@@ -255,20 +268,20 @@ export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    alignItems: 'center',
+    width: "100%",
+    alignItems: "center",
   },
 
   legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: ResponsiveTheme.spacing.sm,
     gap: ResponsiveTheme.spacing.md,
   },
 
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
 

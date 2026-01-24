@@ -3,15 +3,15 @@
  * Displays detailed workout information for a selected day in a modal
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
-import { DayWorkout } from '../../types/ai';
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
+import { DayWorkout } from "../../types/ai";
 
 interface DayWorkoutViewProps {
   workout: DayWorkout | null;
@@ -35,8 +35,12 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         </View>
         <View style={styles.emptyState}>
           <Ionicons name="moon" size={rf(48)} color="#667eea" />
-          <Text style={styles.emptyText}>No workout scheduled for this day</Text>
-          <Text style={styles.emptySubtext}>Take this time to rest and recover</Text>
+          <Text style={styles.emptyText}>
+            No workout scheduled for this day
+          </Text>
+          <Text style={styles.emptySubtext}>
+            Take this time to rest and recover
+          </Text>
         </View>
       </View>
     );
@@ -54,7 +58,8 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         <View>
           <Text style={styles.headerTitle}>{workout.title}</Text>
           <Text style={styles.headerSubtitle}>
-            {workout.dayOfWeek.charAt(0).toUpperCase() + workout.dayOfWeek.slice(1)}
+            {workout.dayOfWeek.charAt(0).toUpperCase() +
+              workout.dayOfWeek.slice(1)}
           </Text>
         </View>
         <Pressable onPress={onClose} style={styles.closeButton}>
@@ -74,12 +79,17 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
         </View>
         <View style={styles.statItem}>
           <Ionicons name="barbell-outline" size={rf(20)} color="#FF6B6B" />
-          <Text style={styles.statText}>{workout.exercises.length} exercises</Text>
+          <Text style={styles.statText}>
+            {workout.exercises.length} exercises
+          </Text>
         </View>
       </View>
 
       {/* Exercises List */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Warmup Section */}
         {warmupExercises.length > 0 && (
           <View style={styles.section}>
@@ -92,7 +102,10 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                   </View>
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.exerciseName}>
-                      {(exercise as any).exerciseData?.name || (exercise as any).name || 'Exercise'}
+                      {exercise.exerciseData?.name ||
+                        exercise.name ||
+                        exercise.exerciseName ||
+                        "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
                       {exercise.sets} sets × {exercise.reps} reps
@@ -117,15 +130,18 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                   </View>
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.exerciseName}>
-                      {exercise.exerciseData?.name || 'Exercise'}
+                      {exercise.exerciseData?.name ||
+                        exercise.name ||
+                        exercise.exerciseName ||
+                        "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
                       {exercise.sets} sets × {exercise.reps} reps
                       {exercise.restTime && ` • ${exercise.restTime}s rest`}
                     </Text>
-                    {(exercise as any).exerciseData?.targetMuscles && (
+                    {exercise.exerciseData?.targetMuscles && (
                       <Text style={styles.targetMuscles}>
-                        Target: {(exercise as any).exerciseData.targetMuscles.join(', ')}
+                        Target: {exercise.exerciseData.targetMuscles.join(", ")}
                       </Text>
                     )}
                   </View>
@@ -147,7 +163,10 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
                   </View>
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.exerciseName}>
-                      {(exercise as any).exerciseData?.name || (exercise as any).name || 'Exercise'}
+                      {exercise.exerciseData?.name ||
+                        exercise.name ||
+                        exercise.exerciseName ||
+                        "Exercise"}
                     </Text>
                     <Text style={styles.exerciseDetails}>
                       {exercise.sets} sets × {exercise.reps} reps
@@ -171,7 +190,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           hapticFeedback={true}
         >
           <LinearGradient
-            colors={['#FF6B6B', '#FF8E53']}
+            colors={["#FF6B6B", "#FF8E53"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.startButton}
@@ -188,50 +207,50 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingTop: rh(60),
     paddingBottom: ResponsiveTheme.spacing.md,
   },
   headerTitle: {
     fontSize: rf(24),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: rh(4),
   },
   headerSubtitle: {
     fontSize: rf(14),
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: "rgba(255, 255, 255, 0.6)",
   },
   closeButton: {
     width: rw(40),
     height: rh(40),
     borderRadius: rw(20),
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: rw(8),
   },
   statText: {
     fontSize: rf(14),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   scrollView: {
     flex: 1,
@@ -242,8 +261,8 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: rf(18),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   exerciseCard: {
@@ -251,40 +270,40 @@ const styles = StyleSheet.create({
     padding: ResponsiveTheme.spacing.md,
   },
   exerciseContent: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
   exerciseNumberContainer: {
     width: rw(32),
     height: rh(32),
     borderRadius: rw(16),
-    backgroundColor: 'rgba(255, 107, 107, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 107, 107, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   exerciseNumber: {
     fontSize: rf(14),
-    fontWeight: '700',
-    color: '#FF6B6B',
+    fontWeight: "700",
+    color: "#FF6B6B",
   },
   exerciseInfo: {
     flex: 1,
   },
   exerciseName: {
     fontSize: rf(16),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     marginBottom: rh(4),
   },
   exerciseDetails: {
     fontSize: rf(13),
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   targetMuscles: {
     fontSize: rf(12),
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: "rgba(255, 255, 255, 0.5)",
     marginTop: rh(4),
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   footer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
@@ -292,35 +311,35 @@ const styles = StyleSheet.create({
     paddingTop: ResponsiveTheme.spacing.md,
   },
   startButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: rw(12),
     paddingVertical: rh(16),
     borderRadius: ResponsiveTheme.spacing.md,
   },
   startButtonText: {
     fontSize: rf(16),
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   emptyState: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.xl,
   },
   emptyText: {
     fontSize: rf(18),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     marginTop: ResponsiveTheme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtext: {
     fontSize: rf(14),
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: "rgba(255, 255, 255, 0.6)",
     marginTop: rh(8),
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

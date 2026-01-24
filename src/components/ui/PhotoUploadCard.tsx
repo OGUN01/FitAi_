@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet, ViewStyle } from 'react-native';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface PhotoUploadCardProps {
   label: string;
@@ -78,19 +85,27 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
           {imageUri ? (
             <>
               {/* Image Preview */}
-              <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+              <Image
+                source={{ uri: imageUri }}
+                style={styles.image}
+                resizeMode="cover"
+              />
 
               {/* AI Badge */}
               {showAIBadge && (
                 <Animated.View style={[styles.aiBadge, animatedBadgeStyle]}>
                   <LinearGradient
-                    colors={aiProcessing ? ['#FF6B35', '#FF8A5C'] : ['#4CAF50', '#45A049']}
+                    colors={
+                      aiProcessing
+                        ? ["#FF6B35", "#FF8A5C"]
+                        : ["#4CAF50", "#45A049"]
+                    }
                     style={styles.aiBadgeGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
                     <Text style={styles.aiBadgeText}>
-                      {aiProcessing ? 'AI Processing...' : 'AI Analyzed'}
+                      {aiProcessing ? "AI Processing..." : "AI Analyzed"}
                     </Text>
                   </LinearGradient>
                 </Animated.View>
@@ -98,9 +113,12 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
 
               {/* Delete Button */}
               {onDelete && (
-                <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={onDelete}
+                >
                   <LinearGradient
-                    colors={['#F44336', '#D32F2F']}
+                    colors={["#F44336", "#D32F2F"]}
                     style={styles.deleteButtonGradient}
                   >
                     <Text style={styles.deleteButtonText}>×</Text>
@@ -117,7 +135,10 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
             <>
               {/* Upload Placeholder */}
               <LinearGradient
-                colors={[ResponsiveTheme.colors.backgroundSecondary, ResponsiveTheme.colors.backgroundTertiary]}
+                colors={[
+                  ResponsiveTheme.colors.backgroundSecondary,
+                  ResponsiveTheme.colors.backgroundTertiary,
+                ]}
                 style={styles.placeholder}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -128,7 +149,9 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
                   </View>
                 </View>
                 <Text style={styles.uploadText}>Upload Photo</Text>
-                <Text style={styles.uploadHint}>Tap to select from gallery</Text>
+                <Text style={styles.uploadHint}>
+                  Tap to select from gallery
+                </Text>
               </LinearGradient>
             </>
           )}
@@ -140,14 +163,14 @@ export const PhotoUploadCard: React.FC<PhotoUploadCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   card: {
     borderRadius: ResponsiveTheme.borderRadius.xl,
     backgroundColor: ResponsiveTheme.colors.background,
     padding: ResponsiveTheme.spacing.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -169,26 +192,26 @@ const styles = StyleSheet.create({
   },
 
   uploadArea: {
-    position: 'relative',
-    width: '100%',
+    position: "relative",
+    width: "100%",
     aspectRatio: 4 / 3,
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
 
   placeholder: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
     borderColor: ResponsiveTheme.colors.border,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
@@ -201,8 +224,8 @@ const styles = StyleSheet.create({
     height: rf(60),
     borderRadius: rf(30),
     backgroundColor: ResponsiveTheme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: ResponsiveTheme.colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -230,12 +253,12 @@ const styles = StyleSheet.create({
   },
 
   aiBadge: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(12),
     right: rp(12),
     borderRadius: ResponsiveTheme.borderRadius.full,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -254,14 +277,14 @@ const styles = StyleSheet.create({
   },
 
   deleteButton: {
-    position: 'absolute',
+    position: "absolute",
     top: rp(12),
     left: rp(12),
     width: rf(32),
     height: rf(32),
     borderRadius: rf(16),
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -269,10 +292,10 @@ const styles = StyleSheet.create({
   },
 
   deleteButtonGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   deleteButtonText: {
@@ -283,13 +306,13 @@ const styles = StyleSheet.create({
   },
 
   replaceOverlay: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
     paddingVertical: rp(8),
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   replaceText: {

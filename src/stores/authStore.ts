@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthUser, LoginCredentials, RegisterCredentials } from '../types/user';
-import { authService, AuthResponse } from '../services/auth';
-import { generateGuestId, migrateGuestId } from '../utils/uuid';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthUser, LoginCredentials, RegisterCredentials } from "../types/user";
+import { authService, AuthResponse } from "../services/auth";
+import { generateGuestId, migrateGuestId } from "../utils/uuid";
 
 interface AuthState {
   // State
@@ -21,7 +21,9 @@ interface AuthState {
   logout: () => Promise<AuthResponse>;
   resetPassword: (email: string) => Promise<AuthResponse>;
   resendEmailVerification: (email: string) => Promise<AuthResponse>;
-  checkEmailVerification: (email: string) => Promise<{ isVerified: boolean; error?: string }>;
+  checkEmailVerification: (
+    email: string,
+  ) => Promise<{ isVerified: boolean; error?: string }>;
   signInWithGoogle: () => Promise<any>;
   linkGoogleAccount: () => Promise<any>;
   unlinkGoogleAccount: () => Promise<any>;
@@ -66,13 +68,14 @@ export const useAuthStore = create<AuthState>()(
               user: null,
               isAuthenticated: false,
               isLoading: false,
-              error: response.error || 'Login failed',
+              error: response.error || "Login failed",
             });
           }
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Login failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Login failed";
           set({
             user: null,
             isAuthenticated: false,
@@ -87,7 +90,9 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
+      register: async (
+        credentials: RegisterCredentials,
+      ): Promise<AuthResponse> => {
         set({ isLoading: true, error: null });
 
         try {
@@ -109,13 +114,14 @@ export const useAuthStore = create<AuthState>()(
               user: null,
               isAuthenticated: false,
               isLoading: false,
-              error: response.error || 'Registration failed',
+              error: response.error || "Registration failed",
             });
           }
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Registration failed";
           set({
             user: null,
             isAuthenticated: false,
@@ -146,13 +152,14 @@ export const useAuthStore = create<AuthState>()(
           } else {
             set({
               isLoading: false,
-              error: response.error || 'Logout failed',
+              error: response.error || "Logout failed",
             });
           }
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Logout failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Logout failed";
           set({
             isLoading: false,
             error: errorMessage,
@@ -173,12 +180,15 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             isLoading: false,
-            error: response.success ? null : response.error || 'Password reset failed',
+            error: response.success
+              ? null
+              : response.error || "Password reset failed",
           });
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Password reset failed";
           set({
             isLoading: false,
             error: errorMessage,
@@ -199,12 +209,17 @@ export const useAuthStore = create<AuthState>()(
 
           set({
             isLoading: false,
-            error: response.success ? null : response.error || 'Email verification failed',
+            error: response.success
+              ? null
+              : response.error || "Email verification failed",
           });
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Email verification failed';
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Email verification failed";
           set({
             isLoading: false,
             error: errorMessage,
@@ -223,7 +238,10 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           return {
             isVerified: false,
-            error: error instanceof Error ? error.message : 'Verification check failed',
+            error:
+              error instanceof Error
+                ? error.message
+                : "Verification check failed",
           };
         }
       },
@@ -241,29 +259,29 @@ export const useAuthStore = create<AuthState>()(
 
       initialize: async () => {
         if (get().isInitialized) {
-          console.log('🔄 AuthStore: Already initialized, skipping...');
+          console.log("🔄 AuthStore: Already initialized, skipping...");
           return;
         }
 
-        console.log('🚀 AuthStore: Initializing auth store...');
+        console.log("🚀 AuthStore: Initializing auth store...");
         set({ isLoading: true });
 
         try {
           // Add timeout wrapper to prevent hanging (3 seconds max)
           const restorePromise = authService.restoreSession();
-          const timeoutPromise = new Promise<AuthResponse>((resolve) => 
+          const timeoutPromise = new Promise<AuthResponse>((resolve) =>
             setTimeout(() => {
-              console.warn('⚠️ AuthStore: Session restore timed out');
-              resolve({ success: false, error: 'Session restore timeout' });
-            }, 3000)
+              console.warn("⚠️ AuthStore: Session restore timed out");
+              resolve({ success: false, error: "Session restore timeout" });
+            }, 3000),
           );
-          
+
           const response = await Promise.race([restorePromise, timeoutPromise]);
 
           if (response.success && response.user) {
             console.log(
-              '✅ AuthStore: Session restored successfully for user:',
-              response.user.email
+              "✅ AuthStore: Session restored successfully for user:",
+              response.user.email,
             );
             set({
               user: response.user,
@@ -273,7 +291,10 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           } else {
-            console.log('❌ AuthStore: No valid session found:', response.error);
+            console.log(
+              "❌ AuthStore: No valid session found:",
+              response.error,
+            );
             set({
               user: null,
               isAuthenticated: false,
@@ -284,19 +305,23 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Set up auth state change listener
-          console.log('👂 AuthStore: Setting up auth state change listener');
+          console.log("👂 AuthStore: Setting up auth state change listener");
           authService.onAuthStateChange((user) => {
-            console.log('🔄 AuthStore: Auth state changed, user:', user?.email || 'null');
+            console.log(
+              "🔄 AuthStore: Auth state changed, user:",
+              user?.email || "null",
+            );
             get().setUser(user);
           });
         } catch (error) {
-          console.log('❌ AuthStore: Initialization failed:', error);
+          console.log("❌ AuthStore: Initialization failed:", error);
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
             isInitialized: true,
-            error: error instanceof Error ? error.message : 'Initialization failed',
+            error:
+              error instanceof Error ? error.message : "Initialization failed",
           });
         }
       },
@@ -319,13 +344,14 @@ export const useAuthStore = create<AuthState>()(
           } else {
             set({
               isLoading: false,
-              error: response.error || 'Google Sign-In failed',
+              error: response.error || "Google Sign-In failed",
             });
           }
 
           return response;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Google Sign-In failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Google Sign-In failed";
           set({
             isLoading: false,
             error: errorMessage,
@@ -347,7 +373,9 @@ export const useAuthStore = create<AuthState>()(
           return response;
         } catch (error) {
           const errorMessage =
-            error instanceof Error ? error.message : 'Failed to link Google account';
+            error instanceof Error
+              ? error.message
+              : "Failed to link Google account";
           set({
             isLoading: false,
             error: errorMessage,
@@ -369,7 +397,9 @@ export const useAuthStore = create<AuthState>()(
           return response;
         } catch (error) {
           const errorMessage =
-            error instanceof Error ? error.message : 'Failed to unlink Google account';
+            error instanceof Error
+              ? error.message
+              : "Failed to unlink Google account";
           set({
             isLoading: false,
             error: errorMessage,
@@ -386,7 +416,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           return await authService.isGoogleLinked();
         } catch (error) {
-          console.error('Failed to check Google link status:', error);
+          console.error("Failed to check Google link status:", error);
           return false;
         }
       },
@@ -401,7 +431,9 @@ export const useAuthStore = create<AuthState>()(
           if (currentState.guestId) {
             guestId = migrateGuestId(currentState.guestId);
             if (guestId !== currentState.guestId) {
-              console.log(`🔄 Migrated guest ID from ${currentState.guestId} to ${guestId}`);
+              console.log(
+                `🔄 Migrated guest ID from ${currentState.guestId} to ${guestId}`,
+              );
             } else {
               guestId = currentState.guestId;
             }
@@ -418,7 +450,10 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false, // Guest mode means not authenticated
         });
 
-        console.log(enabled ? '👤 Guest mode enabled with ID:' : '👤 Guest mode disabled', guestId);
+        console.log(
+          enabled ? "👤 Guest mode enabled with ID:" : "👤 Guest mode disabled",
+          guestId,
+        );
       },
 
       exitGuestMode: () => {
@@ -426,11 +461,11 @@ export const useAuthStore = create<AuthState>()(
           isGuestMode: false,
           guestId: null,
         });
-        console.log('👤 Exited guest mode');
+        console.log("👤 Exited guest mode");
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         user: state.user,
@@ -438,8 +473,8 @@ export const useAuthStore = create<AuthState>()(
         isGuestMode: state.isGuestMode,
         guestId: state.guestId,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export default useAuthStore;

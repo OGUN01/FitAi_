@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,14 +8,14 @@ import {
   Alert,
   ScrollView,
   Dimensions,
-} from 'react-native';
-import * as ImagePickerExpo from 'expo-image-picker';
-import { Button, Card, Modal, THEME } from '../ui';
+} from "react-native";
+import * as ImagePickerExpo from "expo-image-picker";
+import { Button, Card, Modal, THEME } from "../ui";
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get("window");
 
 interface ImagePickerProps {
-  mode: 'single' | 'multiple';
+  mode: "single" | "multiple";
   maxImages?: number;
   onImagesSelected: (uris: string[]) => void;
   onClose: () => void;
@@ -26,7 +26,7 @@ interface ImagePickerProps {
 }
 
 export const ImagePicker: React.FC<ImagePickerProps> = ({
-  mode = 'single',
+  mode = "single",
   maxImages = 5,
   onImagesSelected,
   onClose,
@@ -45,12 +45,13 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
   }, [visible]);
 
   const requestPermissions = async () => {
-    const { status } = await ImagePickerExpo.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
+    const { status } =
+      await ImagePickerExpo.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
       Alert.alert(
-        'Permission Required',
-        'Sorry, we need camera roll permissions to select images.',
-        [{ text: 'OK' }]
+        "Permission Required",
+        "Sorry, we need camera roll permissions to select images.",
+        [{ text: "OK" }],
       );
       return false;
     }
@@ -68,13 +69,13 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         allowsEditing,
         aspect,
         quality,
-        allowsMultipleSelection: mode === 'multiple',
-        selectionLimit: mode === 'multiple' ? maxImages : 1,
+        allowsMultipleSelection: mode === "multiple",
+        selectionLimit: mode === "multiple" ? maxImages : 1,
       });
 
       if (!result.canceled) {
         const uris = result.assets.map((asset) => asset.uri);
-        if (mode === 'single') {
+        if (mode === "single") {
           onImagesSelected(uris);
           onClose();
         } else {
@@ -85,7 +86,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image from library');
+      Alert.alert("Error", "Failed to pick image from library");
     } finally {
       setIsLoading(false);
     }
@@ -93,10 +94,12 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 
   const takePhoto = async () => {
     const { status } = await ImagePickerExpo.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Sorry, we need camera permissions to take photos.', [
-        { text: 'OK' },
-      ]);
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Required",
+        "Sorry, we need camera permissions to take photos.",
+        [{ text: "OK" }],
+      );
       return;
     }
 
@@ -110,7 +113,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 
       if (!result.canceled) {
         const uri = result.assets[0].uri;
-        if (mode === 'single') {
+        if (mode === "single") {
           onImagesSelected([uri]);
           onClose();
         } else {
@@ -121,7 +124,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         }
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo');
+      Alert.alert("Error", "Failed to take photo");
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +149,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           <TouchableOpacity
             style={styles.actionButton}
             onPress={takePhoto}
-            disabled={isLoading || (!canAddMore && mode === 'multiple')}
+            disabled={isLoading || (!canAddMore && mode === "multiple")}
           >
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>📷</Text>
@@ -157,7 +160,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
           <TouchableOpacity
             style={styles.actionButton}
             onPress={pickFromLibrary}
-            disabled={isLoading || (!canAddMore && mode === 'multiple')}
+            disabled={isLoading || (!canAddMore && mode === "multiple")}
           >
             <View style={styles.actionIcon}>
               <Text style={styles.actionEmoji}>🖼️</Text>
@@ -167,7 +170,7 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
         </View>
 
         {/* Selected Images (Multiple Mode) */}
-        {mode === 'multiple' && selectedImages.length > 0 && (
+        {mode === "multiple" && selectedImages.length > 0 && (
           <View style={styles.selectedSection}>
             <Text style={styles.selectedTitle}>
               Selected Images ({selectedImages.length}/{maxImages})
@@ -181,7 +184,10 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
               {selectedImages.map((uri, index) => (
                 <View key={index} style={styles.selectedImageContainer}>
                   <Image source={{ uri }} style={styles.selectedImage} />
-                  <TouchableOpacity style={styles.removeButton} onPress={() => removeImage(index)}>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeImage(index)}
+                  >
                     <Text style={styles.removeButtonText}>✕</Text>
                   </TouchableOpacity>
                 </View>
@@ -201,9 +207,9 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
 
         {/* Bottom Actions */}
         <View style={styles.bottomActions}>
-          {mode === 'multiple' && selectedImages.length > 0 && (
+          {mode === "multiple" && selectedImages.length > 0 && (
             <Button
-              title={`Use ${selectedImages.length} Image${selectedImages.length > 1 ? 's' : ''}`}
+              title={`Use ${selectedImages.length} Image${selectedImages.length > 1 ? "s" : ""}`}
               onPress={confirmSelection}
               variant="primary"
               fullWidth
@@ -211,7 +217,12 @@ export const ImagePicker: React.FC<ImagePickerProps> = ({
             />
           )}
 
-          <Button title="Cancel" onPress={onClose} variant="outline" fullWidth />
+          <Button
+            title="Cancel"
+            onPress={onClose}
+            variant="outline"
+            fullWidth
+          />
         </View>
       </View>
     </Modal>
@@ -224,13 +235,13 @@ const styles = StyleSheet.create({
   },
 
   actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: THEME.spacing.lg,
   },
 
   actionButton: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: THEME.spacing.md,
     borderRadius: THEME.borderRadius.lg,
     backgroundColor: THEME.colors.surface,
@@ -241,9 +252,9 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: THEME.colors.primary + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: THEME.colors.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -253,9 +264,9 @@ const styles = StyleSheet.create({
 
   actionText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   selectedSection: {
@@ -264,17 +275,17 @@ const styles = StyleSheet.create({
 
   selectedTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
 
   selectedImagesContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
 
   selectedImageContainer: {
-    position: 'relative',
+    position: "relative",
     marginRight: THEME.spacing.sm,
   },
 
@@ -285,33 +296,33 @@ const styles = StyleSheet.create({
   },
 
   removeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     right: -8,
     width: 24,
     height: 24,
     borderRadius: 12,
     backgroundColor: THEME.colors.error,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   removeButtonText: {
     fontSize: 12,
     color: THEME.colors.white,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
   },
 
   tipsCard: {
     marginBottom: THEME.spacing.lg,
-    backgroundColor: THEME.colors.info + '10',
+    backgroundColor: THEME.colors.info + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.info + '30',
+    borderColor: THEME.colors.info + "30",
   },
 
   tipsTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.info,
     marginBottom: THEME.spacing.sm,
   },

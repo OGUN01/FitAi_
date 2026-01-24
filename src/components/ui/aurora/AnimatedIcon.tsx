@@ -4,8 +4,8 @@
  * Supports scale, bounce, pulse, and rotate animations
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet, Pressable, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { StyleSheet, Pressable, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,11 +15,11 @@ import Animated, {
   withSequence,
   Easing,
   cancelAnimation,
-} from 'react-native-reanimated';
-import { springConfig, duration } from '../../../theme/animations';
-import { haptics } from '../../../utils/haptics';
+} from "react-native-reanimated";
+import { springConfig, duration } from "../../../theme/animations";
+import { haptics } from "../../../utils/haptics";
 
-type AnimationType = 'scale' | 'bounce' | 'pulse' | 'rotate' | 'none';
+type AnimationType = "scale" | "bounce" | "pulse" | "rotate" | "none";
 
 export interface AnimatedIconProps {
   /**
@@ -92,7 +92,7 @@ export interface AnimatedIconProps {
 
 export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
   icon,
-  animationType = 'scale',
+  animationType = "scale",
   size = 24,
   color,
   onPress,
@@ -112,7 +112,7 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
   // Setup continuous animations
   useEffect(() => {
     if (continuous) {
-      if (animationType === 'pulse') {
+      if (animationType === "pulse") {
         // Pulse animation: scale up and down
         scale.value = withRepeat(
           withSequence(
@@ -123,10 +123,10 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
             withTiming(1, {
               duration: animationDuration,
               easing: Easing.inOut(Easing.ease),
-            })
+            }),
           ),
           -1, // infinite
-          false
+          false,
         );
 
         // Pulse opacity as well
@@ -139,12 +139,12 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
             withTiming(1, {
               duration: animationDuration,
               easing: Easing.inOut(Easing.ease),
-            })
+            }),
           ),
           -1,
-          false
+          false,
         );
-      } else if (animationType === 'rotate') {
+      } else if (animationType === "rotate") {
         // Continuous rotation
         rotation.value = withRepeat(
           withTiming(360, {
@@ -152,7 +152,7 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
             easing: Easing.linear,
           }),
           -1,
-          false
+          false,
         );
       }
     } else {
@@ -184,41 +184,41 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
     // Trigger press animation
     if (!continuous) {
       switch (animationType) {
-        case 'scale':
+        case "scale":
           scale.value = withSequence(
             withTiming(0.85, { duration: 100 }),
-            withSpring(1, springConfig.bounce)
+            withSpring(1, springConfig.bounce),
           );
           break;
 
-        case 'bounce':
+        case "bounce":
           scale.value = withSequence(
             withTiming(0.9, { duration: 100 }),
             withSpring(1.2, springConfig.bounce),
-            withSpring(1, springConfig.smooth)
+            withSpring(1, springConfig.smooth),
           );
           break;
 
-        case 'pulse':
+        case "pulse":
           scale.value = withSequence(
             withTiming(1.2, { duration: 150 }),
-            withSpring(1, springConfig.smooth)
+            withSpring(1, springConfig.smooth),
           );
           opacity.value = withSequence(
             withTiming(0.6, { duration: 150 }),
-            withTiming(1, { duration: 150 })
+            withTiming(1, { duration: 150 }),
           );
           break;
 
-        case 'rotate':
+        case "rotate":
           rotation.value = withSequence(
             withTiming(15, { duration: 100 }),
             withTiming(-15, { duration: 100 }),
-            withSpring(0, springConfig.smooth)
+            withSpring(0, springConfig.smooth),
           );
           break;
 
-        case 'none':
+        case "none":
         default:
           // No animation
           break;
@@ -231,10 +231,7 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
 
   // Animated styles
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { rotate: `${rotation.value}deg` },
-    ],
+    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
     opacity: opacity.value,
   }));
 
@@ -267,12 +264,12 @@ export const AnimatedIcon: React.FC<AnimatedIconProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   iconWrapper: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

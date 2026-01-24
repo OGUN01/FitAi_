@@ -6,7 +6,15 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Modal, Alert } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Modal,
+  Alert,
+  TouchableWithoutFeedback,
+  Pressable,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { Text } from "react-native";
@@ -15,6 +23,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useAuth } from "../../hooks/useAuth";
+import { clearAllUserData } from "../../utils/clearUserData";
 import { useUser, useUserStats } from "../../hooks/useUser";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import {
@@ -119,8 +128,16 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
   const confirmLogout = async () => {
     setShowLogoutConfirmation(false);
     try {
+      // First logout from auth
       await logout();
+
+      // Clear profile store
       clearProfile();
+
+      // CRITICAL: Clear ALL user data from ALL stores to prevent data leakage
+      await clearAllUserData();
+
+      console.log("[ProfileScreen] Logout complete - all user data cleared");
     } catch (error) {
       console.error("[ProfileScreen] Logout error:", error);
       Alert.alert("Error", "Failed to sign out. Please try again.");
@@ -473,62 +490,66 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
           animationType="fade"
           onRequestClose={cancelLogout}
         >
-          <BlurView intensity={80} style={styles.blurContainer}>
-            <View style={styles.confirmationDialog}>
-              <GlassCard
-                elevation={5}
-                blurIntensity="heavy"
-                padding="lg"
-                borderRadius="xl"
-              >
-                <View style={styles.confirmationIconContainer}>
-                  <Ionicons
-                    name="log-out-outline"
-                    size={rf(48)}
-                    color={ResponsiveTheme.colors.error}
-                  />
-                </View>
-                <Text style={styles.confirmationTitle}>Sign Out</Text>
-                <Text style={styles.confirmationMessage}>
-                  Are you sure you want to sign out? Your progress will be
-                  saved.
-                </Text>
-
-                <View style={styles.confirmationActions}>
-                  <AnimatedPressable
-                    style={[
-                      styles.confirmationButton,
-                      styles.confirmationButtonCancel,
-                    ]}
-                    onPress={cancelLogout}
-                    scaleValue={0.95}
+          <TouchableWithoutFeedback onPress={cancelLogout}>
+            <BlurView intensity={80} style={styles.blurContainer}>
+              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                <View style={styles.confirmationDialog}>
+                  <GlassCard
+                    elevation={5}
+                    blurIntensity="heavy"
+                    padding="lg"
+                    borderRadius="xl"
                   >
-                    <Text style={styles.confirmationButtonTextCancel}>
-                      Cancel
+                    <View style={styles.confirmationIconContainer}>
+                      <Ionicons
+                        name="log-out-outline"
+                        size={rf(48)}
+                        color={ResponsiveTheme.colors.error}
+                      />
+                    </View>
+                    <Text style={styles.confirmationTitle}>Sign Out</Text>
+                    <Text style={styles.confirmationMessage}>
+                      Are you sure you want to sign out? Your progress will be
+                      saved.
                     </Text>
-                  </AnimatedPressable>
 
-                  <AnimatedPressable
-                    style={[
-                      styles.confirmationButton,
-                      styles.confirmationButtonConfirm,
-                    ]}
-                    onPress={confirmLogout}
-                    scaleValue={0.95}
-                  >
-                    <LinearGradient
-                      {...toLinearGradientProps(gradients.button.error)}
-                      style={styles.confirmationButtonGradient}
-                    >
-                      <Text style={styles.confirmationButtonText}>
-                        Sign Out
-                      </Text>
-                    </LinearGradient>
-                  </AnimatedPressable>
+                    <View style={styles.confirmationActions}>
+                      <AnimatedPressable
+                        style={[
+                          styles.confirmationButton,
+                          styles.confirmationButtonCancel,
+                        ]}
+                        onPress={cancelLogout}
+                        scaleValue={0.95}
+                      >
+                        <Text style={styles.confirmationButtonTextCancel}>
+                          Cancel
+                        </Text>
+                      </AnimatedPressable>
+
+                      <AnimatedPressable
+                        style={[
+                          styles.confirmationButton,
+                          styles.confirmationButtonConfirm,
+                        ]}
+                        onPress={confirmLogout}
+                        scaleValue={0.95}
+                      >
+                        <LinearGradient
+                          {...toLinearGradientProps(gradients.button.error)}
+                          style={styles.confirmationButtonGradient}
+                        >
+                          <Text style={styles.confirmationButtonText}>
+                            Sign Out
+                          </Text>
+                        </LinearGradient>
+                      </AnimatedPressable>
+                    </View>
+                  </GlassCard>
                 </View>
-              </GlassCard>
-            </View>
-          </BlurView>
+              </TouchableWithoutFeedback>
+            </BlurView>
+          </TouchableWithoutFeedback>
         </Modal>
 
         {/* Edit Overlay */}

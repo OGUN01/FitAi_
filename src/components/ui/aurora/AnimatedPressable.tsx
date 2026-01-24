@@ -5,18 +5,23 @@
  * Phase 4: Enhanced with full haptic support and accessibility features
  */
 
-import React, { useCallback } from 'react';
-import { Pressable, PressableProps, ViewStyle, AccessibilityRole } from 'react-native';
+import React, { useCallback } from "react";
+import {
+  Pressable,
+  PressableProps,
+  ViewStyle,
+  AccessibilityRole,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
-} from 'react-native-reanimated';
-import { animations } from '../../../theme/animations';
-import { haptics, type HapticType } from '../../../utils/haptics';
+} from "react-native-reanimated";
+import { animations } from "../../../theme/animations";
+import { haptics, type HapticType } from "../../../utils/haptics";
 
-interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
+interface AnimatedPressableProps extends Omit<PressableProps, "style"> {
   /**
    * Scale value when pressed
    * @default 0.95
@@ -33,7 +38,7 @@ interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
    * Spring configuration
    * @default 'default'
    */
-  springConfig?: 'default' | 'bounce' | 'smooth' | 'gentle' | 'snappy';
+  springConfig?: "default" | "bounce" | "smooth" | "gentle" | "snappy";
 
   /**
    * Enable haptic feedback
@@ -110,9 +115,9 @@ const getSpringConfig = (config: string) => {
 export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   scaleValue = animations.scale.press,
   useSpring = true,
-  springConfig = 'default',
+  springConfig = "default",
   hapticFeedback = true,
-  hapticType = 'light',
+  hapticType = "light",
   disableAnimation = false,
   fadeOnPress = false,
   pressOpacity = 0.6,
@@ -123,7 +128,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   disabled,
   accessibilityLabel,
   accessibilityHint,
-  accessibilityRole = 'button',
+  accessibilityRole = "button",
   testID,
   ...pressableProps
 }) => {
@@ -161,7 +166,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
       disabled,
       hapticType,
       onPressIn,
-    ]
+    ],
   );
 
   // Handle press out
@@ -190,7 +195,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
 
       onPressOut?.(event);
     },
-    [disableAnimation, useSpring, springConfig, fadeOnPress, onPressOut]
+    [disableAnimation, useSpring, springConfig, fadeOnPress, onPressOut],
   );
 
   // Animated style

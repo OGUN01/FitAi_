@@ -1,27 +1,36 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { TabBar } from './TabBar';
-import { HomeIcon, FitnessIcon, DietIcon, ProgressIcon, ProfileIcon, AnalyticsIcon } from '../icons/TabIcons';
-import { HomeScreen } from '../../screens/main/HomeScreen';
-import { FitnessScreen } from '../../screens/main/FitnessScreen';
-import { DietScreen } from '../../screens/main/DietScreen';
-import { ProgressScreen } from '../../screens/main/ProgressScreen';
-import { ProfileScreen } from '../../screens/main/ProfileScreen';
-import AnalyticsScreen from '../../screens/main/AnalyticsScreen';
-import { WorkoutSessionScreen } from '../../screens/workout/WorkoutSessionScreen';
-import { MealSession } from '../../screens/session/MealSession';
-import CookingSessionScreen from '../../screens/cooking/CookingSessionScreen';
-import { OnboardingContainer } from '../../screens/onboarding/OnboardingContainer';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
-import { DayWorkout, DayMeal } from '../../types/ai';
+import React, { useState } from "react";
+import { View, StyleSheet } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { TabBar } from "./TabBar";
+import {
+  HomeIcon,
+  FitnessIcon,
+  DietIcon,
+  ProgressIcon,
+  ProfileIcon,
+  AnalyticsIcon,
+} from "../icons/TabIcons";
+import { HomeScreen } from "../../screens/main/HomeScreen";
+import { FitnessScreen } from "../../screens/main/FitnessScreen";
+import { DietScreen } from "../../screens/main/DietScreen";
+import { ProgressScreen } from "../../screens/main/ProgressScreen";
+import { ProfileScreen } from "../../screens/main/ProfileScreen";
+import AnalyticsScreen from "../../screens/main/AnalyticsScreen";
+import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen";
+import { MealSession } from "../../screens/session/MealSession";
+import CookingSessionScreen from "../../screens/cooking/CookingSessionScreen";
+import { OnboardingContainer } from "../../screens/onboarding/OnboardingContainer";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
+import { DayWorkout, DayMeal } from "../../types/ai";
 
 interface MainNavigationProps {
   initialTab?: string;
 }
 
-export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'home' }) => {
+export const MainNavigation: React.FC<MainNavigationProps> = ({
+  initialTab = "home",
+}) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [workoutSession, setWorkoutSession] = useState<{
     isActive: boolean;
@@ -52,7 +61,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
   const navigation = {
     navigate: (screen: string, params?: any) => {
       console.log(`🧭 NAVIGATION: Navigating to ${screen}`, { params });
-      if (screen === 'WorkoutSession') {
+      if (screen === "WorkoutSession") {
         console.log(`🧭 Setting workout session:`, {
           workout: params?.workout?.title,
           sessionId: params?.sessionId,
@@ -62,14 +71,14 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
           workout: params.workout,
           sessionId: params.sessionId,
         });
-      } else if (screen === 'MealSession') {
+      } else if (screen === "MealSession") {
         setMealSession({ isActive: true, meal: params.meal });
-      } else if (screen === 'CookingSession') {
+      } else if (screen === "CookingSession") {
         console.log(`🧭 Setting cooking session:`, {
           meal: params?.meal?.name,
         });
         setCookingSession({ isActive: true, meal: params.meal });
-      } else if (screen === 'OnboardingContainer') {
+      } else if (screen === "OnboardingContainer") {
         console.log(`🧭 Setting onboarding edit session:`, {
           editMode: params?.editMode,
           initialTab: params?.initialTab,
@@ -94,32 +103,32 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
 
   const tabs = [
     {
-      key: 'home',
-      title: 'Home',
+      key: "home",
+      title: "Home",
       icon: <HomeIcon />,
       activeIcon: <HomeIcon active />,
     },
     {
-      key: 'fitness',
-      title: 'Workout',
+      key: "fitness",
+      title: "Workout",
       icon: <FitnessIcon />,
       activeIcon: <FitnessIcon active />,
     },
     {
-      key: 'analytics',
-      title: 'Analytics',
+      key: "analytics",
+      title: "Analytics",
       icon: <AnalyticsIcon />,
       activeIcon: <AnalyticsIcon active />,
     },
     {
-      key: 'diet',
-      title: 'Diet',
+      key: "diet",
+      title: "Diet",
       icon: <DietIcon />,
       activeIcon: <DietIcon active />,
     },
     {
-      key: 'profile',
-      title: 'Profile',
+      key: "profile",
+      title: "Profile",
       icon: <ProfileIcon />,
       activeIcon: <ProfileIcon active />,
     },
@@ -137,18 +146,20 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
           editMode={onboardingEditSession.editMode}
           initialTab={onboardingEditSession.initialTab}
           onEditComplete={() => {
-            console.log('✅ OnboardingContainer: Edit completed');
+            console.log("✅ OnboardingContainer: Edit completed");
             onboardingEditSession.onEditComplete?.();
             navigation.goBack();
           }}
           onEditCancel={() => {
-            console.log('❌ OnboardingContainer: Edit cancelled');
+            console.log("❌ OnboardingContainer: Edit cancelled");
             onboardingEditSession.onEditCancel?.();
             navigation.goBack();
           }}
           onComplete={() => {
             // This won't be called in edit mode, but required prop
-            console.log('OnboardingContainer: onComplete called (should not happen in edit mode)');
+            console.log(
+              "OnboardingContainer: onComplete called (should not happen in edit mode)",
+            );
           }}
         />
       );
@@ -194,20 +205,27 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
 
     // If meal session is active, show meal session screen
     if (mealSession.isActive && mealSession.meal) {
-      return <MealSession route={{ params: { meal: mealSession.meal } }} navigation={navigation} />;
+      return (
+        <MealSession
+          route={{ params: { meal: mealSession.meal } }}
+          navigation={navigation}
+        />
+      );
     }
 
     // Otherwise show normal tab screens
     switch (activeTab) {
-      case 'home':
+      case "home":
         return <HomeScreen onNavigateToTab={setActiveTab} />;
-      case 'fitness':
+      case "fitness":
         return <FitnessScreen navigation={navigation} />;
-      case 'analytics':
+      case "analytics":
         return <AnalyticsScreen />;
-      case 'diet':
-        return <DietScreen navigation={navigation} isActive={activeTab === 'diet'} />;
-      case 'profile':
+      case "diet":
+        return (
+          <DietScreen navigation={navigation} isActive={activeTab === "diet"} />
+        );
+      case "profile":
         return <ProfileScreen navigation={navigation} />;
       default:
         return <HomeScreen onNavigateToTab={setActiveTab} />;
@@ -219,9 +237,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({ initialTab = 'ho
       <View style={styles.screenContainer}>{renderScreen()}</View>
 
       {/* Hide tab bar when any session is active */}
-      {!workoutSession.isActive && !mealSession.isActive && !cookingSession.isActive && !onboardingEditSession.isActive && (
-        <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
-      )}
+      {!workoutSession.isActive &&
+        !mealSession.isActive &&
+        !cookingSession.isActive &&
+        !onboardingEditSession.isActive && (
+          <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
+        )}
     </View>
   );
 };

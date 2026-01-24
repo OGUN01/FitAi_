@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import {
 } from "../../utils/cookingFlowGenerator";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
 import MacroDashboard from "../../components/nutrition/MacroDashboard";
+import { haptics } from "../../utils/haptics";
 import IngredientDetailModal from "../../components/nutrition/IngredientDetailModal";
 
 interface CookingSessionScreenProps {
@@ -61,6 +62,8 @@ export default function CookingSessionScreen({
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(
     null,
   );
+  // Ref to track timer interval for cleanup
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<string | null>(
     null,
   );
@@ -151,6 +154,9 @@ export default function CookingSessionScreen({
   };
 
   const startTimer = (minutes: number) => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
     if (timerInterval) {
       clearInterval(timerInterval);
     }
@@ -162,24 +168,39 @@ export default function CookingSessionScreen({
       setCookingTimer((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
+          timerIntervalRef.current = null;
           setTimerInterval(null);
-          Alert.alert("⏰ Timer Complete!", "Your cooking step is ready.");
+          Alert.alert("Timer Complete!", "Your cooking step is ready.");
           return null;
         }
         return prev - 1;
       });
     }, 1000);
 
+    timerIntervalRef.current = interval;
     setTimerInterval(interval);
   };
 
   const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
     if (timerInterval) {
       clearInterval(timerInterval);
       setTimerInterval(null);
     }
     setCookingTimer(null);
   };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   const formatTimer = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -546,7 +567,13 @@ export default function CookingSessionScreen({
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => {
+            haptics.light();
+            navigation.goBack();
+          }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Ionicons name="close" size={28} color="#111827" />
         </TouchableOpacity>
         <View style={styles.headerContent}>

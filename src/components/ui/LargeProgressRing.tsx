@@ -1,15 +1,20 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   withSpring,
   Easing,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -30,7 +35,7 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
   maxValue: rawMaxValue = 100,
   size: rawSize = 200,
   strokeWidth: rawStrokeWidth = 16,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   showGlow = true,
   showValue = true,
   label,
@@ -38,10 +43,15 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
 }) => {
   // Sanitize and round all numeric props to avoid NaN and precision errors on Android native
   const value = Number.isFinite(rawValue) ? Math.round(rawValue) : 0;
-  const maxValue = Number.isFinite(rawMaxValue) && rawMaxValue > 0 ? Math.round(rawMaxValue) : 100;
+  const maxValue =
+    Number.isFinite(rawMaxValue) && rawMaxValue > 0
+      ? Math.round(rawMaxValue)
+      : 100;
   const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 200;
-  const strokeWidth = Number.isFinite(rawStrokeWidth) ? Math.round(rawStrokeWidth) : 16;
-  
+  const strokeWidth = Number.isFinite(rawStrokeWidth)
+    ? Math.round(rawStrokeWidth)
+    : 16;
+
   const progress = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
 
@@ -66,7 +76,9 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
   }, [value, maxValue]);
 
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = Math.round(circumference - (circumference * progress.value) / 100);
+    const strokeDashoffset = Math.round(
+      circumference - (circumference * progress.value) / 100,
+    );
     return {
       strokeDashoffset,
     };
@@ -148,15 +160,15 @@ export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   centerContent: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   valueText: {

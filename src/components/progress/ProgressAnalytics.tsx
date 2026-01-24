@@ -1,38 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Card, THEME } from '../ui';
-import { useProgressData } from '../../hooks/useProgressData';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { useProgressData } from "../../hooks/useProgressData";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 interface ProgressAnalyticsProps {
-  timeRange?: 'week' | 'month' | 'year';
-  onTimeRangeChange?: (range: 'week' | 'month' | 'year') => void;
+  timeRange?: "week" | "month" | "year";
+  onTimeRangeChange?: (range: "week" | "month" | "year") => void;
 }
 
 export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
-  timeRange = 'month',
+  timeRange = "month",
   onTimeRangeChange,
 }) => {
-  const { progressStats, progressEntries, progressGoals, loadProgressStats, statsLoading } =
-    useProgressData();
+  const {
+    progressStats,
+    progressEntries,
+    progressGoals,
+    loadProgressStats,
+    statsLoading,
+  } = useProgressData();
 
-  const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'year'>(timeRange);
+  const [selectedRange, setSelectedRange] = useState<"week" | "month" | "year">(
+    timeRange,
+  );
 
   useEffect(() => {
-    const days = selectedRange === 'week' ? 7 : selectedRange === 'month' ? 30 : 365;
+    const days =
+      selectedRange === "week" ? 7 : selectedRange === "month" ? 30 : 365;
     loadProgressStats(days);
   }, [selectedRange, loadProgressStats]);
 
-  const handleRangeChange = (range: 'week' | 'month' | 'year') => {
+  const handleRangeChange = (range: "week" | "month" | "year") => {
     setSelectedRange(range);
     onTimeRangeChange?.(range);
   };
 
   const timeRanges = [
-    { id: 'week', label: 'Week', icon: '📅' },
-    { id: 'month', label: 'Month', icon: '🗓️' },
-    { id: 'year', label: 'Year', icon: '📆' },
+    { id: "week", label: "Week", icon: "📅" },
+    { id: "month", label: "Month", icon: "🗓️" },
+    { id: "year", label: "Year", icon: "📆" },
   ] as const;
 
   const getProgressColor = (change: number) => {
@@ -42,13 +57,13 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
   };
 
   const getProgressIcon = (change: number) => {
-    if (change > 0) return '📈';
-    if (change < 0) return '📉';
-    return '➡️';
+    if (change > 0) return "📈";
+    if (change < 0) return "📉";
+    return "➡️";
   };
 
   const formatChange = (change: number, unit: string) => {
-    const sign = change > 0 ? '+' : '';
+    const sign = change > 0 ? "+" : "";
     return `${sign}${change.toFixed(1)}${unit}`;
   };
 
@@ -69,7 +84,9 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
     return (
       <Card style={styles.container} variant="elevated">
         <Text style={styles.emptyText}>No progress data available</Text>
-        <Text style={styles.emptySubtext}>Add measurements to see analytics</Text>
+        <Text style={styles.emptySubtext}>
+          Add measurements to see analytics
+        </Text>
       </Card>
     );
   }
@@ -122,16 +139,22 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                 <Text
                   style={[
                     styles.changeText,
-                    { color: getProgressColor(progressStats.weightChange.change) },
+                    {
+                      color: getProgressColor(
+                        progressStats.weightChange.change,
+                      ),
+                    },
                   ]}
                 >
-                  {getProgressIcon(progressStats.weightChange.change)}{' '}
-                  {formatChange(progressStats.weightChange.change, 'kg')}
+                  {getProgressIcon(progressStats.weightChange.change)}{" "}
+                  {formatChange(progressStats.weightChange.change, "kg")}
                 </Text>
               </View>
               {progressGoals?.target_weight_kg && (
                 <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>Goal: {progressGoals.target_weight_kg}kg</Text>
+                  <Text style={styles.goalText}>
+                    Goal: {progressGoals.target_weight_kg}kg
+                  </Text>
                   <View style={styles.progressBar}>
                     <View
                       style={[
@@ -159,11 +182,15 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                 <Text
                   style={[
                     styles.changeText,
-                    { color: getProgressColor(-progressStats.bodyFatChange.change) },
+                    {
+                      color: getProgressColor(
+                        -progressStats.bodyFatChange.change,
+                      ),
+                    },
                   ]}
                 >
-                  {getProgressIcon(-progressStats.bodyFatChange.change)}{' '}
-                  {formatChange(progressStats.bodyFatChange.change, '%')}
+                  {getProgressIcon(-progressStats.bodyFatChange.change)}{" "}
+                  {formatChange(progressStats.bodyFatChange.change, "%")}
                 </Text>
               </View>
               {progressGoals?.target_body_fat_percentage && (
@@ -198,16 +225,22 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
                 <Text
                   style={[
                     styles.changeText,
-                    { color: getProgressColor(progressStats.muscleChange.change) },
+                    {
+                      color: getProgressColor(
+                        progressStats.muscleChange.change,
+                      ),
+                    },
                   ]}
                 >
-                  {getProgressIcon(progressStats.muscleChange.change)}{' '}
-                  {formatChange(progressStats.muscleChange.change, 'kg')}
+                  {getProgressIcon(progressStats.muscleChange.change)}{" "}
+                  {formatChange(progressStats.muscleChange.change, "kg")}
                 </Text>
               </View>
               {progressGoals?.target_muscle_mass_kg && (
                 <View style={styles.goalProgress}>
-                  <Text style={styles.goalText}>Goal: {progressGoals.target_muscle_mass_kg}kg</Text>
+                  <Text style={styles.goalText}>
+                    Goal: {progressGoals.target_muscle_mass_kg}kg
+                  </Text>
                   <View style={styles.progressBar}>
                     <View
                       style={[
@@ -229,21 +262,29 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Body Measurements</Text>
             <View style={styles.measurementsContainer}>
-              {Object.entries(progressStats.measurementChanges).map(([measurement, data]) => (
-                <View key={measurement} style={styles.measurementItem}>
-                  <View style={styles.measurementHeader}>
-                    <Text style={styles.measurementName}>
-                      {measurement.charAt(0).toUpperCase() + measurement.slice(1)}
+              {Object.entries(progressStats.measurementChanges).map(
+                ([measurement, data]) => (
+                  <View key={measurement} style={styles.measurementItem}>
+                    <View style={styles.measurementHeader}>
+                      <Text style={styles.measurementName}>
+                        {measurement.charAt(0).toUpperCase() +
+                          measurement.slice(1)}
+                      </Text>
+                      <Text style={styles.measurementValue}>
+                        {data.current.toFixed(1)}cm
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.measurementChange,
+                        { color: getProgressColor(data.change) },
+                      ]}
+                    >
+                      {formatChange(data.change, "cm")}
                     </Text>
-                    <Text style={styles.measurementValue}>{data.current.toFixed(1)}cm</Text>
                   </View>
-                  <Text
-                    style={[styles.measurementChange, { color: getProgressColor(data.change) }]}
-                  >
-                    {formatChange(data.change, 'cm')}
-                  </Text>
-                </View>
-              ))}
+                ),
+              )}
             </View>
           </View>
         )}
@@ -252,13 +293,16 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.summaryContainer}>
-            <Text style={styles.summaryText}>📈 Total Entries: {progressStats.totalEntries}</Text>
+            <Text style={styles.summaryText}>
+              📈 Total Entries: {progressStats.totalEntries}
+            </Text>
             <Text style={styles.summaryText}>
               📅 Tracking Period: {progressStats.timeRange} days
             </Text>
             {progressStats.weightChange.changePercentage !== 0 && (
               <Text style={styles.summaryText}>
-                ⚖️ Weight Change: {progressStats.weightChange.changePercentage.toFixed(1)}%
+                ⚖️ Weight Change:{" "}
+                {progressStats.weightChange.changePercentage.toFixed(1)}%
               </Text>
             )}
           </View>
@@ -276,26 +320,29 @@ export const ProgressAnalytics: React.FC<ProgressAnalyticsProps> = ({
               <>
                 {progressStats.totalEntries >= 2 && (
                   <Text style={styles.insightText}>
-                    🎯 Great consistency! You have {progressStats.totalEntries} measurements
-                    recorded.
+                    🎯 Great consistency! You have {progressStats.totalEntries}{" "}
+                    measurements recorded.
                   </Text>
                 )}
 
                 {progressStats.weightChange.change < 0 && (
                   <Text style={styles.insightText}>
-                    📉 You're making progress with weight loss! Keep up the great work.
+                    📉 You're making progress with weight loss! Keep up the
+                    great work.
                   </Text>
                 )}
 
                 {progressStats.muscleChange.change > 0 && (
                   <Text style={styles.insightText}>
-                    💪 Excellent muscle gain! Your strength training is paying off.
+                    💪 Excellent muscle gain! Your strength training is paying
+                    off.
                   </Text>
                 )}
 
                 {progressStats.bodyFatChange.change < 0 && (
                   <Text style={styles.insightText}>
-                    🔥 Body fat reduction detected! Your fitness routine is working.
+                    🔥 Body fat reduction detected! Your fitness routine is
+                    working.
                   </Text>
                 )}
               </>
@@ -325,7 +372,7 @@ const styles = StyleSheet.create({
   },
 
   timeRangeSelector: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: THEME.colors.backgroundSecondary,
     borderRadius: THEME.borderRadius.md,
     padding: 4,
@@ -333,9 +380,9 @@ const styles = StyleSheet.create({
 
   timeRangeButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.sm,
@@ -382,8 +429,8 @@ const styles = StyleSheet.create({
   },
 
   metricHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -430,7 +477,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
     borderRadius: 2,
   },
@@ -440,9 +487,9 @@ const styles = StyleSheet.create({
   },
 
   measurementItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: THEME.colors.backgroundSecondary,
     padding: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
@@ -496,20 +543,20 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
   emptyText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.sm,
   },
 
   emptySubtext: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textMuted,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

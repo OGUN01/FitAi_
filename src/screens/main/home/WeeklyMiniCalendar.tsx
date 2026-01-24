@@ -3,13 +3,13 @@
  * Compact 7-day view - NO redundant legend
  */
 
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw } from '../../../utils/responsive';
+import React, { useMemo } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw } from "../../../utils/responsive";
 
 interface DayActivity {
   date: Date;
@@ -24,7 +24,7 @@ interface WeeklyMiniCalendarProps {
   onViewFullCalendar?: () => void;
 }
 
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
 export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   weekData,
@@ -33,11 +33,11 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 }) => {
   const week = useMemo(() => {
     if (weekData && weekData.length === 7) return weekData;
-    
+
     const today = new Date();
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
-    
+
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(startOfWeek);
       date.setDate(startOfWeek.getDate() + i);
@@ -51,25 +51,45 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
   }, [weekData]);
 
   const stats = useMemo(() => {
-    const completed = week.filter(d => d.workoutCompleted).length;
-    const total = week.filter(d => d.hasWorkout).length;
+    const completed = week.filter((d) => d.workoutCompleted).length;
+    const total = week.filter((d) => d.hasWorkout).length;
     return { completed, total };
   }, [week]);
 
   return (
-    <AnimatedPressable onPress={onViewFullCalendar} scaleValue={0.99} hapticFeedback={true} hapticType="light">
-      <GlassCard elevation={2} blurIntensity="light" padding="md" borderRadius="lg">
+    <AnimatedPressable
+      onPress={onViewFullCalendar}
+      scaleValue={0.99}
+      hapticFeedback={true}
+      hapticType="light"
+    >
+      <GlassCard
+        elevation={2}
+        blurIntensity="light"
+        padding="md"
+        borderRadius="lg"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.headerIconBg}>
-              <Ionicons name="calendar-outline" size={rf(14)} color={ResponsiveTheme.colors.primary} />
+              <Ionicons
+                name="calendar-outline"
+                size={rf(14)}
+                color={ResponsiveTheme.colors.primary}
+              />
             </View>
             <Text style={styles.headerTitle}>This Week</Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statsText}>{stats.completed}/{stats.total}</Text>
-            <Ionicons name="chevron-forward" size={rf(14)} color={ResponsiveTheme.colors.textSecondary} />
+            <Text style={styles.statsText}>
+              {stats.completed}/{stats.total}
+            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={rf(14)}
+              color={ResponsiveTheme.colors.textSecondary}
+            />
           </View>
         </View>
 
@@ -79,22 +99,22 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
             const today = new Date();
             const isToday = day.date.toDateString() === today.toDateString();
             const isPast = day.date < today && !isToday;
-            
+
             let cellStyle = styles.defaultCell;
             let textColor = ResponsiveTheme.colors.textSecondary;
-            
+
             if (isToday) {
               cellStyle = styles.todayCell;
               textColor = ResponsiveTheme.colors.primary;
             } else if (day.workoutCompleted) {
               cellStyle = styles.completedCell;
-              textColor = '#fff';
+              textColor = "#fff";
             } else if (day.isRestDay) {
               cellStyle = styles.restCell;
             } else if (isPast && day.hasWorkout) {
               cellStyle = styles.missedCell;
             }
-            
+
             return (
               <AnimatedPressable
                 key={index}
@@ -104,7 +124,9 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
                 hapticType="light"
                 style={styles.dayWrapper}
               >
-                <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>{DAY_LABELS[index]}</Text>
+                <Text style={[styles.dayLabel, isToday && styles.todayLabel]}>
+                  {DAY_LABELS[index]}
+                </Text>
                 <View style={[styles.dayCell, cellStyle]}>
                   {day.workoutCompleted ? (
                     <Ionicons name="checkmark" size={rf(14)} color="#fff" />
@@ -125,14 +147,14 @@ export const WeeklyMiniCalendar: React.FC<WeeklyMiniCalendarProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   headerIconBg: {
@@ -140,51 +162,51 @@ const styles = StyleSheet.create({
     height: rw(28),
     borderRadius: rw(14),
     backgroundColor: `${ResponsiveTheme.colors.primary}12`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: rf(14),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
   statsText: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
   },
   weekGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   dayWrapper: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: 4,
   },
   dayLabel: {
     fontSize: rf(10),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
   },
   todayLabel: {
     color: ResponsiveTheme.colors.primary,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   dayCell: {
     width: rw(34),
     height: rw(34),
     borderRadius: rw(17),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   dayNumber: {
     fontSize: rf(12),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   defaultCell: {
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,

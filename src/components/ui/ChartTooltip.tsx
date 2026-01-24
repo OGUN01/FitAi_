@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   runOnJS,
-} from 'react-native-reanimated';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface ChartTooltipProps {
   visible: boolean;
@@ -62,9 +62,9 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
 
   const displayValue = formatValue
     ? formatValue(value)
-    : typeof value === 'number'
-    ? value.toFixed(1)
-    : value;
+    : typeof value === "number"
+      ? value.toFixed(1)
+      : value;
 
   if (!visible) return null;
 
@@ -81,8 +81,8 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    alignItems: 'center',
+    position: "absolute",
+    alignItems: "center",
     zIndex: 1000,
   },
 
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(12),
     paddingVertical: rp(8),
     borderRadius: ResponsiveTheme.borderRadius.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -104,14 +104,14 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: rp(2),
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   value: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   arrow: {
@@ -121,8 +121,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: rp(6),
     borderRightWidth: rp(6),
     borderTopWidth: rp(6),
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
     borderTopColor: ResponsiveTheme.colors.surface,
   },
 });

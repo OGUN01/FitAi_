@@ -1,7 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { Card, THEME } from '../ui';
-import { DayMeal } from '../../types/ai';
+import React, { memo } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { DayMeal } from "../../types/ai";
 
 interface MealCardProps {
   meal: DayMeal;
@@ -11,216 +17,248 @@ interface MealCardProps {
   style?: any;
 }
 
-export const MealCard: React.FC<MealCardProps> = ({
-  meal,
-  onViewDetails,
-  onStartMeal,
-  progress = 0,
-  style,
-}) => {
-  const getMealTypeIcon = (type: string) => {
-    switch (type) {
-      case 'breakfast':
-        return '🌅';
-      case 'lunch':
-        return '☀️';
-      case 'dinner':
-        return '🌙';
-      case 'snack':
-        return '🍎';
-      default:
-        return '🍽️';
-    }
-  };
+// PERF-010 FIX: Wrap component in React.memo to prevent unnecessary re-renders in FlatList
+export const MealCard: React.FC<MealCardProps> = memo(
+  ({ meal, onViewDetails, onStartMeal, progress = 0, style }) => {
+    const getMealTypeIcon = (type: string) => {
+      switch (type) {
+        case "breakfast":
+          return "🌅";
+        case "lunch":
+          return "☀️";
+        case "dinner":
+          return "🌙";
+        case "snack":
+          return "🍎";
+        default:
+          return "🍽️";
+      }
+    };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy':
-        return THEME.colors.success;
-      case 'medium':
-        return THEME.colors.warning;
-      case 'hard':
-        return THEME.colors.error;
-      default:
-        return THEME.colors.textSecondary;
-    }
-  };
+    const getDifficultyColor = (difficulty: string) => {
+      switch (difficulty) {
+        case "easy":
+          return THEME.colors.success;
+        case "medium":
+          return THEME.colors.warning;
+        case "hard":
+          return THEME.colors.error;
+        default:
+          return THEME.colors.textSecondary;
+      }
+    };
 
-  const getMealTypeColor = (type: string) => {
-    switch (type) {
-      case 'breakfast':
-        return '#FF9500';
-      case 'lunch':
-        return '#34C759';
-      case 'dinner':
-        return '#5856D6';
-      case 'snack':
-        return '#FF3B30';
-      default:
-        return THEME.colors.primary;
-    }
-  };
+    const getMealTypeColor = (type: string) => {
+      switch (type) {
+        case "breakfast":
+          return "#FF9500";
+        case "lunch":
+          return "#34C759";
+        case "dinner":
+          return "#5856D6";
+        case "snack":
+          return "#FF3B30";
+        default:
+          return THEME.colors.primary;
+      }
+    };
 
-  const isCompleted = progress >= 100;
-  const isInProgress = progress > 0 && progress < 100;
+    const isCompleted = progress >= 100;
+    const isInProgress = progress > 0 && progress < 100;
 
-  return (
-    <Card style={StyleSheet.flatten([styles.card, style])} variant="elevated">
-      {/* Progress Bar */}
-      {progress > 0 && (
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: `${progress}%` }]} />
-        </View>
-      )}
+    return (
+      <Card style={StyleSheet.flatten([styles.card, style])} variant="elevated">
+        {/* Progress Bar */}
+        {progress > 0 && (
+          <View style={styles.progressContainer}>
+            <View style={[styles.progressBar, { width: `${progress}%` }]} />
+          </View>
+        )}
 
-      <View style={styles.cardContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <View style={styles.titleRow}>
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: getMealTypeColor(meal.type) + '15' },
-                ]}
-              >
-                <Text style={styles.mealTypeIcon}>{getMealTypeIcon(meal.type)}</Text>
-              </View>
-              <View style={styles.titleContainer}>
-                <Text style={styles.title} numberOfLines={2}>
-                  {meal.name}
-                </Text>
-                <View style={styles.badgeRow}>
-                  <View style={styles.mealTypeBadge}>
-                    <Text style={[styles.mealTypeText, { color: getMealTypeColor(meal.type) }]}>
-                      {meal.type.toUpperCase()}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.difficultyBadge,
-                      { backgroundColor: getDifficultyColor(meal.difficulty) },
-                    ]}
-                  >
-                    <Text style={styles.difficultyText}>{meal.difficulty.toUpperCase()}</Text>
-                  </View>
-                  {meal.aiGenerated && (
-                    <View style={styles.aiPillBadge}>
-                      <Text style={styles.aiPillText}>✨ AI</Text>
+        <View style={styles.cardContent}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.titleSection}>
+              <View style={styles.titleRow}>
+                <View
+                  style={[
+                    styles.iconContainer,
+                    { backgroundColor: getMealTypeColor(meal.type) + "15" },
+                  ]}
+                >
+                  <Text style={styles.mealTypeIcon}>
+                    {getMealTypeIcon(meal.type)}
+                  </Text>
+                </View>
+                <View style={styles.titleContainer}>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {meal.name}
+                  </Text>
+                  <View style={styles.badgeRow}>
+                    <View style={styles.mealTypeBadge}>
+                      <Text
+                        style={[
+                          styles.mealTypeText,
+                          { color: getMealTypeColor(meal.type) },
+                        ]}
+                      >
+                        {meal.type.toUpperCase()}
+                      </Text>
                     </View>
-                  )}
+                    <View
+                      style={[
+                        styles.difficultyBadge,
+                        {
+                          backgroundColor: getDifficultyColor(meal.difficulty),
+                        },
+                      ]}
+                    >
+                      <Text style={styles.difficultyText}>
+                        {meal.difficulty.toUpperCase()}
+                      </Text>
+                    </View>
+                    {meal.aiGenerated && (
+                      <View style={styles.aiPillBadge}>
+                        <Text style={styles.aiPillText}>✨ AI</Text>
+                      </View>
+                    )}
+                  </View>
                 </View>
               </View>
-            </View>
-            <Text style={styles.description} numberOfLines={3}>
-              {meal.description}
-            </Text>
-          </View>
-        </View>
-
-        {/* Nutrition Stats */}
-        <View style={styles.nutritionSection}>
-          <View style={styles.nutritionGrid}>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>{meal.totalCalories}</Text>
-              <Text style={styles.nutritionLabel}>Calories</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>{Math.round(meal.totalMacros.protein)}g</Text>
-              <Text style={styles.nutritionLabel}>Protein</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>
-                {Math.round(meal.totalMacros.carbohydrates)}g
+              <Text style={styles.description} numberOfLines={3}>
+                {meal.description}
               </Text>
-              <Text style={styles.nutritionLabel}>Carbs</Text>
-            </View>
-            <View style={styles.nutritionItem}>
-              <Text style={styles.nutritionValue}>{Math.round(meal.totalMacros.fat)}g</Text>
-              <Text style={styles.nutritionLabel}>Fat</Text>
             </View>
           </View>
-        </View>
 
-        {/* Meal Details */}
-        <View style={styles.detailsSection}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailIcon}>⏱️</Text>
-            <Text style={styles.detailText}>{meal.preparationTime} min</Text>
-          </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailIcon}>🥘</Text>
-            <Text style={styles.detailText}>{meal.items?.length ?? 0} ingredients</Text>
-          </View>
-        </View>
-
-        {/* Progress Bar (if meal is in progress) */}
-        {isInProgress && (
-          <View style={styles.progressSection}>
-            <View style={styles.mealProgressBar}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          {/* Nutrition Stats */}
+          <View style={styles.nutritionSection}>
+            <View style={styles.nutritionGrid}>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionValue}>{meal.totalCalories}</Text>
+                <Text style={styles.nutritionLabel}>Calories</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionValue}>
+                  {Math.round(meal.totalMacros.protein)}g
+                </Text>
+                <Text style={styles.nutritionLabel}>Protein</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionValue}>
+                  {Math.round(meal.totalMacros.carbohydrates)}g
+                </Text>
+                <Text style={styles.nutritionLabel}>Carbs</Text>
+              </View>
+              <View style={styles.nutritionItem}>
+                <Text style={styles.nutritionValue}>
+                  {Math.round(meal.totalMacros.fat)}g
+                </Text>
+                <Text style={styles.nutritionLabel}>Fat</Text>
+              </View>
             </View>
-            <Text style={styles.progressText}>{Math.round(progress)}% complete</Text>
           </View>
-        )}
 
-        {/* Action Buttons */}
-        <View style={styles.actionSection}>
-          {onStartMeal && (
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                styles.primaryButton,
-                isCompleted && styles.completedButton,
-              ]}
-              onPress={() => {
-                if (isCompleted) {
-                  console.log('✅ Meal already completed:', meal.name);
-                  return;
-                }
-                console.log('🔴 MealCard: Start Meal button pressed for:', meal.name);
-                console.log('🔴 MealCard: onStartMeal function available:', !!onStartMeal);
-                if (onStartMeal) {
-                  onStartMeal(meal);
-                } else {
-                  console.error('❌ MealCard: onStartMeal function not provided');
-                }
-              }}
-              activeOpacity={isCompleted ? 1.0 : 0.8}
-              disabled={isCompleted}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text
+          {/* Meal Details */}
+          <View style={styles.detailsSection}>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailIcon}>⏱️</Text>
+              <Text style={styles.detailText}>{meal.preparationTime} min</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Text style={styles.detailIcon}>🥘</Text>
+              <Text style={styles.detailText}>
+                {meal.items?.length ?? 0} ingredients
+              </Text>
+            </View>
+          </View>
+
+          {/* Progress Bar (if meal is in progress) */}
+          {isInProgress && (
+            <View style={styles.progressSection}>
+              <View style={styles.mealProgressBar}>
+                <View
+                  style={[styles.progressFill, { width: `${progress}%` }]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {Math.round(progress)}% complete
+              </Text>
+            </View>
+          )}
+
+          {/* Action Buttons */}
+          <View style={styles.actionSection}>
+            {onStartMeal && (
+              <TouchableOpacity
                 style={[
-                  styles.actionButtonText,
-                  styles.primaryButtonText,
-                  isCompleted && styles.completedButtonText,
+                  styles.actionButton,
+                  styles.primaryButton,
+                  isCompleted && styles.completedButton,
                 ]}
+                onPress={() => {
+                  if (isCompleted) {
+                    console.log("✅ Meal already completed:", meal.name);
+                    return;
+                  }
+                  console.log(
+                    "🔴 MealCard: Start Meal button pressed for:",
+                    meal.name,
+                  );
+                  console.log(
+                    "🔴 MealCard: onStartMeal function available:",
+                    !!onStartMeal,
+                  );
+                  if (onStartMeal) {
+                    onStartMeal(meal);
+                  } else {
+                    console.error(
+                      "❌ MealCard: onStartMeal function not provided",
+                    );
+                  }
+                }}
+                activeOpacity={isCompleted ? 1.0 : 0.8}
+                disabled={isCompleted}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                {isCompleted ? '✅ Completed' : isInProgress ? 'Continue' : 'Start Meal'}
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    styles.primaryButtonText,
+                    isCompleted && styles.completedButtonText,
+                  ]}
+                >
+                  {isCompleted
+                    ? "✅ Completed"
+                    : isInProgress
+                      ? "Continue"
+                      : "Start Meal"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Completed Status Banner */}
+          {isCompleted && (
+            <View style={styles.completedBanner}>
+              <Text style={styles.completedBannerText}>
+                🎉 Meal completed! Great job!
               </Text>
-            </TouchableOpacity>
+            </View>
           )}
         </View>
-
-        {/* Completed Status Banner */}
-        {isCompleted && (
-          <View style={styles.completedBanner}>
-            <Text style={styles.completedBannerText}>🎉 Meal completed! Great job!</Text>
-          </View>
-        )}
-      </View>
-    </Card>
-  );
-};
+      </Card>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   card: {
     marginBottom: THEME.spacing.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 16,
     backgroundColor: THEME.colors.surface,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -230,7 +268,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     height: 4,
     backgroundColor: THEME.colors.border,
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -238,7 +276,7 @@ const styles = StyleSheet.create({
   },
 
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
     borderRadius: 2,
   },
@@ -256,8 +294,8 @@ const styles = StyleSheet.create({
   },
 
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.md,
   },
 
@@ -265,8 +303,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: THEME.spacing.md,
   },
 
@@ -280,15 +318,15 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: THEME.fontSize.xl,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
     lineHeight: 28,
     marginBottom: THEME.spacing.xs,
   },
 
   badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.sm,
     marginTop: THEME.spacing.xs,
   },
@@ -302,7 +340,7 @@ const styles = StyleSheet.create({
 
   mealTypeText: {
     fontSize: THEME.fontSize.xs,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   difficultyBadge: {
@@ -313,20 +351,20 @@ const styles = StyleSheet.create({
 
   difficultyText: {
     fontSize: THEME.fontSize.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.surface,
   },
 
   aiPillBadge: {
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs,
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     borderRadius: 12,
   },
 
   aiPillText: {
     fontSize: THEME.fontSize.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.primary,
   },
 
@@ -341,20 +379,20 @@ const styles = StyleSheet.create({
   },
 
   nutritionGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     backgroundColor: THEME.colors.background,
     borderRadius: 12,
     padding: THEME.spacing.md,
   },
 
   nutritionItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   nutritionValue: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
   },
 
@@ -365,14 +403,14 @@ const styles = StyleSheet.create({
   },
 
   detailsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: THEME.spacing.lg,
   },
 
   detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   detailIcon: {
@@ -383,7 +421,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   progressSection: {
@@ -398,7 +436,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.success,
     borderRadius: 3,
   },
@@ -406,7 +444,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   actionSection: {
@@ -417,8 +455,8 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.lg,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   primaryButton: {
@@ -431,7 +469,7 @@ const styles = StyleSheet.create({
 
   actionButtonText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 
   primaryButtonText: {
@@ -443,16 +481,16 @@ const styles = StyleSheet.create({
   },
 
   completedBanner: {
-    backgroundColor: THEME.colors.success + '15',
+    backgroundColor: THEME.colors.success + "15",
     borderRadius: 8,
     padding: THEME.spacing.sm,
     marginTop: THEME.spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   completedBannerText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.success,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

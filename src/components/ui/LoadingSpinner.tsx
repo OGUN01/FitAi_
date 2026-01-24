@@ -1,11 +1,17 @@
-import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, ViewStyle } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { ResponsiveTheme } from '../../utils/constants';
+import React from "react";
+import {
+  View,
+  ActivityIndicator,
+  Text,
+  StyleSheet,
+  ViewStyle,
+} from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { ResponsiveTheme } from "../../utils/constants";
 
 interface LoadingSpinnerProps {
-  size?: 'small' | 'large';
+  size?: "small" | "large";
   color?: string;
   text?: string;
   style?: ViewStyle;
@@ -13,7 +19,7 @@ interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size = 'large',
+  size = "large",
   color = THEME.colors.primary,
   text,
   style,
@@ -40,8 +46,8 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -49,18 +55,18 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
 
@@ -68,7 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
     minWidth: rw(120),
     ...THEME.shadows.lg,
   },
@@ -77,6 +83,6 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.md,
     fontSize: ResponsiveTheme.fontSize.md,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });

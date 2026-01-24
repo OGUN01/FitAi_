@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { THEME } from '../ui';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { THEME } from "../ui";
 
 export interface DayInfo {
   dayName: string;
@@ -17,7 +23,10 @@ interface WeeklyCalendarProps {
   onDaySelect: (day: string) => void;
   weekOffset?: number;
   onWeekChange?: (offset: number) => void;
-  workoutData?: Record<string, { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }>;
+  workoutData?: Record<
+    string,
+    { hasWorkout: boolean; isCompleted: boolean; isRestDay: boolean }
+  >;
 }
 
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
@@ -38,8 +47,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     monday.setDate(today.getDate() - currentDay + 1 + weekOffset * 7);
 
     const days: DayInfo[] = [];
-    const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayNames = [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday",
+    ];
+    const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(monday);
@@ -60,7 +77,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
       days.push({
         dayName,
         dayNumber: date.getDate(),
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split("T")[0],
         isToday,
         hasWorkout: dayData.hasWorkout,
         isCompleted: dayData.isCompleted,
@@ -71,19 +88,23 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     return days;
   };
 
-  const handleWeekChange = (direction: 'prev' | 'next') => {
-    const newOffset = direction === 'prev' ? currentWeekOffset - 1 : currentWeekOffset + 1;
+  const handleWeekChange = (direction: "prev" | "next") => {
+    const newOffset =
+      direction === "prev" ? currentWeekOffset - 1 : currentWeekOffset + 1;
     setCurrentWeekOffset(newOffset);
     onWeekChange?.(newOffset);
   };
 
   const getWeekDateRange = (days: DayInfo[]) => {
-    if (days.length === 0) return '';
+    if (days.length === 0) return "";
     const firstDay = new Date(days[0].date);
     const lastDay = new Date(days[6].date);
 
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
     };
 
     if (firstDay.getMonth() === lastDay.getMonth()) {
@@ -99,24 +120,30 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
     <View style={styles.container}>
       {/* Week Navigation Header */}
       <View style={styles.weekHeader}>
-        <TouchableOpacity style={styles.weekNavButton} onPress={() => handleWeekChange('prev')}>
+        <TouchableOpacity
+          style={styles.weekNavButton}
+          onPress={() => handleWeekChange("prev")}
+        >
           <Text style={styles.weekNavText}>‹</Text>
         </TouchableOpacity>
 
         <View style={styles.weekInfo}>
           <Text style={styles.weekTitle}>
             {currentWeekOffset === 0
-              ? 'This Week'
+              ? "This Week"
               : currentWeekOffset === -1
-                ? 'Last Week'
+                ? "Last Week"
                 : currentWeekOffset === 1
-                  ? 'Next Week'
-                  : `Week ${currentWeekOffset > 0 ? '+' : ''}${currentWeekOffset}`}
+                  ? "Next Week"
+                  : `Week ${currentWeekOffset > 0 ? "+" : ""}${currentWeekOffset}`}
           </Text>
           <Text style={styles.weekRange}>{getWeekDateRange(days)}</Text>
         </View>
 
-        <TouchableOpacity style={styles.weekNavButton} onPress={() => handleWeekChange('next')}>
+        <TouchableOpacity
+          style={styles.weekNavButton}
+          onPress={() => handleWeekChange("next")}
+        >
           <Text style={styles.weekNavText}>›</Text>
         </TouchableOpacity>
       </View>
@@ -165,10 +192,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                 <View
                   style={[
                     styles.workoutIndicator,
-                    day.isCompleted ? styles.workoutCompleted : styles.workoutPending,
+                    day.isCompleted
+                      ? styles.workoutCompleted
+                      : styles.workoutPending,
                   ]}
                 >
-                  <Text style={styles.workoutIndicatorText}>{day.isCompleted ? '✓' : '•'}</Text>
+                  <Text style={styles.workoutIndicatorText}>
+                    {day.isCompleted ? "✓" : "•"}
+                  </Text>
                 </View>
               )}
               {day.isRestDay && !day.hasWorkout && (
@@ -191,9 +222,9 @@ const styles = StyleSheet.create({
   },
 
   weekHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.lg,
     marginBottom: THEME.spacing.md,
   },
@@ -203,18 +234,18 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   weekNavText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.colors.text,
   },
 
   weekInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
 
@@ -243,11 +274,11 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: THEME.borderRadius.lg,
     backgroundColor: THEME.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: THEME.spacing.sm,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
 
   dayButtonSelected: {
@@ -298,16 +329,16 @@ const styles = StyleSheet.create({
 
   statusContainer: {
     height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   workoutIndicator: {
     width: 16,
     height: 16,
     borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   workoutCompleted: {
@@ -320,13 +351,13 @@ const styles = StyleSheet.create({
 
   workoutIndicatorText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: THEME.colors.white,
   },
 
   restIndicator: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   restIndicatorText: {

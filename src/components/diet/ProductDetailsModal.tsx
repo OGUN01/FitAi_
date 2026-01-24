@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Modal, Button, THEME } from '../ui';
-import { HealthScoreIndicator } from './HealthScoreIndicator';
-import type { ScannedProduct } from '../../services/barcodeService';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Modal, Button, THEME } from "../ui";
+import { HealthScoreIndicator } from "./HealthScoreIndicator";
+import type { ScannedProduct } from "../../services/barcodeService";
 
 interface ProductDetailsModalProps {
   visible: boolean;
@@ -19,7 +19,7 @@ interface ProductDetailsModalProps {
   product: ScannedProduct;
   healthAssessment?: {
     overallScore: number;
-    category: 'excellent' | 'good' | 'moderate' | 'poor' | 'unhealthy';
+    category: "excellent" | "good" | "moderate" | "poor" | "unhealthy";
     breakdown: {
       calories: { score: number; status: string; message: string };
       macros: { score: number; status: string; message: string };
@@ -46,9 +46,9 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     if (onAddToMeal) {
       onAddToMeal(product);
       Alert.alert(
-        'Added to Meal',
+        "Added to Meal",
         `${product.name} has been added to your current meal.`,
-        [{ text: 'OK', onPress: onClose }]
+        [{ text: "OK", onPress: onClose }],
       );
     }
   };
@@ -59,11 +59,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
       <View style={styles.nutritionGrid}>
         <View style={styles.nutritionItem}>
           <Text style={styles.nutritionLabel}>Calories</Text>
-          <Text style={styles.nutritionValue}>{product.nutrition.calories}</Text>
+          <Text style={styles.nutritionValue}>
+            {product.nutrition.calories}
+          </Text>
         </View>
         <View style={styles.nutritionItem}>
           <Text style={styles.nutritionLabel}>Protein</Text>
-          <Text style={styles.nutritionValue}>{product.nutrition.protein}g</Text>
+          <Text style={styles.nutritionValue}>
+            {product.nutrition.protein}g
+          </Text>
         </View>
         <View style={styles.nutritionItem}>
           <Text style={styles.nutritionLabel}>Carbs</Text>
@@ -80,13 +84,17 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {product.nutrition.sugar !== undefined && (
           <View style={styles.nutritionItem}>
             <Text style={styles.nutritionLabel}>Sugar</Text>
-            <Text style={styles.nutritionValue}>{product.nutrition.sugar}g</Text>
+            <Text style={styles.nutritionValue}>
+              {product.nutrition.sugar}g
+            </Text>
           </View>
         )}
         {product.nutrition.sodium !== undefined && (
           <View style={styles.nutritionItem}>
             <Text style={styles.nutritionLabel}>Sodium</Text>
-            <Text style={styles.nutritionValue}>{product.nutrition.sodium}g</Text>
+            <Text style={styles.nutritionValue}>
+              {product.nutrition.sodium}g
+            </Text>
           </View>
         )}
       </View>
@@ -97,7 +105,7 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
     if (!healthAssessment) return null;
 
     const { breakdown } = healthAssessment;
-    
+
     return (
       <View style={styles.breakdownContainer}>
         <Text style={styles.sectionTitle}>Health Breakdown</Text>
@@ -107,11 +115,15 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
               <Text style={styles.breakdownLabel}>
                 {key.charAt(0).toUpperCase() + key.slice(1)}
               </Text>
-              <View style={[
-                styles.breakdownScore,
-                { backgroundColor: getScoreColor(assessment.score) }
-              ]}>
-                <Text style={styles.breakdownScoreText}>{assessment.score}</Text>
+              <View
+                style={[
+                  styles.breakdownScore,
+                  { backgroundColor: getScoreColor(assessment.score) },
+                ]}
+              >
+                <Text style={styles.breakdownScoreText}>
+                  {assessment.score}
+                </Text>
               </View>
             </View>
             <Text style={styles.breakdownMessage}>{assessment.message}</Text>
@@ -167,21 +179,24 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return '#22c55e';
-    if (score >= 60) return '#84cc16';
-    if (score >= 40) return '#eab308';
-    if (score >= 20) return '#f97316';
-    return '#ef4444';
+    if (score >= 80) return "#22c55e";
+    if (score >= 60) return "#84cc16";
+    if (score >= 40) return "#eab308";
+    if (score >= 20) return "#f97316";
+    return "#ef4444";
   };
 
   return (
     <Modal visible={visible} onClose={onClose} title="Product Details">
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Product Header */}
         <View style={styles.headerContainer}>
           {product.additionalInfo?.imageUrl && (
-            <Image 
-              source={{ uri: product.additionalInfo.imageUrl }} 
+            <Image
+              source={{ uri: product.additionalInfo.imageUrl }}
               style={styles.productImage}
               resizeMode="contain"
             />
@@ -222,16 +237,17 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {renderAlerts()}
 
         {/* Health Benefits */}
-        {healthAssessment?.healthBenefits && healthAssessment.healthBenefits.length > 0 && (
-          <View style={styles.benefitsContainer}>
-            <Text style={styles.sectionTitle}>✅ Health Benefits</Text>
-            {healthAssessment.healthBenefits.map((benefit) => (
-              <View key={benefit} style={styles.benefitItem}>
-                <Text style={styles.benefitText}>• {benefit}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {healthAssessment?.healthBenefits &&
+          healthAssessment.healthBenefits.length > 0 && (
+            <View style={styles.benefitsContainer}>
+              <Text style={styles.sectionTitle}>✅ Health Benefits</Text>
+              {healthAssessment.healthBenefits.map((benefit) => (
+                <View key={benefit} style={styles.benefitItem}>
+                  <Text style={styles.benefitText}>• {benefit}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
         {/* Concerns */}
         {healthAssessment?.concerns && healthAssessment.concerns.length > 0 && (
@@ -252,38 +268,44 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {renderAlternatives()}
 
         {/* Additional Information */}
-        {(product.additionalInfo?.ingredients && product.additionalInfo.ingredients.length > 0 || 
-          product.additionalInfo?.allergens && product.additionalInfo.allergens.length > 0 ||
-          product.additionalInfo?.labels && product.additionalInfo.labels.length > 0) && (
+        {((product.additionalInfo?.ingredients &&
+          product.additionalInfo.ingredients.length > 0) ||
+          (product.additionalInfo?.allergens &&
+            product.additionalInfo.allergens.length > 0) ||
+          (product.additionalInfo?.labels &&
+            product.additionalInfo.labels.length > 0)) && (
           <View style={styles.additionalInfoContainer}>
             <Text style={styles.sectionTitle}>Additional Information</Text>
-            
-            {product.additionalInfo?.ingredients && product.additionalInfo.ingredients.length > 0 && (
-              <View style={styles.infoSection}>
-                <Text style={styles.infoTitle}>Ingredients:</Text>
-                <Text style={styles.infoText}>
-                  {product.additionalInfo.ingredients.join(', ')}
-                </Text>
-              </View>
-            )}
 
-            {product.additionalInfo?.allergens && product.additionalInfo.allergens.length > 0 && (
-              <View style={styles.infoSection}>
-                <Text style={styles.infoTitle}>Allergens:</Text>
-                <Text style={styles.alertText}>
-                  {product.additionalInfo.allergens.join(', ')}
-                </Text>
-              </View>
-            )}
+            {product.additionalInfo?.ingredients &&
+              product.additionalInfo.ingredients.length > 0 && (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoTitle}>Ingredients:</Text>
+                  <Text style={styles.infoText}>
+                    {product.additionalInfo.ingredients.join(", ")}
+                  </Text>
+                </View>
+              )}
 
-            {product.additionalInfo?.labels && product.additionalInfo.labels.length > 0 && (
-              <View style={styles.infoSection}>
-                <Text style={styles.infoTitle}>Labels:</Text>
-                <Text style={styles.infoText}>
-                  {product.additionalInfo.labels.join(', ')}
-                </Text>
-              </View>
-            )}
+            {product.additionalInfo?.allergens &&
+              product.additionalInfo.allergens.length > 0 && (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoTitle}>Allergens:</Text>
+                  <Text style={styles.alertText}>
+                    {product.additionalInfo.allergens.join(", ")}
+                  </Text>
+                </View>
+              )}
+
+            {product.additionalInfo?.labels &&
+              product.additionalInfo.labels.length > 0 && (
+                <View style={styles.infoSection}>
+                  <Text style={styles.infoTitle}>Labels:</Text>
+                  <Text style={styles.infoText}>
+                    {product.additionalInfo.labels.join(", ")}
+                  </Text>
+                </View>
+              )}
           </View>
         )}
 
@@ -314,7 +336,7 @@ const styles = StyleSheet.create({
   },
 
   headerContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: THEME.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: THEME.colors.border,
@@ -329,12 +351,12 @@ const styles = StyleSheet.create({
 
   productInfo: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
   productName: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
@@ -354,11 +376,11 @@ const styles = StyleSheet.create({
   barcodeText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    fontFamily: 'monospace',
+    fontFamily: "monospace",
   },
 
   healthScoreContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: THEME.spacing.lg,
     backgroundColor: THEME.colors.surface,
   },
@@ -375,24 +397,24 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
   },
 
   nutritionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
 
   nutritionItem: {
-    width: '48%',
+    width: "48%",
     backgroundColor: THEME.colors.surface,
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     marginBottom: THEME.spacing.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   nutritionLabel: {
@@ -403,7 +425,7 @@ const styles = StyleSheet.create({
 
   nutritionValue: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.text,
   },
 
@@ -418,15 +440,15 @@ const styles = StyleSheet.create({
   },
 
   breakdownHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.xs,
   },
 
   breakdownLabel: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
   },
 
@@ -438,7 +460,7 @@ const styles = StyleSheet.create({
 
   breakdownScoreText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.white,
   },
 
@@ -454,17 +476,17 @@ const styles = StyleSheet.create({
   },
 
   alertItem: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: "#fef2f2",
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: '#ef4444',
+    borderLeftColor: "#ef4444",
     marginBottom: THEME.spacing.sm,
   },
 
   alertText: {
     fontSize: THEME.fontSize.sm,
-    color: '#dc2626',
+    color: "#dc2626",
   },
 
   recommendationsContainer: {
@@ -495,7 +517,7 @@ const styles = StyleSheet.create({
 
   benefitText: {
     fontSize: THEME.fontSize.sm,
-    color: '#059669',
+    color: "#059669",
     lineHeight: 20,
   },
 
@@ -511,7 +533,7 @@ const styles = StyleSheet.create({
 
   concernText: {
     fontSize: THEME.fontSize.sm,
-    color: '#dc2626',
+    color: "#dc2626",
     lineHeight: 20,
   },
 
@@ -543,7 +565,7 @@ const styles = StyleSheet.create({
 
   infoTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.semibold as '600',
+    fontWeight: THEME.fontWeight.semibold as "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },

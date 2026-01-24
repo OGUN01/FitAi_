@@ -1,28 +1,16 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WeeklyWorkoutPlan, DayWorkout } from "../ai";
+import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
 import { crudOperations } from "../services/crudOperations";
 import { dataBridge } from "../services/DataBridge";
 import { offlineService } from "../services/offline";
-import { useAuthStore } from "../stores/authStore";
 import { supabase } from "../services/supabase";
-
-// React Native-compatible UUID v4 generator
-const generateUUID = (): string => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c == "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
-
-// UUID validation helper
-const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-};
+import { generateUUID, isValidUUID } from "../utils/uuid";
+import {
+  getCurrentUserId,
+  getUserIdOrGuest,
+} from "../services/StoreCoordinator";
 
 interface WorkoutProgress {
   workoutId: string;
@@ -95,6 +83,9 @@ interface FitnessState {
   clearData: () => void;
   clearOldWorkoutData: () => Promise<void>;
   forceWorkoutRegeneration: () => void;
+
+  // Reset store (for logout)
+  reset: () => void;
 }
 
 export const useFitnessStore = create<FitnessState>()(
@@ -115,16 +106,13 @@ export const useFitnessStore = create<FitnessState>()(
       saveWeeklyWorkoutPlan: async (plan) => {
         try {
           const planTitle =
-            (plan as any).planTitle || `Week ${plan.weekNumber} Workout Plan`;
+            plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
           console.log("💾 Saving weekly workout plan:", planTitle);
 
           // 🔍 Debug: Validate incoming plan data
           console.log("🔍 Store Debug - Plan validation:");
           console.log("  - Plan object:", plan ? "✅" : "❌");
-          console.log(
-            "  - Plan title:",
-            (plan as any)?.planTitle || "undefined",
-          );
+          console.log("  - Plan title:", plan?.planTitle || "undefined");
           console.log(
             "  - Workouts array:",
             Array.isArray(plan?.workouts) ? "✅" : "❌",
@@ -144,7 +132,7 @@ export const useFitnessStore = create<FitnessState>()(
           );
           console.log(
             "  - State plan title:",
-            (currentState.weeklyWorkoutPlan as any)?.planTitle || "undefined",
+            currentState.weeklyWorkoutPlan?.planTitle || "undefined",
           );
           console.log(
             "  - State workouts count:",
@@ -180,7 +168,7 @@ export const useFitnessStore = create<FitnessState>()(
                   id: `workout_${workout.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
                   localId: `local_${workout.id}_${Date.now()}`,
                   workoutId: workout.id,
-                  userId: useAuthStore.getState().user?.id || "guest",
+                  userId: getUserIdOrGuest(),
                   startedAt: new Date().toISOString(),
                   completedAt: null,
                   duration: workout.duration
@@ -208,7 +196,7 @@ export const useFitnessStore = create<FitnessState>()(
                     notes: exercise.notes || "",
                     personalRecord: false,
                   })),
-                  notes: `${(workout as any).dayOfWeek || "unknown"} - ${(workout as any).description || (workout as any).title}`,
+                  notes: `${workout.dayOfWeek || "unknown"} - ${workout.description || workout.title}`,
                   rating: 0,
                   isCompleted: false,
                   syncStatus:
@@ -243,12 +231,18 @@ export const useFitnessStore = create<FitnessState>()(
           }
         } catch (error) {
           console.error("❌ Failed to save workout plan:", error);
+          // ARCH-003 FIX: Set error state instead of silently swallowing
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to save workout plan";
+          set({ planError: errorMessage });
+
           // Don't throw error if local storage succeeded
-          if (get().weeklyWorkoutPlan) {
-            console.log("⚠️ Plan saved locally but database save failed");
-          } else {
+          if (!get().weeklyWorkoutPlan) {
             throw error;
           }
+          console.log("⚠️ Plan saved locally but database save failed");
         }
 
         // ALSO save the complete weekly plan to the new weekly_workout_plans table
@@ -260,13 +254,11 @@ export const useFitnessStore = create<FitnessState>()(
 
           console.log("📋 Saving complete weekly workout plan to database...");
 
-          // Get authenticated user ID directly from auth store
-          const authUser = useAuthStore.getState().user;
-          const userId = authUser?.id;
+          // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
+          const userId = getCurrentUserId();
           const planId = generateUUID();
 
-          console.log("🔍 FitnessStore: Auth user from store:", authUser);
-          console.log("🔍 FitnessStore: User ID from auth:", userId);
+          console.log("🔍 FitnessStore: User ID from coordinator:", userId);
           console.log("🔍 FitnessStore: Plan ID generated:", planId);
 
           // Ensure user is authenticated before database operation
@@ -290,14 +282,13 @@ export const useFitnessStore = create<FitnessState>()(
           const weeklyPlanData = {
             id: planId,
             user_id: userId,
-            plan_title:
-              (plan as any).planTitle || `Week ${plan.weekNumber} Plan`,
+            plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
             plan_description:
-              (plan as any).planDescription ||
-              `${plan.workouts.length} workouts over ${(plan as any).duration || "1 week"}`,
+              plan.planDescription ||
+              `${plan.workouts.length} workouts over ${plan.duration || "1 week"}`,
             week_number: plan.weekNumber || 1,
             total_workouts: plan.workouts.length,
-            duration_range: (plan as any).duration || "1 week",
+            duration_range: plan.duration ? String(plan.duration) : "1 week",
             plan_data: plan, // Store complete plan as JSONB
             is_active: true,
           };
@@ -306,7 +297,7 @@ export const useFitnessStore = create<FitnessState>()(
             type: "CREATE",
             table: "weekly_workout_plans",
             data: weeklyPlanData,
-            userId: useAuthStore.getState().user?.id || "guest",
+            userId: getUserIdOrGuest(),
             maxRetries: 3,
           });
           console.log("✅ Weekly workout plan queued for database sync");
@@ -315,7 +306,13 @@ export const useFitnessStore = create<FitnessState>()(
             "❌ Failed to save weekly workout plan to database:",
             weeklyPlanError,
           );
-          // Don't fail the whole operation for this
+          // ARCH-003 FIX: Set error state instead of silently swallowing
+          const errorMessage =
+            weeklyPlanError instanceof Error
+              ? weeklyPlanError.message
+              : "Failed to save workout plan to database";
+          set({ planError: errorMessage });
+          // Don't throw - local save succeeded, just log the sync failure
         }
       },
 
@@ -330,8 +327,7 @@ export const useFitnessStore = create<FitnessState>()(
 
           // Try to load complete weekly plan from database
           try {
-            const authUser = useAuthStore.getState().user;
-            const userId = authUser?.id;
+            const userId = getCurrentUserId();
             if (userId) {
               console.log("🔄 Loading weekly workout plan from database...");
               const { data: weeklyPlans, error } = await supabase
@@ -450,7 +446,7 @@ export const useFitnessStore = create<FitnessState>()(
               completed_at: completedAt,
               is_completed: true,
             },
-            userId: useAuthStore.getState().user?.id || "guest",
+            userId: getUserIdOrGuest(),
             maxRetries: 3,
           });
 
@@ -527,7 +523,7 @@ export const useFitnessStore = create<FitnessState>()(
           state.weeklyWorkoutPlan?.workouts.filter(
             (workout) =>
               completedWorkoutIds.includes(workout.id) &&
-              (workout as any).dayOfWeek === todayName,
+              workout.dayOfWeek === todayName,
           ) || [];
 
         return {
@@ -554,7 +550,7 @@ export const useFitnessStore = create<FitnessState>()(
               id: sessionId,
               localId: `local_${sessionId}`,
               workoutId: workout.id,
-              userId: useAuthStore.getState().user?.id || "guest",
+              userId: getUserIdOrGuest(),
               startedAt: new Date().toISOString(),
               completedAt: null,
               duration: workout.duration
@@ -579,7 +575,7 @@ export const useFitnessStore = create<FitnessState>()(
                 notes: exercise.notes || "",
                 personalRecord: false,
               })),
-              notes: `Active session: ${(workout as any).dayOfWeek} - ${(workout as any).description || (workout as any).title}`,
+              notes: `Active session: ${workout.dayOfWeek} - ${workout.description || workout.title}`,
               rating: 0,
               isCompleted: false,
               syncStatus: "pending" as import("../types/localData").SyncStatus,
@@ -737,6 +733,17 @@ export const useFitnessStore = create<FitnessState>()(
           workoutProgress: {},
           currentWorkoutSession: null,
           planError: null,
+        });
+      },
+
+      // Reset store to initial state (for logout)
+      reset: () => {
+        set({
+          weeklyWorkoutPlan: null,
+          isGeneratingPlan: false,
+          planError: null,
+          workoutProgress: {},
+          currentWorkoutSession: null,
         });
       },
 

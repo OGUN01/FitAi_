@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { DayMeal } from '../../types/ai';
-import { THEME } from '../ui';
+import React from "react";
+import { View, Text, StyleSheet, Animated } from "react-native";
+import { DayMeal } from "../../types/ai";
+import { THEME } from "../ui";
 
 interface MacroDashboardProps {
   meal: DayMeal;
@@ -35,7 +35,7 @@ const MacroItem: React.FC<MacroItemProps> = ({
   color,
   percentage,
   target,
-  compact = false
+  compact = false,
 }) => {
   const animatedValue = React.useRef(new Animated.Value(0)).current;
 
@@ -54,7 +54,12 @@ const MacroItem: React.FC<MacroItemProps> = ({
       {/* Progress Ring for percentage */}
       {percentage !== undefined && !compact && (
         <View style={styles.progressRingContainer}>
-          <View style={[styles.progressRingBackground, { borderColor: color + '20' }]} />
+          <View
+            style={[
+              styles.progressRingBackground,
+              { borderColor: color + "20" },
+            ]}
+          />
           <Animated.View
             style={[
               styles.progressRing,
@@ -64,7 +69,7 @@ const MacroItem: React.FC<MacroItemProps> = ({
                   {
                     rotate: animatedValue.interpolate({
                       inputRange: [0, 100],
-                      outputRange: ['0deg', '360deg'],
+                      outputRange: ["0deg", "360deg"],
                     }),
                   },
                 ],
@@ -75,8 +80,16 @@ const MacroItem: React.FC<MacroItemProps> = ({
       )}
 
       {/* Value and Label */}
-      <View style={[styles.macroContent, compact && styles.macroContentCompact]}>
-        <Text style={[styles.macroValue, compact && styles.macroValueCompact, { color }]}>
+      <View
+        style={[styles.macroContent, compact && styles.macroContentCompact]}
+      >
+        <Text
+          style={[
+            styles.macroValue,
+            compact && styles.macroValueCompact,
+            { color },
+          ]}
+        >
           {Math.round(value)}
         </Text>
         <Text style={[styles.macroUnit, compact && styles.macroUnitCompact]}>
@@ -85,14 +98,14 @@ const MacroItem: React.FC<MacroItemProps> = ({
         <Text style={[styles.macroLabel, compact && styles.macroLabelCompact]}>
           {label}
         </Text>
-        
+
         {/* Target comparison */}
         {target && !compact && (
           <Text style={styles.macroTarget}>
             / {Math.round(target)} {unit}
           </Text>
         )}
-        
+
         {/* Percentage */}
         {percentage !== undefined && !compact && (
           <Text style={[styles.macroPercentage, { color }]}>
@@ -113,7 +126,10 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   dailyTargets, // CRITICAL: Should be passed from parent using useCalculatedMetrics
 }) => {
   // Calculate percentages of daily targets (only if targets are provided)
-  const calculatePercentage = (value: number, target: number | null): number | undefined => {
+  const calculatePercentage = (
+    value: number,
+    target: number | null,
+  ): number | undefined => {
     if (!target || target === 0) return undefined;
     return Math.min((value / target) * 100, 100);
   };
@@ -121,35 +137,47 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
   const macroData = [
     {
       value: meal.totalCalories || 0,
-      label: 'Calories',
-      unit: 'cal',
-      color: '#FF6B6B',
+      label: "Calories",
+      unit: "cal",
+      color: "#FF6B6B",
       target: dailyTargets?.calories ?? undefined,
-      percentage: calculatePercentage(meal.totalCalories || 0, dailyTargets?.calories ?? null),
+      percentage: calculatePercentage(
+        meal.totalCalories || 0,
+        dailyTargets?.calories ?? null,
+      ),
     },
     {
       value: meal.totalMacros?.protein || 0,
-      label: 'Protein',
-      unit: 'g',
-      color: '#4ECDC4',
+      label: "Protein",
+      unit: "g",
+      color: "#4ECDC4",
       target: dailyTargets?.protein ?? undefined,
-      percentage: calculatePercentage(meal.totalMacros?.protein || 0, dailyTargets?.protein ?? null),
+      percentage: calculatePercentage(
+        meal.totalMacros?.protein || 0,
+        dailyTargets?.protein ?? null,
+      ),
     },
     {
       value: meal.totalMacros?.carbohydrates || 0,
-      label: 'Carbs',
-      unit: 'g',
-      color: '#45B7D1',
+      label: "Carbs",
+      unit: "g",
+      color: "#45B7D1",
       target: dailyTargets?.carbs ?? undefined,
-      percentage: calculatePercentage(meal.totalMacros?.carbohydrates || 0, dailyTargets?.carbs ?? null),
+      percentage: calculatePercentage(
+        meal.totalMacros?.carbohydrates || 0,
+        dailyTargets?.carbs ?? null,
+      ),
     },
     {
       value: meal.totalMacros?.fat || 0,
-      label: 'Fat',
-      unit: 'g',
-      color: '#96CEB4',
+      label: "Fat",
+      unit: "g",
+      color: "#96CEB4",
       target: dailyTargets?.fat ?? undefined,
-      percentage: calculatePercentage(meal.totalMacros?.fat || 0, dailyTargets?.fat ?? null),
+      percentage: calculatePercentage(
+        meal.totalMacros?.fat || 0,
+        dailyTargets?.fat ?? null,
+      ),
     },
   ];
 
@@ -158,7 +186,7 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
       {showTitle && !compact && (
         <Text style={styles.title}>Nutrition Facts</Text>
       )}
-      
+
       <View style={[styles.macroGrid, compact && styles.macroGridCompact]}>
         {macroData.map((macro, index) => (
           <MacroItem
@@ -183,44 +211,49 @@ export const MacroDashboard: React.FC<MacroDashboardProps> = ({
               {Math.round(meal.totalMacros.fiber)}g
             </Text>
           </View>
-          
+
           {/* Caloric breakdown */}
           <View style={styles.caloricBreakdown}>
             <Text style={styles.breakdownTitle}>Caloric Breakdown</Text>
             <View style={styles.breakdownBars}>
               <View style={styles.breakdownItem}>
-                <View 
+                <View
                   style={[
-                    styles.breakdownBar, 
-                    { 
-                      backgroundColor: '#4ECDC4',
-                      flex: (meal.totalMacros.protein * 4) / (meal.totalCalories || 1) 
-                    }
-                  ]} 
+                    styles.breakdownBar,
+                    {
+                      backgroundColor: "#4ECDC4",
+                      flex:
+                        (meal.totalMacros.protein * 4) /
+                        (meal.totalCalories || 1),
+                    },
+                  ]}
                 />
                 <Text style={styles.breakdownLabel}>Protein</Text>
               </View>
               <View style={styles.breakdownItem}>
-                <View 
+                <View
                   style={[
-                    styles.breakdownBar, 
-                    { 
-                      backgroundColor: '#45B7D1',
-                      flex: (meal.totalMacros.carbohydrates * 4) / (meal.totalCalories || 1) 
-                    }
-                  ]} 
+                    styles.breakdownBar,
+                    {
+                      backgroundColor: "#45B7D1",
+                      flex:
+                        (meal.totalMacros.carbohydrates * 4) /
+                        (meal.totalCalories || 1),
+                    },
+                  ]}
                 />
                 <Text style={styles.breakdownLabel}>Carbs</Text>
               </View>
               <View style={styles.breakdownItem}>
-                <View 
+                <View
                   style={[
-                    styles.breakdownBar, 
-                    { 
-                      backgroundColor: '#96CEB4',
-                      flex: (meal.totalMacros.fat * 9) / (meal.totalCalories || 1) 
-                    }
-                  ]} 
+                    styles.breakdownBar,
+                    {
+                      backgroundColor: "#96CEB4",
+                      flex:
+                        (meal.totalMacros.fat * 9) / (meal.totalCalories || 1),
+                    },
+                  ]}
                 />
                 <Text style={styles.breakdownLabel}>Fat</Text>
               </View>
@@ -238,7 +271,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: THEME.spacing.lg,
     marginVertical: THEME.spacing.md,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -251,23 +284,23 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
   macroGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   macroGridCompact: {
     gap: THEME.spacing.sm,
   },
   macroItem: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    position: 'relative',
+    position: "relative",
   },
   macroItemCompact: {
     flex: 0,
@@ -277,12 +310,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     marginBottom: THEME.spacing.sm,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   progressRingBackground: {
-    position: 'absolute',
+    position: "absolute",
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -293,19 +326,19 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 6,
-    borderRightColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: 'transparent',
+    borderRightColor: "transparent",
+    borderBottomColor: "transparent",
+    borderLeftColor: "transparent",
   },
   macroContent: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   macroContentCompact: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   macroValue: {
     fontSize: THEME.fontSize.xl,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 24,
   },
   macroValueCompact: {
@@ -323,7 +356,7 @@ const styles = StyleSheet.create({
   macroLabel: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: THEME.spacing.xs,
   },
   macroLabelCompact: {
@@ -337,7 +370,7 @@ const styles = StyleSheet.create({
   },
   macroPercentage: {
     fontSize: THEME.fontSize.xs,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 2,
   },
   additionalInfo: {
@@ -347,20 +380,20 @@ const styles = StyleSheet.create({
     borderTopColor: THEME.colors.border,
   },
   fiberInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
   fiberLabel: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   fiberValue: {
     fontSize: THEME.fontSize.md,
-    color: '#8B5CF6',
-    fontWeight: '700',
+    color: "#8B5CF6",
+    fontWeight: "700",
   },
   caloricBreakdown: {
     marginTop: THEME.spacing.md,
@@ -368,18 +401,18 @@ const styles = StyleSheet.create({
   breakdownTitle: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.text,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: THEME.spacing.sm,
   },
   breakdownBars: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 8,
     borderRadius: 4,
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: THEME.colors.background,
   },
   breakdownItem: {
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   breakdownBar: {
     height: 8,
@@ -387,7 +420,7 @@ const styles = StyleSheet.create({
   breakdownLabel: {
     fontSize: THEME.fontSize.xs,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: THEME.spacing.xs,
   },
 });

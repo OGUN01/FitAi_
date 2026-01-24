@@ -4,8 +4,8 @@
  * Uses glassmorphism to match Aurora design language
  */
 
-import React, { useEffect } from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { View, StyleSheet, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,16 +13,22 @@ import Animated, {
   withTiming,
   Easing,
   interpolate,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { animations } from '../../../theme/animations';
-import { colors } from '../../../theme/aurora-tokens';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { animations } from "../../../theme/animations";
+import { colors } from "../../../theme/aurora-tokens";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export type SkeletonVariant = 'text' | 'title' | 'avatar' | 'thumbnail' | 'card' | 'button';
+export type SkeletonVariant =
+  | "text"
+  | "title"
+  | "avatar"
+  | "thumbnail"
+  | "card"
+  | "button";
 
 export interface SkeletonLoaderProps {
   /**
@@ -63,13 +69,16 @@ export interface SkeletonLoaderProps {
 // VARIANT DEFAULTS
 // ============================================================================
 
-const VARIANT_DIMENSIONS: Record<SkeletonVariant, { width: number | string; height: number; borderRadius: number }> = {
-  text: { width: '100%', height: 16, borderRadius: 4 },
-  title: { width: '80%', height: 24, borderRadius: 6 },
+const VARIANT_DIMENSIONS: Record<
+  SkeletonVariant,
+  { width: number | string; height: number; borderRadius: number }
+> = {
+  text: { width: "100%", height: 16, borderRadius: 4 },
+  title: { width: "80%", height: 24, borderRadius: 6 },
   avatar: { width: 48, height: 48, borderRadius: 24 },
   thumbnail: { width: 100, height: 100, borderRadius: 8 },
-  card: { width: '100%', height: 120, borderRadius: 12 },
-  button: { width: '100%', height: 44, borderRadius: 22 },
+  card: { width: "100%", height: 120, borderRadius: 12 },
+  button: { width: "100%", height: 44, borderRadius: 22 },
 };
 
 // ============================================================================
@@ -77,7 +86,7 @@ const VARIANT_DIMENSIONS: Record<SkeletonVariant, { width: number | string; heig
 // ============================================================================
 
 export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
-  variant = 'text',
+  variant = "text",
   width,
   height,
   borderRadius,
@@ -101,7 +110,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
           easing: Easing.linear,
         }),
         -1, // Infinite loop
-        false // Don't reverse
+        false, // Don't reverse
       );
     }
   }, [animated]);
@@ -111,7 +120,7 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
     const translateX = interpolate(
       shimmerPosition.value,
       [0, 1],
-      [-300, 300] // Shimmer sweep distance
+      [-300, 300], // Shimmer sweep distance
     );
 
     return {
@@ -147,11 +156,11 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         >
           <LinearGradient
             colors={[
-              'rgba(255, 255, 255, 0)',
-              'rgba(255, 255, 255, 0.1)',
-              'rgba(255, 255, 255, 0.2)',
-              'rgba(255, 255, 255, 0.1)',
-              'rgba(255, 255, 255, 0)',
+              "rgba(255, 255, 255, 0)",
+              "rgba(255, 255, 255, 0.1)",
+              "rgba(255, 255, 255, 0.2)",
+              "rgba(255, 255, 255, 0.1)",
+              "rgba(255, 255, 255, 0)",
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -182,7 +191,7 @@ export const SkeletonText: React.FC<{
         <SkeletonLoader
           key={index}
           variant="text"
-          width={index === lines - 1 ? '60%' : '100%'}
+          width={index === lines - 1 ? "60%" : "100%"}
         />
       ))}
     </View>
@@ -220,7 +229,11 @@ export const SkeletonListItem: React.FC<{
       {showAvatar && <SkeletonLoader variant="avatar" />}
       <View style={styles.listItemContent}>
         <SkeletonLoader variant="text" width="70%" />
-        <SkeletonLoader variant="text" width="40%" style={styles.listItemSubtext} />
+        <SkeletonLoader
+          variant="text"
+          width="40%"
+          style={styles.listItemSubtext}
+        />
       </View>
     </View>
   );
@@ -232,9 +245,18 @@ export const SkeletonListItem: React.FC<{
 export const SkeletonProfile: React.FC = () => {
   return (
     <View style={styles.profileContainer}>
-      <SkeletonLoader variant="avatar" width={80} height={80} borderRadius={40} />
+      <SkeletonLoader
+        variant="avatar"
+        width={80}
+        height={80}
+        borderRadius={40}
+      />
       <SkeletonLoader variant="title" width="60%" style={styles.profileName} />
-      <SkeletonLoader variant="text" width="40%" style={styles.profileSubtext} />
+      <SkeletonLoader
+        variant="text"
+        width="40%"
+        style={styles.profileSubtext}
+      />
     </View>
   );
 };
@@ -245,9 +267,9 @@ export const SkeletonProfile: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    overflow: 'hidden',
+    overflow: "hidden",
     backgroundColor: colors.glass.surface,
-    position: 'relative',
+    position: "relative",
   },
   base: {
     ...StyleSheet.absoluteFillObject,
@@ -255,7 +277,7 @@ const styles = StyleSheet.create({
   },
   shimmerContainer: {
     ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   shimmer: {
     flex: 1,
@@ -264,7 +286,7 @@ const styles = StyleSheet.create({
 
   // Card layout
   cardContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 12,
     gap: 12,
   },
@@ -281,10 +303,10 @@ const styles = StyleSheet.create({
 
   // List item layout
   listItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 12,
     gap: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   listItemContent: {
     flex: 1,
@@ -296,7 +318,7 @@ const styles = StyleSheet.create({
 
   // Profile layout
   profileContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 24,
     gap: 12,
   },

@@ -1,49 +1,59 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Card, THEME } from '../ui';
-import { useFitnessData } from '../../hooks/useFitnessData';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { useFitnessData } from "../../hooks/useFitnessData";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 interface WorkoutAnalyticsProps {
-  timeRange?: 'week' | 'month' | 'year';
-  onTimeRangeChange?: (range: 'week' | 'month' | 'year') => void;
+  timeRange?: "week" | "month" | "year";
+  onTimeRangeChange?: (range: "week" | "month" | "year") => void;
 }
 
 export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
-  timeRange = 'week',
+  timeRange = "week",
   onTimeRangeChange,
 }) => {
-  const { workoutStats, loadWorkoutStats, statsLoading, statsError } = useFitnessData();
-  const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'year'>(timeRange);
+  const { workoutStats, loadWorkoutStats, statsLoading, statsError } =
+    useFitnessData();
+  const [selectedRange, setSelectedRange] = useState<"week" | "month" | "year">(
+    timeRange,
+  );
 
   useEffect(() => {
     loadWorkoutStats(selectedRange);
   }, [selectedRange, loadWorkoutStats]);
 
-  const handleRangeChange = (range: 'week' | 'month' | 'year') => {
+  const handleRangeChange = (range: "week" | "month" | "year") => {
     setSelectedRange(range);
     onTimeRangeChange?.(range);
   };
 
   const timeRanges = [
-    { id: 'week', label: 'Week', icon: '📅' },
-    { id: 'month', label: 'Month', icon: '🗓️' },
-    { id: 'year', label: 'Year', icon: '📆' },
+    { id: "week", label: "Week", icon: "📅" },
+    { id: "month", label: "Month", icon: "🗓️" },
+    { id: "year", label: "Year", icon: "📆" },
   ] as const;
 
   const getWorkoutTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'strength':
-        return '💪';
-      case 'cardio':
-        return '🏃';
-      case 'flexibility':
-        return '🧘';
-      case 'hiit':
-        return '🔥';
+      case "strength":
+        return "💪";
+      case "cardio":
+        return "🏃";
+      case "flexibility":
+        return "🧘";
+      case "hiit":
+        return "🔥";
       default:
-        return '🏋️';
+        return "🏋️";
     }
   };
 
@@ -97,7 +107,9 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
         {/* Main Stats */}
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{workoutStats?.totalWorkouts || 0}</Text>
+            <Text style={styles.statValue}>
+              {workoutStats?.totalWorkouts || 0}
+            </Text>
             <Text style={styles.statLabel}>Workouts</Text>
           </View>
 
@@ -105,14 +117,14 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
             <Text style={styles.statValue}>
               {workoutStats?.totalDuration
                 ? `${Math.round(workoutStats.totalDuration / 60)}h`
-                : '0h'}
+                : "0h"}
             </Text>
             <Text style={styles.statLabel}>Total Time</Text>
           </View>
 
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
-              {workoutStats?.totalCalories?.toLocaleString() || '0'}
+              {workoutStats?.totalCalories?.toLocaleString() || "0"}
             </Text>
             <Text style={styles.statLabel}>Calories</Text>
           </View>
@@ -121,29 +133,34 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
             <Text style={styles.statValue}>
               {workoutStats?.averageDuration
                 ? `${Math.round(workoutStats.averageDuration)}m`
-                : '0m'}
+                : "0m"}
             </Text>
             <Text style={styles.statLabel}>Avg Duration</Text>
           </View>
         </View>
 
         {/* Workout Types Breakdown */}
-        {workoutStats?.workoutsByType && Object.keys(workoutStats.workoutsByType).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Workout Types</Text>
-            <View style={styles.workoutTypesContainer}>
-              {Object.entries(workoutStats.workoutsByType).map(([type, count]) => (
-                <View key={type} style={styles.workoutTypeItem}>
-                  <View style={styles.workoutTypeHeader}>
-                    <Text style={styles.workoutTypeIcon}>{getWorkoutTypeIcon(type)}</Text>
-                    <Text style={styles.workoutTypeName}>{type}</Text>
-                  </View>
-                  <Text style={styles.workoutTypeCount}>{count}</Text>
-                </View>
-              ))}
+        {workoutStats?.workoutsByType &&
+          Object.keys(workoutStats.workoutsByType).length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Workout Types</Text>
+              <View style={styles.workoutTypesContainer}>
+                {Object.entries(workoutStats.workoutsByType).map(
+                  ([type, count]) => (
+                    <View key={type} style={styles.workoutTypeItem}>
+                      <View style={styles.workoutTypeHeader}>
+                        <Text style={styles.workoutTypeIcon}>
+                          {getWorkoutTypeIcon(type)}
+                        </Text>
+                        <Text style={styles.workoutTypeName}>{type}</Text>
+                      </View>
+                      <Text style={styles.workoutTypeCount}>{count}</Text>
+                    </View>
+                  ),
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          )}
 
         {/* Progress Insights */}
         <View style={styles.section}>
@@ -158,29 +175,33 @@ export const WorkoutAnalytics: React.FC<WorkoutAnalyticsProps> = ({
                 {workoutStats && workoutStats.totalWorkouts > 0 && (
                   <Text style={styles.insightText}>
                     🔥 You've completed {workoutStats.totalWorkouts} workout
-                    {workoutStats.totalWorkouts > 1 ? 's' : ''} this {selectedRange}!
+                    {workoutStats.totalWorkouts > 1 ? "s" : ""} this{" "}
+                    {selectedRange}!
                   </Text>
                 )}
 
                 {workoutStats && workoutStats.totalCalories > 500 && (
                   <Text style={styles.insightText}>
-                    💪 Great job burning {workoutStats.totalCalories.toLocaleString()} calories!
+                    💪 Great job burning{" "}
+                    {workoutStats.totalCalories.toLocaleString()} calories!
                   </Text>
                 )}
 
                 {workoutStats && workoutStats.averageDuration > 30 && (
                   <Text style={styles.insightText}>
-                    ⏱️ Your average workout duration of {Math.round(workoutStats.averageDuration)}{' '}
-                    minutes shows great consistency!
+                    ⏱️ Your average workout duration of{" "}
+                    {Math.round(workoutStats.averageDuration)} minutes shows
+                    great consistency!
                   </Text>
                 )}
 
-                {workoutStats && Object.keys(workoutStats.workoutsByType).length > 2 && (
-                  <Text style={styles.insightText}>
-                    🎨 Excellent variety! You're training different muscle groups and fitness
-                    aspects.
-                  </Text>
-                )}
+                {workoutStats &&
+                  Object.keys(workoutStats.workoutsByType).length > 2 && (
+                    <Text style={styles.insightText}>
+                      🎨 Excellent variety! You're training different muscle
+                      groups and fitness aspects.
+                    </Text>
+                  )}
               </>
             )}
           </View>
@@ -208,7 +229,7 @@ const styles = StyleSheet.create({
   },
 
   timeRangeSelector: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: THEME.colors.backgroundSecondary,
     borderRadius: THEME.borderRadius.md,
     padding: 4,
@@ -216,9 +237,9 @@ const styles = StyleSheet.create({
 
   timeRangeButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.sm,
@@ -244,14 +265,14 @@ const styles = StyleSheet.create({
   },
 
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     marginBottom: THEME.spacing.lg,
   },
 
   statItem: {
-    width: '50%',
-    alignItems: 'center',
+    width: "50%",
+    alignItems: "center",
     paddingVertical: THEME.spacing.md,
   },
 
@@ -284,17 +305,17 @@ const styles = StyleSheet.create({
   },
 
   workoutTypeItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: THEME.colors.backgroundSecondary,
     padding: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
   },
 
   workoutTypeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   workoutTypeIcon: {
@@ -306,7 +327,7 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.md,
     color: THEME.colors.text,
     fontWeight: THEME.fontWeight.medium,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
 
   workoutTypeCount: {
@@ -331,14 +352,14 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
   errorText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.error,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 });

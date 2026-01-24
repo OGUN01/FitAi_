@@ -3,7 +3,7 @@
  * Provides performance monitoring, optimization, and debugging tools
  */
 
-import { InteractionManager, Platform } from 'react-native';
+import { InteractionManager, Platform } from "react-native";
 
 // ============================================================================
 // PERFORMANCE MONITORING
@@ -58,7 +58,9 @@ class PerformanceMonitor {
 
     // Log slow operations
     if (metric.duration > 1000) {
-      console.warn(`🐌 Slow operation detected: ${name} took ${metric.duration}ms`);
+      console.warn(
+        `🐌 Slow operation detected: ${name} took ${metric.duration}ms`,
+      );
     }
 
     return metric;
@@ -76,18 +78,21 @@ class PerformanceMonitor {
     const completedMetrics = this.getMetrics();
 
     if (completedMetrics.length === 0) {
-      console.log('📊 No performance metrics recorded');
+      console.log("📊 No performance metrics recorded");
       return;
     }
 
-    console.log('📊 Performance Summary:');
+    console.log("📊 Performance Summary:");
     completedMetrics
       .sort((a, b) => (b.duration || 0) - (a.duration || 0))
       .forEach((metric) => {
         console.log(`  ${metric.name}: ${metric.duration}ms`);
       });
 
-    const totalTime = completedMetrics.reduce((sum, m) => sum + (m.duration || 0), 0);
+    const totalTime = completedMetrics.reduce(
+      (sum, m) => sum + (m.duration || 0),
+      0,
+    );
     console.log(`  Total measured time: ${totalTime}ms`);
   }
 }
@@ -100,7 +105,7 @@ export const performanceMonitor = new PerformanceMonitor();
 
 export function debounce<T extends (...args: any[]) => any>(
   func: T,
-  delay: number
+  delay: number,
 ): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout;
 
@@ -112,7 +117,7 @@ export function debounce<T extends (...args: any[]) => any>(
 
 export function throttle<T extends (...args: any[]) => any>(
   func: T,
-  limit: number
+  limit: number,
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
 
@@ -141,7 +146,7 @@ export function batchUpdates<T>(
   items: T[],
   processor: (item: T) => Promise<void>,
   batchSize: number = 10,
-  delay: number = 0
+  delay: number = 0,
 ): Promise<void> {
   return new Promise(async (resolve) => {
     for (let i = 0; i < items.length; i += batchSize) {
@@ -164,7 +169,8 @@ export function batchUpdates<T>(
 
 export class MemoryOptimizer {
   private static instance: MemoryOptimizer;
-  private cache: Map<string, { data: any; timestamp: number; ttl: number }> = new Map();
+  private cache: Map<string, { data: any; timestamp: number; ttl: number }> =
+    new Map();
   private maxCacheSize: number = 100;
   private cleanupInterval: NodeJS.Timeout;
 
@@ -174,7 +180,7 @@ export class MemoryOptimizer {
       () => {
         this.cleanup();
       },
-      5 * 60 * 1000
+      5 * 60 * 1000,
     );
   }
 
@@ -265,14 +271,17 @@ export const memoryOptimizer = MemoryOptimizer.getInstance();
 export function shouldComponentUpdate<T extends Record<string, any>>(
   prevProps: T,
   nextProps: T,
-  keys?: (keyof T)[]
+  keys?: (keyof T)[],
 ): boolean {
   const keysToCheck = keys || (Object.keys(nextProps) as (keyof T)[]);
 
   return keysToCheck.some((key) => prevProps[key] !== nextProps[key]);
 }
 
-export function shallowEqual<T extends Record<string, any>>(obj1: T, obj2: T): boolean {
+export function shallowEqual<T extends Record<string, any>>(
+  obj1: T,
+  obj2: T,
+): boolean {
   const keys1 = Object.keys(obj1);
   const keys2 = Object.keys(obj2);
 
@@ -312,7 +321,9 @@ export const platformOptimizations = {
 
   // Get platform-specific optimizations
   get: () => {
-    return Platform.OS === 'ios' ? platformOptimizations.ios : platformOptimizations.android;
+    return Platform.OS === "ios"
+      ? platformOptimizations.ios
+      : platformOptimizations.android;
   },
 };
 
@@ -321,7 +332,11 @@ export const platformOptimizations = {
 // ============================================================================
 
 export function measurePerformance(name?: string) {
-  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor,
+  ) {
     const originalMethod = descriptor.value;
     const methodName = name || `${target.constructor.name}.${propertyKey}`;
 
@@ -346,11 +361,13 @@ export function measurePerformance(name?: string) {
 // BUNDLE SIZE OPTIMIZATION
 // ============================================================================
 
-import React from 'react';
+import React from "react";
 
 export const bundleOptimizations = {
   // Lazy load components
-  lazyLoad: <T extends React.ComponentType<any>>(importFunc: () => Promise<{ default: T }>) => {
+  lazyLoad: <T extends React.ComponentType<any>>(
+    importFunc: () => Promise<{ default: T }>,
+  ) => {
     return React.lazy(importFunc);
   },
 

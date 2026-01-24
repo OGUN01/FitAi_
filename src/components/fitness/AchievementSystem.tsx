@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Card, THEME } from '../ui';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../services/supabase';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { useAuth } from "../../hooks/useAuth";
+import { supabase } from "../../services/supabase";
 
 interface Achievement {
   id: string;
@@ -24,7 +31,9 @@ interface AchievementSystemProps {
   };
 }
 
-export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutStats }) => {
+export const AchievementSystem: React.FC<AchievementSystemProps> = ({
+  workoutStats,
+}) => {
   const { user } = useAuth();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -39,10 +48,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
 
     try {
       const { data, error } = await supabase
-        .from('achievements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('earned_at', { ascending: false });
+        .from("achievements")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("earned_at", { ascending: false });
 
       if (error) {
         setError(error.message);
@@ -50,7 +59,9 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
         setAchievements(data || []);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load achievements');
+      setError(
+        err instanceof Error ? err.message : "Failed to load achievements",
+      );
     } finally {
       setLoading(false);
     }
@@ -60,16 +71,19 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
   const checkForNewAchievements = async () => {
     if (!user?.id || !workoutStats) return;
 
-    const newAchievements: Omit<Achievement, 'id' | 'earned_at'>[] = [];
+    const newAchievements: Omit<Achievement, "id" | "earned_at">[] = [];
 
     // First Workout Achievement
-    if (workoutStats.totalWorkouts >= 1 && !achievements.find((a) => a.type === 'first_workout')) {
+    if (
+      workoutStats.totalWorkouts >= 1 &&
+      !achievements.find((a) => a.type === "first_workout")
+    ) {
       newAchievements.push({
         user_id: user.id,
-        type: 'first_workout',
-        title: 'First Steps',
-        description: 'Completed your first workout!',
-        icon: '🎯',
+        type: "first_workout",
+        title: "First Steps",
+        description: "Completed your first workout!",
+        icon: "🎯",
         value: 10,
       });
     }
@@ -78,34 +92,34 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     const workoutMilestones = [
       {
         count: 5,
-        type: 'workouts_5',
-        title: 'Getting Started',
-        description: 'Completed 5 workouts',
-        icon: '🌟',
+        type: "workouts_5",
+        title: "Getting Started",
+        description: "Completed 5 workouts",
+        icon: "🌟",
         value: 25,
       },
       {
         count: 10,
-        type: 'workouts_10',
-        title: 'Consistent',
-        description: 'Completed 10 workouts',
-        icon: '💪',
+        type: "workouts_10",
+        title: "Consistent",
+        description: "Completed 10 workouts",
+        icon: "💪",
         value: 50,
       },
       {
         count: 25,
-        type: 'workouts_25',
-        title: 'Dedicated',
-        description: 'Completed 25 workouts',
-        icon: '🏆',
+        type: "workouts_25",
+        title: "Dedicated",
+        description: "Completed 25 workouts",
+        icon: "🏆",
         value: 100,
       },
       {
         count: 50,
-        type: 'workouts_50',
-        title: 'Committed',
-        description: 'Completed 50 workouts',
-        icon: '🥇',
+        type: "workouts_50",
+        title: "Committed",
+        description: "Completed 50 workouts",
+        icon: "🥇",
         value: 200,
       },
     ];
@@ -130,26 +144,26 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     const calorieMilestones = [
       {
         calories: 1000,
-        type: 'calories_1k',
-        title: 'Calorie Crusher',
-        description: 'Burned 1,000 calories',
-        icon: '🔥',
+        type: "calories_1k",
+        title: "Calorie Crusher",
+        description: "Burned 1,000 calories",
+        icon: "🔥",
         value: 50,
       },
       {
         calories: 5000,
-        type: 'calories_5k',
-        title: 'Inferno',
-        description: 'Burned 5,000 calories',
-        icon: '🌋',
+        type: "calories_5k",
+        title: "Inferno",
+        description: "Burned 5,000 calories",
+        icon: "🌋",
         value: 150,
       },
       {
         calories: 10000,
-        type: 'calories_10k',
-        title: 'Furnace',
-        description: 'Burned 10,000 calories',
-        icon: '⚡',
+        type: "calories_10k",
+        title: "Furnace",
+        description: "Burned 10,000 calories",
+        icon: "⚡",
         value: 300,
       },
     ];
@@ -173,14 +187,14 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     // Variety Achievement
     if (
       Object.keys(workoutStats.workoutsByType).length >= 3 &&
-      !achievements.find((a) => a.type === 'variety')
+      !achievements.find((a) => a.type === "variety")
     ) {
       newAchievements.push({
         user_id: user.id,
-        type: 'variety',
-        title: 'Well-Rounded',
-        description: 'Tried 3 different workout types',
-        icon: '🎨',
+        type: "variety",
+        title: "Well-Rounded",
+        description: "Tried 3 different workout types",
+        icon: "🎨",
         value: 75,
       });
     }
@@ -188,20 +202,24 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
     // Award new achievements
     if (newAchievements.length > 0) {
       try {
-        const { error } = await supabase.from('achievements').insert(newAchievements);
+        const { error } = await supabase
+          .from("achievements")
+          .insert(newAchievements);
 
         if (!error) {
           // Show achievement notification
-          const titles = newAchievements.map((a) => a.title).join(', ');
-          Alert.alert('🎉 Achievement Unlocked!', `Congratulations! You earned: ${titles}`, [
-            { text: 'Awesome!' },
-          ]);
+          const titles = newAchievements.map((a) => a.title).join(", ");
+          Alert.alert(
+            "🎉 Achievement Unlocked!",
+            `Congratulations! You earned: ${titles}`,
+            [{ text: "Awesome!" }],
+          );
 
           // Reload achievements
           loadAchievements();
         }
       } catch (err) {
-        console.error('Failed to award achievements:', err);
+        console.error("Failed to award achievements:", err);
       }
     }
   };
@@ -217,7 +235,10 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
   }, [workoutStats, user?.id]);
 
   const getTotalPoints = () => {
-    return achievements.reduce((total, achievement) => total + achievement.value, 0);
+    return achievements.reduce(
+      (total, achievement) => total + achievement.value,
+      0,
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -263,19 +284,27 @@ export const AchievementSystem: React.FC<AchievementSystemProps> = ({ workoutSta
             {achievements.map((achievement) => (
               <View key={achievement.id} style={styles.achievementItem}>
                 <View style={styles.achievementIcon}>
-                  <Text style={styles.achievementEmoji}>{achievement.icon}</Text>
+                  <Text style={styles.achievementEmoji}>
+                    {achievement.icon}
+                  </Text>
                 </View>
 
                 <View style={styles.achievementContent}>
-                  <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                  <Text style={styles.achievementDescription}>{achievement.description}</Text>
+                  <Text style={styles.achievementTitle}>
+                    {achievement.title}
+                  </Text>
+                  <Text style={styles.achievementDescription}>
+                    {achievement.description}
+                  </Text>
                   <Text style={styles.achievementDate}>
                     Earned on {formatDate(achievement.earned_at)}
                   </Text>
                 </View>
 
                 <View style={styles.achievementValue}>
-                  <Text style={styles.achievementPoints}>+{achievement.value}</Text>
+                  <Text style={styles.achievementPoints}>
+                    +{achievement.value}
+                  </Text>
                 </View>
               </View>
             ))}
@@ -293,9 +322,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -319,7 +348,7 @@ const styles = StyleSheet.create({
   },
 
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
@@ -338,7 +367,7 @@ const styles = StyleSheet.create({
   emptyDescription: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
 
@@ -347,8 +376,8 @@ const styles = StyleSheet.create({
   },
 
   achievementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: THEME.colors.backgroundSecondary,
     padding: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
@@ -358,9 +387,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: THEME.colors.primary + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: THEME.colors.primary + "20",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: THEME.spacing.md,
   },
 
@@ -391,7 +420,7 @@ const styles = StyleSheet.create({
   },
 
   achievementValue: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   achievementPoints: {
@@ -403,14 +432,14 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 
   errorText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.error,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   nutritionDataService,
   Food,
@@ -369,12 +369,22 @@ export const useNutritionData = (): UseNutritionDataReturn => {
     setStatsError(null);
   }, []);
 
+  // PERF-004 FIX: Use ref to prevent infinite re-fetch loop
+  const initialFetchDoneRef = useRef(false);
+  const lastUserIdRef = useRef<string | undefined>(undefined);
+
   // Load initial data when user is authenticated
   useEffect(() => {
+    // PERF-004 FIX: Only fetch once per user session
     if (isAuthenticated && user?.id && trackB.integration.isInitialized) {
-      refreshAll();
+      // Only fetch if user changed or first time
+      if (!initialFetchDoneRef.current || lastUserIdRef.current !== user.id) {
+        initialFetchDoneRef.current = true;
+        lastUserIdRef.current = user.id;
+        refreshAll();
+      }
     }
-  }, [isAuthenticated, user?.id, trackB.integration.isInitialized, refreshAll]);
+  }, [isAuthenticated, user?.id, trackB.integration.isInitialized]); // Removed refreshAll from deps
 
   // Register with nutrition refresh service for automatic updates
   useEffect(() => {
@@ -387,7 +397,7 @@ export const useNutritionData = (): UseNutritionDataReturn => {
         console.log("📡 Unregistered nutrition data hook from refresh service");
       };
     }
-  }, [isAuthenticated, user?.id, refreshAll]);
+  }, [isAuthenticated, user?.id]); // Removed refreshAll from deps - it's stable via useCallback
 
   // Track B status
   const trackBStatus = {

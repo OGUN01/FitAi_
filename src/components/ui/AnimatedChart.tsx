@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Svg, { Line, Circle, Path, G, Text as SvgText } from 'react-native-svg';
-import { rf, rp, rw, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { ChartTooltip } from './ChartTooltip';
-import { hapticSelection } from '../../utils/haptics';
+} from "react-native-reanimated";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
+import { rf, rp, rw, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { ChartTooltip } from "./ChartTooltip";
+import { hapticSelection } from "../../utils/haptics";
 
 interface DataPoint {
   label: string;
@@ -35,9 +35,9 @@ interface AnimatedChartProps {
 export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   currentValue: rawCurrentValue,
   targetValue: rawTargetValue,
-  currentLabel = 'Current',
-  targetLabel = 'Target',
-  unit = 'kg',
+  currentLabel = "Current",
+  targetLabel = "Target",
+  unit = "kg",
   showProgress = true,
   progressWeeks = 12,
   width = 300,
@@ -47,7 +47,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   // Sanitize inputs to prevent NaN
   const currentValue = Number.isFinite(rawCurrentValue) ? rawCurrentValue : 70;
   const targetValue = Number.isFinite(rawTargetValue) ? rawTargetValue : 65;
-  
+
   const progress = useSharedValue(0);
   const [tooltipData, setTooltipData] = useState<{
     visible: boolean;
@@ -60,7 +60,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     x: 0,
     y: 0,
     value: 0,
-    label: '',
+    label: "",
   });
 
   useEffect(() => {
@@ -142,10 +142,11 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         let minDistance = Infinity;
 
         milestones.forEach((milestone, index) => {
-          const milestoneX = padding + (chartWidth / (milestones.length - 1)) * index;
+          const milestoneX =
+            padding + (chartWidth / (milestones.length - 1)) * index;
           const milestoneY = valueToY(milestone.value);
           const distance = Math.sqrt(
-            Math.pow(touchX - milestoneX, 2) + Math.pow(touchY - milestoneY, 2)
+            Math.pow(touchX - milestoneX, 2) + Math.pow(touchY - milestoneY, 2),
           );
 
           if (distance < minDistance) {
@@ -157,7 +158,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         // Show tooltip if touch is close enough (within 30px)
         if (minDistance < 30) {
           const milestoneIndex = milestones.indexOf(nearestMilestone);
-          const milestoneX = padding + (chartWidth / (milestones.length - 1)) * milestoneIndex;
+          const milestoneX =
+            padding + (chartWidth / (milestones.length - 1)) * milestoneIndex;
           const milestoneY = valueToY(nearestMilestone.value);
 
           hapticSelection();
@@ -189,32 +191,30 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       progress.value,
       [0, 1],
       [padding, padding + chartWidth],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const translateY = interpolate(
       progress.value,
       [0, 1],
       [startY, endY],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
-      transform: [
-        { translateX },
-        { translateY },
-      ],
+      transform: [{ translateX }, { translateY }],
     };
   });
 
   // Calculate percentage change (handle division by zero)
-  const percentageChange = currentValue !== 0 
-    ? ((targetValue - currentValue) / currentValue) * 100 
-    : 0;
-  const changeDirection = percentageChange > 0 ? 'increase' : 'decrease';
-  const changeText = Number.isFinite(percentageChange) 
+  const percentageChange =
+    currentValue !== 0
+      ? ((targetValue - currentValue) / currentValue) * 100
+      : 0;
+  const changeDirection = percentageChange > 0 ? "increase" : "decrease";
+  const changeText = Number.isFinite(percentageChange)
     ? `${Math.abs(percentageChange).toFixed(1)}% ${changeDirection}`
-    : '--';
+    : "--";
 
   return (
     <View style={[styles.container, style]}>
@@ -222,7 +222,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       <View style={styles.header}>
         <View style={styles.valueBox}>
           <Text style={styles.valueLabel}>{currentLabel}</Text>
-          <Text style={styles.valueCurrent}>{currentValue} {unit}</Text>
+          <Text style={styles.valueCurrent}>
+            {currentValue} {unit}
+          </Text>
         </View>
 
         <View style={styles.arrow}>
@@ -232,7 +234,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
         <View style={styles.valueBox}>
           <Text style={styles.valueLabel}>{targetLabel}</Text>
-          <Text style={styles.valueTarget}>{targetValue} {unit}</Text>
+          <Text style={styles.valueTarget}>
+            {targetValue} {unit}
+          </Text>
         </View>
       </View>
 
@@ -245,104 +249,108 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             y={tooltipData.y}
             value={tooltipData.value}
             label={tooltipData.label}
-            formatValue={(val) => `${typeof val === 'number' ? val.toFixed(1) : val} ${unit}`}
+            formatValue={(val) =>
+              `${typeof val === "number" ? val.toFixed(1) : val} ${unit}`
+            }
           />
           <Svg width={width} height={height}>
-        {/* Y-axis grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((fraction, index) => {
-          const y = padding + chartHeight * (1 - fraction);
-          const value = minValue + valueRange * fraction;
+            {/* Y-axis grid lines */}
+            {[0, 0.25, 0.5, 0.75, 1].map((fraction, index) => {
+              const y = padding + chartHeight * (1 - fraction);
+              const value = minValue + valueRange * fraction;
 
-          return (
-            <G key={index}>
-              <Line
-                x1={padding}
-                y1={y}
-                x2={padding + chartWidth}
-                y2={y}
-                stroke={ResponsiveTheme.colors.border}
-                strokeWidth="1"
-                strokeDasharray="4 4"
-              />
-              <SvgText
-                x={padding - 10}
-                y={y}
-                fontSize={rf(10)}
-                fill={ResponsiveTheme.colors.textMuted}
-                textAnchor="end"
-                alignmentBaseline="middle"
-              >
-                {Number.isFinite(value) ? value.toFixed(0) : ''}
-              </SvgText>
-            </G>
-          );
-        })}
+              return (
+                <G key={index}>
+                  <Line
+                    x1={padding}
+                    y1={y}
+                    x2={padding + chartWidth}
+                    y2={y}
+                    stroke={ResponsiveTheme.colors.border}
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
+                  <SvgText
+                    x={padding - 10}
+                    y={y}
+                    fontSize={rf(10)}
+                    fill={ResponsiveTheme.colors.textMuted}
+                    textAnchor="end"
+                    alignmentBaseline="middle"
+                  >
+                    {Number.isFinite(value) ? value.toFixed(0) : ""}
+                  </SvgText>
+                </G>
+              );
+            })}
 
-        {/* X-axis */}
-        <Line
-          x1={padding}
-          y1={padding + chartHeight}
-          x2={padding + chartWidth}
-          y2={padding + chartHeight}
-          stroke={ResponsiveTheme.colors.border}
-          strokeWidth="2"
-        />
+            {/* X-axis */}
+            <Line
+              x1={padding}
+              y1={padding + chartHeight}
+              x2={padding + chartWidth}
+              y2={padding + chartHeight}
+              stroke={ResponsiveTheme.colors.border}
+              strokeWidth="2"
+            />
 
-        {/* Progress line */}
-        <Path
-          d={linePath}
-          fill="transparent"
-          stroke={ResponsiveTheme.colors.primary}
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
+            {/* Progress line */}
+            <Path
+              d={linePath}
+              fill="transparent"
+              stroke={ResponsiveTheme.colors.primary}
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
 
-        {/* Start point */}
-        <Circle
-          cx={padding}
-          cy={valueToY(currentValue)}
-          r="6"
-          fill={ResponsiveTheme.colors.secondary}
-          stroke={ResponsiveTheme.colors.white}
-          strokeWidth="2"
-        />
+            {/* Start point */}
+            <Circle
+              cx={padding}
+              cy={valueToY(currentValue)}
+              r="6"
+              fill={ResponsiveTheme.colors.secondary}
+              stroke={ResponsiveTheme.colors.white}
+              strokeWidth="2"
+            />
 
-        {/* End point */}
-        <Circle
-          cx={padding + chartWidth}
-          cy={valueToY(targetValue)}
-          r="6"
-          fill={ResponsiveTheme.colors.success}
-          stroke={ResponsiveTheme.colors.white}
-          strokeWidth="2"
-        />
+            {/* End point */}
+            <Circle
+              cx={padding + chartWidth}
+              cy={valueToY(targetValue)}
+              r="6"
+              fill={ResponsiveTheme.colors.success}
+              stroke={ResponsiveTheme.colors.white}
+              strokeWidth="2"
+            />
 
-        {/* Milestone markers */}
-        {showProgress && milestones.map((milestone, index) => {
-          const x = padding + (chartWidth / (milestones.length - 1)) * index;
-          const y = valueToY(milestone.value);
+            {/* Milestone markers */}
+            {showProgress &&
+              milestones.map((milestone, index) => {
+                const x =
+                  padding + (chartWidth / (milestones.length - 1)) * index;
+                const y = valueToY(milestone.value);
 
-          return (
-            <G key={index}>
-              <Circle
-                cx={x}
-                cy={y}
-                r="4"
-                fill={ResponsiveTheme.colors.primary}
-                opacity="0.5"
-              />
-              <SvgText
-                x={x}
-                y={padding + chartHeight + 15}
-                fontSize={rf(9)}
-                fill={ResponsiveTheme.colors.textMuted}
-                textAnchor="middle"
-              >
-                {String(milestone.label || '')}
-              </SvgText>
-            </G>
-          );
-        })}
+                return (
+                  <G key={index}>
+                    <Circle
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill={ResponsiveTheme.colors.primary}
+                      opacity="0.5"
+                    />
+                    <SvgText
+                      x={x}
+                      y={padding + chartHeight + 15}
+                      fontSize={rf(9)}
+                      fill={ResponsiveTheme.colors.textMuted}
+                      textAnchor="middle"
+                    >
+                      {String(milestone.label || "")}
+                    </SvgText>
+                  </G>
+                );
+              })}
           </Svg>
         </View>
       </GestureDetector>
@@ -354,7 +362,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             📅 {progressWeeks}-week progression plan
           </Text>
           <Text style={styles.timelineSubtext}>
-            {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)} {unit}/week
+            {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)}{" "}
+            {unit}/week
           </Text>
         </View>
       )}
@@ -364,19 +373,19 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   valueBox: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   valueLabel: {
@@ -398,7 +407,7 @@ const styles = StyleSheet.create({
   },
 
   arrow: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
 
@@ -414,7 +423,7 @@ const styles = StyleSheet.create({
   },
 
   timeline: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: ResponsiveTheme.spacing.md,
     padding: ResponsiveTheme.spacing.sm,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,

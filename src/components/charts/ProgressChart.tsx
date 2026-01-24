@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
-import { THEME } from '../../utils/constants';
-import { ChartTooltip } from '../ui/ChartTooltip';
-import { hapticSelection } from '../../utils/haptics';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { LineChart } from "react-native-chart-kit";
+import { THEME } from "../../utils/constants";
+import { ChartTooltip } from "../ui/ChartTooltip";
+import { hapticSelection } from "../../utils/haptics";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -17,7 +24,7 @@ interface ProgressDataPoint {
 
 interface ProgressChartProps {
   data: ProgressDataPoint[];
-  metric: 'weight' | 'bodyFat' | 'muscleMass';
+  metric: "weight" | "bodyFat" | "muscleMass";
   title: string;
   unit: string;
   style?: any;
@@ -30,7 +37,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   unit,
   style,
 }) => {
-  const [selectedPeriod, setSelectedPeriod] = React.useState<'week' | 'month' | 'year'>('month');
+  const [selectedPeriod, setSelectedPeriod] = React.useState<
+    "week" | "month" | "year"
+  >("month");
   const [tooltipData, setTooltipData] = useState<{
     visible: boolean;
     x: number;
@@ -42,7 +51,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     x: 0,
     y: 0,
     value: 0,
-    label: '',
+    label: "",
   });
 
   // Filter data based on selected period
@@ -51,13 +60,13 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     const cutoffDate = new Date();
 
     switch (selectedPeriod) {
-      case 'week':
+      case "week":
         cutoffDate.setDate(now.getDate() - 7);
         break;
-      case 'month':
+      case "month":
         cutoffDate.setMonth(now.getMonth() - 1);
         break;
-      case 'year':
+      case "year":
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
     }
@@ -71,12 +80,15 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
   const chartData = {
     labels: filteredData.map((point) => {
       const date = new Date(point.date);
-      if (selectedPeriod === 'week') {
-        return date.toLocaleDateString('en-US', { weekday: 'short' });
-      } else if (selectedPeriod === 'month') {
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (selectedPeriod === "week") {
+        return date.toLocaleDateString("en-US", { weekday: "short" });
+      } else if (selectedPeriod === "month") {
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
       } else {
-        return date.toLocaleDateString('en-US', { month: 'short' });
+        return date.toLocaleDateString("en-US", { month: "short" });
       }
     }),
     datasets: [
@@ -99,22 +111,22 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       borderRadius: THEME.borderRadius.lg,
     },
     propsForDots: {
-      r: '4',
-      strokeWidth: '2',
+      r: "4",
+      strokeWidth: "2",
       stroke: THEME.colors.primary,
       fill: THEME.colors.backgroundTertiary,
     },
     propsForBackgroundLines: {
-      strokeDasharray: '',
+      strokeDasharray: "",
       stroke: THEME.colors.border,
       strokeWidth: 1,
     },
   };
 
   const periods = [
-    { key: 'week', label: '7D' },
-    { key: 'month', label: '1M' },
-    { key: 'year', label: '1Y' },
+    { key: "week", label: "7D" },
+    { key: "month", label: "1M" },
+    { key: "year", label: "1Y" },
   ];
 
   // Calculate trend
@@ -144,7 +156,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       x: x - 50, // Center the tooltip
       y: y - 60, // Position above the point
       value: value,
-      label: chartData.labels[index] || '',
+      label: chartData.labels[index] || "",
     });
 
     // Hide tooltip after 2 seconds
@@ -162,7 +174,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         y={tooltipData.y}
         value={tooltipData.value}
         label={tooltipData.label}
-        formatValue={(val) => `${typeof val === 'number' ? val.toFixed(1) : val} ${unit}`}
+        formatValue={(val) =>
+          `${typeof val === "number" ? val.toFixed(1) : val} ${unit}`
+        }
       />
 
       {/* Header */}
@@ -171,16 +185,20 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
           <Text style={styles.title}>{title}</Text>
           <View style={styles.trendContainer}>
             <Text style={styles.trendValue}>
-              {trend.isPositive ? '+' : '-'}
+              {trend.isPositive ? "+" : "-"}
               {trend.value.toFixed(1)} {unit}
             </Text>
             <Text
               style={[
                 styles.trendLabel,
-                { color: trend.isPositive ? THEME.colors.success : THEME.colors.error },
+                {
+                  color: trend.isPositive
+                    ? THEME.colors.success
+                    : THEME.colors.error,
+                },
               ]}
             >
-              {trend.isPositive ? '↗' : '↘'} {selectedPeriod}
+              {trend.isPositive ? "↗" : "↘"} {selectedPeriod}
             </Text>
           </View>
         </View>
@@ -199,7 +217,8 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
               <Text
                 style={[
                   styles.periodButtonText,
-                  selectedPeriod === period.key && styles.periodButtonTextActive,
+                  selectedPeriod === period.key &&
+                    styles.periodButtonTextActive,
                 ]}
               >
                 {period.label}
@@ -231,7 +250,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       ) : (
         <View style={styles.noDataContainer}>
           <Text style={styles.noDataText}>No data available</Text>
-          <Text style={styles.noDataSubtext}>Start tracking to see your progress</Text>
+          <Text style={styles.noDataSubtext}>
+            Start tracking to see your progress
+          </Text>
         </View>
       )}
     </View>
@@ -247,9 +268,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.md,
   },
 
@@ -261,8 +282,8 @@ const styles = StyleSheet.create({
   },
 
   trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.xs,
   },
 
@@ -278,7 +299,7 @@ const styles = StyleSheet.create({
   },
 
   periodSelector: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: THEME.colors.surface,
     borderRadius: THEME.borderRadius.md,
     padding: THEME.spacing.xs / 2,
@@ -310,8 +331,8 @@ const styles = StyleSheet.create({
   },
 
   noDataContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.xxl,
   },
 

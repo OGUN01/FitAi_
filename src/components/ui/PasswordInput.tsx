@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Text, TouchableOpacity } from 'react-native';
-import { Input } from './Input';
-import { THEME } from '../../utils/constants';
+import React, { useState } from "react";
+import { Text, TouchableOpacity } from "react-native";
+import { Input } from "./Input";
+import { THEME } from "../../utils/constants";
 
 interface PasswordInputProps {
   label?: string;
@@ -37,7 +37,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         color: THEME.colors.textSecondary,
       }}
     >
-      {isVisible ? '👁️' : '🙈'}
+      {isVisible ? "👁️" : "🙈"}
     </Text>
   );
 

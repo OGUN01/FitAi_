@@ -4,21 +4,21 @@
  * Synced with Aurora animation system for enhanced UX
  */
 
-import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import * as Haptics from "expo-haptics";
+import { Platform } from "react-native";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export type HapticType =
-  | 'selection'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'light'
-  | 'medium'
-  | 'heavy';
+  | "selection"
+  | "success"
+  | "warning"
+  | "error"
+  | "light"
+  | "medium"
+  | "heavy";
 
 export interface HapticConfig {
   enabled: boolean;
@@ -59,7 +59,7 @@ export const disableHaptics = (): void => {
  * Check if haptics are enabled
  */
 export const areHapticsEnabled = (): boolean => {
-  return hapticConfig.enabled && Platform.OS !== 'web';
+  return hapticConfig.enabled && Platform.OS !== "web";
 };
 
 // ============================================================================
@@ -76,7 +76,7 @@ export const hapticSelection = async (): Promise<void> => {
   try {
     await Haptics.selectionAsync();
   } catch (error) {
-    console.warn('Haptic selection failed:', error);
+    console.warn("Haptic selection failed:", error);
   }
 };
 
@@ -90,7 +90,7 @@ export const hapticSuccess = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   } catch (error) {
-    console.warn('Haptic success failed:', error);
+    console.warn("Haptic success failed:", error);
   }
 };
 
@@ -104,7 +104,7 @@ export const hapticWarning = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
   } catch (error) {
-    console.warn('Haptic warning failed:', error);
+    console.warn("Haptic warning failed:", error);
   }
 };
 
@@ -118,7 +118,7 @@ export const hapticError = async (): Promise<void> => {
   try {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   } catch (error) {
-    console.warn('Haptic error failed:', error);
+    console.warn("Haptic error failed:", error);
   }
 };
 
@@ -132,7 +132,7 @@ export const hapticLight = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   } catch (error) {
-    console.warn('Haptic light impact failed:', error);
+    console.warn("Haptic light impact failed:", error);
   }
 };
 
@@ -146,7 +146,7 @@ export const hapticMedium = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   } catch (error) {
-    console.warn('Haptic medium impact failed:', error);
+    console.warn("Haptic medium impact failed:", error);
   }
 };
 
@@ -160,7 +160,7 @@ export const hapticHeavy = async (): Promise<void> => {
   try {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   } catch (error) {
-    console.warn('Haptic heavy impact failed:', error);
+    console.warn("Haptic heavy impact failed:", error);
   }
 };
 
@@ -234,7 +234,7 @@ export const hapticLongPressActivated = async (): Promise<void> => {
     await hapticMedium();
     setTimeout(() => hapticMedium(), 100);
   } catch (error) {
-    console.warn('Haptic long press failed:', error);
+    console.warn("Haptic long press failed:", error);
   }
 };
 
@@ -274,7 +274,7 @@ export const hapticCelebration = async (): Promise<void> => {
     setTimeout(() => hapticMedium(), 150);
     setTimeout(() => hapticLight(), 300);
   } catch (error) {
-    console.warn('Haptic celebration failed:', error);
+    console.warn("Haptic celebration failed:", error);
   }
 };
 
@@ -288,19 +288,19 @@ export const hapticCelebration = async (): Promise<void> => {
  */
 export const triggerHaptic = async (type: HapticType): Promise<void> => {
   switch (type) {
-    case 'selection':
+    case "selection":
       return hapticSelection();
-    case 'success':
+    case "success":
       return hapticSuccess();
-    case 'warning':
+    case "warning":
       return hapticWarning();
-    case 'error':
+    case "error":
       return hapticError();
-    case 'light':
+    case "light":
       return hapticLight();
-    case 'medium':
+    case "medium":
       return hapticMedium();
-    case 'heavy':
+    case "heavy":
       return hapticHeavy();
     default:
       return hapticLight();

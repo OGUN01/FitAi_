@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { useAuth } from '../../hooks/useAuth';
-import { useUser } from '../../hooks/useUser';
-import { initializeBackend } from '../../utils/integration';
+import React, { useEffect } from "react";
+import { View, Text, ActivityIndicator } from "react-native";
+import { useAuth } from "../../hooks/useAuth";
+import { useUser } from "../../hooks/useUser";
+import { initializeBackend } from "../../utils/integration";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -72,32 +72,32 @@ const AuthenticationScreen: React.FC = () => {
 const styles = {
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    backgroundColor: '#0a0f1c',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    backgroundColor: "#0a0f1c",
   },
   loadingText: {
-    color: '#ffffff',
+    color: "#ffffff",
     marginTop: 16,
     fontSize: 16,
   },
   authContainer: {
     flex: 1,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-    backgroundColor: '#0a0f1c',
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    backgroundColor: "#0a0f1c",
     padding: 20,
   },
   authTitle: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 32,
-    fontWeight: 'bold' as const,
+    fontWeight: "bold" as const,
     marginBottom: 8,
   },
   authSubtitle: {
-    color: '#8e9aaf',
+    color: "#8e9aaf",
     fontSize: 16,
-    textAlign: 'center' as const,
+    textAlign: "center" as const,
   },
 };
 

@@ -4,42 +4,42 @@
  * Move (calories), Exercise (workout), Nutrition (meals)
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withSpring,
   withDelay,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
+} from "react-native-reanimated";
+import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // Ring configuration
 const RINGS = {
   move: {
-    color: '#FF6B6B',
-    gradientEnd: '#FF8E53',
-    icon: 'flame' as const,
-    label: 'Move',
+    color: "#FF6B6B",
+    gradientEnd: "#FF8E53",
+    icon: "flame" as const,
+    label: "Move",
   },
   exercise: {
-    color: '#4CAF50',
-    gradientEnd: '#8BC34A',
-    icon: 'fitness' as const,
-    label: 'Exercise',
+    color: "#4CAF50",
+    gradientEnd: "#8BC34A",
+    icon: "fitness" as const,
+    label: "Exercise",
   },
   nutrition: {
-    color: '#2196F3',
-    gradientEnd: '#03A9F4',
-    icon: 'nutrition' as const,
-    label: 'Nutrition',
+    color: "#2196F3",
+    gradientEnd: "#03A9F4",
+    icon: "nutrition" as const,
+    label: "Nutrition",
   },
 };
 
@@ -62,9 +62,17 @@ const ProgressRing: React.FC<{
   gradientEnd: string;
   gradientId: string;
   delay?: number;
-}> = ({ progress, size, strokeWidth, color, gradientEnd, gradientId, delay = 0 }) => {
+}> = ({
+  progress,
+  size,
+  strokeWidth,
+  color,
+  gradientEnd,
+  gradientId,
+  delay = 0,
+}) => {
   const animatedProgress = useSharedValue(0);
-  
+
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const center = size / 2;
@@ -75,12 +83,13 @@ const ProgressRing: React.FC<{
       withSpring(Math.min(progress, 100), {
         damping: 15,
         stiffness: 80,
-      })
+      }),
     );
   }, [progress]);
 
   const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: circumference - (circumference * animatedProgress.value) / 100,
+    strokeDashoffset:
+      circumference - (circumference * animatedProgress.value) / 100,
   }));
 
   return (
@@ -91,7 +100,7 @@ const ProgressRing: React.FC<{
           <Stop offset="100%" stopColor={gradientEnd} />
         </LinearGradient>
       </Defs>
-      
+
       {/* Background ring */}
       <Circle
         cx={center}
@@ -101,7 +110,7 @@ const ProgressRing: React.FC<{
         strokeWidth={strokeWidth}
         fill="transparent"
       />
-      
+
       {/* Progress ring */}
       <AnimatedCircle
         cx={center}
@@ -124,17 +133,18 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
   moveProgress,
   exerciseProgress,
   nutritionProgress,
-  moveGoal = '500 cal',
-  exerciseGoal = '30 min',
-  nutritionGoal = '4 meals',
+  moveGoal = "500 cal",
+  exerciseGoal = "30 min",
+  nutritionGoal = "4 meals",
   onPress,
 }) => {
   // Calculate overall score - ensure NaN becomes 0
   const safeMove = isNaN(moveProgress) ? 0 : moveProgress;
   const safeExercise = isNaN(exerciseProgress) ? 0 : exerciseProgress;
   const safeNutrition = isNaN(nutritionProgress) ? 0 : nutritionProgress;
-  const overallScore = Math.round((safeMove + safeExercise + safeNutrition) / 3) || 0;
-  
+  const overallScore =
+    Math.round((safeMove + safeExercise + safeNutrition) / 3) || 0;
+
   // Ring sizes (outer to inner)
   const outerSize = rw(160);
   const middleSize = rw(130);
@@ -148,10 +158,20 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
       hapticFeedback={true}
       hapticType="light"
     >
-      <GlassCard elevation={3} blurIntensity="light" padding="lg" borderRadius="xl">
+      <GlassCard
+        elevation={3}
+        blurIntensity="light"
+        padding="lg"
+        borderRadius="xl"
+      >
         <View style={styles.container}>
           {/* Rings Section */}
-          <View style={[styles.ringsContainer, { width: outerSize, height: outerSize }]}>
+          <View
+            style={[
+              styles.ringsContainer,
+              { width: outerSize, height: outerSize },
+            ]}
+          >
             {/* Move Ring (outer) */}
             <ProgressRing
               progress={moveProgress}
@@ -162,14 +182,19 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
               gradientId="moveGradient"
               delay={0}
             />
-            
+
             {/* Exercise Ring (middle) */}
-            <View style={[styles.ringOverlay, { 
-              width: middleSize, 
-              height: middleSize,
-              top: (outerSize - middleSize) / 2,
-              left: (outerSize - middleSize) / 2,
-            }]}>
+            <View
+              style={[
+                styles.ringOverlay,
+                {
+                  width: middleSize,
+                  height: middleSize,
+                  top: (outerSize - middleSize) / 2,
+                  left: (outerSize - middleSize) / 2,
+                },
+              ]}
+            >
               <ProgressRing
                 progress={exerciseProgress}
                 size={middleSize}
@@ -180,14 +205,19 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 delay={100}
               />
             </View>
-            
+
             {/* Nutrition Ring (inner) */}
-            <View style={[styles.ringOverlay, { 
-              width: innerSize, 
-              height: innerSize,
-              top: (outerSize - innerSize) / 2,
-              left: (outerSize - innerSize) / 2,
-            }]}>
+            <View
+              style={[
+                styles.ringOverlay,
+                {
+                  width: innerSize,
+                  height: innerSize,
+                  top: (outerSize - innerSize) / 2,
+                  left: (outerSize - innerSize) / 2,
+                },
+              ]}
+            >
               <ProgressRing
                 progress={nutritionProgress}
                 size={innerSize}
@@ -198,7 +228,7 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 delay={200}
               />
             </View>
-            
+
             {/* Center Score */}
             <View style={styles.centerContent}>
               <Text style={styles.scoreText}>{overallScore}</Text>
@@ -210,35 +240,64 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
           <View style={styles.legendContainer}>
             {/* Move */}
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: RINGS.move.color }]} />
+              <View
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: RINGS.move.color },
+                ]}
+              />
               <View style={styles.legendText}>
                 <View style={styles.legendRow}>
-                  <Ionicons name={RINGS.move.icon} size={rf(14)} color={RINGS.move.color} />
+                  <Ionicons
+                    name={RINGS.move.icon}
+                    size={rf(14)}
+                    color={RINGS.move.color}
+                  />
                   <Text style={styles.legendLabel}>{RINGS.move.label}</Text>
                 </View>
                 <Text style={styles.legendValue}>{moveProgress}%</Text>
               </View>
             </View>
-            
+
             {/* Exercise */}
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: RINGS.exercise.color }]} />
+              <View
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: RINGS.exercise.color },
+                ]}
+              />
               <View style={styles.legendText}>
                 <View style={styles.legendRow}>
-                  <Ionicons name={RINGS.exercise.icon} size={rf(14)} color={RINGS.exercise.color} />
+                  <Ionicons
+                    name={RINGS.exercise.icon}
+                    size={rf(14)}
+                    color={RINGS.exercise.color}
+                  />
                   <Text style={styles.legendLabel}>{RINGS.exercise.label}</Text>
                 </View>
                 <Text style={styles.legendValue}>{exerciseProgress}%</Text>
               </View>
             </View>
-            
+
             {/* Nutrition */}
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: RINGS.nutrition.color }]} />
+              <View
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: RINGS.nutrition.color },
+                ]}
+              />
               <View style={styles.legendText}>
                 <View style={styles.legendRow}>
-                  <Ionicons name={RINGS.nutrition.icon} size={rf(14)} color={RINGS.nutrition.color} />
-                  <Text style={styles.legendLabel}>{RINGS.nutrition.label}</Text>
+                  <Ionicons
+                    name={RINGS.nutrition.icon}
+                    size={rf(14)}
+                    color={RINGS.nutrition.color}
+                  />
+                  <Text style={styles.legendLabel}>
+                    {RINGS.nutrition.label}
+                  </Text>
                 </View>
                 <Text style={styles.legendValue}>{nutritionProgress}%</Text>
               </View>
@@ -252,33 +311,33 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.lg,
   },
   ringsContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   ringOverlay: {
-    position: 'absolute',
+    position: "absolute",
   },
   centerContent: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
   },
   scoreText: {
     fontSize: rf(28),
-    fontWeight: '800',
+    fontWeight: "800",
     color: ResponsiveTheme.colors.text,
   },
   scoreLabel: {
     fontSize: rf(11),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
   },
   legendContainer: {
@@ -286,8 +345,8 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.md,
   },
   legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   legendDot: {
@@ -299,22 +358,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
   legendLabel: {
     fontSize: rf(13),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
   legendValue: {
     fontSize: rf(11),
-    fontWeight: '500',
+    fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
     marginTop: 2,
   },
 });
 
 export default DailyProgressRings;
-

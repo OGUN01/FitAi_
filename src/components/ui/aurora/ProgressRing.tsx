@@ -4,18 +4,23 @@
  * Used for metrics, health scores, and goal tracking
  */
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   withSpring,
   Easing,
-} from 'react-native-reanimated';
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import { animations } from '../../../theme/animations';
-import { colors } from '../../../theme/aurora-tokens';
+} from "react-native-reanimated";
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  Stop,
+} from "react-native-svg";
+import { animations } from "../../../theme/animations";
+import { colors } from "../../../theme/aurora-tokens";
 
 // ============================================================================
 // TYPES
@@ -125,9 +130,13 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 
   // Sanitize inputs to prevent NaN on Android native
   // CRITICAL: Round progress to integer to prevent "Loss of precision" error on Android
-  const progress = Number.isFinite(rawProgress) ? Math.round(Math.max(0, Math.min(100, rawProgress))) : 0;
+  const progress = Number.isFinite(rawProgress)
+    ? Math.round(Math.max(0, Math.min(100, rawProgress)))
+    : 0;
   const size = Number.isFinite(rawSize) ? Math.round(rawSize) : 120;
-  const strokeWidth = Number.isFinite(rawStrokeWidth) ? Math.round(rawStrokeWidth) : 10;
+  const strokeWidth = Number.isFinite(rawStrokeWidth)
+    ? Math.round(rawStrokeWidth)
+    : 10;
 
   // Calculate circle properties - round to integers for Android compatibility
   const radius = Math.round((size - strokeWidth) / 2);
@@ -152,10 +161,10 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
   // Animated circle props - round for Android compatibility
   // CRITICAL: Use Math.round on all calculations to prevent decimal values on Android
   const animatedProps = useAnimatedProps(() => {
-    'worklet';
+    "worklet";
     const currentProgress = Math.round(animatedProgress.value);
     const strokeDashoffset = Math.round(
-      circumference - (circumference * currentProgress) / 100
+      circumference - (circumference * currentProgress) / 100,
     );
 
     return {
@@ -177,7 +186,13 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
         {/* Define gradient if enabled */}
         {gradient && (
           <Defs>
-            <SvgLinearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <SvgLinearGradient
+              id="progressGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               {gradientColors.map((color, index) => (
                 <Stop
                   key={index}
@@ -205,7 +220,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           cx={centerX}
           cy={centerY}
           r={radius}
-          stroke={gradient ? 'url(#progressGradient)' : color}
+          stroke={gradient ? "url(#progressGradient)" : color}
           strokeWidth={strokeWidth}
           fill="transparent"
           strokeDasharray={circumference}
@@ -234,7 +249,7 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
 // ============================================================================
 
 export const MiniProgressRing: React.FC<
-  Omit<ProgressRingProps, 'size' | 'strokeWidth'>
+  Omit<ProgressRingProps, "size" | "strokeWidth">
 > = (props) => {
   return <ProgressRing {...props} size={48} strokeWidth={6} />;
 };
@@ -244,7 +259,7 @@ export const MiniProgressRing: React.FC<
 // ============================================================================
 
 export const LargeProgressRing: React.FC<
-  Omit<ProgressRingProps, 'size' | 'strokeWidth'>
+  Omit<ProgressRingProps, "size" | "strokeWidth">
 > = (props) => {
   return <ProgressRing {...props} size={200} strokeWidth={16} />;
 };
@@ -255,18 +270,18 @@ export const LargeProgressRing: React.FC<
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
   },
   centerContent: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: "absolute",
+    justifyContent: "center",
+    alignItems: "center",
   },
   text: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
 

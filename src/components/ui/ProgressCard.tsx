@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { LargeProgressRing } from './LargeProgressRing';
+import React from "react";
+import { View, Text, StyleSheet, ViewStyle } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { LargeProgressRing } from "./LargeProgressRing";
 
 interface ProgressCardProps {
   title: string;
@@ -24,7 +24,7 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   maxValue = 100,
   description,
   icon,
-  gradient = ['#4CAF50', '#45A049'],
+  gradient = ["#4CAF50", "#45A049"],
   size = 120,
   strokeWidth = 12,
   showGlow = true,
@@ -35,7 +35,10 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
   return (
     <View style={[styles.container, style]}>
       <LinearGradient
-        colors={[ResponsiveTheme.colors.backgroundSecondary, ResponsiveTheme.colors.background]}
+        colors={[
+          ResponsiveTheme.colors.backgroundSecondary,
+          ResponsiveTheme.colors.background,
+        ]}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
@@ -79,8 +82,8 @@ export const ProgressCard: React.FC<ProgressCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     borderRadius: ResponsiveTheme.borderRadius.xl,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -89,38 +92,38 @@ const styles = StyleSheet.create({
 
   gradient: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   ringContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   iconContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   content: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
 
   title: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   valueContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(18),
   },
 });

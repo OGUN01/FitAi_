@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -2006,130 +2008,138 @@ const WorkoutPreferencesTab: React.FC<WorkoutPreferencesTabProps> = ({
         onClose={hideInfoTooltip}
       />
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      {/* OB-UX-006: KeyboardAvoidingView for proper keyboard handling */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardAvoidingView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        {/* Hero Section with Background Image */}
-        <HeroSection
-          image={{
-            uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
-          }}
-          overlayGradient={gradients.overlay.dark}
-          contentPosition="center"
-          height={200}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Let's create your fitness profile</Text>
-          <Text style={styles.subtitle}>
-            Tell us about your goals, current fitness level, and workout
-            preferences
-          </Text>
+          {/* Hero Section with Background Image */}
+          <HeroSection
+            image={{
+              uri: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80",
+            }}
+            overlayGradient={gradients.overlay.dark}
+            contentPosition="center"
+            height={200}
+          >
+            <Text style={styles.title}>Let's create your fitness profile</Text>
+            <Text style={styles.subtitle}>
+              Tell us about your goals, current fitness level, and workout
+              preferences
+            </Text>
 
-          {/* Auto-save Indicator */}
-          {isAutoSaving && (
-            <View style={styles.autoSaveIndicator}>
-              <Ionicons
-                name="save-outline"
-                size={rf(16)}
-                color={ResponsiveTheme.colors.success}
-                style={{ marginRight: 4 }}
-              />
-              <Text style={styles.autoSaveText}>Saving...</Text>
+            {/* Auto-save Indicator */}
+            {isAutoSaving && (
+              <View style={styles.autoSaveIndicator}>
+                <Ionicons
+                  name="save-outline"
+                  size={rf(16)}
+                  color={ResponsiveTheme.colors.success}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={styles.autoSaveText}>Saving...</Text>
+              </View>
+            )}
+          </HeroSection>
+
+          {/* Form Sections */}
+          <View style={styles.content}>
+            <AnimatedSection delay={0}>
+              {renderGoalsAndActivitySection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={100}>
+              {renderCurrentFitnessSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={200}>
+              {renderWorkoutPreferencesSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={300}>
+              {renderWorkoutStyleSection()}
+            </AnimatedSection>
+
+            <AnimatedSection delay={400}>
+              {renderWeightGoalsSection()}
+            </AnimatedSection>
+          </View>
+
+          {/* Validation Summary */}
+          {validationResult && (
+            <View style={styles.validationSummary}>
+              <GlassCard
+                elevation={3}
+                blurIntensity="default"
+                padding="md"
+                borderRadius="lg"
+                style={styles.validationCard}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center" as const,
+                    marginBottom: ResponsiveTheme.spacing.xs,
+                  }}
+                >
+                  <Ionicons
+                    name={
+                      validationResult.is_valid
+                        ? "checkmark-circle-outline"
+                        : "warning-outline"
+                    }
+                    size={rf(20)}
+                    color={
+                      validationResult.is_valid
+                        ? ResponsiveTheme.colors.success
+                        : ResponsiveTheme.colors.warning
+                    }
+                    style={{ marginRight: ResponsiveTheme.spacing.xs }}
+                  />
+                  <Text style={styles.validationTitle}>
+                    {validationResult.is_valid
+                      ? "Ready to Continue"
+                      : "Please Complete"}
+                  </Text>
+                </View>
+                <Text style={styles.validationPercentage}>
+                  {validationResult.completion_percentage}% Complete
+                </Text>
+
+                {validationResult.errors.length > 0 && (
+                  <View style={styles.validationErrors}>
+                    <Text style={styles.validationErrorTitle}>Required:</Text>
+                    {validationResult.errors.map((error, index) => (
+                      <Text key={index} style={styles.validationErrorText}>
+                        • {error}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {validationResult.warnings.length > 0 && (
+                  <View style={styles.validationWarnings}>
+                    <Text style={styles.validationWarningTitle}>
+                      Recommendations:
+                    </Text>
+                    {validationResult.warnings.map((warning, index) => (
+                      <Text key={index} style={styles.validationWarningText}>
+                        • {warning}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+              </GlassCard>
             </View>
           )}
-        </HeroSection>
-
-        {/* Form Sections */}
-        <View style={styles.content}>
-          <AnimatedSection delay={0}>
-            {renderGoalsAndActivitySection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={100}>
-            {renderCurrentFitnessSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={200}>
-            {renderWorkoutPreferencesSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={300}>
-            {renderWorkoutStyleSection()}
-          </AnimatedSection>
-
-          <AnimatedSection delay={400}>
-            {renderWeightGoalsSection()}
-          </AnimatedSection>
-        </View>
-
-        {/* Validation Summary */}
-        {validationResult && (
-          <View style={styles.validationSummary}>
-            <GlassCard
-              elevation={3}
-              blurIntensity="default"
-              padding="md"
-              borderRadius="lg"
-              style={styles.validationCard}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center" as const,
-                  marginBottom: ResponsiveTheme.spacing.xs,
-                }}
-              >
-                <Ionicons
-                  name={
-                    validationResult.is_valid
-                      ? "checkmark-circle-outline"
-                      : "warning-outline"
-                  }
-                  size={rf(20)}
-                  color={
-                    validationResult.is_valid
-                      ? ResponsiveTheme.colors.success
-                      : ResponsiveTheme.colors.warning
-                  }
-                  style={{ marginRight: ResponsiveTheme.spacing.xs }}
-                />
-                <Text style={styles.validationTitle}>
-                  {validationResult.is_valid
-                    ? "Ready to Continue"
-                    : "Please Complete"}
-                </Text>
-              </View>
-              <Text style={styles.validationPercentage}>
-                {validationResult.completion_percentage}% Complete
-              </Text>
-
-              {validationResult.errors.length > 0 && (
-                <View style={styles.validationErrors}>
-                  <Text style={styles.validationErrorTitle}>Required:</Text>
-                  {validationResult.errors.map((error, index) => (
-                    <Text key={index} style={styles.validationErrorText}>
-                      • {error}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {validationResult.warnings.length > 0 && (
-                <View style={styles.validationWarnings}>
-                  <Text style={styles.validationWarningTitle}>
-                    Recommendations:
-                  </Text>
-                  {validationResult.warnings.map((warning, index) => (
-                    <Text key={index} style={styles.validationWarningText}>
-                      • {warning}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </GlassCard>
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Footer Navigation */}
       <View style={styles.footer}>
@@ -2174,6 +2184,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
+  },
+
+  keyboardAvoidingView: {
+    flex: 1,
   },
 
   scrollView: {

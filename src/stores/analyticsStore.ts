@@ -18,8 +18,10 @@ import {
   SleepWellnessAnalytics,
   PredictiveInsights,
 } from "../services/analyticsEngine";
-import { useHealthDataStore } from "./healthDataStore";
-import { useHydrationStore } from "./hydrationStore";
+import {
+  getHydrationGoal,
+  getHealthMetrics,
+} from "../services/StoreCoordinator";
 
 interface AnalyticsStore {
   // State
@@ -80,6 +82,9 @@ interface AnalyticsStore {
   getPositiveTrends: () => string[];
   getNegativeTrends: () => string[];
   getAchievements: () => string[];
+
+  // Reset store (for logout)
+  reset: () => void;
 }
 
 export const useAnalyticsStore = create<AnalyticsStore>()(
@@ -346,8 +351,8 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             score += sleepScore;
 
             // Water intake contribution (0-15 points)
-            // Use user's water goal from hydrationStore, or skip if not set
-            const waterGoalML = useHydrationStore.getState().dailyGoalML;
+            // Use user's water goal from StoreCoordinator, or skip if not set
+            const waterGoalML = getHydrationGoal();
             if (waterGoalML && m.waterIntake) {
               const waterScore = Math.min(
                 15,
@@ -357,8 +362,8 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
             }
 
             // Steps contribution (0-15 points)
-            // Use user's steps goal from healthDataStore, or skip if not set
-            const healthMetrics = useHealthDataStore.getState().metrics;
+            // Use user's steps goal from StoreCoordinator, or skip if not set
+            const healthMetrics = getHealthMetrics();
             if (healthMetrics?.stepsGoal && m.steps) {
               const stepsScore = Math.min(
                 15,
@@ -451,6 +456,31 @@ export const useAnalyticsStore = create<AnalyticsStore>()(
         if (!currentAnalytics) return [];
 
         return currentAnalytics.achievements || [];
+      },
+
+      // Reset store to initial state (for logout)
+      reset: () => {
+        set({
+          isLoading: false,
+          isInitialized: false,
+          currentAnalytics: null,
+          analyticsSummary: {
+            totalWorkouts: 0,
+            averageScore: 0,
+            currentStreak: 0,
+            recentTrend: "No data",
+          },
+          selectedPeriod: "month",
+          metricsHistory: [],
+          chartData: {
+            workoutFrequency: [],
+            weightProgress: [],
+            sleepPattern: [],
+            caloriesBurned: [],
+            waterIntake: [],
+            performanceScore: [],
+          },
+        });
       },
     })),
     {

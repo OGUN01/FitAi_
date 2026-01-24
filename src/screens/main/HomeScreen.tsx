@@ -361,7 +361,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         label: "Log Weight",
         icon: "scale-outline" as keyof typeof Ionicons.glyphMap,
         color: "#9C27B0",
-        onPress: () => Alert.alert("Log Weight", "Add your current weight"),
+        onPress: () =>
+          Alert.alert(
+            "Coming Soon",
+            "Weight logging will be available in the next update. For now, you can track your weight in the Body Measurements section of your profile.",
+            [
+              {
+                text: "Go to Profile",
+                onPress: () => {
+                  // Navigate to profile if navigation is available
+                  console.log("Navigate to Profile for weight tracking");
+                },
+              },
+              { text: "OK" },
+            ],
+          ),
       },
       {
         id: "progress-photo",
@@ -369,14 +383,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         icon: "camera-outline" as keyof typeof Ionicons.glyphMap,
         color: "#FF6B6B",
         onPress: () =>
-          Alert.alert("Progress Photo", "Take or view progress photos"),
+          Alert.alert(
+            "Coming Soon",
+            "Progress photos feature will be available in the next update. This will allow you to take and compare before/after photos to track your transformation.",
+            [{ text: "OK" }],
+          ),
       },
       {
         id: "log-sleep",
         label: "Sleep",
         icon: "moon-outline" as keyof typeof Ionicons.glyphMap,
         color: "#667eea",
-        onPress: () => Alert.alert("Log Sleep", "Track your sleep quality"),
+        onPress: () =>
+          Alert.alert(
+            "Coming Soon",
+            "Sleep tracking will be available in the next update. Connect your wearable device in Settings to automatically sync sleep data.",
+            [
+              {
+                text: "Go to Settings",
+                onPress: () => {
+                  console.log("Navigate to Settings for wearables");
+                },
+              },
+              { text: "OK" },
+            ],
+          ),
       },
       {
         id: "health-sync",

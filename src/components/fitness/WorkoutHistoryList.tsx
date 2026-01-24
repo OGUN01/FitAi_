@@ -3,15 +3,22 @@
  * Real workout history with proper swipe-to-reveal actions
  */
 
-import React, { useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Animated, PanResponder, Alert } from 'react-native';
-import AnimatedRN, { FadeInDown, FadeInRight } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../ui/aurora/GlassCard';
-import { AnimatedPressable } from '../ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rw, rh } from '../../utils/responsive';
-import { haptics } from '../../utils/haptics';
+import React, { useRef, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  PanResponder,
+  Alert,
+} from "react-native";
+import AnimatedRN, { FadeInDown, FadeInRight } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../ui/aurora/GlassCard";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rw, rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
 
 interface CompletedWorkout {
   id: string;
@@ -46,20 +53,24 @@ const WorkoutHistoryCard: React.FC<{
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 10;
+        return (
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
+          Math.abs(gestureState.dx) > 10
+        );
       },
       onPanResponderMove: (_, gestureState) => {
         if (gestureState.dx < 0 || isSwipeOpen.current) {
-          const newValue = isSwipeOpen.current 
-            ? SWIPE_THRESHOLD + gestureState.dx 
+          const newValue = isSwipeOpen.current
+            ? SWIPE_THRESHOLD + gestureState.dx
             : gestureState.dx;
           swipeX.setValue(Math.max(SWIPE_THRESHOLD, Math.min(0, newValue)));
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        const shouldOpen = gestureState.dx < SWIPE_THRESHOLD / 2 || 
+        const shouldOpen =
+          gestureState.dx < SWIPE_THRESHOLD / 2 ||
           (isSwipeOpen.current && gestureState.dx < 20);
-        
+
         if (shouldOpen) {
           Animated.spring(swipeX, {
             toValue: SWIPE_THRESHOLD,
@@ -79,7 +90,7 @@ const WorkoutHistoryCard: React.FC<{
           isSwipeOpen.current = false;
         }
       },
-    })
+    }),
   ).current;
 
   const closeSwipe = useCallback(() => {
@@ -102,42 +113,49 @@ const WorkoutHistoryCard: React.FC<{
     haptics.medium();
     closeSwipe();
     Alert.alert(
-      'Delete Workout',
+      "Delete Workout",
       `Are you sure you want to delete "${workout.title}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ]
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: onDelete },
+      ],
     );
   }, [closeSwipe, workout.title, onDelete]);
 
   const getRelativeDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
+    const diffDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const getCategoryIcon = (): keyof typeof Ionicons.glyphMap => {
     switch (workout.category?.toLowerCase()) {
-      case 'strength': return 'barbell-outline';
-      case 'cardio': return 'heart-outline';
-      case 'hiit': return 'flash-outline';
-      case 'flexibility':
-      case 'yoga': return 'body-outline';
-      default: return 'fitness-outline';
+      case "strength":
+        return "barbell-outline";
+      case "cardio":
+        return "heart-outline";
+      case "hiit":
+        return "flash-outline";
+      case "flexibility":
+      case "yoga":
+        return "body-outline";
+      default:
+        return "fitness-outline";
     }
   };
 
   const isCompleted = workout.progress === 100;
 
   return (
-    <AnimatedRN.View 
+    <AnimatedRN.View
       entering={FadeInRight.delay(100 + index * 80).duration(300)}
       style={styles.cardWrapper}
     >
@@ -180,24 +198,39 @@ const WorkoutHistoryCard: React.FC<{
           hapticFeedback={true}
           hapticType="light"
         >
-          <GlassCard elevation={1} blurIntensity="light" padding="md" borderRadius="lg">
+          <GlassCard
+            elevation={1}
+            blurIntensity="light"
+            padding="md"
+            borderRadius="lg"
+          >
             <View style={styles.cardContent}>
               {/* Icon */}
-              <View style={[
-                styles.iconContainer,
-                { backgroundColor: isCompleted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 107, 107, 0.15)' }
-              ]}>
-                <Ionicons 
-                  name={getCategoryIcon()} 
-                  size={rf(20)} 
-                  color={isCompleted ? '#10b981' : '#FF6B6B'} 
+              <View
+                style={[
+                  styles.iconContainer,
+                  {
+                    backgroundColor: isCompleted
+                      ? "rgba(16, 185, 129, 0.15)"
+                      : "rgba(255, 107, 107, 0.15)",
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={getCategoryIcon()}
+                  size={rf(20)}
+                  color={isCompleted ? "#10b981" : "#FF6B6B"}
                 />
               </View>
 
               {/* Info */}
               <View style={styles.infoContainer}>
-                <Text style={styles.date}>{getRelativeDate(workout.completedAt)}</Text>
-                <Text style={styles.title} numberOfLines={1}>{workout.title}</Text>
+                <Text style={styles.date}>
+                  {getRelativeDate(workout.completedAt)}
+                </Text>
+                <Text style={styles.title} numberOfLines={1}>
+                  {workout.title}
+                </Text>
                 <Text style={styles.meta}>
                   {workout.duration} min • {workout.caloriesBurned} cal
                 </Text>
@@ -207,7 +240,11 @@ const WorkoutHistoryCard: React.FC<{
               <View style={styles.statusContainer}>
                 {isCompleted ? (
                   <View style={styles.completedBadge}>
-                    <Ionicons name="checkmark-circle" size={rf(18)} color="#10b981" />
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={rf(18)}
+                      color="#10b981"
+                    />
                   </View>
                 ) : (
                   <View style={styles.progressBadge}>
@@ -232,11 +269,22 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
   if (workouts.length === 0) {
     return (
       <AnimatedRN.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard elevation={1} blurIntensity="light" padding="lg" borderRadius="lg">
+        <GlassCard
+          elevation={1}
+          blurIntensity="light"
+          padding="lg"
+          borderRadius="lg"
+        >
           <View style={styles.emptyState}>
-            <Ionicons name="time-outline" size={rf(32)} color={ResponsiveTheme.colors.textSecondary} />
+            <Ionicons
+              name="time-outline"
+              size={rf(32)}
+              color={ResponsiveTheme.colors.textSecondary}
+            />
             <Text style={styles.emptyTitle}>No Workout History</Text>
-            <Text style={styles.emptySubtitle}>Complete your first workout to see it here</Text>
+            <Text style={styles.emptySubtitle}>
+              Complete your first workout to see it here
+            </Text>
           </View>
         </GlassCard>
       </AnimatedRN.View>
@@ -248,7 +296,11 @@ export const WorkoutHistoryList: React.FC<WorkoutHistoryListProps> = ({
       {/* Section Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderLeft}>
-          <Ionicons name="time-outline" size={rf(18)} color={ResponsiveTheme.colors.text} />
+          <Ionicons
+            name="time-outline"
+            size={rf(18)}
+            color={ResponsiveTheme.colors.text}
+          />
           <Text style={styles.sectionTitle}>Recent Activity</Text>
         </View>
         <Text style={styles.sectionCount}>{workouts.length} workouts</Text>
@@ -274,19 +326,19 @@ const styles = StyleSheet.create({
     gap: ResponsiveTheme.spacing.sm,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   sectionHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
   sectionTitle: {
     fontSize: rf(15),
-    fontWeight: '700',
+    fontWeight: "700",
     color: ResponsiveTheme.colors.text,
   },
   sectionCount: {
@@ -294,54 +346,54 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textSecondary,
   },
   cardWrapper: {
-    position: 'relative',
+    position: "relative",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   actionsContainer: {
-    position: 'absolute',
+    position: "absolute",
     right: 0,
     top: 0,
     bottom: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
   },
   actionButton: {
-    height: '100%',
+    height: "100%",
   },
   actionContent: {
     width: rw(48),
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: ResponsiveTheme.borderRadius.md,
     gap: 4,
   },
   repeatAction: {
-    backgroundColor: '#10b981',
+    backgroundColor: "#10b981",
   },
   deleteAction: {
-    backgroundColor: '#ef4444',
+    backgroundColor: "#ef4444",
   },
   actionText: {
     fontSize: rf(9),
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   cardContainer: {
     backgroundColor: ResponsiveTheme.colors.background,
   },
   cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
   },
   iconContainer: {
     width: rw(44),
     height: rw(44),
     borderRadius: rw(12),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   infoContainer: {
     flex: 1,
@@ -353,7 +405,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: rf(14),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
   meta: {
@@ -362,40 +414,39 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   completedBadge: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
     padding: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressBadge: {
-    backgroundColor: 'rgba(255, 142, 83, 0.15)',
+    backgroundColor: "rgba(255, 142, 83, 0.15)",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
     paddingVertical: 4,
     borderRadius: ResponsiveTheme.borderRadius.full,
   },
   progressText: {
     fontSize: rf(11),
-    fontWeight: '700',
-    color: '#FF8E53',
+    fontWeight: "700",
+    color: "#FF8E53",
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: ResponsiveTheme.spacing.lg,
     gap: ResponsiveTheme.spacing.sm,
   },
   emptyTitle: {
     fontSize: rf(14),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.text,
   },
   emptySubtitle: {
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 
 export default WorkoutHistoryList;
-

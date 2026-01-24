@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Card, THEME } from '../../components/ui';
-import { Camera } from '../../components/advanced/Camera';
-import { ImagePicker } from '../../components/advanced/ImagePicker';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Card, THEME } from "../../components/ui";
+import { Camera } from "../../components/advanced/Camera";
+import { ImagePicker } from "../../components/advanced/ImagePicker";
 
 export interface BodyAnalysis {
   photos: {
@@ -35,36 +43,40 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
   onSkip,
   initialData = {},
 }) => {
-  const [photos, setPhotos] = useState<BodyAnalysis['photos']>(initialData.photos || {});
-  const [analysis, setAnalysis] = useState<BodyAnalysis['analysis'] | null>(
-    initialData.analysis || null
+  const [photos, setPhotos] = useState<BodyAnalysis["photos"]>(
+    initialData.photos || {},
+  );
+  const [analysis, setAnalysis] = useState<BodyAnalysis["analysis"] | null>(
+    initialData.analysis || null,
   );
   const [showCamera, setShowCamera] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
-  const [currentPhotoType, setCurrentPhotoType] = useState<'front' | 'back' | 'side'>('front');
+  const [currentPhotoType, setCurrentPhotoType] = useState<
+    "front" | "back" | "side"
+  >("front");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const photoTypes = [
     {
-      type: 'front' as const,
-      title: 'Front View',
-      icon: '👤',
-      description: 'Stand facing the camera',
-      instruction: 'Stand straight, arms at your sides, facing the camera',
+      type: "front" as const,
+      title: "Front View",
+      icon: "👤",
+      description: "Stand facing the camera",
+      instruction: "Stand straight, arms at your sides, facing the camera",
     },
     {
-      type: 'back' as const,
-      title: 'Back View',
-      icon: '🔄',
-      description: 'Turn around, back to camera',
-      instruction: 'Turn around, arms at your sides, back facing the camera',
+      type: "back" as const,
+      title: "Back View",
+      icon: "🔄",
+      description: "Turn around, back to camera",
+      instruction: "Turn around, arms at your sides, back facing the camera",
     },
     {
-      type: 'side' as const,
-      title: 'Side View',
-      icon: '↔️',
-      description: 'Turn sideways to camera',
-      instruction: 'Turn to your side, arms at your sides, profile view',
+      type: "side" as const,
+      title: "Side View",
+      icon: "↔️",
+      description: "Turn sideways to camera",
+      instruction: "Turn to your side, arms at your sides, profile view",
     },
   ];
 
@@ -86,16 +98,16 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
     setShowImagePicker(false);
   };
 
-  const openPhotoOptions = (photoType: 'front' | 'back' | 'side') => {
+  const openPhotoOptions = (photoType: "front" | "back" | "side") => {
     setCurrentPhotoType(photoType);
-    Alert.alert('Add Photo', 'How would you like to add your photo?', [
-      { text: 'Camera', onPress: () => setShowCamera(true) },
-      { text: 'Photo Library', onPress: () => setShowImagePicker(true) },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Add Photo", "How would you like to add your photo?", [
+      { text: "Camera", onPress: () => setShowCamera(true) },
+      { text: "Photo Library", onPress: () => setShowImagePicker(true) },
+      { text: "Cancel", style: "cancel" },
     ]);
   };
 
-  const removePhoto = (photoType: 'front' | 'back' | 'side') => {
+  const removePhoto = (photoType: "front" | "back" | "side") => {
     setPhotos((prev) => {
       const newPhotos = { ...prev };
       delete newPhotos[photoType];
@@ -110,7 +122,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
   const analyzePhotos = async () => {
     const photoCount = Object.keys(photos).length;
     if (photoCount === 0) {
-      Alert.alert('No Photos', 'Please add at least one photo to analyze.');
+      Alert.alert("No Photos", "Please add at least one photo to analyze.");
       return;
     }
 
@@ -121,26 +133,29 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
       const mockAnalysis = {
-        bodyType: 'Mesomorph',
-        muscleMass: 'Moderate',
-        bodyFat: '15-20%',
-        fitnessLevel: 'Intermediate',
+        bodyType: "Mesomorph",
+        muscleMass: "Moderate",
+        bodyFat: "15-20%",
+        fitnessLevel: "Intermediate",
         recommendations: [
-          'Focus on strength training to build lean muscle',
-          'Incorporate cardio 3-4 times per week',
-          'Maintain a balanced diet with adequate protein',
-          'Consider progressive overload in your workouts',
+          "Focus on strength training to build lean muscle",
+          "Incorporate cardio 3-4 times per week",
+          "Maintain a balanced diet with adequate protein",
+          "Consider progressive overload in your workouts",
         ],
       };
 
       setAnalysis(mockAnalysis);
       Alert.alert(
-        'Analysis Complete! 🎯',
-        'Your body analysis is ready. Review the results below.',
-        [{ text: 'Great!' }]
+        "Analysis Complete! 🎯",
+        "Your body analysis is ready. Review the results below.",
+        [{ text: "Great!" }],
       );
     } catch (error) {
-      Alert.alert('Analysis Failed', 'Unable to analyze photos. Please try again.');
+      Alert.alert(
+        "Analysis Failed",
+        "Unable to analyze photos. Please try again.",
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -158,10 +173,15 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Body Analysis</Text>
-          <Text style={styles.subtitle}>Take photos for AI-powered body composition analysis</Text>
+          <Text style={styles.subtitle}>
+            Take photos for AI-powered body composition analysis
+          </Text>
         </View>
 
         <View style={styles.content}>
@@ -170,9 +190,9 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
             <Text style={styles.sectionTitle}>Photo Guidelines</Text>
             <Card style={styles.instructionCard}>
               <Text style={styles.instructionText}>
-                • Wear form-fitting clothes or workout attire{'\n'}• Ensure good lighting{'\n'}•
-                Stand against a plain background{'\n'}• Keep arms at your sides{'\n'}• Take photos
-                from about 6 feet away
+                • Wear form-fitting clothes or workout attire{"\n"}• Ensure good
+                lighting{"\n"}• Stand against a plain background{"\n"}• Keep
+                arms at your sides{"\n"}• Take photos from about 6 feet away
               </Text>
             </Card>
           </View>
@@ -180,7 +200,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
           {/* Photo Capture */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
-              Photos ({photoCount}/3) {hasAllPhotos && '✅'}
+              Photos ({photoCount}/3) {hasAllPhotos && "✅"}
             </Text>
             <View style={styles.photoGrid}>
               {photoTypes.map((photoType) => (
@@ -206,14 +226,20 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
                       ) : (
                         <View style={styles.photoPlaceholder}>
                           <Text style={styles.photoIcon}>{photoType.icon}</Text>
-                          <Text style={styles.photoTitle}>{photoType.title}</Text>
-                          <Text style={styles.photoDescription}>{photoType.description}</Text>
+                          <Text style={styles.photoTitle}>
+                            {photoType.title}
+                          </Text>
+                          <Text style={styles.photoDescription}>
+                            {photoType.description}
+                          </Text>
                           <Text style={styles.addPhotoText}>Tap to add</Text>
                         </View>
                       )}
                     </Card>
                   </TouchableOpacity>
-                  <Text style={styles.photoInstruction}>{photoType.instruction}</Text>
+                  <Text style={styles.photoInstruction}>
+                    {photoType.instruction}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -223,7 +249,7 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
           {photoCount > 0 && !analysis && (
             <View style={styles.section}>
               <Button
-                title={isAnalyzing ? 'Analyzing...' : '🤖 Analyze Photos'}
+                title={isAnalyzing ? "Analyzing..." : "🤖 Analyze Photos"}
                 onPress={analyzePhotos}
                 variant="secondary"
                 loading={isAnalyzing}
@@ -240,11 +266,15 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
                 <View style={styles.analysisGrid}>
                   <View style={styles.analysisItem}>
                     <Text style={styles.analysisLabel}>Body Type</Text>
-                    <Text style={styles.analysisValue}>{analysis.bodyType}</Text>
+                    <Text style={styles.analysisValue}>
+                      {analysis.bodyType}
+                    </Text>
                   </View>
                   <View style={styles.analysisItem}>
                     <Text style={styles.analysisLabel}>Muscle Mass</Text>
-                    <Text style={styles.analysisValue}>{analysis.muscleMass}</Text>
+                    <Text style={styles.analysisValue}>
+                      {analysis.muscleMass}
+                    </Text>
                   </View>
                   <View style={styles.analysisItem}>
                     <Text style={styles.analysisLabel}>Body Fat</Text>
@@ -252,12 +282,16 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
                   </View>
                   <View style={styles.analysisItem}>
                     <Text style={styles.analysisLabel}>Fitness Level</Text>
-                    <Text style={styles.analysisValue}>{analysis.fitnessLevel}</Text>
+                    <Text style={styles.analysisValue}>
+                      {analysis.fitnessLevel}
+                    </Text>
                   </View>
                 </View>
 
                 <View style={styles.recommendationsSection}>
-                  <Text style={styles.recommendationsTitle}>Recommendations</Text>
+                  <Text style={styles.recommendationsTitle}>
+                    Recommendations
+                  </Text>
                   {analysis.recommendations.map((rec, index) => (
                     <Text key={index} style={styles.recommendationItem}>
                       • {rec}
@@ -271,7 +305,9 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
           {/* Skip Option */}
           <View style={styles.section}>
             <TouchableOpacity onPress={onSkip}>
-              <Text style={styles.skipText}>Skip body analysis (you can add photos later)</Text>
+              <Text style={styles.skipText}>
+                Skip body analysis (you can add photos later)
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -279,8 +315,18 @@ export const BodyAnalysisScreen: React.FC<BodyAnalysisScreenProps> = ({
 
       <View style={styles.footer}>
         <View style={styles.buttonRow}>
-          <Button title="Back" onPress={onBack} variant="outline" style={styles.backButton} />
-          <Button title="Next" onPress={handleNext} variant="primary" style={styles.nextButton} />
+          <Button
+            title="Back"
+            onPress={onBack}
+            variant="outline"
+            style={styles.backButton}
+          />
+          <Button
+            title="Next"
+            onPress={handleNext}
+            variant="primary"
+            style={styles.nextButton}
+          />
         </View>
       </View>
 
@@ -378,26 +424,26 @@ const styles = StyleSheet.create({
   },
 
   photoPreview: {
-    position: 'relative',
+    position: "relative",
     height: rh(120),
   },
 
   photoImage: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   removePhotoButton: {
-    position: 'absolute',
+    position: "absolute",
     top: ResponsiveTheme.spacing.sm,
     right: ResponsiveTheme.spacing.sm,
     backgroundColor: ResponsiveTheme.colors.error,
     borderRadius: ResponsiveTheme.borderRadius.full,
     width: rw(24),
     height: rh(24),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   removePhotoText: {
@@ -407,8 +453,8 @@ const styles = StyleSheet.create({
   },
 
   photoPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: ResponsiveTheme.spacing.md,
     minHeight: rh(120),
   },
@@ -428,7 +474,7 @@ const styles = StyleSheet.create({
   photoDescription: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.sm,
   },
 
@@ -441,8 +487,8 @@ const styles = StyleSheet.create({
   photoInstruction: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
   },
 
   analysisCard: {
@@ -450,15 +496,15 @@ const styles = StyleSheet.create({
   },
 
   analysisGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
 
   analysisItem: {
-    width: '48%',
-    alignItems: 'center',
+    width: "48%",
+    alignItems: "center",
   },
 
   analysisLabel: {
@@ -496,8 +542,8 @@ const styles = StyleSheet.create({
   skipText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
-    textAlign: 'center',
-    textDecorationLine: 'underline',
+    textAlign: "center",
+    textDecorationLine: "underline",
   },
 
   footer: {
@@ -509,7 +555,7 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: ResponsiveTheme.spacing.md,
   },
 

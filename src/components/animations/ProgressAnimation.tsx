@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface ProgressAnimationProps {
   progress: number; // 0-100
-  type?: 'linear' | 'circular' | 'ring';
-  size?: 'sm' | 'md' | 'lg';
+  type?: "linear" | "circular" | "ring";
+  size?: "sm" | "md" | "lg";
   color?: string;
   backgroundColor?: string;
   showPercentage?: boolean;
@@ -16,8 +16,8 @@ interface ProgressAnimationProps {
 
 export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   progress,
-  type = 'linear',
-  size = 'md',
+  type = "linear",
+  size = "md",
   color = THEME.colors.primary,
   backgroundColor = THEME.colors.surface,
   showPercentage = true,
@@ -30,11 +30,11 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
 
   const getSizeValues = () => {
     switch (size) {
-      case 'sm':
+      case "sm":
         return { height: 6, circularSize: 60, strokeWidth: 4 };
-      case 'md':
+      case "md":
         return { height: 8, circularSize: 80, strokeWidth: 6 };
-      case 'lg':
+      case "lg":
         return { height: 12, circularSize: 120, strokeWidth: 8 };
       default:
         return { height: 8, circularSize: 80, strokeWidth: 6 };
@@ -53,14 +53,14 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     }).start();
 
     // Continuous rotation for circular progress
-    if (type === 'circular' || type === 'ring') {
+    if (type === "circular" || type === "ring") {
       const rotationAnimation = Animated.loop(
         Animated.timing(rotationValue, {
           toValue: 1,
           duration: 2000,
           easing: Easing.linear,
           useNativeDriver: true,
-        })
+        }),
       );
       rotationAnimation.start();
       return () => rotationAnimation.stop();
@@ -70,8 +70,8 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
   const renderLinearProgress = () => {
     const progressWidth = animatedValue.interpolate({
       inputRange: [0, 100],
-      outputRange: ['0%', '100%'],
-      extrapolate: 'clamp',
+      outputRange: ["0%", "100%"],
+      extrapolate: "clamp",
     });
 
     return (
@@ -109,17 +109,21 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     const strokeDashoffset = animatedValue.interpolate({
       inputRange: [0, 100],
       outputRange: [circumference, 0],
-      extrapolate: 'clamp',
+      extrapolate: "clamp",
     });
 
     const rotation = rotationValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ['0deg', '360deg'],
+      outputRange: ["0deg", "360deg"],
     });
 
     return (
       <View
-        style={[styles.circularContainer, { width: circularSize, height: circularSize }, style]}
+        style={[
+          styles.circularContainer,
+          { width: circularSize, height: circularSize },
+          style,
+        ]}
       >
         <Animated.View
           style={[
@@ -155,15 +159,15 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
                 borderRadius: circularSize / 2,
                 borderWidth: strokeWidth,
                 borderColor: color,
-                borderTopColor: 'transparent',
-                borderRightColor: 'transparent',
+                borderTopColor: "transparent",
+                borderRightColor: "transparent",
                 transform: [
-                  { rotate: '-90deg' },
+                  { rotate: "-90deg" },
                   {
                     rotateZ: animatedValue.interpolate({
                       inputRange: [0, 100],
-                      outputRange: ['0deg', '360deg'],
-                      extrapolate: 'clamp',
+                      outputRange: ["0deg", "360deg"],
+                      extrapolate: "clamp",
                     }),
                   },
                 ],
@@ -180,7 +184,12 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
             </Animated.Text>
           )}
           {label && (
-            <Text style={[styles.circularLabel, { color: THEME.colors.textSecondary }]}>
+            <Text
+              style={[
+                styles.circularLabel,
+                { color: THEME.colors.textSecondary },
+              ]}
+            >
               {label}
             </Text>
           )}
@@ -194,7 +203,13 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
     const circumference = 2 * Math.PI * radius;
 
     return (
-      <View style={[styles.ringContainer, { width: circularSize, height: circularSize }, style]}>
+      <View
+        style={[
+          styles.ringContainer,
+          { width: circularSize, height: circularSize },
+          style,
+        ]}
+      >
         {/* Multiple rings for visual effect */}
         {[0.6, 0.8, 1].map((multiplier, index) => {
           const ringSize = circularSize * multiplier;
@@ -203,8 +218,11 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
 
           const strokeDashoffset = animatedValue.interpolate({
             inputRange: [0, 100],
-            outputRange: [ringCircumference, ringCircumference * (1 - progress / 100)],
-            extrapolate: 'clamp',
+            outputRange: [
+              ringCircumference,
+              ringCircumference * (1 - progress / 100),
+            ],
+            extrapolate: "clamp",
           });
 
           return (
@@ -218,7 +236,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
                   borderRadius: ringSize / 2,
                   borderWidth: strokeWidth / (index + 1),
                   borderColor: backgroundColor,
-                  position: 'absolute',
+                  position: "absolute",
                   top: (circularSize - ringSize) / 2,
                   left: (circularSize - ringSize) / 2,
                 },
@@ -230,10 +248,16 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
         {/* Center Content */}
         <View style={styles.ringCenter}>
           {showPercentage && (
-            <Text style={[styles.ringPercentage, { color }]}>{Math.round(progress)}%</Text>
+            <Text style={[styles.ringPercentage, { color }]}>
+              {Math.round(progress)}%
+            </Text>
           )}
           {label && (
-            <Text style={[styles.ringLabel, { color: THEME.colors.textSecondary }]}>{label}</Text>
+            <Text
+              style={[styles.ringLabel, { color: THEME.colors.textSecondary }]}
+            >
+              {label}
+            </Text>
           )}
         </View>
       </View>
@@ -242,11 +266,11 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
 
   const renderProgress = () => {
     switch (type) {
-      case 'linear':
+      case "linear":
         return renderLinearProgress();
-      case 'circular':
+      case "circular":
         return renderCircularProgress();
-      case 'ring':
+      case "ring":
         return renderRingProgress();
       default:
         return renderLinearProgress();
@@ -258,7 +282,7 @@ export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({
 
 const styles = StyleSheet.create({
   linearContainer: {
-    width: '100%',
+    width: "100%",
   },
 
   label: {
@@ -269,15 +293,15 @@ const styles = StyleSheet.create({
   },
 
   progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.sm,
   },
 
   linearTrack: {
     flex: 1,
     borderRadius: THEME.borderRadius.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   linearFill: {
@@ -288,31 +312,31 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.sm,
     fontWeight: THEME.fontWeight.semibold,
     minWidth: 40,
-    textAlign: 'right',
+    textAlign: "right",
   },
 
   circularContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   circularProgress: {
-    position: 'absolute',
+    position: "absolute",
   },
 
   circularTrack: {
-    position: 'absolute',
+    position: "absolute",
   },
 
   circularFill: {
-    position: 'absolute',
+    position: "absolute",
   },
 
   circularCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   circularPercentage: {
@@ -326,19 +350,19 @@ const styles = StyleSheet.create({
   },
 
   ringContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   ring: {
-    borderStyle: 'solid',
+    borderStyle: "solid",
   },
 
   ringCenter: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   ringPercentage: {

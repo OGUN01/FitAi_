@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated } from 'react-native';
-import { Card, Button, THEME } from '../ui';
-import { ExerciseGifPlayer } from './ExerciseGifPlayer';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Animated,
+} from "react-native";
+import { Card, Button, THEME } from "../ui";
+import { ExerciseGifPlayer } from "./ExerciseGifPlayer";
 
 interface ExerciseSessionModalProps {
   isVisible: boolean;
@@ -26,7 +33,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 }) => {
   const [breathingAnim] = useState(new Animated.Value(1));
   const [pulseAnim] = useState(new Animated.Value(0));
-  
+
   // Breathing animation effect
   useEffect(() => {
     if (isVisible) {
@@ -43,10 +50,10 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
             duration: 2000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
 
-      // Start pulse animation  
+      // Start pulse animation
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -59,7 +66,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
             duration: 1500,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
 
       breathingAnimation.start();
@@ -75,7 +82,12 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
   if (!isVisible) return null;
 
   return (
-    <Modal visible={isVisible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal
+      visible={isVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
       <View style={styles.overlay}>
         <Card style={styles.sessionCard} variant="elevated">
           <View style={styles.sessionContent}>
@@ -107,7 +119,7 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
                   },
                 ]}
               />
-              
+
               {/* Exercise GIF in center */}
               <View style={styles.exerciseGifContainer}>
                 <ExerciseGifPlayer
@@ -137,14 +149,18 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
                 style={[styles.controlButton, styles.cancelButton]}
                 onPress={onCancel}
               >
-                <Text style={[styles.controlText, styles.cancelText]}>Cancel</Text>
+                <Text style={[styles.controlText, styles.cancelText]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.controlButton, styles.completeButton]}
                 onPress={onComplete}
               >
-                <Text style={[styles.controlText, styles.completeText]}>Complete Set</Text>
+                <Text style={[styles.controlText, styles.completeText]}>
+                  Complete Set
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -170,25 +186,25 @@ export const ExerciseSessionModal: React.FC<ExerciseSessionModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   sessionCard: {
-    width: '90%',
+    width: "90%",
     maxWidth: 400,
     padding: THEME.spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   sessionContent: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
 
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -207,37 +223,37 @@ const styles = StyleSheet.create({
   animationContainer: {
     width: 250,
     height: 250,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
-    position: 'relative',
+    position: "relative",
   },
 
   breathingCircleOuter: {
-    position: 'absolute',
+    position: "absolute",
     width: 250,
     height: 250,
     borderRadius: 125,
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     borderWidth: 2,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   breathingCircleMiddle: {
-    position: 'absolute',
+    position: "absolute",
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: THEME.colors.primary + '10',
+    backgroundColor: THEME.colors.primary + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '30',
+    borderColor: THEME.colors.primary + "30",
   },
 
   exerciseGifContainer: {
-    position: 'relative',
+    position: "relative",
     zIndex: 10,
     borderRadius: 90,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 4,
   },
 
@@ -245,22 +261,22 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.lg,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   motivationText: {
     fontSize: THEME.fontSize.sm,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
     marginBottom: THEME.spacing.xl,
   },
 
   controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     marginBottom: THEME.spacing.lg,
     gap: THEME.spacing.md,
   },
@@ -269,13 +285,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     borderRadius: THEME.borderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
   },
 
   cancelButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderColor: THEME.colors.border,
   },
 
@@ -298,8 +314,8 @@ const styles = StyleSheet.create({
   },
 
   progressDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: THEME.spacing.sm,
   },
 

@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from 'react';
-import { Text, TextStyle } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { Text, TextStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   Easing,
-} from 'react-native-reanimated';
+} from "react-native-reanimated";
 
 interface AnimatedNumberProps {
   value: number;
@@ -23,8 +23,8 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   decimals = 0,
   style,
   duration = 1000,
-  prefix = '',
-  suffix = '',
+  prefix = "",
+  suffix = "",
 }) => {
   const animatedValue = useSharedValue(0);
   const previousValue = useRef(0);
@@ -45,11 +45,10 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   });
 
   return (
-    <AnimatedText
-      style={style}
-      animatedProps={animatedProps}
-    >
-      {prefix}{value.toFixed(decimals)}{suffix}
+    <AnimatedText style={style} animatedProps={animatedProps}>
+      {prefix}
+      {value.toFixed(decimals)}
+      {suffix}
     </AnimatedText>
   );
 };

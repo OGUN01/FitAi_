@@ -1,4 +1,27 @@
-// User-related TypeScript type definitions
+/**
+ * User-related TypeScript type definitions
+ *
+ * ============================================================================
+ * LEGACY TYPES - PREFER src/types/onboarding.ts FOR NEW DEVELOPMENT
+ * ============================================================================
+ *
+ * This file contains types that predate the unified onboarding system.
+ * Many interfaces here use camelCase which differs from the database schema.
+ *
+ * MIGRATION GUIDE:
+ *   - PersonalInfo -> Use PersonalInfoData from src/types/onboarding.ts
+ *   - FitnessGoals -> Use WorkoutPreferencesData from src/types/onboarding.ts
+ *   - DietPreferences -> Use DietPreferencesData from src/types/onboarding.ts
+ *   - WorkoutPreferences -> Use WorkoutPreferencesData from src/types/onboarding.ts
+ *
+ * NAMING CONVENTION NOTE:
+ *   - This file has mixed snake_case and camelCase (backward compatibility)
+ *   - For conversion utilities, see src/utils/typeTransformers.ts
+ *   - New code should use snake_case to match database schema
+ *
+ * @see src/types/onboarding.ts - Preferred types matching database schema
+ * @see src/utils/typeTransformers.ts - Case conversion utilities
+ */
 
 export interface PersonalInfo {
   // Name fields (match database schema)

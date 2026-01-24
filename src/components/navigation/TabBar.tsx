@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-native';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { THEME } from '../../utils/constants';
-import { useResponsiveTheme } from '../../hooks/useResponsiveTheme';
+import React from "react";
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { THEME } from "../../utils/constants";
+import { useResponsiveTheme } from "../../hooks/useResponsiveTheme";
 
 // REMOVED: Module-level Dimensions.get() causes crash
 // const { width: screenWidth } = Dimensions.get('window');
@@ -20,7 +26,11 @@ interface TabBarProps {
   onTabPress: (tabKey: string) => void;
 }
 
-export const TabBar: React.FC<TabBarProps> = ({ tabs, activeTab, onTabPress }) => {
+export const TabBar: React.FC<TabBarProps> = ({
+  tabs,
+  activeTab,
+  onTabPress,
+}) => {
   const responsiveTheme = useResponsiveTheme();
 
   return (
@@ -112,17 +122,17 @@ const styles = StyleSheet.create({
   },
 
   tabBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
     // All responsive styles moved to inline
   },
 
   tab: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
     // All responsive styles moved to inline
   },
 
@@ -131,12 +141,12 @@ const styles = StyleSheet.create({
   },
 
   tabText: {
-    textAlign: 'center',
+    textAlign: "center",
     // All responsive styles moved to inline
   },
 
   activeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     // All responsive styles moved to inline
   },

@@ -81,6 +81,7 @@ export interface WeeklyWorkoutPlan {
   planDescription?: string;
   restDays?: number[];
   totalEstimatedCalories?: number;
+  duration?: number | string; // Total duration in minutes for the week
 }
 
 export interface WeeklyMealPlan {
@@ -88,6 +89,8 @@ export interface WeeklyMealPlan {
   weekNumber: number;
   meals: any[];
   planTitle?: string;
+  planDescription?: string;
+  totalEstimatedCalories?: number;
 }
 
 export interface AIServiceMetadata {

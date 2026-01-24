@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
 
 interface Exercise {
   id: string;
@@ -20,7 +20,7 @@ interface Exercise {
   restTime: string;
   instructions: string[];
   targetMuscles: string[];
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
   equipment: string[];
 }
 
@@ -38,78 +38,79 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   // Mock workout data - in real app this would come from props or API
   const workout = {
     id: workoutId,
-    name: 'Upper Body Strength',
+    name: "Upper Body Strength",
     description:
-      'Build strength and muscle mass in your upper body with this comprehensive workout',
-    duration: '45-60 min',
-    difficulty: 'Intermediate',
-    targetMuscles: ['Chest', 'Back', 'Shoulders', 'Arms'],
-    equipment: ['Dumbbells', 'Barbell', 'Bench'],
+      "Build strength and muscle mass in your upper body with this comprehensive workout",
+    duration: "45-60 min",
+    difficulty: "Intermediate",
+    targetMuscles: ["Chest", "Back", "Shoulders", "Arms"],
+    equipment: ["Dumbbells", "Barbell", "Bench"],
     calories: 350,
     exercises: [
       {
-        id: '1',
-        name: 'Bench Press',
+        id: "1",
+        name: "Bench Press",
         sets: 4,
-        reps: '8-10',
-        weight: '135-155 lbs',
-        restTime: '2-3 min',
+        reps: "8-10",
+        weight: "135-155 lbs",
+        restTime: "2-3 min",
         instructions: [
-          'Lie flat on bench with feet firmly on ground',
-          'Grip barbell slightly wider than shoulder width',
-          'Lower bar to chest with control',
-          'Press bar up explosively to starting position',
+          "Lie flat on bench with feet firmly on ground",
+          "Grip barbell slightly wider than shoulder width",
+          "Lower bar to chest with control",
+          "Press bar up explosively to starting position",
         ],
-        targetMuscles: ['Chest', 'Triceps', 'Shoulders'],
-        difficulty: 'Intermediate' as const,
-        equipment: ['Barbell', 'Bench'],
+        targetMuscles: ["Chest", "Triceps", "Shoulders"],
+        difficulty: "Intermediate" as const,
+        equipment: ["Barbell", "Bench"],
       },
       {
-        id: '2',
-        name: 'Bent-Over Row',
+        id: "2",
+        name: "Bent-Over Row",
         sets: 4,
-        reps: '8-12',
-        weight: '95-115 lbs',
-        restTime: '2 min',
+        reps: "8-12",
+        weight: "95-115 lbs",
+        restTime: "2 min",
         instructions: [
-          'Stand with feet hip-width apart, holding barbell',
-          'Hinge at hips, keeping back straight',
-          'Pull barbell to lower chest/upper abdomen',
-          'Lower with control to starting position',
+          "Stand with feet hip-width apart, holding barbell",
+          "Hinge at hips, keeping back straight",
+          "Pull barbell to lower chest/upper abdomen",
+          "Lower with control to starting position",
         ],
-        targetMuscles: ['Back', 'Biceps'],
-        difficulty: 'Intermediate' as const,
-        equipment: ['Barbell'],
+        targetMuscles: ["Back", "Biceps"],
+        difficulty: "Intermediate" as const,
+        equipment: ["Barbell"],
       },
       {
-        id: '3',
-        name: 'Overhead Press',
+        id: "3",
+        name: "Overhead Press",
         sets: 3,
-        reps: '10-12',
-        weight: '75-95 lbs',
-        restTime: '90 sec',
+        reps: "10-12",
+        weight: "75-95 lbs",
+        restTime: "90 sec",
         instructions: [
-          'Stand with feet shoulder-width apart',
-          'Hold barbell at shoulder height',
-          'Press barbell overhead until arms are fully extended',
-          'Lower with control to starting position',
+          "Stand with feet shoulder-width apart",
+          "Hold barbell at shoulder height",
+          "Press barbell overhead until arms are fully extended",
+          "Lower with control to starting position",
         ],
-        targetMuscles: ['Shoulders', 'Triceps'],
-        difficulty: 'Intermediate' as const,
-        equipment: ['Barbell'],
+        targetMuscles: ["Shoulders", "Triceps"],
+        difficulty: "Intermediate" as const,
+        equipment: ["Barbell"],
       },
     ] as Exercise[],
   };
 
-  const [selectedExercise, setSelectedExercise] = React.useState<Exercise | null>(null);
+  const [selectedExercise, setSelectedExercise] =
+    React.useState<Exercise | null>(null);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner':
+      case "Beginner":
         return THEME.colors.success;
-      case 'Intermediate':
+      case "Intermediate":
         return THEME.colors.warning;
-      case 'Advanced':
+      case "Advanced":
         return THEME.colors.error;
       default:
         return THEME.colors.textSecondary;
@@ -129,13 +130,18 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Workout Info Card */}
         <Card style={styles.workoutCard} variant="elevated">
           <View style={styles.workoutHeader}>
             <View style={styles.workoutInfo}>
               <Text style={styles.workoutName}>{workout.name}</Text>
-              <Text style={styles.workoutDescription}>{workout.description}</Text>
+              <Text style={styles.workoutDescription}>
+                {workout.description}
+              </Text>
             </View>
             <View style={styles.workoutIcon}>
               <Text style={styles.workoutEmoji}>💪</Text>
@@ -149,7 +155,12 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
               <Text style={styles.statLabel}>Duration</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: getDifficultyColor(workout.difficulty) }]}>
+              <Text
+                style={[
+                  styles.statValue,
+                  { color: getDifficultyColor(workout.difficulty) },
+                ]}
+              >
                 {workout.difficulty}
               </Text>
               <Text style={styles.statLabel}>Difficulty</Text>
@@ -187,7 +198,9 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
 
         {/* Exercises List */}
         <View style={styles.exercisesSection}>
-          <Text style={styles.sectionTitle}>Exercises ({workout.exercises?.length ?? 0})</Text>
+          <Text style={styles.sectionTitle}>
+            Exercises ({workout.exercises?.length ?? 0})
+          </Text>
 
           {workout.exercises?.map((exercise, index) => (
             <Card
@@ -205,7 +218,9 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     {exercise.sets} sets × {exercise.reps} reps
                     {exercise.weight && ` • ${exercise.weight}`}
                   </Text>
-                  <Text style={styles.exerciseRest}>Rest: {exercise.restTime}</Text>
+                  <Text style={styles.exerciseRest}>
+                    Rest: {exercise.restTime}
+                  </Text>
                 </View>
                 <TouchableOpacity style={styles.exerciseArrow}>
                   <Text style={styles.exerciseArrowText}>→</Text>
@@ -246,9 +261,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: 1,
@@ -260,8 +275,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   backIcon: {
@@ -280,8 +295,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   favoriteIcon: {
@@ -299,8 +314,8 @@ const styles = StyleSheet.create({
   },
 
   workoutHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     marginBottom: THEME.spacing.md,
   },
 
@@ -326,8 +341,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: THEME.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: THEME.spacing.md,
   },
 
@@ -336,8 +351,8 @@ const styles = StyleSheet.create({
   },
 
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     paddingVertical: THEME.spacing.md,
     borderTopWidth: 1,
     borderBottomWidth: 1,
@@ -346,7 +361,7 @@ const styles = StyleSheet.create({
   },
 
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   statValue: {
@@ -373,18 +388,18 @@ const styles = StyleSheet.create({
   },
 
   musclesList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs,
   },
 
   muscleTag: {
-    backgroundColor: THEME.colors.primary + '20',
+    backgroundColor: THEME.colors.primary + "20",
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.xs / 2,
     borderRadius: THEME.borderRadius.md,
     borderWidth: 1,
-    borderColor: THEME.colors.primary + '40',
+    borderColor: THEME.colors.primary + "40",
   },
 
   muscleText: {
@@ -405,8 +420,8 @@ const styles = StyleSheet.create({
   },
 
   equipmentList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs,
   },
 
@@ -438,8 +453,8 @@ const styles = StyleSheet.create({
   },
 
   exerciseHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: THEME.spacing.sm,
   },
 
@@ -448,8 +463,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: THEME.spacing.sm,
   },
 
@@ -486,8 +501,8 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: THEME.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   exerciseArrowText: {
@@ -496,13 +511,13 @@ const styles = StyleSheet.create({
   },
 
   exerciseMuscles: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.xs / 2,
   },
 
   exerciseMuscleTag: {
-    backgroundColor: THEME.colors.secondary + '20',
+    backgroundColor: THEME.colors.secondary + "20",
     paddingHorizontal: THEME.spacing.xs,
     paddingVertical: THEME.spacing.xs / 4,
     borderRadius: THEME.borderRadius.sm,

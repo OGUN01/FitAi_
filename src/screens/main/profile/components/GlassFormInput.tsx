@@ -1,6 +1,6 @@
 /**
  * GlassFormInput - Glassmorphic Text Input Component
- * 
+ *
  * Features:
  * - Glassmorphic styling
  * - Icon support
@@ -8,24 +8,24 @@
  * - Animated focus state
  */
 
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
   TextInputProps,
-} from 'react-native';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   useSharedValue,
-} from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { ResponsiveTheme } from '../../../../utils/constants';
-import { rf, rw } from '../../../../utils/responsive';
+} from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons";
+import { ResponsiveTheme } from "../../../../utils/constants";
+import { rf, rw } from "../../../../utils/responsive";
 
-interface GlassFormInputProps extends Omit<TextInputProps, 'style'> {
+interface GlassFormInputProps extends Omit<TextInputProps, "style"> {
   label: string;
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
@@ -59,8 +59,8 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
   };
 
   const animatedBorderStyle = useAnimatedStyle(() => ({
-    borderColor: error 
-      ? ResponsiveTheme.colors.error 
+    borderColor: error
+      ? ResponsiveTheme.colors.error
       : `rgba(102, 126, 234, ${0.2 + borderOpacity.value * 0.3})`,
   }));
 
@@ -70,9 +70,20 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
       <Text style={styles.label}>{label}</Text>
 
       {/* Input Container */}
-      <Animated.View style={[styles.inputContainer, animatedBorderStyle, error && styles.inputError]}>
+      <Animated.View
+        style={[
+          styles.inputContainer,
+          animatedBorderStyle,
+          error && styles.inputError,
+        ]}
+      >
         {icon && (
-          <View style={[styles.iconContainer, { backgroundColor: `${iconColor}15` }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: `${iconColor}15` },
+            ]}
+          >
             <Ionicons name={icon} size={rf(16)} color={iconColor} />
           </View>
         )}
@@ -88,15 +99,17 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
           {...props}
         />
 
-        {suffix && (
-          <Text style={styles.suffix}>{suffix}</Text>
-        )}
+        {suffix && <Text style={styles.suffix}>{suffix}</Text>}
       </Animated.View>
 
       {/* Error or Hint */}
       {error ? (
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle" size={rf(12)} color={ResponsiveTheme.colors.error} />
+          <Ionicons
+            name="alert-circle"
+            size={rf(12)}
+            color={ResponsiveTheme.colors.error}
+          />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : hint ? (
@@ -112,19 +125,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: rf(13),
-    fontWeight: '600',
+    fontWeight: "600",
     color: ResponsiveTheme.colors.textSecondary,
     marginBottom: ResponsiveTheme.spacing.sm,
     marginLeft: ResponsiveTheme.spacing.xs,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    overflow: 'hidden',
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    overflow: "hidden",
   },
   inputError: {
     borderColor: ResponsiveTheme.colors.error,
@@ -132,8 +145,8 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: rw(40),
     height: rw(48),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
@@ -141,7 +154,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: rw(48),
     fontSize: rf(15),
-    color: '#fff',
+    color: "#fff",
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
   inputNoIcon: {
@@ -153,8 +166,8 @@ const styles = StyleSheet.create({
     paddingRight: ResponsiveTheme.spacing.md,
   },
   errorContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
     marginTop: ResponsiveTheme.spacing.xs,
     marginLeft: ResponsiveTheme.spacing.xs,
@@ -172,24 +185,3 @@ const styles = StyleSheet.create({
 });
 
 export default GlassFormInput;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

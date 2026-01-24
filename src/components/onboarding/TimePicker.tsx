@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
-import { rf, rp, rh, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button } from '../ui';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  ScrollView,
+} from "react-native";
+import { rf, rp, rh, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button } from "../ui";
 
 // ============================================================================
 // TYPES
@@ -24,6 +31,9 @@ interface TimePickerWheelProps {
   width: number;
 }
 
+// Item height for scroll calculations
+const ITEM_HEIGHT = rh(5);
+
 // ============================================================================
 // TIME PICKER WHEEL COMPONENT
 // ============================================================================
@@ -35,10 +45,26 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
   width,
 }) => {
   const selectedIndex = values.indexOf(selectedValue);
-  
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // OB-UX-005: Scroll to selected value when component mounts or selectedValue changes
+  useEffect(() => {
+    if (scrollViewRef.current && selectedIndex >= 0) {
+      // Small delay to ensure layout is complete
+      const timeoutId = setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: selectedIndex * ITEM_HEIGHT,
+          animated: false,
+        });
+      }, 100);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedIndex]);
+
   return (
     <View style={[styles.wheelContainer, { width }]}>
-      <ScrollView 
+      <ScrollView
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.wheelContent}
       >
@@ -46,21 +72,24 @@ const TimePickerWheel: React.FC<TimePickerWheelProps> = ({
           const isSelected = index === selectedIndex;
           const distance = Math.abs(index - selectedIndex);
           const opacity = Math.max(0.3, 1 - distance * 0.2);
-          
+
           return (
             <TouchableOpacity
               key={value}
               style={[
                 styles.wheelItem,
                 isSelected && styles.wheelItemSelected,
-                { opacity }
+                { opacity, height: ITEM_HEIGHT },
               ]}
               onPress={() => onValueChange(value)}
+              delayPressIn={50}
             >
-              <Text style={[
-                styles.wheelItemText,
-                isSelected && styles.wheelItemTextSelected,
-              ]}>
+              <Text
+                style={[
+                  styles.wheelItemText,
+                  isSelected && styles.wheelItemTextSelected,
+                ]}
+              >
                 {value}
               </Text>
             </TouchableOpacity>
@@ -80,48 +109,56 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   initialTime,
   onTimeSelect,
   onClose,
-  title = 'Select Time',
+  title = "Select Time",
   is24Hour = true,
 }) => {
-  const [hours, minutes] = initialTime.split(':');
+  const [hours, minutes] = initialTime.split(":");
   const [selectedHour, setSelectedHour] = useState(hours);
   const [selectedMinute, setSelectedMinute] = useState(minutes);
-  const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM');
-  
+  const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">("AM");
+
   // Generate time values
-  const hourValues = is24Hour 
-    ? Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'))
-    : Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-    
-  const minuteValues = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
-  const periodValues = ['AM', 'PM'];
-  
+  const hourValues = is24Hour
+    ? Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"))
+    : Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));
+
+  const minuteValues = Array.from({ length: 60 }, (_, i) =>
+    i.toString().padStart(2, "0"),
+  );
+  const periodValues = ["AM", "PM"];
+
   // Initialize period for 12-hour format
   React.useEffect(() => {
     if (!is24Hour) {
       const hour24 = parseInt(hours);
-      setSelectedPeriod(hour24 >= 12 ? 'PM' : 'AM');
-      setSelectedHour(hour24 === 0 ? '12' : hour24 > 12 ? (hour24 - 12).toString().padStart(2, '0') : hours);
+      setSelectedPeriod(hour24 >= 12 ? "PM" : "AM");
+      setSelectedHour(
+        hour24 === 0
+          ? "12"
+          : hour24 > 12
+            ? (hour24 - 12).toString().padStart(2, "0")
+            : hours,
+      );
     }
   }, [hours, is24Hour]);
-  
+
   const handleConfirm = () => {
     let finalHour = selectedHour;
-    
+
     if (!is24Hour) {
       let hour24 = parseInt(selectedHour);
-      if (selectedPeriod === 'PM' && hour24 !== 12) {
+      if (selectedPeriod === "PM" && hour24 !== 12) {
         hour24 += 12;
-      } else if (selectedPeriod === 'AM' && hour24 === 12) {
+      } else if (selectedPeriod === "AM" && hour24 === 12) {
         hour24 = 0;
       }
-      finalHour = hour24.toString().padStart(2, '0');
+      finalHour = hour24.toString().padStart(2, "0");
     }
-    
+
     const timeString = `${finalHour}:${selectedMinute}`;
     onTimeSelect(timeString);
   };
-  
+
   const formatDisplayTime = () => {
     if (is24Hour) {
       return `${selectedHour}:${selectedMinute}`;
@@ -129,7 +166,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
       return `${selectedHour}:${selectedMinute} ${selectedPeriod}`;
     }
   };
-  
+
   return (
     <Modal
       visible={visible}
@@ -144,7 +181,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.selectedTime}>{formatDisplayTime()}</Text>
           </View>
-          
+
           {/* Time Picker Wheels */}
           <View style={styles.pickersContainer}>
             {/* Hour Picker */}
@@ -157,7 +194,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 width={rw(80)}
               />
             </View>
-            
+
             {/* Minute Picker */}
             <View style={styles.pickerSection}>
               <Text style={styles.pickerLabel}>Minute</Text>
@@ -168,7 +205,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 width={rw(80)}
               />
             </View>
-            
+
             {/* Period Picker (12-hour format only) */}
             {!is24Hour && (
               <View style={styles.pickerSection}>
@@ -176,67 +213,67 @@ export const TimePicker: React.FC<TimePickerProps> = ({
                 <TimePickerWheel
                   values={periodValues}
                   selectedValue={selectedPeriod}
-                  onValueChange={(value) => setSelectedPeriod(value as 'AM' | 'PM')}
+                  onValueChange={(value) =>
+                    setSelectedPeriod(value as "AM" | "PM")
+                  }
                   width={rw(60)}
                 />
               </View>
             )}
           </View>
-          
+
           {/* Quick Time Buttons */}
           <View style={styles.quickTimesContainer}>
             <Text style={styles.quickTimesTitle}>Quick Select</Text>
             <View style={styles.quickTimesGrid}>
-              {title.toLowerCase().includes('wake') ? (
-                // Wake time presets
-                [
-                  { label: '6:00 AM', value: '06:00' },
-                  { label: '7:00 AM', value: '07:00' },
-                  { label: '8:00 AM', value: '08:00' },
-                  { label: '9:00 AM', value: '09:00' },
-                ].map(preset => (
-                  <TouchableOpacity
-                    key={preset.value}
-                    style={styles.quickTimeButton}
-                    onPress={() => {
-                      const [h, m] = preset.value.split(':');
-                      setSelectedHour(h);
-                      setSelectedMinute(m);
-                      if (!is24Hour) {
-                        setSelectedPeriod(parseInt(h) >= 12 ? 'PM' : 'AM');
-                      }
-                    }}
-                  >
-                    <Text style={styles.quickTimeText}>{preset.label}</Text>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                // Sleep time presets
-                [
-                  { label: '10:00 PM', value: '22:00' },
-                  { label: '11:00 PM', value: '23:00' },
-                  { label: '12:00 AM', value: '00:00' },
-                  { label: '1:00 AM', value: '01:00' },
-                ].map(preset => (
-                  <TouchableOpacity
-                    key={preset.value}
-                    style={styles.quickTimeButton}
-                    onPress={() => {
-                      const [h, m] = preset.value.split(':');
-                      setSelectedHour(h);
-                      setSelectedMinute(m);
-                      if (!is24Hour) {
-                        setSelectedPeriod(parseInt(h) >= 12 ? 'PM' : 'AM');
-                      }
-                    }}
-                  >
-                    <Text style={styles.quickTimeText}>{preset.label}</Text>
-                  </TouchableOpacity>
-                ))
-              )}
+              {title.toLowerCase().includes("wake")
+                ? // Wake time presets
+                  [
+                    { label: "6:00 AM", value: "06:00" },
+                    { label: "7:00 AM", value: "07:00" },
+                    { label: "8:00 AM", value: "08:00" },
+                    { label: "9:00 AM", value: "09:00" },
+                  ].map((preset) => (
+                    <TouchableOpacity
+                      key={preset.value}
+                      style={styles.quickTimeButton}
+                      onPress={() => {
+                        const [h, m] = preset.value.split(":");
+                        setSelectedHour(h);
+                        setSelectedMinute(m);
+                        if (!is24Hour) {
+                          setSelectedPeriod(parseInt(h) >= 12 ? "PM" : "AM");
+                        }
+                      }}
+                    >
+                      <Text style={styles.quickTimeText}>{preset.label}</Text>
+                    </TouchableOpacity>
+                  ))
+                : // Sleep time presets
+                  [
+                    { label: "10:00 PM", value: "22:00" },
+                    { label: "11:00 PM", value: "23:00" },
+                    { label: "12:00 AM", value: "00:00" },
+                    { label: "1:00 AM", value: "01:00" },
+                  ].map((preset) => (
+                    <TouchableOpacity
+                      key={preset.value}
+                      style={styles.quickTimeButton}
+                      onPress={() => {
+                        const [h, m] = preset.value.split(":");
+                        setSelectedHour(h);
+                        setSelectedMinute(m);
+                        if (!is24Hour) {
+                          setSelectedPeriod(parseInt(h) >= 12 ? "PM" : "AM");
+                        }
+                      }}
+                    >
+                      <Text style={styles.quickTimeText}>{preset.label}</Text>
+                    </TouchableOpacity>
+                  ))}
             </View>
           </View>
-          
+
           {/* Actions */}
           <View style={styles.actionsContainer}>
             <Button
@@ -265,8 +302,8 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
 
   modalContainer: {
@@ -274,14 +311,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: ResponsiveTheme.borderRadius.xl,
     borderTopRightRadius: ResponsiveTheme.borderRadius.xl,
     paddingBottom: ResponsiveTheme.spacing.xl,
-    maxHeight: '80%',
+    maxHeight: "80%",
   },
 
   header: {
     padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   title: {
@@ -299,14 +336,14 @@ const styles = StyleSheet.create({
 
   // Picker Container
   pickersContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     paddingVertical: ResponsiveTheme.spacing.lg,
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   pickerSection: {
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: ResponsiveTheme.spacing.sm,
   },
 
@@ -331,7 +368,7 @@ const styles = StyleSheet.create({
   wheelItem: {
     paddingVertical: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: ResponsiveTheme.borderRadius.md,
     marginVertical: ResponsiveTheme.spacing.xs,
     marginHorizontal: ResponsiveTheme.spacing.sm,
@@ -363,13 +400,13 @@ const styles = StyleSheet.create({
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.md,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   quickTimesGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
@@ -390,7 +427,7 @@ const styles = StyleSheet.create({
 
   // Actions
   actionsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     gap: ResponsiveTheme.spacing.md,
   },

@@ -1,13 +1,13 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import NotificationServiceClass, {
   NotificationPreferences,
   WaterReminderConfig,
   WorkoutReminderConfig,
   MealReminderConfig,
   SleepReminderConfig,
-} from '../services/notificationService';
+} from "../services/notificationService";
 
 // Lazy singleton access - no module-level instantiation
 const getNotificationService = () => NotificationServiceClass.getInstance();
@@ -21,10 +21,14 @@ interface NotificationState {
   // Actions
   initialize: () => Promise<void>;
   updateWaterConfig: (config: Partial<WaterReminderConfig>) => Promise<void>;
-  updateWorkoutConfig: (config: Partial<WorkoutReminderConfig>) => Promise<void>;
+  updateWorkoutConfig: (
+    config: Partial<WorkoutReminderConfig>,
+  ) => Promise<void>;
   updateMealConfig: (config: Partial<MealReminderConfig>) => Promise<void>;
   updateSleepConfig: (config: Partial<SleepReminderConfig>) => Promise<void>;
-  toggleNotificationType: (type: keyof NotificationPreferences) => Promise<void>;
+  toggleNotificationType: (
+    type: keyof NotificationPreferences,
+  ) => Promise<void>;
   resetToDefaults: () => Promise<void>;
   scheduleAllNotifications: () => Promise<void>;
   clearAllNotifications: () => Promise<void>;
@@ -36,8 +40,8 @@ const getDefaultPreferences = (): NotificationPreferences => ({
   water: {
     enabled: true,
     dailyGoalLiters: 4,
-    wakeUpTime: '07:00',
-    sleepTime: '23:00',
+    wakeUpTime: "07:00",
+    sleepTime: "23:00",
   },
   workout: {
     enabled: true,
@@ -45,18 +49,18 @@ const getDefaultPreferences = (): NotificationPreferences => ({
   },
   meals: {
     enabled: true,
-    breakfast: { enabled: true, time: '08:00' },
-    lunch: { enabled: true, time: '13:00' },
-    dinner: { enabled: true, time: '19:00' },
+    breakfast: { enabled: true, time: "08:00" },
+    lunch: { enabled: true, time: "13:00" },
+    dinner: { enabled: true, time: "19:00" },
   },
   sleep: {
     enabled: false,
-    bedtime: '22:30',
+    bedtime: "22:30",
     reminderMinutes: 30,
   },
   progress: {
     enabled: true,
-    frequency: 'weekly',
+    frequency: "weekly",
   },
 });
 
@@ -76,7 +80,7 @@ export const useNotificationStore = create<NotificationState>()(
           const notificationService = getNotificationService();
           const success = await notificationService.initialize();
           if (!success) {
-            throw new Error('Failed to initialize notification permissions');
+            throw new Error("Failed to initialize notification permissions");
           }
 
           // Load saved preferences
@@ -90,9 +94,12 @@ export const useNotificationStore = create<NotificationState>()(
 
           set({ isInitialized: true, isLoading: false });
         } catch (error) {
-          console.error('Failed to initialize notification store:', error);
+          console.error("Failed to initialize notification store:", error);
           set({
-            error: error instanceof Error ? error.message : 'Failed to initialize notifications',
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to initialize notifications",
             isLoading: false,
           });
         }
@@ -121,7 +128,9 @@ export const useNotificationStore = create<NotificationState>()(
         set({ preferences: updatedPrefs });
         const notificationService = getNotificationService();
         await notificationService.savePreferences(updatedPrefs);
-        await notificationService.scheduleWorkoutReminders(updatedPrefs.workout);
+        await notificationService.scheduleWorkoutReminders(
+          updatedPrefs.workout,
+        );
       },
 
       updateMealConfig: async (config) => {
@@ -166,19 +175,25 @@ export const useNotificationStore = create<NotificationState>()(
 
         // Reschedule specific notification type
         switch (type) {
-          case 'water':
-            await notificationService.scheduleWaterReminders(updatedPrefs.water);
+          case "water":
+            await notificationService.scheduleWaterReminders(
+              updatedPrefs.water,
+            );
             break;
-          case 'workout':
-            await notificationService.scheduleWorkoutReminders(updatedPrefs.workout);
+          case "workout":
+            await notificationService.scheduleWorkoutReminders(
+              updatedPrefs.workout,
+            );
             break;
-          case 'meals':
+          case "meals":
             await notificationService.scheduleMealReminders(updatedPrefs.meals);
             break;
-          case 'sleep':
-            await notificationService.scheduleSleepReminders(updatedPrefs.sleep);
+          case "sleep":
+            await notificationService.scheduleSleepReminders(
+              updatedPrefs.sleep,
+            );
             break;
-          case 'progress':
+          case "progress":
             // Progress notifications handled separately
             break;
         }
@@ -206,7 +221,9 @@ export const useNotificationStore = create<NotificationState>()(
           }
 
           if (preferences.workout.enabled) {
-            await notificationService.scheduleWorkoutReminders(preferences.workout);
+            await notificationService.scheduleWorkoutReminders(
+              preferences.workout,
+            );
           }
 
           if (preferences.meals.enabled) {
@@ -217,10 +234,10 @@ export const useNotificationStore = create<NotificationState>()(
             await notificationService.scheduleSleepReminders(preferences.sleep);
           }
 
-          console.log('All notifications scheduled successfully');
+          console.log("All notifications scheduled successfully");
         } catch (error) {
-          console.error('Failed to schedule notifications:', error);
-          set({ error: 'Failed to schedule notifications' });
+          console.error("Failed to schedule notifications:", error);
+          set({ error: "Failed to schedule notifications" });
         }
       },
 
@@ -231,38 +248,44 @@ export const useNotificationStore = create<NotificationState>()(
 
       getScheduledCount: async () => {
         const notificationService = getNotificationService();
-        const notifications = await notificationService.getScheduledNotifications();
+        const notifications =
+          await notificationService.getScheduledNotifications();
         return notifications.length;
       },
     }),
     {
-      name: 'notification-store',
+      name: "notification-store",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         preferences: state.preferences,
         isInitialized: state.isInitialized,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // Helper hook for water-specific operations
 export const useWaterReminders = () => {
-  const { preferences, updateWaterConfig, toggleNotificationType } = useNotificationStore();
+  const { preferences, updateWaterConfig, toggleNotificationType } =
+    useNotificationStore();
 
   return {
     config: preferences.water,
     updateConfig: updateWaterConfig,
-    toggle: () => toggleNotificationType('water'),
+    toggle: () => toggleNotificationType("water"),
 
     // Convenience methods
-    setDailyGoal: (liters: number) => updateWaterConfig({ dailyGoalLiters: liters }),
+    setDailyGoal: (liters: number) =>
+      updateWaterConfig({ dailyGoalLiters: liters }),
     setWakeUpTime: (time: string) => updateWaterConfig({ wakeUpTime: time }),
     setSleepTime: (time: string) => updateWaterConfig({ sleepTime: time }),
 
     // Calculate current progress helper
     calculateDailyProgress: (currentLiters: number) => ({
-      percentage: Math.min((currentLiters / preferences.water.dailyGoalLiters) * 100, 100),
+      percentage: Math.min(
+        (currentLiters / preferences.water.dailyGoalLiters) * 100,
+        100,
+      ),
       remaining: Math.max(preferences.water.dailyGoalLiters - currentLiters, 0),
       isGoalMet: currentLiters >= preferences.water.dailyGoalLiters,
     }),
@@ -271,33 +294,40 @@ export const useWaterReminders = () => {
 
 // Helper hook for workout-specific operations
 export const useWorkoutReminders = () => {
-  const { preferences, updateWorkoutConfig, toggleNotificationType } = useNotificationStore();
+  const { preferences, updateWorkoutConfig, toggleNotificationType } =
+    useNotificationStore();
 
   return {
     config: preferences.workout,
     updateConfig: updateWorkoutConfig,
-    toggle: () => toggleNotificationType('workout'),
+    toggle: () => toggleNotificationType("workout"),
 
     // Convenience methods
-    setReminderTime: (minutes: number) => updateWorkoutConfig({ reminderMinutes: minutes }),
-    setCustomTimes: (times: string[]) => updateWorkoutConfig({ customTimes: times }),
+    setReminderTime: (minutes: number) =>
+      updateWorkoutConfig({ reminderMinutes: minutes }),
+    setCustomTimes: (times: string[]) =>
+      updateWorkoutConfig({ customTimes: times }),
 
     // Auto-schedule from workout plan
     scheduleFromWorkoutPlan: async (workoutTimes: string[]) => {
       const notificationService = getNotificationService();
-      await notificationService.scheduleWorkoutReminders(preferences.workout, workoutTimes);
+      await notificationService.scheduleWorkoutReminders(
+        preferences.workout,
+        workoutTimes,
+      );
     },
   };
 };
 
 // Helper hook for meal-specific operations
 export const useMealReminders = () => {
-  const { preferences, updateMealConfig, toggleNotificationType } = useNotificationStore();
+  const { preferences, updateMealConfig, toggleNotificationType } =
+    useNotificationStore();
 
   return {
     config: preferences.meals,
     updateConfig: updateMealConfig,
-    toggle: () => toggleNotificationType('meals'),
+    toggle: () => toggleNotificationType("meals"),
 
     // Individual meal toggles
     toggleBreakfast: () =>
@@ -309,11 +339,17 @@ export const useMealReminders = () => {
       }),
     toggleLunch: () =>
       updateMealConfig({
-        lunch: { ...preferences.meals.lunch, enabled: !preferences.meals.lunch.enabled },
+        lunch: {
+          ...preferences.meals.lunch,
+          enabled: !preferences.meals.lunch.enabled,
+        },
       }),
     toggleDinner: () =>
       updateMealConfig({
-        dinner: { ...preferences.meals.dinner, enabled: !preferences.meals.dinner.enabled },
+        dinner: {
+          ...preferences.meals.dinner,
+          enabled: !preferences.meals.dinner.enabled,
+        },
       }),
 
     // Time setters
@@ -334,15 +370,17 @@ export const useMealReminders = () => {
 
 // Helper hook for sleep-specific operations
 export const useSleepReminders = () => {
-  const { preferences, updateSleepConfig, toggleNotificationType } = useNotificationStore();
+  const { preferences, updateSleepConfig, toggleNotificationType } =
+    useNotificationStore();
 
   return {
     config: preferences.sleep,
     updateConfig: updateSleepConfig,
-    toggle: () => toggleNotificationType('sleep'),
+    toggle: () => toggleNotificationType("sleep"),
 
     // Convenience methods
     setBedtime: (time: string) => updateSleepConfig({ bedtime: time }),
-    setReminderMinutes: (minutes: number) => updateSleepConfig({ reminderMinutes: minutes }),
+    setReminderMinutes: (minutes: number) =>
+      updateSleepConfig({ reminderMinutes: minutes }),
   };
 };

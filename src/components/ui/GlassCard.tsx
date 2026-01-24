@@ -3,21 +3,25 @@
  * Glassmorphic card with blur effect, optional gradient border, and elevation
  */
 
-import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { GlassView } from './aurora/GlassView';
-import { spacing, shadows, borderRadius as br } from '../../theme/aurora-tokens';
+import React from "react";
+import { StyleSheet, View, ViewStyle } from "react-native";
+import { GlassView } from "./aurora/GlassView";
+import {
+  spacing,
+  shadows,
+  borderRadius as br,
+} from "../../theme/aurora-tokens";
 
 type ElevationLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-type PaddingSize = 'none' | 'sm' | 'md' | 'lg' | 'xl';
-type BorderRadiusSize = 'none' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+type PaddingSize = "none" | "sm" | "md" | "lg" | "xl";
+type BorderRadiusSize = "none" | "sm" | "md" | "lg" | "xl" | "xxl";
 
 interface GlassCardProps {
   /**
    * Blur intensity for glass effect
    * @default 'default'
    */
-  blurIntensity?: 'light' | 'default' | 'heavy';
+  blurIntensity?: "light" | "default" | "heavy";
 
   /**
    * Elevation level (1-8)
@@ -78,15 +82,15 @@ interface GlassCardProps {
 
 const getPaddingValue = (size: PaddingSize): number => {
   switch (size) {
-    case 'none':
+    case "none":
       return 0;
-    case 'sm':
+    case "sm":
       return spacing.sm;
-    case 'md':
+    case "md":
       return spacing.md;
-    case 'lg':
+    case "lg":
       return spacing.lg;
-    case 'xl':
+    case "xl":
       return spacing.xl;
     default:
       return spacing.md;
@@ -95,17 +99,17 @@ const getPaddingValue = (size: PaddingSize): number => {
 
 const getBorderRadiusValue = (size: BorderRadiusSize): number => {
   switch (size) {
-    case 'none':
+    case "none":
       return 0;
-    case 'sm':
+    case "sm":
       return br.sm;
-    case 'md':
+    case "md":
       return br.md;
-    case 'lg':
+    case "lg":
       return br.lg;
-    case 'xl':
+    case "xl":
       return br.xl;
-    case 'xxl':
+    case "xxl":
       return br.xxl;
     default:
       return br.lg;
@@ -118,11 +122,11 @@ const getShadowStyle = (level: ElevationLevel) => {
 };
 
 export const GlassCard: React.FC<GlassCardProps> = ({
-  blurIntensity = 'default',
+  blurIntensity = "default",
   elevation = 3,
   gradientBorder = false,
-  padding = 'md',
-  borderRadius = 'lg',
+  padding = "md",
+  borderRadius = "lg",
   showBorder = true,
   pressable = false,
   onPress,
@@ -168,14 +172,14 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 const styles = StyleSheet.create({
   shadowWrapper: {
     // Shadow wrapper - contains shadow properties
-    overflow: 'hidden', // Ensure content is clipped within bounds
+    overflow: "hidden", // Ensure content is clipped within bounds
   },
   glassContainer: {
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   content: {
-    width: '100%',
-    overflow: 'hidden', // Additional clipping for content
+    width: "100%",
+    overflow: "hidden", // Additional clipping for content
   },
 });
 

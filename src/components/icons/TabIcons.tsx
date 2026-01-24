@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface IconProps {
   size?: number;
@@ -14,7 +14,13 @@ export const HomeIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
     <View
       style={[
         styles.homeBase,
@@ -41,15 +47,30 @@ export const FitnessIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
     <View
-      style={[styles.dumbbellBar, { backgroundColor: active ? THEME.colors.primary : color }]}
+      style={[
+        styles.dumbbellBar,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
     />
     <View
-      style={[styles.dumbbellWeight1, { backgroundColor: active ? THEME.colors.primary : color }]}
+      style={[
+        styles.dumbbellWeight1,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
     />
     <View
-      style={[styles.dumbbellWeight2, { backgroundColor: active ? THEME.colors.primary : color }]}
+      style={[
+        styles.dumbbellWeight2,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
     />
   </View>
 );
@@ -60,17 +81,28 @@ export const DietIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
     <View
       style={[
         styles.apple,
         {
           borderColor: active ? THEME.colors.primary : color,
-          backgroundColor: active ? `${THEME.colors.primary}20` : 'transparent',
+          backgroundColor: active ? `${THEME.colors.primary}20` : "transparent",
         },
       ]}
     />
-    <View style={[styles.appleLeaf, { backgroundColor: active ? THEME.colors.primary : color }]} />
+    <View
+      style={[
+        styles.appleLeaf,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
   </View>
 );
 
@@ -80,10 +112,31 @@ export const ProgressIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
-    <View style={[styles.chartBar1, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.chartBar2, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.chartBar3, { backgroundColor: active ? THEME.colors.primary : color }]} />
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
+    <View
+      style={[
+        styles.chartBar1,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.chartBar2,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.chartBar3,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
   </View>
 );
 
@@ -93,14 +146,55 @@ export const AnalyticsIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
-    <View style={[styles.analyticsLine1, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsLine2, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsLine3, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsPoint1, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsPoint2, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsPoint3, { backgroundColor: active ? THEME.colors.primary : color }]} />
-    <View style={[styles.analyticsPoint4, { backgroundColor: active ? THEME.colors.primary : color }]} />
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
+    <View
+      style={[
+        styles.analyticsLine1,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsLine2,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsLine3,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsPoint1,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsPoint2,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsPoint3,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
+    <View
+      style={[
+        styles.analyticsPoint4,
+        { backgroundColor: active ? THEME.colors.primary : color },
+      ]}
+    />
   </View>
 );
 
@@ -110,13 +204,19 @@ export const ProfileIcon: React.FC<IconProps> = ({
   color = THEME.colors.textMuted,
   active = false,
 }) => (
-  <View style={[styles.iconBase, { width: size, height: size }, active && styles.activeIcon]}>
+  <View
+    style={[
+      styles.iconBase,
+      { width: size, height: size },
+      active && styles.activeIcon,
+    ]}
+  >
     <View
       style={[
         styles.profileHead,
         {
           borderColor: active ? THEME.colors.primary : color,
-          backgroundColor: active ? `${THEME.colors.primary}20` : 'transparent',
+          backgroundColor: active ? `${THEME.colors.primary}20` : "transparent",
         },
       ]}
     />
@@ -125,7 +225,7 @@ export const ProfileIcon: React.FC<IconProps> = ({
         styles.profileBody,
         {
           borderColor: active ? THEME.colors.primary : color,
-          backgroundColor: active ? `${THEME.colors.primary}20` : 'transparent',
+          backgroundColor: active ? `${THEME.colors.primary}20` : "transparent",
         },
       ]}
     />
@@ -134,9 +234,9 @@ export const ProfileIcon: React.FC<IconProps> = ({
 
 const styles = StyleSheet.create({
   iconBase: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
 
   activeIcon: {
@@ -149,7 +249,7 @@ const styles = StyleSheet.create({
     height: 10,
     borderWidth: 1.5,
     borderTopWidth: 0,
-    position: 'absolute',
+    position: "absolute",
     bottom: 2,
   },
 
@@ -159,9 +259,9 @@ const styles = StyleSheet.create({
     borderLeftWidth: 8,
     borderRightWidth: 8,
     borderBottomWidth: 6,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    position: 'absolute',
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    position: "absolute",
     top: 2,
   },
 
@@ -169,20 +269,20 @@ const styles = StyleSheet.create({
   dumbbellBar: {
     width: 12,
     height: 2,
-    position: 'absolute',
+    position: "absolute",
   },
 
   dumbbellWeight1: {
     width: 3,
     height: 8,
-    position: 'absolute',
+    position: "absolute",
     left: -2,
   },
 
   dumbbellWeight2: {
     width: 3,
     height: 8,
-    position: 'absolute',
+    position: "absolute",
     right: -2,
   },
 
@@ -192,7 +292,7 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 8,
     borderWidth: 1.5,
-    position: 'absolute',
+    position: "absolute",
     bottom: 1,
   },
 
@@ -200,7 +300,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 2,
     borderRadius: 2,
-    position: 'absolute',
+    position: "absolute",
     top: 2,
     right: 4,
   },
@@ -209,7 +309,7 @@ const styles = StyleSheet.create({
   chartBar1: {
     width: 3,
     height: 8,
-    position: 'absolute',
+    position: "absolute",
     left: 2,
     bottom: 2,
   },
@@ -217,7 +317,7 @@ const styles = StyleSheet.create({
   chartBar2: {
     width: 3,
     height: 12,
-    position: 'absolute',
+    position: "absolute",
     left: 7,
     bottom: 2,
   },
@@ -225,7 +325,7 @@ const styles = StyleSheet.create({
   chartBar3: {
     width: 3,
     height: 6,
-    position: 'absolute',
+    position: "absolute",
     right: 2,
     bottom: 2,
   },
@@ -236,7 +336,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     borderWidth: 1.5,
-    position: 'absolute',
+    position: "absolute",
     top: 2,
   },
 
@@ -245,7 +345,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 7,
     borderWidth: 1.5,
-    position: 'absolute',
+    position: "absolute",
     bottom: 2,
   },
 
@@ -253,35 +353,35 @@ const styles = StyleSheet.create({
   analyticsLine1: {
     width: 4,
     height: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 2,
     top: 8,
-    transform: [{ rotate: '15deg' }],
+    transform: [{ rotate: "15deg" }],
   },
 
   analyticsLine2: {
     width: 4,
     height: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 6,
     top: 6,
-    transform: [{ rotate: '-20deg' }],
+    transform: [{ rotate: "-20deg" }],
   },
 
   analyticsLine3: {
     width: 4,
     height: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 10,
     top: 10,
-    transform: [{ rotate: '25deg' }],
+    transform: [{ rotate: "25deg" }],
   },
 
   analyticsPoint1: {
     width: 2,
     height: 2,
     borderRadius: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 2,
     top: 8,
   },
@@ -290,7 +390,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 6,
     top: 5,
   },
@@ -299,7 +399,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    position: 'absolute',
+    position: "absolute",
     left: 10,
     top: 11,
   },
@@ -308,7 +408,7 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
-    position: 'absolute',
+    position: "absolute",
     right: 2,
     top: 7,
   },

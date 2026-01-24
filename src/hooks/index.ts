@@ -22,3 +22,18 @@ export {
   type JobStatus,
   type UseAsyncMealGenerationResult,
 } from "./useAsyncMealGeneration";
+
+// Dashboard Data - Centralized store access for dashboard components
+// ARCH-006 FIX: Reduces multi-store imports causing re-renders
+export {
+  useDashboardData,
+  useTodaysWorkout,
+  useTodaysNutrition,
+  useAnalyticsSummary,
+  type DashboardUser,
+  type DashboardNutrition,
+  type DashboardFitness,
+  type DashboardHealth,
+  type DashboardHydration,
+  type DashboardData,
+} from "./useDashboardData";

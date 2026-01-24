@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
 /**
  * RecentActivityFeed Component
@@ -11,7 +17,7 @@ import { THEME } from '../../utils/constants';
 
 interface ActivityItem {
   id: string;
-  type: 'workout' | 'meal' | 'achievement';
+  type: "workout" | "meal" | "achievement";
   title: string;
   description?: string;
   timestamp: Date;
@@ -36,24 +42,24 @@ const ActivityCard: React.FC<{
 }> = ({ activity, onPress }) => {
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'workout':
-        return '💪';
-      case 'meal':
-        return '🍽️';
-      case 'achievement':
-        return '🏆';
+      case "workout":
+        return "💪";
+      case "meal":
+        return "🍽️";
+      case "achievement":
+        return "🏆";
       default:
-        return '📋';
+        return "📋";
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'workout':
+      case "workout":
         return THEME.colors.success;
-      case 'meal':
+      case "meal":
         return THEME.colors.primary;
-      case 'achievement':
+      case "achievement":
         return THEME.colors.warning;
       default:
         return THEME.colors.textMuted;
@@ -67,11 +73,11 @@ const ActivityCard: React.FC<{
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const days = Math.floor(hours / 24);
 
-      if (days > 0) return `${days} day${days === 1 ? '' : 's'} ago`;
-      if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-      return 'Just now';
+      if (days > 0) return `${days} day${days === 1 ? "" : "s"} ago`;
+      if (hours > 0) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+      return "Just now";
     } catch {
-      return 'Recently';
+      return "Recently";
     }
   };
 
@@ -94,7 +100,7 @@ const ActivityCard: React.FC<{
       parts.push(`${details.meals} meals`);
     }
 
-    return parts.length > 0 ? parts.join(' • ') : null;
+    return parts.length > 0 ? parts.join(" • ") : null;
   };
 
   return (
@@ -105,25 +111,36 @@ const ActivityCard: React.FC<{
     >
       <View style={styles.activityHeader}>
         <View style={styles.activityIconContainer}>
-          <Text style={styles.activityIcon}>{getActivityIcon(activity.type)}</Text>
+          <Text style={styles.activityIcon}>
+            {getActivityIcon(activity.type)}
+          </Text>
         </View>
 
         <View style={styles.activityContent}>
           <Text style={styles.activityTitle}>{activity.title}</Text>
 
           {activity.description && (
-            <Text style={styles.activityDescription}>{activity.description}</Text>
+            <Text style={styles.activityDescription}>
+              {activity.description}
+            </Text>
           )}
 
           {formatDetails(activity) && (
-            <Text style={styles.activityDetails}>{formatDetails(activity)}</Text>
+            <Text style={styles.activityDetails}>
+              {formatDetails(activity)}
+            </Text>
           )}
         </View>
 
         <View style={styles.activityMeta}>
-          <Text style={styles.activityTime}>{formatTimestamp(activity.timestamp)}</Text>
+          <Text style={styles.activityTime}>
+            {formatTimestamp(activity.timestamp)}
+          </Text>
           <View
-            style={[styles.activityIndicator, { backgroundColor: getActivityColor(activity.type) }]}
+            style={[
+              styles.activityIndicator,
+              { backgroundColor: getActivityColor(activity.type) },
+            ]}
           />
         </View>
       </View>
@@ -166,9 +183,16 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
         )}
       </View>
 
-      <ScrollView style={styles.activityList} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.activityList}
+        showsVerticalScrollIndicator={false}
+      >
         {limitedActivities.map((activity) => (
-          <ActivityCard key={activity.id} activity={activity} onPress={onActivityPress} />
+          <ActivityCard
+            key={activity.id}
+            activity={activity}
+            onPress={onActivityPress}
+          />
         ))}
       </ScrollView>
     </View>
@@ -181,9 +205,9 @@ const styles = StyleSheet.create({
     paddingBottom: THEME.spacing.lg,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
   sectionTitle: {
@@ -208,8 +232,8 @@ const styles = StyleSheet.create({
     borderColor: THEME.colors.border,
   },
   activityHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   activityIconContainer: {
     marginRight: THEME.spacing.sm,
@@ -239,7 +263,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
   },
   activityMeta: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   activityTime: {
     fontSize: THEME.fontSize.xs,
@@ -253,7 +277,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   emptyContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: THEME.spacing.xxl,
     paddingHorizontal: THEME.spacing.lg,
   },
@@ -266,13 +290,13 @@ const styles = StyleSheet.create({
     fontWeight: THEME.fontWeight.semibold,
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptyDescription: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.normal,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 20,
   },
 });

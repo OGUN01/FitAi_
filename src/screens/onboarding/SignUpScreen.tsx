@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rp, rh, rw, rs } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { Button, Input, PasswordInput, THEME } from '../../components/ui';
-import { useAuth } from '../../hooks/useAuth';
-import { RegisterCredentials } from '../../types/user';
-import { migrationManager } from '../../services/migrationManager';
-import { dataBridge } from '../../services/DataBridge';
-import { GoogleIcon } from '../../components/icons/GoogleIcon';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { Button, Input, PasswordInput, THEME } from "../../components/ui";
+import { useAuth } from "../../hooks/useAuth";
+import { RegisterCredentials } from "../../types/user";
+import { migrationManager } from "../../services/migrationManager";
+import { dataBridge } from "../../services/DataBridge";
+import { GoogleIcon } from "../../components/icons/GoogleIcon";
 
 interface SignUpScreenProps {
   onSignUpSuccess: () => void;
@@ -17,11 +24,15 @@ interface SignUpScreenProps {
   onLogin: () => void;
 }
 
-export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onBack, onLogin }) => {
+export const SignUpScreen: React.FC<SignUpScreenProps> = ({
+  onSignUpSuccess,
+  onBack,
+  onLogin,
+}) => {
   const [formData, setFormData] = useState<RegisterCredentials>({
-    email: '',
-    password: '',
-    confirmPassword: '',
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<Partial<RegisterCredentials>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -42,23 +53,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     // Confirm password validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     setErrors(newErrors);
@@ -72,7 +83,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
     try {
       // Check if there's local guest data before registering
       const hasLocalData = await dataBridge.hasLocalData();
-      console.log('🔍 SignUpScreen: Local data check result:', hasLocalData);
+      console.log("🔍 SignUpScreen: Local data check result:", hasLocalData);
 
       // Ensure we trim and normalize the credentials before sending
       const trimmedCredentials = {
@@ -80,23 +91,28 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
         password: formData.password.trim(),
         confirmPassword: formData.confirmPassword.trim(),
       };
-      console.log('🔐 SignUpScreen: Using credentials:', { email: trimmedCredentials.email });
+      console.log("🔐 SignUpScreen: Using credentials:", {
+        email: trimmedCredentials.email,
+      });
       const result = await register(trimmedCredentials);
 
       if (result.success) {
-        const alertTitle = 'Registration Successful!';
+        const alertTitle = "Registration Successful!";
         let alertMessage =
-          'Please check your email and click the verification link to activate your account. After verification, you can log in to continue.';
+          "Please check your email and click the verification link to activate your account. After verification, you can log in to continue.";
 
         // If there's local data, mention it will be preserved
         if (hasLocalData) {
-          alertMessage += '\n\nYour profile data will be automatically synced when you log in.';
-          console.log('✅ SignUpScreen: User has local data - will trigger migration on login');
+          alertMessage +=
+            "\n\nYour profile data will be automatically synced when you log in.";
+          console.log(
+            "✅ SignUpScreen: User has local data - will trigger migration on login",
+          );
         }
 
         Alert.alert(alertTitle, alertMessage, [
           {
-            text: 'OK',
+            text: "OK",
             onPress: () => {
               // After user acknowledges the message, redirect to login screen
               onSignUpSuccess();
@@ -104,11 +120,11 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
           },
         ]);
       } else {
-        Alert.alert('Registration Failed', result.error || 'Please try again');
+        Alert.alert("Registration Failed", result.error || "Please try again");
       }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred');
-      console.error('Registration error:', error);
+      Alert.alert("Error", "An unexpected error occurred");
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +136,10 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
     try {
       // Check if there's local guest data before Google sign-up
       const hasLocalData = await dataBridge.hasLocalData();
-      console.log('🔍 SignUpScreen: Google sign-up - Local data check result:', hasLocalData);
+      console.log(
+        "🔍 SignUpScreen: Google sign-up - Local data check result:",
+        hasLocalData,
+      );
 
       const response = await signInWithGoogle();
 
@@ -131,18 +150,23 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
         if (hasLocalData) {
           alertMessage =
             "Welcome to FitAI! Your profile data will be automatically synced. Let's set up your profile.";
-          console.log('✅ SignUpScreen: Google user has local data - will trigger migration');
+          console.log(
+            "✅ SignUpScreen: Google user has local data - will trigger migration",
+          );
         }
 
-        Alert.alert('Google Sign-Up Successful!', alertMessage, [
-          { text: 'Continue', onPress: onSignUpSuccess },
+        Alert.alert("Google Sign-Up Successful!", alertMessage, [
+          { text: "Continue", onPress: onSignUpSuccess },
         ]);
       } else {
-        Alert.alert('Google Sign-Up Failed', response.error || 'Please try again.');
+        Alert.alert(
+          "Google Sign-Up Failed",
+          response.error || "Please try again.",
+        );
       }
     } catch (error) {
-      Alert.alert('Error', 'Google Sign-Up failed. Please try again.');
-      console.error('Google Sign-Up error:', error);
+      Alert.alert("Error", "Google Sign-Up failed. Please try again.");
+      console.error("Google Sign-Up error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -150,16 +174,24 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>Join FitAI</Text>
-          <Text style={styles.subtitle}>Start your personalized fitness journey today</Text>
+          <Text style={styles.subtitle}>
+            Start your personalized fitness journey today
+          </Text>
         </View>
 
         <View style={styles.form}>
           {/* Google Sign-Up as Primary */}
           <TouchableOpacity
-            style={[styles.googlePrimaryButton, isLoading && styles.buttonDisabled]}
+            style={[
+              styles.googlePrimaryButton,
+              isLoading && styles.buttonDisabled,
+            ]}
             onPress={handleGoogleSignUp}
             disabled={isLoading}
             activeOpacity={0.8}
@@ -168,20 +200,34 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
               <GoogleIcon size={20} style={styles.googleIcon} />
               <Text style={styles.googlePrimaryText}>Continue with Google</Text>
             </View>
-            <Text style={styles.googleSubtext}>Instant access • No email verification</Text>
+            <Text style={styles.googleSubtext}>
+              Instant access • No email verification
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.benefitsContainer}>
             <View style={styles.benefitRow}>
-              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.success}
+              />
               <Text style={styles.benefitText}>One-click sign up</Text>
             </View>
             <View style={styles.benefitRow}>
-              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.success}
+              />
               <Text style={styles.benefitText}>No password to remember</Text>
             </View>
             <View style={styles.benefitRow}>
-              <Ionicons name="checkmark-circle" size={rf(16)} color={ResponsiveTheme.colors.success} />
+              <Ionicons
+                name="checkmark-circle"
+                size={rf(16)}
+                color={ResponsiveTheme.colors.success}
+              />
               <Text style={styles.benefitText}>Start immediately</Text>
             </View>
           </View>
@@ -198,7 +244,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
               label="Email Address"
               placeholder="Enter your email address"
               value={formData.email}
-              onChangeText={(value) => updateField('email', value)}
+              onChangeText={(value) => updateField("email", value)}
               keyboardType="email-address"
               autoCapitalize="none"
               error={errors.email}
@@ -208,7 +254,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
               label="Password"
               placeholder="Create a strong password"
               value={formData.password}
-              onChangeText={(value) => updateField('password', value)}
+              onChangeText={(value) => updateField("password", value)}
               error={errors.password}
             />
 
@@ -216,7 +262,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onB
               label="Confirm Password"
               placeholder="Confirm your password"
               value={formData.confirmPassword}
-              onChangeText={(value) => updateField('confirmPassword', value)}
+              onChangeText={(value) => updateField("confirmPassword", value)}
               error={errors.confirmPassword}
             />
 
@@ -269,23 +315,23 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: ResponsiveTheme.spacing.xl,
     paddingBottom: ResponsiveTheme.spacing.lg,
   },
 
   title: {
     fontSize: rf(28),
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: ResponsiveTheme.colors.text,
     marginBottom: ResponsiveTheme.spacing.sm,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   subtitle: {
     fontSize: rf(16),
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(24),
   },
 
@@ -295,13 +341,13 @@ const styles = StyleSheet.create({
 
   // Google Primary Button Styles
   googlePrimaryButton: {
-    backgroundColor: '#4285F4',
+    backgroundColor: "#4285F4",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     marginBottom: ResponsiveTheme.spacing.md,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -312,9 +358,9 @@ const styles = StyleSheet.create({
   },
 
   googleButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
@@ -323,15 +369,15 @@ const styles = StyleSheet.create({
   },
 
   googlePrimaryText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
   },
 
   googleSubtext: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: ResponsiveTheme.fontSize.sm,
-    textAlign: 'center',
+    textAlign: "center",
     opacity: 0.9,
   },
 
@@ -342,13 +388,13 @@ const styles = StyleSheet.create({
   },
 
   benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   checkmark: {
-    color: '#34A853',
+    color: "#34A853",
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     marginRight: ResponsiveTheme.spacing.sm,
@@ -371,16 +417,16 @@ const styles = StyleSheet.create({
   },
 
   emailNote: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    fontStyle: 'italic',
+    fontStyle: "italic",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: ResponsiveTheme.spacing.lg,
   },
 
@@ -395,7 +441,7 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     fontSize: rf(13),
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   loginButton: {
@@ -408,7 +454,7 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     paddingHorizontal: ResponsiveTheme.spacing.xl,
   },
 });

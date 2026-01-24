@@ -1,6 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, PanResponder, Animated, Dimensions } from 'react-native';
-import { THEME } from '../../utils/constants';
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  PanResponder,
+  Animated,
+  Dimensions,
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface SliderProps {
   min: number;
@@ -25,7 +32,7 @@ export const Slider: React.FC<SliderProps> = ({
   value,
   onValueChange,
   label,
-  unit = '',
+  unit = "",
   showValue = true,
   disabled = false,
   trackColor = THEME.colors.surface,
@@ -69,8 +76,12 @@ export const Slider: React.FC<SliderProps> = ({
       if (sliderWidth <= 24) return; // Prevent calculation with invalid slider width
 
       const { dx } = gestureState;
-      const currentPosition = ((value - min) / (max - min)) * (sliderWidth - 24);
-      const newPosition = Math.max(0, Math.min(sliderWidth - 24, currentPosition + dx));
+      const currentPosition =
+        ((value - min) / (max - min)) * (sliderWidth - 24);
+      const newPosition = Math.max(
+        0,
+        Math.min(sliderWidth - 24, currentPosition + dx),
+      );
 
       thumbPosition.setValue(newPosition);
 
@@ -109,7 +120,9 @@ export const Slider: React.FC<SliderProps> = ({
           {showValue && (
             <View style={styles.valueContainer}>
               <Text style={styles.value}>{getDisplayValue()}</Text>
-              <Text style={styles.percentage}>({getValuePercentage().toFixed(0)}%)</Text>
+              <Text style={styles.percentage}>
+                ({getValuePercentage().toFixed(0)}%)
+              </Text>
             </View>
           )}
         </View>
@@ -133,7 +146,7 @@ export const Slider: React.FC<SliderProps> = ({
                   ? thumbPosition.interpolate({
                       inputRange: [0, sliderWidth - 24],
                       outputRange: [12, sliderWidth - 12],
-                      extrapolate: 'clamp',
+                      extrapolate: "clamp",
                     })
                   : 12,
             },
@@ -171,23 +184,27 @@ export const Slider: React.FC<SliderProps> = ({
       {/* Step Indicators */}
       {step > 1 && (
         <View style={styles.stepsContainer}>
-          {Array.from({ length: Math.floor((max - min) / step) + 1 }, (_, index) => {
-            const stepValue = min + index * step;
-            const stepPercentage = ((stepValue - min) / (max - min)) * 100;
+          {Array.from(
+            { length: Math.floor((max - min) / step) + 1 },
+            (_, index) => {
+              const stepValue = min + index * step;
+              const stepPercentage = ((stepValue - min) / (max - min)) * 100;
 
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.stepIndicator,
-                  {
-                    left: `${stepPercentage}%`,
-                    backgroundColor: stepValue <= value ? activeTrackColor : trackColor,
-                  },
-                ]}
-              />
-            );
-          })}
+              return (
+                <View
+                  key={index}
+                  style={[
+                    styles.stepIndicator,
+                    {
+                      left: `${stepPercentage}%`,
+                      backgroundColor:
+                        stepValue <= value ? activeTrackColor : trackColor,
+                    },
+                  ]}
+                />
+              );
+            },
+          )}
         </View>
       )}
     </View>
@@ -200,27 +217,27 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: THEME.spacing.md,
   },
 
   label: {
     fontSize: THEME.fontSize.md,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
     color: THEME.colors.text,
   },
 
   valueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: THEME.spacing.xs,
   },
 
   value: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: THEME.fontWeight.bold as '700',
+    fontWeight: THEME.fontWeight.bold as "700",
     color: THEME.colors.primary,
   },
 
@@ -232,14 +249,14 @@ const styles = StyleSheet.create({
   track: {
     height: 8,
     borderRadius: 4,
-    position: 'relative',
+    position: "relative",
     marginVertical: THEME.spacing.sm,
   },
 
   activeTrack: {
     height: 8,
     borderRadius: 4,
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
   },
@@ -248,11 +265,11 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    position: 'absolute',
+    position: "absolute",
     top: -8,
     left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     ...THEME.shadows.sm,
   },
 
@@ -268,8 +285,8 @@ const styles = StyleSheet.create({
   },
 
   minMaxContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: THEME.spacing.xs,
   },
 
@@ -279,13 +296,13 @@ const styles = StyleSheet.create({
   },
 
   stepsContainer: {
-    position: 'relative',
+    position: "relative",
     height: 4,
     marginTop: THEME.spacing.xs,
   },
 
   stepIndicator: {
-    position: 'absolute',
+    position: "absolute",
     width: 2,
     height: 4,
     borderRadius: 1,

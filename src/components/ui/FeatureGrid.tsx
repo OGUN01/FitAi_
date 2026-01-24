@@ -1,16 +1,22 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ViewStyle,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withDelay,
   withSequence,
-} from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rp } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
+} from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
 
 export interface FeatureItem {
   id: string;
@@ -47,7 +53,7 @@ const FeatureGridItem: React.FC<{
         withSpring(1, {
           damping: 15,
           stiffness: 150,
-        })
+        }),
       );
     } else {
       scale.value = 1;
@@ -55,10 +61,7 @@ const FeatureGridItem: React.FC<{
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: scale.value },
-      { scale: bounce.value },
-    ],
+    transform: [{ scale: scale.value }, { scale: bounce.value }],
   }));
 
   const handlePress = () => {
@@ -66,7 +69,7 @@ const FeatureGridItem: React.FC<{
       // Bounce animation on press
       bounce.value = withSequence(
         withSpring(0.9, { damping: 10, stiffness: 300 }),
-        withSpring(1, { damping: 10, stiffness: 300 })
+        withSpring(1, { damping: 10, stiffness: 300 }),
       );
       onPress(item.id);
     }
@@ -82,8 +85,14 @@ const FeatureGridItem: React.FC<{
       <LinearGradient
         colors={
           selectable && item.selected
-            ? [ResponsiveTheme.colors.primary, ResponsiveTheme.colors.primaryDark]
-            : [ResponsiveTheme.colors.backgroundSecondary, ResponsiveTheme.colors.backgroundTertiary]
+            ? [
+                ResponsiveTheme.colors.primary,
+                ResponsiveTheme.colors.primaryDark,
+              ]
+            : [
+                ResponsiveTheme.colors.backgroundSecondary,
+                ResponsiveTheme.colors.backgroundTertiary,
+              ]
         }
         style={styles.itemGradient}
         start={{ x: 0, y: 0 }}
@@ -105,7 +114,7 @@ const FeatureGridItem: React.FC<{
       {selectable && item.selected && (
         <View style={styles.selectionIndicator}>
           <LinearGradient
-            colors={['#4CAF50', '#45A049']}
+            colors={["#4CAF50", "#45A049"]}
             style={styles.selectionIndicatorGradient}
           >
             <Ionicons name="checkmark" size={rf(14)} color="#FFFFFF" />
@@ -132,10 +141,12 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
             key={item.id}
             style={[
               styles.gridItem,
-              { 
+              {
                 flex: columns === 2 ? 1 : undefined,
-                minWidth: columns === 2 ? '45%' : `${Math.floor(100 / columns) - 2}%`,
-                maxWidth: columns === 2 ? '48%' : `${Math.floor(100 / columns)}%`,
+                minWidth:
+                  columns === 2 ? "45%" : `${Math.floor(100 / columns) - 2}%`,
+                maxWidth:
+                  columns === 2 ? "48%" : `${Math.floor(100 / columns)}%`,
               },
             ]}
           >
@@ -155,12 +166,12 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
 
   gridItem: {
@@ -168,10 +179,10 @@ const styles = StyleSheet.create({
   },
 
   itemContainer: {
-    position: 'relative',
+    position: "relative",
     borderRadius: ResponsiveTheme.borderRadius.lg,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -181,25 +192,25 @@ const styles = StyleSheet.create({
   itemGradient: {
     paddingVertical: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 100,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: "transparent",
     borderRadius: ResponsiveTheme.borderRadius.lg,
   },
 
   iconContainer: {
     marginBottom: ResponsiveTheme.spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   label: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: ResponsiveTheme.fontSize.sm * 1.15,
     flexShrink: 1,
   },
@@ -209,14 +220,14 @@ const styles = StyleSheet.create({
   },
 
   selectionIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 8,
     width: 24,
     height: 24,
     borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -224,10 +235,10 @@ const styles = StyleSheet.create({
   },
 
   selectionIndicatorGradient: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   checkmark: {

@@ -3,13 +3,13 @@
  * Compact inline banner for guest sign-up
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../../../components/ui/aurora/GlassCard';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw } from '../../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../../components/ui/aurora/GlassCard";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw } from "../../../utils/responsive";
 
 interface GuestPromptBannerProps {
   onSignUpPress: () => void;
@@ -25,16 +25,20 @@ export const GuestPromptBanner: React.FC<GuestPromptBannerProps> = ({
       hapticFeedback={true}
       hapticType="light"
     >
-      <GlassCard 
-        elevation={1} 
-        blurIntensity="light" 
-        padding="sm" 
+      <GlassCard
+        elevation={1}
+        blurIntensity="light"
+        padding="sm"
         borderRadius="lg"
         style={styles.card}
       >
         <View style={styles.row}>
           <View style={styles.iconCircle}>
-            <Ionicons name="person-add" size={rf(16)} color={ResponsiveTheme.colors.primary} />
+            <Ionicons
+              name="person-add"
+              size={rf(16)}
+              color={ResponsiveTheme.colors.primary}
+            />
           </View>
           <Text style={styles.text}>Create account to save progress</Text>
           <View style={styles.button}>
@@ -53,8 +57,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
   },
   iconCircle: {
@@ -62,8 +66,8 @@ const styles = StyleSheet.create({
     height: rw(32),
     borderRadius: rw(16),
     backgroundColor: `${ResponsiveTheme.colors.primary}15`,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   text: {
     flex: 1,
@@ -80,7 +84,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: '#fff',
+    color: "#fff",
   },
 });
 

@@ -42,26 +42,26 @@ export class APIKeyRotator {
     if (mainApiKey && mainApiKey.trim()) {
       this.keys.push(mainApiKey.trim());
       this.initializeKeyUsage(mainApiKey.trim());
-      console.log('✅ Using main Gemini API key for food recognition');
+      console.log("✅ Using main Gemini API key for food recognition");
     }
 
     // Also load rotation keys if available (matching gemini.ts naming)
     const keyVariables = [
-      'EXPO_PUBLIC_GEMINI_KEY_1',
-      'EXPO_PUBLIC_GEMINI_KEY_2',
-      'EXPO_PUBLIC_GEMINI_KEY_3',
-      'EXPO_PUBLIC_GEMINI_KEY_4',
-      'EXPO_PUBLIC_GEMINI_KEY_5',
-      'EXPO_PUBLIC_GEMINI_KEY_6',
-      'EXPO_PUBLIC_GEMINI_KEY_7',
-      'EXPO_PUBLIC_GEMINI_KEY_8',
-      'EXPO_PUBLIC_GEMINI_KEY_9',
-      'EXPO_PUBLIC_GEMINI_KEY_10',
-      'EXPO_PUBLIC_GEMINI_KEY_11',
-      'EXPO_PUBLIC_GEMINI_KEY_12',
-      'EXPO_PUBLIC_GEMINI_KEY_13',
-      'EXPO_PUBLIC_GEMINI_KEY_14',
-      'EXPO_PUBLIC_GEMINI_KEY_15',
+      "EXPO_PUBLIC_GEMINI_KEY_1",
+      "EXPO_PUBLIC_GEMINI_KEY_2",
+      "EXPO_PUBLIC_GEMINI_KEY_3",
+      "EXPO_PUBLIC_GEMINI_KEY_4",
+      "EXPO_PUBLIC_GEMINI_KEY_5",
+      "EXPO_PUBLIC_GEMINI_KEY_6",
+      "EXPO_PUBLIC_GEMINI_KEY_7",
+      "EXPO_PUBLIC_GEMINI_KEY_8",
+      "EXPO_PUBLIC_GEMINI_KEY_9",
+      "EXPO_PUBLIC_GEMINI_KEY_10",
+      "EXPO_PUBLIC_GEMINI_KEY_11",
+      "EXPO_PUBLIC_GEMINI_KEY_12",
+      "EXPO_PUBLIC_GEMINI_KEY_13",
+      "EXPO_PUBLIC_GEMINI_KEY_14",
+      "EXPO_PUBLIC_GEMINI_KEY_15",
     ];
 
     for (const keyVar of keyVariables) {
@@ -73,7 +73,7 @@ export class APIKeyRotator {
     }
 
     if (this.keys.length === 0) {
-      console.warn('⚠️ No Gemini API keys found in environment variables');
+      console.warn("⚠️ No Gemini API keys found in environment variables");
       // Don't throw error - allow app to run without food recognition service
       // throw new Error('No Gemini API keys configured');
     }
@@ -103,7 +103,7 @@ export class APIKeyRotator {
 
     // Return null if no keys are available
     if (this.keys.length === 0) {
-      console.warn('⚠️ No API keys configured');
+      console.warn("⚠️ No API keys configured");
       return null;
     }
 
@@ -135,7 +135,7 @@ export class APIKeyRotator {
       }
     }
 
-    console.warn('⚠️ All API keys have reached their limits');
+    console.warn("⚠️ All API keys have reached their limits");
     return null;
   }
 
@@ -172,7 +172,7 @@ export class APIKeyRotator {
     usage.requestsThisMinute++;
 
     console.log(
-      `📊 Key usage: ${usage.requestsToday}/${this.DAILY_LIMIT} daily, ${usage.requestsThisMinute}/${this.MINUTE_LIMIT} per minute`
+      `📊 Key usage: ${usage.requestsToday}/${this.DAILY_LIMIT} daily, ${usage.requestsThisMinute}/${this.MINUTE_LIMIT} per minute`,
     );
   }
 
@@ -186,7 +186,9 @@ export class APIKeyRotator {
     usage.isBlocked = true;
     usage.blockUntil = Date.now() + duration;
 
-    console.warn(`🚫 API key blocked for ${duration / 1000} seconds due to rate limiting`);
+    console.warn(
+      `🚫 API key blocked for ${duration / 1000} seconds due to rate limiting`,
+    );
   }
 
   /**
@@ -215,12 +217,16 @@ export class APIKeyRotator {
    */
   private getPacificMidnight(): number {
     const now = new Date();
-    const pacific = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const pacific = new Date(
+      now.toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
+    );
     const midnight = new Date(pacific);
     midnight.setHours(24, 0, 0, 0); // Next midnight
 
     // Convert back to local time
-    const utcMidnight = new Date(midnight.getTime() + midnight.getTimezoneOffset() * 60000);
+    const utcMidnight = new Date(
+      midnight.getTime() + midnight.getTimezoneOffset() * 60000,
+    );
     return utcMidnight.getTime();
   }
 
@@ -250,9 +256,9 @@ export class APIKeyRotator {
             usage.requestsToday = 0;
             usage.lastResetTime = Date.now();
           }
-          console.log('🔄 Daily quota reset for all API keys');
+          console.log("🔄 Daily quota reset for all API keys");
         },
-        24 * 60 * 60 * 1000
+        24 * 60 * 60 * 1000,
       );
     }, msUntilMidnight);
   }
@@ -355,8 +361,8 @@ export class APIKeyRotator {
   handleAPIError(key: string, error: any): void {
     if (
       error.status === 429 ||
-      error.message?.includes('quota') ||
-      error.message?.includes('rate limit')
+      error.message?.includes("quota") ||
+      error.message?.includes("rate limit")
     ) {
       // Rate limited - block this key temporarily
       this.markKeyAsBlocked(key);

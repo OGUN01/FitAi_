@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { offlineService, SyncResult, OfflineAction } from '../services/offline';
-import { dataBridge } from '../services/DataBridge';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { offlineService, SyncResult, OfflineAction } from "../services/offline";
+import { dataBridge } from "../services/DataBridge";
 import {
   OnboardingData,
   WorkoutSession,
@@ -10,7 +10,7 @@ import {
   BodyMeasurement,
   LocalStorageSchema,
   ValidationResult,
-} from '../types/localData';
+} from "../types/localData";
 
 interface OfflineState {
   // State
@@ -79,9 +79,11 @@ export const useOfflineStore = create<OfflineState>()(
           await dataBridge.initialize();
 
           // Set up network listener
-          const removeListener = offlineService.addNetworkListener((isOnline) => {
-            get().updateNetworkStatus(isOnline);
-          });
+          const removeListener = offlineService.addNetworkListener(
+            (isOnline) => {
+              get().updateNetworkStatus(isOnline);
+            },
+          );
 
           // Update initial status
           get().updateSyncStatus();
@@ -90,9 +92,9 @@ export const useOfflineStore = create<OfflineState>()(
           await get().updateDataStats();
 
           set({ isInitialized: true });
-          console.log('Enhanced offline store initialized successfully');
+          console.log("Enhanced offline store initialized successfully");
         } catch (error) {
-          console.error('Failed to initialize enhanced offline store:', error);
+          console.error("Failed to initialize enhanced offline store:", error);
           throw error;
         }
       },
@@ -118,7 +120,7 @@ export const useOfflineStore = create<OfflineState>()(
             success: false,
             syncedActions: 0,
             failedActions: 0,
-            errors: [error instanceof Error ? error.message : 'Sync failed'],
+            errors: [error instanceof Error ? error.message : "Sync failed"],
           };
 
           set({
@@ -141,7 +143,7 @@ export const useOfflineStore = create<OfflineState>()(
             lastSyncAttempt: null,
           });
         } catch (error) {
-          console.warn('Failed to clear offline data:', error);
+          console.warn("Failed to clear offline data:", error);
         }
       },
 
@@ -175,7 +177,7 @@ export const useOfflineStore = create<OfflineState>()(
           await dataBridge.storeOnboardingData(data);
           await get().updateDataStats();
         } catch (error) {
-          console.error('Failed to store onboarding data:', error);
+          console.error("Failed to store onboarding data:", error);
           throw error;
         }
       },
@@ -184,7 +186,7 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           return await dataBridge.getOnboardingData();
         } catch (error) {
-          console.error('Failed to get onboarding data:', error);
+          console.error("Failed to get onboarding data:", error);
           return null;
         }
       },
@@ -194,7 +196,7 @@ export const useOfflineStore = create<OfflineState>()(
           await dataBridge.storeWorkoutSession(session);
           await get().updateDataStats();
         } catch (error) {
-          console.error('Failed to store workout session:', error);
+          console.error("Failed to store workout session:", error);
           throw error;
         }
       },
@@ -203,7 +205,7 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           return await dataBridge.getWorkoutSessions(limit);
         } catch (error) {
-          console.error('Failed to get workout sessions:', error);
+          console.error("Failed to get workout sessions:", error);
           return [];
         }
       },
@@ -212,7 +214,7 @@ export const useOfflineStore = create<OfflineState>()(
           await dataBridge.storeMealLog(mealLog);
           await get().updateDataStats();
         } catch (error) {
-          console.error('Failed to store meal log:', error);
+          console.error("Failed to store meal log:", error);
           throw error;
         }
       },
@@ -221,7 +223,7 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           return await dataBridge.getMealLogs(date, limit);
         } catch (error) {
-          console.error('Failed to get meal logs:', error);
+          console.error("Failed to get meal logs:", error);
           return [];
         }
       },
@@ -231,7 +233,7 @@ export const useOfflineStore = create<OfflineState>()(
           await dataBridge.storeBodyMeasurement(measurement);
           await get().updateDataStats();
         } catch (error) {
-          console.error('Failed to store body measurement:', error);
+          console.error("Failed to store body measurement:", error);
           throw error;
         }
       },
@@ -240,7 +242,7 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           return await dataBridge.getBodyMeasurements(limit);
         } catch (error) {
-          console.error('Failed to get body measurements:', error);
+          console.error("Failed to get body measurements:", error);
           return [];
         }
       },
@@ -250,7 +252,7 @@ export const useOfflineStore = create<OfflineState>()(
           const stats = await dataBridge.getDataStatistics();
           set({ dataStats: stats });
         } catch (error) {
-          console.error('Failed to update data stats:', error);
+          console.error("Failed to update data stats:", error);
         }
       },
 
@@ -262,10 +264,10 @@ export const useOfflineStore = create<OfflineState>()(
               isValid: false,
               errors: [
                 {
-                  field: 'schema',
-                  message: 'No local data found',
-                  code: 'NO_DATA',
-                  severity: 'error' as const,
+                  field: "schema",
+                  message: "No local data found",
+                  code: "NO_DATA",
+                  severity: "error" as const,
                 },
               ],
               warnings: [],
@@ -273,18 +275,18 @@ export const useOfflineStore = create<OfflineState>()(
           }
 
           // Import validation service dynamically to avoid circular imports
-          const { validationService } = await import('../utils/validation');
+          const { validationService } = await import("../utils/validation");
           return validationService.validateLocalStorageSchema(schema);
         } catch (error) {
-          console.error('Failed to validate local data:', error);
+          console.error("Failed to validate local data:", error);
           return {
             isValid: false,
             errors: [
               {
-                field: 'validation',
-                message: 'Validation failed',
-                code: 'VALIDATION_ERROR',
-                severity: 'error' as const,
+                field: "validation",
+                message: "Validation failed",
+                code: "VALIDATION_ERROR",
+                severity: "error" as const,
               },
             ],
             warnings: [],
@@ -296,21 +298,21 @@ export const useOfflineStore = create<OfflineState>()(
         try {
           return await dataBridge.exportAllData();
         } catch (error) {
-          console.error('Failed to export local data:', error);
+          console.error("Failed to export local data:", error);
           return null;
         }
       },
     }),
     {
-      name: 'enhanced-offline-storage',
+      name: "enhanced-offline-storage",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         autoSyncEnabled: state.autoSyncEnabled,
         lastSyncResult: state.lastSyncResult,
         dataStats: state.dataStats,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export default useOfflineStore;

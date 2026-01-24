@@ -4,7 +4,7 @@
  * Designed for $1M app quality with seamless user experience
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -17,30 +17,33 @@ import {
   StatusBar,
   Platform,
   ScrollView,
-} from 'react-native';
-import { useEditContext } from '../../contexts/EditContext';
-import { THEME } from '../ui';
+} from "react-native";
+import { useEditContext } from "../../contexts/EditContext";
+import { THEME } from "../ui";
 
 // Import onboarding screens for reuse
-import { PersonalInfoScreen } from '../../screens/onboarding/PersonalInfoScreen';
-import { DietPreferencesScreen } from '../../screens/onboarding/DietPreferencesScreen';
-import { WorkoutPreferencesScreen } from '../../screens/onboarding/WorkoutPreferencesScreen';
-import { FitnessGoalsScreen } from '../../screens/onboarding/FitnessGoalsScreen';
+import { PersonalInfoScreen } from "../../screens/onboarding/PersonalInfoScreen";
+import { DietPreferencesScreen } from "../../screens/onboarding/DietPreferencesScreen";
+import { WorkoutPreferencesScreen } from "../../screens/onboarding/WorkoutPreferencesScreen";
+import { FitnessGoalsScreen } from "../../screens/onboarding/FitnessGoalsScreen";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface EditOverlayProps {
   visible: boolean;
   onClose: () => void;
 }
 
-export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) => {
+export const EditOverlay: React.FC<EditOverlayProps> = ({
+  visible,
+  onClose,
+}) => {
   // Safe context access with error handling
   const contextData = (() => {
     try {
       return useEditContext();
     } catch (error) {
-      console.error('EditOverlay: Error accessing EditContext:', error);
+      console.error("EditOverlay: Error accessing EditContext:", error);
       return {
         editSection: null,
         isLoading: false,
@@ -114,13 +117,13 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
 
     try {
       switch (editSection) {
-        case 'personalInfo':
+        case "personalInfo":
           return <PersonalInfoScreen {...commonProps} />;
-        case 'fitnessGoals':
+        case "fitnessGoals":
           return <FitnessGoalsScreen {...commonProps} />;
-        case 'dietPreferences':
+        case "dietPreferences":
           return <DietPreferencesScreen {...commonProps} />;
-        case 'workoutPreferences':
+        case "workoutPreferences":
           return <WorkoutPreferencesScreen {...commonProps} />;
         default:
           return (
@@ -130,12 +133,12 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
           );
       }
     } catch (error) {
-      console.error('🚨 EditOverlay: Error rendering edit screen:', error);
+      console.error("🚨 EditOverlay: Error rendering edit screen:", error);
       return (
         <View style={styles.errorContainer}>
           <Text>Error loading edit screen</Text>
-          <Text style={{ marginTop: 10, fontSize: 12, color: '#666' }}>
-            {error instanceof Error ? error.message : 'Unknown error'}
+          <Text style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
+            {error instanceof Error ? error.message : "Unknown error"}
           </Text>
         </View>
       );
@@ -159,7 +162,11 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
       statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <StatusBar backgroundColor="rgba(0, 0, 0, 0.5)" barStyle="light-content" translucent={true} />
+      <StatusBar
+        backgroundColor="rgba(0, 0, 0, 0.5)"
+        barStyle="light-content"
+        translucent={true}
+      />
 
       {/* Backdrop */}
       <Animated.View
@@ -229,12 +236,12 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({ visible, onClose }) =>
 
 const styles = StyleSheet.create({
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     zIndex: 1,
   },
 
@@ -243,18 +250,18 @@ const styles = StyleSheet.create({
   },
 
   modalContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     zIndex: 2,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
 
   safeArea: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
 
   modalContent: {
@@ -263,7 +270,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     maxHeight: SCREEN_HEIGHT * 0.95,
     minHeight: SCREEN_HEIGHT * 0.6,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: -4,
@@ -274,7 +281,7 @@ const styles = StyleSheet.create({
   },
 
   modalHeader: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: THEME.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: THEME.colors.border,
@@ -294,14 +301,14 @@ const styles = StyleSheet.create({
   },
 
   loadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 3,
   },
 
@@ -309,7 +316,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     borderRadius: 12,
     padding: THEME.spacing.xl,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -331,8 +338,8 @@ const styles = StyleSheet.create({
 
   errorContainer: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     minHeight: 100,
   },
 });

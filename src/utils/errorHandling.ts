@@ -3,27 +3,27 @@
  * Provides comprehensive error management for production-ready applications
  */
 
-import { Alert } from 'react-native';
+import { Alert } from "react-native";
 
 // ============================================================================
 // ERROR TYPES
 // ============================================================================
 
 export enum ErrorType {
-  VALIDATION = 'VALIDATION',
-  NETWORK = 'NETWORK',
-  STORAGE = 'STORAGE',
-  AUTHENTICATION = 'AUTHENTICATION',
-  MIGRATION = 'MIGRATION',
-  SYNC = 'SYNC',
-  UNKNOWN = 'UNKNOWN',
+  VALIDATION = "VALIDATION",
+  NETWORK = "NETWORK",
+  STORAGE = "STORAGE",
+  AUTHENTICATION = "AUTHENTICATION",
+  MIGRATION = "MIGRATION",
+  SYNC = "SYNC",
+  UNKNOWN = "UNKNOWN",
 }
 
 export enum ErrorSeverity {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
 }
 
 export interface AppError {
@@ -57,7 +57,9 @@ class ErrorLogger {
     this.isEnabled = false;
   }
 
-  log(error: Partial<AppError> & { message: string; type: ErrorType }): AppError {
+  log(
+    error: Partial<AppError> & { message: string; type: ErrorType },
+  ): AppError {
     if (!this.isEnabled) {
       return error as AppError;
     }
@@ -67,7 +69,10 @@ class ErrorLogger {
       severity: ErrorSeverity.MEDIUM,
       timestamp: new Date().toISOString(),
       retryable: false,
-      userFriendlyMessage: this.generateUserFriendlyMessage(error.type, error.message),
+      userFriendlyMessage: this.generateUserFriendlyMessage(
+        error.type,
+        error.message,
+      ),
       ...error,
     };
 
@@ -112,16 +117,22 @@ class ErrorLogger {
     return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private generateUserFriendlyMessage(type: ErrorType, message: string): string {
+  private generateUserFriendlyMessage(
+    type: ErrorType,
+    message: string,
+  ): string {
     const friendlyMessages: Record<ErrorType, string> = {
-      [ErrorType.VALIDATION]: 'Please check your input and try again.',
-      [ErrorType.NETWORK]: 'Please check your internet connection and try again.',
-      [ErrorType.STORAGE]: 'There was a problem saving your data. Please try again.',
-      [ErrorType.AUTHENTICATION]: 'Please log in again to continue.',
-      [ErrorType.MIGRATION]: 'There was a problem syncing your data. Please try again.',
+      [ErrorType.VALIDATION]: "Please check your input and try again.",
+      [ErrorType.NETWORK]:
+        "Please check your internet connection and try again.",
+      [ErrorType.STORAGE]:
+        "There was a problem saving your data. Please try again.",
+      [ErrorType.AUTHENTICATION]: "Please log in again to continue.",
+      [ErrorType.MIGRATION]:
+        "There was a problem syncing your data. Please try again.",
       [ErrorType.SYNC]:
-        'Your data could not be synced. Please try again when you have a stable connection.',
-      [ErrorType.UNKNOWN]: 'Something went wrong. Please try again.',
+        "Your data could not be synced. Please try again when you have a stable connection.",
+      [ErrorType.UNKNOWN]: "Something went wrong. Please try again.",
     };
 
     return friendlyMessages[type] || friendlyMessages[ErrorType.UNKNOWN];
@@ -130,27 +141,27 @@ class ErrorLogger {
   private logToConsole(error: AppError) {
     const emoji = this.getSeverityEmoji(error.severity);
     console.group(`${emoji} ${error.type} Error - ${error.severity}`);
-    console.error('Message:', error.message);
-    console.error('User Message:', error.userFriendlyMessage);
-    if (error.details) console.error('Details:', error.details);
-    if (error.context) console.error('Context:', error.context);
-    if (error.stack) console.error('Stack:', error.stack);
-    console.error('Timestamp:', error.timestamp);
-    console.error('Retryable:', error.retryable);
+    console.error("Message:", error.message);
+    console.error("User Message:", error.userFriendlyMessage);
+    if (error.details) console.error("Details:", error.details);
+    if (error.context) console.error("Context:", error.context);
+    if (error.stack) console.error("Stack:", error.stack);
+    console.error("Timestamp:", error.timestamp);
+    console.error("Retryable:", error.retryable);
     console.groupEnd();
   }
 
   private logToCrashlytics(error: AppError) {
     // In a real app, you would integrate with Firebase Crashlytics or similar
-    console.log('📊 Logging to crash reporting service:', error.id);
+    console.log("📊 Logging to crash reporting service:", error.id);
   }
 
   private getSeverityEmoji(severity: ErrorSeverity): string {
     const emojis: Record<ErrorSeverity, string> = {
-      [ErrorSeverity.LOW]: '💡',
-      [ErrorSeverity.MEDIUM]: '⚠️',
-      [ErrorSeverity.HIGH]: '🚨',
-      [ErrorSeverity.CRITICAL]: '💥',
+      [ErrorSeverity.LOW]: "💡",
+      [ErrorSeverity.MEDIUM]: "⚠️",
+      [ErrorSeverity.HIGH]: "🚨",
+      [ErrorSeverity.CRITICAL]: "💥",
     };
     return emojis[severity];
   }
@@ -163,10 +174,13 @@ export const errorLogger = new ErrorLogger();
 // ============================================================================
 
 export class ErrorHandler {
-  static handle(error: Error | AppError, context?: Record<string, any>): AppError {
+  static handle(
+    error: Error | AppError,
+    context?: Record<string, any>,
+  ): AppError {
     let appError: AppError;
 
-    if ('type' in error && 'severity' in error) {
+    if ("type" in error && "severity" in error) {
       // Already an AppError
       appError = error as AppError;
     } else {
@@ -180,12 +194,18 @@ export class ErrorHandler {
     return appError;
   }
 
-  static handleWithAlert(error: Error | AppError, context?: Record<string, any>): AppError {
+  static handleWithAlert(
+    error: Error | AppError,
+    context?: Record<string, any>,
+  ): AppError {
     const appError = this.handle(error, context);
 
     // Show user-friendly alert for high severity errors
-    if (appError.severity === ErrorSeverity.HIGH || appError.severity === ErrorSeverity.CRITICAL) {
-      Alert.alert('Error', appError.userFriendlyMessage, [{ text: 'OK' }]);
+    if (
+      appError.severity === ErrorSeverity.HIGH ||
+      appError.severity === ErrorSeverity.CRITICAL
+    ) {
+      Alert.alert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
     }
 
     return appError;
@@ -194,23 +214,26 @@ export class ErrorHandler {
   static handleWithRetry(
     error: Error | AppError,
     retryCallback: () => void,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): AppError {
     const appError = this.handle(error, context);
 
     if (appError.retryable) {
-      Alert.alert('Error', appError.userFriendlyMessage, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Retry', onPress: retryCallback },
+      Alert.alert("Error", appError.userFriendlyMessage, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Retry", onPress: retryCallback },
       ]);
     } else {
-      Alert.alert('Error', appError.userFriendlyMessage, [{ text: 'OK' }]);
+      Alert.alert("Error", appError.userFriendlyMessage, [{ text: "OK" }]);
     }
 
     return appError;
   }
 
-  private static convertToAppError(error: Error, context?: Record<string, any>): AppError {
+  private static convertToAppError(
+    error: Error,
+    context?: Record<string, any>,
+  ): AppError {
     const type = this.inferErrorType(error);
     const severity = this.inferErrorSeverity(error, type);
     const retryable = this.isRetryable(error, type);
@@ -225,43 +248,56 @@ export class ErrorHandler {
       timestamp: new Date().toISOString(),
       context,
       retryable,
-      userFriendlyMessage: errorLogger['generateUserFriendlyMessage'](type, error.message),
+      userFriendlyMessage: errorLogger["generateUserFriendlyMessage"](
+        type,
+        error.message,
+      ),
     };
   }
 
   private static inferErrorType(error: Error): ErrorType {
     const message = error.message.toLowerCase();
 
-    if (message.includes('network') || message.includes('fetch') || message.includes('timeout')) {
+    if (
+      message.includes("network") ||
+      message.includes("fetch") ||
+      message.includes("timeout")
+    ) {
       return ErrorType.NETWORK;
     }
-    if (message.includes('storage') || message.includes('asyncstorage')) {
+    if (message.includes("storage") || message.includes("asyncstorage")) {
       return ErrorType.STORAGE;
     }
     if (
-      message.includes('auth') ||
-      message.includes('unauthorized') ||
-      message.includes('forbidden')
+      message.includes("auth") ||
+      message.includes("unauthorized") ||
+      message.includes("forbidden")
     ) {
       return ErrorType.AUTHENTICATION;
     }
     if (
-      message.includes('validation') ||
-      message.includes('invalid') ||
-      message.includes('required')
+      message.includes("validation") ||
+      message.includes("invalid") ||
+      message.includes("required")
     ) {
       return ErrorType.VALIDATION;
     }
-    if (message.includes('migration') || message.includes('sync')) {
+    if (message.includes("migration") || message.includes("sync")) {
       return ErrorType.MIGRATION;
     }
 
     return ErrorType.UNKNOWN;
   }
 
-  private static inferErrorSeverity(error: Error, type: ErrorType): ErrorSeverity {
+  private static inferErrorSeverity(
+    error: Error,
+    type: ErrorType,
+  ): ErrorSeverity {
     // Critical errors that break core functionality
-    if (type === ErrorType.AUTHENTICATION || error.message.includes('critical')) {
+    if (
+      type === ErrorType.AUTHENTICATION ||
+      error.message.includes("critical")
+    ) {
       return ErrorSeverity.CRITICAL;
     }
 
@@ -280,12 +316,16 @@ export class ErrorHandler {
 
   private static isRetryable(error: Error, type: ErrorType): boolean {
     // Network and sync errors are usually retryable
-    if (type === ErrorType.NETWORK || type === ErrorType.SYNC || type === ErrorType.MIGRATION) {
+    if (
+      type === ErrorType.NETWORK ||
+      type === ErrorType.SYNC ||
+      type === ErrorType.MIGRATION
+    ) {
       return true;
     }
 
     // Storage errors might be retryable
-    if (type === ErrorType.STORAGE && !error.message.includes('quota')) {
+    if (type === ErrorType.STORAGE && !error.message.includes("quota")) {
       return true;
     }
 
@@ -300,7 +340,7 @@ export class ErrorHandler {
 export const createValidationError = (
   message: string,
   details?: string,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): AppError => {
   return errorLogger.log({
     type: ErrorType.VALIDATION,
@@ -315,7 +355,7 @@ export const createValidationError = (
 export const createNetworkError = (
   message: string,
   details?: string,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): AppError => {
   return errorLogger.log({
     type: ErrorType.NETWORK,
@@ -330,7 +370,7 @@ export const createNetworkError = (
 export const createStorageError = (
   message: string,
   details?: string,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): AppError => {
   return errorLogger.log({
     type: ErrorType.STORAGE,
@@ -345,7 +385,7 @@ export const createStorageError = (
 export const createMigrationError = (
   message: string,
   details?: string,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ): AppError => {
   return errorLogger.log({
     type: ErrorType.MIGRATION,
@@ -369,7 +409,7 @@ export const handleComponentError = (error: Error, errorInfo: any) => {
 
   // In production, you might want to show a fallback UI
   if (!__DEV__) {
-    console.log('🔄 Component error handled, showing fallback UI');
+    console.log("🔄 Component error handled, showing fallback UI");
   }
 
   return appError;

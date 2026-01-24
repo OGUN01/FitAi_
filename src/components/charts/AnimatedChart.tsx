@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Svg, { Line, Circle, Path, G, Text as SvgText } from 'react-native-svg';
-import { rf, rp, rw, rh } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { ChartTooltip } from '../ui/ChartTooltip';
-import { hapticSelection } from '../../utils/haptics';
+} from "react-native-reanimated";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import Svg, { Line, Circle, Path, G, Text as SvgText } from "react-native-svg";
+import { rf, rp, rw, rh } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { ChartTooltip } from "../ui/ChartTooltip";
+import { hapticSelection } from "../../utils/haptics";
 
 interface DataPoint {
   label: string;
@@ -35,9 +35,9 @@ interface AnimatedChartProps {
 export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   currentValue: rawCurrentValue,
   targetValue: rawTargetValue,
-  currentLabel = 'Current',
-  targetLabel = 'Target',
-  unit = 'kg',
+  currentLabel = "Current",
+  targetLabel = "Target",
+  unit = "kg",
   showProgress = true,
   progressWeeks = 12,
   width: rawWidth = 300,
@@ -45,13 +45,15 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   style,
 }) => {
   // Sanitize and round all numeric props to avoid NaN and precision errors on Android
-  const safeCurrentValue = Number.isFinite(rawCurrentValue) ? rawCurrentValue : 70;
+  const safeCurrentValue = Number.isFinite(rawCurrentValue)
+    ? rawCurrentValue
+    : 70;
   const safeTargetValue = Number.isFinite(rawTargetValue) ? rawTargetValue : 65;
   const currentValue = Math.round(safeCurrentValue * 10) / 10; // Keep 1 decimal
   const targetValue = Math.round(safeTargetValue * 10) / 10;
   const width = Math.round(Number.isFinite(rawWidth) ? rawWidth : 300);
   const height = Math.round(Number.isFinite(rawHeight) ? rawHeight : 200);
-  
+
   const progress = useSharedValue(0);
   const [tooltipData, setTooltipData] = useState<{
     visible: boolean;
@@ -64,7 +66,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
     x: 0,
     y: 0,
     value: 0,
-    label: '',
+    label: "",
   });
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   }, [currentValue, targetValue]);
 
   // Calculate chart dimensions with better padding for labels
-  const paddingLeft = 50;   // More space for Y-axis labels
+  const paddingLeft = 50; // More space for Y-axis labels
   const paddingRight = 20;
   const paddingTop = 20;
   const paddingBottom = 35; // More space for X-axis labels
@@ -86,7 +88,7 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   const rawMin = Math.min(currentValue, targetValue);
   const rawMax = Math.max(currentValue, targetValue);
   const range = rawMax - rawMin;
-  
+
   // Round to nice values for cleaner axis labels
   const step = range > 20 ? 10 : range > 10 ? 5 : 2;
   const minValue = Math.floor(rawMin / step) * step - step;
@@ -102,22 +104,25 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
   // Generate milestone points - limit to 5 points max for cleaner labels
   const milestones: DataPoint[] = [];
   const valueStep = (targetValue - currentValue) / progressWeeks;
-  
+
   // Calculate optimal step to get ~4-5 milestones
   const maxMilestones = 5;
   const weekStep = Math.ceil(progressWeeks / (maxMilestones - 1));
-  
+
   for (let week = 0; week <= progressWeeks; week += weekStep) {
     const value = currentValue + valueStep * week;
     milestones.push({
-      label: week === 0 ? '0' : `${week}w`,
+      label: week === 0 ? "0" : `${week}w`,
       value,
     });
   }
 
   // Ensure final target is included
   const lastMilestone = milestones[milestones.length - 1];
-  if (lastMilestone.label !== `${progressWeeks}w` && lastMilestone.label !== '0') {
+  if (
+    lastMilestone.label !== `${progressWeeks}w` &&
+    lastMilestone.label !== "0"
+  ) {
     milestones.push({
       label: `${progressWeeks}w`,
       value: targetValue,
@@ -160,10 +165,11 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         let minDistance = Infinity;
 
         milestones.forEach((milestone, index) => {
-          const milestoneX = paddingLeft + (chartWidth / (milestones.length - 1)) * index;
+          const milestoneX =
+            paddingLeft + (chartWidth / (milestones.length - 1)) * index;
           const milestoneY = valueToY(milestone.value);
           const distance = Math.sqrt(
-            Math.pow(touchX - milestoneX, 2) + Math.pow(touchY - milestoneY, 2)
+            Math.pow(touchX - milestoneX, 2) + Math.pow(touchY - milestoneY, 2),
           );
 
           if (distance < minDistance) {
@@ -175,7 +181,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
         // Show tooltip if touch is close enough (within 30px)
         if (minDistance < 30) {
           const milestoneIndex = milestones.indexOf(nearestMilestone);
-          const milestoneX = paddingLeft + (chartWidth / (milestones.length - 1)) * milestoneIndex;
+          const milestoneX =
+            paddingLeft +
+            (chartWidth / (milestones.length - 1)) * milestoneIndex;
           const milestoneY = valueToY(nearestMilestone.value);
 
           hapticSelection();
@@ -207,27 +215,24 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       progress.value,
       [0, 1],
       [paddingLeft, paddingLeft + chartWidth],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const translateY = interpolate(
       progress.value,
       [0, 1],
       [startY, endY],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
-      transform: [
-        { translateX },
-        { translateY },
-      ],
+      transform: [{ translateX }, { translateY }],
     };
   });
 
   // Calculate percentage change
   const percentageChange = ((targetValue - currentValue) / currentValue) * 100;
-  const changeDirection = percentageChange > 0 ? 'increase' : 'decrease';
+  const changeDirection = percentageChange > 0 ? "increase" : "decrease";
   const changeText = `${Math.abs(percentageChange).toFixed(1)}% ${changeDirection}`;
 
   return (
@@ -236,7 +241,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
       <View style={styles.header}>
         <View style={styles.valueBox}>
           <Text style={styles.valueLabel}>{currentLabel}</Text>
-          <Text style={styles.valueCurrent}>{currentValue} {unit}</Text>
+          <Text style={styles.valueCurrent}>
+            {currentValue} {unit}
+          </Text>
         </View>
 
         <View style={styles.arrow}>
@@ -246,7 +253,9 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
         <View style={styles.valueBox}>
           <Text style={styles.valueLabel}>{targetLabel}</Text>
-          <Text style={styles.valueTarget}>{targetValue} {unit}</Text>
+          <Text style={styles.valueTarget}>
+            {targetValue} {unit}
+          </Text>
         </View>
       </View>
 
@@ -259,116 +268,123 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             y={tooltipData.y}
             value={tooltipData.value}
             label={tooltipData.label}
-            formatValue={(val) => `${typeof val === 'number' ? val.toFixed(1) : val} ${unit}`}
+            formatValue={(val) =>
+              `${typeof val === "number" ? val.toFixed(1) : val} ${unit}`
+            }
           />
           <Svg width={width} height={height}>
-        {/* Y-axis grid lines with nice round values */}
-        {(() => {
-          // Generate Y-axis values at nice intervals
-          const yAxisValues: number[] = [];
-          for (let val = minValue; val <= maxValue; val += step) {
-            yAxisValues.push(val);
-          }
-          // Limit to max 5 lines
-          const skipFactor = Math.ceil(yAxisValues.length / 5);
-          const filteredValues = yAxisValues.filter((_, i) => i % skipFactor === 0);
-          
-          return filteredValues.map((value, index) => {
-            const y = valueToY(value);
-            
-            return (
-              <G key={index}>
-                <Line
-                  x1={paddingLeft}
-                  y1={y}
-                  x2={paddingLeft + chartWidth}
-                  y2={y}
-                  stroke={ResponsiveTheme.colors.border}
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                  opacity={0.4}
-                />
-                <SvgText
-                  x={paddingLeft - 10}
-                  y={y + 1}
-                  fontSize={rf(11)}
-                  fill={ResponsiveTheme.colors.textMuted}
-                  textAnchor="end"
-                  alignmentBaseline="middle"
-                >
-                  {value}
-                </SvgText>
-              </G>
-            );
-          });
-        })()}
+            {/* Y-axis grid lines with nice round values */}
+            {(() => {
+              // Generate Y-axis values at nice intervals
+              const yAxisValues: number[] = [];
+              for (let val = minValue; val <= maxValue; val += step) {
+                yAxisValues.push(val);
+              }
+              // Limit to max 5 lines
+              const skipFactor = Math.ceil(yAxisValues.length / 5);
+              const filteredValues = yAxisValues.filter(
+                (_, i) => i % skipFactor === 0,
+              );
 
-        {/* X-axis */}
-        <Line
-          x1={paddingLeft}
-          y1={paddingTop + chartHeight}
-          x2={paddingLeft + chartWidth}
-          y2={paddingTop + chartHeight}
-          stroke={ResponsiveTheme.colors.border}
-          strokeWidth="1"
-        />
+              return filteredValues.map((value, index) => {
+                const y = valueToY(value);
 
-        {/* Progress line */}
-        <Path
-          d={linePath}
-          fill="transparent"
-          stroke={ResponsiveTheme.colors.primary}
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
+                return (
+                  <G key={index}>
+                    <Line
+                      x1={paddingLeft}
+                      y1={y}
+                      x2={paddingLeft + chartWidth}
+                      y2={y}
+                      stroke={ResponsiveTheme.colors.border}
+                      strokeWidth="1"
+                      strokeDasharray="4 4"
+                      opacity={0.4}
+                    />
+                    <SvgText
+                      x={paddingLeft - 10}
+                      y={y + 1}
+                      fontSize={rf(11)}
+                      fill={ResponsiveTheme.colors.textMuted}
+                      textAnchor="end"
+                      alignmentBaseline="middle"
+                    >
+                      {value}
+                    </SvgText>
+                  </G>
+                );
+              });
+            })()}
 
-        {/* Start point */}
-        <Circle
-          cx={paddingLeft}
-          cy={valueToY(currentValue)}
-          r="6"
-          fill={ResponsiveTheme.colors.secondary}
-          stroke={ResponsiveTheme.colors.white}
-          strokeWidth="2"
-        />
+            {/* X-axis */}
+            <Line
+              x1={paddingLeft}
+              y1={paddingTop + chartHeight}
+              x2={paddingLeft + chartWidth}
+              y2={paddingTop + chartHeight}
+              stroke={ResponsiveTheme.colors.border}
+              strokeWidth="1"
+            />
 
-        {/* End point */}
-        <Circle
-          cx={paddingLeft + chartWidth}
-          cy={valueToY(targetValue)}
-          r="6"
-          fill={ResponsiveTheme.colors.success}
-          stroke={ResponsiveTheme.colors.white}
-          strokeWidth="2"
-        />
+            {/* Progress line */}
+            <Path
+              d={linePath}
+              fill="transparent"
+              stroke={ResponsiveTheme.colors.primary}
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
 
-        {/* Milestone markers */}
-        {showProgress && milestones.map((milestone, index) => {
-          const x = Math.round(paddingLeft + (chartWidth / (milestones.length - 1)) * index);
-          const y = valueToY(milestone.value);
+            {/* Start point */}
+            <Circle
+              cx={paddingLeft}
+              cy={valueToY(currentValue)}
+              r="6"
+              fill={ResponsiveTheme.colors.secondary}
+              stroke={ResponsiveTheme.colors.white}
+              strokeWidth="2"
+            />
 
-          return (
-            <G key={index}>
-              <Circle
-                cx={x}
-                cy={y}
-                r={4}
-                fill={ResponsiveTheme.colors.primary}
-                opacity={0.5}
-              />
-              <SvgText
-                x={x}
-                y={Math.round(paddingTop + chartHeight + 18)}
-                fontSize={rf(10)}
-                fill={ResponsiveTheme.colors.textMuted}
-                textAnchor="middle"
-                fontWeight="500"
-              >
-                {milestone.label}
-              </SvgText>
-            </G>
-          );
-        })}
+            {/* End point */}
+            <Circle
+              cx={paddingLeft + chartWidth}
+              cy={valueToY(targetValue)}
+              r="6"
+              fill={ResponsiveTheme.colors.success}
+              stroke={ResponsiveTheme.colors.white}
+              strokeWidth="2"
+            />
+
+            {/* Milestone markers */}
+            {showProgress &&
+              milestones.map((milestone, index) => {
+                const x = Math.round(
+                  paddingLeft + (chartWidth / (milestones.length - 1)) * index,
+                );
+                const y = valueToY(milestone.value);
+
+                return (
+                  <G key={index}>
+                    <Circle
+                      cx={x}
+                      cy={y}
+                      r={4}
+                      fill={ResponsiveTheme.colors.primary}
+                      opacity={0.5}
+                    />
+                    <SvgText
+                      x={x}
+                      y={Math.round(paddingTop + chartHeight + 18)}
+                      fontSize={rf(10)}
+                      fill={ResponsiveTheme.colors.textMuted}
+                      textAnchor="middle"
+                      fontWeight="500"
+                    >
+                      {milestone.label}
+                    </SvgText>
+                  </G>
+                );
+              })}
           </Svg>
         </View>
       </GestureDetector>
@@ -380,7 +396,8 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             📅 {progressWeeks}-week progression plan
           </Text>
           <Text style={styles.timelineSubtext}>
-            {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)} {unit}/week
+            {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)}{" "}
+            {unit}/week
           </Text>
         </View>
       )}
@@ -390,19 +407,19 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
   },
 
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
 
   valueBox: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   valueLabel: {
@@ -424,7 +441,7 @@ const styles = StyleSheet.create({
   },
 
   arrow: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
 
@@ -440,7 +457,7 @@ const styles = StyleSheet.create({
   },
 
   timeline: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: ResponsiveTheme.spacing.md,
     padding: ResponsiveTheme.spacing.sm,
     backgroundColor: `${ResponsiveTheme.colors.primary}10`,

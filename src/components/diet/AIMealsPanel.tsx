@@ -1,7 +1,7 @@
 // 🤖 AI Meals Generation Panel
 // Comprehensive interface for AI-powered meal generation with personalization
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-} from 'react-native';
-import { Card } from '../ui';
-import { ResponsiveTheme } from '../../utils/constants';
-import { rf, rh, rw, rs, rp } from '../../utils/responsive';
+} from "react-native";
+import { Card } from "../ui";
+import { ResponsiveTheme } from "../../utils/constants";
+import { rf, rh, rw, rs, rp } from "../../utils/responsive";
 
 interface AIMealsPanelProps {
   visible: boolean;
@@ -25,7 +25,7 @@ interface AIMealsPanelProps {
 
 interface MealGenerationOption {
   id: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'custom';
+  type: "breakfast" | "lunch" | "dinner" | "snack" | "custom";
   title: string;
   emoji: string;
   description: string;
@@ -36,54 +36,69 @@ interface MealGenerationOption {
 
 const mealOptions: MealGenerationOption[] = [
   {
-    id: 'breakfast',
-    type: 'breakfast',
-    title: 'Breakfast',
-    emoji: '🌅',
-    description: 'Energizing morning meals to start your day right',
-    color: '#f59e0b', // amber
-    suggestions: ['High protein', 'Quick prep', 'Fiber rich', 'Brain boosting'],
-    estimatedTime: '15-30 min',
+    id: "breakfast",
+    type: "breakfast",
+    title: "Breakfast",
+    emoji: "🌅",
+    description: "Energizing morning meals to start your day right",
+    color: "#f59e0b", // amber
+    suggestions: ["High protein", "Quick prep", "Fiber rich", "Brain boosting"],
+    estimatedTime: "15-30 min",
   },
   {
-    id: 'lunch',
-    type: 'lunch',
-    title: 'Lunch',
-    emoji: '☀️',
-    description: 'Balanced midday meals for sustained energy',
-    color: '#10b981', // emerald
-    suggestions: ['Balanced macros', 'Office friendly', 'Meal prep', 'Light & fresh'],
-    estimatedTime: '20-45 min',
+    id: "lunch",
+    type: "lunch",
+    title: "Lunch",
+    emoji: "☀️",
+    description: "Balanced midday meals for sustained energy",
+    color: "#10b981", // emerald
+    suggestions: [
+      "Balanced macros",
+      "Office friendly",
+      "Meal prep",
+      "Light & fresh",
+    ],
+    estimatedTime: "20-45 min",
   },
   {
-    id: 'dinner',
-    type: 'dinner',
-    title: 'Dinner',
-    emoji: '🌙',
-    description: 'Satisfying evening meals for recovery',
-    color: '#8b5cf6', // violet
-    suggestions: ['Family friendly', 'Comfort food', 'Recovery focused', 'Lean protein'],
-    estimatedTime: '30-60 min',
+    id: "dinner",
+    type: "dinner",
+    title: "Dinner",
+    emoji: "🌙",
+    description: "Satisfying evening meals for recovery",
+    color: "#8b5cf6", // violet
+    suggestions: [
+      "Family friendly",
+      "Comfort food",
+      "Recovery focused",
+      "Lean protein",
+    ],
+    estimatedTime: "30-60 min",
   },
   {
-    id: 'snack',
-    type: 'snack',
-    title: 'Healthy Snack',
-    emoji: '🍎',
-    description: 'Smart snacking options for any time',
-    color: '#f97316', // orange
-    suggestions: ['Pre-workout', 'Post-workout', 'Office snack', 'Sweet treat'],
-    estimatedTime: '5-15 min',
+    id: "snack",
+    type: "snack",
+    title: "Healthy Snack",
+    emoji: "🍎",
+    description: "Smart snacking options for any time",
+    color: "#f97316", // orange
+    suggestions: ["Pre-workout", "Post-workout", "Office snack", "Sweet treat"],
+    estimatedTime: "5-15 min",
   },
   {
-    id: 'custom',
-    type: 'custom',
-    title: 'Custom Meal',
-    emoji: '✨',
-    description: 'Personalized meal based on your specific needs',
-    color: '#ec4899', // pink
-    suggestions: ['Goal-specific', 'Dietary needs', 'Cuisine preference', 'Macros focused'],
-    estimatedTime: 'Variable',
+    id: "custom",
+    type: "custom",
+    title: "Custom Meal",
+    emoji: "✨",
+    description: "Personalized meal based on your specific needs",
+    color: "#ec4899", // pink
+    suggestions: [
+      "Goal-specific",
+      "Dietary needs",
+      "Cuisine preference",
+      "Macros focused",
+    ],
+    estimatedTime: "Variable",
   },
 ];
 
@@ -97,32 +112,32 @@ interface QuickActionOption {
 
 const quickActions: QuickActionOption[] = [
   {
-    id: 'daily_plan',
-    title: 'Full Day Plan',
-    emoji: '📅',
-    description: 'Generate complete daily meal plan',
-    action: 'daily_plan',
+    id: "daily_plan",
+    title: "Full Day Plan",
+    emoji: "📅",
+    description: "Generate complete daily meal plan",
+    action: "daily_plan",
   },
   {
-    id: 'meal_prep',
-    title: 'Meal Prep',
-    emoji: '📦',
-    description: 'Batch cooking for the week',
-    action: 'meal_prep',
+    id: "meal_prep",
+    title: "Meal Prep",
+    emoji: "📦",
+    description: "Batch cooking for the week",
+    action: "meal_prep",
   },
   {
-    id: 'goal_focused',
-    title: 'Goal-Focused',
-    emoji: '🎯',
-    description: 'Meals optimized for your goals',
-    action: 'goal_focused',
+    id: "goal_focused",
+    title: "Goal-Focused",
+    emoji: "🎯",
+    description: "Meals optimized for your goals",
+    action: "goal_focused",
   },
   {
-    id: 'quick_easy',
-    title: 'Quick & Easy',
-    emoji: '⚡',
-    description: 'Fast meals under 20 minutes',
-    action: 'quick_easy',
+    id: "quick_easy",
+    title: "Quick & Easy",
+    emoji: "⚡",
+    description: "Fast meals under 20 minutes",
+    action: "quick_easy",
   },
 ];
 
@@ -137,7 +152,10 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
 
   if (!visible) return null;
 
-  const handleMealGeneration = async (option: MealGenerationOption, customOptions?: any) => {
+  const handleMealGeneration = async (
+    option: MealGenerationOption,
+    customOptions?: any,
+  ) => {
     try {
       const generationOptions = {
         mealType: option.type,
@@ -151,7 +169,10 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
       // Reset selections after successful generation
       setSelectedOptions([]);
     } catch (error) {
-      Alert.alert('Generation Failed', 'Failed to generate meal. Please try again.');
+      Alert.alert(
+        "Generation Failed",
+        "Failed to generate meal. Please try again.",
+      );
     }
   };
 
@@ -162,30 +183,39 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
         actionType: action.action,
       });
     } catch (error) {
-      Alert.alert('Action Failed', `Failed to execute ${action.title}. Please try again.`);
+      Alert.alert(
+        "Action Failed",
+        `Failed to execute ${action.title}. Please try again.`,
+      );
     }
   };
 
   const toggleSuggestion = (suggestion: string) => {
     setSelectedOptions((prev) =>
-      prev.includes(suggestion) ? prev.filter((s) => s !== suggestion) : [...prev, suggestion]
+      prev.includes(suggestion)
+        ? prev.filter((s) => s !== suggestion)
+        : [...prev, suggestion],
     );
   };
 
   const getProfileStatus = () => {
-    if (!profile) return { status: 'incomplete', message: 'Profile not available' };
+    if (!profile)
+      return { status: "incomplete", message: "Profile not available" };
 
     const missingItems = [];
-    if (!profile.personalInfo) missingItems.push('Personal Info');
-    if (!profile.fitnessGoals) missingItems.push('Fitness Goals');
-    if (!profile.dietPreferences) missingItems.push('Diet Preferences');
+    if (!profile.personalInfo) missingItems.push("Personal Info");
+    if (!profile.fitnessGoals) missingItems.push("Fitness Goals");
+    if (!profile.dietPreferences) missingItems.push("Diet Preferences");
 
     if (missingItems.length === 0) {
-      return { status: 'complete', message: 'Profile complete - ready for personalized meals!' };
+      return {
+        status: "complete",
+        message: "Profile complete - ready for personalized meals!",
+      };
     } else {
       return {
-        status: 'partial',
-        message: `Missing: ${missingItems.join(', ')}. Meals will be less personalized.`,
+        status: "partial",
+        message: `Missing: ${missingItems.join(", ")}. Meals will be less personalized.`,
       };
     }
   };
@@ -202,7 +232,8 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
               <Text style={styles.headerEmoji}>🤖</Text>
               <Text style={styles.headerTitle}>AI Meal Generation</Text>
               <Text style={styles.headerSubtitle}>
-                Generate personalized meals based on your profile and preferences
+                Generate personalized meals based on your profile and
+                preferences
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -214,16 +245,22 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
           <View
             style={[
               styles.statusBanner,
-              { backgroundColor: profileStatus.status === 'complete' ? '#dcfce7' : '#fef3c7' },
+              {
+                backgroundColor:
+                  profileStatus.status === "complete" ? "#dcfce7" : "#fef3c7",
+              },
             ]}
           >
             <Text style={styles.statusIcon}>
-              {profileStatus.status === 'complete' ? '✅' : '⚠️'}
+              {profileStatus.status === "complete" ? "✅" : "⚠️"}
             </Text>
             <Text
               style={[
                 styles.statusText,
-                { color: profileStatus.status === 'complete' ? '#15803d' : '#92400e' },
+                {
+                  color:
+                    profileStatus.status === "complete" ? "#15803d" : "#92400e",
+                },
               ]}
             >
               {profileStatus.message}
@@ -243,7 +280,9 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
                 >
                   <Text style={styles.quickActionEmoji}>{action.emoji}</Text>
                   <Text style={styles.quickActionTitle}>{action.title}</Text>
-                  <Text style={styles.quickActionDescription}>{action.description}</Text>
+                  <Text style={styles.quickActionDescription}>
+                    {action.description}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -256,23 +295,35 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
             {mealOptions.map((option) => (
               <TouchableOpacity
                 key={option.id}
-                style={[styles.mealCard, isGenerating && styles.mealCardDisabled]}
+                style={[
+                  styles.mealCard,
+                  isGenerating && styles.mealCardDisabled,
+                ]}
                 onPress={() => handleMealGeneration(option)}
                 disabled={isGenerating}
               >
                 <View style={styles.mealCardContent}>
-                  <View style={[styles.mealEmoji, { backgroundColor: option.color + '20' }]}>
+                  <View
+                    style={[
+                      styles.mealEmoji,
+                      { backgroundColor: option.color + "20" },
+                    ]}
+                  >
                     <Text style={styles.mealEmojiText}>{option.emoji}</Text>
                   </View>
 
                   <View style={styles.mealInfo}>
                     <Text style={styles.mealTitle}>{option.title}</Text>
-                    <Text style={styles.mealDescription}>{option.description}</Text>
+                    <Text style={styles.mealDescription}>
+                      {option.description}
+                    </Text>
 
                     <View style={styles.mealMeta}>
-                      <Text style={styles.mealTime}>⏱️ {option.estimatedTime}</Text>
+                      <Text style={styles.mealTime}>
+                        ⏱️ {option.estimatedTime}
+                      </Text>
                       <Text style={styles.mealSuggestions}>
-                        {option.suggestions.slice(0, 2).join(' • ')}
+                        {option.suggestions.slice(0, 2).join(" • ")}
                       </Text>
                     </View>
                   </View>
@@ -281,7 +332,12 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
                     {isGenerating ? (
                       <ActivityIndicator size="small" color={option.color} />
                     ) : (
-                      <Text style={[styles.generateButtonText, { color: option.color }]}>
+                      <Text
+                        style={[
+                          styles.generateButtonText,
+                          { color: option.color },
+                        ]}
+                      >
                         Generate
                       </Text>
                     )}
@@ -317,7 +373,8 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              🤖 Powered by Gemini 2.5 Flash • 90%+ accuracy • Zero-cost operation
+              🤖 Powered by Gemini 2.5 Flash • 90%+ accuracy • Zero-cost
+              operation
             </Text>
           </View>
         </ScrollView>
@@ -328,29 +385,29 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
 
 const styles = StyleSheet.create({
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
 
   panel: {
-    width: '90%',
-    maxHeight: '85%',
+    width: "90%",
+    maxHeight: "85%",
     backgroundColor: ResponsiveTheme.colors.surface,
     borderRadius: ResponsiveTheme.borderRadius.xl,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     padding: ResponsiveTheme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: ResponsiveTheme.colors.border,
@@ -358,7 +415,7 @@ const styles = StyleSheet.create({
 
   headerContent: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   headerEmoji: {
@@ -376,7 +433,7 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(18),
   },
 
@@ -385,9 +442,9 @@ const styles = StyleSheet.create({
     height: rh(32),
     borderRadius: rs(16),
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
     right: ResponsiveTheme.spacing.lg,
     top: ResponsiveTheme.spacing.lg,
   },
@@ -399,8 +456,8 @@ const styles = StyleSheet.create({
   },
 
   statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     margin: ResponsiveTheme.spacing.lg,
     padding: ResponsiveTheme.spacing.md,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -429,18 +486,18 @@ const styles = StyleSheet.create({
   },
 
   quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
 
   quickActionCard: {
     flex: 1,
-    minWidth: '47%',
+    minWidth: "47%",
     backgroundColor: ResponsiveTheme.colors.background,
     borderRadius: ResponsiveTheme.borderRadius.md,
     padding: ResponsiveTheme.spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
     borderColor: ResponsiveTheme.colors.border,
   },
@@ -454,14 +511,14 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.sm,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   quickActionDescription: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(14),
   },
 
@@ -478,8 +535,8 @@ const styles = StyleSheet.create({
   },
 
   mealCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: ResponsiveTheme.spacing.lg,
   },
 
@@ -487,8 +544,8 @@ const styles = StyleSheet.create({
     width: rw(48),
     height: rh(48),
     borderRadius: rs(12),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: ResponsiveTheme.spacing.md,
   },
 
@@ -515,8 +572,8 @@ const styles = StyleSheet.create({
   },
 
   mealMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: ResponsiveTheme.spacing.md,
   },
 
@@ -536,8 +593,8 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minWidth: rw(70),
   },
 
@@ -547,16 +604,16 @@ const styles = StyleSheet.create({
   },
 
   featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.md,
   },
 
   featureItem: {
     flex: 1,
-    minWidth: '47%',
-    flexDirection: 'row',
-    alignItems: 'center',
+    minWidth: "47%",
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     padding: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -576,14 +633,14 @@ const styles = StyleSheet.create({
 
   footer: {
     padding: ResponsiveTheme.spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
   },
 
   footerText: {
     fontSize: ResponsiveTheme.fontSize.xs,
     color: ResponsiveTheme.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: rf(16),
   },
 });

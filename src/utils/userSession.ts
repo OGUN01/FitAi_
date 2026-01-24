@@ -1,5 +1,5 @@
 // Utility to get current user session info across the app
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
 
 class UserSessionManager {
   private static instance: UserSessionManager;
@@ -16,20 +16,23 @@ class UserSessionManager {
 
   setUserId(userId: string | null): void {
     this.currentUserId = userId;
-    console.log('👤 User session updated:', userId ? 'logged in' : 'logged out');
+    console.log(
+      "👤 User session updated:",
+      userId ? "logged in" : "logged out",
+    );
   }
 
   getUserId(): string {
-    return this.currentUserId || 'guest_user';
+    return this.currentUserId || "guest_user";
   }
 
   isAuthenticated(): boolean {
-    return this.currentUserId !== null && this.currentUserId !== 'guest_user';
+    return this.currentUserId !== null && this.currentUserId !== "guest_user";
   }
 
   // For development/demo purposes
   getDevUserId(): string {
-    return this.currentUserId || 'demo_user_' + Date.now().toString().slice(-6);
+    return this.currentUserId || "demo_user_" + Date.now().toString().slice(-6);
   }
 }
 

@@ -4,12 +4,12 @@
  * Fixes Issue #6, #25 - Consistent section title patterns
  */
 
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '../../../components/ui/aurora/AnimatedPressable';
-import { ResponsiveTheme } from '../../../utils/constants';
-import { rf, rw } from '../../../utils/responsive';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
+import { ResponsiveTheme } from "../../../utils/constants";
+import { rf, rw } from "../../../utils/responsive";
 
 interface SectionHeaderProps {
   title: string;
@@ -32,14 +32,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
     <View style={styles.container}>
       <View style={styles.titleRow}>
         {icon && (
-          <Ionicons 
-            name={icon} 
-            size={rf(20)} 
-            color={iconColor} 
+          <Ionicons
+            name={icon}
+            size={rf(20)}
+            color={iconColor}
             style={styles.icon}
           />
         )}
-        <Text 
+        <Text
           style={styles.title}
           accessibilityRole="header"
           accessibilityLabel={accessibilityLabel || title}
@@ -65,14 +65,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.md,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   icon: {
@@ -91,4 +91,3 @@ const styles = StyleSheet.create({
 });
 
 export default SectionHeader;
-

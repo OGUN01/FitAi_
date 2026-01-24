@@ -9,19 +9,21 @@
  * Uses profileValidation.ts for strict validation with zero fallbacks
  */
 
-import { PersonalInfoData } from '../types/onboarding';
-import { getRequiredField, validatePersonalInfo } from './profileValidation';
+import { PersonalInfoData } from "../types/onboarding";
+import { getRequiredField, validatePersonalInfo } from "./profileValidation";
 
 /**
  * Validates personal info before accessing fields
  * @throws Error if validation fails with detailed error messages
  */
-function ensureValidPersonalInfo(personalInfo: PersonalInfoData | null | undefined): PersonalInfoData {
+function ensureValidPersonalInfo(
+  personalInfo: PersonalInfoData | null | undefined,
+): PersonalInfoData {
   const validationResult = validatePersonalInfo(personalInfo);
 
   if (!validationResult.isValid) {
     throw new Error(
-      `Personal info validation failed: ${validationResult.errors.join(', ')}`
+      `Personal info validation failed: ${validationResult.errors.join(", ")}`,
     );
   }
 
@@ -41,7 +43,7 @@ function ensureValidPersonalInfo(personalInfo: PersonalInfoData | null | undefin
  * @throws Error if name cannot be determined
  */
 export function getUserDisplayName(
-  personalInfo: PersonalInfoData | null | undefined
+  personalInfo: PersonalInfoData | null | undefined,
 ): string {
   // Validate using strict validation utilities
   const validated = ensureValidPersonalInfo(personalInfo);
@@ -52,8 +54,12 @@ export function getUserDisplayName(
   }
 
   // Priority 2: Compute from first_name + last_name
-  const firstName = getRequiredField(validated.first_name, 'first_name', 'getUserDisplayName').trim();
-  const lastName = validated.last_name?.trim() || '';
+  const firstName = getRequiredField(
+    validated.first_name,
+    "first_name",
+    "getUserDisplayName",
+  ).trim();
+  const lastName = validated.last_name?.trim() || "";
 
   if (lastName) {
     return `${firstName} ${lastName}`;
@@ -70,13 +76,17 @@ export function getUserDisplayName(
  * @throws Error if first name cannot be determined
  */
 export function getUserFirstName(
-  personalInfo: PersonalInfoData | null | undefined
+  personalInfo: PersonalInfoData | null | undefined,
 ): string {
   // Validate using strict validation utilities
   const validated = ensureValidPersonalInfo(personalInfo);
 
   // Try first_name field first (required by validation)
-  const firstName = getRequiredField(validated.first_name, 'first_name', 'getUserFirstName');
+  const firstName = getRequiredField(
+    validated.first_name,
+    "first_name",
+    "getUserFirstName",
+  );
 
   return firstName.trim();
 }
@@ -89,14 +99,18 @@ export function getUserFirstName(
  * @throws Error if initials cannot be determined
  */
 export function getUserInitials(
-  personalInfo: PersonalInfoData | null | undefined
+  personalInfo: PersonalInfoData | null | undefined,
 ): string {
   // Validate using strict validation utilities
   const validated = ensureValidPersonalInfo(personalInfo);
 
   // Get required first name (validated)
-  const firstName = getRequiredField(validated.first_name, 'first_name', 'getUserInitials').trim();
-  const lastName = validated.last_name?.trim() || '';
+  const firstName = getRequiredField(
+    validated.first_name,
+    "first_name",
+    "getUserInitials",
+  ).trim();
+  const lastName = validated.last_name?.trim() || "";
 
   // Compute initials
   if (lastName) {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   Text,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw } from "../../utils/responsive";
@@ -123,6 +124,15 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   // State for premium completion modal (used for success)
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
+  // OB-UX-001: Double-tap prevention state
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // OB-UX-002: Saving state for button disabled state during save operations
+  const [isSaving, setIsSaving] = useState(false);
+
+  // OB-UX-003: Ref to track editing state to avoid state updates during render
+  const pendingEditingReset = useRef(false);
+
   // Initialize starting tab - update when initialTab or editMode changes
   useEffect(() => {
     const tabToShow = editMode && initialTab ? initialTab : startingTab;
@@ -151,6 +161,15 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
     );
     return () => backHandler.remove();
   }, [currentTab, hasUnsavedChanges]);
+
+  // OB-UX-003: Reset editing state in useEffect instead of during render
+  useEffect(() => {
+    if (pendingEditingReset.current && currentTab === 5) {
+      pendingEditingReset.current = false;
+      setIsEditingFromReview(false);
+      setPreviousTab(null);
+    }
+  }, [currentTab]);
 
   // Auto-save periodically
   useEffect(() => {
@@ -261,53 +280,72 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
   };
 
   const handleNextTab = async (currentTabData?: any) => {
-    console.log(
-      "🎭 OnboardingContainer: handleNextTab called, currentTab:",
-      currentTab,
-      "editMode:",
-      editMode,
-    );
-    console.log(
-      "🎭 OnboardingContainer: currentTabData provided:",
-      currentTabData ? "Yes" : "No",
-    );
-
-    const validation = validateTab(currentTab, currentTabData);
-    console.log("🎭 OnboardingContainer: Validation result:", validation);
-
-    if (!validation.is_valid) {
-      console.log("🚫 OnboardingContainer: Validation failed, showing alert");
-      Alert.alert(
-        "Incomplete Information",
-        `Please complete all required fields:\n\n${validation.errors.join("\n")}`,
-        [{ text: "OK" }],
-      );
-      return;
-    }
-
-    console.log("✅ OnboardingContainer: Validation passed");
-
-    // Mark current tab as completed
-    markTabCompleted(currentTab);
-
-    // In edit mode, save and call onEditComplete
-    if (editMode) {
+    // OB-UX-001: Prevent double-tap during navigation
+    if (isNavigating || isSaving) {
       console.log(
-        "💾 OnboardingContainer: Edit mode - saving and calling onEditComplete",
+        "🚫 OnboardingContainer: Navigation blocked - already in progress",
       );
-      await saveToLocal();
-      onEditComplete?.();
       return;
     }
 
-    // Normal mode: Move to next tab or complete onboarding
-    if (currentTab < 5) {
-      const nextTab = currentTab + 1;
-      console.log("🎭 OnboardingContainer: Moving to tab:", nextTab);
-      setCurrentTab(nextTab);
-    } else {
-      console.log("🎉 OnboardingContainer: Completing onboarding");
-      handleCompleteOnboarding();
+    setIsNavigating(true);
+
+    try {
+      console.log(
+        "🎭 OnboardingContainer: handleNextTab called, currentTab:",
+        currentTab,
+        "editMode:",
+        editMode,
+      );
+      console.log(
+        "🎭 OnboardingContainer: currentTabData provided:",
+        currentTabData ? "Yes" : "No",
+      );
+
+      const validation = validateTab(currentTab, currentTabData);
+      console.log("🎭 OnboardingContainer: Validation result:", validation);
+
+      if (!validation.is_valid) {
+        console.log("🚫 OnboardingContainer: Validation failed, showing alert");
+        Alert.alert(
+          "Incomplete Information",
+          `Please complete all required fields:\n\n${validation.errors.join("\n")}`,
+          [{ text: "OK" }],
+        );
+        return;
+      }
+
+      console.log("✅ OnboardingContainer: Validation passed");
+
+      // Mark current tab as completed
+      markTabCompleted(currentTab);
+
+      // In edit mode, save and call onEditComplete
+      if (editMode) {
+        console.log(
+          "💾 OnboardingContainer: Edit mode - saving and calling onEditComplete",
+        );
+        setIsSaving(true);
+        try {
+          await saveToLocal();
+        } finally {
+          setIsSaving(false);
+        }
+        onEditComplete?.();
+        return;
+      }
+
+      // Normal mode: Move to next tab or complete onboarding
+      if (currentTab < 5) {
+        const nextTab = currentTab + 1;
+        console.log("🎭 OnboardingContainer: Moving to tab:", nextTab);
+        setCurrentTab(nextTab);
+      } else {
+        console.log("🎉 OnboardingContainer: Completing onboarding");
+        handleCompleteOnboarding();
+      }
+    } finally {
+      setIsNavigating(false);
     }
   };
 
@@ -513,6 +551,9 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
       onNavigateToTab: canJumpToReview ? setCurrentTab : undefined,
       isLoading,
       isAutoSaving,
+      // OB-UX-001/002: Pass navigation and saving states to tabs
+      isNavigating,
+      isSaving,
       // Pass editing from review state for button text change
       isEditingFromReview,
       onReturnToReview: handleReturnToReview,
@@ -563,10 +604,9 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = ({
         );
 
       case 5:
-        // Reset editing state when we're back on Review tab
-        if (isEditingFromReview) {
-          setIsEditingFromReview(false);
-          setPreviousTab(null);
+        // OB-UX-003: Schedule editing state reset for next render cycle instead of during render
+        if (isEditingFromReview && !pendingEditingReset.current) {
+          pendingEditingReset.current = true;
         }
         return (
           <AdvancedReviewTab

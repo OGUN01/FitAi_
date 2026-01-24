@@ -1,5 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, Platform, PanResponder, GestureResponderEvent, PanResponderGestureState } from 'react-native';
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  Platform,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -8,15 +17,18 @@ import Animated, {
   runOnJS,
   interpolate,
   Extrapolate,
-} from 'react-native-reanimated';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { rf, rp, rh, rw } from '../../utils/responsive';
-import { ResponsiveTheme } from '../../utils/constants';
-import { hapticSwipeAction } from '../../utils/haptics';
+} from "react-native-reanimated";
+import {
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+} from "react-native-gesture-handler";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { rf, rp, rh, rw } from "../../utils/responsive";
+import { ResponsiveTheme } from "../../utils/constants";
+import { hapticSwipeAction } from "../../utils/haptics";
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 export interface SwipeableCard {
@@ -133,7 +145,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
           translateY.value = withSpring(0);
         }
       },
-    })
+    }),
   ).current;
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
@@ -141,14 +153,14 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       translateX.value,
       [-SCREEN_WIDTH / 2, 0, SCREEN_WIDTH / 2],
       [-15, 0, 15],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     const opacity = interpolate(
       Math.abs(translateX.value),
       [0, SWIPE_THRESHOLD],
       [1, 0.8],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return {
@@ -166,7 +178,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       translateX.value,
       [-SWIPE_THRESHOLD, 0],
       [1, 0],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return { opacity };
@@ -177,7 +189,7 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
       translateX.value,
       [0, SWIPE_THRESHOLD],
       [0, 1],
-      Extrapolate.CLAMP
+      Extrapolate.CLAMP,
     );
 
     return { opacity };
@@ -214,14 +226,19 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Ionicons name={nextCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
+            <Ionicons
+              name={nextCard.iconName as any}
+              size={rf(36)}
+              color="#FFFFFF"
+              style={styles.cardIcon}
+            />
             <Text style={styles.cardTitle}>{nextCard.title}</Text>
           </LinearGradient>
         </View>
       )}
 
       {/* Current card (foreground) - Platform-specific gesture handling */}
-      {Platform.OS === 'web' ? (
+      {Platform.OS === "web" ? (
         <Animated.View
           {...panResponder.panHandlers}
           style={[styles.card, cardAnimatedStyle]}
@@ -233,24 +250,46 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
             end={{ x: 1, y: 1 }}
           >
             {/* Swipe indicators */}
-            <Animated.View style={[styles.swipeIndicator, styles.swipeLeft, leftIndicatorStyle]}>
+            <Animated.View
+              style={[
+                styles.swipeIndicator,
+                styles.swipeLeft,
+                leftIndicatorStyle,
+              ]}
+            >
               <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
             </Animated.View>
 
-            <Animated.View style={[styles.swipeIndicator, styles.swipeRight, rightIndicatorStyle]}>
+            <Animated.View
+              style={[
+                styles.swipeIndicator,
+                styles.swipeRight,
+                rightIndicatorStyle,
+              ]}
+            >
               <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
             </Animated.View>
 
             {/* Card content */}
             <View style={styles.cardContent}>
-              <Ionicons name={currentCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
+              <Ionicons
+                name={currentCard.iconName as any}
+                size={rf(36)}
+                color="#FFFFFF"
+                style={styles.cardIcon}
+              />
               <Text style={styles.cardTitle}>{currentCard.title}</Text>
-              <Text style={styles.cardDescription}>{currentCard.description}</Text>
+              <Text style={styles.cardDescription}>
+                {currentCard.description}
+              </Text>
 
               {currentCard.details && currentCard.details.length > 0 && (
                 <View style={styles.detailsContainer}>
                   {currentCard.details.map((detail) => (
-                    <Text key={`detail-web-${detail.substring(0, 30)}`} style={styles.detailText}>
+                    <Text
+                      key={`detail-web-${detail.substring(0, 30)}`}
+                      style={styles.detailText}
+                    >
                       • {detail}
                     </Text>
                   ))}
@@ -276,24 +315,46 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
               end={{ x: 1, y: 1 }}
             >
               {/* Swipe indicators */}
-              <Animated.View style={[styles.swipeIndicator, styles.swipeLeft, leftIndicatorStyle]}>
+              <Animated.View
+                style={[
+                  styles.swipeIndicator,
+                  styles.swipeLeft,
+                  leftIndicatorStyle,
+                ]}
+              >
                 <Text style={styles.swipeIndicatorText}>👎 SKIP</Text>
               </Animated.View>
 
-              <Animated.View style={[styles.swipeIndicator, styles.swipeRight, rightIndicatorStyle]}>
+              <Animated.View
+                style={[
+                  styles.swipeIndicator,
+                  styles.swipeRight,
+                  rightIndicatorStyle,
+                ]}
+              >
                 <Text style={styles.swipeIndicatorText}>👍 LIKE</Text>
               </Animated.View>
 
               {/* Card content */}
               <View style={styles.cardContent}>
-                <Ionicons name={currentCard.iconName as any} size={rf(36)} color="#FFFFFF" style={styles.cardIcon} />
+                <Ionicons
+                  name={currentCard.iconName as any}
+                  size={rf(36)}
+                  color="#FFFFFF"
+                  style={styles.cardIcon}
+                />
                 <Text style={styles.cardTitle}>{currentCard.title}</Text>
-                <Text style={styles.cardDescription}>{currentCard.description}</Text>
+                <Text style={styles.cardDescription}>
+                  {currentCard.description}
+                </Text>
 
                 {currentCard.details && currentCard.details.length > 0 && (
                   <View style={styles.detailsContainer}>
                     {currentCard.details.map((detail) => (
-                      <Text key={`detail-native-${detail.substring(0, 30)}`} style={styles.detailText}>
+                      <Text
+                        key={`detail-native-${detail.substring(0, 30)}`}
+                        style={styles.detailText}
+                      >
                         • {detail}
                       </Text>
                     ))}
@@ -325,18 +386,18 @@ export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({
 const styles = StyleSheet.create({
   container: {
     height: rh(240), // Reduced from 400
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
   },
 
   card: {
     width: SCREEN_WIDTH * 0.8, // Slightly narrower
     height: rh(200), // Reduced from 350
     borderRadius: ResponsiveTheme.borderRadius.xl,
-    position: 'absolute',
-    overflow: 'hidden',
-    shadowColor: '#000',
+    position: "absolute",
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -351,14 +412,14 @@ const styles = StyleSheet.create({
   cardGradient: {
     flex: 1,
     padding: ResponsiveTheme.spacing.md, // Reduced from xl
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   cardContent: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
 
   cardIcon: {
@@ -369,32 +430,32 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xl, // Reduced from xxl
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.white,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: ResponsiveTheme.spacing.xs, // Reduced from sm
   },
 
   cardDescription: {
     fontSize: ResponsiveTheme.fontSize.sm, // Reduced from md
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
+    color: "rgba(255, 255, 255, 0.9)",
+    textAlign: "center",
     lineHeight: rf(18),
     paddingHorizontal: ResponsiveTheme.spacing.md,
   },
 
   detailsContainer: {
     marginTop: ResponsiveTheme.spacing.lg,
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     paddingHorizontal: ResponsiveTheme.spacing.xl,
   },
 
   detailText: {
     fontSize: ResponsiveTheme.fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: "rgba(255, 255, 255, 0.85)",
     marginBottom: ResponsiveTheme.spacing.xs,
   },
 
   swipeIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: ResponsiveTheme.spacing.sm, // Reduced from xl
     padding: ResponsiveTheme.spacing.xs, // Reduced from md
     borderRadius: ResponsiveTheme.borderRadius.md,
@@ -403,14 +464,14 @@ const styles = StyleSheet.create({
 
   swipeLeft: {
     left: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: '#FF4444',
-    backgroundColor: 'rgba(255, 68, 68, 0.2)',
+    borderColor: "#FF4444",
+    backgroundColor: "rgba(255, 68, 68, 0.2)",
   },
 
   swipeRight: {
     right: ResponsiveTheme.spacing.sm, // Reduced from xl
-    borderColor: '#44FF44',
-    backgroundColor: 'rgba(68, 255, 68, 0.2)',
+    borderColor: "#44FF44",
+    backgroundColor: "rgba(68, 255, 68, 0.2)",
   },
 
   swipeIndicatorText: {
@@ -420,10 +481,10 @@ const styles = StyleSheet.create({
   },
 
   progressContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: ResponsiveTheme.spacing.md,
-    alignSelf: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    alignSelf: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
     borderRadius: ResponsiveTheme.borderRadius.full,
@@ -436,20 +497,20 @@ const styles = StyleSheet.create({
   },
 
   instructions: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
 
   instructionText: {
     fontSize: ResponsiveTheme.fontSize.sm,
     color: ResponsiveTheme.colors.textMuted,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   completedContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: ResponsiveTheme.spacing.xl,
   },
 

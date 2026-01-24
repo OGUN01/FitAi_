@@ -4,22 +4,22 @@
  * Used for displaying metrics like BMI, calories, steps, etc.
  */
 
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, ViewStyle } from 'react-native';
+import React, { useEffect } from "react";
+import { StyleSheet, View, Text, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
   withTiming,
   Easing,
   useDerivedValue,
-} from 'react-native-reanimated';
-import { GlassCard } from './GlassCard';
-import { colors, typography, spacing } from '../../../theme/aurora-tokens';
-import { duration, easingFunctions } from '../../../theme/animations';
+} from "react-native-reanimated";
+import { GlassCard } from "./GlassCard";
+import { colors, typography, spacing } from "../../../theme/aurora-tokens";
+import { duration, easingFunctions } from "../../../theme/animations";
 
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
-type TrendType = 'up' | 'down' | 'neutral';
+type TrendType = "up" | "down" | "neutral";
 
 export interface MetricCardProps {
   /**
@@ -93,14 +93,14 @@ export interface MetricCardProps {
    * Size variant
    * @default 'medium'
    */
-  size?: 'small' | 'medium' | 'large';
+  size?: "small" | "medium" | "large";
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
   label,
   value,
   icon,
-  trend = 'neutral',
+  trend = "neutral",
   animateValue = true,
   unit,
   animationDuration = 1000,
@@ -109,7 +109,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   gradientBackground = false,
   elevation = 2,
   style,
-  size = 'medium',
+  size = "medium",
 }) => {
   // Animated value for count-up effect
   const animatedValue = useSharedValue(animateValue ? 0 : value);
@@ -140,13 +140,13 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   // Get trend indicator symbol and color
   const getTrendIndicator = () => {
     switch (trend) {
-      case 'up':
-        return { symbol: '↑', color: colors.success.DEFAULT };
-      case 'down':
-        return { symbol: '↓', color: colors.error.DEFAULT };
-      case 'neutral':
+      case "up":
+        return { symbol: "↑", color: colors.success.DEFAULT };
+      case "down":
+        return { symbol: "↓", color: colors.error.DEFAULT };
+      case "neutral":
       default:
-        return { symbol: '−', color: colors.text.muted };
+        return { symbol: "−", color: colors.text.muted };
     }
   };
 
@@ -155,21 +155,21 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   // Get size-specific styles
   const getSizeStyles = () => {
     switch (size) {
-      case 'small':
+      case "small":
         return {
           padding: spacing.sm,
           valueFontSize: typography.fontSize.h3,
           labelFontSize: typography.fontSize.caption,
           iconSize: 24,
         };
-      case 'large':
+      case "large":
         return {
           padding: spacing.lg,
           valueFontSize: typography.fontSize.display,
           labelFontSize: typography.fontSize.h3,
           iconSize: 48,
         };
-      case 'medium':
+      case "medium":
       default:
         return {
           padding: spacing.md,
@@ -187,14 +187,21 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       elevation={elevation}
       padding="none"
       borderRadius="lg"
-      blurIntensity={glassBackground && !gradientBackground ? 'default' : 'light'}
+      blurIntensity={
+        glassBackground && !gradientBackground ? "default" : "light"
+      }
       style={style}
       contentStyle={styles.card}
     >
       <View style={[styles.content, { padding: sizeStyles.padding }]}>
         {/* Icon Section */}
         {icon && (
-          <View style={[styles.iconContainer, { width: sizeStyles.iconSize, height: sizeStyles.iconSize }]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { width: sizeStyles.iconSize, height: sizeStyles.iconSize },
+            ]}
+          >
             {icon}
           </View>
         )}
@@ -211,7 +218,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
               {value.toFixed(decimals)}
             </AnimatedText>
             {unit && (
-              <Text style={[styles.unit, { fontSize: sizeStyles.labelFontSize }]}>
+              <Text
+                style={[styles.unit, { fontSize: sizeStyles.labelFontSize }]}
+              >
                 {unit}
               </Text>
             )}
@@ -219,10 +228,12 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
           {/* Label Row */}
           <View style={styles.labelRow}>
-            <Text style={[styles.label, { fontSize: sizeStyles.labelFontSize }]}>
+            <Text
+              style={[styles.label, { fontSize: sizeStyles.labelFontSize }]}
+            >
               {label}
             </Text>
-            {trend !== 'neutral' && (
+            {trend !== "neutral" && (
               <Text style={[styles.trend, { color: trendIndicator.color }]}>
                 {trendIndicator.symbol}
               </Text>
@@ -239,14 +250,14 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   content: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
   },
   iconContainer: {
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: colors.glass.background,
   },
   metricsContainer: {
@@ -254,8 +265,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   valueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: spacing.xs,
   },
   value: {
@@ -267,8 +278,8 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.xs,
   },
   label: {

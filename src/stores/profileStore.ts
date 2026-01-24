@@ -1,22 +1,42 @@
 /**
  * Unified Profile Store for FitAI
  *
- * SINGLE SOURCE OF TRUTH for onboarding profile data:
+ * ============================================================================
+ * SINGLE SOURCE OF TRUTH (SSOT) FOR ONBOARDING PROFILE DATA
+ * ============================================================================
+ *
+ * This store is the AUTHORITATIVE source for all onboarding-related data:
  *   - personalInfo (name, age, gender, height, weight, etc.)
  *   - dietPreferences (dietary restrictions, allergies, cuisine preferences)
  *   - bodyAnalysis (measurements, body composition goals)
  *   - workoutPreferences (exercise preferences, schedule, experience level)
  *   - advancedReview (health conditions, medications, special notes)
  *
- * NOTE: This store handles ONBOARDING data.
- *       For Supabase user profile operations, see userStore.ts
+ * DATA FORMAT: All fields use snake_case to match database schema
+ *   - first_name (not firstName)
+ *   - primary_goals (not primaryGoals)
+ *   - See src/types/onboarding.ts for complete type definitions
+ *
+ * IMPORTANT ARCHITECTURAL NOTES:
+ *   - DataBridge reads/writes through this store (not userStore)
+ *   - OnboardingContainer uses this store for UI state
+ *   - userStore is ONLY for Supabase auth operations (not onboarding data)
+ *   - For snake_case/camelCase conversion, see src/utils/typeTransformers.ts
  *
  * Storage key: 'profile-storage-v2' (v2 to avoid conflicts with existing stores)
+ *
+ * @see src/services/DataBridge.ts - Data sync layer
+ * @see src/screens/onboarding/OnboardingContainer.tsx - UI consumer
+ * @see src/types/onboarding.ts - Type definitions
  */
 
-import { create } from 'zustand';
-import { persist, createJSONStorage, subscribeWithSelector } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from "zustand";
+import {
+  persist,
+  createJSONStorage,
+  subscribeWithSelector,
+} from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Import types from onboarding (which are the actual data structures used)
 import type {
@@ -25,13 +45,13 @@ import type {
   BodyAnalysisData,
   WorkoutPreferencesData,
   AdvancedReviewData,
-} from '../types/onboarding';
+} from "../types/onboarding";
 
 // ============================================================================
 // SYNC STATUS TYPES
 // ============================================================================
 
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'pending';
+export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "pending";
 
 // ============================================================================
 // STORE STATE INTERFACE
@@ -95,7 +115,7 @@ const initialState: ProfileState = {
   advancedReview: null,
 
   // Sync management
-  syncStatus: 'idle',
+  syncStatus: "idle",
   lastSyncedAt: null,
   syncError: null,
 
@@ -122,12 +142,15 @@ export const useProfileStore = create<ProfileStore>()(
          * Update personal info and mark sync status as pending
          */
         updatePersonalInfo: (data: Partial<PersonalInfoData>) => {
-          console.log('[ProfileStore] updatePersonalInfo called with:', Object.keys(data));
+          console.log(
+            "[ProfileStore] updatePersonalInfo called with:",
+            Object.keys(data),
+          );
           set((state) => ({
             personalInfo: state.personalInfo
               ? { ...state.personalInfo, ...data }
               : (data as PersonalInfoData),
-            syncStatus: 'pending',
+            syncStatus: "pending",
           }));
         },
 
@@ -135,12 +158,15 @@ export const useProfileStore = create<ProfileStore>()(
          * Update diet preferences and mark sync status as pending
          */
         updateDietPreferences: (data: Partial<DietPreferencesData>) => {
-          console.log('[ProfileStore] updateDietPreferences called with:', Object.keys(data));
+          console.log(
+            "[ProfileStore] updateDietPreferences called with:",
+            Object.keys(data),
+          );
           set((state) => ({
             dietPreferences: state.dietPreferences
               ? { ...state.dietPreferences, ...data }
               : (data as DietPreferencesData),
-            syncStatus: 'pending',
+            syncStatus: "pending",
           }));
         },
 
@@ -148,12 +174,15 @@ export const useProfileStore = create<ProfileStore>()(
          * Update body analysis and mark sync status as pending
          */
         updateBodyAnalysis: (data: Partial<BodyAnalysisData>) => {
-          console.log('[ProfileStore] updateBodyAnalysis called with:', Object.keys(data));
+          console.log(
+            "[ProfileStore] updateBodyAnalysis called with:",
+            Object.keys(data),
+          );
           set((state) => ({
             bodyAnalysis: state.bodyAnalysis
               ? { ...state.bodyAnalysis, ...data }
               : (data as BodyAnalysisData),
-            syncStatus: 'pending',
+            syncStatus: "pending",
           }));
         },
 
@@ -161,12 +190,15 @@ export const useProfileStore = create<ProfileStore>()(
          * Update workout preferences and mark sync status as pending
          */
         updateWorkoutPreferences: (data: Partial<WorkoutPreferencesData>) => {
-          console.log('[ProfileStore] updateWorkoutPreferences called with:', Object.keys(data));
+          console.log(
+            "[ProfileStore] updateWorkoutPreferences called with:",
+            Object.keys(data),
+          );
           set((state) => ({
             workoutPreferences: state.workoutPreferences
               ? { ...state.workoutPreferences, ...data }
               : (data as WorkoutPreferencesData),
-            syncStatus: 'pending',
+            syncStatus: "pending",
           }));
         },
 
@@ -174,12 +206,15 @@ export const useProfileStore = create<ProfileStore>()(
          * Update advanced review and mark sync status as pending
          */
         updateAdvancedReview: (data: Partial<AdvancedReviewData>) => {
-          console.log('[ProfileStore] updateAdvancedReview called with:', Object.keys(data));
+          console.log(
+            "[ProfileStore] updateAdvancedReview called with:",
+            Object.keys(data),
+          );
           set((state) => ({
             advancedReview: state.advancedReview
               ? { ...state.advancedReview, ...data }
               : (data as AdvancedReviewData),
-            syncStatus: 'pending',
+            syncStatus: "pending",
           }));
         },
 
@@ -192,11 +227,18 @@ export const useProfileStore = create<ProfileStore>()(
          * Also updates lastSyncedAt when status is 'synced'
          */
         setSyncStatus: (status: SyncStatus, error?: string | null) => {
-          console.log('[ProfileStore] setSyncStatus:', status, error ? `(error: ${error})` : '');
+          console.log(
+            "[ProfileStore] setSyncStatus:",
+            status,
+            error ? `(error: ${error})` : "",
+          );
           set({
             syncStatus: status,
             syncError: error ?? null,
-            lastSyncedAt: status === 'synced' ? new Date().toISOString() : get().lastSyncedAt,
+            lastSyncedAt:
+              status === "synced"
+                ? new Date().toISOString()
+                : get().lastSyncedAt,
           });
         },
 
@@ -209,15 +251,19 @@ export const useProfileStore = create<ProfileStore>()(
          * This is used during migration to consolidate data from the old system
          */
         hydrateFromLegacy: (data: Partial<ProfileState>) => {
-          console.log('[ProfileStore] hydrateFromLegacy called with sections:', Object.keys(data));
+          console.log(
+            "[ProfileStore] hydrateFromLegacy called with sections:",
+            Object.keys(data),
+          );
           set((state) => ({
             personalInfo: data.personalInfo ?? state.personalInfo,
             dietPreferences: data.dietPreferences ?? state.dietPreferences,
             bodyAnalysis: data.bodyAnalysis ?? state.bodyAnalysis,
-            workoutPreferences: data.workoutPreferences ?? state.workoutPreferences,
+            workoutPreferences:
+              data.workoutPreferences ?? state.workoutPreferences,
             advancedReview: data.advancedReview ?? state.advancedReview,
             isHydrated: true,
-            syncStatus: 'pending', // Mark as pending to trigger sync
+            syncStatus: "pending", // Mark as pending to trigger sync
           }));
         },
 
@@ -230,12 +276,14 @@ export const useProfileStore = create<ProfileStore>()(
          * Useful for logout or account deletion
          */
         reset: () => {
-          console.log('[ProfileStore] reset called - clearing all profile data');
+          console.log(
+            "[ProfileStore] reset called - clearing all profile data",
+          );
           set(initialState);
         },
       }),
       {
-        name: 'profile-storage-v2', // v2 to avoid conflicts with existing storage
+        name: "profile-storage-v2", // v2 to avoid conflicts with existing storage
         storage: createJSONStorage(() => AsyncStorage),
         // Only persist the data fields, not the sync status or hydration flag
         partialize: (state) => ({
@@ -250,18 +298,21 @@ export const useProfileStore = create<ProfileStore>()(
         // Handle rehydration from storage
         onRehydrateStorage: () => (state) => {
           if (state) {
-            console.log('[ProfileStore] Rehydrated from storage, sections present:', {
-              personalInfo: !!state.personalInfo,
-              dietPreferences: !!state.dietPreferences,
-              bodyAnalysis: !!state.bodyAnalysis,
-              workoutPreferences: !!state.workoutPreferences,
-              advancedReview: !!state.advancedReview,
-            });
+            console.log(
+              "[ProfileStore] Rehydrated from storage, sections present:",
+              {
+                personalInfo: !!state.personalInfo,
+                dietPreferences: !!state.dietPreferences,
+                bodyAnalysis: !!state.bodyAnalysis,
+                workoutPreferences: !!state.workoutPreferences,
+                advancedReview: !!state.advancedReview,
+              },
+            );
           }
         },
-      }
-    )
-  )
+      },
+    ),
+  ),
 );
 
 // ============================================================================
@@ -276,7 +327,8 @@ export const selectPersonalInfo = (state: ProfileStore) => state.personalInfo;
 /**
  * Select only diet preferences
  */
-export const selectDietPreferences = (state: ProfileStore) => state.dietPreferences;
+export const selectDietPreferences = (state: ProfileStore) =>
+  state.dietPreferences;
 
 /**
  * Select only body analysis
@@ -286,12 +338,14 @@ export const selectBodyAnalysis = (state: ProfileStore) => state.bodyAnalysis;
 /**
  * Select only workout preferences
  */
-export const selectWorkoutPreferences = (state: ProfileStore) => state.workoutPreferences;
+export const selectWorkoutPreferences = (state: ProfileStore) =>
+  state.workoutPreferences;
 
 /**
  * Select only advanced review
  */
-export const selectAdvancedReview = (state: ProfileStore) => state.advancedReview;
+export const selectAdvancedReview = (state: ProfileStore) =>
+  state.advancedReview;
 
 /**
  * Select sync status information

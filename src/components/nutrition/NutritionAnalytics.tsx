@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Card, THEME } from '../ui';
-import { useNutritionData } from '../../hooks/useNutritionData';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
+import { Card, THEME } from "../ui";
+import { useNutritionData } from "../../hooks/useNutritionData";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 interface NutritionAnalyticsProps {
-  timeRange?: 'week' | 'month' | 'year';
-  onTimeRangeChange?: (range: 'week' | 'month' | 'year') => void;
+  timeRange?: "week" | "month" | "year";
+  onTimeRangeChange?: (range: "week" | "month" | "year") => void;
 }
 
 export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
-  timeRange = 'week',
+  timeRange = "week",
   onTimeRangeChange,
 }) => {
   const {
@@ -23,7 +30,9 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
     statsLoading,
   } = useNutritionData();
 
-  const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'year'>(timeRange);
+  const [selectedRange, setSelectedRange] = useState<"week" | "month" | "year">(
+    timeRange,
+  );
   const [weeklyStats, setWeeklyStats] = useState<{
     avgCalories: number;
     avgProtein: number;
@@ -37,15 +46,15 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
     calculateWeeklyStats();
   }, [userMeals, selectedRange]);
 
-  const handleRangeChange = (range: 'week' | 'month' | 'year') => {
+  const handleRangeChange = (range: "week" | "month" | "year") => {
     setSelectedRange(range);
     onTimeRangeChange?.(range);
   };
 
   const timeRanges = [
-    { id: 'week', label: 'Week', icon: '📅' },
-    { id: 'month', label: 'Month', icon: '🗓️' },
-    { id: 'year', label: 'Year', icon: '📆' },
+    { id: "week", label: "Week", icon: "📅" },
+    { id: "month", label: "Month", icon: "🗓️" },
+    { id: "year", label: "Year", icon: "📆" },
   ] as const;
 
   const calculateWeeklyStats = () => {
@@ -70,7 +79,7 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
         carbs: acc.carbs + meal.total_carbs,
         fat: acc.fat + meal.total_fat,
       }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      { calories: 0, protein: 0, carbs: 0, fat: 0 },
     );
 
     setWeeklyStats({
@@ -138,7 +147,9 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
             <Text style={styles.sectionTitle}>Today's Progress</Text>
             <View style={styles.progressGrid}>
               <View style={styles.progressItem}>
-                <Text style={styles.progressValue}>{dailyNutrition.calories}</Text>
+                <Text style={styles.progressValue}>
+                  {dailyNutrition.calories}
+                </Text>
                 <Text style={styles.progressLabel}>Calories</Text>
                 <View style={styles.progressBar}>
                   <View
@@ -149,18 +160,22 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                         backgroundColor: getProgressColor(
                           getProgressPercentage(
                             dailyNutrition.calories,
-                            nutritionGoals.daily_calories
-                          )
+                            nutritionGoals.daily_calories,
+                          ),
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.daily_calories}</Text>
+                <Text style={styles.progressTarget}>
+                  Goal: {nutritionGoals.daily_calories}
+                </Text>
               </View>
 
               <View style={styles.progressItem}>
-                <Text style={styles.progressValue}>{Math.round(dailyNutrition.protein)}g</Text>
+                <Text style={styles.progressValue}>
+                  {Math.round(dailyNutrition.protein)}g
+                </Text>
                 <Text style={styles.progressLabel}>Protein</Text>
                 <View style={styles.progressBar}>
                   <View
@@ -171,18 +186,22 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                         backgroundColor: getProgressColor(
                           getProgressPercentage(
                             dailyNutrition.protein,
-                            nutritionGoals.macroTargets?.protein ?? 0
-                          )
+                            nutritionGoals.macroTargets?.protein ?? 0,
+                          ),
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.protein ?? 0}g</Text>
+                <Text style={styles.progressTarget}>
+                  Goal: {nutritionGoals.macroTargets?.protein ?? 0}g
+                </Text>
               </View>
 
               <View style={styles.progressItem}>
-                <Text style={styles.progressValue}>{Math.round(dailyNutrition.carbs)}g</Text>
+                <Text style={styles.progressValue}>
+                  {Math.round(dailyNutrition.carbs)}g
+                </Text>
                 <Text style={styles.progressLabel}>Carbs</Text>
                 <View style={styles.progressBar}>
                   <View
@@ -191,17 +210,24 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                       {
                         width: `${getProgressPercentage(dailyNutrition.carbs, nutritionGoals.macroTargets?.carbohydrates ?? 0)}%`,
                         backgroundColor: getProgressColor(
-                          getProgressPercentage(dailyNutrition.carbs, nutritionGoals.macroTargets?.carbohydrates ?? 0)
+                          getProgressPercentage(
+                            dailyNutrition.carbs,
+                            nutritionGoals.macroTargets?.carbohydrates ?? 0,
+                          ),
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.carbohydrates ?? 0}g</Text>
+                <Text style={styles.progressTarget}>
+                  Goal: {nutritionGoals.macroTargets?.carbohydrates ?? 0}g
+                </Text>
               </View>
 
               <View style={styles.progressItem}>
-                <Text style={styles.progressValue}>{Math.round(dailyNutrition.fat)}g</Text>
+                <Text style={styles.progressValue}>
+                  {Math.round(dailyNutrition.fat)}g
+                </Text>
                 <Text style={styles.progressLabel}>Fat</Text>
                 <View style={styles.progressBar}>
                   <View
@@ -210,13 +236,18 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
                       {
                         width: `${getProgressPercentage(dailyNutrition.fat, nutritionGoals.macroTargets?.fat ?? 0)}%`,
                         backgroundColor: getProgressColor(
-                          getProgressPercentage(dailyNutrition.fat, nutritionGoals.macroTargets?.fat ?? 0)
+                          getProgressPercentage(
+                            dailyNutrition.fat,
+                            nutritionGoals.macroTargets?.fat ?? 0,
+                          ),
                         ),
                       },
                     ]}
                   />
                 </View>
-                <Text style={styles.progressTarget}>Goal: {nutritionGoals.macroTargets?.fat ?? 0}g</Text>
+                <Text style={styles.progressTarget}>
+                  Goal: {nutritionGoals.macroTargets?.fat ?? 0}g
+                </Text>
               </View>
             </View>
           </View>
@@ -256,33 +287,40 @@ export const NutritionAnalytics: React.FC<NutritionAnalyticsProps> = ({
           <View style={styles.insightsContainer}>
             {!dailyNutrition || dailyNutrition.mealsCount === 0 ? (
               <Text style={styles.insightText}>
-                🍽️ Start tracking your meals to see personalized nutrition insights!
+                🍽️ Start tracking your meals to see personalized nutrition
+                insights!
               </Text>
             ) : (
               <>
                 {dailyNutrition.mealsCount > 0 && (
                   <Text style={styles.insightText}>
                     📊 You've logged {dailyNutrition.mealsCount} meal
-                    {dailyNutrition.mealsCount > 1 ? 's' : ''} today!
+                    {dailyNutrition.mealsCount > 1 ? "s" : ""} today!
                   </Text>
                 )}
 
                 {nutritionGoals &&
-                  dailyNutrition.calories > nutritionGoals.daily_calories * 0.8 && (
+                  dailyNutrition.calories >
+                    nutritionGoals.daily_calories * 0.8 && (
                     <Text style={styles.insightText}>
-                      🎯 Great job! You're on track to meet your calorie goal today.
+                      🎯 Great job! You're on track to meet your calorie goal
+                      today.
                     </Text>
                   )}
 
-                {nutritionGoals && dailyNutrition.protein > (nutritionGoals.macroTargets?.protein ?? 0) * 0.8 && (
-                  <Text style={styles.insightText}>
-                    💪 Excellent protein intake! You're supporting your fitness goals.
-                  </Text>
-                )}
+                {nutritionGoals &&
+                  dailyNutrition.protein >
+                    (nutritionGoals.macroTargets?.protein ?? 0) * 0.8 && (
+                    <Text style={styles.insightText}>
+                      💪 Excellent protein intake! You're supporting your
+                      fitness goals.
+                    </Text>
+                  )}
 
                 {weeklyStats && weeklyStats.totalMeals >= 5 && (
                   <Text style={styles.insightText}>
-                    🌟 Consistent tracking! You're building great nutrition habits.
+                    🌟 Consistent tracking! You're building great nutrition
+                    habits.
                   </Text>
                 )}
               </>
@@ -312,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   timeRangeSelector: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: THEME.colors.backgroundSecondary,
     borderRadius: THEME.borderRadius.md,
     padding: 4,
@@ -320,9 +358,9 @@ const styles = StyleSheet.create({
 
   timeRangeButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: THEME.borderRadius.sm,
@@ -359,13 +397,13 @@ const styles = StyleSheet.create({
   },
 
   progressGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.md,
   },
 
   progressItem: {
-    width: '48%',
+    width: "48%",
     backgroundColor: THEME.colors.backgroundSecondary,
     padding: THEME.spacing.md,
     borderRadius: THEME.borderRadius.md,
@@ -392,7 +430,7 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 3,
   },
 
@@ -402,14 +440,14 @@ const styles = StyleSheet.create({
   },
 
   statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: THEME.spacing.md,
   },
 
   statItem: {
-    width: '48%',
-    alignItems: 'center',
+    width: "48%",
+    alignItems: "center",
     paddingVertical: THEME.spacing.md,
   },
 
@@ -442,7 +480,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: THEME.spacing.xl,
   },
 });

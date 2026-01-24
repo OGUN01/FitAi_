@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,12 @@ import {
   Alert,
   ScrollView,
   Animated,
-} from 'react-native';
-import { Button, Card, THEME } from '../../components/ui';
-import { DayMeal } from '../../types/ai';
-import completionTrackingService from '../../services/completionTracking';
-import { useAuth } from '../../hooks/useAuth';
-import { useNutritionData } from '../../hooks/useNutritionData';
+} from "react-native";
+import { Button, Card, THEME } from "../../components/ui";
+import { DayMeal } from "../../types/ai";
+import completionTrackingService from "../../services/completionTracking";
+import { useAuth } from "../../hooks/useAuth";
+import { useNutritionData } from "../../hooks/useNutritionData";
 
 interface MealSessionScreenProps {
   route: {
@@ -31,24 +31,31 @@ interface IngredientProgress {
   notes?: string;
 }
 
-export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, navigation }) => {
+export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({
+  route,
+  navigation,
+}) => {
   const { meal, logId } = route.params;
   const { user } = useAuth();
   const { loadDailyNutrition } = useNutritionData();
 
   // State management
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [ingredientProgress, setIngredientProgress] = useState<IngredientProgress[]>(
+  const [ingredientProgress, setIngredientProgress] = useState<
+    IngredientProgress[]
+  >(
     meal.items.map((_, index) => ({
       itemIndex: index,
       isCompleted: false,
-    }))
+    })),
   );
   const [mealStartTime] = useState(new Date());
   const [fadeAnim] = useState(new Animated.Value(1));
 
   const totalSteps = meal.items?.length ?? 0;
-  const completedSteps = ingredientProgress.filter((ip) => ip.isCompleted).length;
+  const completedSteps = ingredientProgress.filter(
+    (ip) => ip.isCompleted,
+  ).length;
   const overallProgress = completedSteps / totalSteps;
 
   // Animation when changing steps
@@ -72,14 +79,18 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
     const progressPercentage = Math.round((completedItems / totalSteps) * 100);
 
     try {
-      await completionTrackingService.updateMealProgress(meal.id, progressPercentage, {
-        logId,
-        itemIndex,
-        completedItems,
-        totalItems: totalSteps,
-      });
+      await completionTrackingService.updateMealProgress(
+        meal.id,
+        progressPercentage,
+        {
+          logId,
+          itemIndex,
+          completedItems,
+          totalItems: totalSteps,
+        },
+      );
     } catch (error) {
-      console.error('Failed to update meal progress:', error);
+      console.error("Failed to update meal progress:", error);
     }
   };
 
@@ -113,7 +124,9 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
 
   // Complete meal
   const completeMeal = async () => {
-    const preparationTime = Math.round((new Date().getTime() - mealStartTime.getTime()) / 60000);
+    const preparationTime = Math.round(
+      (new Date().getTime() - mealStartTime.getTime()) / 60000,
+    );
 
     try {
       // Mark meal as completed in the tracking service
@@ -127,49 +140,51 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
           totalItems: totalSteps,
           completedAt: new Date().toISOString(),
         },
-        user?.id // Supabase sync requires userId, local storage works without
+        user?.id, // Supabase sync requires userId, local storage works without
       );
 
       if (success) {
         // Refresh nutrition data to update calorie display
         try {
           await loadDailyNutrition();
-          console.log('✅ Daily nutrition data refreshed after meal completion');
+          console.log(
+            "✅ Daily nutrition data refreshed after meal completion",
+          );
         } catch (refreshError) {
-          console.warn('⚠️ Failed to refresh nutrition data:', refreshError);
+          console.warn("⚠️ Failed to refresh nutrition data:", refreshError);
         }
 
         Alert.alert(
-          '🍽️ Meal Complete!',
+          "🍽️ Meal Complete!",
           `Delicious! You prepared "${meal.name}" in ${preparationTime} minutes.\n\nCalories: ~${meal.totalCalories}\nIngredients used: ${completedSteps}/${totalSteps}`,
           [
             {
-              text: 'View Nutrition',
+              text: "View Nutrition",
               onPress: () => {
-                navigation.navigate('Diet');
+                navigation.navigate("Diet");
               },
             },
             {
-              text: 'Done',
+              text: "Done",
               onPress: () => navigation.goBack(),
-              style: 'default',
+              style: "default",
             },
-          ]
+          ],
         );
       } else {
-        throw new Error('Failed to save meal completion');
+        throw new Error("Failed to save meal completion");
       }
     } catch (error) {
-      console.error('Error completing meal:', error);
+      console.error("Error completing meal:", error);
       Alert.alert(
-        'Meal Complete!',
+        "Meal Complete!",
         `Delicious! You prepared "${meal.name}" in ${preparationTime} minutes.\n\nNote: Progress may not have been saved.`,
         [
           {
-            text: 'Done',
+            text: "Done",
             onPress: () => navigation.goBack(),
           },
-        ]
+        ],
       );
     }
   };
@@ -180,36 +195,46 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
 
     if (hasProgress) {
       Alert.alert(
-        'Exit Meal Preparation?',
+        "Exit Meal Preparation?",
         `You've completed ${completedSteps}/${totalSteps} ingredients. Your progress will be saved.`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: "Cancel", style: "cancel" },
           {
-            text: 'Save & Exit',
+            text: "Save & Exit",
             onPress: async () => {
               try {
-                const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
-                await completionTrackingService.updateMealProgress(meal.id, progressPercentage, {
-                  logId,
-                  partialCompletion: true,
-                  exitedAt: new Date().toISOString(),
-                });
+                const progressPercentage = Math.round(
+                  (completedSteps / totalSteps) * 100,
+                );
+                await completionTrackingService.updateMealProgress(
+                  meal.id,
+                  progressPercentage,
+                  {
+                    logId,
+                    partialCompletion: true,
+                    exitedAt: new Date().toISOString(),
+                  },
+                );
               } catch (error) {
-                console.error('Failed to save progress:', error);
+                console.error("Failed to save progress:", error);
               }
               navigation.goBack();
             },
           },
-        ]
+        ],
       );
     } else {
       Alert.alert(
-        'Exit Meal Preparation?',
-        'Are you sure you want to exit? No progress has been made.',
+        "Exit Meal Preparation?",
+        "Are you sure you want to exit? No progress has been made.",
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', style: 'destructive', onPress: () => navigation.goBack() },
-        ]
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Exit",
+            style: "destructive",
+            onPress: () => navigation.goBack(),
+          },
+        ],
       );
     }
   };
@@ -220,7 +245,11 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={exitMeal} style={styles.exitButton}>
+        <TouchableOpacity
+          onPress={exitMeal}
+          style={styles.exitButton}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={styles.exitButtonText}>✕</Text>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -231,14 +260,19 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
         </View>
         <View style={styles.headerRight}>
           <Text style={styles.timerText}>
-            {Math.round((new Date().getTime() - mealStartTime.getTime()) / 60000)}m
+            {Math.round(
+              (new Date().getTime() - mealStartTime.getTime()) / 60000,
+            )}
+            m
           </Text>
         </View>
       </View>
 
       {/* Progress Bar */}
       <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBar, { width: `${overallProgress * 100}%` }]} />
+        <View
+          style={[styles.progressBar, { width: `${overallProgress * 100}%` }]}
+        />
       </View>
 
       {/* Main Content */}
@@ -250,10 +284,12 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
               <Text style={styles.stepTitle}>{currentItem.name}</Text>
               <View style={styles.stepDetails}>
                 <Text style={styles.stepDetailText}>
-                  Quantity: {currentItem.quantity || '1 serving'}
+                  Quantity: {currentItem.quantity || "1 serving"}
                 </Text>
                 {currentItem.calories && (
-                  <Text style={styles.stepDetailText}>{currentItem.calories} cal</Text>
+                  <Text style={styles.stepDetailText}>
+                    {currentItem.calories} cal
+                  </Text>
                 )}
               </View>
             </View>
@@ -263,7 +299,8 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
               <TouchableOpacity
                 style={[
                   styles.statusButton,
-                  ingredientProgress[currentStepIndex]?.isCompleted && styles.statusButtonCompleted,
+                  ingredientProgress[currentStepIndex]?.isCompleted &&
+                    styles.statusButtonCompleted,
                 ]}
                 onPress={() => handleIngredientComplete(currentStepIndex)}
               >
@@ -274,7 +311,9 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
                       styles.statusButtonTextCompleted,
                   ]}
                 >
-                  {ingredientProgress[currentStepIndex]?.isCompleted ? '✓ Added' : 'Mark as Added'}
+                  {ingredientProgress[currentStepIndex]?.isCompleted
+                    ? "✓ Added"
+                    : "Mark as Added"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -285,7 +324,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
               <Text style={styles.notesText}>
                 {currentItem.preparation ||
                   meal.instructions ||
-                  'Add this ingredient to your meal preparation.'}
+                  "Add this ingredient to your meal preparation."}
               </Text>
             </View>
           </Card>
@@ -295,15 +334,21 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
             <Text style={styles.overviewTitle}>Meal Overview</Text>
             <View style={styles.overviewGrid}>
               <View style={styles.overviewItem}>
-                <Text style={styles.overviewValue}>{meal.totalCalories || 0}</Text>
+                <Text style={styles.overviewValue}>
+                  {meal.totalCalories || 0}
+                </Text>
                 <Text style={styles.overviewLabel}>Calories</Text>
               </View>
               <View style={styles.overviewItem}>
-                <Text style={styles.overviewValue}>{meal.preparationTime || 30}</Text>
+                <Text style={styles.overviewValue}>
+                  {meal.preparationTime || 30}
+                </Text>
                 <Text style={styles.overviewLabel}>Minutes</Text>
               </View>
               <View style={styles.overviewItem}>
-                <Text style={styles.overviewValue}>{meal.difficulty || 'Easy'}</Text>
+                <Text style={styles.overviewValue}>
+                  {meal.difficulty || "Easy"}
+                </Text>
                 <Text style={styles.overviewLabel}>Difficulty</Text>
               </View>
               <View style={styles.overviewItem}>
@@ -328,7 +373,7 @@ export const MealSessionScreen: React.FC<MealSessionScreenProps> = ({ route, nav
         />
 
         <Button
-          title={currentStepIndex === totalSteps - 1 ? 'Finish Meal' : 'Next'}
+          title={currentStepIndex === totalSteps - 1 ? "Finish Meal" : "Next"}
           onPress={goToNextStep}
           variant="primary"
           style={styles.navButton}
@@ -345,9 +390,9 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
     backgroundColor: THEME.colors.surface,
@@ -359,28 +404,28 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: THEME.colors.error + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: THEME.colors.error + "20",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   exitButtonText: {
     fontSize: 18,
     color: THEME.colors.error,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 
   headerInfo: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     marginHorizontal: THEME.spacing.md,
   },
 
   mealTitle: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   progressText: {
@@ -390,12 +435,12 @@ const styles = StyleSheet.create({
   },
 
   headerRight: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   timerText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.primary,
   },
 
@@ -406,7 +451,7 @@ const styles = StyleSheet.create({
   },
 
   progressBar: {
-    height: '100%',
+    height: "100%",
     backgroundColor: THEME.colors.primary,
     borderRadius: 2,
   },
@@ -431,26 +476,26 @@ const styles = StyleSheet.create({
 
   stepTitle: {
     fontSize: THEME.fontSize.xl,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   stepDetails: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     gap: THEME.spacing.lg,
   },
 
   stepDetailText: {
     fontSize: THEME.fontSize.md,
     color: THEME.colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   statusContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: THEME.spacing.lg,
   },
 
@@ -470,7 +515,7 @@ const styles = StyleSheet.create({
 
   statusButtonText: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
 
@@ -486,7 +531,7 @@ const styles = StyleSheet.create({
 
   notesTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
@@ -504,24 +549,24 @@ const styles = StyleSheet.create({
 
   overviewTitle: {
     fontSize: THEME.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
     color: THEME.colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: THEME.spacing.md,
   },
 
   overviewGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
 
   overviewItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   overviewValue: {
     fontSize: THEME.fontSize.lg,
-    fontWeight: '700',
+    fontWeight: "700",
     color: THEME.colors.primary,
     marginBottom: THEME.spacing.xs,
   },
@@ -532,7 +577,7 @@ const styles = StyleSheet.create({
   },
 
   navigationContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.lg,
     gap: THEME.spacing.md,

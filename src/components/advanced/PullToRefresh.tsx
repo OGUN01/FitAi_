@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   Animated,
   PanResponder,
   Vibration,
-} from 'react-native';
-import { THEME } from '../../utils/constants';
+} from "react-native";
+import { THEME } from "../../utils/constants";
 
 interface PullToRefreshProps {
   children: React.ReactNode;
@@ -100,7 +100,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
         toValue: 360,
         duration: 1000,
         useNativeDriver: true,
-      })
+      }),
     );
     rotationAnimation.start();
 
@@ -135,15 +135,15 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   };
 
   const getRefreshText = () => {
-    if (isRefreshing) return 'Refreshing...';
-    if (canRefresh) return 'Release to refresh';
-    return 'Pull to refresh';
+    if (isRefreshing) return "Refreshing...";
+    if (canRefresh) return "Release to refresh";
+    return "Pull to refresh";
   };
 
   const getRefreshIcon = () => {
-    if (isRefreshing) return '⟳';
-    if (canRefresh) return '↑';
-    return '↓';
+    if (isRefreshing) return "⟳";
+    if (canRefresh) return "↑";
+    return "↓";
   };
 
   return (
@@ -157,7 +157,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
             opacity: pullDistance.interpolate({
               inputRange: [0, pullThreshold],
               outputRange: [0, 1],
-              extrapolate: 'clamp',
+              extrapolate: "clamp",
             }),
           },
         ]}
@@ -171,12 +171,14 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
                   {
                     rotate: rotationValue.interpolate({
                       inputRange: [0, 360],
-                      outputRange: ['0deg', '360deg'],
+                      outputRange: ["0deg", "360deg"],
                     }),
                   },
                   { scale: scaleValue },
                 ],
-                color: canRefresh ? THEME.colors.primary : THEME.colors.textSecondary,
+                color: canRefresh
+                  ? THEME.colors.primary
+                  : THEME.colors.textSecondary,
               },
             ]}
           >
@@ -185,7 +187,11 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           <Text
             style={[
               styles.refreshText,
-              { color: canRefresh ? THEME.colors.primary : THEME.colors.textSecondary },
+              {
+                color: canRefresh
+                  ? THEME.colors.primary
+                  : THEME.colors.textSecondary,
+              },
             ]}
           >
             {getRefreshText()}
@@ -227,20 +233,20 @@ const styles = StyleSheet.create({
   },
 
   refreshContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 1,
     backgroundColor: THEME.colors.background,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
+    justifyContent: "flex-end",
+    alignItems: "center",
     paddingBottom: 10,
   },
 
   refreshContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   refreshIcon: {
@@ -250,7 +256,7 @@ const styles = StyleSheet.create({
 
   refreshText: {
     fontSize: THEME.fontSize.sm,
-    fontWeight: THEME.fontWeight.medium as '500',
+    fontWeight: THEME.fontWeight.medium as "500",
   },
 
   scrollView: {

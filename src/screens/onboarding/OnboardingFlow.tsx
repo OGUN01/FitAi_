@@ -1,3 +1,23 @@
+/**
+ * @deprecated DEPRECATED - DO NOT USE FOR NEW DEVELOPMENT
+ *
+ * This component uses local useState for state management which creates
+ * a DUPLICATE source of truth separate from profileStore.
+ *
+ * USE INSTEAD: OnboardingContainer.tsx
+ * - OnboardingContainer uses profileStore (Zustand) as SINGLE SOURCE OF TRUTH
+ * - OnboardingContainer has proper tab-based navigation
+ * - OnboardingContainer integrates with DataBridge for database sync
+ *
+ * This file is kept for backward compatibility only and will be removed
+ * in a future release.
+ *
+ * Migration: Replace all imports of OnboardingFlow with OnboardingContainer
+ *
+ * @see OnboardingContainer.tsx - The correct onboarding implementation
+ * @see profileStore.ts - SSOT for all onboarding profile data
+ */
+
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";

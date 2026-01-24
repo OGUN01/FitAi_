@@ -1,30 +1,59 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { WeeklyMealPlan, DayMeal } from "../ai";
-import { SyncStatus } from "../types/localData";
+import { WeeklyMealPlan, DayMeal, MealItem } from "../ai";
+import { SyncStatus, LoggedFood } from "../types/localData";
 import { Meal } from "../types/ai";
 import { crudOperations } from "../services/crudOperations";
 import { dataBridge } from "../services/DataBridge";
 import { offlineService } from "../services/offline";
-import { useAuthStore } from "../stores/authStore";
 import { supabase } from "../services/supabase";
+import { generateUUID, isValidUUID } from "../utils/uuid";
+import {
+  getCurrentUserId,
+  getUserIdOrGuest,
+} from "../services/StoreCoordinator";
 
-// React Native-compatible UUID v4 generator
-const generateUUID = (): string => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c == "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
+// Type guard for MealType - ensures type safety without 'as any'
+type MealType = "breakfast" | "lunch" | "dinner" | "snack";
+const VALID_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
-// UUID validation helper
-const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-};
+function toMealType(value: string | undefined): MealType {
+  const normalized = (value || "snack").toLowerCase();
+  if (VALID_MEAL_TYPES.includes(normalized as MealType)) {
+    return normalized as MealType;
+  }
+  // Map common variations
+  if (normalized.includes("break") || normalized.includes("morning"))
+    return "breakfast";
+  if (normalized.includes("lunch") || normalized.includes("noon"))
+    return "lunch";
+  if (normalized.includes("dinner") || normalized.includes("evening"))
+    return "dinner";
+  return "snack"; // Default fallback
+}
+
+// Helper to create a properly typed LoggedFood (uses lightweight version without full Food object)
+function createLoggedFood(
+  item: MealItem,
+  mealId: string,
+  index: number,
+): LoggedFood {
+  return {
+    id: `food_${mealId}_${index}`,
+    foodId: `food_${mealId}_${index}`,
+    // food is optional - we use lightweight version
+    quantity: typeof item.quantity === "number" ? item.quantity : 100,
+    unit: "grams",
+    calories: item.calories || 0,
+    macros: {
+      protein: item.macros?.protein ?? 0,
+      carbohydrates: item.macros?.carbohydrates ?? 0,
+      fat: item.macros?.fat ?? 0,
+      fiber: item.macros?.fiber ?? 0,
+    },
+  };
+}
 
 interface MealProgress {
   mealId: string;
@@ -40,6 +69,12 @@ interface ConsumedNutrition {
   carbs: number;
   fat: number;
 }
+
+// PERF-005 FIX: Cache for consumed nutrition to avoid O(n²) recalculation
+let consumedNutritionCache: ConsumedNutrition | null = null;
+let consumedNutritionCacheKey: string = "";
+let todaysConsumedNutritionCache: ConsumedNutrition | null = null;
+let todaysConsumedNutritionCacheKey: string = "";
 
 interface NutritionState {
   // Weekly meal plan state
@@ -98,6 +133,9 @@ interface NutritionState {
   persistData: () => Promise<void>;
   loadData: () => Promise<void>;
   clearData: () => void;
+
+  // Reset store (for logout)
+  reset: () => void;
 }
 
 export const useNutritionStore = create<NutritionState>()(
@@ -121,7 +159,7 @@ export const useNutritionStore = create<NutritionState>()(
       saveWeeklyMealPlan: async (plan) => {
         try {
           const planTitle =
-            (plan as any).planTitle || `Week ${plan.weekNumber} Meal Plan`;
+            plan.planTitle || `Week ${plan.weekNumber} Meal Plan`;
           console.log("🍽️ Saving weekly meal plan:", planTitle);
 
           // Save to local storage via Zustand persist first
@@ -146,71 +184,57 @@ export const useNutritionStore = create<NutritionState>()(
             ),
           );
 
-          // Save individual meals to database for tracking
-          let savedCount = 0;
-          let errorCount = 0;
+          // PERF-008 FIX: Save individual meals to database in parallel for tracking
+          const timestamp = Date.now();
+          const mealLogPromises = plan.meals
+            .filter((meal) => meal.id && meal.name) // Validate meal data upfront
+            .map(async (meal, mealIndex) => {
+              try {
+                // Create a proper MealLog object matching the expected schema
+                const mealLog: import("../types/localData").MealLog = {
+                  id: `meal_${meal.id}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`,
+                  mealType: toMealType(meal.type),
+                  foods: (meal.items || []).map(
+                    (item: MealItem, index: number) =>
+                      createLoggedFood(item, meal.id, index),
+                  ),
+                  totalCalories: meal.totalCalories || 0,
+                  totalMacros: {
+                    protein: meal.totalMacros?.protein ?? 0,
+                    carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
+                    fat: meal.totalMacros?.fat ?? 0,
+                    fiber: meal.totalMacros?.fiber ?? 0,
+                  },
+                  loggedAt: new Date().toISOString(),
+                  photos: [],
+                  syncStatus: SyncStatus.PENDING,
+                  syncMetadata: {
+                    lastSyncedAt: undefined,
+                    lastModifiedAt: new Date().toISOString(),
+                    syncVersion: 1,
+                    deviceId: "dev-device",
+                  },
+                };
 
-          for (const meal of plan.meals) {
-            try {
-              // Validate meal data
-              if (!meal.id || !meal.name) {
-                console.error("❌ Invalid meal data:", meal);
-                errorCount++;
-                continue;
+                await crudOperations.createMealLog(mealLog);
+                return { success: true, meal: meal.name };
+              } catch (mealError) {
+                console.error(
+                  `❌ Failed to save meal ${meal.name}:`,
+                  mealError,
+                );
+                return { success: false, meal: meal.name, error: mealError };
               }
+            });
 
-              // Create a proper MealLog object matching the expected schema
-              const mealLog: import("../types/localData").MealLog = {
-                id: `meal_${meal.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-                mealType: ((meal as any).type || "meal").toLowerCase() as any, // uses DayMeal.type
-                foods: ((meal as any).items || []).map(
-                  (item: any, index: number) => ({
-                    id: `food_${meal.id}_${index}`,
-                    foodId: `food_${meal.id}_${index}`,
-                    food: {
-                      id: `food_${meal.id}_${index}`,
-                      name: item.name || "Unknown food",
-                      isCustom: true,
-                      isFavorite: false,
-                      localId: `local_${Date.now()}_${index}`,
-                      usageCount: 1,
-                      verificationStatus: "user_created",
-                    } as any,
-                    quantity: item.quantity || 100,
-                    unit: "grams",
-                    calories: item.calories || 0,
-                    macros: {
-                      protein: item.macros?.protein ?? 0,
-                      carbohydrates: item.macros?.carbohydrates ?? 0,
-                      fat: item.macros?.fat ?? 0,
-                      fiber: item.macros?.fiber ?? 0,
-                    },
-                  }),
-                ),
-                totalCalories: meal.totalCalories || 0,
-                totalMacros: {
-                  protein: meal.totalMacros?.protein ?? 0,
-                  carbohydrates: meal.totalMacros?.carbohydrates ?? 0,
-                  fat: meal.totalMacros?.fat ?? 0,
-                  fiber: meal.totalMacros?.fiber ?? 0,
-                },
-                loggedAt: new Date().toISOString(),
-                photos: [],
-                syncStatus: SyncStatus.PENDING,
-                syncMetadata: {
-                  lastSyncedAt: undefined,
-                  lastModifiedAt: new Date().toISOString(),
-                  syncVersion: 1,
-                  deviceId: "dev-device",
-                },
-              };
+          // PERF-008 FIX: Execute all saves in parallel instead of sequential
+          const results = await Promise.all(mealLogPromises);
+          const savedCount = results.filter((r) => r.success).length;
+          const errorCount = results.filter((r) => !r.success).length;
+          const invalidCount = plan.meals.length - results.length;
 
-              await crudOperations.createMealLog(mealLog);
-              savedCount++;
-            } catch (mealError) {
-              console.error(`❌ Failed to save meal ${meal.name}:`, mealError);
-              errorCount++;
-            }
+          if (invalidCount > 0) {
+            console.error(`❌ ${invalidCount} invalid meals skipped`);
           }
 
           console.log(
@@ -222,12 +246,16 @@ export const useNutritionStore = create<NutritionState>()(
           }
         } catch (error) {
           console.error("❌ Failed to save meal plan:", error);
+          // ARCH-003 FIX: Set error state instead of silently swallowing
+          const errorMessage =
+            error instanceof Error ? error.message : "Failed to save meal plan";
+          set({ planError: errorMessage });
+
           // Don't throw error if local storage succeeded
-          if (get().weeklyMealPlan) {
-            console.log("⚠️ Meal plan saved locally but database save failed");
-          } else {
+          if (!get().weeklyMealPlan) {
             throw error;
           }
+          console.log("⚠️ Meal plan saved locally but database save failed");
         }
 
         // ALSO save the complete weekly meal plan to the new weekly_meal_plans table
@@ -237,13 +265,11 @@ export const useNutritionStore = create<NutritionState>()(
 
           console.log("🍽️ Saving complete weekly meal plan to database...");
 
-          // Get authenticated user ID directly from auth store
-          const authUser = useAuthStore.getState().user;
-          const userId = authUser?.id;
+          // Get authenticated user ID via StoreCoordinator (removes cross-store dependency)
+          const userId = getCurrentUserId();
           const planId = generateUUID();
 
-          console.log("🍽️ NutritionStore: Auth user from store:", authUser);
-          console.log("🍽️ NutritionStore: User ID from auth:", userId);
+          console.log("🍽️ NutritionStore: User ID from coordinator:", userId);
           console.log("🍽️ NutritionStore: Plan ID generated:", planId);
 
           // Ensure user is authenticated before database operation
@@ -267,17 +293,15 @@ export const useNutritionStore = create<NutritionState>()(
           const weeklyMealPlanData = {
             id: planId,
             user_id: userId,
-            plan_title:
-              (plan as any).planTitle || `Week ${plan.weekNumber} Plan`,
+            plan_title: plan.planTitle || `Week ${plan.weekNumber} Plan`,
             plan_description:
-              (plan as any).planDescription ||
-              `${plan.meals.length} meals planned`,
+              plan.planDescription || `${plan.meals.length} meals planned`,
             week_number: plan.weekNumber || 1,
             total_meals: plan.meals.length,
             total_calories:
-              (plan as any).totalEstimatedCalories ||
+              plan.totalEstimatedCalories ||
               plan.meals.reduce(
-                (sum: number, meal: any) => sum + (meal.totalCalories || 0),
+                (sum: number, meal: DayMeal) => sum + (meal.totalCalories || 0),
                 0,
               ),
             plan_data: plan, // Store complete meal plan as JSONB
@@ -288,7 +312,7 @@ export const useNutritionStore = create<NutritionState>()(
             type: "CREATE",
             table: "weekly_meal_plans",
             data: weeklyMealPlanData,
-            userId: useAuthStore.getState().user?.id || "guest",
+            userId: getUserIdOrGuest(),
             maxRetries: 3,
           });
           console.log("✅ Weekly meal plan queued for database sync");
@@ -297,7 +321,13 @@ export const useNutritionStore = create<NutritionState>()(
             "❌ Failed to save weekly meal plan to database:",
             weeklyMealPlanError,
           );
-          // Don't fail the whole operation for this
+          // ARCH-003 FIX: Set error state instead of silently swallowing
+          const errorMessage =
+            weeklyMealPlanError instanceof Error
+              ? weeklyMealPlanError.message
+              : "Failed to save meal plan to database";
+          set({ planError: errorMessage });
+          // Don't throw - local save succeeded, just log the sync failure
         }
       },
 
@@ -307,9 +337,7 @@ export const useNutritionStore = create<NutritionState>()(
           const currentPlan = get().weeklyMealPlan;
           if (currentPlan) {
             console.log("📋 Found meal plan in store:", {
-              title:
-                (currentPlan as any).planTitle ||
-                `Week ${currentPlan.weekNumber}`,
+              title: currentPlan.planTitle || `Week ${currentPlan.weekNumber}`,
               meals: currentPlan.meals.length,
               mealsByDay: currentPlan.meals.reduce(
                 (acc, meal) => {
@@ -324,8 +352,7 @@ export const useNutritionStore = create<NutritionState>()(
 
           // Try to load complete weekly meal plan from database
           try {
-            const authUser = useAuthStore.getState().user;
-            const userId = authUser?.id;
+            const userId = getCurrentUserId();
             if (userId) {
               console.log("🔄 Loading weekly meal plan from database...");
               const { data: weeklyMealPlans, error } = await supabase
@@ -486,7 +513,7 @@ export const useNutritionStore = create<NutritionState>()(
               id: logId,
               notes: "[COMPLETED]",
             },
-            userId: useAuthStore.getState().user?.id || "guest",
+            userId: getUserIdOrGuest(),
             maxRetries: 3,
           });
 
@@ -511,25 +538,36 @@ export const useNutritionStore = create<NutritionState>()(
         return get().mealProgress[mealId] || null;
       },
 
-      // COMPUTED SELECTORS - SINGLE SOURCE OF TRUTH for consumed nutrition
+      // PERF-005 FIX: COMPUTED SELECTORS with caching - SINGLE SOURCE OF TRUTH for consumed nutrition
       // This calculates consumed nutrition from mealProgress (local state)
       // avoiding dual-source issues between Zustand and Supabase
       getConsumedNutrition: () => {
         const state = get();
+
+        // Create cache key from mealProgress state
+        const cacheKey = JSON.stringify(state.mealProgress);
+
+        // Return cached value if state hasn't changed
+        if (consumedNutritionCache && consumedNutritionCacheKey === cacheKey) {
+          return consumedNutritionCache;
+        }
 
         // Get all meal IDs that are 100% completed
         const completedMealIds = Object.entries(state.mealProgress)
           .filter(([_, progress]) => progress.progress === 100)
           .map(([id]) => id);
 
+        // PERF-005 FIX: Use Set for O(1) lookup instead of O(n) includes
+        const completedMealIdSet = new Set(completedMealIds);
+
         // Find the actual meal data from weekly plan
         const completedMeals =
           state.weeklyMealPlan?.meals.filter((meal) =>
-            completedMealIds.includes(meal.id),
+            completedMealIdSet.has(meal.id),
           ) || [];
 
         // Sum up all nutrition from completed meals
-        return completedMeals.reduce(
+        const result = completedMeals.reduce(
           (acc, meal) => ({
             calories: acc.calories + (meal.totalCalories || 0),
             protein: acc.protein + (meal.totalMacros?.protein || 0),
@@ -538,9 +576,15 @@ export const useNutritionStore = create<NutritionState>()(
           }),
           { calories: 0, protein: 0, carbs: 0, fat: 0 },
         );
+
+        // Cache the result
+        consumedNutritionCache = result;
+        consumedNutritionCacheKey = cacheKey;
+
+        return result;
       },
 
-      // Get consumed nutrition for TODAY only
+      // PERF-005 FIX: Get consumed nutrition for TODAY only with caching
       getTodaysConsumedNutrition: () => {
         const state = get();
         const today = new Date();
@@ -555,20 +599,33 @@ export const useNutritionStore = create<NutritionState>()(
         ];
         const todayName = dayNames[today.getDay()];
 
+        // Create cache key from mealProgress state + today's date
+        const cacheKey = JSON.stringify(state.mealProgress) + "_" + todayName;
+
+        // Return cached value if state hasn't changed
+        if (
+          todaysConsumedNutritionCache &&
+          todaysConsumedNutritionCacheKey === cacheKey
+        ) {
+          return todaysConsumedNutritionCache;
+        }
+
         // Get all meal IDs that are 100% completed
         const completedMealIds = Object.entries(state.mealProgress)
           .filter(([_, progress]) => progress.progress === 100)
           .map(([id]) => id);
 
+        // PERF-005 FIX: Use Set for O(1) lookup instead of O(n) includes
+        const completedMealIdSet = new Set(completedMealIds);
+
         // Filter to only today's completed meals
         const todaysCompletedMeals =
           state.weeklyMealPlan?.meals.filter(
             (meal) =>
-              completedMealIds.includes(meal.id) &&
-              meal.dayOfWeek === todayName,
+              completedMealIdSet.has(meal.id) && meal.dayOfWeek === todayName,
           ) || [];
 
-        return todaysCompletedMeals.reduce(
+        const result = todaysCompletedMeals.reduce(
           (acc, meal) => ({
             calories: acc.calories + (meal.totalCalories || 0),
             protein: acc.protein + (meal.totalMacros?.protein || 0),
@@ -577,6 +634,12 @@ export const useNutritionStore = create<NutritionState>()(
           }),
           { calories: 0, protein: 0, carbs: 0, fat: 0 },
         );
+
+        // Cache the result
+        todaysConsumedNutritionCache = result;
+        todaysConsumedNutritionCacheKey = cacheKey;
+
+        return result;
       },
 
       // Meal session actions
@@ -587,31 +650,9 @@ export const useNutritionStore = create<NutritionState>()(
           // Create a proper MealLog object for active session
           const mealLog: import("../types/localData").MealLog = {
             id: logId,
-            mealType: meal.type.toLowerCase() as any,
-            foods: meal.items.map(
-              (item, index) =>
-                ({
-                  id: `food_${meal.id}_${index}`,
-                  foodId: `food_${meal.id}_${index}`,
-                  food: {
-                    id: `food_${meal.id}_${index}`,
-                    name: item.name || "Unknown food",
-                    isCustom: true,
-                    isFavorite: false,
-                    localId: `local_${Date.now()}_${index}`,
-                    usageCount: 1,
-                    verificationStatus: "user_created",
-                  } as any,
-                  quantity: item.quantity || 100,
-                  unit: "grams",
-                  calories: item.calories || 0,
-                  macros: {
-                    protein: item.macros?.protein ?? 0,
-                    carbohydrates: item.macros?.carbohydrates ?? 0,
-                    fat: item.macros?.fat ?? 0,
-                    fiber: item.macros?.fiber ?? 0,
-                  },
-                }) as any,
+            mealType: toMealType(meal.type),
+            foods: meal.items.map((item, index) =>
+              createLoggedFood(item, meal.id, index),
             ),
             totalCalories: meal.totalCalories || 0,
             totalMacros: {
@@ -649,14 +690,12 @@ export const useNutritionStore = create<NutritionState>()(
               mealId: meal.id,
               logId,
               startedAt: new Date().toISOString(),
-              ingredients: meal.items.map(
-                (item, index) =>
-                  ({
-                    ingredientId: `${meal.id}_${index}`,
-                    completed: false,
-                    quantity: item.quantity || 100,
-                  }) as any,
-              ),
+              ingredients: meal.items.map((item, index) => ({
+                ingredientId: `${meal.id}_${index}`,
+                completed: false,
+                quantity:
+                  typeof item.quantity === "number" ? item.quantity : 100,
+              })),
             },
           });
 
@@ -750,32 +789,14 @@ export const useNutritionStore = create<NutritionState>()(
 
           // Save daily meals as individual logs
           for (const meal of state.dailyMeals) {
+            const mealId = meal.id || String(Date.now());
+            const mealItems = meal.items || [];
             const mealLog: import("../types/localData").MealLog = {
-              id: `daily_meal_${meal.id || Date.now()}`,
-              mealType: meal.type as any,
-              foods:
-                (meal.items as any[] | undefined)?.map((item: any, index) => ({
-                  id: `food_${meal.id || Date.now()}_${index}`,
-                  foodId: `food_${meal.id || Date.now()}_${index}`,
-                  food: {
-                    id: `food_${meal.id || Date.now()}_${index}`,
-                    name: item.name || "Unknown food",
-                    isCustom: true,
-                    isFavorite: false,
-                    localId: `local_${Date.now()}_${index}`,
-                    usageCount: 1,
-                    verificationStatus: "user_created",
-                  } as any,
-                  quantity: 100,
-                  unit: "grams",
-                  calories: item.calories || 0,
-                  macros: {
-                    protein: item.macros?.protein ?? 0,
-                    carbohydrates: item.macros?.carbohydrates ?? 0,
-                    fat: item.macros?.fat ?? 0,
-                    fiber: item.macros?.fiber ?? 0,
-                  },
-                })) || [],
+              id: `daily_meal_${mealId}`,
+              mealType: toMealType(meal.type),
+              foods: mealItems.map((item, index) =>
+                createLoggedFood(item, mealId, index),
+              ),
               totalCalories: meal.totalCalories || 0,
               totalMacros: {
                 protein: meal.totalMacros?.protein ?? 0,
@@ -846,6 +867,20 @@ export const useNutritionStore = create<NutritionState>()(
           currentMealSession: null,
           planError: null,
           mealError: null,
+        });
+      },
+
+      // Reset store to initial state (for logout)
+      reset: () => {
+        set({
+          weeklyMealPlan: null,
+          isGeneratingPlan: false,
+          planError: null,
+          mealProgress: {},
+          dailyMeals: [],
+          isGeneratingMeal: false,
+          mealError: null,
+          currentMealSession: null,
         });
       },
     }),
