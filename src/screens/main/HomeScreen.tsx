@@ -130,6 +130,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     addWater: hydrationAddWater,
     setDailyGoal: setHydrationGoal,
     checkAndResetIfNewDay,
+    syncWithSupabase: syncHydrationWithSupabase,
   } = useHydrationStore();
 
   // Get calculated metrics for initializing hydration goal
@@ -143,6 +144,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     }
     // Check for daily reset
     checkAndResetIfNewDay();
+
+    // Sync hydration data from Supabase (reconcile cloud data on app start)
+    syncHydrationWithSupabase().catch((err) => {
+      console.warn("[HomeScreen] Failed to sync hydration from Supabase:", err);
+    });
   }, [calculatedMetrics?.dailyWaterML]);
 
   // Load data

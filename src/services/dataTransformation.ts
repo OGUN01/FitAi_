@@ -507,13 +507,40 @@ export class DataTransformationService {
 
       case "meal":
         // Merge food items if different
-        const localFoods = JSON.parse(localData.foods_data || "[]");
-        const remoteFoods = JSON.parse(remoteData.foods_data || "[]");
+        // Handle food_items as JSONB (could be object, array, or string)
+        let localFoods: unknown[] = [];
+        let remoteFoods: unknown[] = [];
+
+        if (localData.food_items) {
+          if (typeof localData.food_items === "string") {
+            try {
+              localFoods = JSON.parse(localData.food_items);
+            } catch {
+              localFoods = [];
+            }
+          } else if (Array.isArray(localData.food_items)) {
+            localFoods = localData.food_items;
+          }
+        }
+
+        if (remoteData.food_items) {
+          if (typeof remoteData.food_items === "string") {
+            try {
+              remoteFoods = JSON.parse(remoteData.food_items);
+            } catch {
+              remoteFoods = [];
+            }
+          } else if (Array.isArray(remoteData.food_items)) {
+            remoteFoods = remoteData.food_items;
+          }
+        }
 
         if (localFoods.length > remoteFoods.length) {
-          merged.foods_data = localData.foods_data;
+          merged.food_items = localData.food_items;
           merged.total_calories = localData.total_calories;
-          merged.total_macros = localData.total_macros;
+          merged.total_protein = localData.total_protein;
+          merged.total_carbohydrates = localData.total_carbohydrates;
+          merged.total_fat = localData.total_fat;
         }
         break;
 
@@ -526,7 +553,7 @@ export class DataTransformationService {
           merged.weight_kg = localData.weight_kg;
           merged.body_fat_percentage = localData.body_fat_percentage;
           merged.muscle_mass_kg = localData.muscle_mass_kg;
-          merged.measurements_data = localData.measurements_data;
+          merged.measurements = localData.measurements;
         }
         break;
     }
