@@ -10,6 +10,70 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 
 // ============================================================================
+// BASE64 ENCODING/DECODING (React Native compatible)
+// ============================================================================
+
+/**
+ * Base64 encoding table
+ */
+const BASE64_CHARS =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/**
+ * Encode binary string to base64 (React Native compatible)
+ */
+function binaryToBase64(binary: string): string {
+  let result = "";
+  let padding = 0;
+
+  for (let i = 0; i < binary.length; i += 3) {
+    const b1 = binary.charCodeAt(i) & 0xff;
+    const b2 = i + 1 < binary.length ? binary.charCodeAt(i + 1) & 0xff : 0;
+    const b3 = i + 2 < binary.length ? binary.charCodeAt(i + 2) & 0xff : 0;
+
+    const triplet = (b1 << 16) | (b2 << 8) | b3;
+
+    result += BASE64_CHARS[(triplet >> 18) & 0x3f];
+    result += BASE64_CHARS[(triplet >> 12) & 0x3f];
+    result += i + 1 < binary.length ? BASE64_CHARS[(triplet >> 6) & 0x3f] : "=";
+    result += i + 2 < binary.length ? BASE64_CHARS[triplet & 0x3f] : "=";
+  }
+
+  return result;
+}
+
+/**
+ * Decode base64 to binary string (React Native compatible)
+ */
+function base64ToBinary(base64: string): string {
+  // Remove padding
+  const cleanBase64 = base64.replace(/=+$/, "");
+  let result = "";
+
+  for (let i = 0; i < cleanBase64.length; i += 4) {
+    const c1 = BASE64_CHARS.indexOf(cleanBase64[i]);
+    const c2 =
+      i + 1 < cleanBase64.length ? BASE64_CHARS.indexOf(cleanBase64[i + 1]) : 0;
+    const c3 =
+      i + 2 < cleanBase64.length ? BASE64_CHARS.indexOf(cleanBase64[i + 2]) : 0;
+    const c4 =
+      i + 3 < cleanBase64.length ? BASE64_CHARS.indexOf(cleanBase64[i + 3]) : 0;
+
+    const triplet = (c1 << 18) | (c2 << 12) | (c3 << 6) | c4;
+
+    result += String.fromCharCode((triplet >> 16) & 0xff);
+    if (i + 2 < cleanBase64.length) {
+      result += String.fromCharCode((triplet >> 8) & 0xff);
+    }
+    if (i + 3 < cleanBase64.length) {
+      result += String.fromCharCode(triplet & 0xff);
+    }
+  }
+
+  return result;
+}
+
+// ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
 
@@ -829,8 +893,8 @@ export class BackupRecoveryService {
         encrypted += String.fromCharCode(charCode ^ keyCode);
       }
 
-      // Base64 encode for storage safety
-      const base64 = Buffer.from(encrypted, "binary").toString("base64");
+      // Base64 encode for storage safety (React Native compatible)
+      const base64 = binaryToBase64(encrypted);
       return `ENCRYPTED:${base64}`;
     } catch (error) {
       console.error("Encryption failed:", error);
@@ -849,7 +913,7 @@ export class BackupRecoveryService {
 
     try {
       const base64Data = data.slice(10); // Remove "ENCRYPTED:" prefix
-      const encrypted = Buffer.from(base64Data, "base64").toString("binary");
+      const encrypted = base64ToBinary(base64Data);
 
       // Reverse XOR encryption
       const deviceId = await this.getDeviceId();
