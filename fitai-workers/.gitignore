@@ -171,3 +171,7 @@ dist
 .env.local
 .env.*.local
 *.env
+
+# Playwright test output
+playwright-report/
+test-results/

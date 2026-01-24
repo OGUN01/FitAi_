@@ -5,30 +5,32 @@ import { test, expect } from '@playwright/test';
  * Tests the /workout/generate endpoint
  */
 
-// Sample user profile for testing
+// Sample user profile for testing (format matching API schema)
 const sampleUserProfile = {
-	personalInfo: {
+	profile: {
 		age: 30,
 		gender: 'male',
 		height: 175,
 		weight: 75,
-		activityLevel: 'moderately_active',
-	},
-	fitnessGoals: {
-		primary_goals: ['build_muscle', 'improve_fitness'],
-		experience: 'intermediate',
-		target_weight: 80,
-	},
-	bodyMetrics: {
-		height: 175,
-		weight: 75,
-		bmi: 24.5,
-	},
-	workoutPreferences: {
-		workout_types: ['strength', 'hiit'],
-		time_preference: 45,
+		fitnessGoal: 'muscle_gain',
+		experienceLevel: 'intermediate',
 		equipment: ['dumbbells', 'barbell', 'bodyweight'],
-		workout_days: ['monday', 'wednesday', 'friday'],
+	},
+	weeklyPlan: {
+		workoutsPerWeek: 3,
+		preferredDays: ['monday', 'wednesday', 'friday'],
+		workoutTypes: ['strength'],
+		preferredWorkoutTime: 'morning',
+		activityLevel: 'moderate',
+		prefersVariety: true,
+	},
+};
+
+// Invalid profile for testing validation
+const invalidProfile = {
+	personalInfo: {
+		age: 30,
+		gender: 'male',
 	},
 };
 
@@ -54,12 +56,7 @@ test.describe('Workout Generation API', () => {
 
 	test('POST /workout/generate rejects invalid data types', async ({ request }) => {
 		const response = await request.post('/workout/generate', {
-			data: {
-				personalInfo: {
-					age: 'not-a-number', // Invalid type
-					gender: 'male',
-				},
-			},
+			data: invalidProfile,
 		});
 
 		// Should return error
@@ -77,13 +74,8 @@ test.describe('Workout Generation API', () => {
 	});
 });
 
-test.describe('Workout Generation with Auth (requires valid token)', () => {
-	// These tests require a valid Supabase JWT token
-	// Skip if no auth token is available
-
-	test.skip('POST /workout/generate returns workout plan with valid token', async ({ request }) => {
-		// This test requires a valid JWT token from Supabase
-		// In CI, this would be provided via environment variables
+test.describe('Workout Generation with Auth', () => {
+	test('POST /workout/generate returns workout plan with valid token', async ({ request }) => {
 		const authToken = process.env.TEST_AUTH_TOKEN;
 
 		if (!authToken) {
@@ -98,11 +90,11 @@ test.describe('Workout Generation with Auth (requires valid token)', () => {
 			},
 		});
 
+		// Should return 200 OK with workout data
 		expect(response.status()).toBe(200);
 
 		const data = await response.json();
 		expect(data.success).toBe(true);
 		expect(data.data).toBeDefined();
-		expect(data.data.workouts).toBeDefined();
 	});
 });

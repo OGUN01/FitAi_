@@ -102,8 +102,8 @@ test.describe('Diet Generation Validation', () => {
 	});
 });
 
-test.describe('Diet Generation with Auth (requires valid token)', () => {
-	test.skip('POST /diet/generate returns meal plan with valid token', async ({ request }) => {
+test.describe('Diet Generation with Auth', () => {
+	test('POST /diet/generate returns meal plan with valid token', async ({ request }) => {
 		const authToken = process.env.TEST_AUTH_TOKEN;
 
 		if (!authToken) {
@@ -118,11 +118,11 @@ test.describe('Diet Generation with Auth (requires valid token)', () => {
 			},
 		});
 
-		expect(response.status()).toBe(200);
+		// Diet can return 200 (cache hit) or 202 (async job started)
+		expect([200, 202]).toContain(response.status());
 
 		const data = await response.json();
 		expect(data.success).toBe(true);
 		expect(data.data).toBeDefined();
-		expect(data.data.meals).toBeDefined();
 	});
 });
