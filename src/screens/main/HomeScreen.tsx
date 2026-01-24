@@ -76,6 +76,7 @@ import {
   SyncStatusIndicator,
 } from "./home";
 import { completionTrackingService } from "../../services/completionTracking";
+import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
 
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
@@ -120,6 +121,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
 
   // HYDRATION - Single Source of Truth from hydrationStore
   const {
@@ -361,21 +363,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         label: "Log Weight",
         icon: "scale-outline" as keyof typeof Ionicons.glyphMap,
         color: "#9C27B0",
-        onPress: () =>
-          Alert.alert(
-            "Coming Soon",
-            "Weight logging will be available in the next update. For now, you can track your weight in the Body Measurements section of your profile.",
-            [
-              {
-                text: "Go to Profile",
-                onPress: () => {
-                  // Navigate to profile if navigation is available
-                  console.log("Navigate to Profile for weight tracking");
-                },
-              },
-              { text: "OK" },
-            ],
-          ),
+        onPress: () => setShowWeightModal(true),
       },
       {
         id: "progress-photo",
@@ -471,159 +459,174 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   }
 
   return (
-    <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container} edges={["top"]}>
-        <Animated.View
-          style={[styles.animatedContainer, { opacity: fadeAnim }]}
-        >
-          <Animated.ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={ResponsiveTheme.colors.primary}
-                colors={[ResponsiveTheme.colors.primary]}
-              />
-            }
+    <>
+      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+        <SafeAreaView style={styles.container} edges={["top"]}>
+          <Animated.View
+            style={[styles.animatedContainer, { opacity: fadeAnim }]}
           >
-            {/* 1. Header */}
-            <HomeHeader
-              userName={profile?.personalInfo?.name ?? ""} // NO FALLBACK - single source
-              userInitial={profile?.personalInfo?.name?.charAt(0) ?? ""} // NO FALLBACK
-              streak={realStreak}
-              onProfilePress={() => onNavigateToTab?.("profile")}
-              onStreakPress={() =>
-                Alert.alert("Streak", `${realStreak} day streak! Keep going!`)
-              }
-            />
-
-            {/* 2. Motivation Banner */}
-            <View style={styles.section}>
-              <MotivationBanner />
-            </View>
-
-            {/* Guest Banner */}
-            {isGuestMode && (
-              <View style={styles.section}>
-                <GuestPromptBanner
-                  onSignUpPress={() => setShowGuestSignUp(true)}
+            <Animated.ScrollView
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={ResponsiveTheme.colors.primary}
+                  colors={[ResponsiveTheme.colors.primary]}
                 />
-              </View>
-            )}
-
-            {/* 3. Health Intelligence Hub - PREMIUM */}
-            <View style={styles.section}>
-              <HealthIntelligenceHub
-                sleepHours={healthMetrics?.sleepHours}
-                sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
-                restingHeartRate={healthMetrics?.restingHeartRate}
-                hrTrend={
-                  healthMetrics?.restingHeartRate &&
-                  healthMetrics.restingHeartRate < 65
-                    ? "down"
-                    : "stable"
+              }
+            >
+              {/* 1. Header */}
+              <HomeHeader
+                userName={profile?.personalInfo?.name ?? ""} // NO FALLBACK - single source
+                userInitial={profile?.personalInfo?.name?.charAt(0) ?? ""} // NO FALLBACK
+                streak={realStreak}
+                onProfilePress={() => onNavigateToTab?.("profile")}
+                onStreakPress={() =>
+                  Alert.alert("Streak", `${realStreak} day streak! Keep going!`)
                 }
-                steps={healthMetrics?.steps}
-                stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
-                activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
-                age={userAge}
-                onPress={() => onNavigateToTab?.("progress")}
-                onDetailPress={(metric) => {
-                  if (metric === "heart")
-                    Alert.alert("Heart Rate", "Detailed heart rate data");
-                  else if (metric === "sleep")
-                    Alert.alert("Sleep", "Detailed sleep analysis");
-                }}
               />
-            </View>
 
-            {/* 4. Daily Progress Rings */}
-            <View style={styles.section}>
-              <DailyProgressRings
-                caloriesBurned={realCaloriesBurned}
-                caloriesGoal={actualCaloriesGoal} // From TDEE/healthMetrics - properly calculated
-                workoutMinutes={workoutMinutes}
-                workoutGoal={
-                  calculatedMetrics?.workoutDurationMinutes ??
-                  calculatedMetrics?.recommendedCardioMinutes ??
-                  30
-                } // User's preferred workout duration from onboarding
-                mealsLogged={mealsLogged}
-                mealsGoal={calculatedMetrics?.mealsPerDay ?? 3} // Default 3 meals if not set
-                steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
-                stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
-                stepsSource={healthMetrics?.sources?.steps} // Data source attribution
-                onPress={() => onNavigateToTab?.("progress")}
-              />
-              {/* Wearable Sync Status */}
-              {wearableConnected && (
-                <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
-                  <SyncStatusIndicator />
+              {/* 2. Motivation Banner */}
+              <View style={styles.section}>
+                <MotivationBanner />
+              </View>
+
+              {/* Guest Banner */}
+              {isGuestMode && (
+                <View style={styles.section}>
+                  <GuestPromptBanner
+                    onSignUpPress={() => setShowGuestSignUp(true)}
+                  />
                 </View>
               )}
-            </View>
 
-            {/* 5. Today's Workout */}
-            <View style={styles.section}>
-              <TodaysFocus
-                workoutInfo={todaysWorkoutInfo as any}
-                workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
-                onWorkoutPress={() => onNavigateToTab?.("fitness")}
-              />
-            </View>
+              {/* 3. Health Intelligence Hub - PREMIUM */}
+              <View style={styles.section}>
+                <HealthIntelligenceHub
+                  sleepHours={healthMetrics?.sleepHours}
+                  sleepQuality={healthMetrics?.sleepQuality} // NO FALLBACK - single source
+                  restingHeartRate={healthMetrics?.restingHeartRate}
+                  hrTrend={
+                    healthMetrics?.restingHeartRate &&
+                    healthMetrics.restingHeartRate < 65
+                      ? "down"
+                      : "stable"
+                  }
+                  steps={healthMetrics?.steps}
+                  stepsGoal={healthMetrics?.stepsGoal} // NO HARDCODED - from healthDataStore
+                  activeCalories={healthMetrics?.activeCalories} // NO FALLBACK - single source
+                  age={userAge}
+                  onPress={() => onNavigateToTab?.("progress")}
+                  onDetailPress={(metric) => {
+                    if (metric === "heart")
+                      Alert.alert("Heart Rate", "Detailed heart rate data");
+                    else if (metric === "sleep")
+                      Alert.alert("Sleep", "Detailed sleep analysis");
+                  }}
+                />
+              </View>
 
-            {/* 6. Quick Actions - Unique utilities */}
-            <View style={styles.quickActionsSection}>
-              <QuickActions actions={quickActions} />
-            </View>
+              {/* 4. Daily Progress Rings */}
+              <View style={styles.section}>
+                <DailyProgressRings
+                  caloriesBurned={realCaloriesBurned}
+                  caloriesGoal={actualCaloriesGoal} // From TDEE/healthMetrics - properly calculated
+                  workoutMinutes={workoutMinutes}
+                  workoutGoal={
+                    calculatedMetrics?.workoutDurationMinutes ??
+                    calculatedMetrics?.recommendedCardioMinutes ??
+                    30
+                  } // User's preferred workout duration from onboarding
+                  mealsLogged={mealsLogged}
+                  mealsGoal={calculatedMetrics?.mealsPerDay ?? 3} // Default 3 meals if not set
+                  steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
+                  stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
+                  stepsSource={healthMetrics?.sources?.steps} // Data source attribution
+                  onPress={() => onNavigateToTab?.("progress")}
+                />
+                {/* Wearable Sync Status */}
+                {wearableConnected && (
+                  <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
+                    <SyncStatusIndicator />
+                  </View>
+                )}
+              </View>
 
-            {/* 7. Hydration Tracker - PREMIUM (uses hydrationStore) */}
-            <View style={styles.section}>
-              <HydrationTracker
-                currentIntake={waterIntakeML}
-                dailyGoal={waterGoal ?? 0}
-                onAddWater={handleAddWater}
-                onPress={() =>
-                  Alert.alert("Hydration", "Detailed hydration tracking")
-                }
-              />
-            </View>
+              {/* 5. Today's Workout */}
+              <View style={styles.section}>
+                <TodaysFocus
+                  workoutInfo={todaysWorkoutInfo as any}
+                  workoutProgress={todaysData?.progress?.workoutProgress} // NO FALLBACK
+                  onWorkoutPress={() => onNavigateToTab?.("fitness")}
+                />
+              </View>
 
-            {/* 9. Body Progress - PREMIUM */}
-            <View style={styles.section}>
-              <BodyProgressCard
-                currentWeight={weightData.currentWeight}
-                goalWeight={weightData.goalWeight}
-                startingWeight={weightData.startingWeight}
-                weightHistory={weightData.weightHistory}
-                unit="kg"
-                onPress={() => onNavigateToTab?.("progress")}
-                onPhotoPress={() =>
-                  Alert.alert("Progress Photo", "Take or view progress photos")
-                }
-                onLogWeight={() =>
-                  Alert.alert("Log Weight", "Add weight entry")
-                }
-              />
-            </View>
+              {/* 6. Quick Actions - Unique utilities */}
+              <View style={styles.quickActionsSection}>
+                <QuickActions actions={quickActions} />
+              </View>
 
-            {/* 10. Weekly Calendar */}
-            <View style={styles.section}>
-              <WeeklyMiniCalendar
-                weekData={weekCalendarData}
-                onViewFullCalendar={() => onNavigateToTab?.("fitness")}
-              />
-            </View>
+              {/* 7. Hydration Tracker - PREMIUM (uses hydrationStore) */}
+              <View style={styles.section}>
+                <HydrationTracker
+                  currentIntake={waterIntakeML}
+                  dailyGoal={waterGoal ?? 0}
+                  onAddWater={handleAddWater}
+                  onPress={() =>
+                    Alert.alert("Hydration", "Detailed hydration tracking")
+                  }
+                />
+              </View>
 
-            {/* Bottom Spacing */}
-            <View style={{ height: insets.bottom + rh(90) }} />
-          </Animated.ScrollView>
-        </Animated.View>
-      </SafeAreaView>
-    </AuroraBackground>
+              {/* 9. Body Progress - PREMIUM */}
+              <View style={styles.section}>
+                <BodyProgressCard
+                  currentWeight={weightData.currentWeight}
+                  goalWeight={weightData.goalWeight}
+                  startingWeight={weightData.startingWeight}
+                  weightHistory={weightData.weightHistory}
+                  unit="kg"
+                  onPress={() => onNavigateToTab?.("progress")}
+                  onPhotoPress={() =>
+                    Alert.alert(
+                      "Progress Photo",
+                      "Take or view progress photos",
+                    )
+                  }
+                  onLogWeight={() => setShowWeightModal(true)}
+                />
+              </View>
+
+              {/* 10. Weekly Calendar */}
+              <View style={styles.section}>
+                <WeeklyMiniCalendar
+                  weekData={weekCalendarData}
+                  onViewFullCalendar={() => onNavigateToTab?.("fitness")}
+                />
+              </View>
+
+              {/* Bottom Spacing */}
+              <View style={{ height: insets.bottom + rh(90) }} />
+            </Animated.ScrollView>
+          </Animated.View>
+        </SafeAreaView>
+      </AuroraBackground>
+
+      {/* Weight Entry Modal */}
+      <WeightEntryModal
+        visible={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        currentWeight={weightData.currentWeight}
+        unit="kg"
+        onSuccess={() => {
+          // Optionally refresh data after successful weight entry
+          console.log("Weight entry successful, refreshing data...");
+        }}
+      />
+    </>
   );
 };
 

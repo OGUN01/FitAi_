@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { hydrationDataService } from "../services/hydrationData";
 
 /**
  * HYDRATION STORE - SINGLE SOURCE OF TRUTH
@@ -34,6 +35,9 @@ interface HydrationState {
 
   // Reset store (for logout)
   reset: () => void;
+
+  // Sync with Supabase
+  syncWithSupabase: () => Promise<void>;
 }
 
 const getTodayDateString = (): string => {
@@ -63,6 +67,14 @@ export const useHydrationStore = create<HydrationState>()(
           : newIntake;
 
         set({ waterIntakeML: Math.min(newIntake, maxIntake) });
+
+        // Sync to Supabase in background (fire and forget)
+        hydrationDataService.logWaterIntake(amountML).catch((err) => {
+          console.warn(
+            "[HydrationStore] Failed to sync water to Supabase:",
+            err,
+          );
+        });
       },
 
       // Set exact water intake (for manual adjustment)
@@ -129,6 +141,27 @@ export const useHydrationStore = create<HydrationState>()(
           dailyGoalML: null,
           lastResetDate: getTodayDateString(),
         });
+      },
+
+      // Sync with Supabase - call on app start to reconcile local with remote
+      syncWithSupabase: async () => {
+        try {
+          const result = await hydrationDataService.syncHydrationWithSupabase();
+          if (result.success && result.total_ml > 0) {
+            // If remote has more water than local, use remote as source of truth
+            const state = get();
+            if (result.total_ml > state.waterIntakeML) {
+              set({ waterIntakeML: result.total_ml });
+              console.log(
+                "[HydrationStore] Synced from Supabase:",
+                result.total_ml,
+                "ml",
+              );
+            }
+          }
+        } catch (error) {
+          console.warn("[HydrationStore] Sync failed:", error);
+        }
       },
     }),
     {

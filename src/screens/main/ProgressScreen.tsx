@@ -31,11 +31,13 @@ import { useNutritionStore } from "../../stores/nutritionStore";
 import { completionTrackingService } from "../../services/completionTracking";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { useHealthDataStore } from "../../stores/healthDataStore";
+import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
 
 export const ProgressScreen: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [refreshing, setRefreshing] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
@@ -445,201 +447,122 @@ export const ProgressScreen: React.FC = () => {
       return;
     }
 
-    // For demo purposes, create a sample entry
-    const success = await createProgressEntry({
-      weight_kg: 72.5,
-      body_fat_percentage: 18.2,
-      muscle_mass_kg: 42.1,
-      measurements: {
-        chest: 100,
-        waist: 80,
-        hips: 95,
-        bicep: 35,
-        thigh: 55,
-        neck: 38,
-      },
-      notes: "Weekly progress check",
-    });
-
-    if (success) {
-      Alert.alert("Success", "Progress entry added successfully!");
-    } else {
-      Alert.alert("Error", "Failed to add progress entry");
-    }
+    // Open the weight entry modal instead of creating hardcoded demo data
+    setShowWeightModal(true);
   };
 
   return (
-    <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container}>
-        <Animated.View
-          style={{
-            flex: 1,
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
-        >
-          <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor={ResponsiveTheme.colors.primary}
-                colors={[ResponsiveTheme.colors.primary]}
-                title=""
-                titleColor={ResponsiveTheme.colors.primary}
-              />
-            }
+    <>
+      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+        <SafeAreaView style={styles.container}>
+          <Animated.View
+            style={{
+              flex: 1,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            }}
           >
-            <View>
-              {/* Header */}
-              <View style={styles.header}>
-                <Text style={styles.title}>Progress</Text>
-                <View style={styles.headerButtons}>
-                  {/* Track B Status Indicator */}
-                  <AnimatedPressable
-                    style={styles.statusButton}
-                    scaleValue={0.95}
-                  >
-                    <Ionicons
-                      name={
-                        trackBStatus.isConnected
-                          ? "checkmark-circle"
-                          : "close-circle"
-                      }
-                      size={rf(16)}
-                      color={
-                        trackBStatus.isConnected
-                          ? ResponsiveTheme.colors.success
-                          : ResponsiveTheme.colors.error
-                      }
-                    />
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    style={
-                      showAnalytics
-                        ? [styles.analyticsButton, styles.analyticsButtonActive]
-                        : styles.analyticsButton
-                    }
-                    onPress={() => setShowAnalytics(!showAnalytics)}
-                    scaleValue={0.95}
-                  >
-                    <Ionicons
-                      name="stats-chart-outline"
-                      size={rf(16)}
-                      color={
+            <ScrollView
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={ResponsiveTheme.colors.primary}
+                  colors={[ResponsiveTheme.colors.primary]}
+                  title=""
+                  titleColor={ResponsiveTheme.colors.primary}
+                />
+              }
+            >
+              <View>
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.title}>Progress</Text>
+                  <View style={styles.headerButtons}>
+                    {/* Track B Status Indicator */}
+                    <AnimatedPressable
+                      style={styles.statusButton}
+                      scaleValue={0.95}
+                    >
+                      <Ionicons
+                        name={
+                          trackBStatus.isConnected
+                            ? "checkmark-circle"
+                            : "close-circle"
+                        }
+                        size={rf(16)}
+                        color={
+                          trackBStatus.isConnected
+                            ? ResponsiveTheme.colors.success
+                            : ResponsiveTheme.colors.error
+                        }
+                      />
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={
                         showAnalytics
-                          ? ResponsiveTheme.colors.white
-                          : ResponsiveTheme.colors.text
+                          ? [
+                              styles.analyticsButton,
+                              styles.analyticsButtonActive,
+                            ]
+                          : styles.analyticsButton
                       }
-                    />
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    style={styles.addButton}
-                    onPress={handleAddProgressEntry}
-                    scaleValue={0.95}
-                    hapticFeedback={true}
-                    hapticType="medium"
-                  >
-                    <Ionicons
-                      name="add"
-                      size={rf(16)}
-                      color={ResponsiveTheme.colors.white}
-                    />
-                  </AnimatedPressable>
-                  <AnimatedPressable
-                    style={styles.shareButton}
-                    scaleValue={0.95}
-                  >
-                    <Ionicons
-                      name="share-outline"
-                      size={rf(20)}
-                      color={ResponsiveTheme.colors.text}
-                    />
-                  </AnimatedPressable>
-                </View>
-              </View>
-
-              {/* Loading State - Blocks interaction with overlay */}
-              {(progressLoading || statsLoading) && (
-                <View
-                  style={[styles.loadingContainer, StyleSheet.absoluteFill]}
-                  pointerEvents="box-only"
-                >
-                  <AuroraSpinner size="lg" theme="primary" />
-                  <Text style={styles.loadingText}>
-                    Loading progress data...
-                  </Text>
-                </View>
-              )}
-
-              {/* Error State */}
-              {progressError && (
-                <GlassCard
-                  style={styles.errorCard}
-                  elevation={1}
-                  blurIntensity="light"
-                  padding="md"
-                  borderRadius="lg"
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center" as const,
-                      gap: rp(8),
-                      marginBottom: ResponsiveTheme.spacing.md,
-                    }}
-                  >
-                    <Ionicons
-                      name="warning-outline"
-                      size={rf(24)}
-                      color={ResponsiveTheme.colors.error}
-                    />
-                    <Text style={styles.errorText}>{progressError}</Text>
+                      onPress={() => setShowAnalytics(!showAnalytics)}
+                      scaleValue={0.95}
+                    >
+                      <Ionicons
+                        name="stats-chart-outline"
+                        size={rf(16)}
+                        color={
+                          showAnalytics
+                            ? ResponsiveTheme.colors.white
+                            : ResponsiveTheme.colors.text
+                        }
+                      />
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.addButton}
+                      onPress={handleAddProgressEntry}
+                      scaleValue={0.95}
+                      hapticFeedback={true}
+                      hapticType="medium"
+                    >
+                      <Ionicons
+                        name="add"
+                        size={rf(16)}
+                        color={ResponsiveTheme.colors.white}
+                      />
+                    </AnimatedPressable>
+                    <AnimatedPressable
+                      style={styles.shareButton}
+                      scaleValue={0.95}
+                    >
+                      <Ionicons
+                        name="share-outline"
+                        size={rf(20)}
+                        color={ResponsiveTheme.colors.text}
+                      />
+                    </AnimatedPressable>
                   </View>
-                  <Button
-                    title="Retry"
-                    onPress={refreshAll}
-                    variant="outline"
-                    size="sm"
-                    style={styles.retryButton}
-                  />
-                </GlassCard>
-              )}
+                </View>
 
-              {/* No Authentication State */}
-              {!isAuthenticated && (
-                <GlassCard
-                  style={styles.errorCard}
-                  elevation={1}
-                  blurIntensity="light"
-                  padding="md"
-                  borderRadius="lg"
-                >
+                {/* Loading State - Blocks interaction with overlay */}
+                {(progressLoading || statsLoading) && (
                   <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center" as const,
-                      gap: rp(8),
-                    }}
+                    style={[styles.loadingContainer, StyleSheet.absoluteFill]}
+                    pointerEvents="box-only"
                   >
-                    <Ionicons
-                      name="lock-closed-outline"
-                      size={rf(24)}
-                      color={ResponsiveTheme.colors.error}
-                    />
-                    <Text style={styles.errorText}>
-                      Please sign in to track your progress
+                    <AuroraSpinner size="lg" theme="primary" />
+                    <Text style={styles.loadingText}>
+                      Loading progress data...
                     </Text>
                   </View>
-                </GlassCard>
-              )}
+                )}
 
-              {/* No Data State */}
-              {isAuthenticated &&
-                progressEntries.length === 0 &&
-                !progressLoading && (
+                {/* Error State */}
+                {progressError && (
                   <GlassCard
                     style={styles.errorCard}
                     elevation={1}
@@ -656,809 +579,909 @@ export const ProgressScreen: React.FC = () => {
                       }}
                     >
                       <Ionicons
-                        name="stats-chart-outline"
+                        name="warning-outline"
                         size={rf(24)}
-                        color={ResponsiveTheme.colors.textSecondary}
+                        color={ResponsiveTheme.colors.error}
                       />
-                      <Text style={styles.errorText}>No progress data yet</Text>
+                      <Text style={styles.errorText}>{progressError}</Text>
                     </View>
-                    <Text style={styles.errorSubtext}>
-                      Add your first measurement to start tracking!
-                    </Text>
                     <Button
-                      title="Add Entry"
-                      onPress={handleAddProgressEntry}
-                      variant="primary"
+                      title="Retry"
+                      onPress={refreshAll}
+                      variant="outline"
                       size="sm"
                       style={styles.retryButton}
                     />
                   </GlassCard>
                 )}
 
-              {/* Today's Progress */}
-              {isAuthenticated && todaysData && !showAnalytics && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Today's Progress</Text>
+                {/* No Authentication State */}
+                {!isAuthenticated && (
                   <GlassCard
-                    style={styles.todaysCard}
-                    elevation={2}
+                    style={styles.errorCard}
+                    elevation={1}
                     blurIntensity="light"
-                    padding="lg"
+                    padding="md"
                     borderRadius="lg"
                   >
-                    <View style={styles.todaysHeader}>
-                      <Text style={styles.todaysDate}>
-                        {new Date().toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "short",
-                          day: "numeric",
-                        })}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center" as const,
+                        gap: rp(8),
+                      }}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={rf(24)}
+                        color={ResponsiveTheme.colors.error}
+                      />
+                      <Text style={styles.errorText}>
+                        Please sign in to track your progress
                       </Text>
-                    </View>
-
-                    <View style={styles.todaysStats}>
-                      {/* Workout Progress */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="barbell-outline"
-                          size={rf(24)}
-                          color={ResponsiveTheme.colors.primary}
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Workout</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {todaysData.workout
-                              ? `${todaysData.progress.workoutProgress}%`
-                              : "Rest Day"}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Meals Progress */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="restaurant-outline"
-                          size={rf(24)}
-                          color={ResponsiveTheme.colors.primary}
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Meals</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {todaysData.progress.mealsCompleted}/
-                            {todaysData.progress.totalMeals}
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Calories Progress */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="flame-outline"
-                          size={rf(24)}
-                          color={ResponsiveTheme.colors.primary}
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Calories</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {todaysData.progress.caloriesConsumed}/
-                            {todaysData.progress.targetCalories}
-                          </Text>
-                        </View>
-                      </View>
                     </View>
                   </GlassCard>
-                </View>
-              )}
+                )}
 
-              {/* Wearable Health Data */}
-              {isAuthenticated && isWearableConnected && !showAnalytics && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Wearable Activity</Text>
-                  <GlassCard
-                    style={styles.todaysCard}
-                    elevation={2}
-                    blurIntensity="light"
-                    padding="lg"
-                    borderRadius="lg"
-                  >
-                    <View style={styles.wearableHeader}>
-                      <Ionicons
-                        name="watch-outline"
-                        size={rf(20)}
-                        color={ResponsiveTheme.colors.primary}
-                      />
-                      <Text style={styles.wearableLabel}>
-                        From your smartwatch
+                {/* No Data State */}
+                {isAuthenticated &&
+                  progressEntries.length === 0 &&
+                  !progressLoading && (
+                    <GlassCard
+                      style={styles.errorCard}
+                      elevation={1}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center" as const,
+                          gap: rp(8),
+                          marginBottom: ResponsiveTheme.spacing.md,
+                        }}
+                      >
+                        <Ionicons
+                          name="stats-chart-outline"
+                          size={rf(24)}
+                          color={ResponsiveTheme.colors.textSecondary}
+                        />
+                        <Text style={styles.errorText}>
+                          No progress data yet
+                        </Text>
+                      </View>
+                      <Text style={styles.errorSubtext}>
+                        Add your first measurement to start tracking!
                       </Text>
-                    </View>
-                    <View style={styles.todaysStats}>
-                      {/* Steps */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="walk-outline"
-                          size={rf(24)}
-                          color="#4CAF50"
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Steps</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {healthMetrics.steps.toLocaleString()}
-                          </Text>
-                        </View>
+                      <Button
+                        title="Add Entry"
+                        onPress={handleAddProgressEntry}
+                        variant="primary"
+                        size="sm"
+                        style={styles.retryButton}
+                      />
+                    </GlassCard>
+                  )}
+
+                {/* Today's Progress */}
+                {isAuthenticated && todaysData && !showAnalytics && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Today's Progress</Text>
+                    <GlassCard
+                      style={styles.todaysCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="lg"
+                      borderRadius="lg"
+                    >
+                      <View style={styles.todaysHeader}>
+                        <Text style={styles.todaysDate}>
+                          {new Date().toLocaleDateString("en-US", {
+                            weekday: "long",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </Text>
                       </View>
 
-                      {/* Active Calories */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="flame-outline"
-                          size={rf(24)}
-                          color="#FF9800"
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Burned</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {healthMetrics.activeCalories} cal
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Heart Rate */}
-                      <View style={styles.todaysStat}>
-                        <Ionicons
-                          name="heart-outline"
-                          size={rf(24)}
-                          color="#F44336"
-                          style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                        />
-                        <View style={styles.todaysStatContent}>
-                          <Text style={styles.todaysStatLabel}>Heart Rate</Text>
-                          <Text style={styles.todaysStatValue}>
-                            {healthMetrics.heartRate || "--"} bpm
-                          </Text>
-                        </View>
-                      </View>
-
-                      {/* Sleep Hours */}
-                      {healthMetrics.sleepHours && (
+                      <View style={styles.todaysStats}>
+                        {/* Workout Progress */}
                         <View style={styles.todaysStat}>
                           <Ionicons
-                            name="bed-outline"
+                            name="barbell-outline"
                             size={rf(24)}
-                            color="#9C27B0"
+                            color={ResponsiveTheme.colors.primary}
                             style={{ marginBottom: ResponsiveTheme.spacing.xs }}
                           />
                           <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Sleep</Text>
+                            <Text style={styles.todaysStatLabel}>Workout</Text>
                             <Text style={styles.todaysStatValue}>
-                              {healthMetrics.sleepHours.toFixed(1)}h
+                              {todaysData.workout
+                                ? `${todaysData.progress.workoutProgress}%`
+                                : "Rest Day"}
                             </Text>
                           </View>
                         </View>
-                      )}
-                    </View>
-                  </GlassCard>
-                </View>
-              )}
 
-              {/* Progress Analytics Component */}
-              {showAnalytics && <ProgressAnalytics />}
+                        {/* Meals Progress */}
+                        <View style={styles.todaysStat}>
+                          <Ionicons
+                            name="restaurant-outline"
+                            size={rf(24)}
+                            color={ResponsiveTheme.colors.primary}
+                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
+                          />
+                          <View style={styles.todaysStatContent}>
+                            <Text style={styles.todaysStatLabel}>Meals</Text>
+                            <Text style={styles.todaysStatValue}>
+                              {todaysData.progress.mealsCompleted}/
+                              {todaysData.progress.totalMeals}
+                            </Text>
+                          </View>
+                        </View>
 
-              {/* Period Selector */}
-              {!showAnalytics && (
-                <View style={styles.section}>
-                  <View style={styles.periodSelector}>
-                    {periods.map((period) => (
-                      <AnimatedPressable
-                        key={period.id}
-                        onPress={() => setSelectedPeriod(period.id)}
-                        style={
-                          selectedPeriod === period.id
-                            ? [styles.periodButton, styles.periodButtonActive]
-                            : styles.periodButton
-                        }
-                        scaleValue={0.97}
-                        hapticFeedback={true}
-                        hapticType="selection"
-                      >
-                        <Text
-                          style={[
-                            styles.periodText,
-                            selectedPeriod === period.id &&
-                              styles.periodTextActive,
-                          ]}
-                        >
-                          {period.label}
-                        </Text>
-                      </AnimatedPressable>
-                    ))}
-                  </View>
-                </View>
-              )}
-
-              {/* Body Stats */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Body Metrics</Text>
-                <View style={styles.statsGrid}>
-                  <GlassCard
-                    style={styles.statCard}
-                    elevation={2}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <View style={styles.statHeader}>
-                      <Text style={styles.statValue}>
-                        {stats.weight.current}
-                      </Text>
-                      <Text style={styles.statUnit}>{stats.weight.unit}</Text>
-                      <Ionicons
-                        name={
-                          stats.weight.trend === "decreasing"
-                            ? "trending-down-outline"
-                            : "trending-up-outline"
-                        }
-                        size={rf(16)}
-                        color={
-                          stats.weight.trend === "decreasing"
-                            ? ResponsiveTheme.colors.success
-                            : ResponsiveTheme.colors.error
-                        }
-                      />
-                    </View>
-                    <Text style={styles.statLabel}>Weight</Text>
-                    <Text
-                      style={[
-                        styles.statChange,
-                        (stats.weight.change ?? 0) < 0
-                          ? styles.statChangePositive
-                          : styles.statChangeNegative,
-                      ]}
-                    >
-                      {(stats.weight.change ?? 0) > 0 ? "+" : ""}
-                      {stats.weight.change ?? 0} {stats.weight.unit}
-                    </Text>
-                    <View style={styles.goalProgress}>
-                      <Text style={styles.goalText}>
-                        Goal: {stats.weight.goal}
-                        {stats.weight.unit}
-                      </Text>
-                      <View style={styles.progressBar}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            (() => {
-                              const current = Number(stats.weight.current);
-                              const goal = Number(stats.weight.goal);
-                              if (current <= 0 || !isFinite(current)) {
-                                return { width: "0%" };
-                              }
-                              const raw =
-                                ((current - goal) / current) * 100 + 50;
-                              const clamped = Math.max(
-                                0,
-                                Math.min(100, isFinite(raw) ? raw : 0),
-                              );
-                              return { width: `${clamped}%` };
-                            })(),
-                          ]}
-                        />
+                        {/* Calories Progress */}
+                        <View style={styles.todaysStat}>
+                          <Ionicons
+                            name="flame-outline"
+                            size={rf(24)}
+                            color={ResponsiveTheme.colors.primary}
+                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
+                          />
+                          <View style={styles.todaysStatContent}>
+                            <Text style={styles.todaysStatLabel}>Calories</Text>
+                            <Text style={styles.todaysStatValue}>
+                              {todaysData.progress.caloriesConsumed}/
+                              {todaysData.progress.targetCalories}
+                            </Text>
+                          </View>
+                        </View>
                       </View>
-                    </View>
-                  </GlassCard>
-
-                  <GlassCard
-                    style={styles.statCard}
-                    elevation={2}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <Text style={styles.statValue}>
-                      {stats.bodyFat.current}
-                    </Text>
-                    <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
-                    <Text style={styles.statLabel}>Body Fat</Text>
-                    <Text
-                      style={[
-                        styles.statChange,
-                        (stats.bodyFat.change ?? 0) < 0
-                          ? styles.statChangePositive
-                          : styles.statChangeNegative,
-                      ]}
-                    >
-                      {(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}
-                      {stats.bodyFat.change ?? 0}
-                      {stats.bodyFat.unit}
-                    </Text>
-                  </GlassCard>
-                </View>
-
-                <View style={styles.statsGrid}>
-                  <GlassCard
-                    style={styles.statCard}
-                    elevation={2}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <Text style={styles.statValue}>{stats.muscle.current}</Text>
-                    <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
-                    <Text style={styles.statLabel}>Muscle Mass</Text>
-                    <Text
-                      style={[
-                        styles.statChange,
-                        (stats.muscle.change ?? 0) > 0
-                          ? styles.statChangePositive
-                          : styles.statChangeNegative,
-                      ]}
-                    >
-                      {(stats.muscle.change ?? 0) > 0 ? "+" : ""}
-                      {stats.muscle.change ?? 0} {stats.muscle.unit}
-                    </Text>
-                  </GlassCard>
-
-                  <GlassCard
-                    style={styles.statCard}
-                    elevation={2}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <Text style={styles.statValue}>{stats.bmi.current}</Text>
-                    <Text style={styles.statUnit}>BMI</Text>
-                    <Text style={styles.statLabel}>Body Mass Index</Text>
-                    <Text
-                      style={[
-                        styles.statChange,
-                        (stats.bmi.change ?? 0) < 0
-                          ? styles.statChangePositive
-                          : styles.statChangeNegative,
-                      ]}
-                    >
-                      {(stats.bmi.change ?? 0) > 0 ? "+" : ""}
-                      {stats.bmi.change ?? 0}
-                    </Text>
-                  </GlassCard>
-                </View>
-              </View>
-
-              {/* Weekly Activity */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>This Week's Activity</Text>
-                <GlassCard
-                  style={styles.chartCard}
-                  elevation={2}
-                  blurIntensity="light"
-                  padding="lg"
-                  borderRadius="lg"
-                >
-                  <View style={styles.chartHeader}>
-                    <Text style={styles.chartTitle}>Activity & Nutrition</Text>
-                    <Text style={styles.chartSubtitle}>Last 7 days</Text>
+                    </GlassCard>
                   </View>
-
-                  <View style={styles.chart}>
-                    {weeklyData.map((day, index) => (
-                      <View key={index} style={styles.chartDay}>
-                        <View style={styles.chartBars}>
-                          <View
-                            style={[
-                              styles.chartBar,
-                              styles.workoutBar,
-                              { height: day.workouts * 40 + 10 },
-                            ]}
-                          />
-                          <View
-                            style={[
-                              styles.chartBar,
-                              styles.mealBar,
-                              { height: day.meals * 20 + 10 },
-                            ]}
-                          />
-                          <View
-                            style={[
-                              styles.chartBar,
-                              styles.calorieBar,
-                              { height: day.calories / 10 + 5 },
-                            ]}
-                          />
-                        </View>
-                        <Text style={styles.chartDayLabel}>{day.day}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View style={styles.chartLegend}>
-                    <View style={styles.legendItem}>
-                      <View
-                        style={[
-                          styles.legendDot,
-                          { backgroundColor: ResponsiveTheme.colors.primary },
-                        ]}
-                      />
-                      <Text style={styles.legendText}>Workouts</Text>
-                    </View>
-                    <View style={styles.legendItem}>
-                      <View
-                        style={[
-                          styles.legendDot,
-                          { backgroundColor: "#4CAF50" },
-                        ]}
-                      />
-                      <Text style={styles.legendText}>Meals</Text>
-                    </View>
-                    <View style={styles.legendItem}>
-                      <View
-                        style={[
-                          styles.legendDot,
-                          { backgroundColor: ResponsiveTheme.colors.secondary },
-                        ]}
-                      />
-                      <Text style={styles.legendText}>Calories</Text>
-                    </View>
-                  </View>
-                </GlassCard>
-              </View>
-
-              {/* Recent Activities */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Recent Activities</Text>
-                  {recentActivities.length > 3 && (
-                    <AnimatedPressable
-                      onPress={() => {
-                        loadAllActivities();
-                        setShowAllActivities(true);
-                      }}
-                      scaleValue={0.97}
-                    >
-                      <Text style={styles.viewAllText}>View All</Text>
-                    </AnimatedPressable>
-                  )}
-                </View>
-
-                {recentActivities.length > 0 ? (
-                  recentActivities.slice(0, 3).map((activity, index) => {
-                    // Ensure activity name is a string
-                    let activityName = activity.name;
-                    if (Array.isArray(activityName)) {
-                      activityName = activityName.join(", ");
-                    } else if (typeof activityName !== "string") {
-                      activityName = String(activityName || "Unknown Activity");
-                    }
-
-                    return (
-                      <GlassCard
-                        key={activity.id}
-                        style={styles.activityCard}
-                        elevation={1}
-                        blurIntensity="light"
-                        padding="md"
-                        borderRadius="lg"
-                      >
-                        <View style={styles.activityContent}>
-                          <View style={styles.activityIcon}>
-                            <Ionicons
-                              name={
-                                activity.type === "workout"
-                                  ? "barbell-outline"
-                                  : "restaurant-outline"
-                              }
-                              size={rf(20)}
-                              color={ResponsiveTheme.colors.primary}
-                            />
-                          </View>
-                          <View style={styles.activityInfo}>
-                            <Text style={styles.activityName}>
-                              {activityName}
-                            </Text>
-                            <Text style={styles.activityDetails}>
-                              {activity.type === "workout"
-                                ? `${activity.duration || "Unknown"} min • ${activity.calories || 0} cal`
-                                : `${activity.calories || 0} calories consumed`}
-                            </Text>
-                            <Text style={styles.activityDate}>
-                              {new Date(
-                                activity.completedAt,
-                              ).toLocaleDateString()}
-                            </Text>
-                          </View>
-                          <View style={styles.activityBadge}>
-                            <Ionicons
-                              name="checkmark"
-                              size={rf(14)}
-                              color={ResponsiveTheme.colors.white}
-                            />
-                          </View>
-                        </View>
-                      </GlassCard>
-                    );
-                  })
-                ) : (
-                  <GlassCard
-                    style={styles.emptyCard}
-                    elevation={1}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <Text style={styles.emptyText}>
-                      No recent activities yet
-                    </Text>
-                    <Text style={styles.emptySubtext}>
-                      Complete workouts and meals to see them here
-                    </Text>
-                  </GlassCard>
                 )}
-              </View>
 
-              {/* Achievements */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Achievements</Text>
-
-                {achievements.map((achievement) => (
-                  <GlassCard
-                    key={achievement.id}
-                    style={styles.achievementCard}
-                    elevation={1}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <View style={styles.achievementContent}>
-                      <View
-                        style={[
-                          styles.achievementIcon,
-                          achievement.completed &&
-                            styles.achievementIconCompleted,
-                        ]}
-                      >
+                {/* Wearable Health Data */}
+                {isAuthenticated && isWearableConnected && !showAnalytics && (
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Wearable Activity</Text>
+                    <GlassCard
+                      style={styles.todaysCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="lg"
+                      borderRadius="lg"
+                    >
+                      <View style={styles.wearableHeader}>
                         <Ionicons
-                          name={(achievement as any).iconName}
-                          size={rf(24)}
-                          color={
-                            achievement.completed
-                              ? ResponsiveTheme.colors.primary
-                              : ResponsiveTheme.colors.textSecondary
-                          }
-                        />
-                      </View>
-
-                      <View style={styles.achievementInfo}>
-                        <View style={styles.achievementHeader}>
-                          <Text style={styles.achievementTitle}>
-                            {achievement.title}
-                          </Text>
-                          <View style={styles.achievementMeta}>
-                            <Text style={styles.achievementCategory}>
-                              {achievement.category}
-                            </Text>
-                            <Text style={styles.achievementPoints}>
-                              +{achievement.points} pts
-                            </Text>
-                          </View>
-                        </View>
-                        <Text style={styles.achievementDescription}>
-                          {achievement.description}
-                        </Text>
-
-                        {!achievement.completed &&
-                        (achievement.progress ?? 0) > 0 &&
-                        (achievement.target ?? 0) > 0 ? (
-                          <View style={styles.achievementProgress}>
-                            <View style={styles.progressBar}>
-                              <View
-                                style={[
-                                  styles.progressFill,
-                                  {
-                                    width: `${Math.min(100, Math.max(0, ((achievement.progress || 0) / (achievement.target || 1)) * 100))}%`,
-                                  },
-                                ]}
-                              />
-                            </View>
-                            <Text style={styles.progressText}>
-                              {achievement.progress}/{achievement.target}
-                            </Text>
-                          </View>
-                        ) : null}
-
-                        <View
-                          style={[
-                            styles.rarityBadge,
-                            // @ts-ignore - dynamic style access
-                            styles[
-                              `rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`
-                            ],
-                          ]}
-                        >
-                          <Text style={styles.rarityText}>
-                            {achievement.rarity.toUpperCase()}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text
-                        style={[
-                          styles.achievementDate,
-                          achievement.completed &&
-                            styles.achievementDateCompleted,
-                        ]}
-                      >
-                        {achievement.date}
-                      </Text>
-                    </View>
-                  </GlassCard>
-                ))}
-              </View>
-
-              {/* Summary Stats */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Overall Summary</Text>
-                <GlassCard
-                  style={styles.summaryCard}
-                  elevation={2}
-                  blurIntensity="light"
-                  padding="lg"
-                  borderRadius="lg"
-                >
-                  <View style={styles.summaryGrid}>
-                    <View style={styles.summaryItem}>
-                      <Text style={styles.summaryValue}>
-                        {weeklyProgress?.workoutsCompleted ?? "--"}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Total Workouts</Text>
-                    </View>
-
-                    <View style={styles.summaryItem}>
-                      <Text style={styles.summaryValue}>
-                        {realWeeklyData.reduce(
-                          (total, day) => total + day.duration,
-                          0,
-                        ) > 0
-                          ? `${Math.round(realWeeklyData.reduce((total, day) => total + day.duration, 0) / 60)}h`
-                          : progressStats?.totalDuration
-                            ? `${Math.round(progressStats.totalDuration / 60)}h`
-                            : "0h"}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Time Exercised</Text>
-                    </View>
-
-                    <View style={styles.summaryItem}>
-                      <Text style={styles.summaryValue}>
-                        {DataRetrievalService.getTotalCaloriesBurned()?.toLocaleString() ||
-                          progressStats?.totalCalories?.toLocaleString() ||
-                          "0"}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Calories Burned</Text>
-                    </View>
-
-                    <View style={styles.summaryItem}>
-                      <Text style={styles.summaryValue}>
-                        {weeklyProgress?.streak ?? "--"}
-                      </Text>
-                      <Text style={styles.summaryLabel}>Day Streak</Text>
-                    </View>
-                  </View>
-                </GlassCard>
-              </View>
-
-              <View style={styles.bottomSpacing} />
-            </View>
-          </ScrollView>
-        </Animated.View>
-
-        {/* All Activities Modal */}
-        <Modal
-          visible={showAllActivities}
-          animationType="slide"
-          presentationStyle="pageSheet"
-        >
-          <SafeAreaView style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>All Activities</Text>
-              <AnimatedPressable
-                onPress={() => setShowAllActivities(false)}
-                style={styles.modalCloseButton}
-                scaleValue={0.95}
-              >
-                <Ionicons
-                  name="close"
-                  size={rf(20)}
-                  color={ResponsiveTheme.colors.textSecondary}
-                />
-              </AnimatedPressable>
-            </View>
-
-            <FlatList
-              data={allActivities}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.modalContent}
-              renderItem={({ item: activity }) => {
-                // Ensure activity name is a string
-                let activityName = activity.name;
-                if (Array.isArray(activityName)) {
-                  activityName = activityName.join(", ");
-                } else if (typeof activityName !== "string") {
-                  activityName = String(activityName || "Unknown Activity");
-                }
-
-                return (
-                  <GlassCard
-                    style={styles.modalActivityCard}
-                    elevation={1}
-                    blurIntensity="light"
-                    padding="md"
-                    borderRadius="lg"
-                  >
-                    <View style={styles.activityContent}>
-                      <View style={styles.activityIcon}>
-                        <Ionicons
-                          name={
-                            activity.type === "workout"
-                              ? "barbell-outline"
-                              : "restaurant-outline"
-                          }
+                          name="watch-outline"
                           size={rf(20)}
                           color={ResponsiveTheme.colors.primary}
                         />
-                      </View>
-                      <View style={styles.activityInfo}>
-                        <Text style={styles.activityName}>{activityName}</Text>
-                        <Text style={styles.activityDetails}>
-                          {activity.type === "workout"
-                            ? `${activity.duration || "Unknown"} min • ${activity.calories || 0} cal`
-                            : `${activity.calories || 0} calories consumed`}
-                        </Text>
-                        <Text style={styles.activityDate}>
-                          {new Date(activity.completedAt).toLocaleDateString()}
+                        <Text style={styles.wearableLabel}>
+                          From your smartwatch
                         </Text>
                       </View>
-                      <View style={styles.activityBadge}>
+                      <View style={styles.todaysStats}>
+                        {/* Steps */}
+                        <View style={styles.todaysStat}>
+                          <Ionicons
+                            name="walk-outline"
+                            size={rf(24)}
+                            color="#4CAF50"
+                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
+                          />
+                          <View style={styles.todaysStatContent}>
+                            <Text style={styles.todaysStatLabel}>Steps</Text>
+                            <Text style={styles.todaysStatValue}>
+                              {healthMetrics.steps.toLocaleString()}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Active Calories */}
+                        <View style={styles.todaysStat}>
+                          <Ionicons
+                            name="flame-outline"
+                            size={rf(24)}
+                            color="#FF9800"
+                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
+                          />
+                          <View style={styles.todaysStatContent}>
+                            <Text style={styles.todaysStatLabel}>Burned</Text>
+                            <Text style={styles.todaysStatValue}>
+                              {healthMetrics.activeCalories} cal
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Heart Rate */}
+                        <View style={styles.todaysStat}>
+                          <Ionicons
+                            name="heart-outline"
+                            size={rf(24)}
+                            color="#F44336"
+                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
+                          />
+                          <View style={styles.todaysStatContent}>
+                            <Text style={styles.todaysStatLabel}>
+                              Heart Rate
+                            </Text>
+                            <Text style={styles.todaysStatValue}>
+                              {healthMetrics.heartRate || "--"} bpm
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Sleep Hours */}
+                        {healthMetrics.sleepHours && (
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="bed-outline"
+                              size={rf(24)}
+                              color="#9C27B0"
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>Sleep</Text>
+                              <Text style={styles.todaysStatValue}>
+                                {healthMetrics.sleepHours.toFixed(1)}h
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    </GlassCard>
+                  </View>
+                )}
+
+                {/* Progress Analytics Component */}
+                {showAnalytics && <ProgressAnalytics />}
+
+                {/* Period Selector */}
+                {!showAnalytics && (
+                  <View style={styles.section}>
+                    <View style={styles.periodSelector}>
+                      {periods.map((period) => (
+                        <AnimatedPressable
+                          key={period.id}
+                          onPress={() => setSelectedPeriod(period.id)}
+                          style={
+                            selectedPeriod === period.id
+                              ? [styles.periodButton, styles.periodButtonActive]
+                              : styles.periodButton
+                          }
+                          scaleValue={0.97}
+                          hapticFeedback={true}
+                          hapticType="selection"
+                        >
+                          <Text
+                            style={[
+                              styles.periodText,
+                              selectedPeriod === period.id &&
+                                styles.periodTextActive,
+                            ]}
+                          >
+                            {period.label}
+                          </Text>
+                        </AnimatedPressable>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Body Stats */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Body Metrics</Text>
+                  <View style={styles.statsGrid}>
+                    <GlassCard
+                      style={styles.statCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <View style={styles.statHeader}>
+                        <Text style={styles.statValue}>
+                          {stats.weight.current}
+                        </Text>
+                        <Text style={styles.statUnit}>{stats.weight.unit}</Text>
                         <Ionicons
-                          name="checkmark"
-                          size={rf(14)}
-                          color={ResponsiveTheme.colors.white}
+                          name={
+                            stats.weight.trend === "decreasing"
+                              ? "trending-down-outline"
+                              : "trending-up-outline"
+                          }
+                          size={rf(16)}
+                          color={
+                            stats.weight.trend === "decreasing"
+                              ? ResponsiveTheme.colors.success
+                              : ResponsiveTheme.colors.error
+                          }
                         />
+                      </View>
+                      <Text style={styles.statLabel}>Weight</Text>
+                      <Text
+                        style={[
+                          styles.statChange,
+                          (stats.weight.change ?? 0) < 0
+                            ? styles.statChangePositive
+                            : styles.statChangeNegative,
+                        ]}
+                      >
+                        {(stats.weight.change ?? 0) > 0 ? "+" : ""}
+                        {stats.weight.change ?? 0} {stats.weight.unit}
+                      </Text>
+                      <View style={styles.goalProgress}>
+                        <Text style={styles.goalText}>
+                          Goal: {stats.weight.goal}
+                          {stats.weight.unit}
+                        </Text>
+                        <View style={styles.progressBar}>
+                          <View
+                            style={[
+                              styles.progressFill,
+                              (() => {
+                                const current = Number(stats.weight.current);
+                                const goal = Number(stats.weight.goal);
+                                if (current <= 0 || !isFinite(current)) {
+                                  return { width: "0%" };
+                                }
+                                const raw =
+                                  ((current - goal) / current) * 100 + 50;
+                                const clamped = Math.max(
+                                  0,
+                                  Math.min(100, isFinite(raw) ? raw : 0),
+                                );
+                                return { width: `${clamped}%` };
+                              })(),
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    </GlassCard>
+
+                    <GlassCard
+                      style={styles.statCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <Text style={styles.statValue}>
+                        {stats.bodyFat.current}
+                      </Text>
+                      <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
+                      <Text style={styles.statLabel}>Body Fat</Text>
+                      <Text
+                        style={[
+                          styles.statChange,
+                          (stats.bodyFat.change ?? 0) < 0
+                            ? styles.statChangePositive
+                            : styles.statChangeNegative,
+                        ]}
+                      >
+                        {(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}
+                        {stats.bodyFat.change ?? 0}
+                        {stats.bodyFat.unit}
+                      </Text>
+                    </GlassCard>
+                  </View>
+
+                  <View style={styles.statsGrid}>
+                    <GlassCard
+                      style={styles.statCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <Text style={styles.statValue}>
+                        {stats.muscle.current}
+                      </Text>
+                      <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                      <Text style={styles.statLabel}>Muscle Mass</Text>
+                      <Text
+                        style={[
+                          styles.statChange,
+                          (stats.muscle.change ?? 0) > 0
+                            ? styles.statChangePositive
+                            : styles.statChangeNegative,
+                        ]}
+                      >
+                        {(stats.muscle.change ?? 0) > 0 ? "+" : ""}
+                        {stats.muscle.change ?? 0} {stats.muscle.unit}
+                      </Text>
+                    </GlassCard>
+
+                    <GlassCard
+                      style={styles.statCard}
+                      elevation={2}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <Text style={styles.statValue}>{stats.bmi.current}</Text>
+                      <Text style={styles.statUnit}>BMI</Text>
+                      <Text style={styles.statLabel}>Body Mass Index</Text>
+                      <Text
+                        style={[
+                          styles.statChange,
+                          (stats.bmi.change ?? 0) < 0
+                            ? styles.statChangePositive
+                            : styles.statChangeNegative,
+                        ]}
+                      >
+                        {(stats.bmi.change ?? 0) > 0 ? "+" : ""}
+                        {stats.bmi.change ?? 0}
+                      </Text>
+                    </GlassCard>
+                  </View>
+                </View>
+
+                {/* Weekly Activity */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>This Week's Activity</Text>
+                  <GlassCard
+                    style={styles.chartCard}
+                    elevation={2}
+                    blurIntensity="light"
+                    padding="lg"
+                    borderRadius="lg"
+                  >
+                    <View style={styles.chartHeader}>
+                      <Text style={styles.chartTitle}>
+                        Activity & Nutrition
+                      </Text>
+                      <Text style={styles.chartSubtitle}>Last 7 days</Text>
+                    </View>
+
+                    <View style={styles.chart}>
+                      {weeklyData.map((day, index) => (
+                        <View key={index} style={styles.chartDay}>
+                          <View style={styles.chartBars}>
+                            <View
+                              style={[
+                                styles.chartBar,
+                                styles.workoutBar,
+                                { height: day.workouts * 40 + 10 },
+                              ]}
+                            />
+                            <View
+                              style={[
+                                styles.chartBar,
+                                styles.mealBar,
+                                { height: day.meals * 20 + 10 },
+                              ]}
+                            />
+                            <View
+                              style={[
+                                styles.chartBar,
+                                styles.calorieBar,
+                                { height: day.calories / 10 + 5 },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.chartDayLabel}>{day.day}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View style={styles.chartLegend}>
+                      <View style={styles.legendItem}>
+                        <View
+                          style={[
+                            styles.legendDot,
+                            { backgroundColor: ResponsiveTheme.colors.primary },
+                          ]}
+                        />
+                        <Text style={styles.legendText}>Workouts</Text>
+                      </View>
+                      <View style={styles.legendItem}>
+                        <View
+                          style={[
+                            styles.legendDot,
+                            { backgroundColor: "#4CAF50" },
+                          ]}
+                        />
+                        <Text style={styles.legendText}>Meals</Text>
+                      </View>
+                      <View style={styles.legendItem}>
+                        <View
+                          style={[
+                            styles.legendDot,
+                            {
+                              backgroundColor: ResponsiveTheme.colors.secondary,
+                            },
+                          ]}
+                        />
+                        <Text style={styles.legendText}>Calories</Text>
                       </View>
                     </View>
                   </GlassCard>
-                );
-              }}
-              onEndReached={loadMoreActivities}
-              onEndReachedThreshold={0.1}
-              ListFooterComponent={() =>
-                loadingMoreActivities ? (
-                  <View style={styles.loadingFooter}>
-                    <AuroraSpinner size="sm" theme="primary" />
-                    <Text style={styles.loadingText}>
-                      Loading more activities...
+                </View>
+
+                {/* Recent Activities */}
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Recent Activities</Text>
+                    {recentActivities.length > 3 && (
+                      <AnimatedPressable
+                        onPress={() => {
+                          loadAllActivities();
+                          setShowAllActivities(true);
+                        }}
+                        scaleValue={0.97}
+                      >
+                        <Text style={styles.viewAllText}>View All</Text>
+                      </AnimatedPressable>
+                    )}
+                  </View>
+
+                  {recentActivities.length > 0 ? (
+                    recentActivities.slice(0, 3).map((activity, index) => {
+                      // Ensure activity name is a string
+                      let activityName = activity.name;
+                      if (Array.isArray(activityName)) {
+                        activityName = activityName.join(", ");
+                      } else if (typeof activityName !== "string") {
+                        activityName = String(
+                          activityName || "Unknown Activity",
+                        );
+                      }
+
+                      return (
+                        <GlassCard
+                          key={activity.id}
+                          style={styles.activityCard}
+                          elevation={1}
+                          blurIntensity="light"
+                          padding="md"
+                          borderRadius="lg"
+                        >
+                          <View style={styles.activityContent}>
+                            <View style={styles.activityIcon}>
+                              <Ionicons
+                                name={
+                                  activity.type === "workout"
+                                    ? "barbell-outline"
+                                    : "restaurant-outline"
+                                }
+                                size={rf(20)}
+                                color={ResponsiveTheme.colors.primary}
+                              />
+                            </View>
+                            <View style={styles.activityInfo}>
+                              <Text style={styles.activityName}>
+                                {activityName}
+                              </Text>
+                              <Text style={styles.activityDetails}>
+                                {activity.type === "workout"
+                                  ? `${activity.duration || "Unknown"} min • ${activity.calories || 0} cal`
+                                  : `${activity.calories || 0} calories consumed`}
+                              </Text>
+                              <Text style={styles.activityDate}>
+                                {new Date(
+                                  activity.completedAt,
+                                ).toLocaleDateString()}
+                              </Text>
+                            </View>
+                            <View style={styles.activityBadge}>
+                              <Ionicons
+                                name="checkmark"
+                                size={rf(14)}
+                                color={ResponsiveTheme.colors.white}
+                              />
+                            </View>
+                          </View>
+                        </GlassCard>
+                      );
+                    })
+                  ) : (
+                    <GlassCard
+                      style={styles.emptyCard}
+                      elevation={1}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <Text style={styles.emptyText}>
+                        No recent activities yet
+                      </Text>
+                      <Text style={styles.emptySubtext}>
+                        Complete workouts and meals to see them here
+                      </Text>
+                    </GlassCard>
+                  )}
+                </View>
+
+                {/* Achievements */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Achievements</Text>
+
+                  {achievements.map((achievement) => (
+                    <GlassCard
+                      key={achievement.id}
+                      style={styles.achievementCard}
+                      elevation={1}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <View style={styles.achievementContent}>
+                        <View
+                          style={[
+                            styles.achievementIcon,
+                            achievement.completed &&
+                              styles.achievementIconCompleted,
+                          ]}
+                        >
+                          <Ionicons
+                            name={(achievement as any).iconName}
+                            size={rf(24)}
+                            color={
+                              achievement.completed
+                                ? ResponsiveTheme.colors.primary
+                                : ResponsiveTheme.colors.textSecondary
+                            }
+                          />
+                        </View>
+
+                        <View style={styles.achievementInfo}>
+                          <View style={styles.achievementHeader}>
+                            <Text style={styles.achievementTitle}>
+                              {achievement.title}
+                            </Text>
+                            <View style={styles.achievementMeta}>
+                              <Text style={styles.achievementCategory}>
+                                {achievement.category}
+                              </Text>
+                              <Text style={styles.achievementPoints}>
+                                +{achievement.points} pts
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.achievementDescription}>
+                            {achievement.description}
+                          </Text>
+
+                          {!achievement.completed &&
+                          (achievement.progress ?? 0) > 0 &&
+                          (achievement.target ?? 0) > 0 ? (
+                            <View style={styles.achievementProgress}>
+                              <View style={styles.progressBar}>
+                                <View
+                                  style={[
+                                    styles.progressFill,
+                                    {
+                                      width: `${Math.min(100, Math.max(0, ((achievement.progress || 0) / (achievement.target || 1)) * 100))}%`,
+                                    },
+                                  ]}
+                                />
+                              </View>
+                              <Text style={styles.progressText}>
+                                {achievement.progress}/{achievement.target}
+                              </Text>
+                            </View>
+                          ) : null}
+
+                          <View
+                            style={[
+                              styles.rarityBadge,
+                              // @ts-ignore - dynamic style access
+                              styles[
+                                `rarity${achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}`
+                              ],
+                            ]}
+                          >
+                            <Text style={styles.rarityText}>
+                              {achievement.rarity.toUpperCase()}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text
+                          style={[
+                            styles.achievementDate,
+                            achievement.completed &&
+                              styles.achievementDateCompleted,
+                          ]}
+                        >
+                          {achievement.date}
+                        </Text>
+                      </View>
+                    </GlassCard>
+                  ))}
+                </View>
+
+                {/* Summary Stats */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Overall Summary</Text>
+                  <GlassCard
+                    style={styles.summaryCard}
+                    elevation={2}
+                    blurIntensity="light"
+                    padding="lg"
+                    borderRadius="lg"
+                  >
+                    <View style={styles.summaryGrid}>
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {weeklyProgress?.workoutsCompleted ?? "--"}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Total Workouts</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {realWeeklyData.reduce(
+                            (total, day) => total + day.duration,
+                            0,
+                          ) > 0
+                            ? `${Math.round(realWeeklyData.reduce((total, day) => total + day.duration, 0) / 60)}h`
+                            : progressStats?.totalDuration
+                              ? `${Math.round(progressStats.totalDuration / 60)}h`
+                              : "0h"}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Time Exercised</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {DataRetrievalService.getTotalCaloriesBurned()?.toLocaleString() ||
+                            progressStats?.totalCalories?.toLocaleString() ||
+                            "0"}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Calories Burned</Text>
+                      </View>
+
+                      <View style={styles.summaryItem}>
+                        <Text style={styles.summaryValue}>
+                          {weeklyProgress?.streak ?? "--"}
+                        </Text>
+                        <Text style={styles.summaryLabel}>Day Streak</Text>
+                      </View>
+                    </View>
+                  </GlassCard>
+                </View>
+
+                <View style={styles.bottomSpacing} />
+              </View>
+            </ScrollView>
+          </Animated.View>
+
+          {/* All Activities Modal */}
+          <Modal
+            visible={showAllActivities}
+            animationType="slide"
+            presentationStyle="pageSheet"
+          >
+            <SafeAreaView style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>All Activities</Text>
+                <AnimatedPressable
+                  onPress={() => setShowAllActivities(false)}
+                  style={styles.modalCloseButton}
+                  scaleValue={0.95}
+                >
+                  <Ionicons
+                    name="close"
+                    size={rf(20)}
+                    color={ResponsiveTheme.colors.textSecondary}
+                  />
+                </AnimatedPressable>
+              </View>
+
+              <FlatList
+                data={allActivities}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalContent}
+                renderItem={({ item: activity }) => {
+                  // Ensure activity name is a string
+                  let activityName = activity.name;
+                  if (Array.isArray(activityName)) {
+                    activityName = activityName.join(", ");
+                  } else if (typeof activityName !== "string") {
+                    activityName = String(activityName || "Unknown Activity");
+                  }
+
+                  return (
+                    <GlassCard
+                      style={styles.modalActivityCard}
+                      elevation={1}
+                      blurIntensity="light"
+                      padding="md"
+                      borderRadius="lg"
+                    >
+                      <View style={styles.activityContent}>
+                        <View style={styles.activityIcon}>
+                          <Ionicons
+                            name={
+                              activity.type === "workout"
+                                ? "barbell-outline"
+                                : "restaurant-outline"
+                            }
+                            size={rf(20)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
+                        </View>
+                        <View style={styles.activityInfo}>
+                          <Text style={styles.activityName}>
+                            {activityName}
+                          </Text>
+                          <Text style={styles.activityDetails}>
+                            {activity.type === "workout"
+                              ? `${activity.duration || "Unknown"} min • ${activity.calories || 0} cal`
+                              : `${activity.calories || 0} calories consumed`}
+                          </Text>
+                          <Text style={styles.activityDate}>
+                            {new Date(
+                              activity.completedAt,
+                            ).toLocaleDateString()}
+                          </Text>
+                        </View>
+                        <View style={styles.activityBadge}>
+                          <Ionicons
+                            name="checkmark"
+                            size={rf(14)}
+                            color={ResponsiveTheme.colors.white}
+                          />
+                        </View>
+                      </View>
+                    </GlassCard>
+                  );
+                }}
+                onEndReached={loadMoreActivities}
+                onEndReachedThreshold={0.1}
+                ListFooterComponent={() =>
+                  loadingMoreActivities ? (
+                    <View style={styles.loadingFooter}>
+                      <AuroraSpinner size="sm" theme="primary" />
+                      <Text style={styles.loadingText}>
+                        Loading more activities...
+                      </Text>
+                    </View>
+                  ) : !hasMoreActivities && allActivities.length > 0 ? (
+                    <View style={styles.endFooter}>
+                      <Text style={styles.endText}>
+                        You've reached the end!
+                      </Text>
+                    </View>
+                  ) : null
+                }
+                ListEmptyComponent={() => (
+                  <View style={styles.emptyModalContainer}>
+                    <Text style={styles.emptyModalText}>
+                      No activities found
+                    </Text>
+                    <Text style={styles.emptyModalSubtext}>
+                      Complete workouts and meals to see them here
                     </Text>
                   </View>
-                ) : !hasMoreActivities && allActivities.length > 0 ? (
-                  <View style={styles.endFooter}>
-                    <Text style={styles.endText}>You've reached the end!</Text>
-                  </View>
-                ) : null
-              }
-              ListEmptyComponent={() => (
-                <View style={styles.emptyModalContainer}>
-                  <Text style={styles.emptyModalText}>No activities found</Text>
-                  <Text style={styles.emptyModalSubtext}>
-                    Complete workouts and meals to see them here
-                  </Text>
-                </View>
-              )}
-            />
-          </SafeAreaView>
-        </Modal>
-      </SafeAreaView>
-    </AuroraBackground>
+                )}
+              />
+            </SafeAreaView>
+          </Modal>
+        </SafeAreaView>
+      </AuroraBackground>
+
+      {/* Weight Entry Modal */}
+      <WeightEntryModal
+        visible={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        currentWeight={progressStats?.weightChange?.current}
+        unit="kg"
+        onSuccess={() => {
+          // Refresh progress data after successful entry
+          refreshProgressData();
+          Alert.alert("Success", "Weight entry saved successfully!");
+        }}
+      />
+    </>
   );
 };
 

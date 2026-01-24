@@ -125,31 +125,51 @@ export class DataTransformationService {
     userId: string,
   ): SupabaseMealLog {
     return {
-      id: mealLog.id,
       user_id: userId,
-      date: mealLog.date,
       meal_type: mealLog.mealType,
-      foods_data: JSON.stringify(mealLog.foods),
-      total_calories: mealLog.totalCalories,
-      total_macros: JSON.stringify(mealLog.totalMacros),
-      notes: mealLog.notes || "",
-      photos: mealLog.photos || [],
-      logged_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      meal_name:
+        mealLog.foods?.[0]?.food?.name || mealLog.foods?.[0]?.foodId || "Meal",
+      food_items: mealLog.foods || [],
+      total_calories: mealLog.totalCalories || 0,
+      total_protein: mealLog.totalMacros?.protein || 0,
+      total_carbohydrates: mealLog.totalMacros?.carbohydrates || 0,
+      total_fat: mealLog.totalMacros?.fat || 0,
+      notes: mealLog.notes || null,
+      logged_at: mealLog.loggedAt || new Date().toISOString(),
     };
   }
 
   transformSupabaseToMealLog(supabaseMealLog: any): MealLog {
+    // Handle food_items - could be object, array, or string
+    let foods = [];
+    if (supabaseMealLog.food_items) {
+      if (typeof supabaseMealLog.food_items === "string") {
+        try {
+          foods = JSON.parse(supabaseMealLog.food_items);
+        } catch {
+          foods = [];
+        }
+      } else if (Array.isArray(supabaseMealLog.food_items)) {
+        foods = supabaseMealLog.food_items;
+      } else {
+        foods = [supabaseMealLog.food_items];
+      }
+    }
+
     return {
       id: supabaseMealLog.id,
       mealType: supabaseMealLog.meal_type,
-      foods: JSON.parse(supabaseMealLog.foods_data || "[]"),
-      totalCalories: supabaseMealLog.total_calories,
-      totalMacros: JSON.parse(supabaseMealLog.total_macros || "{}"),
+      foods: foods,
+      totalCalories: supabaseMealLog.total_calories || 0,
+      totalMacros: {
+        protein: supabaseMealLog.total_protein || 0,
+        carbohydrates: supabaseMealLog.total_carbohydrates || 0,
+        fat: supabaseMealLog.total_fat || 0,
+        fiber: 0,
+      },
       loggedAt: supabaseMealLog.logged_at || new Date().toISOString(),
       notes: supabaseMealLog.notes || "",
-      photos: supabaseMealLog.photos || [],
+      photos: [],
       syncStatus: SyncStatus.SYNCED,
       syncMetadata: {
         lastSyncedAt: new Date().toISOString(),
@@ -169,13 +189,12 @@ export class DataTransformationService {
     userId: string,
   ): SupabaseProgressEntry {
     return {
-      id: measurement.id,
       user_id: userId,
-      date: measurement.date,
+      entry_date: measurement.date,
       weight_kg: measurement.weight,
       body_fat_percentage: measurement.bodyFat,
       muscle_mass_kg: measurement.muscleMass,
-      measurements_data: JSON.stringify({
+      measurements: {
         chest: measurement.chest,
         waist: measurement.waist,
         hips: measurement.hips,
@@ -183,21 +202,39 @@ export class DataTransformationService {
         thighs: measurement.thighs,
         calves: measurement.calves,
         neck: measurement.neck,
-      }),
+      },
       notes: measurement.notes || "",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
   }
 
   transformSupabaseToBodyMeasurement(supabaseEntry: any): BodyMeasurement {
+    // Handle measurements - could be object or string
+    let measurements: any = {};
+    if (supabaseEntry.measurements) {
+      if (typeof supabaseEntry.measurements === "string") {
+        try {
+          measurements = JSON.parse(supabaseEntry.measurements);
+        } catch {
+          measurements = {};
+        }
+      } else {
+        measurements = supabaseEntry.measurements;
+      }
+    }
+
     return {
       id: supabaseEntry.id,
-      // userId omitted in BodyMeasurement type
-      date: supabaseEntry.date,
+      date: supabaseEntry.entry_date,
       weight: supabaseEntry.weight_kg,
       bodyFat: supabaseEntry.body_fat_percentage,
       muscleMass: supabaseEntry.muscle_mass_kg,
+      chest: measurements.chest,
+      waist: measurements.waist,
+      hips: measurements.hips,
+      biceps: measurements.biceps,
+      thighs: measurements.thighs,
+      calves: measurements.calves,
+      neck: measurements.neck,
       notes: supabaseEntry.notes || "",
       syncStatus: "synced",
     };
