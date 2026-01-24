@@ -293,6 +293,68 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["water_logs"]["Insert"]>;
       };
+      user_achievements: {
+        Row: {
+          id: string;
+          user_id: string;
+          achievement_id: string;
+          progress: number;
+          max_progress: number;
+          is_completed: boolean;
+          unlocked_at: string | null;
+          celebration_shown: boolean;
+          fit_coins_earned: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          achievement_id: string;
+          progress?: number;
+          max_progress?: number;
+          is_completed?: boolean;
+          unlocked_at?: string | null;
+          celebration_shown?: boolean;
+          fit_coins_earned?: number;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["user_achievements"]["Insert"]
+        >;
+      };
+      analytics_metrics: {
+        Row: {
+          id: string;
+          user_id: string;
+          metric_date: string;
+          weight_kg: number | null;
+          calories_consumed: number | null;
+          calories_burned: number | null;
+          workouts_completed: number;
+          meals_logged: number;
+          water_intake_ml: number;
+          steps: number | null;
+          sleep_hours: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          metric_date: string;
+          weight_kg?: number | null;
+          calories_consumed?: number | null;
+          calories_burned?: number | null;
+          workouts_completed?: number;
+          meals_logged?: number;
+          water_intake_ml?: number;
+          steps?: number | null;
+          sleep_hours?: number | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["analytics_metrics"]["Insert"]
+        >;
+      };
     };
   };
 }

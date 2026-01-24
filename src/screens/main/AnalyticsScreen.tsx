@@ -28,7 +28,9 @@ import { useHealthDataStore } from "../../stores/healthDataStore";
 import { useFitnessStore } from "../../stores/fitnessStore";
 import { useAchievementStore } from "../../stores/achievementStore";
 import { useUserStore } from "../../stores/userStore";
+import { useAuthStore } from "../../stores/authStore";
 import { useCalculatedMetrics } from "../../hooks/useCalculatedMetrics";
+import { analyticsDataService } from "../../services/analyticsData";
 
 // Modular Components
 import {
@@ -45,9 +47,16 @@ export const AnalyticsScreen: React.FC = () => {
   // State
   const [selectedPeriod, setSelectedPeriod] = useState<Period>("month");
   const [refreshing, setRefreshing] = useState(false);
+  const [weightHistory, setWeightHistory] = useState<
+    Array<{ date: string; weight: number }>
+  >([]);
+  const [calorieHistory, setCalorieHistory] = useState<
+    Array<{ date: string; consumed: number; burned: number }>
+  >([]);
 
   // Stores
   const { profile } = useUserStore();
+  const { user } = useAuthStore();
   const { metrics: healthMetrics } = useHealthDataStore();
   const { weeklyWorkoutPlan, workoutProgress } = useFitnessStore();
   const { currentStreak } = useAchievementStore();
@@ -64,6 +73,30 @@ export const AnalyticsScreen: React.FC = () => {
       initializeAnalytics();
     }
   }, [isInitialized, initializeAnalytics]);
+
+  // Load weight and calorie history from Supabase
+  useEffect(() => {
+    const loadHistoryData = async () => {
+      if (!user?.id) return;
+
+      const periodDays =
+        selectedPeriod === "week" ? 7 : selectedPeriod === "month" ? 30 : 365;
+
+      try {
+        const [weightData, calorieData] = await Promise.all([
+          analyticsDataService.getWeightHistory(user.id, periodDays),
+          analyticsDataService.getCalorieHistory(user.id, periodDays),
+        ]);
+
+        setWeightHistory(weightData);
+        setCalorieHistory(calorieData);
+      } catch (error) {
+        console.error("Failed to load analytics history:", error);
+      }
+    };
+
+    loadHistoryData();
+  }, [user?.id, selectedPeriod]);
 
   // Calculate metrics data - prioritize calculatedMetrics from onboarding
   const metricsData = useMemo(() => {
@@ -173,18 +206,37 @@ export const AnalyticsScreen: React.FC = () => {
       return { label, value: count };
     });
 
-    // NO MOCK DATA - Only show actual tracked data
-    // Weight and calorie history would come from a dedicated tracking store in production
-    // For now, return undefined to show empty states until user logs actual data
+    // Use actual data from Supabase for weight and calorie history
+    // Transform weight history to chart format
+    const weightChartData =
+      weightHistory.length > 0
+        ? weightHistory.map((w) => ({
+            label: new Date(w.date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            }),
+            value: w.weight,
+          }))
+        : undefined;
+
+    // Transform calorie history to chart format
+    const calorieChartData =
+      calorieHistory.length > 0
+        ? calorieHistory.map((c) => ({
+            label: new Date(c.date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            }),
+            value: c.consumed,
+          }))
+        : undefined;
 
     return {
-      // Weight data - only show if user has logged weight entries
-      // TODO: Replace with actual weight history from weightTrackingStore
-      weightData: undefined,
+      // Weight data - from Supabase analytics_metrics
+      weightData: weightChartData,
 
-      // Calorie data - only show if user has logged meals/calories
-      // TODO: Replace with actual calorie history from nutritionStore
-      calorieData: undefined,
+      // Calorie data - from Supabase analytics_metrics
+      calorieData: calorieChartData,
 
       // Workout data - shows actual completed workouts
       workoutData: workoutData.some((d) => d.value > 0)
@@ -197,6 +249,8 @@ export const AnalyticsScreen: React.FC = () => {
     workoutProgress,
     metricsData,
     calculatedMetrics,
+    weightHistory,
+    calorieHistory,
   ]);
 
   // Handlers

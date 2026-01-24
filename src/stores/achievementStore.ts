@@ -1,5 +1,6 @@
 // Achievement Store for FitAI
 // Zustand store for managing achievement state and user progress
+// Now with Supabase sync for data persistence across devices
 
 import { create } from "zustand";
 import {
@@ -15,6 +16,7 @@ import {
   AchievementCategory,
   AchievementTier,
 } from "../services/achievementEngine";
+import { achievementDataService } from "../services/achievementData";
 
 // PERF-006 FIX: Track listener to prevent memory leaks
 let achievementListenerAttached = false;
@@ -82,6 +84,10 @@ interface AchievementStore {
   getTotalBadgesEarned: () => number;
   getTopCategories: () => Array<{ category: string; count: number }>;
 
+  // Supabase sync methods
+  syncWithSupabase: (userId: string) => Promise<void>;
+  loadFromSupabase: (userId: string) => Promise<void>;
+
   // Reset store (for logout)
   reset: () => void;
 }
@@ -146,7 +152,7 @@ export const useAchievementStore = create<AchievementStore>()(
           // Get all achievements
           const achievements = achievementEngine.getAllAchievements();
 
-          // Get user's progress
+          // Get user's progress from local engine
           const userProgress =
             achievementEngine.getUserAchievementProgress(userId);
 
@@ -181,6 +187,12 @@ export const useAchievementStore = create<AchievementStore>()(
               }
 
               console.log(`🏆 Achievement unlocked: ${achievement.title}`);
+
+              // Sync newly unlocked achievement to Supabase
+              achievementDataService.saveUserAchievement(
+                userId,
+                userAchievement,
+              );
             },
           );
 
@@ -198,6 +210,10 @@ export const useAchievementStore = create<AchievementStore>()(
           console.log(
             `✅ Achievement store initialized with ${achievements.length} achievements`,
           );
+
+          // Load and merge achievements from Supabase (for returning users)
+          // This runs async after local init to not block the UI
+          get().loadFromSupabase(userId);
         } catch (error) {
           console.error("❌ Error initializing achievement store:", error);
           set({ isLoading: false });
@@ -389,6 +405,84 @@ export const useAchievementStore = create<AchievementStore>()(
           .sort(([, a], [, b]) => b - a)
           .slice(0, 3)
           .map(([category, count]) => ({ category, count }));
+      },
+
+      // Sync achievements to Supabase for cloud persistence
+      syncWithSupabase: async (userId: string) => {
+        try {
+          const state = get();
+          console.log("☁️ Syncing achievements to Supabase...");
+
+          const result = await achievementDataService.saveAllAchievements(
+            userId,
+            state.userAchievements,
+          );
+
+          if (result.success) {
+            console.log(`✅ Synced ${result.synced} achievements to Supabase`);
+          } else {
+            console.warn(
+              `⚠️ Achievement sync had errors: ${result.errors.join(", ")}`,
+            );
+          }
+        } catch (error) {
+          console.error("❌ Failed to sync achievements to Supabase:", error);
+        }
+      },
+
+      // Load achievements from Supabase (for returning users)
+      loadFromSupabase: async (userId: string) => {
+        try {
+          console.log("☁️ Loading achievements from Supabase...");
+
+          const cloudAchievements =
+            await achievementDataService.loadUserAchievements(userId);
+
+          if (cloudAchievements.size > 0) {
+            const state = get();
+
+            // Merge cloud achievements with local (cloud takes precedence for completed)
+            const mergedAchievements = new Map(state.userAchievements);
+
+            cloudAchievements.forEach((cloudAchievement, key) => {
+              const localAchievement = mergedAchievements.get(key);
+
+              // Use cloud if completed or has more progress
+              if (
+                !localAchievement ||
+                cloudAchievement.isCompleted ||
+                cloudAchievement.progress > (localAchievement.progress || 0)
+              ) {
+                mergedAchievements.set(key, cloudAchievement);
+              }
+            });
+
+            // Calculate stats from merged achievements
+            const completed = Array.from(mergedAchievements.values()).filter(
+              (a) => a.isCompleted,
+            );
+            const totalFitCoins = completed.reduce(
+              (sum, a) => sum + (a.fitCoinsEarned || 0),
+              0,
+            );
+            const completionRate =
+              mergedAchievements.size > 0
+                ? (completed.length / mergedAchievements.size) * 100
+                : 0;
+
+            set({
+              userAchievements: mergedAchievements,
+              totalFitCoinsEarned: totalFitCoins,
+              completionRate,
+            });
+
+            console.log(
+              `✅ Loaded and merged ${cloudAchievements.size} achievements from Supabase`,
+            );
+          }
+        } catch (error) {
+          console.error("❌ Failed to load achievements from Supabase:", error);
+        }
       },
 
       // Reset store to initial state (for logout)
