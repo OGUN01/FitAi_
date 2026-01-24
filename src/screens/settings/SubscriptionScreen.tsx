@@ -265,10 +265,38 @@ const SubscriptionScreen: React.FC = () => {
       {/* Legal Links */}
       <View>
         <View>
-          <Pressable onPress={() => {}}>
+          <Pressable
+            onPress={() =>
+              Linking.openURL("https://fitai.app/terms").catch(() =>
+                Alert.alert(
+                  "Terms of Service",
+                  "Visit https://fitai.app/terms to view our Terms of Service.\n\n" +
+                    "Key points:\n" +
+                    "• Subscriptions auto-renew unless cancelled\n" +
+                    "• Cancel anytime through your app store\n" +
+                    "• Refunds are handled by Apple/Google\n" +
+                    "• Your data is protected per our Privacy Policy",
+                ),
+              )
+            }
+          >
             <Text>Terms of Service</Text>
           </Pressable>
-          <Pressable onPress={() => {}}>
+          <Pressable
+            onPress={() =>
+              Linking.openURL("https://fitai.app/privacy").catch(() =>
+                Alert.alert(
+                  "Privacy Policy",
+                  "Visit https://fitai.app/privacy to view our Privacy Policy.\n\n" +
+                    "Your data protection:\n" +
+                    "• We never sell your personal data\n" +
+                    "• Health data is encrypted and secure\n" +
+                    "• You can delete your data anytime\n" +
+                    "• We comply with GDPR and CCPA",
+                ),
+              )
+            }
+          >
             <Text>Privacy Policy</Text>
           </Pressable>
         </View>

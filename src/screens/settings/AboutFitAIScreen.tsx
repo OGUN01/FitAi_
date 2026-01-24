@@ -26,6 +26,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Application from "expo-application";
+import Constants from "expo-constants";
 
 // UI Components
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
@@ -110,8 +112,16 @@ const ActionItem: React.FC<ActionItemProps> = ({
 export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   onBack,
 }) => {
-  const appVersion = "1.0.0";
-  const buildNumber = "2024.01.15";
+  // Get version from expo-constants (reads from app.config.js/app.json)
+  // Falls back to expo-application for native build info
+  const appVersion =
+    Constants.expoConfig?.version ||
+    Application.nativeApplicationVersion ||
+    "1.0.0";
+  const buildNumber =
+    Constants.expoConfig?.android?.versionCode?.toString() ||
+    Application.nativeBuildVersion ||
+    new Date().toISOString().split("T")[0];
 
   const features: FeatureItem[] = [
     {
@@ -475,12 +485,15 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               iconColor="#607D8B"
               title="Terms of Service"
               description="Review our terms and conditions"
-              onPress={() =>
-                Alert.alert(
-                  "Terms of Service",
-                  "Terms of service will be displayed here.",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://fitai.app/terms").catch(() =>
+                  Alert.alert(
+                    "Terms of Service",
+                    "Visit https://fitai.app/terms to view our Terms of Service.",
+                  ),
+                );
+              }}
               animationDelay={800}
             />
 
@@ -489,12 +502,15 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               iconColor="#607D8B"
               title="Privacy Policy"
               description="Learn how we protect your data"
-              onPress={() =>
-                Alert.alert(
-                  "Privacy Policy",
-                  "Privacy policy will be displayed here.",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://fitai.app/privacy").catch(() =>
+                  Alert.alert(
+                    "Privacy Policy",
+                    "Visit https://fitai.app/privacy to view our Privacy Policy.",
+                  ),
+                );
+              }}
               animationDelay={850}
             />
 
@@ -503,12 +519,22 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               iconColor="#607D8B"
               title="Open Source Licenses"
               description="Third-party libraries we use"
-              onPress={() =>
-                Alert.alert(
-                  "Open Source",
-                  "Open source licenses will be displayed here.",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://fitai.app/licenses").catch(() =>
+                  Alert.alert(
+                    "Open Source Licenses",
+                    "FitAI uses the following open source libraries:\n\n" +
+                      "• React Native (MIT)\n" +
+                      "• Expo (MIT)\n" +
+                      "• Zustand (MIT)\n" +
+                      "• React Navigation (MIT)\n" +
+                      "• Supabase JS (MIT)\n" +
+                      "• And many more...\n\n" +
+                      "Visit https://fitai.app/licenses for the complete list.",
+                  ),
+                );
+              }}
               animationDelay={900}
             />
           </View>

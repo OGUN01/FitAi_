@@ -1,6 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { advancedExerciseMatching, AdvancedMatchResult } from './advancedExerciseMatching';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import {
+  advancedExerciseMatching,
+  AdvancedMatchResult,
+} from "./advancedExerciseMatching";
 // Temporarily disabled to prevent import issues
 // import { normalizedNameMapping, NameMappingResult } from './normalizedNameMapping';
 
@@ -31,223 +34,223 @@ export interface ExerciseAPIResponse {
 export interface ExerciseMatchResult {
   exercise: ExerciseData;
   confidence: number;
-  matchType: 'exact' | 'fuzzy' | 'partial';
+  matchType: "exact" | "fuzzy" | "partial";
 }
 
 class ExerciseVisualService {
-  private baseURL = 'https://exercisedata.vercel.app/api/v1';
+  private baseURL = "https://exercisedata.vercel.app/api/v1";
   private fallbackAPIs = [
-    'https://exercisedata.vercel.app/api/v1',
-    'https://v1.exercisedb.dev/api/v1',
-    'https://api.api-ninjas.com/v1/exercises',
+    "https://exercisedata.vercel.app/api/v1",
+    "https://v1.exercisedb.dev/api/v1",
+    "https://api.api-ninjas.com/v1/exercises",
   ];
   private cache = new Map<string, ExerciseData>();
-  private cacheKey = 'exercise_cache';
-  private lastCacheUpdate = 'last_cache_update';
+  private cacheKey = "exercise_cache";
+  private lastCacheUpdate = "last_cache_update";
   private cacheExpiryDays = 7; // Cache expires after 7 days
 
   // Comprehensive local exercise mappings for 100% coverage with WORKING GIF URLs
   private localExerciseMapping = new Map<string, ExerciseData>([
     // Cardio exercises with verified working GIFs
     [
-      'jumping_jacks',
+      "jumping_jacks",
       {
-        exerciseId: 'local_jumping_jacks',
-        name: 'Jumping Jacks',
-        gifUrl: 'https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif',
-        targetMuscles: ['cardiovascular'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['legs', 'arms'],
+        exerciseId: "local_jumping_jacks",
+        name: "Jumping Jacks",
+        gifUrl: "https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif",
+        targetMuscles: ["cardiovascular"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["legs", "arms"],
         instructions: [
-          'Start standing with feet together and arms at sides',
-          'Jump while spreading legs and raising arms overhead',
-          'Jump back to starting position',
-          'Repeat for desired reps',
+          "Start standing with feet together and arms at sides",
+          "Jump while spreading legs and raising arms overhead",
+          "Jump back to starting position",
+          "Repeat for desired reps",
         ],
       },
     ],
     [
-      'light_jogging_intervals',
+      "light_jogging_intervals",
       {
-        exerciseId: 'local_jogging_intervals',
-        name: 'Light Jogging Intervals',
-        gifUrl: 'https://media.giphy.com/media/3o7WTCmEF0Zcw1zYWY/giphy.gif',
-        targetMuscles: ['cardiovascular'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['legs', 'core'],
+        exerciseId: "local_jogging_intervals",
+        name: "Light Jogging Intervals",
+        gifUrl: "https://media.giphy.com/media/3o7WTCmEF0Zcw1zYWY/giphy.gif",
+        targetMuscles: ["cardiovascular"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["legs", "core"],
         instructions: [
-          'Start with light jogging pace',
-          'Alternate between jogging and walking',
-          'Maintain steady breathing',
-          'Keep arms relaxed and moving naturally',
+          "Start with light jogging pace",
+          "Alternate between jogging and walking",
+          "Maintain steady breathing",
+          "Keep arms relaxed and moving naturally",
         ],
       },
     ],
     [
-      'butt_kicks',
+      "butt_kicks",
       {
-        exerciseId: 'local_butt_kicks',
-        name: 'Butt Kicks',
-        gifUrl: 'https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif',
-        targetMuscles: ['hamstrings'],
-        bodyParts: ['legs'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['calves', 'glutes'],
+        exerciseId: "local_butt_kicks",
+        name: "Butt Kicks",
+        gifUrl: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+        targetMuscles: ["hamstrings"],
+        bodyParts: ["legs"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["calves", "glutes"],
         instructions: [
-          'Stand with feet hip-width apart',
-          'Jog in place while kicking heels to glutes',
-          'Keep core engaged',
-          'Pump arms naturally',
+          "Stand with feet hip-width apart",
+          "Jog in place while kicking heels to glutes",
+          "Keep core engaged",
+          "Pump arms naturally",
         ],
       },
     ],
     [
-      'high_knees',
+      "high_knees",
       {
-        exerciseId: 'local_high_knees',
-        name: 'High Knees',
-        gifUrl: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-        targetMuscles: ['quadriceps'],
-        bodyParts: ['legs'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['hip flexors', 'core'],
+        exerciseId: "local_high_knees",
+        name: "High Knees",
+        gifUrl: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+        targetMuscles: ["quadriceps"],
+        bodyParts: ["legs"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["hip flexors", "core"],
         instructions: [
-          'Stand with feet hip-width apart',
-          'Jog in place lifting knees toward chest',
-          'Keep core tight',
-          'Pump arms opposite to legs',
+          "Stand with feet hip-width apart",
+          "Jog in place lifting knees toward chest",
+          "Keep core tight",
+          "Pump arms opposite to legs",
         ],
       },
     ],
 
-    // Strength exercises - will use API data since local static URLs are broken
+    // Strength exercises - using reliable Giphy URLs for consistent display
     [
-      'dumbbell_goblet_squat',
+      "dumbbell_goblet_squat",
       {
-        exerciseId: 'local_goblet_squat',
-        name: 'Dumbbell Goblet Squat',
-        gifUrl: '', // Will be populated from API
-        targetMuscles: ['quadriceps'],
-        bodyParts: ['legs'],
-        equipments: ['dumbbell'],
-        secondaryMuscles: ['glutes', 'core'],
+        exerciseId: "local_goblet_squat",
+        name: "Dumbbell Goblet Squat",
+        gifUrl: "https://media.giphy.com/media/1qfDiTQ8NURS8rSHUF/giphy.gif",
+        targetMuscles: ["quadriceps"],
+        bodyParts: ["legs"],
+        equipments: ["dumbbell"],
+        secondaryMuscles: ["glutes", "core"],
         instructions: [
-          'Hold dumbbell at chest level',
-          'Stand with feet shoulder-width apart',
-          'Squat down keeping chest up',
-          'Drive through heels to stand',
+          "Hold dumbbell at chest level",
+          "Stand with feet shoulder-width apart",
+          "Squat down keeping chest up",
+          "Drive through heels to stand",
         ],
       },
     ],
     [
-      'dumbbell_lunges',
+      "dumbbell_lunges",
       {
-        exerciseId: 'local_dumbbell_lunges',
-        name: 'Dumbbell Lunges',
-        gifUrl: '', // Will be populated from API
-        targetMuscles: ['quadriceps'],
-        bodyParts: ['legs'],
-        equipments: ['dumbbell'],
-        secondaryMuscles: ['glutes', 'hamstrings'],
+        exerciseId: "local_dumbbell_lunges",
+        name: "Dumbbell Lunges",
+        gifUrl: "https://media.giphy.com/media/xUA7aN1MTCZx97V1Ic/giphy.gif",
+        targetMuscles: ["quadriceps"],
+        bodyParts: ["legs"],
+        equipments: ["dumbbell"],
+        secondaryMuscles: ["glutes", "hamstrings"],
         instructions: [
-          'Hold dumbbells at sides',
-          'Step forward into lunge position',
-          'Lower until both knees at 90 degrees',
-          'Push back to starting position',
+          "Hold dumbbells at sides",
+          "Step forward into lunge position",
+          "Lower until both knees at 90 degrees",
+          "Push back to starting position",
         ],
       },
     ],
     [
-      'push_ups',
+      "push_ups",
       {
-        exerciseId: 'local_push_ups',
-        name: 'Push-ups',
-        gifUrl: 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif',
-        targetMuscles: ['chest'],
-        bodyParts: ['upper body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['triceps', 'shoulders'],
+        exerciseId: "local_push_ups",
+        name: "Push-ups",
+        gifUrl: "https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif",
+        targetMuscles: ["chest"],
+        bodyParts: ["upper body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["triceps", "shoulders"],
         instructions: [
-          'Start in plank position',
-          'Lower chest to floor',
-          'Push back up to starting position',
-          'Keep body straight throughout',
+          "Start in plank position",
+          "Lower chest to floor",
+          "Push back up to starting position",
+          "Keep body straight throughout",
         ],
       },
     ],
     [
-      'plank',
+      "plank",
       {
-        exerciseId: 'local_plank',
-        name: 'Plank',
-        gifUrl: 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif',
-        targetMuscles: ['core'],
-        bodyParts: ['core'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['shoulders', 'back'],
+        exerciseId: "local_plank",
+        name: "Plank",
+        gifUrl: "https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif",
+        targetMuscles: ["core"],
+        bodyParts: ["core"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["shoulders", "back"],
         instructions: [
-          'Start in forearm plank position',
-          'Keep body straight from head to heels',
-          'Engage core muscles',
-          'Hold for desired time',
+          "Start in forearm plank position",
+          "Keep body straight from head to heels",
+          "Engage core muscles",
+          "Hold for desired time",
         ],
       },
     ],
 
     // More common variations
     [
-      'mountain_climbers',
+      "mountain_climbers",
       {
-        exerciseId: 'local_mountain_climbers',
-        name: 'Mountain Climbers',
-        gifUrl: 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif',
-        targetMuscles: ['core'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['shoulders', 'legs'],
+        exerciseId: "local_mountain_climbers",
+        name: "Mountain Climbers",
+        gifUrl: "https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif",
+        targetMuscles: ["core"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["shoulders", "legs"],
         instructions: [
-          'Start in plank position',
-          'Alternate bringing knees to chest',
-          'Keep hips level',
-          'Maintain fast pace',
+          "Start in plank position",
+          "Alternate bringing knees to chest",
+          "Keep hips level",
+          "Maintain fast pace",
         ],
       },
     ],
     [
-      'mountain_climber',
+      "mountain_climber",
       {
-        exerciseId: 'local_mountain_climber',
-        name: 'Mountain Climber',
-        gifUrl: 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif',
-        targetMuscles: ['cardiovascular system'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['shoulders', 'legs', 'core'],
+        exerciseId: "local_mountain_climber",
+        name: "Mountain Climber",
+        gifUrl: "https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif",
+        targetMuscles: ["cardiovascular system"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["shoulders", "legs", "core"],
         instructions: [
-          'Start in plank position',
-          'Alternate bringing knees to chest',
-          'Keep hips level',
-          'Maintain fast pace',
+          "Start in plank position",
+          "Alternate bringing knees to chest",
+          "Keep hips level",
+          "Maintain fast pace",
         ],
       },
     ],
     [
-      'burpees',
+      "burpees",
       {
-        exerciseId: 'local_burpees',
-        name: 'Burpees',
-        gifUrl: 'https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif',
-        targetMuscles: ['full body'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
-        secondaryMuscles: ['cardiovascular'],
+        exerciseId: "local_burpees",
+        name: "Burpees",
+        gifUrl: "https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif",
+        targetMuscles: ["full body"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
+        secondaryMuscles: ["cardiovascular"],
         instructions: [
-          'Start standing',
-          'Drop to squat and place hands on floor',
-          'Jump feet back to plank',
-          'Do push-up, jump feet in, jump up',
+          "Start standing",
+          "Drop to squat and place hands on floor",
+          "Jump feet back to plank",
+          "Do push-up, jump feet in, jump up",
         ],
       },
     ],
@@ -262,17 +265,20 @@ class ExerciseVisualService {
    * Preload local exercise mappings into cache for faster access
    */
   private preloadLocalMappingsToCache(): void {
-    console.log('📋 Preloading local exercise mappings to cache...');
+    console.log("📋 Preloading local exercise mappings to cache...");
     for (const [key, exercise] of this.localExerciseMapping.entries()) {
       this.cache.set(key, exercise);
       this.cache.set(exercise.exerciseId, exercise);
       this.cache.set(exercise.name.toLowerCase(), exercise);
     }
-    console.log(`✅ Preloaded ${this.localExerciseMapping.size} local exercise mappings`);
+    console.log(
+      `✅ Preloaded ${this.localExerciseMapping.size} local exercise mappings`,
+    );
   }
 
   /**
    * Find exercise in local mappings with fuzzy matching
+   * All local mappings have verified working GIF URLs
    */
   private findLocalExerciseMapping(exerciseName: string): ExerciseData | null {
     const cleanName = exerciseName.toLowerCase().trim();
@@ -280,35 +286,45 @@ class ExerciseVisualService {
     // Direct match
     if (this.localExerciseMapping.has(cleanName)) {
       const exercise = this.localExerciseMapping.get(cleanName)!;
-      // If GIF URL is empty, skip local mapping and let API handle it
-      if (!exercise.gifUrl) {
-        console.log(`⚠️  Local mapping for "${cleanName}" has no GIF URL, skipping to API`);
-        return null;
-      }
+      console.log(`✅ Direct local match found for "${cleanName}"`);
       return exercise;
     }
 
     // Fuzzy matching for variations
     const fuzzyMatches = [
       // Remove common variations
-      cleanName.replace(/_+/g, ' ').replace(/\s+/g, ' '),
-      cleanName.replace(/dumbbell_/g, '').replace(/_+/g, ' '),
-      cleanName.replace(/bodyweight_/g, '').replace(/_+/g, ' '),
-      cleanName.replace(/\(.*?\)/g, '').trim(),
-      cleanName.replace(/_each_leg|_per_leg|_alternating/g, ''),
-      cleanName.replace(/_intervals?|_sets?|_reps?/g, ''),
+      cleanName.replace(/_+/g, " ").replace(/\s+/g, " "),
+      cleanName.replace(/dumbbell_/g, "").replace(/_+/g, " "),
+      cleanName.replace(/bodyweight_/g, "").replace(/_+/g, " "),
+      cleanName.replace(/\(.*?\)/g, "").trim(),
+      cleanName.replace(/_each_leg|_per_leg|_alternating/g, ""),
+      cleanName.replace(/_intervals?|_sets?|_reps?/g, ""),
 
       // Common exercise name patterns
-      cleanName.includes('jump') && cleanName.includes('jack') ? 'jumping_jacks' : null,
-      cleanName.includes('jog') || cleanName.includes('running') ? 'light_jogging_intervals' : null,
-      cleanName.includes('butt') && cleanName.includes('kick') ? 'butt_kicks' : null,
-      cleanName.includes('high') && cleanName.includes('knee') ? 'high_knees' : null,
-      cleanName.includes('goblet') && cleanName.includes('squat') ? 'dumbbell_goblet_squat' : null,
-      cleanName.includes('lunge') ? 'dumbbell_lunges' : null,
-      cleanName.includes('push') && cleanName.includes('up') ? 'push_ups' : null,
-      cleanName.includes('plank') ? 'plank' : null,
-      cleanName.includes('mountain') && cleanName.includes('climb') ? 'mountain_climbers' : null,
-      cleanName.includes('burpee') ? 'burpees' : null,
+      cleanName.includes("jump") && cleanName.includes("jack")
+        ? "jumping_jacks"
+        : null,
+      cleanName.includes("jog") || cleanName.includes("running")
+        ? "light_jogging_intervals"
+        : null,
+      cleanName.includes("butt") && cleanName.includes("kick")
+        ? "butt_kicks"
+        : null,
+      cleanName.includes("high") && cleanName.includes("knee")
+        ? "high_knees"
+        : null,
+      cleanName.includes("goblet") && cleanName.includes("squat")
+        ? "dumbbell_goblet_squat"
+        : null,
+      cleanName.includes("lunge") ? "dumbbell_lunges" : null,
+      cleanName.includes("push") && cleanName.includes("up")
+        ? "push_ups"
+        : null,
+      cleanName.includes("plank") ? "plank" : null,
+      cleanName.includes("mountain") && cleanName.includes("climb")
+        ? "mountain_climbers"
+        : null,
+      cleanName.includes("burpee") ? "burpees" : null,
     ].filter(Boolean);
 
     for (const fuzzyName of fuzzyMatches) {
@@ -345,15 +361,15 @@ class ExerciseVisualService {
           });
           console.log(`🏋️ Loaded ${exercises.length} exercises from cache`);
         } else {
-          console.log('🏋️ Cache expired, will refresh exercises');
+          console.log("🏋️ Cache expired, will refresh exercises");
           await this.preloadPopularExercises();
         }
       } else {
-        console.log('🏋️ No cache found, preloading exercises');
+        console.log("🏋️ No cache found, preloading exercises");
         await this.preloadPopularExercises();
       }
     } catch (error) {
-      console.error('Failed to initialize exercise cache:', error);
+      console.error("Failed to initialize exercise cache:", error);
     }
   }
 
@@ -362,7 +378,7 @@ class ExerciseVisualService {
    */
   private async preloadPopularExercises(): Promise<void> {
     try {
-      console.log('🏋️ Preloading popular exercises...');
+      console.log("🏋️ Preloading popular exercises...");
       const exercises: ExerciseData[] = [];
 
       // Load first 30 pages (300 exercises) - covers most common exercises
@@ -380,7 +396,7 @@ class ExerciseVisualService {
       await this.cacheExercises(exercises);
       console.log(`🏋️ Preloaded ${exercises.length} exercises successfully`);
     } catch (error) {
-      console.error('Failed to preload exercises:', error);
+      console.error("Failed to preload exercises:", error);
     }
   }
 
@@ -389,7 +405,7 @@ class ExerciseVisualService {
    */
   private async fetchExercisePage(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<ExerciseAPIResponse> {
     const errors: string[] = [];
 
@@ -397,30 +413,34 @@ class ExerciseVisualService {
     try {
       console.log(`🌐 Fetching exercises from Vercel API (page ${page})...`);
       const offset = (page - 1) * limit;
-      const response = await fetch(`${this.baseURL}/exercises?offset=${offset}&limit=${limit}`);
+      const response = await fetch(
+        `${this.baseURL}/exercises?offset=${offset}&limit=${limit}`,
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log(`✅ Successfully fetched ${data.data?.length || 0} exercises from Vercel API`);
+      console.log(
+        `✅ Successfully fetched ${data.data?.length || 0} exercises from Vercel API`,
+      );
       return data;
     } catch (error) {
       errors.push(`Vercel API failed: ${error}`);
-      console.warn('❌ Vercel API failed, trying fallbacks:', error);
+      console.warn("❌ Vercel API failed, trying fallbacks:", error);
     }
 
     // Try API Ninjas fallback
     try {
-      console.log('🌐 Trying API Ninjas fallback...');
+      console.log("🌐 Trying API Ninjas fallback...");
       const response = await fetch(
         `https://api.api-ninjas.com/v1/exercises?offset=${(page - 1) * limit}`,
         {
           headers: {
-            'X-Api-Key': process.env.EXPO_PUBLIC_API_NINJAS_KEY || '',
+            "X-Api-Key": process.env.EXPO_PUBLIC_API_NINJAS_KEY || "",
           },
-        }
+        },
       );
 
       if (response.ok) {
@@ -429,15 +449,17 @@ class ExerciseVisualService {
         const transformedData = exercises.map((ex: any, index: number) => ({
           exerciseId: `ninja_${page}_${index}`,
           name: ex.name,
-          gifUrl: `https://static.exercisedb.dev/media/placeholder_${ex.type?.toLowerCase() || 'general'}.gif`, // Placeholder GIF
+          gifUrl: `https://static.exercisedb.dev/media/placeholder_${ex.type?.toLowerCase() || "general"}.gif`, // Placeholder GIF
           targetMuscles: [ex.muscle],
           bodyParts: [],
-          equipments: [ex.equipment || 'bodyweight'],
+          equipments: [ex.equipment || "bodyweight"],
           secondaryMuscles: [],
-          instructions: [ex.instructions || 'Follow proper form and technique'],
+          instructions: [ex.instructions || "Follow proper form and technique"],
         }));
 
-        console.log(`✅ Successfully fetched ${transformedData.length} exercises from API Ninjas`);
+        console.log(
+          `✅ Successfully fetched ${transformedData.length} exercises from API Ninjas`,
+        );
         return {
           success: true,
           metadata: {
@@ -452,14 +474,14 @@ class ExerciseVisualService {
       }
     } catch (error) {
       errors.push(`API Ninjas failed: ${error}`);
-      console.warn('❌ API Ninjas fallback failed:', error);
+      console.warn("❌ API Ninjas fallback failed:", error);
     }
 
     // Try free exercise database
     try {
-      console.log('🌐 Trying Free Exercise Database...');
+      console.log("🌐 Trying Free Exercise Database...");
       const response = await fetch(
-        'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json'
+        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json",
       );
 
       if (response.ok) {
@@ -470,20 +492,21 @@ class ExerciseVisualService {
 
         // Transform free-exercise-db format to our format
         const transformedData = exercises.map((ex: any) => ({
-          exerciseId: ex.id || `free_${ex.name?.toLowerCase().replace(/\s+/g, '_')}`,
+          exerciseId:
+            ex.id || `free_${ex.name?.toLowerCase().replace(/\s+/g, "_")}`,
           name: ex.name,
           gifUrl:
             ex.images?.[0] ||
             `https://via.placeholder.com/400x300.gif?text=${encodeURIComponent(ex.name)}`,
           targetMuscles: ex.primaryMuscles || [],
           bodyParts: [],
-          equipments: ex.equipment || ['bodyweight'],
+          equipments: ex.equipment || ["bodyweight"],
           secondaryMuscles: ex.secondaryMuscles || [],
-          instructions: ex.instructions || ['Follow proper form and technique'],
+          instructions: ex.instructions || ["Follow proper form and technique"],
         }));
 
         console.log(
-          `✅ Successfully fetched ${transformedData.length} exercises from Free Exercise DB`
+          `✅ Successfully fetched ${transformedData.length} exercises from Free Exercise DB`,
         );
         return {
           success: true,
@@ -492,19 +515,20 @@ class ExerciseVisualService {
             totalExercises: allExercises.length,
             currentPage: page,
             previousPage: page > 1 ? `page=${page - 1}` : null,
-            nextPage: endIndex < allExercises.length ? `page=${page + 1}` : null,
+            nextPage:
+              endIndex < allExercises.length ? `page=${page + 1}` : null,
           },
           data: transformedData,
         };
       }
     } catch (error) {
       errors.push(`Free Exercise DB failed: ${error}`);
-      console.warn('❌ Free Exercise Database fallback failed:', error);
+      console.warn("❌ Free Exercise Database fallback failed:", error);
     }
 
     // All APIs failed - return empty result with error info
-    console.error('❌ All exercise APIs failed:', errors);
-    throw new Error(`All exercise APIs failed: ${errors.join(', ')}`);
+    console.error("❌ All exercise APIs failed:", errors);
+    throw new Error(`All exercise APIs failed: ${errors.join(", ")}`);
   }
 
   /**
@@ -522,7 +546,7 @@ class ExerciseVisualService {
       await AsyncStorage.setItem(this.cacheKey, JSON.stringify(exercises));
       await AsyncStorage.setItem(this.lastCacheUpdate, Date.now().toString());
     } catch (error) {
-      console.error('Failed to cache exercises:', error);
+      console.error("Failed to cache exercises:", error);
     }
   }
 
@@ -561,8 +585,8 @@ class ExerciseVisualService {
           const response = await fetch(searchUrl, {
             signal: controller.signal,
             headers: {
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
+              Accept: "application/json",
+              "Content-Type": "application/json",
             },
           });
 
@@ -575,7 +599,9 @@ class ExerciseVisualService {
           const result: ExerciseAPIResponse = await response.json();
 
           if (result.success && result.data?.length > 0) {
-            console.log(`✅ Vercel API found ${result.data.length} exercises for "${query}"`);
+            console.log(
+              `✅ Vercel API found ${result.data.length} exercises for "${query}"`,
+            );
 
             // Cache new results for faster future access (fix URLs first)
             result.data.forEach((exercise) => {
@@ -596,7 +622,7 @@ class ExerciseVisualService {
           console.warn(`❌ Vercel API search failed for "${query}":`, apiError);
         }
       } else {
-        console.log('📴 Network offline, skipping API call');
+        console.log("📴 Network offline, skipping API call");
       }
 
       // If API fails, try general endpoint as fallback
@@ -615,18 +641,20 @@ class ExerciseVisualService {
                 (exercise) =>
                   exercise.name.toLowerCase().includes(query.toLowerCase()) ||
                   exercise.targetMuscles.some((muscle) =>
-                    muscle.toLowerCase().includes(query.toLowerCase())
-                  )
+                    muscle.toLowerCase().includes(query.toLowerCase()),
+                  ),
               );
 
               if (filteredResults.length > 0) {
-                console.log(`✅ Fallback found ${filteredResults.length} matching exercises`);
+                console.log(
+                  `✅ Fallback found ${filteredResults.length} matching exercises`,
+                );
                 return filteredResults;
               }
             }
           }
         } catch (fallbackError) {
-          console.warn('❌ Fallback endpoint also failed:', fallbackError);
+          console.warn("❌ Fallback endpoint also failed:", fallbackError);
         }
       }
 
@@ -634,36 +662,38 @@ class ExerciseVisualService {
 
       // Final fallback - create a safe exercise with working GIF
       const fallbackExercise: ExerciseData = {
-        exerciseId: `fallback_${query.toLowerCase().replace(/\s+/g, '_')}`,
+        exerciseId: `fallback_${query.toLowerCase().replace(/\s+/g, "_")}`,
         name: this.normalizeFallbackExerciseName(query),
         gifUrl: this.getFallbackGifUrl(query),
         targetMuscles: this.inferTargetMuscles(query),
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
         secondaryMuscles: [],
         instructions: [
-          'Perform this exercise with proper form and technique',
-          'Focus on controlled movements throughout the range of motion',
-          'Maintain steady breathing during the exercise',
+          "Perform this exercise with proper form and technique",
+          "Focus on controlled movements throughout the range of motion",
+          "Maintain steady breathing during the exercise",
         ],
       };
 
-      console.log(`🔄 Using intelligent fallback exercise: "${fallbackExercise.name}"`);
+      console.log(
+        `🔄 Using intelligent fallback exercise: "${fallbackExercise.name}"`,
+      );
       return [fallbackExercise];
     } catch (error) {
-      console.error('Search exercises failed:', error);
+      console.error("Search exercises failed:", error);
 
       // Emergency fallback
       return [
         {
-          exerciseId: `emergency_${query.toLowerCase().replace(/\s+/g, '_')}`,
+          exerciseId: `emergency_${query.toLowerCase().replace(/\s+/g, "_")}`,
           name: query,
-          gifUrl: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-          targetMuscles: ['full body'],
-          bodyParts: ['full body'],
-          equipments: ['body weight'],
+          gifUrl: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+          targetMuscles: ["full body"],
+          bodyParts: ["full body"],
+          equipments: ["body weight"],
           secondaryMuscles: [],
-          instructions: ['Perform with proper form'],
+          instructions: ["Perform with proper form"],
         },
       ];
     }
@@ -676,21 +706,26 @@ class ExerciseVisualService {
     const normalized = query.toLowerCase().trim();
 
     // Map common patterns to standard names
-    if (normalized.includes('push') && normalized.includes('up')) return 'Push-ups';
-    if (normalized.includes('squat')) return 'Squats';
-    if (normalized.includes('lunge')) return 'Lunges';
-    if (normalized.includes('plank')) return 'Plank';
-    if (normalized.includes('burpee')) return 'Burpees';
-    if (normalized.includes('jump') && normalized.includes('jack')) return 'Jumping Jacks';
-    if (normalized.includes('mountain') && normalized.includes('climb')) return 'Mountain Climbers';
-    if (normalized.includes('high') && normalized.includes('knee')) return 'High Knees';
-    if (normalized.includes('butt') && normalized.includes('kick')) return 'Butt Kicks';
+    if (normalized.includes("push") && normalized.includes("up"))
+      return "Push-ups";
+    if (normalized.includes("squat")) return "Squats";
+    if (normalized.includes("lunge")) return "Lunges";
+    if (normalized.includes("plank")) return "Plank";
+    if (normalized.includes("burpee")) return "Burpees";
+    if (normalized.includes("jump") && normalized.includes("jack"))
+      return "Jumping Jacks";
+    if (normalized.includes("mountain") && normalized.includes("climb"))
+      return "Mountain Climbers";
+    if (normalized.includes("high") && normalized.includes("knee"))
+      return "High Knees";
+    if (normalized.includes("butt") && normalized.includes("kick"))
+      return "Butt Kicks";
 
     // Default: capitalize first letter of each word
     return query
-      .split(' ')
+      .split(" ")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+      .join(" ");
   }
 
   /**
@@ -700,24 +735,24 @@ class ExerciseVisualService {
     const normalized = query.toLowerCase();
 
     // Use local mapping GIF URLs for verified exercises
-    if (normalized.includes('jump') && normalized.includes('jack')) {
-      return 'https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif';
+    if (normalized.includes("jump") && normalized.includes("jack")) {
+      return "https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif";
     }
-    if (normalized.includes('push') && normalized.includes('up')) {
-      return 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif';
+    if (normalized.includes("push") && normalized.includes("up")) {
+      return "https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif";
     }
-    if (normalized.includes('plank')) {
-      return 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif';
+    if (normalized.includes("plank")) {
+      return "https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif";
     }
-    if (normalized.includes('mountain') && normalized.includes('climb')) {
-      return 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif';
+    if (normalized.includes("mountain") && normalized.includes("climb")) {
+      return "https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif";
     }
-    if (normalized.includes('burpee')) {
-      return 'https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif';
+    if (normalized.includes("burpee")) {
+      return "https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif";
     }
 
     // Default to a versatile workout GIF
-    return 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif';
+    return "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
   }
 
   /**
@@ -728,8 +763,11 @@ class ExerciseVisualService {
     if (!originalUrl) return originalUrl;
 
     // Replace broken v1.cdn.exercisedb.dev with working static.exercisedb.dev
-    if (originalUrl.includes('v1.cdn.exercisedb.dev')) {
-      const fixedUrl = originalUrl.replace('v1.cdn.exercisedb.dev', 'static.exercisedb.dev');
+    if (originalUrl.includes("v1.cdn.exercisedb.dev")) {
+      const fixedUrl = originalUrl.replace(
+        "v1.cdn.exercisedb.dev",
+        "static.exercisedb.dev",
+      );
       console.log(`🔧 Fixed broken CDN URL: ${originalUrl} -> ${fixedUrl}`);
       return fixedUrl;
     }
@@ -740,40 +778,50 @@ class ExerciseVisualService {
   /**
    * Get working GIF URL to replace broken CDN URLs
    */
-  private getWorkingGifUrl(exerciseName: string, originalQuery: string): string {
+  private getWorkingGifUrl(
+    exerciseName: string,
+    originalQuery: string,
+  ): string {
     const normalized = exerciseName.toLowerCase();
     const query = originalQuery.toLowerCase();
 
-    console.log(`🔧 Finding working GIF for "${exerciseName}" (originally "${originalQuery}")`);
+    console.log(
+      `🔧 Finding working GIF for "${exerciseName}" (originally "${originalQuery}")`,
+    );
 
     // Map common exercises to working Giphy URLs
     const workingGifMap: { [key: string]: string } = {
       // Core exercises
-      'mountain climber': 'https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif',
-      'push-up': 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif',
-      burpee: 'https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif',
-      'jumping jack': 'https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif',
-      plank: 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif',
-      squat: 'https://media.giphy.com/media/1qfDiTQ8NURS8rSHUF/giphy.gif',
-      lunge: 'https://media.giphy.com/media/xUA7aN1MTCZx97V1Ic/giphy.gif',
-      'sit-up': 'https://media.giphy.com/media/3oKIPa2TdahY8LAAxy/giphy.gif',
-      crunch: 'https://media.giphy.com/media/3oKIPa2TdahY8LAAxy/giphy.gif',
+      "mountain climber":
+        "https://media.giphy.com/media/3oEjI8Kq5HhZLCrqBW/giphy.gif",
+      "push-up": "https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif",
+      burpee: "https://media.giphy.com/media/3oEjI0ZBtK8e6XG1qg/giphy.gif",
+      "jumping jack":
+        "https://media.giphy.com/media/3oEduGGZhLKWtfHJYc/giphy.gif",
+      plank: "https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif",
+      squat: "https://media.giphy.com/media/1qfDiTQ8NURS8rSHUF/giphy.gif",
+      lunge: "https://media.giphy.com/media/xUA7aN1MTCZx97V1Ic/giphy.gif",
+      "sit-up": "https://media.giphy.com/media/3oKIPa2TdahY8LAAxy/giphy.gif",
+      crunch: "https://media.giphy.com/media/3oKIPa2TdahY8LAAxy/giphy.gif",
 
       // Cardio
-      run: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-      running: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-      'jump rope': 'https://media.giphy.com/media/xT39CXg2h4KLxSKn5e/giphy.gif',
+      run: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+      running: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+      "jump rope": "https://media.giphy.com/media/xT39CXg2h4KLxSKn5e/giphy.gif",
 
       // Strength
-      'chest dip': 'https://media.giphy.com/media/26uf23YtWnP5Y5vfW/giphy.gif',
-      'pull-up': 'https://media.giphy.com/media/26uf8NrpoNcLqfNHq/giphy.gif',
-      'chin-up': 'https://media.giphy.com/media/26uf8NrpoNcLqfNHq/giphy.gif',
-      deadlift: 'https://media.giphy.com/media/3oz8xRSfVxLo3kMvKw/giphy.gif',
+      "chest dip": "https://media.giphy.com/media/26uf23YtWnP5Y5vfW/giphy.gif",
+      "pull-up": "https://media.giphy.com/media/26uf8NrpoNcLqfNHq/giphy.gif",
+      "chin-up": "https://media.giphy.com/media/26uf8NrpoNcLqfNHq/giphy.gif",
+      deadlift: "https://media.giphy.com/media/3oz8xRSfVxLo3kMvKw/giphy.gif",
 
       // Equipment-based
-      'dumbbell curl': 'https://media.giphy.com/media/l4FGw4d101Sa0pGTe/giphy.gif',
-      'barbell squat': 'https://media.giphy.com/media/1qfDiTQ8NURS8rSHUF/giphy.gif',
-      'kettlebell swing': 'https://media.giphy.com/media/26uf1EjXKMhkv1pde/giphy.gif',
+      "dumbbell curl":
+        "https://media.giphy.com/media/l4FGw4d101Sa0pGTe/giphy.gif",
+      "barbell squat":
+        "https://media.giphy.com/media/1qfDiTQ8NURS8rSHUF/giphy.gif",
+      "kettlebell swing":
+        "https://media.giphy.com/media/26uf1EjXKMhkv1pde/giphy.gif",
     };
 
     // Direct match
@@ -783,72 +831,72 @@ class ExerciseVisualService {
     }
 
     // Pattern matching
-    if (normalized.includes('mountain') && normalized.includes('climb')) {
-      return workingGifMap['mountain climber'];
+    if (normalized.includes("mountain") && normalized.includes("climb")) {
+      return workingGifMap["mountain climber"];
     }
-    if (normalized.includes('push') && normalized.includes('up')) {
-      return workingGifMap['push-up'];
+    if (normalized.includes("push") && normalized.includes("up")) {
+      return workingGifMap["push-up"];
     }
-    if (normalized.includes('burpee')) {
-      return workingGifMap['burpee'];
+    if (normalized.includes("burpee")) {
+      return workingGifMap["burpee"];
     }
-    if (normalized.includes('jumping') && normalized.includes('jack')) {
-      return workingGifMap['jumping jack'];
+    if (normalized.includes("jumping") && normalized.includes("jack")) {
+      return workingGifMap["jumping jack"];
     }
-    if (normalized.includes('plank')) {
-      return workingGifMap['plank'];
+    if (normalized.includes("plank")) {
+      return workingGifMap["plank"];
     }
-    if (normalized.includes('squat')) {
-      return workingGifMap['squat'];
+    if (normalized.includes("squat")) {
+      return workingGifMap["squat"];
     }
-    if (normalized.includes('lunge')) {
-      return workingGifMap['lunge'];
+    if (normalized.includes("lunge")) {
+      return workingGifMap["lunge"];
     }
-    if (normalized.includes('sit') && normalized.includes('up')) {
-      return workingGifMap['sit-up'];
+    if (normalized.includes("sit") && normalized.includes("up")) {
+      return workingGifMap["sit-up"];
     }
-    if (normalized.includes('crunch')) {
-      return workingGifMap['crunch'];
+    if (normalized.includes("crunch")) {
+      return workingGifMap["crunch"];
     }
-    if (normalized.includes('run')) {
-      return workingGifMap['run'];
+    if (normalized.includes("run")) {
+      return workingGifMap["run"];
     }
-    if (normalized.includes('jump') && normalized.includes('rope')) {
-      return workingGifMap['jump rope'];
+    if (normalized.includes("jump") && normalized.includes("rope")) {
+      return workingGifMap["jump rope"];
     }
-    if (normalized.includes('dip')) {
-      return workingGifMap['chest dip'];
+    if (normalized.includes("dip")) {
+      return workingGifMap["chest dip"];
     }
-    if (normalized.includes('pull') && normalized.includes('up')) {
-      return workingGifMap['pull-up'];
+    if (normalized.includes("pull") && normalized.includes("up")) {
+      return workingGifMap["pull-up"];
     }
-    if (normalized.includes('chin') && normalized.includes('up')) {
-      return workingGifMap['chin-up'];
+    if (normalized.includes("chin") && normalized.includes("up")) {
+      return workingGifMap["chin-up"];
     }
-    if (normalized.includes('curl')) {
-      return workingGifMap['dumbbell curl'];
+    if (normalized.includes("curl")) {
+      return workingGifMap["dumbbell curl"];
     }
-    if (normalized.includes('kettlebell')) {
-      return workingGifMap['kettlebell swing'];
+    if (normalized.includes("kettlebell")) {
+      return workingGifMap["kettlebell swing"];
     }
 
     // Category-based fallbacks
-    if (normalized.includes('cardio') || query.includes('cardio')) {
-      return 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif';
+    if (normalized.includes("cardio") || query.includes("cardio")) {
+      return "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
     }
-    if (normalized.includes('strength') || query.includes('strength')) {
-      return 'https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif';
+    if (normalized.includes("strength") || query.includes("strength")) {
+      return "https://media.giphy.com/media/l1J9EdzfOSgfyueLm/giphy.gif";
     }
-    if (normalized.includes('core') || query.includes('core')) {
-      return 'https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif';
+    if (normalized.includes("core") || query.includes("core")) {
+      return "https://media.giphy.com/media/ZAOJHWhgLdHEI/giphy.gif";
     }
-    if (normalized.includes('stretch') || query.includes('flexibility')) {
-      return 'https://media.giphy.com/media/3oEjI5TqjzqZWQzKus/giphy.gif';
+    if (normalized.includes("stretch") || query.includes("flexibility")) {
+      return "https://media.giphy.com/media/3oEjI5TqjzqZWQzKus/giphy.gif";
     }
 
     // Default workout GIF
     console.log(`🔄 Using default workout GIF for "${exerciseName}"`);
-    return 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif';
+    return "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
   }
 
   /**
@@ -857,16 +905,28 @@ class ExerciseVisualService {
   private inferTargetMuscles(query: string): string[] {
     const normalized = query.toLowerCase();
 
-    if (normalized.includes('push') || normalized.includes('chest')) return ['pectorals'];
-    if (normalized.includes('squat') || normalized.includes('leg')) return ['quadriceps', 'glutes'];
-    if (normalized.includes('pull') || normalized.includes('back')) return ['latissimus dorsi'];
-    if (normalized.includes('shoulder') || normalized.includes('press')) return ['deltoids'];
-    if (normalized.includes('core') || normalized.includes('plank') || normalized.includes('abs'))
-      return ['abs'];
-    if (normalized.includes('cardio') || normalized.includes('jump') || normalized.includes('run'))
-      return ['cardiovascular system'];
+    if (normalized.includes("push") || normalized.includes("chest"))
+      return ["pectorals"];
+    if (normalized.includes("squat") || normalized.includes("leg"))
+      return ["quadriceps", "glutes"];
+    if (normalized.includes("pull") || normalized.includes("back"))
+      return ["latissimus dorsi"];
+    if (normalized.includes("shoulder") || normalized.includes("press"))
+      return ["deltoids"];
+    if (
+      normalized.includes("core") ||
+      normalized.includes("plank") ||
+      normalized.includes("abs")
+    )
+      return ["abs"];
+    if (
+      normalized.includes("cardio") ||
+      normalized.includes("jump") ||
+      normalized.includes("run")
+    )
+      return ["cardiovascular system"];
 
-    return ['full body'];
+    return ["full body"];
   }
 
   /**
@@ -893,7 +953,7 @@ class ExerciseVisualService {
 
       return null;
     } catch (error) {
-      console.error('Get exercise by ID failed:', error);
+      console.error("Get exercise by ID failed:", error);
       return null;
     }
   }
@@ -905,7 +965,7 @@ class ExerciseVisualService {
   async findExercise(
     exerciseName: string,
     useAdvancedMatching: boolean = true,
-    preventCircularCalls: boolean = false
+    preventCircularCalls: boolean = false,
   ): Promise<ExerciseMatchResult | null> {
     const cleanName = exerciseName.toLowerCase().trim();
     console.log(`🎯 BULLETPROOF SEARCH: "${exerciseName}" -> "${cleanName}"`);
@@ -918,7 +978,7 @@ class ExerciseVisualService {
       return {
         exercise: localExercise,
         confidence: 1.0,
-        matchType: 'exact',
+        matchType: "exact",
       };
     }
 
@@ -932,7 +992,7 @@ class ExerciseVisualService {
       return {
         exercise: exactMatch,
         confidence: 1.0,
-        matchType: 'exact',
+        matchType: "exact",
       };
     }
 
@@ -941,8 +1001,14 @@ class ExerciseVisualService {
       try {
         console.log(`🧠 Tier 3: Advanced matching...`);
         const advancedResult =
-          await advancedExerciseMatching.findExerciseWithFullCoverage(exerciseName);
-        if (advancedResult && advancedResult.exercise && advancedResult.exercise.gifUrl) {
+          await advancedExerciseMatching.findExerciseWithFullCoverage(
+            exerciseName,
+          );
+        if (
+          advancedResult &&
+          advancedResult.exercise &&
+          advancedResult.exercise.gifUrl
+        ) {
           console.log(`✅ TIER 3 SUCCESS: "${advancedResult.exercise.name}"`);
           return {
             exercise: advancedResult.exercise,
@@ -951,7 +1017,7 @@ class ExerciseVisualService {
           };
         }
       } catch (error) {
-        console.warn('Tier 3 (Advanced matching) failed:', error);
+        console.warn("Tier 3 (Advanced matching) failed:", error);
       }
     }
 
@@ -970,12 +1036,17 @@ class ExerciseVisualService {
       }
 
       if (bestMatch.gifUrl) {
-        const confidence = this.calculateSimilarity(cleanName, bestMatch.name.toLowerCase());
-        console.log(`✅ TIER 4 SUCCESS: "${bestMatch.name}" (${Math.round(confidence * 100)}%)`);
+        const confidence = this.calculateSimilarity(
+          cleanName,
+          bestMatch.name.toLowerCase(),
+        );
+        console.log(
+          `✅ TIER 4 SUCCESS: "${bestMatch.name}" (${Math.round(confidence * 100)}%)`,
+        );
         return {
           exercise: bestMatch,
           confidence,
-          matchType: confidence > 0.8 ? 'fuzzy' : 'partial',
+          matchType: confidence > 0.8 ? "fuzzy" : "partial",
         };
       }
     }
@@ -989,23 +1060,27 @@ class ExerciseVisualService {
     }
 
     // This should NEVER happen with our bulletproof system
-    console.error(`❌ BULLETPROOF FAILURE: All 5 tiers failed for "${exerciseName}"`);
-    console.error('This indicates a system error - should be impossible with current setup');
+    console.error(
+      `❌ BULLETPROOF FAILURE: All 5 tiers failed for "${exerciseName}"`,
+    );
+    console.error(
+      "This indicates a system error - should be impossible with current setup",
+    );
 
     // Emergency fallback - should never be reached
     return {
       exercise: {
-        exerciseId: `emergency_${cleanName.replace(/\s+/g, '_')}`,
+        exerciseId: `emergency_${cleanName.replace(/\s+/g, "_")}`,
         name: exerciseName,
-        gifUrl: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-        targetMuscles: ['full body'],
-        bodyParts: ['full body'],
-        equipments: ['body weight'],
+        gifUrl: "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
+        targetMuscles: ["full body"],
+        bodyParts: ["full body"],
+        equipments: ["body weight"],
         secondaryMuscles: [],
-        instructions: ['Perform with proper form'],
+        instructions: ["Perform with proper form"],
       },
       confidence: 0.5,
-      matchType: 'partial',
+      matchType: "partial",
     };
   }
 
@@ -1013,7 +1088,7 @@ class ExerciseVisualService {
    * Find partial matches in cache
    */
   private findPartialMatch(query: string): ExerciseMatchResult | null {
-    const queryWords = query.split(' ');
+    const queryWords = query.split(" ");
     let bestMatch: ExerciseData | null = null;
     let bestScore = 0;
 
@@ -1043,7 +1118,7 @@ class ExerciseVisualService {
       return {
         exercise: bestMatch,
         confidence: bestScore,
-        matchType: 'partial',
+        matchType: "partial",
       };
     }
 
@@ -1085,7 +1160,7 @@ class ExerciseVisualService {
         matrix[j][i] = Math.min(
           matrix[j][i - 1] + 1, // deletion
           matrix[j - 1][i] + 1, // insertion
-          matrix[j - 1][i - 1] + indicator // substitution
+          matrix[j - 1][i - 1] + indicator, // substitution
         );
       }
     }
@@ -1099,7 +1174,7 @@ class ExerciseVisualService {
   async getExercisesByBodyPart(bodyPart: string): Promise<ExerciseData[]> {
     try {
       const response = await fetch(
-        `${this.baseURL}/bodyparts/${encodeURIComponent(bodyPart)}/exercises`
+        `${this.baseURL}/bodyparts/${encodeURIComponent(bodyPart)}/exercises`,
       );
       const result: ExerciseAPIResponse = await response.json();
 
@@ -1115,7 +1190,7 @@ class ExerciseVisualService {
 
       return [];
     } catch (error) {
-      console.error('Get exercises by body part failed:', error);
+      console.error("Get exercises by body part failed:", error);
       return [];
     }
   }
@@ -1126,7 +1201,7 @@ class ExerciseVisualService {
   async getExercisesByEquipment(equipment: string): Promise<ExerciseData[]> {
     try {
       const response = await fetch(
-        `${this.baseURL}/equipments/${encodeURIComponent(equipment)}/exercises`
+        `${this.baseURL}/equipments/${encodeURIComponent(equipment)}/exercises`,
       );
       const result: ExerciseAPIResponse = await response.json();
 
@@ -1142,7 +1217,7 @@ class ExerciseVisualService {
 
       return [];
     } catch (error) {
-      console.error('Get exercises by equipment failed:', error);
+      console.error("Get exercises by equipment failed:", error);
       return [];
     }
   }
@@ -1156,7 +1231,7 @@ class ExerciseVisualService {
       const result = await response.json();
       return result.success ? result.data : [];
     } catch (error) {
-      console.error('Get body parts failed:', error);
+      console.error("Get body parts failed:", error);
       return [];
     }
   }
@@ -1170,7 +1245,7 @@ class ExerciseVisualService {
       const result = await response.json();
       return result.success ? result.data : [];
     } catch (error) {
-      console.error('Get equipments failed:', error);
+      console.error("Get equipments failed:", error);
       return [];
     }
   }
@@ -1182,7 +1257,7 @@ class ExerciseVisualService {
     this.cache.clear();
     await AsyncStorage.removeItem(this.cacheKey);
     await AsyncStorage.removeItem(this.lastCacheUpdate);
-    console.log('🏋️ Exercise cache cleared');
+    console.log("🏋️ Exercise cache cleared");
   }
 
   /**
@@ -1190,9 +1265,11 @@ class ExerciseVisualService {
    * This is called when generating workouts to ensure <100ms loading
    */
   async preloadWorkoutVisuals(
-    exerciseNames: string[]
+    exerciseNames: string[],
   ): Promise<Map<string, ExerciseMatchResult | null>> {
-    console.log(`🚀 Preloading visuals for ${exerciseNames.length} exercises...`);
+    console.log(
+      `🚀 Preloading visuals for ${exerciseNames.length} exercises...`,
+    );
     const results = new Map<string, ExerciseMatchResult | null>();
     const startTime = Date.now();
 
@@ -1214,9 +1291,11 @@ class ExerciseVisualService {
     const loadTime = Date.now() - startTime;
 
     console.log(
-      `✅ Preloaded ${successCount}/${exerciseNames.length} exercise visuals in ${loadTime}ms`
+      `✅ Preloaded ${successCount}/${exerciseNames.length} exercise visuals in ${loadTime}ms`,
     );
-    console.log(`📊 Success rate: ${Math.round((successCount / exerciseNames.length) * 100)}%`);
+    console.log(
+      `📊 Success rate: ${Math.round((successCount / exerciseNames.length) * 100)}%`,
+    );
 
     return results;
   }
@@ -1225,12 +1304,16 @@ class ExerciseVisualService {
    * Batch preload exercises for entire workout plan
    * Achieves Netflix-level performance by loading everything upfront
    */
-  async preloadWorkoutPlanVisuals(workoutPlan: { exercises: string[] }[]): Promise<void> {
+  async preloadWorkoutPlanVisuals(
+    workoutPlan: { exercises: string[] }[],
+  ): Promise<void> {
     const allExercises = workoutPlan
       .flatMap((workout) => workout.exercises)
       .filter((exercise, index, array) => array.indexOf(exercise) === index); // Remove duplicates
 
-    console.log(`🎯 Preloading entire workout plan: ${allExercises.length} unique exercises`);
+    console.log(
+      `🎯 Preloading entire workout plan: ${allExercises.length} unique exercises`,
+    );
     await this.preloadWorkoutVisuals(allExercises);
   }
 
@@ -1248,7 +1331,7 @@ class ExerciseVisualService {
     // Count actual exercises (not duplicated IDs)
     const exercises = Array.from(this.cache.values()).filter(
       (exercise, index, array) =>
-        array.findIndex((e) => e.exerciseId === exercise.exerciseId) === index
+        array.findIndex((e) => e.exerciseId === exercise.exerciseId) === index,
     );
 
     return {

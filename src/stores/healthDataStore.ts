@@ -150,10 +150,15 @@ export interface HealthDataState {
   }) => Promise<boolean>;
 
   // Advanced Health Features (Roadmap Week 1 requirements)
+  // Uses actual HealthKit/Health Connect data when available, falls back to age-based formulas
   getHeartRateZones: (age: number) => Promise<{
     restingHR?: number;
     maxHR: number;
-    zones: Record<string, { min: number; max: number; name: string }>;
+    calculationMethod?: string;
+    zones: Record<
+      string,
+      { min: number; max: number; name: string; description?: string }
+    >;
   }>;
   getSleepRecommendations: () => Promise<{
     sleepQuality: string;
@@ -755,73 +760,138 @@ export const useHealthDataStore = create<HealthDataState>()(
       },
 
       // Advanced Health Features (Roadmap Week 1 implementations)
+      // Heart Rate Zone Calculation Methods:
+      // 1. Uses actual resting HR from HealthKit/Health Connect if available
+      // 2. Falls back to age-based Tanaka formula (208 - 0.7 * age) which is more accurate than 220-age
+      // 3. Karvonen formula for zone calculation when resting HR is available
       getHeartRateZones: async (age: number) => {
         try {
-          console.log("❤️ Getting heart rate zones from HealthKit...");
-          // Return default zones based on age (HealthKit service method not yet implemented)
-          const maxHR = 220 - age;
+          console.log("❤️ Calculating heart rate zones...");
+          const { metrics, isHealthKitAuthorized, isHealthConnectAuthorized } =
+            get();
+
+          // Get resting heart rate from actual health data if available
+          let restingHR: number | undefined = metrics.restingHeartRate;
+
+          // If no resting HR stored, try to get latest heart rate as approximation
+          // (actual resting HR should be measured at rest, morning preferred)
+          if (!restingHR && metrics.heartRate && metrics.heartRate < 80) {
+            // Only use current HR if it's in resting range
+            restingHR = metrics.heartRate;
+          }
+
+          // Calculate max HR using Tanaka formula (more accurate than 220-age)
+          // Tanaka et al. (2001): HRmax = 208 - (0.7 × age)
+          const maxHR = Math.round(208 - 0.7 * age);
+
+          // Determine calculation method for transparency
+          const hasHealthData =
+            isHealthKitAuthorized || isHealthConnectAuthorized;
+          const calculationMethod = restingHR
+            ? "Karvonen (with actual resting HR)"
+            : hasHealthData
+              ? "Age-based Tanaka formula (no resting HR data yet)"
+              : "Age-based Tanaka formula (connect health app for personalized zones)";
+
+          console.log(
+            `📊 Heart rate zone calculation method: ${calculationMethod}`,
+          );
+          console.log(
+            `   Max HR: ${maxHR} bpm, Resting HR: ${restingHR || "not available"}`,
+          );
+
+          // Calculate zones using Karvonen method if resting HR available
+          // Otherwise use percentage of max HR
+          const calculateZone = (
+            minPct: number,
+            maxPct: number,
+          ): { min: number; max: number } => {
+            if (restingHR) {
+              // Karvonen formula: Target HR = ((max HR − resting HR) × %intensity) + resting HR
+              const heartRateReserve = maxHR - restingHR;
+              return {
+                min: Math.round(heartRateReserve * minPct + restingHR),
+                max: Math.round(heartRateReserve * maxPct + restingHR),
+              };
+            } else {
+              // Simple percentage of max HR
+              return {
+                min: Math.round(maxHR * minPct),
+                max: Math.round(maxHR * maxPct),
+              };
+            }
+          };
+
           return {
-            restingHR: undefined,
+            restingHR,
             maxHR,
+            calculationMethod,
             zones: {
               zone1: {
-                min: Math.round(maxHR * 0.5),
-                max: Math.round(maxHR * 0.6),
+                ...calculateZone(0.5, 0.6),
                 name: "Recovery",
+                description: "Light activity, active recovery",
               },
               zone2: {
-                min: Math.round(maxHR * 0.6),
-                max: Math.round(maxHR * 0.7),
+                ...calculateZone(0.6, 0.7),
                 name: "Aerobic Base",
+                description: "Fat burning, endurance building",
               },
               zone3: {
-                min: Math.round(maxHR * 0.7),
-                max: Math.round(maxHR * 0.8),
+                ...calculateZone(0.7, 0.8),
                 name: "Aerobic",
+                description: "Cardiovascular fitness improvement",
               },
               zone4: {
-                min: Math.round(maxHR * 0.8),
-                max: Math.round(maxHR * 0.9),
+                ...calculateZone(0.8, 0.9),
                 name: "Lactate Threshold",
+                description: "Increased speed endurance",
               },
               zone5: {
-                min: Math.round(maxHR * 0.9),
-                max: maxHR,
+                ...calculateZone(0.9, 1.0),
                 name: "VO2 Max",
+                description: "Maximum effort, anaerobic training",
               },
             },
           };
         } catch (error) {
           console.error("❌ Failed to get heart rate zones:", error);
-          // Return default zones based on age
-          const maxHR = 220 - age;
+          // Return fallback zones based on Tanaka formula
+          const maxHR = Math.round(208 - 0.7 * age);
           return {
+            restingHR: undefined,
             maxHR,
+            calculationMethod: "Age-based Tanaka formula (fallback)",
             zones: {
               zone1: {
                 min: Math.round(maxHR * 0.5),
                 max: Math.round(maxHR * 0.6),
                 name: "Recovery",
+                description: "Light activity, active recovery",
               },
               zone2: {
                 min: Math.round(maxHR * 0.6),
                 max: Math.round(maxHR * 0.7),
                 name: "Aerobic Base",
+                description: "Fat burning, endurance building",
               },
               zone3: {
                 min: Math.round(maxHR * 0.7),
                 max: Math.round(maxHR * 0.8),
                 name: "Aerobic",
+                description: "Cardiovascular fitness improvement",
               },
               zone4: {
                 min: Math.round(maxHR * 0.8),
                 max: Math.round(maxHR * 0.9),
                 name: "Lactate Threshold",
+                description: "Increased speed endurance",
               },
               zone5: {
                 min: Math.round(maxHR * 0.9),
                 max: maxHR,
                 name: "VO2 Max",
+                description: "Maximum effort, anaerobic training",
               },
             },
           };

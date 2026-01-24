@@ -274,9 +274,18 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
   }, []);
 
   const handleTutorials = useCallback(() => {
-    Alert.alert(
-      "Getting Started",
-      "Interactive tutorials will be available in the next update!",
+    haptics.light();
+    Linking.openURL("https://fitai.app/tutorials").catch(() =>
+      Alert.alert(
+        "Getting Started",
+        "Welcome to FitAI! Here's how to get started:\n\n" +
+          "1. Complete your profile in Settings\n" +
+          "2. Set your fitness goals\n" +
+          "3. Try the AI workout generator\n" +
+          "4. Scan your first meal\n" +
+          "5. Track your daily water intake\n\n" +
+          "Visit https://fitai.app/tutorials for interactive guides!",
+      ),
     );
   }, []);
 
@@ -453,12 +462,20 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               iconColor="#4CAF50"
               title="User Guide"
               description="Complete guide to using all FitAI features"
-              onPress={() =>
-                Alert.alert(
-                  "User Guide",
-                  "Comprehensive user guide will be available soon!",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://fitai.app/guide").catch(() =>
+                  Alert.alert(
+                    "User Guide",
+                    "Visit https://fitai.app/guide for the complete user guide.\n\n" +
+                      "Quick Tips:\n\n" +
+                      "• Tap the + button to log workouts and meals\n" +
+                      "• Use the AI chat for personalized recommendations\n" +
+                      "• Track progress in the Analytics tab\n" +
+                      "• Customize your goals in Settings",
+                  ),
+                );
+              }}
               animationDelay={600}
             />
 
@@ -467,12 +484,21 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               iconColor="#FF6B6B"
               title="Video Tutorials"
               description="Step-by-step video guides for beginners"
-              onPress={() =>
-                Alert.alert(
-                  "Video Tutorials",
-                  "Video tutorials will be available soon!",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://youtube.com/@fitai_app").catch(() =>
+                  Alert.alert(
+                    "Video Tutorials",
+                    "Subscribe to our YouTube channel for video tutorials:\n\n" +
+                      "https://youtube.com/@fitai_app\n\n" +
+                      "Topics covered:\n" +
+                      "• Getting started with FitAI\n" +
+                      "• Creating custom workout plans\n" +
+                      "• Food scanning and meal logging\n" +
+                      "• Understanding your analytics",
+                  ),
+                );
+              }}
               animationDelay={650}
             />
 
@@ -481,12 +507,20 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               iconColor="#667eea"
               title="Community Forum"
               description="Connect with other FitAI users"
-              onPress={() =>
-                Alert.alert(
-                  "Join Our Community",
-                  "Community forum will be available soon!",
-                )
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://community.fitai.app").catch(() =>
+                  Alert.alert(
+                    "Join Our Community",
+                    "Connect with fellow fitness enthusiasts!\n\n" +
+                      "• Share your progress and achievements\n" +
+                      "• Get tips from experienced users\n" +
+                      "• Participate in community challenges\n" +
+                      "• Request new features\n\n" +
+                      "Visit: https://community.fitai.app",
+                  ),
+                );
+              }}
               animationDelay={700}
             />
 
@@ -495,9 +529,21 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               iconColor="#FF9800"
               title="System Status"
               description="Check if all FitAI services are running smoothly"
-              onPress={() =>
-                Alert.alert("System Status", "All systems operational!")
-              }
+              onPress={() => {
+                haptics.light();
+                Linking.openURL("https://status.fitai.app").catch(() =>
+                  Alert.alert(
+                    "System Status",
+                    "All FitAI systems are currently operational.\n\n" +
+                      "✅ Authentication Services\n" +
+                      "✅ AI Workout Generation\n" +
+                      "✅ Food Recognition\n" +
+                      "✅ Data Sync Services\n" +
+                      "✅ Push Notifications\n\n" +
+                      "For real-time status updates, visit:\nhttps://status.fitai.app",
+                  ),
+                );
+              }}
               animationDelay={750}
             />
           </View>

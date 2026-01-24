@@ -17,15 +17,15 @@
  */
 // Provides encrypted, compressed, and versioned local storage with quota management
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Crypto from 'expo-crypto';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 import {
   LocalStorageSchema,
   EncryptionConfig,
   EncryptedData,
   StorageInfo,
   ValidationResult,
-} from '../types/localData';
+} from "../types/localData";
 
 // Web-compatible crypto utilities
 const CryptoUtils = {
@@ -37,7 +37,9 @@ const CryptoUtils = {
         const randomBytes = Crypto.getRandomBytes(bytes);
         return {
           toString: () =>
-            Array.from(randomBytes, (byte) => byte.toString(16).padStart(2, '0')).join(''),
+            Array.from(randomBytes, (byte) =>
+              byte.toString(16).padStart(2, "0"),
+            ).join(""),
         };
       },
     },
@@ -54,7 +56,8 @@ const CryptoUtils = {
       hash = hash & hash; // Convert to 32bit integer
     }
     return {
-      toString: () => Math.abs(hash).toString(16).padStart(64, '0').substring(0, 64),
+      toString: () =>
+        Math.abs(hash).toString(16).padStart(64, "0").substring(0, 64),
     };
   },
 
@@ -70,7 +73,7 @@ const CryptoUtils = {
           toString: (format: any) => encoded,
         },
         tag: {
-          toString: (format: any) => 'mock-tag',
+          toString: (format: any) => "mock-tag",
         },
       };
     },
@@ -85,7 +88,7 @@ const CryptoUtils = {
         };
       } catch (error) {
         return {
-          toString: (format: any) => '',
+          toString: (format: any) => "",
         };
       }
     },
@@ -95,7 +98,7 @@ const CryptoUtils = {
   enc: {
     Base64: {
       stringify: (wordArray: any) => {
-        if (typeof wordArray === 'string') {
+        if (typeof wordArray === "string") {
           // Basic string handling for React Native compatibility
           return wordArray;
         }
@@ -122,7 +125,7 @@ const CryptoUtils = {
 
   // Mode constants
   mode: {
-    GCM: 'GCM',
+    GCM: "GCM",
   },
 };
 
@@ -130,11 +133,11 @@ const CryptoUtils = {
 // CONSTANTS
 // ============================================================================
 
-const STORAGE_VERSION = '0.1.5';
-const STORAGE_KEY_PREFIX = '@fitai_local_';
+const STORAGE_VERSION = "0.1.5";
+const STORAGE_KEY_PREFIX = "@fitai_local_";
 const ENCRYPTION_CONFIG: EncryptionConfig = {
-  algorithm: 'AES-256-GCM',
-  keyDerivation: 'PBKDF2',
+  algorithm: "AES-256-GCM",
+  keyDerivation: "PBKDF2",
   iterations: 10000,
   saltLength: 32,
   ivLength: 16,
@@ -171,7 +174,10 @@ export class EnhancedLocalStorageService {
       // Auto-initialize on first access (non-blocking)
       EnhancedLocalStorageService.initializationPromise =
         EnhancedLocalStorageService.instance.initialize().catch((error) => {
-          console.error('[EnhancedLocalStorage] Auto-initialization failed:', error);
+          console.error(
+            "[EnhancedLocalStorage] Auto-initialization failed:",
+            error,
+          );
         });
     }
     return EnhancedLocalStorageService.instance;
@@ -216,9 +222,12 @@ export class EnhancedLocalStorageService {
       // Initialize storage info (can now safely call methods that check initialization)
       await this.updateStorageInfo();
 
-      console.log('Enhanced Local Storage Service initialized successfully');
+      console.log("Enhanced Local Storage Service initialized successfully");
     } catch (error) {
-      console.error('Failed to initialize Enhanced Local Storage Service:', error);
+      console.error(
+        "Failed to initialize Enhanced Local Storage Service:",
+        error,
+      );
       this.isInitialized = false; // Reset on error
       throw error;
     }
@@ -226,12 +235,16 @@ export class EnhancedLocalStorageService {
 
   private async initializeEncryption(userPassword?: string): Promise<void> {
     try {
-      let encryptionKey = await AsyncStorage.getItem(STORAGE_KEYS.ENCRYPTION_KEY);
+      let encryptionKey = await AsyncStorage.getItem(
+        STORAGE_KEYS.ENCRYPTION_KEY,
+      );
 
       if (!encryptionKey) {
         // Generate new encryption key
         const password = userPassword || this.generateRandomPassword();
-        const salt = CryptoUtils.lib.WordArray.random(ENCRYPTION_CONFIG.saltLength);
+        const salt = CryptoUtils.lib.WordArray.random(
+          ENCRYPTION_CONFIG.saltLength,
+        );
 
         encryptionKey = CryptoUtils.PBKDF2(password, salt, {
           keySize: 256 / 32,
@@ -243,7 +256,7 @@ export class EnhancedLocalStorageService {
 
       this.encryptionKey = encryptionKey;
     } catch (error) {
-      console.error('Failed to initialize encryption:', error);
+      console.error("Failed to initialize encryption:", error);
       throw error;
     }
   }
@@ -255,9 +268,10 @@ export class EnhancedLocalStorageService {
   private async checkAndMigrateVersion(): Promise<void> {
     try {
       // Directly get schema without ensureInitialized check during initialization
-      const storedSchema = await this.retrieveDataDuringInit<LocalStorageSchema>(
-        STORAGE_KEYS.SCHEMA
-      );
+      const storedSchema =
+        await this.retrieveDataDuringInit<LocalStorageSchema>(
+          STORAGE_KEYS.SCHEMA,
+        );
 
       if (!storedSchema) {
         // First time initialization
@@ -267,7 +281,7 @@ export class EnhancedLocalStorageService {
         await this.migrateSchema(storedSchema.version, STORAGE_VERSION);
       }
     } catch (error) {
-      console.error('Failed to check/migrate version:', error);
+      console.error("Failed to check/migrate version:", error);
       throw error;
     }
   }
@@ -281,14 +295,15 @@ export class EnhancedLocalStorageService {
       user: {
         onboardingData: null,
         preferences: {
-          units: 'metric',
+          units: "metric",
           notifications: true,
           darkMode: true,
-          language: 'en',
+          language: "en",
           timezone:
-            typeof Intl !== 'undefined' && typeof Intl.DateTimeFormat === 'function'
+            typeof Intl !== "undefined" &&
+            typeof Intl.DateTimeFormat === "function"
               ? Intl.DateTimeFormat().resolvedOptions().timeZone
-              : 'UTC',
+              : "UTC",
           autoSync: true,
           dataRetention: 365,
         },
@@ -364,16 +379,135 @@ export class EnhancedLocalStorageService {
     await this.storeDataDuringInit(STORAGE_KEYS.SCHEMA, initialSchema);
   }
 
-  private async migrateSchema(fromVersion: string, toVersion: string): Promise<void> {
-    console.log(`Migrating schema from ${fromVersion} to ${toVersion}`);
-    // TODO: Implement schema migration logic based on version differences
-    // For now, we'll just update the version
-    const schema = await this.retrieveDataDuringInit<LocalStorageSchema>(STORAGE_KEYS.SCHEMA);
-    if (schema) {
-      schema.version = toVersion;
-      schema.updatedAt = new Date().toISOString();
-      await this.storeDataDuringInit(STORAGE_KEYS.SCHEMA, schema);
+  private async migrateSchema(
+    fromVersion: string,
+    toVersion: string,
+  ): Promise<void> {
+    console.log(`🔄 Migrating schema from ${fromVersion} to ${toVersion}`);
+
+    const schema = await this.retrieveDataDuringInit<LocalStorageSchema>(
+      STORAGE_KEYS.SCHEMA,
+    );
+    if (!schema) {
+      console.warn(
+        "⚠️ No schema found during migration, initializing fresh schema",
+      );
+      await this.initializeSchema();
+      return;
     }
+
+    // Define migration functions for each version upgrade
+    const migrations: Record<
+      string,
+      (schema: LocalStorageSchema) => LocalStorageSchema
+    > = {
+      // Migration from 0.1.0 to 0.1.1: Added sync queue
+      "0.1.0->0.1.1": (s) => {
+        if (!s.metadata.syncQueue) {
+          s.metadata.syncQueue = [];
+        }
+        return s;
+      },
+      // Migration from 0.1.1 to 0.1.2: Added water logs
+      "0.1.1->0.1.2": (s) => {
+        if (!s.nutrition.waterLogs) {
+          s.nutrition.waterLogs = [];
+        }
+        return s;
+      },
+      // Migration from 0.1.2 to 0.1.3: Added goals to progress
+      "0.1.2->0.1.3": (s) => {
+        if (!s.progress.goals) {
+          s.progress.goals = [];
+        }
+        return s;
+      },
+      // Migration from 0.1.3 to 0.1.4: Added custom exercises and foods
+      "0.1.3->0.1.4": (s) => {
+        if (!s.fitness.customExercises) {
+          s.fitness.customExercises = [];
+        }
+        if (!s.nutrition.customFoods) {
+          s.nutrition.customFoods = [];
+        }
+        return s;
+      },
+      // Migration from 0.1.4 to 0.1.5: Added storage info and compression ratio
+      "0.1.4->0.1.5": (s) => {
+        if (!s.metadata.storageInfo) {
+          s.metadata.storageInfo = {
+            totalSize: 0,
+            usedSize: 0,
+            availableSize: 0,
+            quotaExceeded: false,
+            lastCleanup: null,
+            compressionRatio: 1.0,
+          };
+        }
+        return s;
+      },
+    };
+
+    // Parse version strings to compare
+    const parseVersion = (v: string): number[] =>
+      v.split(".").map((n) => parseInt(n, 10) || 0);
+    const compareVersions = (a: string, b: string): number => {
+      const aParts = parseVersion(a);
+      const bParts = parseVersion(b);
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aPart = aParts[i] || 0;
+        const bPart = bParts[i] || 0;
+        if (aPart < bPart) return -1;
+        if (aPart > bPart) return 1;
+      }
+      return 0;
+    };
+
+    // Get ordered list of versions
+    const allVersions = ["0.1.0", "0.1.1", "0.1.2", "0.1.3", "0.1.4", "0.1.5"];
+    const startIndex = allVersions.findIndex((v) => v === fromVersion);
+    const endIndex = allVersions.findIndex((v) => v === toVersion);
+
+    let migratedSchema = { ...schema };
+    let migrationsApplied = 0;
+
+    // Apply migrations sequentially
+    if (startIndex !== -1 && endIndex !== -1 && startIndex < endIndex) {
+      for (let i = startIndex; i < endIndex; i++) {
+        const migrationKey = `${allVersions[i]}->${allVersions[i + 1]}`;
+        const migrationFn = migrations[migrationKey];
+
+        if (migrationFn) {
+          console.log(`  📦 Applying migration: ${migrationKey}`);
+          try {
+            migratedSchema = migrationFn(migratedSchema);
+            migrationsApplied++;
+          } catch (error) {
+            console.error(`  ❌ Migration ${migrationKey} failed:`, error);
+            // Continue with remaining migrations
+          }
+        } else {
+          console.log(`  ⏭️ No migration needed for: ${migrationKey}`);
+        }
+      }
+    } else {
+      // Version not in known list - just update version number
+      console.log(
+        `  ⚠️ Unknown version path ${fromVersion} -> ${toVersion}, updating version only`,
+      );
+    }
+
+    // Update version and timestamp
+    migratedSchema.version = toVersion;
+    migratedSchema.updatedAt = new Date().toISOString();
+
+    // Save migrated schema
+    await this.storeDataDuringInit(STORAGE_KEYS.SCHEMA, migratedSchema);
+
+    console.log(
+      `✅ Schema migration complete: ${migrationsApplied} migrations applied`,
+    );
+    console.log(`   Version updated: ${fromVersion} -> ${toVersion}`);
   }
 
   // ============================================================================
@@ -435,7 +569,7 @@ export class EnhancedLocalStorageService {
     try {
       let storedData = await AsyncStorage.getItem(key);
 
-      if (!storedData || storedData === 'undefined') {
+      if (!storedData || storedData === "undefined") {
         return null;
       }
 
@@ -462,7 +596,7 @@ export class EnhancedLocalStorageService {
     try {
       let storedData = await AsyncStorage.getItem(key);
 
-      if (!storedData || storedData === 'undefined') {
+      if (!storedData || storedData === "undefined") {
         return null;
       }
 
@@ -479,7 +613,10 @@ export class EnhancedLocalStorageService {
 
       return JSON.parse(storedData) as T;
     } catch (error) {
-      console.error(`Failed to retrieve data during init for key ${key}:`, error);
+      console.error(
+        `Failed to retrieve data during init for key ${key}:`,
+        error,
+      );
       return null;
     }
   }
@@ -515,7 +652,7 @@ export class EnhancedLocalStorageService {
       await AsyncStorage.multiRemove(keys);
       await this.updateStorageInfo();
     } catch (error) {
-      console.error('Failed to clear all data:', error);
+      console.error("Failed to clear all data:", error);
       throw error;
     }
   }
@@ -527,7 +664,7 @@ export class EnhancedLocalStorageService {
       await AsyncStorage.multiRemove(keys);
       // Note: We don't call updateStorageInfo during init to avoid circular dependency
     } catch (error) {
-      console.error('Failed to clear all data during init:', error);
+      console.error("Failed to clear all data during init:", error);
       throw error;
     }
   }
@@ -548,7 +685,7 @@ export class EnhancedLocalStorageService {
   async updateSchema(updates: Partial<LocalStorageSchema>): Promise<void> {
     const currentSchema = await this.getStoredSchema();
     if (!currentSchema) {
-      throw new Error('No schema found to update');
+      throw new Error("No schema found to update");
     }
 
     const updatedSchema: LocalStorageSchema = {
@@ -561,10 +698,12 @@ export class EnhancedLocalStorageService {
   }
 
   // Special method for updating schema during initialization (without ensureInitialized check)
-  async updateSchemaDuringInit(updates: Partial<LocalStorageSchema>): Promise<void> {
+  async updateSchemaDuringInit(
+    updates: Partial<LocalStorageSchema>,
+  ): Promise<void> {
     const currentSchema = await this.getStoredSchemaDuringInit();
     if (!currentSchema) {
-      throw new Error('No schema found to update');
+      throw new Error("No schema found to update");
     }
 
     const updatedSchema: LocalStorageSchema = {
@@ -582,7 +721,7 @@ export class EnhancedLocalStorageService {
 
   private encrypt(data: string): EncryptedData {
     if (!this.encryptionKey) {
-      throw new Error('Encryption key not initialized');
+      throw new Error("Encryption key not initialized");
     }
 
     const salt = CryptoUtils.lib.WordArray.random(ENCRYPTION_CONFIG.saltLength);
@@ -597,25 +736,25 @@ export class EnhancedLocalStorageService {
       payload: encrypted.ciphertext.toString(CryptoUtils.enc.Base64),
       iv: iv.toString(),
       salt: salt.toString(),
-      tag: encrypted.tag?.toString(CryptoUtils.enc.Base64) || '',
+      tag: encrypted.tag?.toString(CryptoUtils.enc.Base64) || "",
     };
   }
 
   private decrypt(encryptedData: EncryptedData): string {
     if (!this.encryptionKey) {
-      throw new Error('Encryption key not initialized');
+      throw new Error("Encryption key not initialized");
     }
 
     const decrypted = CryptoUtils.AES.decrypt(
       {
         ciphertext: CryptoUtils.enc.Base64.parse(encryptedData.payload),
-        tag: CryptoUtils.enc.Base64.parse(encryptedData.tag || ''),
+        tag: CryptoUtils.enc.Base64.parse(encryptedData.tag || ""),
       } as any,
       this.encryptionKey,
       {
         iv: CryptoUtils.enc.Base64.parse(encryptedData.iv),
         mode: CryptoUtils.mode.GCM,
-      }
+      },
     );
 
     return decrypted.toString(CryptoUtils.enc.Utf8);
@@ -632,7 +771,9 @@ export class EnhancedLocalStorageService {
   }
 
   private decompress(compressedData: string): string {
-    return CryptoUtils.enc.Base64.parse(compressedData).toString(CryptoUtils.enc.Utf8);
+    return CryptoUtils.enc.Base64.parse(compressedData).toString(
+      CryptoUtils.enc.Utf8,
+    );
   }
 
   // ============================================================================
@@ -642,7 +783,9 @@ export class EnhancedLocalStorageService {
   private async updateStorageInfo(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const fitaiKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
+      const fitaiKeys = keys.filter((key) =>
+        key.startsWith(STORAGE_KEY_PREFIX),
+      );
 
       let totalSize = 0;
       for (const key of fitaiKeys) {
@@ -662,9 +805,12 @@ export class EnhancedLocalStorageService {
         compressionRatio: this.compressionEnabled ? 0.7 : 1.0, // Estimated
       };
 
-      await AsyncStorage.setItem(STORAGE_KEYS.STORAGE_INFO, JSON.stringify(storageInfo));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.STORAGE_INFO,
+        JSON.stringify(storageInfo),
+      );
     } catch (error) {
-      console.error('Failed to update storage info:', error);
+      console.error("Failed to update storage info:", error);
     }
   }
 
@@ -673,7 +819,7 @@ export class EnhancedLocalStorageService {
       const info = await AsyncStorage.getItem(STORAGE_KEYS.STORAGE_INFO);
       return info ? JSON.parse(info) : null;
     } catch (error) {
-      console.error('Failed to get storage info:', error);
+      console.error("Failed to get storage info:", error);
       return null;
     }
   }
@@ -694,7 +840,9 @@ export class EnhancedLocalStorageService {
 
   private ensureInitialized(): void {
     if (!this.isInitialized) {
-      throw new Error('Enhanced Local Storage Service not initialized. Call initialize() first.');
+      throw new Error(
+        "Enhanced Local Storage Service not initialized. Call initialize() first.",
+      );
     }
   }
 
@@ -716,14 +864,19 @@ export class EnhancedLocalStorageService {
   // Basic key-value setter used by migration
   async setItem(key: string, value: any): Promise<void> {
     this.ensureInitialized();
-    await AsyncStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    await AsyncStorage.setItem(
+      key,
+      typeof value === "string" ? value : JSON.stringify(value),
+    );
   }
 
   // Clear all FitAI local storage keys and reinitialize minimal schema
   async clearAll(): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const fitaiKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
+      const fitaiKeys = keys.filter((key) =>
+        key.startsWith(STORAGE_KEY_PREFIX),
+      );
       if (fitaiKeys.length) {
         await AsyncStorage.multiRemove(fitaiKeys);
       }
@@ -761,10 +914,13 @@ export class EnhancedLocalStorageService {
         progress: { measurements: [] },
         metadata: {},
       };
-      await AsyncStorage.setItem(STORAGE_KEYS.SCHEMA, JSON.stringify(newSchema));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.SCHEMA,
+        JSON.stringify(newSchema),
+      );
       await this.updateStorageInfo();
     } catch (error) {
-      console.error('Failed to clear local storage:', error);
+      console.error("Failed to clear local storage:", error);
       throw error;
     }
   }
