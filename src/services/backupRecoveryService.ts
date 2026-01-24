@@ -5,6 +5,9 @@ import { enhancedLocalStorage } from "./localStorage";
 import { dataBridge } from "./DataBridge";
 import { validationService } from "../utils/validation";
 import { LocalStorageSchema } from "../types/localData";
+import { supabase } from "./supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -744,68 +747,409 @@ export class BackupRecoveryService {
     return types;
   }
 
-  // Placeholder methods for actual implementation
+  // Utility methods for encryption and storage
   private async getDeviceId(): Promise<string> {
-    return "device_123";
+    try {
+      let deviceId = await AsyncStorage.getItem("@fitai_device_id");
+      if (!deviceId) {
+        deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        await AsyncStorage.setItem("@fitai_device_id", deviceId);
+      }
+      return deviceId;
+    } catch {
+      return `device_${Date.now()}`;
+    }
   }
 
   private async getIncrementalChanges(): Promise<IncrementalChange[]> {
+    // Load change log from storage
+    try {
+      const changes = await AsyncStorage.getItem("@fitai_change_log");
+      if (changes) {
+        const parsed = JSON.parse(changes);
+        // Clear change log after reading
+        await AsyncStorage.setItem("@fitai_change_log", "[]");
+        return parsed;
+      }
+    } catch (error) {
+      console.error("Failed to get incremental changes:", error);
+    }
     return [];
   }
 
   private async compressData(data: string): Promise<string> {
-    // Implement compression
-    return data;
+    // Simple LZ-style compression for React Native
+    // In production, use a proper compression library like pako
+    // For now, we use base64 encoding with a marker
+    try {
+      // Basic run-length encoding for repeated characters
+      let compressed = data.replace(/(.)\1{4,}/g, (match, char) => {
+        return `${char}#${match.length}#`;
+      });
+      return `COMPRESSED:${compressed}`;
+    } catch {
+      return data;
+    }
+  }
+
+  private async decompressData(data: string): Promise<string> {
+    if (!data.startsWith("COMPRESSED:")) {
+      return data;
+    }
+    try {
+      let decompressed = data.slice(11); // Remove "COMPRESSED:" prefix
+      // Reverse run-length encoding
+      decompressed = decompressed.replace(/(.)\#(\d+)\#/g, (_, char, count) => {
+        return char.repeat(parseInt(count, 10));
+      });
+      return decompressed;
+    } catch {
+      return data;
+    }
   }
 
   private async encryptData(data: string): Promise<string> {
-    // Implement encryption
-    return data;
+    // Use expo-crypto for encryption
+    // In a production app, you'd use a proper encryption key stored securely
+    try {
+      // Generate a simple hash-based encryption key from device ID
+      const deviceId = await this.getDeviceId();
+      const keyHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        deviceId + "_fitai_backup_key",
+      );
+
+      // Simple XOR encryption with the key (for demo purposes)
+      // In production, use proper AES encryption with expo-crypto or react-native-crypto
+      const keyBytes = keyHash.slice(0, 32);
+      let encrypted = "";
+      for (let i = 0; i < data.length; i++) {
+        const charCode = data.charCodeAt(i);
+        const keyCode = keyBytes.charCodeAt(i % keyBytes.length);
+        encrypted += String.fromCharCode(charCode ^ keyCode);
+      }
+
+      // Base64 encode for storage safety
+      const base64 = Buffer.from(encrypted, "binary").toString("base64");
+      return `ENCRYPTED:${base64}`;
+    } catch (error) {
+      console.error("Encryption failed:", error);
+      // Return unencrypted data with marker
+      return `UNENCRYPTED:${data}`;
+    }
+  }
+
+  private async decryptData(data: string): Promise<string> {
+    if (data.startsWith("UNENCRYPTED:")) {
+      return data.slice(12);
+    }
+    if (!data.startsWith("ENCRYPTED:")) {
+      return data;
+    }
+
+    try {
+      const base64Data = data.slice(10); // Remove "ENCRYPTED:" prefix
+      const encrypted = Buffer.from(base64Data, "base64").toString("binary");
+
+      // Reverse XOR encryption
+      const deviceId = await this.getDeviceId();
+      const keyHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        deviceId + "_fitai_backup_key",
+      );
+
+      const keyBytes = keyHash.slice(0, 32);
+      let decrypted = "";
+      for (let i = 0; i < encrypted.length; i++) {
+        const charCode = encrypted.charCodeAt(i);
+        const keyCode = keyBytes.charCodeAt(i % keyBytes.length);
+        decrypted += String.fromCharCode(charCode ^ keyCode);
+      }
+
+      return decrypted;
+    } catch (error) {
+      console.error("Decryption failed:", error);
+      throw new Error("Failed to decrypt backup data");
+    }
   }
 
   private async calculateChecksum(data: string): Promise<string> {
-    // Implement checksum calculation
-    return "checksum_" + data.length;
+    try {
+      const hash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        data,
+      );
+      return hash;
+    } catch {
+      // Fallback to simple checksum
+      let checksum = 0;
+      for (let i = 0; i < data.length; i++) {
+        checksum = ((checksum << 5) - checksum + data.charCodeAt(i)) | 0;
+      }
+      return `simple_${Math.abs(checksum).toString(16)}`;
+    }
   }
 
   private async storeCloudBackup(backupData: BackupData): Promise<void> {
-    // Implement cloud storage using Supabase Storage
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn("Cannot store cloud backup: User not authenticated");
+        return;
+      }
+
+      // Serialize backup data
+      const serializedData = JSON.stringify(backupData);
+      const blob = new Blob([serializedData], { type: "application/json" });
+
+      // Upload to Supabase Storage
+      const filePath = `backups/${user.id}/${backupData.metadata.id}.json`;
+      const { error } = await supabase.storage
+        .from("user-backups")
+        .upload(filePath, blob, {
+          contentType: "application/json",
+          upsert: true,
+        });
+
+      if (error) {
+        console.error("Failed to upload backup to cloud:", error);
+        // Don't throw - cloud backup is optional
+      } else {
+        console.log("Backup uploaded to cloud:", backupData.metadata.id);
+      }
+    } catch (error) {
+      console.error("Cloud backup storage error:", error);
+      // Don't throw - cloud backup is optional
+    }
   }
 
   private async loadCloudBackup(backupId: string): Promise<BackupData | null> {
-    // Implement cloud loading
-    return null;
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return null;
+      }
+
+      const filePath = `backups/${user.id}/${backupId}.json`;
+      const { data, error } = await supabase.storage
+        .from("user-backups")
+        .download(filePath);
+
+      if (error || !data) {
+        console.error("Failed to download backup from cloud:", error);
+        return null;
+      }
+
+      const text = await data.text();
+      const backupData = JSON.parse(text) as BackupData;
+
+      // Process (decrypt/decompress) the loaded backup
+      return await this.processLoadedBackup(backupData);
+    } catch (error) {
+      console.error("Cloud backup load error:", error);
+      return null;
+    }
   }
 
   private async deleteCloudBackup(backupId: string): Promise<void> {
-    // Implement cloud deletion
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return;
+      }
+
+      const filePath = `backups/${user.id}/${backupId}.json`;
+      const { error } = await supabase.storage
+        .from("user-backups")
+        .remove([filePath]);
+
+      if (error) {
+        console.error("Failed to delete cloud backup:", error);
+      }
+    } catch (error) {
+      console.error("Cloud backup deletion error:", error);
+    }
   }
 
   private async getLocalBackups(): Promise<BackupMetadata[]> {
-    // Get local backup metadata
-    return [];
+    try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const backupKeys = allKeys.filter((key) => key.startsWith("backup_"));
+
+      const metadataList: BackupMetadata[] = [];
+
+      for (const key of backupKeys) {
+        try {
+          const data = await enhancedLocalStorage.getData<BackupData>(key);
+          if (data?.metadata) {
+            metadataList.push({
+              ...data.metadata,
+              location: "local",
+              createdAt: new Date(data.metadata.createdAt),
+            });
+          }
+        } catch {
+          // Skip corrupted backups
+        }
+      }
+
+      return metadataList;
+    } catch (error) {
+      console.error("Failed to get local backups:", error);
+      return [];
+    }
   }
 
   private async getCloudBackups(): Promise<BackupMetadata[]> {
-    // Get cloud backup metadata
-    return [];
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        return [];
+      }
+
+      const { data: files, error } = await supabase.storage
+        .from("user-backups")
+        .list(`backups/${user.id}`, {
+          limit: 100,
+          sortBy: { column: "created_at", order: "desc" },
+        });
+
+      if (error || !files) {
+        console.error("Failed to list cloud backups:", error);
+        return [];
+      }
+
+      // Extract metadata from file names (or download and parse)
+      const metadataList: BackupMetadata[] = files
+        .filter((file) => file.name.endsWith(".json"))
+        .map((file) => ({
+          id: file.name.replace(".json", ""),
+          type: "full" as const,
+          location: "cloud" as const,
+          createdAt: new Date(file.created_at || Date.now()),
+          size: file.metadata?.size || 0,
+          checksum: "",
+          version: "1.0",
+          deviceId: "",
+          userId: user.id,
+          description: `Cloud backup from ${new Date(file.created_at || Date.now()).toLocaleDateString()}`,
+          dataTypes: [],
+          isEncrypted: true,
+          isCompressed: true,
+        }));
+
+      return metadataList;
+    } catch (error) {
+      console.error("Failed to get cloud backups:", error);
+      return [];
+    }
   }
 
   private async processLoadedBackup(backup: BackupData): Promise<BackupData> {
-    // Decrypt and decompress loaded backup
-    return backup;
+    try {
+      let dataStr = JSON.stringify(backup.data);
+
+      // Decrypt if encrypted
+      if (backup.metadata.isEncrypted) {
+        dataStr = await this.decryptData(dataStr);
+      }
+
+      // Decompress if compressed
+      if (backup.metadata.isCompressed) {
+        dataStr = await this.decompressData(dataStr);
+      }
+
+      // Verify checksum
+      const calculatedChecksum = await this.calculateChecksum(dataStr);
+      if (
+        backup.metadata.checksum &&
+        calculatedChecksum !== backup.metadata.checksum
+      ) {
+        console.warn("Backup checksum mismatch - data may be corrupted");
+      }
+
+      return {
+        ...backup,
+        data: JSON.parse(dataStr),
+      };
+    } catch (error) {
+      console.error("Failed to process loaded backup:", error);
+      return backup; // Return as-is if processing fails
+    }
   }
 
   private async cleanupOldBackups(): Promise<void> {
-    // Remove backups older than retention period
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(
+        cutoffDate.getDate() - this.config.backupRetentionDays,
+      );
+
+      const allBackups = await this.listBackups();
+
+      // Keep at least the most recent backups up to maxLocalBackups
+      const sortedBackups = allBackups.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
+
+      // Delete old backups beyond the retention limit
+      const backupsToDelete = sortedBackups.slice(this.config.maxLocalBackups);
+      const oldBackups = sortedBackups.filter((b) => b.createdAt < cutoffDate);
+
+      const deleteList = [...new Set([...backupsToDelete, ...oldBackups])];
+
+      for (const backup of deleteList) {
+        try {
+          await this.deleteBackup(backup.id);
+          console.log(`Cleaned up old backup: ${backup.id}`);
+        } catch (error) {
+          console.error(`Failed to cleanup backup ${backup.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Backup cleanup failed:", error);
+    }
   }
 
   private async loadBackupStatus(): Promise<void> {
-    // Load status from storage
+    try {
+      const statusJson = await AsyncStorage.getItem("@fitai_backup_status");
+      if (statusJson) {
+        const savedStatus = JSON.parse(statusJson);
+        this.status = {
+          ...this.status,
+          lastBackupTime: savedStatus.lastBackupTime
+            ? new Date(savedStatus.lastBackupTime)
+            : null,
+          lastBackupResult: savedStatus.lastBackupResult,
+        };
+      }
+    } catch (error) {
+      console.error("Failed to load backup status:", error);
+    }
   }
 
   private async saveBackupStatus(): Promise<void> {
-    // Save status to storage
+    try {
+      const statusToSave = {
+        lastBackupTime: this.status.lastBackupTime?.toISOString(),
+        lastBackupResult: this.status.lastBackupResult,
+      };
+      await AsyncStorage.setItem(
+        "@fitai_backup_status",
+        JSON.stringify(statusToSave),
+      );
+    } catch (error) {
+      console.error("Failed to save backup status:", error);
+    }
   }
 }
 

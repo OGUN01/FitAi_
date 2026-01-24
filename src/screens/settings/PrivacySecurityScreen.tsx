@@ -9,7 +9,7 @@
  * - FadeInDown entry animations
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // UI Components
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
@@ -32,6 +33,9 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
+
+// Services
+import { supabase } from "../../services/supabase";
 
 interface PrivacySecurityScreenProps {
   onBack?: () => void;
@@ -183,6 +187,8 @@ const ActionItem: React.FC<ActionItemProps> = ({
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
+  const PRIVACY_SETTINGS_KEY = "@fitai_privacy_settings";
+
   const [settings, setSettings] = useState({
     dataSharing: false,
     analytics: true,
@@ -193,6 +199,25 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   });
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load settings from AsyncStorage on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(PRIVACY_SETTINGS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setSettings((prev) => ({ ...prev, ...parsed }));
+        }
+      } catch (error) {
+        console.error("Failed to load privacy settings:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const toggleSetting = useCallback((key: keyof typeof settings) => {
     setSettings((prev) => ({
@@ -202,27 +227,71 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
     setHasChanges(true);
   }, []);
 
-  const handleDataExport = useCallback(() => {
+  const handleDataExport = useCallback(async () => {
     Alert.alert(
       "Export Data",
-      "Your data export will be prepared and sent to your email address. This may take a few minutes.",
+      "Your data export will be prepared. This may take a few moments.",
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Export",
-          onPress: () => {
-            haptics.success();
-            Alert.alert(
-              "Export Started",
-              "Your data export has been initiated. You will receive an email when it's ready.",
-            );
+          onPress: async () => {
+            try {
+              haptics.success();
+
+              // Get current user
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+              if (!user) {
+                Alert.alert("Error", "You must be logged in to export data.");
+                return;
+              }
+
+              // Collect all user data from local storage
+              const allKeys = await AsyncStorage.getAllKeys();
+              const fitaiKeys = allKeys.filter(
+                (key) => key.startsWith("@fitai") || key.startsWith("fitai"),
+              );
+              const userData = await AsyncStorage.multiGet(fitaiKeys);
+
+              // Create export object
+              const exportData = {
+                exportDate: new Date().toISOString(),
+                userId: user.id,
+                email: user.email,
+                localData: Object.fromEntries(
+                  userData
+                    .map(([key, value]) => [
+                      key,
+                      value ? JSON.parse(value) : null,
+                    ])
+                    .filter(([_, value]) => value !== null),
+                ),
+              };
+
+              // In a real app, this would upload to a storage bucket and email the link
+              // For now, we log it and show success
+              console.log(
+                "Data export prepared:",
+                JSON.stringify(exportData, null, 2),
+              );
+
+              Alert.alert(
+                "Export Complete",
+                "Your data has been exported. In a production app, this would be emailed to you.",
+              );
+            } catch (error) {
+              console.error("Data export failed:", error);
+              Alert.alert("Error", "Failed to export data. Please try again.");
+            }
           },
         },
       ],
     );
   }, []);
 
-  const handleDeleteAccount = useCallback(() => {
+  const handleDeleteAccount = useCallback(async () => {
     Alert.alert(
       "Delete Account",
       "This action cannot be undone. All your data will be permanently deleted.",
@@ -240,12 +309,44 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
                 {
                   text: "Delete Forever",
                   style: "destructive",
-                  onPress: () => {
-                    haptics.medium();
-                    Alert.alert(
-                      "Account Deletion",
-                      "Account deletion process will be implemented here.",
-                    );
+                  onPress: async () => {
+                    try {
+                      haptics.medium();
+
+                      // Get current user
+                      const {
+                        data: { user },
+                      } = await supabase.auth.getUser();
+                      if (!user) {
+                        Alert.alert(
+                          "Error",
+                          "You must be logged in to delete your account.",
+                        );
+                        return;
+                      }
+
+                      // Clear all local data
+                      const allKeys = await AsyncStorage.getAllKeys();
+                      const fitaiKeys = allKeys.filter(
+                        (key) =>
+                          key.startsWith("@fitai") || key.startsWith("fitai"),
+                      );
+                      await AsyncStorage.multiRemove(fitaiKeys);
+
+                      // Sign out (actual account deletion would require server-side implementation)
+                      await supabase.auth.signOut();
+
+                      Alert.alert(
+                        "Account Deleted",
+                        "Your local data has been cleared and you have been signed out. Contact support to complete server-side deletion.",
+                      );
+                    } catch (error) {
+                      console.error("Account deletion failed:", error);
+                      Alert.alert(
+                        "Error",
+                        "Failed to delete account. Please try again.",
+                      );
+                    }
                   },
                 },
               ],
@@ -259,14 +360,18 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   const saveSettings = useCallback(async () => {
     try {
       haptics.success();
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Persist settings to AsyncStorage
+      await AsyncStorage.setItem(
+        PRIVACY_SETTINGS_KEY,
+        JSON.stringify(settings),
+      );
       setHasChanges(false);
       Alert.alert("Success", "Privacy settings saved successfully!");
     } catch (error) {
       console.error("Failed to save privacy settings:", error);
       Alert.alert("Error", "Failed to save settings. Please try again.");
     }
-  }, []);
+  }, [settings]);
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>

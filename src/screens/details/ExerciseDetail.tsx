@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,25 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Button, Card, THEME } from "../../components/ui";
+import { useFitnessStore } from "../../stores/fitnessStore";
+import { EXERCISES } from "../../data/exercises";
+import {
+  exerciseVisualService,
+  ExerciseData,
+} from "../../services/exerciseVisualService";
 
 const { width: screenWidth } = Dimensions.get("window");
+
+interface ExerciseInstruction {
+  step: number;
+  title: string;
+  description: string;
+  tips: string[];
+}
 
 interface ExerciseDetailProps {
   exerciseId: string;
@@ -26,85 +41,114 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isPlaying, setIsPlaying] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [visualData, setVisualData] = useState<ExerciseData | null>(null);
   const animationValue = React.useRef(new Animated.Value(0)).current;
 
-  // Mock exercise data
-  const exercise = {
-    id: exerciseId,
-    name: "Bench Press",
-    description:
-      "A compound upper body exercise that primarily targets the chest, shoulders, and triceps",
-    difficulty: "Intermediate",
-    targetMuscles: ["Chest", "Triceps", "Shoulders"],
-    equipment: ["Barbell", "Bench"],
-    instructions: [
-      {
-        step: 1,
-        title: "Setup Position",
-        description:
-          "Lie flat on the bench with your feet firmly planted on the ground. Your eyes should be directly under the barbell.",
-        tips: [
-          "Keep your back flat against the bench",
-          "Maintain a slight arch in your lower back",
-        ],
-      },
-      {
-        step: 2,
-        title: "Grip the Bar",
-        description:
-          "Grip the barbell with hands slightly wider than shoulder-width apart. Use an overhand grip.",
-        tips: [
-          "Wrap your thumbs around the bar",
-          "Keep wrists straight and strong",
-        ],
-      },
-      {
-        step: 3,
-        title: "Unrack the Weight",
-        description:
-          "Lift the bar off the rack and position it directly over your chest with arms fully extended.",
-        tips: ["Move slowly and controlled", "Engage your core for stability"],
-      },
-      {
-        step: 4,
-        title: "Lower the Bar",
-        description:
-          "Slowly lower the bar to your chest, keeping your elbows at about a 45-degree angle.",
-        tips: [
-          "Control the descent",
-          "Touch your chest lightly",
-          "Keep your shoulders back",
-        ],
-      },
-      {
-        step: 5,
-        title: "Press Up",
-        description:
-          "Drive the bar back up to the starting position, focusing on pushing through your chest.",
-        tips: [
-          "Exhale during the press",
-          "Keep the bar path straight",
-          "Fully extend your arms",
-        ],
-      },
-    ],
-    sets: 4,
-    reps: "8-10",
-    restTime: "2-3 minutes",
-    weight: "135-155 lbs",
-    safetyTips: [
-      "Always use a spotter when lifting heavy weights",
-      "Warm up thoroughly before starting",
-      "Never bounce the bar off your chest",
-      "Keep your feet on the ground throughout the movement",
-    ],
-    commonMistakes: [
-      "Arching the back excessively",
-      "Flaring elbows too wide",
-      "Pressing the bar toward the face",
-      "Using too much weight too soon",
-    ],
-  };
+  const { weeklyWorkoutPlan } = useFitnessStore();
+
+  // Find exercise from the current workout plan or static database
+  const exercise = useMemo(() => {
+    // First try to find in current workout plan
+    if (weeklyWorkoutPlan?.workouts) {
+      for (const workout of weeklyWorkoutPlan.workouts) {
+        if (workout.exercises) {
+          for (const ex of workout.exercises) {
+            // WorkoutSet has exercise property or direct id match
+            const exId = ex.id || (ex as any).exercise?.id;
+            if (exId === exerciseId) {
+              const exerciseInfo = (ex as any).exercise || ex;
+              return {
+                id: exerciseId,
+                name: exerciseInfo.name || "Exercise",
+                description: exerciseInfo.description || "",
+                difficulty: exerciseInfo.difficulty || "intermediate",
+                targetMuscles:
+                  exerciseInfo.targetMuscles || exerciseInfo.muscleGroups || [],
+                equipment: exerciseInfo.equipment || [],
+                instructions: (exerciseInfo.instructions || []).map(
+                  (inst: string, index: number) => ({
+                    step: index + 1,
+                    title: `Step ${index + 1}`,
+                    description: inst,
+                    tips: [],
+                  }),
+                ),
+                sets: ex.sets || 3,
+                reps: ex.reps?.toString() || "10-12",
+                restTime: ex.restTime ? `${ex.restTime} seconds` : "60 seconds",
+                weight: ex.weight || "",
+                tips: exerciseInfo.tips || exerciseInfo.formTips || [],
+                safetyTips: exerciseInfo.safetyConsiderations || [],
+                commonMistakes: [],
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Then try static exercise database
+    const staticExercise = EXERCISES.find(
+      (ex) =>
+        ex.id === exerciseId ||
+        ex.name.toLowerCase() === exerciseId.toLowerCase(),
+    );
+    if (staticExercise) {
+      return {
+        id: staticExercise.id,
+        name: staticExercise.name,
+        description: staticExercise.description,
+        difficulty: staticExercise.difficulty,
+        targetMuscles: staticExercise.muscleGroups,
+        equipment: staticExercise.equipment,
+        instructions: (staticExercise.instructions || []).map(
+          (inst: string, index: number) => ({
+            step: index + 1,
+            title: `Step ${index + 1}`,
+            description: inst,
+            tips: [],
+          }),
+        ),
+        sets: staticExercise.sets || 3,
+        reps: staticExercise.reps || "10-12",
+        restTime: staticExercise.restTime
+          ? `${staticExercise.restTime} seconds`
+          : "60 seconds",
+        weight: "",
+        tips: staticExercise.tips || [],
+        safetyTips: [],
+        commonMistakes: [],
+      };
+    }
+
+    // Not found - return null
+    return null;
+  }, [weeklyWorkoutPlan, exerciseId]);
+
+  // Fetch visual data (GIF) from exercise visual service
+  useEffect(() => {
+    async function fetchVisualData() {
+      if (!exercise) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const result = await exerciseVisualService.findExercise(exercise.name);
+        if (result) {
+          setVisualData(result.exercise);
+        }
+      } catch (error) {
+        console.error("Failed to fetch exercise visual data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchVisualData();
+  }, [exercise?.name]);
 
   // Animation for step transitions
   const animateToStep = (stepIndex: number) => {
@@ -120,7 +164,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   React.useEffect(() => {
     let interval: NodeJS.Timeout;
 
-    if (isPlaying) {
+    if (isPlaying && exercise?.instructions?.length) {
       interval = setInterval(() => {
         setCurrentStep((prev) => {
           const nextStep = (prev + 1) % exercise.instructions.length;
@@ -133,20 +177,83 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, exercise.instructions.length]);
+  }, [isPlaying, exercise?.instructions?.length]);
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner":
+    switch (difficulty.toLowerCase()) {
+      case "beginner":
         return THEME.colors.success;
-      case "Intermediate":
+      case "intermediate":
         return THEME.colors.warning;
-      case "Advanced":
+      case "advanced":
         return THEME.colors.error;
       default:
         return THEME.colors.textSecondary;
     }
   };
+
+  const formatDifficulty = (difficulty: string) => {
+    return (
+      difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase()
+    );
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <Text style={styles.loadingText}>Loading exercise...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Exercise not found
+  if (!exercise) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Exercise Guide</Text>
+          <View style={styles.favoriteButton} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🏋️</Text>
+          <Text style={styles.emptyTitle}>Exercise Not Found</Text>
+          <Text style={styles.emptySubtitle}>
+            This exercise may have been removed or is not available.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={onBack || (() => {})}
+            variant="primary"
+            style={{ marginTop: THEME.spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Merge visual data instructions if available
+  const displayInstructions: ExerciseInstruction[] =
+    visualData?.instructions && visualData.instructions.length > 0
+      ? visualData.instructions.map((inst: string, index: number) => ({
+          step: index + 1,
+          title: `Step ${index + 1}`,
+          description: inst,
+          tips: [],
+        }))
+      : exercise.instructions;
+
+  // Merge target muscles from visual data if available
+  const displayTargetMuscles =
+    visualData?.targetMuscles && visualData.targetMuscles.length > 0
+      ? visualData.targetMuscles
+      : exercise.targetMuscles;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -169,9 +276,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
         <Card style={styles.exerciseCard} variant="elevated">
           <View style={styles.exerciseHeader}>
             <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{exercise.name}</Text>
+              <Text style={styles.exerciseName}>
+                {visualData?.name || exercise.name}
+              </Text>
               <Text style={styles.exerciseDescription}>
-                {exercise.description}
+                {exercise.description ||
+                  `Targets: ${displayTargetMuscles.join(", ")}`}
               </Text>
             </View>
             <View style={styles.difficultyBadge}>
@@ -181,7 +291,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
                   { color: getDifficultyColor(exercise.difficulty) },
                 ]}
               >
-                {exercise.difficulty}
+                {formatDifficulty(exercise.difficulty)}
               </Text>
             </View>
           </View>
@@ -196,10 +306,12 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
               <Text style={styles.statValue}>{exercise.reps}</Text>
               <Text style={styles.statLabel}>Reps</Text>
             </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{exercise.weight}</Text>
-              <Text style={styles.statLabel}>Weight</Text>
-            </View>
+            {exercise.weight && (
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{exercise.weight}</Text>
+                <Text style={styles.statLabel}>Weight</Text>
+              </View>
+            )}
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{exercise.restTime}</Text>
               <Text style={styles.statLabel}>Rest</Text>
@@ -207,130 +319,150 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           </View>
 
           {/* Target Muscles */}
-          <View style={styles.musclesContainer}>
-            <Text style={styles.musclesTitle}>Target Muscles</Text>
-            <View style={styles.musclesList}>
-              {exercise.targetMuscles.map((muscle, index) => (
-                <View key={index} style={styles.muscleTag}>
-                  <Text style={styles.muscleText}>{muscle}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </Card>
-
-        {/* Animation/Video Placeholder */}
-        <Card style={styles.animationCard}>
-          <View style={styles.animationContainer}>
-            <View style={styles.animationPlaceholder}>
-              <Text style={styles.animationEmoji}>🏋️‍♂️</Text>
-              <Text style={styles.animationText}>Exercise Animation</Text>
-            </View>
-
-            {/* Animation Controls */}
-            <View style={styles.animationControls}>
-              <TouchableOpacity
-                style={styles.playButton}
-                onPress={() => setIsPlaying(!isPlaying)}
-              >
-                <Text style={styles.playButtonText}>
-                  {isPlaying ? "⏸️" : "▶️"}
-                </Text>
-              </TouchableOpacity>
-
-              <View style={styles.stepIndicators}>
-                {exercise.instructions.map((_, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.stepIndicator,
-                      currentStep === index && styles.stepIndicatorActive,
-                    ]}
-                    onPress={() => animateToStep(index)}
-                  />
+          {displayTargetMuscles.length > 0 && (
+            <View style={styles.musclesContainer}>
+              <Text style={styles.musclesTitle}>Target Muscles</Text>
+              <View style={styles.musclesList}>
+                {displayTargetMuscles.map((muscle: string, index: number) => (
+                  <View key={index} style={styles.muscleTag}>
+                    <Text style={styles.muscleText}>{muscle}</Text>
+                  </View>
                 ))}
               </View>
             </View>
+          )}
+        </Card>
+
+        {/* Animation/GIF Display */}
+        <Card style={styles.animationCard}>
+          <View style={styles.animationContainer}>
+            {visualData?.gifUrl ? (
+              <Image
+                source={{ uri: visualData.gifUrl }}
+                style={styles.exerciseGif}
+                resizeMode="contain"
+              />
+            ) : (
+              <View style={styles.animationPlaceholder}>
+                <Text style={styles.animationEmoji}>🏋️‍♂️</Text>
+                <Text style={styles.animationText}>Exercise Animation</Text>
+              </View>
+            )}
+
+            {/* Animation Controls */}
+            {displayInstructions.length > 1 && (
+              <View style={styles.animationControls}>
+                <TouchableOpacity
+                  style={styles.playButton}
+                  onPress={() => setIsPlaying(!isPlaying)}
+                >
+                  <Text style={styles.playButtonText}>
+                    {isPlaying ? "⏸️" : "▶️"}
+                  </Text>
+                </TouchableOpacity>
+
+                <View style={styles.stepIndicators}>
+                  {displayInstructions.map((_, index: number) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.stepIndicator,
+                        currentStep === index && styles.stepIndicatorActive,
+                      ]}
+                      onPress={() => animateToStep(index)}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
           </View>
         </Card>
 
         {/* Instructions */}
-        <Card style={styles.instructionsCard}>
-          <Text style={styles.instructionsTitle}>
-            Step-by-Step Instructions
-          </Text>
+        {displayInstructions.length > 0 && (
+          <Card style={styles.instructionsCard}>
+            <Text style={styles.instructionsTitle}>
+              Step-by-Step Instructions
+            </Text>
 
-          {exercise.instructions.map((instruction, index) => (
-            <View
-              key={index}
-              style={[
-                styles.instructionItem,
-                currentStep === index && styles.instructionItemActive,
-              ]}
-            >
-              <View style={styles.instructionHeader}>
+            {displayInstructions.map(
+              (instruction: ExerciseInstruction, index: number) => (
                 <View
+                  key={index}
                   style={[
-                    styles.stepNumber,
-                    currentStep === index && styles.stepNumberActive,
+                    styles.instructionItem,
+                    currentStep === index && styles.instructionItemActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.stepNumberText,
-                      currentStep === index && styles.stepNumberTextActive,
-                    ]}
-                  >
-                    {instruction.step}
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.instructionTitle,
-                    currentStep === index && styles.instructionTitleActive,
-                  ]}
-                >
-                  {instruction.title}
-                </Text>
-              </View>
-
-              <Text style={styles.instructionDescription}>
-                {instruction.description}
-              </Text>
-
-              {instruction.tips.length > 0 && (
-                <View style={styles.tipsContainer}>
-                  <Text style={styles.tipsTitle}>💡 Tips:</Text>
-                  {instruction.tips.map((tip, tipIndex) => (
-                    <Text key={tipIndex} style={styles.tipText}>
-                      • {tip}
+                  <View style={styles.instructionHeader}>
+                    <View
+                      style={[
+                        styles.stepNumber,
+                        currentStep === index && styles.stepNumberActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.stepNumberText,
+                          currentStep === index && styles.stepNumberTextActive,
+                        ]}
+                      >
+                        {instruction.step}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.instructionTitle,
+                        currentStep === index && styles.instructionTitleActive,
+                      ]}
+                    >
+                      {instruction.title}
                     </Text>
-                  ))}
+                  </View>
+
+                  <Text style={styles.instructionDescription}>
+                    {instruction.description}
+                  </Text>
+
+                  {instruction.tips.length > 0 && (
+                    <View style={styles.tipsContainer}>
+                      <Text style={styles.tipsTitle}>Tips:</Text>
+                      {instruction.tips.map((tip: string, tipIndex: number) => (
+                        <Text key={tipIndex} style={styles.tipText}>
+                          • {tip}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
-          ))}
-        </Card>
+              ),
+            )}
+          </Card>
+        )}
+
+        {/* Tips */}
+        {exercise.tips.length > 0 && (
+          <Card style={styles.safetyCard}>
+            <Text style={styles.safetyTitle}>Tips</Text>
+            {exercise.tips.map((tip: string, index: number) => (
+              <Text key={index} style={styles.safetyTip}>
+                • {tip}
+              </Text>
+            ))}
+          </Card>
+        )}
 
         {/* Safety Tips */}
-        <Card style={styles.safetyCard}>
-          <Text style={styles.safetyTitle}>⚠️ Safety Tips</Text>
-          {exercise.safetyTips.map((tip, index) => (
-            <Text key={index} style={styles.safetyTip}>
-              • {tip}
-            </Text>
-          ))}
-        </Card>
-
-        {/* Common Mistakes */}
-        <Card style={styles.mistakesCard}>
-          <Text style={styles.mistakesTitle}>❌ Common Mistakes</Text>
-          {exercise.commonMistakes.map((mistake, index) => (
-            <Text key={index} style={styles.mistakeText}>
-              • {mistake}
-            </Text>
-          ))}
-        </Card>
+        {exercise.safetyTips.length > 0 && (
+          <Card style={styles.mistakesCard}>
+            <Text style={styles.mistakesTitle}>Safety Considerations</Text>
+            {exercise.safetyTips.map((tip: string, index: number) => (
+              <Text key={index} style={styles.mistakeText}>
+                • {tip}
+              </Text>
+            ))}
+          </Card>
+        )}
       </ScrollView>
 
       {/* Start Exercise Button */}
@@ -351,6 +483,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    marginTop: THEME.spacing.md,
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: THEME.spacing.xl,
+  },
+
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: THEME.spacing.md,
+  },
+
+  emptyTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+  },
+
+  emptySubtitle: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
   },
 
   header: {
@@ -509,6 +678,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  exerciseGif: {
+    width: screenWidth - 64,
+    height: 200,
+    borderRadius: THEME.borderRadius.lg,
+    marginBottom: THEME.spacing.md,
+  },
+
   animationPlaceholder: {
     width: screenWidth - 64,
     height: 200,
@@ -657,15 +833,15 @@ const styles = StyleSheet.create({
 
   safetyCard: {
     marginBottom: THEME.spacing.md,
-    backgroundColor: THEME.colors.error + "10",
+    backgroundColor: THEME.colors.success + "10",
     borderWidth: 1,
-    borderColor: THEME.colors.error + "30",
+    borderColor: THEME.colors.success + "30",
   },
 
   safetyTitle: {
     fontSize: THEME.fontSize.md,
     fontWeight: THEME.fontWeight.semibold,
-    color: THEME.colors.error,
+    color: THEME.colors.success,
     marginBottom: THEME.spacing.sm,
   },
 

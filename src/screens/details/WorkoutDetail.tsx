@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,9 +6,10 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Button, Card, THEME } from "../../components/ui";
+import { useFitnessStore } from "../../stores/fitnessStore";
 
 interface Exercise {
   id: string;
@@ -35,74 +36,59 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
   onBack,
   onStartWorkout,
 }) => {
-  // Mock workout data - in real app this would come from props or API
-  const workout = {
-    id: workoutId,
-    name: "Upper Body Strength",
-    description:
-      "Build strength and muscle mass in your upper body with this comprehensive workout",
-    duration: "45-60 min",
-    difficulty: "Intermediate",
-    targetMuscles: ["Chest", "Back", "Shoulders", "Arms"],
-    equipment: ["Dumbbells", "Barbell", "Bench"],
-    calories: 350,
-    exercises: [
-      {
-        id: "1",
-        name: "Bench Press",
-        sets: 4,
-        reps: "8-10",
-        weight: "135-155 lbs",
-        restTime: "2-3 min",
-        instructions: [
-          "Lie flat on bench with feet firmly on ground",
-          "Grip barbell slightly wider than shoulder width",
-          "Lower bar to chest with control",
-          "Press bar up explosively to starting position",
-        ],
-        targetMuscles: ["Chest", "Triceps", "Shoulders"],
-        difficulty: "Intermediate" as const,
-        equipment: ["Barbell", "Bench"],
-      },
-      {
-        id: "2",
-        name: "Bent-Over Row",
-        sets: 4,
-        reps: "8-12",
-        weight: "95-115 lbs",
-        restTime: "2 min",
-        instructions: [
-          "Stand with feet hip-width apart, holding barbell",
-          "Hinge at hips, keeping back straight",
-          "Pull barbell to lower chest/upper abdomen",
-          "Lower with control to starting position",
-        ],
-        targetMuscles: ["Back", "Biceps"],
-        difficulty: "Intermediate" as const,
-        equipment: ["Barbell"],
-      },
-      {
-        id: "3",
-        name: "Overhead Press",
-        sets: 3,
-        reps: "10-12",
-        weight: "75-95 lbs",
-        restTime: "90 sec",
-        instructions: [
-          "Stand with feet shoulder-width apart",
-          "Hold barbell at shoulder height",
-          "Press barbell overhead until arms are fully extended",
-          "Lower with control to starting position",
-        ],
-        targetMuscles: ["Shoulders", "Triceps"],
-        difficulty: "Intermediate" as const,
-        equipment: ["Barbell"],
-      },
-    ] as Exercise[],
-  };
-
+  const { weeklyWorkoutPlan, workoutProgress, isGeneratingPlan } =
+    useFitnessStore();
   const [selectedExercise, setSelectedExercise] =
     React.useState<Exercise | null>(null);
+
+  // Find the workout from the store by ID
+  const workout = React.useMemo(() => {
+    if (!weeklyWorkoutPlan?.workouts) return null;
+
+    // Search through all workouts in the weekly plan
+    // DayWorkout extends Workout which has: title, category, targetMuscleGroups, estimatedCalories, difficulty
+    for (const dailyWorkout of weeklyWorkoutPlan.workouts) {
+      if (dailyWorkout.id === workoutId) {
+        return {
+          id: dailyWorkout.id,
+          name: dailyWorkout.title || dailyWorkout.category || "Workout",
+          description:
+            dailyWorkout.description ||
+            `${dailyWorkout.category} workout focusing on ${dailyWorkout.targetMuscleGroups?.join(", ") || "full body"}`,
+          duration: dailyWorkout.duration
+            ? `${dailyWorkout.duration} min`
+            : "45-60 min",
+          difficulty: dailyWorkout.difficulty || "intermediate",
+          targetMuscles: dailyWorkout.targetMuscleGroups || [],
+          equipment: dailyWorkout.equipment || [],
+          calories: dailyWorkout.estimatedCalories || 0,
+          exercises: (dailyWorkout.exercises || []).map(
+            (ex: any, index: number) => ({
+              id: ex.id || `ex_${index}`,
+              name: ex.name || ex.exercise?.name || "Exercise",
+              sets: ex.sets || 3,
+              reps:
+                ex.reps?.toString() || ex.repetitions?.toString() || "10-12",
+              weight: ex.weight || ex.suggestedWeight,
+              duration: ex.duration,
+              restTime:
+                ex.restTime || (ex.restSeconds ? `${ex.restSeconds}s` : "60s"),
+              instructions: ex.instructions || ex.formTips || [],
+              targetMuscles: ex.targetMuscles || ex.muscleGroups || [],
+              difficulty: ex.difficulty || "Intermediate",
+              equipment: ex.equipment || [],
+            }),
+          ) as Exercise[],
+        };
+      }
+    }
+    return null;
+  }, [weeklyWorkoutPlan, workoutId]);
+
+  // Get progress for this workout - WorkoutProgress has: progress (0-100), completedAt
+  const progressData = workoutProgress[workoutId];
+  const isCompleted = progressData?.completedAt !== undefined;
+  const completionPercentage = progressData?.progress || 0;
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -116,6 +102,46 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
         return THEME.colors.textSecondary;
     }
   };
+
+  // Loading state
+  if (isGeneratingPlan) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <Text style={styles.loadingText}>Loading workout...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Workout not found
+  if (!workout) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Workout Details</Text>
+          <View style={styles.favoriteButton} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🏋️</Text>
+          <Text style={styles.emptyTitle}>Workout Not Found</Text>
+          <Text style={styles.emptySubtitle}>
+            This workout may have been removed or is not available.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={onBack || (() => {})}
+            variant="primary"
+            style={{ marginTop: THEME.spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -144,9 +170,28 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
               </Text>
             </View>
             <View style={styles.workoutIcon}>
-              <Text style={styles.workoutEmoji}>💪</Text>
+              <Text style={styles.workoutEmoji}>
+                {isCompleted ? "✅" : "💪"}
+              </Text>
             </View>
           </View>
+
+          {/* Progress indicator if workout has been started */}
+          {completionPercentage > 0 && !isCompleted && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { width: `${completionPercentage}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {completionPercentage}% complete
+              </Text>
+            </View>
+          )}
 
           {/* Workout Stats */}
           <View style={styles.statsContainer}>
@@ -166,34 +211,40 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
               <Text style={styles.statLabel}>Difficulty</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{workout.calories}</Text>
+              <Text style={styles.statValue}>
+                {workout.calories > 0 ? workout.calories : "~300"}
+              </Text>
               <Text style={styles.statLabel}>Calories</Text>
             </View>
           </View>
 
           {/* Target Muscles */}
-          <View style={styles.musclesContainer}>
-            <Text style={styles.musclesTitle}>Target Muscles</Text>
-            <View style={styles.musclesList}>
-              {workout.targetMuscles.map((muscle, index) => (
-                <View key={index} style={styles.muscleTag}>
-                  <Text style={styles.muscleText}>{muscle}</Text>
-                </View>
-              ))}
+          {workout.targetMuscles.length > 0 && (
+            <View style={styles.musclesContainer}>
+              <Text style={styles.musclesTitle}>Target Muscles</Text>
+              <View style={styles.musclesList}>
+                {workout.targetMuscles.map((muscle: string, index: number) => (
+                  <View key={index} style={styles.muscleTag}>
+                    <Text style={styles.muscleText}>{muscle}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Equipment */}
-          <View style={styles.equipmentContainer}>
-            <Text style={styles.equipmentTitle}>Equipment Needed</Text>
-            <View style={styles.equipmentList}>
-              {workout.equipment.map((item, index) => (
-                <View key={index} style={styles.equipmentTag}>
-                  <Text style={styles.equipmentText}>{item}</Text>
-                </View>
-              ))}
+          {workout.equipment.length > 0 && (
+            <View style={styles.equipmentContainer}>
+              <Text style={styles.equipmentTitle}>Equipment Needed</Text>
+              <View style={styles.equipmentList}>
+                {workout.equipment.map((item, index) => (
+                  <View key={index} style={styles.equipmentTag}>
+                    <Text style={styles.equipmentText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+          )}
         </Card>
 
         {/* Exercises List */}
@@ -228,13 +279,15 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
               </View>
 
               {/* Target Muscles for Exercise */}
-              <View style={styles.exerciseMuscles}>
-                {exercise.targetMuscles.map((muscle, muscleIndex) => (
-                  <View key={muscleIndex} style={styles.exerciseMuscleTag}>
-                    <Text style={styles.exerciseMuscleText}>{muscle}</Text>
-                  </View>
-                ))}
-              </View>
+              {exercise.targetMuscles.length > 0 && (
+                <View style={styles.exerciseMuscles}>
+                  {exercise.targetMuscles.map((muscle, muscleIndex) => (
+                    <View key={muscleIndex} style={styles.exerciseMuscleTag}>
+                      <Text style={styles.exerciseMuscleText}>{muscle}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </Card>
           ))}
         </View>
@@ -243,7 +296,13 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
       {/* Start Workout Button */}
       <View style={styles.bottomContainer}>
         <Button
-          title="Start Workout"
+          title={
+            isCompleted
+              ? "View Results"
+              : completionPercentage > 0
+                ? "Continue Workout"
+                : "Start Workout"
+          }
           onPress={onStartWorkout || (() => {})}
           variant="primary"
           size="lg"
@@ -258,6 +317,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    marginTop: THEME.spacing.md,
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: THEME.spacing.xl,
+  },
+
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: THEME.spacing.md,
+  },
+
+  emptyTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+  },
+
+  emptySubtitle: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
   },
 
   header: {
@@ -348,6 +444,30 @@ const styles = StyleSheet.create({
 
   workoutEmoji: {
     fontSize: 24,
+  },
+
+  progressContainer: {
+    marginBottom: THEME.spacing.md,
+  },
+
+  progressBar: {
+    height: 8,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    height: "100%",
+    backgroundColor: THEME.colors.primary,
+    borderRadius: 4,
+  },
+
+  progressText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.primary,
+    marginTop: THEME.spacing.xs,
+    textAlign: "center",
   },
 
   statsContainer: {

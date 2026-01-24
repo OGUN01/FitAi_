@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,12 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Button, Card, THEME } from "../../components/ui";
 import { NutritionChart } from "../../components/charts";
 import useCalculatedMetrics from "../../hooks/useCalculatedMetrics";
+import { useNutritionStore } from "../../stores/nutritionStore";
 
 interface FoodItem {
   id: string;
@@ -40,111 +41,227 @@ export const MealDetail: React.FC<MealDetailProps> = ({
 }) => {
   // Get user's calorie target - NO HARDCODED VALUES
   const calculatedMetrics = useCalculatedMetrics();
+  const { weeklyMealPlan, mealProgress, isGeneratingPlan } =
+    useNutritionStore();
 
-  // Mock meal data - in real app this would come from props or API
-  const meal = {
-    id: mealId,
-    name: "Breakfast",
-    time: "8:30 AM",
-    date: "2025-01-19",
-    totalCalories: 485,
-    totalProtein: 28,
-    totalCarbs: 45,
-    totalFat: 18,
-    foods: [
-      {
-        id: "1",
-        name: "Greek Yogurt",
-        quantity: 150,
-        unit: "g",
-        calories: 130,
-        protein: 15,
-        carbs: 9,
-        fat: 4,
-        fiber: 0,
-        sugar: 9,
-      },
-      {
-        id: "2",
-        name: "Blueberries",
-        quantity: 80,
-        unit: "g",
-        calories: 45,
-        protein: 0.5,
-        carbs: 11,
-        fat: 0.2,
-        fiber: 2,
-        sugar: 8,
-      },
-      {
-        id: "3",
-        name: "Granola",
-        quantity: 30,
-        unit: "g",
-        calories: 140,
-        protein: 4,
-        carbs: 18,
-        fat: 6,
-        fiber: 3,
-        sugar: 5,
-      },
-      {
-        id: "4",
-        name: "Almonds",
-        quantity: 20,
-        unit: "g",
-        calories: 115,
-        protein: 4,
-        carbs: 4,
-        fat: 10,
-        fiber: 2,
-        sugar: 1,
-      },
-      {
-        id: "5",
-        name: "Honey",
-        quantity: 15,
-        unit: "g",
-        calories: 45,
-        protein: 0,
-        carbs: 12,
-        fat: 0,
-        fiber: 0,
-        sugar: 12,
-      },
-    ] as FoodItem[],
-  };
+  // Find the meal from the store by ID
+  // WeeklyMealPlan has: meals: DayMeal[]
+  // DayMeal has: id, type, name, items (or foods), totalCalories, totalMacros
+  const meal = useMemo(() => {
+    if (!weeklyMealPlan?.meals) return null;
 
-  const nutritionData = {
-    calories: meal.totalCalories,
-    protein: meal.totalProtein,
-    carbs: meal.totalCarbs,
-    fat: meal.totalFat,
-  };
+    // Search through meals array directly
+    for (const m of weeklyMealPlan.meals) {
+      if (m.id === mealId) {
+        // Get foods/items from meal
+        const foods: FoodItem[] = (m.items || m.foods || []).map(
+          (food: any, index: number) => ({
+            id: food.id || `food_${index}`,
+            name: food.name || "Food Item",
+            quantity: food.quantity || food.servingSize || 100,
+            unit: food.unit || food.servingUnit || "g",
+            calories: food.calories || 0,
+            protein: food.protein || food.macros?.protein || 0,
+            carbs:
+              food.carbs ||
+              food.carbohydrates ||
+              food.macros?.carbohydrates ||
+              0,
+            fat: food.fat || food.fats || food.macros?.fat || 0,
+            fiber: food.fiber || food.macros?.fiber,
+            sugar: food.sugar,
+          }),
+        );
+
+        const totalCalories =
+          m.totalCalories ||
+          foods.reduce((sum: number, f: FoodItem) => sum + f.calories, 0);
+        const totalProtein =
+          m.totalMacros?.protein ||
+          m.totalProtein ||
+          foods.reduce((sum: number, f: FoodItem) => sum + f.protein, 0);
+        const totalCarbs =
+          m.totalMacros?.carbohydrates ||
+          m.totalCarbs ||
+          foods.reduce((sum: number, f: FoodItem) => sum + f.carbs, 0);
+        const totalFat =
+          m.totalMacros?.fat ||
+          m.totalFat ||
+          foods.reduce((sum: number, f: FoodItem) => sum + f.fat, 0);
+
+        // Check completion status from mealProgress - has completedAt not completed
+        const progressData = mealProgress[mealId];
+        const isCompleted = progressData?.completedAt !== undefined;
+
+        return {
+          id: m.id,
+          name: m.name || m.type || "Meal",
+          time: m.timing || "",
+          date:
+            m.createdAt?.split("T")[0] ||
+            new Date().toISOString().split("T")[0],
+          totalCalories: Math.round(totalCalories),
+          totalProtein: Math.round(totalProtein),
+          totalCarbs: Math.round(totalCarbs),
+          totalFat: Math.round(totalFat),
+          foods,
+          notes: m.description || "",
+          isCompleted,
+        };
+      }
+    }
+    return null;
+  }, [weeklyMealPlan, mealId, mealProgress]);
+
+  const nutritionData = meal
+    ? {
+        calories: meal.totalCalories,
+        protein: meal.totalProtein,
+        carbs: meal.totalCarbs,
+        fat: meal.totalFat,
+      }
+    : null;
 
   const getMealIcon = (mealName: string) => {
-    switch (mealName.toLowerCase()) {
-      case "breakfast":
-        return "🌅";
-      case "lunch":
-        return "☀️";
-      case "dinner":
-        return "🌙";
-      case "snack":
-        return "🍎";
-      default:
-        return "🍽️";
-    }
+    const name = mealName.toLowerCase();
+    if (name.includes("breakfast")) return "🌅";
+    if (name.includes("lunch")) return "☀️";
+    if (name.includes("dinner")) return "🌙";
+    if (name.includes("snack")) return "🍎";
+    return "🍽️";
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-    });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+    } catch {
+      return dateString;
+    }
   };
+
+  // Generate insights based on actual meal data
+  interface MealData {
+    id: string;
+    name: string;
+    time: string;
+    date: string;
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFat: number;
+    foods: FoodItem[];
+    notes: string;
+    isCompleted: boolean;
+  }
+
+  const generateInsights = (mealData: MealData) => {
+    const insights: { icon: string; text: string }[] = [];
+
+    if (mealData.totalProtein >= 20) {
+      insights.push({
+        icon: "check",
+        text: "Good protein content for muscle maintenance",
+      });
+    } else if (mealData.totalProtein < 10) {
+      insights.push({
+        icon: "warning",
+        text: "Consider adding more protein to this meal",
+      });
+    }
+
+    const totalMacros =
+      mealData.totalProtein + mealData.totalCarbs + mealData.totalFat;
+    const proteinRatio =
+      totalMacros > 0 ? (mealData.totalProtein / totalMacros) * 100 : 0;
+    const carbsRatio =
+      totalMacros > 0 ? (mealData.totalCarbs / totalMacros) * 100 : 0;
+
+    if (
+      proteinRatio >= 20 &&
+      proteinRatio <= 35 &&
+      carbsRatio >= 40 &&
+      carbsRatio <= 55
+    ) {
+      insights.push({
+        icon: "check",
+        text: "Balanced macronutrient distribution",
+      });
+    }
+
+    const totalFiber = mealData.foods.reduce(
+      (sum: number, f: FoodItem) => sum + (f.fiber || 0),
+      0,
+    );
+    if (totalFiber < 5) {
+      insights.push({
+        icon: "⚠️",
+        text: "Consider adding more fiber-rich foods",
+      });
+    } else if (totalFiber >= 8) {
+      insights.push({
+        icon: "✅",
+        text: "Good fiber content for digestive health",
+      });
+    }
+
+    if (mealData.totalCalories >= 300 && mealData.totalCalories <= 600) {
+      insights.push({
+        icon: "✅",
+        text: "Appropriate calorie range for a main meal",
+      });
+    }
+
+    return insights.length > 0
+      ? insights
+      : [{ icon: "ℹ️", text: "Log more meals to get personalized insights" }];
+  };
+
+  // Loading state
+  if (isGeneratingPlan) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={THEME.colors.primary} />
+          <Text style={styles.loadingText}>Loading meal...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Meal not found
+  if (!meal) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={onBack}>
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Meal Details</Text>
+          <View style={styles.editButton} />
+        </View>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🍽️</Text>
+          <Text style={styles.emptyTitle}>Meal Not Found</Text>
+          <Text style={styles.emptySubtitle}>
+            This meal may have been removed or is not available.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={onBack || (() => {})}
+            variant="primary"
+            style={{ marginTop: THEME.spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const insights = generateInsights(meal);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -170,9 +287,13 @@ export const MealDetail: React.FC<MealDetailProps> = ({
               <View style={styles.mealTitleRow}>
                 <Text style={styles.mealIcon}>{getMealIcon(meal.name)}</Text>
                 <Text style={styles.mealName}>{meal.name}</Text>
+                {meal.isCompleted && (
+                  <Text style={styles.completedBadge}>✓</Text>
+                )}
               </View>
               <Text style={styles.mealTime}>
-                {meal.time} • {formatDate(meal.date)}
+                {meal.time ? `${meal.time} • ` : ""}
+                {formatDate(meal.date)}
               </Text>
             </View>
 
@@ -204,85 +325,81 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         </Card>
 
         {/* Nutrition Chart */}
-        <NutritionChart
-          data={nutritionData}
-          targetCalories={calculatedMetrics?.dailyCalories ?? undefined}
-          style={styles.chartContainer}
-        />
+        {nutritionData && (
+          <NutritionChart
+            data={nutritionData}
+            targetCalories={calculatedMetrics?.dailyCalories ?? undefined}
+            style={styles.chartContainer}
+          />
+        )}
 
         {/* Food Items */}
         <View style={styles.foodSection}>
           <Text style={styles.sectionTitle}>Food Items</Text>
 
-          {meal.foods.map((food, index) => (
-            <Card key={food.id} style={styles.foodCard}>
-              <View style={styles.foodHeader}>
-                <View style={styles.foodInfo}>
-                  <Text style={styles.foodName}>{food.name}</Text>
-                  <Text style={styles.foodQuantity}>
-                    {food.quantity} {food.unit}
-                  </Text>
-                </View>
-                <Text style={styles.foodCalories}>{food.calories} cal</Text>
-              </View>
-
-              {/* Food Macros */}
-              <View style={styles.foodMacros}>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroValue}>{food.protein}g</Text>
-                  <Text style={styles.macroLabel}>Protein</Text>
-                </View>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroValue}>{food.carbs}g</Text>
-                  <Text style={styles.macroLabel}>Carbs</Text>
-                </View>
-                <View style={styles.macroItem}>
-                  <Text style={styles.macroValue}>{food.fat}g</Text>
-                  <Text style={styles.macroLabel}>Fat</Text>
-                </View>
-                {food.fiber !== undefined && (
-                  <View style={styles.macroItem}>
-                    <Text style={styles.macroValue}>{food.fiber}g</Text>
-                    <Text style={styles.macroLabel}>Fiber</Text>
+          {meal.foods.length > 0 ? (
+            meal.foods.map((food) => (
+              <Card key={food.id} style={styles.foodCard}>
+                <View style={styles.foodHeader}>
+                  <View style={styles.foodInfo}>
+                    <Text style={styles.foodName}>{food.name}</Text>
+                    <Text style={styles.foodQuantity}>
+                      {food.quantity} {food.unit}
+                    </Text>
                   </View>
-                )}
-              </View>
+                  <Text style={styles.foodCalories}>{food.calories} cal</Text>
+                </View>
+
+                {/* Food Macros */}
+                <View style={styles.foodMacros}>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroValue}>{food.protein}g</Text>
+                    <Text style={styles.macroLabel}>Protein</Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroValue}>{food.carbs}g</Text>
+                    <Text style={styles.macroLabel}>Carbs</Text>
+                  </View>
+                  <View style={styles.macroItem}>
+                    <Text style={styles.macroValue}>{food.fat}g</Text>
+                    <Text style={styles.macroLabel}>Fat</Text>
+                  </View>
+                  {food.fiber !== undefined && food.fiber > 0 && (
+                    <View style={styles.macroItem}>
+                      <Text style={styles.macroValue}>{food.fiber}g</Text>
+                      <Text style={styles.macroLabel}>Fiber</Text>
+                    </View>
+                  )}
+                </View>
+              </Card>
+            ))
+          ) : (
+            <Card style={styles.foodCard}>
+              <Text style={styles.noFoodsText}>
+                No food items recorded for this meal.
+              </Text>
             </Card>
-          ))}
+          )}
         </View>
 
         {/* Meal Notes */}
-        <Card style={styles.notesCard}>
-          <Text style={styles.notesTitle}>📝 Meal Notes</Text>
-          <Text style={styles.notesText}>
-            Healthy breakfast with good balance of protein and complex carbs.
-            Greek yogurt provides probiotics, berries add antioxidants, and nuts
-            give healthy fats.
-          </Text>
-        </Card>
+        {meal.notes && (
+          <Card style={styles.notesCard}>
+            <Text style={styles.notesTitle}>📝 Meal Notes</Text>
+            <Text style={styles.notesText}>{meal.notes}</Text>
+          </Card>
+        )}
 
         {/* Meal Insights */}
         <Card style={styles.insightsCard}>
           <Text style={styles.insightsTitle}>💡 Nutritional Insights</Text>
           <View style={styles.insightsList}>
-            <View style={styles.insightItem}>
-              <Text style={styles.insightIcon}>✅</Text>
-              <Text style={styles.insightText}>
-                Good protein content for muscle maintenance
-              </Text>
-            </View>
-            <View style={styles.insightItem}>
-              <Text style={styles.insightIcon}>✅</Text>
-              <Text style={styles.insightText}>
-                Balanced macronutrient distribution
-              </Text>
-            </View>
-            <View style={styles.insightItem}>
-              <Text style={styles.insightIcon}>⚠️</Text>
-              <Text style={styles.insightText}>
-                Consider adding more fiber-rich foods
-              </Text>
-            </View>
+            {insights.map((insight, index) => (
+              <View key={index} style={styles.insightItem}>
+                <Text style={styles.insightIcon}>{insight.icon}</Text>
+                <Text style={styles.insightText}>{insight.text}</Text>
+              </View>
+            ))}
           </View>
         </Card>
       </ScrollView>
@@ -313,6 +430,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    marginTop: THEME.spacing.md,
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: THEME.spacing.xl,
+  },
+
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: THEME.spacing.md,
+  },
+
+  emptyTitle: {
+    fontSize: THEME.fontSize.xl,
+    fontWeight: THEME.fontWeight.bold,
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+  },
+
+  emptySubtitle: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
+  },
+
+  noFoodsText: {
+    fontSize: THEME.fontSize.md,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
+    padding: THEME.spacing.md,
   },
 
   header: {
@@ -393,6 +554,12 @@ const styles = StyleSheet.create({
     fontSize: THEME.fontSize.xxl,
     fontWeight: THEME.fontWeight.bold,
     color: THEME.colors.text,
+  },
+
+  completedBadge: {
+    fontSize: THEME.fontSize.lg,
+    color: THEME.colors.success,
+    marginLeft: THEME.spacing.sm,
   },
 
   mealTime: {
