@@ -1,11 +1,13 @@
 // Real-time Sync Service for Track B Infrastructure
 // Provides bidirectional data synchronization with Supabase and intelligent sync scheduling
 
-import { enhancedLocalStorage } from "./localStorage";
-import { dataBridge } from "./DataBridge";
-import { conflictResolutionService } from "./conflictResolution";
-import { validationService } from "../utils/validation";
-import { LocalStorageSchema } from "../types/localData";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./supabase";
+
+// Storage keys for sync service
+const SYNC_STATUS_KEY = "@fitai_sync_status";
+const SYNC_QUEUE_KEY = "@fitai_sync_queue";
+const DELTA_SYNC_KEY = "@fitai_delta_sync";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -643,63 +645,372 @@ export class RealTimeSyncService {
     return new Date(Date.now() + this.config.syncIntervalMs);
   }
 
-  // Placeholder methods for actual implementation
+  // ============================================================================
+  // PERSISTENCE METHODS - Load/Save sync state to AsyncStorage
+  // ============================================================================
+
   private async loadSyncStatus(): Promise<void> {
-    // Load from local storage
+    try {
+      const stored = await AsyncStorage.getItem(SYNC_STATUS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.status = {
+          ...this.status,
+          lastSyncTime: parsed.lastSyncTime
+            ? new Date(parsed.lastSyncTime)
+            : null,
+          lastSyncResult: parsed.lastSyncResult
+            ? {
+                ...parsed.lastSyncResult,
+                startTime: new Date(parsed.lastSyncResult.startTime),
+                endTime: new Date(parsed.lastSyncResult.endTime),
+                nextSyncTime: new Date(parsed.lastSyncResult.nextSyncTime),
+              }
+            : null,
+          nextSyncTime: parsed.nextSyncTime
+            ? new Date(parsed.nextSyncTime)
+            : null,
+        };
+        console.log("✅ Loaded sync status from storage");
+      }
+    } catch (error) {
+      console.error("Failed to load sync status:", error);
+    }
   }
 
   private async saveSyncStatus(): Promise<void> {
-    // Save to local storage
+    try {
+      const toStore = {
+        lastSyncTime: this.status.lastSyncTime?.toISOString() || null,
+        lastSyncResult: this.status.lastSyncResult
+          ? {
+              ...this.status.lastSyncResult,
+              startTime: this.status.lastSyncResult.startTime.toISOString(),
+              endTime: this.status.lastSyncResult.endTime.toISOString(),
+              nextSyncTime:
+                this.status.lastSyncResult.nextSyncTime.toISOString(),
+            }
+          : null,
+        nextSyncTime: this.status.nextSyncTime?.toISOString() || null,
+      };
+      await AsyncStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(toStore));
+      console.log("✅ Saved sync status to storage");
+    } catch (error) {
+      console.error("Failed to save sync status:", error);
+    }
   }
 
   private async loadSyncQueue(): Promise<void> {
-    // Load from local storage
+    try {
+      const stored = await AsyncStorage.getItem(SYNC_QUEUE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.syncQueue = parsed.map((op: any) => ({
+          ...op,
+          timestamp: new Date(op.timestamp),
+        }));
+        this.updateSyncStatus({ queuedOperations: this.syncQueue.length });
+        console.log(`✅ Loaded ${this.syncQueue.length} queued operations`);
+      }
+    } catch (error) {
+      console.error("Failed to load sync queue:", error);
+    }
   }
 
   private async saveSyncQueue(): Promise<void> {
-    // Save to local storage
+    try {
+      const toStore = this.syncQueue.map((op) => ({
+        ...op,
+        timestamp: op.timestamp.toISOString(),
+      }));
+      await AsyncStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(toStore));
+    } catch (error) {
+      console.error("Failed to save sync queue:", error);
+    }
   }
+
+  // ============================================================================
+  // SYNC OPERATIONS - Execute uploads/downloads with Supabase
+  // ============================================================================
 
   private async executeUploadOperation(
     operation: SyncOperation,
   ): Promise<void> {
-    // Execute upload using Supabase MCP tools
+    const { type, table, recordId, data } = operation;
+
+    console.log(`📤 Executing ${type} on ${table}:${recordId}`);
+
+    switch (type) {
+      case "create":
+        const { error: createError } = await supabase.from(table).insert(data);
+        if (createError) throw new Error(createError.message);
+        break;
+
+      case "update":
+        const { error: updateError } = await supabase
+          .from(table)
+          .update(data)
+          .eq("id", recordId);
+        if (updateError) throw new Error(updateError.message);
+        break;
+
+      case "delete":
+        const { error: deleteError } = await supabase
+          .from(table)
+          .delete()
+          .eq("id", recordId);
+        if (deleteError) throw new Error(deleteError.message);
+        break;
+    }
+
+    console.log(`✅ Successfully executed ${type} on ${table}:${recordId}`);
   }
 
   private async getDeltaSyncInfo(): Promise<DeltaSyncInfo> {
-    // Get delta sync information
+    try {
+      const stored = await AsyncStorage.getItem(DELTA_SYNC_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          lastSyncTimestamp: new Date(parsed.lastSyncTimestamp),
+          syncVersion: parsed.syncVersion || 1,
+          checksums: parsed.checksums || {},
+        };
+      }
+    } catch (error) {
+      console.error("Failed to load delta sync info:", error);
+    }
+
+    // Default: sync everything from the beginning
     return {
-      lastSyncTimestamp: new Date(),
+      lastSyncTimestamp: new Date(0),
       syncVersion: 1,
       checksums: {},
     };
   }
 
   private async fetchRemoteChanges(deltaInfo: DeltaSyncInfo): Promise<any[]> {
-    // Fetch remote changes using Supabase MCP tools
-    return [];
+    const changes: any[] = [];
+    const lastSync = deltaInfo.lastSyncTimestamp.toISOString();
+
+    // Tables to sync - these are the main data tables in FitAI
+    const tablesToSync = [
+      "workout_sessions",
+      "meal_logs",
+      "weight_logs",
+      "hydration_logs",
+      "user_achievements",
+      "analytics_metrics",
+    ];
+
+    for (const table of tablesToSync) {
+      try {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .gt("updated_at", lastSync)
+          .order("updated_at", { ascending: true });
+
+        if (error) {
+          console.warn(`⚠️ Failed to fetch changes from ${table}:`, error);
+          continue;
+        }
+
+        if (data && data.length > 0) {
+          changes.push(
+            ...data.map((record) => ({
+              table,
+              record,
+              type: "remote_update",
+            })),
+          );
+          console.log(`📥 Found ${data.length} changes in ${table}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Error fetching from ${table}:`, error);
+      }
+    }
+
+    console.log(`📥 Total remote changes: ${changes.length}`);
+    return changes;
   }
 
   private async applyRemoteChange(change: any): Promise<void> {
-    // Apply remote change to local storage
+    const { table, record } = change;
+
+    // Use AsyncStorage directly for sync operations (enhancedLocalStorage is for encrypted backups only)
+    // Map table names to local storage keys
+    const tableToStorageKey: Record<string, string> = {
+      workout_sessions: "@fitai_workout_history",
+      meal_logs: "@fitai_meal_logs",
+      weight_logs: "@fitai_weight_logs",
+      hydration_logs: "@fitai_hydration_logs",
+      user_achievements: "@fitai_achievements",
+      analytics_metrics: "@fitai_analytics",
+    };
+
+    const storageKey = tableToStorageKey[table];
+    if (storageKey) {
+      try {
+        // Load existing data
+        const existingJson = await AsyncStorage.getItem(storageKey);
+        const existing = existingJson ? JSON.parse(existingJson) : [];
+        const history = Array.isArray(existing) ? existing : [];
+
+        // Merge the record
+        const index = history.findIndex((item: any) => item.id === record.id);
+        if (index >= 0) {
+          history[index] = { ...history[index], ...record };
+        } else {
+          history.push(record);
+        }
+
+        // Save back to storage
+        await AsyncStorage.setItem(storageKey, JSON.stringify(history));
+        console.log(`✅ Applied remote change to ${table}:${record.id}`);
+      } catch (error) {
+        console.error(`Failed to apply change to ${table}:`, error);
+        throw error;
+      }
+    }
   }
 
   private async updateDeltaSyncInfo(deltaInfo: DeltaSyncInfo): Promise<void> {
-    // Update delta sync information
+    try {
+      const toStore = {
+        lastSyncTimestamp: new Date().toISOString(),
+        syncVersion: deltaInfo.syncVersion + 1,
+        checksums: deltaInfo.checksums,
+      };
+      await AsyncStorage.setItem(DELTA_SYNC_KEY, JSON.stringify(toStore));
+      console.log("✅ Updated delta sync info");
+    } catch (error) {
+      console.error("Failed to update delta sync info:", error);
+    }
   }
 
   private async getPendingConflicts(): Promise<SyncConflict[]> {
-    // Get pending conflicts
-    return [];
+    // For now, use the conflict resolution service to get pending conflicts
+    // In a full implementation, this would query a conflicts table or local storage
+    try {
+      // Check for any queued operations that might conflict
+      const conflicts: SyncConflict[] = [];
+
+      for (const operation of this.syncQueue) {
+        // Check if remote has a newer version
+        try {
+          const { data } = await supabase
+            .from(operation.table)
+            .select("*")
+            .eq("id", operation.recordId)
+            .single();
+
+          if (data && new Date(data.updated_at) > operation.timestamp) {
+            // Potential conflict detected
+            conflicts.push({
+              id: `conflict_${operation.id}`,
+              table: operation.table,
+              recordId: operation.recordId,
+              field: "*", // All fields
+              localValue: operation.data,
+              remoteValue: data,
+              resolution: "pending",
+              timestamp: new Date(),
+            });
+          }
+        } catch {
+          // No conflict if record doesn't exist remotely
+        }
+      }
+
+      return conflicts;
+    } catch (error) {
+      console.error("Failed to get pending conflicts:", error);
+      return [];
+    }
   }
 
   private async resolveConflict(conflict: SyncConflict): Promise<any> {
-    // Resolve conflict using conflict resolution service
-    return { resolvedValue: conflict.localValue, strategy: "local_wins" };
+    // Implement conflict resolution based on configured strategy
+    // This is a simplified version - the full conflictResolutionService has a private method
+    const strategy = this.config.conflictResolutionStrategy;
+
+    let resolvedValue: any;
+    let appliedStrategy: string;
+
+    switch (strategy) {
+      case "local_wins":
+        resolvedValue = conflict.localValue;
+        appliedStrategy = "local_wins";
+        break;
+
+      case "remote_wins":
+        resolvedValue = conflict.remoteValue;
+        appliedStrategy = "remote_wins";
+        break;
+
+      case "auto":
+        // Use timestamp-based resolution for auto mode
+        const localTimestamp =
+          conflict.localValue?.updated_at || conflict.localValue?.created_at;
+        const remoteTimestamp =
+          conflict.remoteValue?.updated_at || conflict.remoteValue?.created_at;
+
+        if (localTimestamp && remoteTimestamp) {
+          const localDate = new Date(localTimestamp);
+          const remoteDate = new Date(remoteTimestamp);
+          resolvedValue =
+            localDate > remoteDate ? conflict.localValue : conflict.remoteValue;
+          appliedStrategy =
+            localDate > remoteDate
+              ? "use_latest_timestamp_local"
+              : "use_latest_timestamp_remote";
+        } else {
+          // Default to local if timestamps unavailable
+          resolvedValue = conflict.localValue;
+          appliedStrategy = "local_wins_default";
+        }
+        break;
+
+      case "manual":
+      default:
+        // For manual resolution, prefer local but flag for review
+        resolvedValue = conflict.localValue;
+        appliedStrategy = "pending_user_review";
+        break;
+    }
+
+    console.log(
+      `🔄 Resolved conflict for ${conflict.table}:${conflict.recordId} using ${appliedStrategy}`,
+    );
+
+    return {
+      resolvedValue,
+      strategy: appliedStrategy,
+    };
   }
 
   private async cleanupSyncQueue(): Promise<void> {
-    // Remove completed operations and update queue
+    // Remove completed/expired operations
+    const now = new Date();
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+    this.syncQueue = this.syncQueue.filter((op) => {
+      const age = now.getTime() - op.timestamp.getTime();
+      const expired = age > maxAge;
+      const maxRetriesReached = op.retryCount >= op.maxRetries;
+
+      if (expired || maxRetriesReached) {
+        console.log(
+          `🗑️ Removing ${expired ? "expired" : "failed"} operation: ${op.id}`,
+        );
+        return false;
+      }
+      return true;
+    });
+
+    // Save updated queue
+    await this.saveSyncQueue();
     this.updateSyncStatus({ queuedOperations: this.syncQueue.length });
   }
 }

@@ -1,33 +1,41 @@
 // Apple HealthKit Integration Service for FitAI
 // Provides comprehensive bidirectional health data synchronization
 
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Platform-specific imports - expo-health-kit is iOS only
 let HealthKitModule: any = null;
 
-if (Platform.OS === 'ios') {
+if (Platform.OS === "ios") {
   try {
-    HealthKitModule = require('expo-health-kit');
+    HealthKitModule = require("expo-health-kit");
   } catch (error) {
-    console.log('HealthKit not available on this platform');
+    console.log("HealthKit not available on this platform");
   }
 }
 
 // Create safe wrappers for HealthKit functions
 const HealthKitPermissions = HealthKitModule?.HealthKitPermissions;
-const isHealthKitSupported = HealthKitModule?.isHealthKitSupported || (() => false);
-const requestPermissions = HealthKitModule?.requestPermissions || (() => Promise.resolve(false));
+const isHealthKitSupported =
+  HealthKitModule?.isHealthKitSupported || (() => false);
+const requestPermissions =
+  HealthKitModule?.requestPermissions || (() => Promise.resolve(false));
 const getWorkouts = HealthKitModule?.getWorkouts || (() => Promise.resolve([]));
 const getSteps = HealthKitModule?.getSteps || (() => Promise.resolve(0));
-const getHeartRateData = HealthKitModule?.getHeartRateData || (() => Promise.resolve([]));
-const getSleepData = HealthKitModule?.getSleepData || (() => Promise.resolve([]));
-const getBodyMass = HealthKitModule?.getBodyMass || (() => Promise.resolve(null));
-const getActiveEnergyBurned = HealthKitModule?.getActiveEnergyBurned || (() => Promise.resolve(0));
-const saveWorkout = HealthKitModule?.saveWorkout || (() => Promise.resolve(false));
+const getHeartRateData =
+  HealthKitModule?.getHeartRateData || (() => Promise.resolve([]));
+const getSleepData =
+  HealthKitModule?.getSleepData || (() => Promise.resolve([]));
+const getBodyMass =
+  HealthKitModule?.getBodyMass || (() => Promise.resolve(null));
+const getActiveEnergyBurned =
+  HealthKitModule?.getActiveEnergyBurned || (() => Promise.resolve(0));
+const saveWorkout =
+  HealthKitModule?.saveWorkout || (() => Promise.resolve(false));
 const saveSteps = HealthKitModule?.saveSteps || (() => Promise.resolve(false));
-const saveBodyMass = HealthKitModule?.saveBodyMass || (() => Promise.resolve(false));
+const saveBodyMass =
+  HealthKitModule?.saveBodyMass || (() => Promise.resolve(false));
 
 export interface HealthKitData {
   steps?: number;
@@ -36,7 +44,7 @@ export interface HealthKitData {
   restingHeartRate?: number;
   heartRateVariability?: number;
   sleepHours?: number;
-  sleepQuality?: 'deep' | 'rem' | 'light' | 'awake';
+  sleepQuality?: "deep" | "rem" | "light" | "awake";
   bodyWeight?: number;
   workouts?: HealthKitWorkout[];
   distance?: number;
@@ -89,27 +97,27 @@ class HealthKitService {
 
   async initialize(): Promise<boolean> {
     try {
-      if (!Platform.OS || Platform.OS !== 'ios') {
-        console.log('🍎 HealthKit is only available on iOS');
+      if (!Platform.OS || Platform.OS !== "ios") {
+        console.log("🍎 HealthKit is only available on iOS");
         return false;
       }
 
       if (!HealthKitModule) {
-        console.log('🍎 HealthKit module not available');
+        console.log("🍎 HealthKit module not available");
         return false;
       }
 
       const supported = await isHealthKitSupported();
       if (!supported) {
-        console.log('🍎 HealthKit is not supported on this device');
+        console.log("🍎 HealthKit is not supported on this device");
         return false;
       }
 
       this.isInitialized = true;
-      console.log('🍎 HealthKit initialized successfully');
+      console.log("🍎 HealthKit initialized successfully");
       return true;
     } catch (error) {
-      console.error('Failed to initialize HealthKit:', error);
+      console.error("Failed to initialize HealthKit:", error);
       return false;
     }
   }
@@ -125,7 +133,7 @@ class HealthKitService {
         await this.initialize();
       }
 
-      if (Platform.OS !== 'ios' || !HealthKitModule) {
+      if (Platform.OS !== "ios" || !HealthKitModule) {
         return { granted: false };
       }
 
@@ -155,25 +163,31 @@ class HealthKitService {
       };
 
       const granted = await requestPermissions(permissions);
-      
+
       if (granted) {
-        await AsyncStorage.setItem('healthkit_authorized', 'true');
-        await AsyncStorage.setItem('healthkit_auth_date', new Date().toISOString());
+        await AsyncStorage.setItem("healthkit_authorized", "true");
+        await AsyncStorage.setItem(
+          "healthkit_auth_date",
+          new Date().toISOString(),
+        );
       }
 
-      return { 
-        granted, 
-        permissions: permissions.permissions 
+      return {
+        granted,
+        permissions: permissions.permissions,
       };
     } catch (error) {
-      console.error('Failed to request HealthKit authorization:', error);
+      console.error("Failed to request HealthKit authorization:", error);
       return { granted: false };
     }
   }
 
-  async fetchHealthData(startDate?: Date, endDate?: Date): Promise<HealthKitData> {
+  async fetchHealthData(
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<HealthKitData> {
     try {
-      if (!this.isInitialized || Platform.OS !== 'ios' || !HealthKitModule) {
+      if (!this.isInitialized || Platform.OS !== "ios" || !HealthKitModule) {
         return {};
       }
 
@@ -198,7 +212,7 @@ class HealthKitService {
         getActiveEnergyBurned(options),
         getHeartRateData(options),
         getSleepData(options),
-        getBodyMass({ unit: 'kg' }),
+        getBodyMass({ unit: "kg" }),
         getWorkouts(options),
       ]);
 
@@ -206,34 +220,46 @@ class HealthKitService {
       let heartRate, restingHeartRate, heartRateVariability;
       if (heartRateData && heartRateData.length > 0) {
         const hrValues = heartRateData.map((hr: any) => hr.value);
-        heartRate = Math.round(hrValues.reduce((a: number, b: number) => a + b, 0) / hrValues.length);
+        heartRate = Math.round(
+          hrValues.reduce((a: number, b: number) => a + b, 0) / hrValues.length,
+        );
         restingHeartRate = Math.min(...hrValues);
-        
+
         // Calculate HRV (simplified)
         if (hrValues.length > 1) {
-          const diffs = hrValues.slice(1).map((val: number, i: number) => Math.abs(val - hrValues[i]));
-          heartRateVariability = Math.round(diffs.reduce((a: number, b: number) => a + b, 0) / diffs.length);
+          const diffs = hrValues
+            .slice(1)
+            .map((val: number, i: number) => Math.abs(val - hrValues[i]));
+          heartRateVariability = Math.round(
+            diffs.reduce((a: number, b: number) => a + b, 0) / diffs.length,
+          );
         }
       }
 
       // Process sleep data
       let sleepHours, sleepQuality;
       if (sleepData && sleepData.length > 0) {
-        const totalSleepMinutes = sleepData.reduce((total: number, sleep: any) => {
-          const duration = (new Date(sleep.endDate).getTime() - new Date(sleep.startDate).getTime()) / 60000;
-          return total + duration;
-        }, 0);
+        const totalSleepMinutes = sleepData.reduce(
+          (total: number, sleep: any) => {
+            const duration =
+              (new Date(sleep.endDate).getTime() -
+                new Date(sleep.startDate).getTime()) /
+              60000;
+            return total + duration;
+          },
+          0,
+        );
         sleepHours = totalSleepMinutes / 60;
 
         // Determine sleep quality based on duration and consistency
         if (sleepHours >= 7 && sleepHours <= 9) {
-          sleepQuality = 'deep';
+          sleepQuality = "deep";
         } else if (sleepHours >= 6) {
-          sleepQuality = 'rem';
+          sleepQuality = "rem";
         } else if (sleepHours >= 5) {
-          sleepQuality = 'light';
+          sleepQuality = "light";
         } else {
-          sleepQuality = 'awake';
+          sleepQuality = "awake";
         }
       }
 
@@ -247,11 +273,14 @@ class HealthKitService {
         energyBurned: workout.totalEnergyBurned,
         distance: workout.totalDistance,
         heartRate: workout.averageHeartRate,
-        source: workout.sourceRevision?.source || 'HealthKit',
+        source: workout.sourceRevision?.source || "HealthKit",
       }));
 
       this.lastSyncTime = new Date();
-      await AsyncStorage.setItem('healthkit_last_sync', this.lastSyncTime.toISOString());
+      await AsyncStorage.setItem(
+        "healthkit_last_sync",
+        this.lastSyncTime.toISOString(),
+      );
 
       return {
         steps: steps || 0,
@@ -265,7 +294,7 @@ class HealthKitService {
         workouts: processedWorkouts,
       };
     } catch (error) {
-      console.error('Failed to fetch health data:', error);
+      console.error("Failed to fetch health data:", error);
       return {};
     }
   }
@@ -278,7 +307,7 @@ class HealthKitService {
     heartRate?: number;
   }): Promise<boolean> {
     try {
-      if (!this.isInitialized || Platform.OS !== 'ios' || !HealthKitModule) {
+      if (!this.isInitialized || Platform.OS !== "ios" || !HealthKitModule) {
         return false;
       }
 
@@ -294,21 +323,21 @@ class HealthKitService {
       };
 
       const success = await saveWorkout(workoutData);
-      
+
       if (success) {
-        console.log('🍎 Workout saved to HealthKit successfully');
+        console.log("🍎 Workout saved to HealthKit successfully");
       }
-      
+
       return success;
     } catch (error) {
-      console.error('Failed to save workout to HealthKit:', error);
+      console.error("Failed to save workout to HealthKit:", error);
       return false;
     }
   }
 
   async saveStepsToHealthKit(steps: number, date?: Date): Promise<boolean> {
     try {
-      if (!this.isInitialized || Platform.OS !== 'ios' || !HealthKitModule) {
+      if (!this.isInitialized || Platform.OS !== "ios" || !HealthKitModule) {
         return false;
       }
 
@@ -319,41 +348,44 @@ class HealthKitService {
       };
 
       const success = await saveSteps(stepData);
-      
+
       if (success) {
-        console.log('🍎 Steps saved to HealthKit successfully');
+        console.log("🍎 Steps saved to HealthKit successfully");
       }
-      
+
       return success;
     } catch (error) {
-      console.error('Failed to save steps to HealthKit:', error);
+      console.error("Failed to save steps to HealthKit:", error);
       return false;
     }
   }
 
-  async saveWeightToHealthKit(weight: number, unit: 'kg' | 'lbs' = 'kg'): Promise<boolean> {
+  async saveWeightToHealthKit(
+    weight: number,
+    unit: "kg" | "lbs" = "kg",
+  ): Promise<boolean> {
     try {
-      if (!this.isInitialized || Platform.OS !== 'ios' || !HealthKitModule) {
+      if (!this.isInitialized || Platform.OS !== "ios" || !HealthKitModule) {
         return false;
       }
 
-      const weightInKg = unit === 'lbs' ? weight * 0.453592 : weight;
+      const weightInKg = unit === "lbs" ? weight * 0.453592 : weight;
 
       const weightData = {
         value: weightInKg,
-        unit: 'kg',
+        unit: "kg",
         date: new Date().toISOString(),
       };
 
       const success = await saveBodyMass(weightData);
-      
+
       if (success) {
-        console.log('🍎 Weight saved to HealthKit successfully');
+        console.log("🍎 Weight saved to HealthKit successfully");
       }
-      
+
       return success;
     } catch (error) {
-      console.error('Failed to save weight to HealthKit:', error);
+      console.error("Failed to save weight to HealthKit:", error);
       return false;
     }
   }
@@ -364,74 +396,79 @@ class HealthKitService {
       this.syncInterval = null;
     }
 
-    if (Platform.OS !== 'ios' || !HealthKitModule) {
-      console.log('🍎 HealthKit auto-sync not available on this platform');
+    if (Platform.OS !== "ios" || !HealthKitModule) {
+      console.log("🍎 HealthKit auto-sync not available on this platform");
       return;
     }
 
-    this.syncInterval = setInterval(async () => {
-      console.log('🍎 Running HealthKit auto-sync...');
-      await this.fetchHealthData();
-    }, intervalMinutes * 60 * 1000);
+    this.syncInterval = setInterval(
+      async () => {
+        console.log("🍎 Running HealthKit auto-sync...");
+        await this.fetchHealthData();
+      },
+      intervalMinutes * 60 * 1000,
+    );
 
-    console.log(`🍎 HealthKit auto-sync started (every ${intervalMinutes} minutes)`);
+    console.log(
+      `🍎 HealthKit auto-sync started (every ${intervalMinutes} minutes)`,
+    );
   }
 
   stopAutoSync(): void {
     if (this.syncInterval) {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
-      console.log('🍎 HealthKit auto-sync stopped');
+      console.log("🍎 HealthKit auto-sync stopped");
     }
   }
 
   private mapWorkoutType(type: string): string {
     // Map FitAI workout types to HealthKit activity types
     const mapping: Record<string, string> = {
-      'strength': 'TraditionalStrengthTraining',
-      'cardio': 'Running',
-      'yoga': 'Yoga',
-      'pilates': 'Pilates',
-      'hiit': 'HighIntensityIntervalTraining',
-      'cycling': 'Cycling',
-      'swimming': 'Swimming',
-      'walking': 'Walking',
-      'running': 'Running',
-      'boxing': 'Boxing',
-      'dance': 'Dance',
-      'crossfit': 'CrossTraining',
-      'stretching': 'Flexibility',
+      strength: "TraditionalStrengthTraining",
+      cardio: "Running",
+      yoga: "Yoga",
+      pilates: "Pilates",
+      hiit: "HighIntensityIntervalTraining",
+      cycling: "Cycling",
+      swimming: "Swimming",
+      walking: "Walking",
+      running: "Running",
+      boxing: "Boxing",
+      dance: "Dance",
+      crossfit: "CrossTraining",
+      stretching: "Flexibility",
     };
 
-    return mapping[type.toLowerCase()] || 'Other';
+    return mapping[type.toLowerCase()] || "Other";
   }
 
   async hasPermissions(): Promise<boolean> {
     try {
-      if (Platform.OS !== 'ios' || !HealthKitModule) {
+      if (Platform.OS !== "ios" || !HealthKitModule) {
         return false;
       }
-      
-      const authorized = await AsyncStorage.getItem('healthkit_authorized');
-      return authorized === 'true';
+
+      const authorized = await AsyncStorage.getItem("healthkit_authorized");
+      return authorized === "true";
     } catch (error) {
-      console.error('Failed to check HealthKit permissions:', error);
+      console.error("Failed to check HealthKit permissions:", error);
       return false;
     }
   }
 
   async getLastSyncTime(): Promise<Date | null> {
     try {
-      const syncTime = await AsyncStorage.getItem('healthkit_last_sync');
+      const syncTime = await AsyncStorage.getItem("healthkit_last_sync");
       return syncTime ? new Date(syncTime) : null;
     } catch (error) {
-      console.error('Failed to get last sync time:', error);
+      console.error("Failed to get last sync time:", error);
       return null;
     }
   }
 
   isAvailable(): boolean {
-    return Platform.OS === 'ios' && this.isInitialized && !!HealthKitModule;
+    return Platform.OS === "ios" && this.isInitialized && !!HealthKitModule;
   }
 
   async syncHealthDataFromHealthKit(daysBack: number = 7): Promise<{
@@ -453,7 +490,7 @@ class HealthKitService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -468,7 +505,8 @@ class HealthKitService {
   }): Promise<boolean> {
     return this.saveWorkoutToHealthKit({
       type: workout.type,
-      duration: (workout.endDate.getTime() - workout.startDate.getTime()) / 60000,
+      duration:
+        (workout.endDate.getTime() - workout.startDate.getTime()) / 60000,
       calories: workout.calories,
       distance: workout.distance,
     });
@@ -482,19 +520,38 @@ class HealthKitService {
     water?: number;
     date: Date;
   }): Promise<boolean> {
-    // HealthKit doesn't have direct nutrition export in our wrapper
-    // This is a placeholder that returns false for now
-    console.warn('Nutrition export not yet implemented for HealthKit');
+    // LIBRARY LIMITATION: expo-health-kit (v1.0.8) only supports READING health data
+    // via queryHealthData(), not WRITING nutrition data to HealthKit.
+    //
+    // To implement this feature, we would need to either:
+    // 1. Use a different library like react-native-health that supports writes
+    // 2. Create a custom native module for HealthKit writes
+    // 3. Wait for expo-health-kit to add saveHealthData() support
+    //
+    // For now, nutrition data is tracked locally in FitAI but not synced to Apple Health.
+    console.log(
+      "ℹ️ Nutrition export to HealthKit not available - expo-health-kit library limitation",
+    );
+    console.log(
+      `   Nutrition data for ${nutrition.date.toDateString()}: ${nutrition.calories} cal, ${nutrition.protein}g protein`,
+    );
     return false;
   }
 
-  async exportBodyWeightToHealthKit(weight: number, date: Date = new Date()): Promise<boolean> {
-    return this.saveWeightToHealthKit(weight, 'kg');
+  async exportBodyWeightToHealthKit(
+    weight: number,
+    date: Date = new Date(),
+  ): Promise<boolean> {
+    return this.saveWeightToHealthKit(weight, "kg");
   }
 
   async clearCache(): Promise<void> {
     // HealthKit data is managed by iOS, we just clear our cached authorization
-    await AsyncStorage.multiRemove(['healthkit_authorized', 'healthkit_auth_date', 'healthkit_last_sync']);
+    await AsyncStorage.multiRemove([
+      "healthkit_authorized",
+      "healthkit_auth_date",
+      "healthkit_last_sync",
+    ]);
   }
 
   async getHealthSummary(): Promise<any> {
@@ -508,7 +565,7 @@ class HealthKitService {
       lastWeight: data.bodyWeight,
       heartRate: data.heartRate,
       recentWorkouts: data.workouts?.length || 0,
-      syncStatus: lastSync ? 'synced' : 'never_synced',
+      syncStatus: lastSync ? "synced" : "never_synced",
     };
   }
 
@@ -518,11 +575,27 @@ class HealthKitService {
     const restingHR = 60; // Default estimate
 
     const zones = {
-      zone1: { min: Math.round(maxHR * 0.5), max: Math.round(maxHR * 0.6), name: 'Recovery' },
-      zone2: { min: Math.round(maxHR * 0.6), max: Math.round(maxHR * 0.7), name: 'Aerobic Base' },
-      zone3: { min: Math.round(maxHR * 0.7), max: Math.round(maxHR * 0.8), name: 'Aerobic' },
-      zone4: { min: Math.round(maxHR * 0.8), max: Math.round(maxHR * 0.9), name: 'Lactate Threshold' },
-      zone5: { min: Math.round(maxHR * 0.9), max: maxHR, name: 'VO2 Max' },
+      zone1: {
+        min: Math.round(maxHR * 0.5),
+        max: Math.round(maxHR * 0.6),
+        name: "Recovery",
+      },
+      zone2: {
+        min: Math.round(maxHR * 0.6),
+        max: Math.round(maxHR * 0.7),
+        name: "Aerobic Base",
+      },
+      zone3: {
+        min: Math.round(maxHR * 0.7),
+        max: Math.round(maxHR * 0.8),
+        name: "Aerobic",
+      },
+      zone4: {
+        min: Math.round(maxHR * 0.8),
+        max: Math.round(maxHR * 0.9),
+        name: "Lactate Threshold",
+      },
+      zone5: { min: Math.round(maxHR * 0.9), max: maxHR, name: "VO2 Max" },
     };
 
     return { restingHR, maxHR, zones };
@@ -534,23 +607,42 @@ class HealthKitService {
 
     // If no sleep data, return null recommendations
     if (!sleepDuration) {
-      console.warn('[HealthKit] No sleep data available for recommendations');
+      console.warn("[HealthKit] No sleep data available for recommendations");
       return { sleepQuality: null, sleepDuration: null, recommendations: null };
     }
 
-    let sleepQuality: 'poor' | 'fair' | 'good' | 'excellent' = 'fair';
-    if (sleepDuration < 6) sleepQuality = 'poor';
-    else if (sleepDuration < 7) sleepQuality = 'fair';
-    else if (sleepDuration < 9) sleepQuality = 'good';
-    else sleepQuality = 'excellent';
+    let sleepQuality: "poor" | "fair" | "good" | "excellent" = "fair";
+    if (sleepDuration < 6) sleepQuality = "poor";
+    else if (sleepDuration < 7) sleepQuality = "fair";
+    else if (sleepDuration < 9) sleepQuality = "good";
+    else sleepQuality = "excellent";
 
     return {
       sleepQuality,
       sleepDuration,
       recommendations: {
-        intensityAdjustment: sleepQuality === 'poor' ? -2 : sleepQuality === 'fair' ? -1 : sleepQuality === 'good' ? 0 : 1,
-        workoutType: sleepQuality === 'poor' ? 'recovery' : sleepQuality === 'fair' ? 'light' : sleepQuality === 'good' ? 'moderate' : 'intense',
-        duration: sleepQuality === 'poor' || sleepQuality === 'fair' ? 'shorter' : sleepQuality === 'good' ? 'normal' : 'longer',
+        intensityAdjustment:
+          sleepQuality === "poor"
+            ? -2
+            : sleepQuality === "fair"
+              ? -1
+              : sleepQuality === "good"
+                ? 0
+                : 1,
+        workoutType:
+          sleepQuality === "poor"
+            ? "recovery"
+            : sleepQuality === "fair"
+              ? "light"
+              : sleepQuality === "good"
+                ? "moderate"
+                : "intense",
+        duration:
+          sleepQuality === "poor" || sleepQuality === "fair"
+            ? "shorter"
+            : sleepQuality === "good"
+              ? "normal"
+              : "longer",
         notes: [`Sleep quality: ${sleepQuality}`],
       },
     };
@@ -563,7 +655,7 @@ class HealthKitService {
 
     let activityMultiplier = 1.0;
     if (activeEnergy > 600) activityMultiplier = 1.15;
-    else if (activeEnergy > 400) activityMultiplier = 1.10;
+    else if (activeEnergy > 400) activityMultiplier = 1.1;
     else if (activeEnergy > 200) activityMultiplier = 1.05;
     else activityMultiplier = 0.95;
 

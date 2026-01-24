@@ -659,8 +659,12 @@ export const useHealthDataStore = create<HealthDataState>()(
             `📤 Exporting nutrition to HealthKit for ${nutrition.date.toDateString()}`,
           );
 
-          // Nutrition export not yet implemented in HealthKit service
-          console.log("ℹ️ Nutrition export to HealthKit not yet implemented");
+          // LIBRARY LIMITATION: expo-health-kit (v1.0.8) only supports reading health data,
+          // not writing nutrition data to HealthKit. Nutrition is tracked locally in FitAI.
+          // See healthKit.ts:exportNutritionToHealthKit for full explanation.
+          console.log(
+            "ℹ️ Nutrition export to HealthKit not available - library limitation",
+          );
           return false;
         } catch (error) {
           console.error("❌ Failed to export nutrition to HealthKit:", error);
@@ -827,32 +831,96 @@ export const useHealthDataStore = create<HealthDataState>()(
       getSleepRecommendations: async () => {
         try {
           console.log("😴 Getting sleep-based workout recommendations...");
-          // Return default recommendations (HealthKit service method not yet implemented)
+
+          // Try to get recommendations from HealthKit service (iOS)
+          const { isHealthKitAuthorized, settings } = get();
+
+          if (isHealthKitAuthorized && settings.dataTypesToSync.sleep) {
+            const recommendations =
+              await healthKitService.getSleepBasedWorkoutRecommendations();
+
+            // If we got valid sleep data from HealthKit
+            if (
+              recommendations.sleepQuality !== null &&
+              recommendations.sleepDuration !== null
+            ) {
+              console.log(
+                `✅ Got sleep recommendations from HealthKit: ${recommendations.sleepQuality} quality, ${recommendations.sleepDuration}h`,
+              );
+              return {
+                sleepQuality: recommendations.sleepQuality,
+                sleepDuration: recommendations.sleepDuration,
+                workoutRecommendations: recommendations.recommendations,
+              };
+            }
+          }
+
+          // Try Health Connect (Android)
+          const { isHealthConnectAvailable, isHealthConnectAuthorized } = get();
+          if (isHealthConnectAvailable && isHealthConnectAuthorized) {
+            const metrics = get().metrics;
+            if (metrics.sleepHours && metrics.sleepHours > 0) {
+              let sleepQuality: "poor" | "fair" | "good" | "excellent" = "fair";
+              if (metrics.sleepHours < 6) sleepQuality = "poor";
+              else if (metrics.sleepHours < 7) sleepQuality = "fair";
+              else if (metrics.sleepHours < 9) sleepQuality = "good";
+              else sleepQuality = "excellent";
+
+              const intensityAdjustment =
+                sleepQuality === "poor"
+                  ? -2
+                  : sleepQuality === "fair"
+                    ? -1
+                    : sleepQuality === "good"
+                      ? 0
+                      : 1;
+              const workoutType =
+                sleepQuality === "poor"
+                  ? "recovery"
+                  : sleepQuality === "fair"
+                    ? "light"
+                    : sleepQuality === "good"
+                      ? "moderate"
+                      : "intense";
+              const duration =
+                sleepQuality === "poor" || sleepQuality === "fair"
+                  ? "shorter"
+                  : sleepQuality === "good"
+                    ? "normal"
+                    : "longer";
+
+              console.log(
+                `✅ Got sleep recommendations from Health Connect: ${sleepQuality} quality, ${metrics.sleepHours}h`,
+              );
+              return {
+                sleepQuality,
+                sleepDuration: metrics.sleepHours,
+                workoutRecommendations: {
+                  intensityAdjustment,
+                  workoutType,
+                  duration,
+                  notes: [
+                    `Sleep quality: ${sleepQuality}`,
+                    `${metrics.sleepHours.toFixed(1)} hours of sleep`,
+                  ],
+                },
+              };
+            }
+          }
+
+          // No sleep data available - return null recommendations (not defaults)
+          console.log("ℹ️ No sleep data available from health sources");
           return {
-            sleepQuality: "fair",
-            sleepDuration: 7,
-            workoutRecommendations: {
-              intensityAdjustment: 0,
-              workoutType: "moderate",
-              duration: "normal",
-              notes: [
-                "No sleep data available - proceeding with normal workout",
-              ],
-            },
+            sleepQuality: null,
+            sleepDuration: null,
+            workoutRecommendations: null,
           };
         } catch (error) {
           console.error("❌ Failed to get sleep recommendations:", error);
           return {
-            sleepQuality: "fair",
-            sleepDuration: 7,
-            workoutRecommendations: {
-              intensityAdjustment: 0,
-              workoutType: "moderate",
-              duration: "normal",
-              notes: [
-                "Sleep data unavailable - proceeding with normal workout",
-              ],
-            },
+            sleepQuality: null,
+            sleepDuration: null,
+            workoutRecommendations: null,
           };
         }
       },
@@ -860,7 +928,104 @@ export const useHealthDataStore = create<HealthDataState>()(
       getActivityAdjustedCalories: async (baseCalories: number) => {
         try {
           console.log("🔥 Getting activity-adjusted calories...");
-          // Return default values (HealthKit service method not yet implemented)
+
+          const {
+            isHealthKitAuthorized,
+            isHealthConnectAuthorized,
+            isHealthConnectAvailable,
+            metrics,
+            settings,
+          } = get();
+
+          // Try HealthKit first (iOS) - use workouts setting as proxy for activity tracking
+          if (isHealthKitAuthorized && settings.dataTypesToSync.workouts) {
+            const result =
+              await healthKitService.getActivityAdjustedCalories(baseCalories);
+
+            if (
+              result.activityMultiplier !== 1.0 ||
+              result.breakdown.activeEnergy > 0
+            ) {
+              console.log(
+                `✅ Got activity-adjusted calories from HealthKit: ${result.adjustedCalories} (${result.activityMultiplier}x)`,
+              );
+              return result;
+            }
+          }
+
+          // Try Health Connect (Android)
+          if (isHealthConnectAvailable && isHealthConnectAuthorized) {
+            const activeEnergy = metrics.activeCalories || 0;
+            const steps = metrics.steps || 0;
+
+            // Calculate activity multiplier based on active energy and steps
+            let activityMultiplier = 1.0;
+            if (activeEnergy > 600 || steps > 15000) activityMultiplier = 1.2;
+            else if (activeEnergy > 400 || steps > 10000)
+              activityMultiplier = 1.15;
+            else if (activeEnergy > 200 || steps > 7500)
+              activityMultiplier = 1.1;
+            else if (activeEnergy > 100 || steps > 5000)
+              activityMultiplier = 1.05;
+            else if (activeEnergy < 50 && steps < 2000)
+              activityMultiplier = 0.95;
+
+            const stepBonus = Math.floor(steps / 1000) * 20; // ~20 cal per 1000 steps
+            const exerciseBonus = Math.round(activeEnergy * 0.1); // 10% bonus for activity
+            const adjustedCalories = Math.round(
+              baseCalories * activityMultiplier,
+            );
+
+            console.log(
+              `✅ Got activity-adjusted calories from Health Connect: ${adjustedCalories} (${activityMultiplier}x)`,
+            );
+
+            // Generate activity recommendations inline (can't use `this` in Zustand)
+            const recommendations: string[] = [];
+            if (activityMultiplier < 1.0) {
+              recommendations.push(
+                "Your activity level is below average. Consider adding a short walk or light exercise.",
+              );
+            }
+            if (steps < 5000) {
+              recommendations.push(
+                `You've taken ${steps.toLocaleString()} steps today. Aim for 7,500-10,000 steps for optimal health.`,
+              );
+            } else if (steps >= 10000) {
+              recommendations.push(
+                `Great job! You've hit ${steps.toLocaleString()} steps today.`,
+              );
+            }
+            if (activeEnergy < 200) {
+              recommendations.push(
+                "Consider adding 20-30 minutes of moderate exercise to boost your active calorie burn.",
+              );
+            } else if (activeEnergy >= 500) {
+              recommendations.push(
+                `Excellent activity level! You've burned ${activeEnergy} active calories today.`,
+              );
+            }
+            if (recommendations.length === 0) {
+              recommendations.push(
+                "You're on track with your activity goals. Keep it up!",
+              );
+            }
+
+            return {
+              adjustedCalories,
+              activityMultiplier,
+              breakdown: {
+                baseCalories,
+                activeEnergy,
+                exerciseBonus,
+                stepBonus,
+              },
+              recommendations,
+            };
+          }
+
+          // No activity data available - use base calories with 1.0 multiplier
+          console.log("ℹ️ No activity data available - using base calories");
           return {
             adjustedCalories: baseCalories,
             activityMultiplier: 1.0,
@@ -871,7 +1036,7 @@ export const useHealthDataStore = create<HealthDataState>()(
               stepBonus: 0,
             },
             recommendations: [
-              "Using base calories - activity data not available",
+              "Connect to Apple Health or Health Connect to get personalized calorie adjustments based on your activity",
             ],
           };
         } catch (error) {
