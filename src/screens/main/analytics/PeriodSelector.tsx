@@ -15,7 +15,7 @@ import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressab
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rp } from "../../../utils/responsive";
 
-export type Period = "week" | "month" | "year";
+export type Period = "week" | "month" | "quarter" | "year";
 
 interface PeriodSelectorProps {
   selectedPeriod: Period;
@@ -25,6 +25,7 @@ interface PeriodSelectorProps {
 const PERIODS: { key: Period; label: string }[] = [
   { key: "week", label: "Week" },
   { key: "month", label: "Month" },
+  { key: "quarter", label: "Quarter" },
   { key: "year", label: "Year" },
 ];
 

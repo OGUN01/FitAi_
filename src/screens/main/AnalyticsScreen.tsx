@@ -89,7 +89,13 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
       if (!user?.id) return;
 
       const periodDays =
-        selectedPeriod === "week" ? 7 : selectedPeriod === "month" ? 30 : 365;
+        selectedPeriod === "week"
+          ? 7
+          : selectedPeriod === "month"
+            ? 30
+            : selectedPeriod === "quarter"
+              ? 90
+              : 365;
 
       try {
         const [weightData, calorieData] = await Promise.all([
@@ -185,7 +191,9 @@ export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
         ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         : selectedPeriod === "month"
           ? ["W1", "W2", "W3", "W4"]
-          : ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
+          : selectedPeriod === "quarter"
+            ? ["M1", "M2", "M3"]
+            : ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
 
     // Calculate workout data per day/week
     const workoutData = labels.map((label, index) => {

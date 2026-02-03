@@ -50,6 +50,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
         return "This Week";
       case "month":
         return "This Month";
+      case "quarter":
+        return "This Quarter";
       case "year":
         return "This Year";
       default:

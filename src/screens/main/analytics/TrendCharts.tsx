@@ -45,6 +45,8 @@ import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh } from "../../../utils/responsive";
 import { SectionHeader } from "../home/SectionHeader";
 
+import { Period } from "./PeriodSelector";
+
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -57,7 +59,7 @@ interface TrendChartsProps {
   weightData?: ChartData[];
   calorieData?: ChartData[];
   workoutData?: ChartData[];
-  period: "week" | "month" | "year";
+  period: Period;
   onChartPress?: (chartType: string) => void;
 }
 
@@ -637,6 +639,8 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
       case "month":
         return ["W1", "W2", "W3", "W4"];
+      case "quarter":
+        return ["M1", "M2", "M3"];
       case "year":
         return ["Jan", "Mar", "May", "Jul", "Sep", "Nov"];
       default:

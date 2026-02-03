@@ -42,9 +42,11 @@ interface MetricData {
   dailyWater?: number | null;
 }
 
+import { Period } from "./PeriodSelector";
+
 interface MetricSummaryGridProps {
   data: MetricData;
-  period: "week" | "month" | "year";
+  period: Period;
   onMetricPress?: (metric: string) => void;
 }
 
