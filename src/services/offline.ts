@@ -65,6 +65,14 @@ function validateSupabaseResponse(
   return { valid: true };
 }
 
+// Rollback state for optimistic updates
+interface OptimisticRollbackState {
+  actionId: string;
+  key: string;
+  originalData: OfflineData | null; // null means data didn't exist (was created)
+  type: "UPDATE" | "CREATE" | "DELETE";
+}
+
 class OfflineService {
   private static instance: OfflineService;
   private isOnline: boolean = true;
@@ -72,6 +80,7 @@ class OfflineService {
   private syncQueue: OfflineAction[] = [];
   private offlineData: Map<string, OfflineData> = new Map();
   private listeners: Set<(isOnline: boolean) => void> = new Set();
+  private rollbackStates: Map<string, OptimisticRollbackState> = new Map();
 
   private constructor() {
     this.initializeNetworkListener();
@@ -175,7 +184,7 @@ class OfflineService {
    */
   async queueAction(
     action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
-  ): Promise<void> {
+  ): Promise<string> {
     const offlineAction: OfflineAction = {
       ...action,
       id: this.generateId(),
@@ -190,6 +199,8 @@ class OfflineService {
     if (this.isOnline) {
       this.syncOfflineActions();
     }
+
+    return offlineAction.id;
   }
 
   /**
@@ -261,11 +272,12 @@ class OfflineService {
           await this.executeAction(action);
           successfulActions.push(action.id);
           result.syncedActions++;
+          this.rollbackStates.delete(action.id);
         } catch (error) {
           action.retryCount++;
 
           if (action.retryCount >= action.maxRetries) {
-            // Remove failed action after max retries
+            await this.rollbackAction(action.id);
             successfulActions.push(action.id);
             result.failedActions++;
             result.errors.push(`Failed to sync action ${action.id}: ${error}`);
@@ -288,6 +300,36 @@ class OfflineService {
     }
 
     return result;
+  }
+
+  private async rollbackAction(actionId: string): Promise<void> {
+    const rollbackState = this.rollbackStates.get(actionId);
+    if (!rollbackState) {
+      return;
+    }
+
+    const { key, originalData, type } = rollbackState;
+
+    switch (type) {
+      case "UPDATE":
+        if (originalData) {
+          await this.storeOfflineData(key, originalData);
+        } else {
+          await this.removeOfflineData(key);
+        }
+        break;
+      case "CREATE":
+        await this.removeOfflineData(key);
+        break;
+      case "DELETE":
+        if (originalData) {
+          await this.storeOfflineData(key, originalData);
+        }
+        break;
+    }
+
+    this.rollbackStates.delete(actionId);
+    console.warn(`⚠️ Sync failed for ${key}, changes have been rolled back`);
   }
 
   /**
@@ -459,7 +501,7 @@ class OfflineService {
    * Generate unique ID
    */
   private generateId(): string {
-    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   /**
@@ -482,17 +524,24 @@ class OfflineService {
     data: any,
     userId: string,
   ): Promise<void> {
-    // Update local data immediately
     const key = `${table}_${id}`;
+    const originalData = this.getOfflineData(key);
+
     await this.storeOfflineData(key, { ...data, id });
 
-    // Queue for sync
-    await this.queueAction({
+    const actionId = await this.queueAction({
       type: "UPDATE",
       table,
       data: { ...data, id },
       userId,
       maxRetries: 3,
+    });
+
+    this.rollbackStates.set(actionId, {
+      actionId,
+      key,
+      originalData,
+      type: "UPDATE",
     });
   }
 
@@ -507,18 +556,23 @@ class OfflineService {
   ): Promise<string> {
     const id = tempId || this.generateId();
     const dataWithId = { ...data, id };
-
-    // Store local data immediately
     const key = `${table}_${id}`;
+
     await this.storeOfflineData(key, dataWithId);
 
-    // Queue for sync
-    await this.queueAction({
+    const actionId = await this.queueAction({
       type: "CREATE",
       table,
       data: dataWithId,
       userId,
       maxRetries: 3,
+    });
+
+    this.rollbackStates.set(actionId, {
+      actionId,
+      key,
+      originalData: null,
+      type: "CREATE",
     });
 
     return id;
@@ -532,17 +586,24 @@ class OfflineService {
     id: string,
     userId: string,
   ): Promise<void> {
-    // Remove local data immediately
     const key = `${table}_${id}`;
+    const originalData = this.getOfflineData(key);
+
     await this.removeOfflineData(key);
 
-    // Queue for sync
-    await this.queueAction({
+    const actionId = await this.queueAction({
       type: "DELETE",
       table,
       data: { id },
       userId,
       maxRetries: 3,
+    });
+
+    this.rollbackStates.set(actionId, {
+      actionId,
+      key,
+      originalData,
+      type: "DELETE",
     });
   }
 }

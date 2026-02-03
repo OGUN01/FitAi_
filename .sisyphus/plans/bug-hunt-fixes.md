@@ -926,7 +926,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.3. Add Optimistic Update Rollback
+- [x] 3.3. Add Optimistic Update Rollback
 
   **What to do**:
   - Store original state before optimistic update

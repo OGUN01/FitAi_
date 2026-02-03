@@ -898,6 +898,7 @@ All TODOs either removed or converted to informational comments that explain arc
 - src/screens/main/ProgressScreen.tsx: Added `analysisError`, `statsError`, `syncError` to existing Error Card.
   **Pattern**: Used `GlassCard` with red text/border and `Button` for retry actions.
   **Verification**: Grep count 9 (>5), TSC passed.
+
 ## [2026-02-03T16:41:19] Task 3.2: Integrate Conflict Resolution
 
 **Status**: COMPLETE
@@ -906,12 +907,49 @@ All TODOs either removed or converted to informational comments that explain arc
 **Pattern**: Before sync operations, fetch remote data, detect conflicts via conflictResolutionService.detectConflicts(), resolve with "use_latest_timestamp" strategy (last-write-wins), then sync with resolved data.
 
 **Implementation**:
+
 - Added import: conflictResolutionService, ConflictContext from ./conflictResolution
 - Added fetchRemoteData() helper method (maps DataType to table/idField)
 - Modified executeOperation(): detect conflicts -> resolve -> sync with resolved data
 - Graceful failure: if conflict detection fails, proceed with original data
 
 **Verification**:
+
 - grep 'conflictResolution' src/services/SyncEngine.ts: 5 matches (import + 3 usages)
 - npx tsc --noEmit: 0 errors
 
+## [2026-02-03T17:50:00] Task 3.3: Optimistic Update Rollback
+
+**Status**: COMPLETE
+**Changes**: Added rollback mechanism for optimistic updates in offline.ts
+
+**Implementation**:
+
+1. Added `OptimisticRollbackState` interface to store pre-update state
+2. Added `rollbackStates` Map to OfflineService class
+3. Modified `queueAction()` to return action ID
+4. Modified `optimisticUpdate()`, `optimisticCreate()`, `optimisticDelete()` to:
+   - Capture original data state before applying changes
+   - Store rollback state keyed by action ID
+5. Added `rollbackAction()` private method:
+   - Restores original state based on operation type
+   - UPDATE: Restore original data (or remove if didn't exist)
+   - CREATE: Remove the created data
+   - DELETE: Restore the deleted data
+6. Modified `syncOfflineActions()`:
+   - On success: Clean up rollback state
+   - On max retries failure: Call rollbackAction(), then notify user
+
+**User Notification**: `console.warn()` with message "Sync failed for ${key}, changes have been rolled back"
+
+**Pattern**:
+
+- Rollback state captured BEFORE optimistic update applied
+- originalData: null means item was newly created (rollback = delete)
+- originalData: object means item existed (rollback = restore)
+
+**Verification**:
+
+- npx tsc --noEmit: 0 errors
+
+**Files Modified**: src/services/offline.ts only
