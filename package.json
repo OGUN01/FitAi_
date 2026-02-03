@@ -45,6 +45,7 @@
     "test:onboarding:device": "node scripts/run-onboarding-tests.js --emulator --full",
     "test:gemini": "node test-gemini-simple.js",
     "test:gemini-full": "node test-gemini-structured-output.js",
+    "profile:memory": "node scripts/profile-memory.js",
     "build:development-local": "eas build --platform android --profile development --local",
     "build:preview": "eas build --platform android --profile preview",
     "build:preview-local": "eas build --platform android --profile preview-local --local",
