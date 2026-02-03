@@ -7,20 +7,27 @@
  * TDD: RED phase - tests written before implementation
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
 import { syncMutex, SyncMutex } from "../../services/syncMutex";
 
 describe("syncMutex", () => {
   beforeEach(() => {
     // Ensure mutex is released before each test
     syncMutex.forceRelease();
-    vi.useFakeTimers();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
     syncMutex.forceRelease();
-    vi.useRealTimers();
-    vi.clearAllMocks();
+    jest.useRealTimers();
+    jest.clearAllMocks();
   });
 
   describe("acquire", () => {
@@ -87,7 +94,7 @@ describe("syncMutex", () => {
       syncMutex.release();
 
       // Advance timers to allow promise resolution
-      await vi.advanceTimersByTimeAsync(10);
+      await jest.advanceTimersByTimeAsync(10);
 
       // Now it should be resolved
       expect(waitResolved).toBe(true);
@@ -96,7 +103,7 @@ describe("syncMutex", () => {
 
   describe("withLock", () => {
     it("should execute function while holding lock", async () => {
-      const fn = vi.fn().mockResolvedValue("result");
+      const fn = jest.fn().mockResolvedValue("result");
 
       const result = await syncMutex.withLock("test-operation", fn);
 
@@ -105,7 +112,7 @@ describe("syncMutex", () => {
     });
 
     it("should release lock even if function throws", async () => {
-      const fn = vi.fn().mockRejectedValue(new Error("test error"));
+      const fn = jest.fn().mockRejectedValue(new Error("test error"));
 
       await expect(syncMutex.withLock("test-operation", fn)).rejects.toThrow(
         "test error",
@@ -114,7 +121,7 @@ describe("syncMutex", () => {
     });
 
     it("should release lock after successful execution", async () => {
-      const fn = vi.fn().mockResolvedValue("done");
+      const fn = jest.fn().mockResolvedValue("done");
 
       await syncMutex.withLock("test-operation", fn);
 
@@ -142,7 +149,7 @@ describe("syncMutex", () => {
       }, 100);
 
       // Advance timers
-      await vi.advanceTimersByTimeAsync(150);
+      await jest.advanceTimersByTimeAsync(150);
       await secondPromise;
 
       expect(executionOrder).toEqual(["first-released", "second"]);
@@ -175,7 +182,7 @@ describe("syncMutex", () => {
       const p2 = syncService1();
 
       // Advance timers to complete both operations
-      await vi.advanceTimersByTimeAsync(200);
+      await jest.advanceTimersByTimeAsync(200);
       await Promise.all([p1, p2]);
 
       // Verify operations did not interleave

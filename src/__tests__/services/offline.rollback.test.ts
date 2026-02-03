@@ -7,36 +7,43 @@
  * TDD: RED phase - tests written before implementation
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
 
 // Mock Alert before importing module
-const mockAlert = vi.fn();
-vi.mock("react-native", () => ({
+const mockAlert = jest.fn();
+jest.mock("react-native", () => ({
   Alert: {
     alert: mockAlert,
   },
 }));
 
 // Mock AsyncStorage
-vi.mock("@react-native-async-storage/async-storage", () => ({
+jest.mock("@react-native-async-storage/async-storage", () => ({
   default: {
-    getItem: vi.fn().mockResolvedValue(null),
-    setItem: vi.fn().mockResolvedValue(undefined),
-    removeItem: vi.fn().mockResolvedValue(undefined),
+    getItem: jest.fn().mockResolvedValue(null),
+    setItem: jest.fn().mockResolvedValue(undefined),
+    removeItem: jest.fn().mockResolvedValue(undefined),
   },
 }));
 
 // Mock NetInfo
-vi.mock("@react-native-community/netinfo", () => ({
+jest.mock("@react-native-community/netinfo", () => ({
   default: {
-    fetch: vi.fn().mockResolvedValue({ isConnected: true }),
-    addEventListener: vi.fn().mockReturnValue(vi.fn()),
+    fetch: jest.fn().mockResolvedValue({ isConnected: true }),
+    addEventListener: jest.fn().mockReturnValue(jest.fn()),
   },
 }));
 
 // Mock supabase
-const mockSupabaseFrom = vi.fn();
-vi.mock("../../services/supabase", () => ({
+const mockSupabaseFrom = jest.fn();
+jest.mock("../../services/supabase", () => ({
   supabase: {
     from: mockSupabaseFrom,
   },
@@ -44,18 +51,18 @@ vi.mock("../../services/supabase", () => ({
 
 describe("Optimistic Update Rollback", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
+    jest.clearAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   describe("optimisticUpdate with rollback", () => {
     it("should store original state before optimistic update", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Store existing data first
@@ -79,13 +86,13 @@ describe("Optimistic Update Rollback", () => {
 
     it("should rollback to original state when sync fails", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: new Error("Network error") }),
+        update: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ error: new Error("Network error") }),
       });
 
       // Store original data
@@ -102,7 +109,7 @@ describe("Optimistic Update Rollback", () => {
       );
 
       // Wait for sync attempts to complete (with retries)
-      await vi.advanceTimersByTimeAsync(30000);
+      await jest.advanceTimersByTimeAsync(30000);
 
       // After sync failure, data should be reverted
       const storedData = offlineService.getOfflineData("items_item-1");
@@ -112,13 +119,13 @@ describe("Optimistic Update Rollback", () => {
 
     it("should notify user when rollback occurs", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: new Error("Network error") }),
+        update: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ error: new Error("Network error") }),
       });
 
       // Store original data
@@ -135,7 +142,7 @@ describe("Optimistic Update Rollback", () => {
       );
 
       // Wait for sync attempts to complete
-      await vi.advanceTimersByTimeAsync(30000);
+      await jest.advanceTimersByTimeAsync(30000);
 
       // User should be notified
       expect(mockAlert).toHaveBeenCalledWith(
@@ -146,13 +153,13 @@ describe("Optimistic Update Rollback", () => {
 
     it("should not rollback if sync succeeds", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Setup successful sync
       mockSupabaseFrom.mockReturnValue({
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null }),
+        update: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ error: null }),
       });
 
       // Store original data
@@ -169,7 +176,7 @@ describe("Optimistic Update Rollback", () => {
       );
 
       // Wait for sync to complete
-      await vi.advanceTimersByTimeAsync(5000);
+      await jest.advanceTimersByTimeAsync(5000);
 
       // Data should remain updated (not rolled back)
       const storedData = offlineService.getOfflineData("items_item-1");
@@ -179,12 +186,12 @@ describe("Optimistic Update Rollback", () => {
 
     it("should handle rollback for optimisticCreate on failure", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
-        insert: vi
+        insert: jest
           .fn()
           .mockResolvedValue({ error: new Error("Network error") }),
       });
@@ -203,7 +210,7 @@ describe("Optimistic Update Rollback", () => {
       expect(storedData?.name).toBe("New Item");
 
       // Wait for sync to fail
-      await vi.advanceTimersByTimeAsync(30000);
+      await jest.advanceTimersByTimeAsync(30000);
 
       // After failure, created item should be removed (rolled back)
       storedData = offlineService.getOfflineData(key);
@@ -212,13 +219,13 @@ describe("Optimistic Update Rollback", () => {
 
     it("should handle rollback for optimisticDelete on failure", async () => {
       // Import fresh instance
-      vi.resetModules();
+      jest.resetModules();
       const { offlineService } = await import("../../services/offline");
 
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: new Error("Network error") }),
+        delete: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValue({ error: new Error("Network error") }),
       });
 
       // Store original data
@@ -233,7 +240,7 @@ describe("Optimistic Update Rollback", () => {
       expect(storedData).toBeNull();
 
       // Wait for sync to fail
-      await vi.advanceTimersByTimeAsync(30000);
+      await jest.advanceTimersByTimeAsync(30000);
 
       // After failure, deleted item should be restored
       storedData = offlineService.getOfflineData("items_item-1");

@@ -5,7 +5,14 @@
  * by using an event-based pattern instead of direct imports.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
 import {
   authEvents,
   AuthEvent,
@@ -20,20 +27,20 @@ describe("authEvents", () => {
 
   afterEach(() => {
     authEvents.removeAllListeners();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe("subscribe", () => {
     it("should return an unsubscribe function", () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       const unsubscribe = authEvents.subscribe("SIGNED_IN", callback);
 
       expect(typeof unsubscribe).toBe("function");
     });
 
     it("should allow multiple subscribers to the same event", () => {
-      const callback1 = vi.fn();
-      const callback2 = vi.fn();
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
 
       authEvents.subscribe("SIGNED_IN", callback1);
       authEvents.subscribe("SIGNED_IN", callback2);
@@ -50,7 +57,7 @@ describe("authEvents", () => {
 
   describe("emit", () => {
     it("should call subscribed callbacks with event data on SIGNED_IN", () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       authEvents.subscribe("SIGNED_IN", callback);
 
       const eventData = { userId: "user-123", email: "test@example.com" };
@@ -63,7 +70,7 @@ describe("authEvents", () => {
     });
 
     it("should call subscribed callbacks on SIGNED_OUT", () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       authEvents.subscribe("SIGNED_OUT", callback);
 
       authEvents.emit("SIGNED_OUT");
@@ -75,8 +82,8 @@ describe("authEvents", () => {
     });
 
     it("should not call callbacks for other event types", () => {
-      const signInCallback = vi.fn();
-      const signOutCallback = vi.fn();
+      const signInCallback = jest.fn();
+      const signOutCallback = jest.fn();
 
       authEvents.subscribe("SIGNED_IN", signInCallback);
       authEvents.subscribe("SIGNED_OUT", signOutCallback);
@@ -91,7 +98,7 @@ describe("authEvents", () => {
     });
 
     it("should handle AUTH_STATE_CHANGE event", () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       authEvents.subscribe("AUTH_STATE_CHANGE", callback);
 
       const eventData = {
@@ -110,7 +117,7 @@ describe("authEvents", () => {
 
   describe("unsubscribe", () => {
     it("should stop receiving events after unsubscribe", () => {
-      const callback = vi.fn();
+      const callback = jest.fn();
       const unsubscribe = authEvents.subscribe("SIGNED_IN", callback);
 
       authEvents.emit("SIGNED_IN", {
@@ -131,8 +138,8 @@ describe("authEvents", () => {
 
   describe("removeAllListeners", () => {
     it("should remove all subscriptions", () => {
-      const callback1 = vi.fn();
-      const callback2 = vi.fn();
+      const callback1 = jest.fn();
+      const callback2 = jest.fn();
 
       authEvents.subscribe("SIGNED_IN", callback1);
       authEvents.subscribe("SIGNED_OUT", callback2);
