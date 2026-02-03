@@ -3,6 +3,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
+import { syncMutex } from "./syncMutex";
 
 // Storage keys for sync service
 const SYNC_STATUS_KEY = "@fitai_sync_status";
@@ -172,10 +173,14 @@ export class RealTimeSyncService {
     }
   }
 
-  /**
-   * Start manual sync
-   */
   async startSync(force = false): Promise<SyncResult> {
+    return syncMutex.withLock(
+      "RealTimeSyncService.startSync",
+      async () => await this.startSyncInternal(force),
+    );
+  }
+
+  private async startSyncInternal(force = false): Promise<SyncResult> {
     if (this.status.isSyncing && !force) {
       throw new Error("Sync is already in progress");
     }
@@ -190,7 +195,6 @@ export class RealTimeSyncService {
     try {
       this.updateSyncStatus({ isSyncing: true, syncProgress: 0 });
 
-      // Execute sync phases
       const result = await this.executeSyncPhases();
 
       const endTime = new Date();

@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
 import { authEvents } from "./authEvents";
+import { syncMutex } from "./syncMutex";
 
 // ============================================================================
 // TYPES
@@ -247,10 +248,14 @@ class SyncEngine {
     }
   }
 
-  /**
-   * Process all pending operations in the queue
-   */
   async processQueue(): Promise<SyncResult> {
+    return syncMutex.withLock(
+      "SyncEngine.processQueue",
+      async () => await this.processQueueInternal(),
+    );
+  }
+
+  private async processQueueInternal(): Promise<SyncResult> {
     if (this.isSyncing) {
       console.log("[SyncEngine] Already syncing, skipping...");
       return {
@@ -292,7 +297,7 @@ class SyncEngine {
 
     for (const operation of this.queue) {
       if (operation.status === "processing") {
-        continue; // Skip operations already being processed
+        continue;
       }
 
       operation.status = "processing";
@@ -312,7 +317,7 @@ class SyncEngine {
           operation.status = "failed";
           result.failedItems++;
           result.errors.push(`${operation.type}: ${errorMessage}`);
-          completedIds.push(operation.id); // Remove from queue after max retries
+          completedIds.push(operation.id);
           console.error(
             `[SyncEngine] Operation failed after ${MAX_RETRIES} retries: ${operation.type}`,
           );
@@ -325,11 +330,9 @@ class SyncEngine {
       }
     }
 
-    // Remove completed operations from queue
     this.queue = this.queue.filter((op) => !completedIds.includes(op.id));
     await this.saveQueue();
 
-    // Update last sync timestamp
     this.lastSyncAt = new Date().toISOString();
     await AsyncStorage.setItem(LAST_SYNC_KEY, this.lastSyncAt);
 
@@ -415,10 +418,14 @@ class SyncEngine {
   // SYNC ALL DATA
   // ============================================================================
 
-  /**
-   * Sync all data types to database
-   */
   async syncAll(userId: string): Promise<SyncResult> {
+    return syncMutex.withLock(
+      "SyncEngine.syncAll",
+      async () => await this.syncAllInternal(userId),
+    );
+  }
+
+  private async syncAllInternal(userId: string): Promise<SyncResult> {
     console.log(`[SyncEngine] Syncing all data for user: ${userId}`);
 
     if (!this.isOnline) {
@@ -439,9 +446,8 @@ class SyncEngine {
       errors: [],
     };
 
-    // Process any pending queue items first
     if (this.queue.length > 0) {
-      const queueResult = await this.processQueue();
+      const queueResult = await this.processQueueInternal();
       result.syncedItems += queueResult.syncedItems;
       result.failedItems += queueResult.failedItems;
       result.errors.push(...queueResult.errors);
