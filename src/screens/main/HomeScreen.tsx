@@ -30,6 +30,7 @@ import React, {
 } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   Animated,
   Alert,
@@ -596,6 +597,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   stepsSource={healthMetrics?.sources?.steps} // Data source attribution
                   onPress={() => onNavigateToTab?.("progress")}
                 />
+                {mealsLogged === 0 && (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      marginTop: ResponsiveTheme.spacing.sm,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: ResponsiveTheme.colors.textSecondary,
+                        opacity: 0.6,
+                        fontSize: ResponsiveTheme.fontSize.sm,
+                      }}
+                    >
+                      No meals logged today
+                    </Text>
+                  </View>
+                )}
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
                   <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
@@ -651,10 +670,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
 
               {/* 10. Weekly Calendar */}
               <View style={styles.section}>
-                <WeeklyMiniCalendar
-                  weekData={weekCalendarData}
-                  onViewFullCalendar={() => onNavigateToTab?.("fitness")}
-                />
+                {!weekCalendarData ||
+                weekCalendarData.every((d) => !d.hasWorkout) ? (
+                  <View style={{ padding: 20, alignItems: "center" }}>
+                    <Text
+                      style={{
+                        color: ResponsiveTheme.colors.textSecondary,
+                        opacity: 0.6,
+                      }}
+                    >
+                      No workouts scheduled
+                    </Text>
+                  </View>
+                ) : (
+                  <WeeklyMiniCalendar
+                    weekData={weekCalendarData}
+                    onViewFullCalendar={() => onNavigateToTab?.("fitness")}
+                  />
+                )}
               </View>
 
               {/* Bottom Spacing */}

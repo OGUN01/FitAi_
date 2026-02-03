@@ -964,307 +964,363 @@ Track your fitness journey with FitAI!`;
                 {/* Body Stats */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Body Metrics</Text>
-                  <View style={styles.statsGrid}>
+                  {!stats.weight.current &&
+                  !stats.bodyFat.current &&
+                  !stats.muscle.current ? (
                     <GlassCard
-                      style={styles.statCard}
+                      style={{
+                        width: "100%",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: 120,
+                        padding: ResponsiveTheme.spacing.lg,
+                      }}
                       elevation={2}
                       blurIntensity="light"
-                      padding="md"
+                      padding="lg"
                       borderRadius="lg"
                     >
-                      <View style={styles.statHeader}>
-                        <Text style={styles.statValue}>
-                          {stats.weight.current && stats.weight.current > 0
-                            ? stats.weight.current
-                            : "--"}
-                        </Text>
-                        <Text style={styles.statUnit}>{stats.weight.unit}</Text>
-                        {stats.weight.change !== null &&
-                          stats.weight.change !== 0 && (
-                            <Ionicons
-                              name={
-                                stats.weight.trend === "decreasing"
-                                  ? "trending-down-outline"
-                                  : "trending-up-outline"
-                              }
-                              size={rf(16)}
-                              color={
-                                stats.weight.trend === "decreasing"
-                                  ? ResponsiveTheme.colors.success
-                                  : ResponsiveTheme.colors.error
-                              }
-                            />
-                          )}
-                      </View>
-                      <Text style={styles.statLabel}>Weight</Text>
+                      <Ionicons
+                        name="body-outline"
+                        size={rf(32)}
+                        color={ResponsiveTheme.colors.textSecondary}
+                        style={{
+                          marginBottom: ResponsiveTheme.spacing.sm,
+                          opacity: 0.6,
+                        }}
+                      />
                       <Text
-                        style={[
-                          styles.statChange,
-                          (stats.weight.change ?? 0) < 0
-                            ? styles.statChangePositive
-                            : styles.statChangeNegative,
-                        ]}
+                        style={{
+                          fontSize: rf(16),
+                          color: ResponsiveTheme.colors.textSecondary,
+                          fontWeight: "500",
+                          marginBottom: ResponsiveTheme.spacing.xs,
+                        }}
                       >
-                        {stats.weight.change !== null
-                          ? `${(stats.weight.change ?? 0) > 0 ? "+" : ""}${stats.weight.change} ${stats.weight.unit}`
-                          : "--"}
+                        Start tracking to see progress
                       </Text>
-                      {stats.weight.current && (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 4,
-                          }}
+                      <Text
+                        style={{
+                          fontSize: rf(14),
+                          color: ResponsiveTheme.colors.textSecondary,
+                          opacity: 0.6,
+                        }}
+                      >
+                        Log your weight and body metrics
+                      </Text>
+                    </GlassCard>
+                  ) : (
+                    <>
+                      <View style={styles.statsGrid}>
+                        <GlassCard
+                          style={styles.statCard}
+                          elevation={2}
+                          blurIntensity="light"
+                          padding="md"
+                          borderRadius="lg"
                         >
-                          <Ionicons
-                            name="create-outline"
-                            size={rf(12)}
-                            color={ResponsiveTheme.colors.textSecondary}
-                            style={{ marginRight: 4 }}
-                          />
+                          <View style={styles.statHeader}>
+                            <Text style={styles.statValue}>
+                              {stats.weight.current && stats.weight.current > 0
+                                ? stats.weight.current
+                                : "--"}
+                            </Text>
+                            <Text style={styles.statUnit}>
+                              {stats.weight.unit}
+                            </Text>
+                            {stats.weight.change !== null &&
+                              stats.weight.change !== 0 && (
+                                <Ionicons
+                                  name={
+                                    stats.weight.trend === "decreasing"
+                                      ? "trending-down-outline"
+                                      : "trending-up-outline"
+                                  }
+                                  size={rf(16)}
+                                  color={
+                                    stats.weight.trend === "decreasing"
+                                      ? ResponsiveTheme.colors.success
+                                      : ResponsiveTheme.colors.error
+                                  }
+                                />
+                              )}
+                          </View>
+                          <Text style={styles.statLabel}>Weight</Text>
                           <Text
-                            style={{
-                              fontSize: rf(11),
-                              color: ResponsiveTheme.colors.textSecondary,
-                            }}
-                          >
-                            Manual
-                            {progressEntries[0]?.entry_date
-                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-                              : ""}
-                          </Text>
-                        </View>
-                      )}
-                      <View style={styles.goalProgress}>
-                        <Text style={styles.goalText}>
-                          Goal: {stats.weight.goal}
-                          {stats.weight.unit}
-                        </Text>
-                        <View style={styles.progressBar}>
-                          <View
                             style={[
-                              styles.progressFill,
-                              (() => {
-                                const current = Number(stats.weight.current);
-                                const goal = Number(stats.weight.goal);
-                                if (current <= 0 || !isFinite(current)) {
-                                  return { width: "0%" };
-                                }
-                                const raw =
-                                  ((current - goal) / current) * 100 + 50;
-                                const clamped = Math.max(
-                                  0,
-                                  Math.min(100, isFinite(raw) ? raw : 0),
-                                );
-                                return { width: `${clamped}%` };
-                              })(),
+                              styles.statChange,
+                              (stats.weight.change ?? 0) < 0
+                                ? styles.statChangePositive
+                                : styles.statChangeNegative,
                             ]}
-                          />
-                        </View>
-                      </View>
-                    </GlassCard>
-
-                    <GlassCard
-                      style={styles.statCard}
-                      elevation={2}
-                      blurIntensity="light"
-                      padding="md"
-                      borderRadius="lg"
-                    >
-                      <View style={styles.statHeader}>
-                        <Text style={styles.statValue}>
-                          {stats.bodyFat.current && stats.bodyFat.current > 0
-                            ? stats.bodyFat.current
-                            : "--"}
-                        </Text>
-                        <Text style={styles.statUnit}>
-                          {stats.bodyFat.unit}
-                        </Text>
-                        {stats.bodyFat.change !== null &&
-                          stats.bodyFat.change !== 0 && (
-                            <Ionicons
-                              name={
-                                stats.bodyFat.trend === "decreasing"
-                                  ? "trending-down-outline"
-                                  : "trending-up-outline"
-                              }
-                              size={rf(16)}
-                              color={
-                                stats.bodyFat.trend === "decreasing"
-                                  ? ResponsiveTheme.colors.success
-                                  : ResponsiveTheme.colors.error
-                              }
-                            />
+                          >
+                            {stats.weight.change !== null
+                              ? `${(stats.weight.change ?? 0) > 0 ? "+" : ""}${stats.weight.change} ${stats.weight.unit}`
+                              : "--"}
+                          </Text>
+                          {stats.weight.current && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                size={rf(12)}
+                                color={ResponsiveTheme.colors.textSecondary}
+                                style={{ marginRight: 4 }}
+                              />
+                              <Text
+                                style={{
+                                  fontSize: rf(11),
+                                  color: ResponsiveTheme.colors.textSecondary,
+                                }}
+                              >
+                                Manual
+                                {progressEntries[0]?.entry_date
+                                  ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                                  : ""}
+                              </Text>
+                            </View>
                           )}
-                      </View>
-                      <Text style={styles.statLabel}>Body Fat</Text>
-                      <Text
-                        style={[
-                          styles.statChange,
-                          (stats.bodyFat.change ?? 0) < 0
-                            ? styles.statChangePositive
-                            : styles.statChangeNegative,
-                        ]}
-                      >
-                        {stats.bodyFat.change !== null
-                          ? `${(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}${stats.bodyFat.change}${stats.bodyFat.unit}`
-                          : "--"}
-                      </Text>
-                      {stats.bodyFat.current && (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 4,
-                          }}
-                        >
-                          <Ionicons
-                            name="create-outline"
-                            size={rf(12)}
-                            color={ResponsiveTheme.colors.textSecondary}
-                            style={{ marginRight: 4 }}
-                          />
-                          <Text
-                            style={{
-                              fontSize: rf(11),
-                              color: ResponsiveTheme.colors.textSecondary,
-                            }}
-                          >
-                            Manual
-                            {progressEntries[0]?.entry_date
-                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-                              : ""}
-                          </Text>
-                        </View>
-                      )}
-                    </GlassCard>
-                  </View>
+                          <View style={styles.goalProgress}>
+                            <Text style={styles.goalText}>
+                              Goal: {stats.weight.goal}
+                              {stats.weight.unit}
+                            </Text>
+                            <View style={styles.progressBar}>
+                              <View
+                                style={[
+                                  styles.progressFill,
+                                  (() => {
+                                    const current = Number(
+                                      stats.weight.current,
+                                    );
+                                    const goal = Number(stats.weight.goal);
+                                    if (current <= 0 || !isFinite(current)) {
+                                      return { width: "0%" };
+                                    }
+                                    const raw =
+                                      ((current - goal) / current) * 100 + 50;
+                                    const clamped = Math.max(
+                                      0,
+                                      Math.min(100, isFinite(raw) ? raw : 0),
+                                    );
+                                    return { width: `${clamped}%` };
+                                  })(),
+                                ]}
+                              />
+                            </View>
+                          </View>
+                        </GlassCard>
 
-                  <View style={styles.statsGrid}>
-                    <GlassCard
-                      style={styles.statCard}
-                      elevation={2}
-                      blurIntensity="light"
-                      padding="md"
-                      borderRadius="lg"
-                    >
-                      <View style={styles.statHeader}>
-                        <Text style={styles.statValue}>
-                          {stats.muscle.current && stats.muscle.current > 0
-                            ? stats.muscle.current
-                            : "--"}
-                        </Text>
-                        <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
-                        {stats.muscle.change !== null &&
-                          stats.muscle.change !== 0 && (
-                            <Ionicons
-                              name={
-                                stats.muscle.trend === "decreasing"
-                                  ? "trending-down-outline"
-                                  : "trending-up-outline"
-                              }
-                              size={rf(16)}
-                              color={
-                                stats.muscle.trend === "decreasing"
-                                  ? ResponsiveTheme.colors.error
-                                  : ResponsiveTheme.colors.success
-                              }
-                            />
+                        <GlassCard
+                          style={styles.statCard}
+                          elevation={2}
+                          blurIntensity="light"
+                          padding="md"
+                          borderRadius="lg"
+                        >
+                          <View style={styles.statHeader}>
+                            <Text style={styles.statValue}>
+                              {stats.bodyFat.current &&
+                              stats.bodyFat.current > 0
+                                ? stats.bodyFat.current
+                                : "--"}
+                            </Text>
+                            <Text style={styles.statUnit}>
+                              {stats.bodyFat.unit}
+                            </Text>
+                            {stats.bodyFat.change !== null &&
+                              stats.bodyFat.change !== 0 && (
+                                <Ionicons
+                                  name={
+                                    stats.bodyFat.trend === "decreasing"
+                                      ? "trending-down-outline"
+                                      : "trending-up-outline"
+                                  }
+                                  size={rf(16)}
+                                  color={
+                                    stats.bodyFat.trend === "decreasing"
+                                      ? ResponsiveTheme.colors.success
+                                      : ResponsiveTheme.colors.error
+                                  }
+                                />
+                              )}
+                          </View>
+                          <Text style={styles.statLabel}>Body Fat</Text>
+                          <Text
+                            style={[
+                              styles.statChange,
+                              (stats.bodyFat.change ?? 0) < 0
+                                ? styles.statChangePositive
+                                : styles.statChangeNegative,
+                            ]}
+                          >
+                            {stats.bodyFat.change !== null
+                              ? `${(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}${stats.bodyFat.change}${stats.bodyFat.unit}`
+                              : "--"}
+                          </Text>
+                          {stats.bodyFat.current && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                size={rf(12)}
+                                color={ResponsiveTheme.colors.textSecondary}
+                                style={{ marginRight: 4 }}
+                              />
+                              <Text
+                                style={{
+                                  fontSize: rf(11),
+                                  color: ResponsiveTheme.colors.textSecondary,
+                                }}
+                              >
+                                Manual
+                                {progressEntries[0]?.entry_date
+                                  ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                                  : ""}
+                              </Text>
+                            </View>
                           )}
+                        </GlassCard>
                       </View>
-                      <Text style={styles.statLabel}>Muscle Mass</Text>
-                      <Text
-                        style={[
-                          styles.statChange,
-                          (stats.muscle.change ?? 0) > 0
-                            ? styles.statChangePositive
-                            : styles.statChangeNegative,
-                        ]}
-                      >
-                        {stats.muscle.change !== null
-                          ? `${(stats.muscle.change ?? 0) > 0 ? "+" : ""}${stats.muscle.change} ${stats.muscle.unit}`
-                          : "--"}
-                      </Text>
-                      {stats.muscle.current && (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 4,
-                          }}
-                        >
-                          <Ionicons
-                            name="create-outline"
-                            size={rf(12)}
-                            color={ResponsiveTheme.colors.textSecondary}
-                            style={{ marginRight: 4 }}
-                          />
-                          <Text
-                            style={{
-                              fontSize: rf(11),
-                              color: ResponsiveTheme.colors.textSecondary,
-                            }}
-                          >
-                            Manual
-                            {progressEntries[0]?.entry_date
-                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-                              : ""}
-                          </Text>
-                        </View>
-                      )}
-                    </GlassCard>
 
-                    <GlassCard
-                      style={styles.statCard}
-                      elevation={2}
-                      blurIntensity="light"
-                      padding="md"
-                      borderRadius="lg"
-                    >
-                      <View style={styles.statHeader}>
-                        <Text style={styles.statValue}>
-                          {stats.bmi.current && stats.bmi.current > 0
-                            ? Number(stats.bmi.current).toFixed(1)
-                            : "--"}
-                        </Text>
-                        <Text style={styles.statUnit}>BMI</Text>
-                      </View>
-                      <Text style={styles.statLabel}>Body Mass Index</Text>
-                      <Text
-                        style={[
-                          styles.statChange,
-                          { color: ResponsiveTheme.colors.textSecondary },
-                        ]}
-                      >
-                        --
-                      </Text>
-                      {stats.bmi.current && (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            marginTop: 4,
-                          }}
+                      <View style={styles.statsGrid}>
+                        <GlassCard
+                          style={styles.statCard}
+                          elevation={2}
+                          blurIntensity="light"
+                          padding="md"
+                          borderRadius="lg"
                         >
-                          <Ionicons
-                            name="calculator-outline"
-                            size={rf(12)}
-                            color={ResponsiveTheme.colors.textSecondary}
-                            style={{ marginRight: 4 }}
-                          />
+                          <View style={styles.statHeader}>
+                            <Text style={styles.statValue}>
+                              {stats.muscle.current && stats.muscle.current > 0
+                                ? stats.muscle.current
+                                : "--"}
+                            </Text>
+                            <Text style={styles.statUnit}>
+                              {stats.muscle.unit}
+                            </Text>
+                            {stats.muscle.change !== null &&
+                              stats.muscle.change !== 0 && (
+                                <Ionicons
+                                  name={
+                                    stats.muscle.trend === "decreasing"
+                                      ? "trending-down-outline"
+                                      : "trending-up-outline"
+                                  }
+                                  size={rf(16)}
+                                  color={
+                                    stats.muscle.trend === "decreasing"
+                                      ? ResponsiveTheme.colors.error
+                                      : ResponsiveTheme.colors.success
+                                  }
+                                />
+                              )}
+                          </View>
+                          <Text style={styles.statLabel}>Muscle Mass</Text>
                           <Text
-                            style={{
-                              fontSize: rf(11),
-                              color: ResponsiveTheme.colors.textSecondary,
-                            }}
+                            style={[
+                              styles.statChange,
+                              (stats.muscle.change ?? 0) > 0
+                                ? styles.statChangePositive
+                                : styles.statChangeNegative,
+                            ]}
                           >
-                            Calculated
+                            {stats.muscle.change !== null
+                              ? `${(stats.muscle.change ?? 0) > 0 ? "+" : ""}${stats.muscle.change} ${stats.muscle.unit}`
+                              : "--"}
                           </Text>
-                        </View>
-                      )}
-                    </GlassCard>
-                  </View>
+                          {stats.muscle.current && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="create-outline"
+                                size={rf(12)}
+                                color={ResponsiveTheme.colors.textSecondary}
+                                style={{ marginRight: 4 }}
+                              />
+                              <Text
+                                style={{
+                                  fontSize: rf(11),
+                                  color: ResponsiveTheme.colors.textSecondary,
+                                }}
+                              >
+                                Manual
+                                {progressEntries[0]?.entry_date
+                                  ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                                  : ""}
+                              </Text>
+                            </View>
+                          )}
+                        </GlassCard>
+
+                        <GlassCard
+                          style={styles.statCard}
+                          elevation={2}
+                          blurIntensity="light"
+                          padding="md"
+                          borderRadius="lg"
+                        >
+                          <View style={styles.statHeader}>
+                            <Text style={styles.statValue}>
+                              {stats.bmi.current && stats.bmi.current > 0
+                                ? Number(stats.bmi.current).toFixed(1)
+                                : "--"}
+                            </Text>
+                            <Text style={styles.statUnit}>BMI</Text>
+                          </View>
+                          <Text style={styles.statLabel}>Body Mass Index</Text>
+                          <Text
+                            style={[
+                              styles.statChange,
+                              { color: ResponsiveTheme.colors.textSecondary },
+                            ]}
+                          >
+                            --
+                          </Text>
+                          {stats.bmi.current && (
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                marginTop: 4,
+                              }}
+                            >
+                              <Ionicons
+                                name="calculator-outline"
+                                size={rf(12)}
+                                color={ResponsiveTheme.colors.textSecondary}
+                                style={{ marginRight: 4 }}
+                              />
+                              <Text
+                                style={{
+                                  fontSize: rf(11),
+                                  color: ResponsiveTheme.colors.textSecondary,
+                                }}
+                              >
+                                Calculated
+                              </Text>
+                            </View>
+                          )}
+                        </GlassCard>
+                      </View>
+                    </>
+                  )}
                 </View>
 
                 {/* Weekly Activity */}

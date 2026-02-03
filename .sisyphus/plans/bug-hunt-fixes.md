@@ -1143,7 +1143,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.8. Add Empty States for Lists
+- [x] 3.8. Add Empty States for Lists
 
   **What to do**:
   - Add "No meals logged" for empty meal list

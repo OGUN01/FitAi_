@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
@@ -314,22 +315,60 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
             <NutritionSummaryCard nutritionTargets={nutritionTargets} />
 
-            <MealPlanView
-              weeklyMealPlan={weeklyMealPlan}
-              selectedDay={selectedDay}
-              setSelectedDay={setSelectedDay}
-              getTodaysMeals={getTodaysMeals}
-              storeGetMealProgress={storeGetMealProgress}
-              mealSchedule={mealSchedule}
-              handleStartMeal={handleStartMeal}
-              completeMealPreparation={completeMealPreparation}
-              macroTargets={{
-                protein: macroTargets.protein || 0,
-                carbs: macroTargets.carbs || 0,
-                fat: macroTargets.fat || 0,
-              }}
-              calorieTarget={calorieTarget || 0}
-            />
+            {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
+              <View
+                style={{
+                  paddingVertical: ResponsiveTheme.spacing.xl,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="restaurant-outline"
+                  size={rf(48)}
+                  color={ResponsiveTheme.colors.textSecondary}
+                  style={{
+                    opacity: 0.3,
+                    marginBottom: ResponsiveTheme.spacing.md,
+                  }}
+                />
+                <Text
+                  style={{
+                    color: ResponsiveTheme.colors.textSecondary,
+                    fontSize: ResponsiveTheme.fontSize.md,
+                    marginBottom: ResponsiveTheme.spacing.xs,
+                  }}
+                >
+                  No meals logged
+                </Text>
+                <Text
+                  style={{
+                    color: ResponsiveTheme.colors.textSecondary,
+                    opacity: 0.6,
+                    fontSize: ResponsiveTheme.fontSize.sm,
+                  }}
+                >
+                  Tap + to log your first meal
+                </Text>
+              </View>
+            ) : (
+              <MealPlanView
+                weeklyMealPlan={weeklyMealPlan}
+                selectedDay={selectedDay}
+                setSelectedDay={setSelectedDay}
+                getTodaysMeals={getTodaysMeals}
+                storeGetMealProgress={storeGetMealProgress}
+                mealSchedule={mealSchedule}
+                handleStartMeal={handleStartMeal}
+                completeMealPreparation={completeMealPreparation}
+                macroTargets={{
+                  protein: macroTargets.protein || 0,
+                  carbs: macroTargets.carbs || 0,
+                  fat: macroTargets.fat || 0,
+                }}
+                calorieTarget={calorieTarget || 0}
+              />
+            )}
 
             <MealSuggestions />
 
