@@ -256,6 +256,7 @@ export interface Database {
           measurements: object | null; // JSONB
           progress_photos: string[] | null;
           notes: string | null;
+          recorded_at: string; // Timestamp when the entry was recorded (for analytics)
           created_at: string;
           updated_at: string;
         };
@@ -269,6 +270,7 @@ export interface Database {
           measurements?: object | null;
           progress_photos?: string[] | null;
           notes?: string | null;
+          recorded_at?: string; // Timestamp when the entry was recorded (for analytics)
         };
         Update: Partial<
           Database["public"]["Tables"]["progress_entries"]["Insert"]

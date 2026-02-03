@@ -8,6 +8,8 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Button, THEME } from "../ui";
@@ -60,7 +62,7 @@ interface CameraProps {
   onBarcodeScanned?: (barcode: string, type: string) => void;
   onClose: () => void;
   visible?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const CameraComponent: React.FC<CameraProps> = ({

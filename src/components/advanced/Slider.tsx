@@ -6,6 +6,8 @@ import {
   PanResponder,
   Animated,
   Dimensions,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -22,7 +24,7 @@ interface SliderProps {
   trackColor?: string;
   thumbColor?: string;
   activeTrackColor?: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Slider: React.FC<SliderProps> = ({

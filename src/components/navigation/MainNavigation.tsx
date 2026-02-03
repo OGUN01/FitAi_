@@ -14,6 +14,7 @@ import { HomeScreen } from "../../screens/main/HomeScreen";
 import { FitnessScreen } from "../../screens/main/FitnessScreen";
 import { DietScreen } from "../../screens/main/DietScreen";
 import { ProgressScreen } from "../../screens/main/ProgressScreen";
+import { ProgressTrendsScreen } from "../../screens/main/ProgressTrendsScreen";
 import { ProfileScreen } from "../../screens/main/ProfileScreen";
 import AnalyticsScreen from "../../screens/main/AnalyticsScreen";
 import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen";
@@ -57,6 +58,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     onEditCancel?: () => void;
   }>({ isActive: false });
 
+  // NEW: Progress screen session state
+  const [progressSession, setProgressSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
+  // NEW: ProgressTrends screen session state
+  const [progressTrendsSession, setProgressTrendsSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
@@ -90,6 +101,12 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
           onEditComplete: params?.onEditComplete,
           onEditCancel: params?.onEditCancel,
         });
+      } else if (screen === "Progress") {
+        console.log(`🧭 Setting progress session`);
+        setProgressSession({ isActive: true });
+      } else if (screen === "ProgressTrends") {
+        console.log(`🧭 Setting progress trends session`);
+        setProgressTrendsSession({ isActive: true });
       }
     },
     goBack: () => {
@@ -98,6 +115,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       setMealSession({ isActive: false });
       setCookingSession({ isActive: false });
       setOnboardingEditSession({ isActive: false });
+      setProgressSession({ isActive: false });
+      setProgressTrendsSession({ isActive: false });
     },
   };
 
@@ -213,6 +232,16 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       );
     }
 
+    // If progress session is active, show progress screen
+    if (progressSession.isActive) {
+      return <ProgressScreen navigation={navigation} />;
+    }
+
+    // If progress trends session is active, show progress trends screen
+    if (progressTrendsSession.isActive) {
+      return <ProgressTrendsScreen navigation={navigation} />;
+    }
+
     // Otherwise show normal tab screens
     switch (activeTab) {
       case "home":
@@ -220,7 +249,7 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       case "fitness":
         return <FitnessScreen navigation={navigation} />;
       case "analytics":
-        return <AnalyticsScreen />;
+        return <AnalyticsScreen navigation={navigation} />;
       case "diet":
         return (
           <DietScreen navigation={navigation} isActive={activeTab === "diet"} />
@@ -240,7 +269,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       {!workoutSession.isActive &&
         !mealSession.isActive &&
         !cookingSession.isActive &&
-        !onboardingEditSession.isActive && (
+        !onboardingEditSession.isActive &&
+        !progressSession.isActive &&
+        !progressTrendsSession.isActive && (
           <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
         )}
     </View>

@@ -6,6 +6,8 @@ import {
   Dimensions,
   ScrollView,
   TouchableOpacity,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { LineChart } from "react-native-chart-kit";
 import { THEME } from "../../utils/constants";
@@ -27,7 +29,7 @@ interface ProgressChartProps {
   metric: "weight" | "bodyFat" | "muscleMass";
   title: string;
   unit: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ProgressChart: React.FC<ProgressChartProps> = ({

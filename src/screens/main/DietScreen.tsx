@@ -18,7 +18,7 @@ import {
   Platform,
   PanResponder,
 } from "react-native";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
@@ -78,6 +78,7 @@ import MealTypeSelector from "../../components/diet/MealTypeSelector";
 import AIMealsPanel from "../../components/diet/AIMealsPanel";
 import CreateRecipeModal from "../../components/diet/CreateRecipeModal";
 import JobStatusIndicator from "../../components/diet/JobStatusIndicator";
+import { WaterIntakeModal } from "../../components/diet/WaterIntakeModal";
 import {
   runQuickActionsTests,
   runFoodRecognitionE2ETests,
@@ -334,6 +335,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     useState<any>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
+  const [showWaterIntakeModal, setShowWaterIntakeModal] = useState(false);
 
   // Swipe State
   const [mealSwipePositions, setMealSwipePositions] = useState<
@@ -2330,61 +2332,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   };
 
   const handleLogWater = () => {
-    Alert.alert(
-      "Log Water Intake",
-      "Choose how to log your water consumption:",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Add 250ml",
-          onPress: () => hydrationAddWater(250),
-        },
-        {
-          text: "Add 500ml",
-          onPress: () => {
-            hydrationAddWater(500);
-            Alert.alert("Water Added!", "Added 500ml to your daily intake.");
-          },
-        },
-        {
-          text: "Custom Amount",
-          onPress: () => {
-            Alert.prompt(
-              "Water Amount (Liters)",
-              "How many liters did you drink?",
-              [
-                {
-                  text: "Cancel",
-                  style: "cancel",
-                },
-                {
-                  text: "Add",
-                  onPress: (value) => {
-                    const amountLiters = parseFloat(value || "0");
-                    if (amountLiters > 0 && amountLiters <= 3) {
-                      const amountML = amountLiters * 1000; // Convert to ML for store
-                      hydrationAddWater(amountML);
-                      Alert.alert(
-                        "Water Added!",
-                        `Added ${amountLiters}L to your daily intake.`,
-                      );
-                    } else {
-                      Alert.alert(
-                        "Invalid Amount",
-                        "Please enter a number between 0.1 and 3.0 liters.",
-                      );
-                    }
-                  },
-                },
-              ],
-              "plain-text",
-              "",
-              "decimal-pad",
-            );
-          },
-        },
-      ],
-    );
+    setShowWaterIntakeModal(true);
   };
 
   // Handle feedback submission
@@ -2615,7 +2563,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top"]}>
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -2678,10 +2626,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
               <View style={styles.headerButtons}>
                 {/* Track B Status Indicator */}
-                <AnimatedPressable
-                  style={styles.statusButton}
-                  scaleValue={0.97}
-                >
+                <View style={styles.statusButton}>
                   <Ionicons
                     name={
                       trackBStatus.isConnected
@@ -2691,7 +2636,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                     size={rf(16)}
                     color={trackBStatus.isConnected ? "#10b981" : "#ef4444"}
                   />
-                </AnimatedPressable>
+                </View>
                 <AnimatedPressable
                   style={[
                     styles.aiButton,
@@ -3951,7 +3896,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 </AnimatedPressable>
 
                 <AnimatedPressable
-                  onPress={() => {}}
+                  onPress={() => setShowMealTypeSelector(true)}
                   scaleValue={0.92}
                   style={styles.quickActionPill}
                 >
@@ -3980,99 +3925,6 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                   </LinearGradient>
                 </AnimatedPressable>
               </ScrollView>
-            </View>
-
-            {/* Water Intake */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Water Intake</Text>
-              <GlassCard
-                style={styles.waterCard}
-                elevation={2}
-                padding="lg"
-                blurIntensity="light"
-                borderRadius="lg"
-              >
-                <View style={styles.waterHeader}>
-                  <Ionicons
-                    name="water-outline"
-                    size={rf(32)}
-                    color={ResponsiveTheme.colors.primary}
-                    style={styles.waterIcon}
-                  />
-                  <View style={styles.waterInfo}>
-                    <Text style={styles.waterAmount}>
-                      {waterConsumedLiters.toFixed(1)}L /{" "}
-                      {waterGoalLiters?.toFixed(1) ?? "?"}L
-                    </Text>
-                    <Text style={styles.waterSubtext}>
-                      {waterConsumedLiters === 0
-                        ? "Start tracking your hydration!"
-                        : waterGoalLiters &&
-                            waterConsumedLiters >= waterGoalLiters
-                          ? "Daily goal achieved!"
-                          : waterGoalLiters
-                            ? `${(waterGoalLiters - waterConsumedLiters).toFixed(1)}L more to reach your goal!`
-                            : "Set your water goal in settings"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.waterProgress}>
-                  <View style={styles.progressBar}>
-                    <View
-                      style={[
-                        styles.progressFill,
-                        {
-                          width: `${waterGoalLiters ? Math.max(0, Math.min((waterConsumedLiters / waterGoalLiters) * 100, 100)) : 0}%`,
-                          backgroundColor:
-                            waterGoalLiters &&
-                            waterConsumedLiters >= waterGoalLiters
-                              ? "#10b981"
-                              : ResponsiveTheme.colors.primary,
-                        },
-                      ]}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.waterButtons}>
-                  <Button
-                    title="+ 250ml"
-                    onPress={handleAddWater}
-                    variant={
-                      waterGoalLiters && waterConsumedLiters >= waterGoalLiters
-                        ? ("solid" as any)
-                        : "outline"
-                    }
-                    size="sm"
-                    style={{
-                      ...styles.waterButton,
-                      flex: 1,
-                      marginRight: ResponsiveTheme.spacing.sm,
-                    }}
-                  />
-                  <Button
-                    title="Custom"
-                    onPress={handleLogWater}
-                    variant="outline"
-                    size="sm"
-                    style={{
-                      ...styles.waterButton,
-                      flex: 0.7,
-                      marginRight: ResponsiveTheme.spacing.sm,
-                    }}
-                  />
-                  {waterConsumedLiters > 0 && (
-                    <Button
-                      title="- 250ml"
-                      onPress={handleRemoveWater}
-                      variant="outline"
-                      size="sm"
-                      style={{ ...styles.waterButton, flex: 0.8 }}
-                    />
-                  )}
-                </View>
-              </GlassCard>
             </View>
 
             <View style={styles.bottomSpacing} />
@@ -4133,6 +3985,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           visible={showMealTypeSelector}
           onSelect={handleMealTypeSelected}
           onClose={() => setShowMealTypeSelector(false)}
+        />
+
+        {/* Water Intake Modal */}
+        <WaterIntakeModal
+          visible={showWaterIntakeModal}
+          onClose={() => setShowWaterIntakeModal(false)}
+          onAddWater={hydrationAddWater}
+          currentIntakeML={waterIntakeML}
+          goalML={waterGoalML || 2500}
         />
 
         {/* AI Meals Panel */}

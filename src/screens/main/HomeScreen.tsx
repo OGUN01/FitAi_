@@ -40,6 +40,8 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+// Note: useFocusEffect removed - app uses custom navigation, not React Navigation
+// Focus refresh is handled via useEffect on mount
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -134,8 +136,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   } = useHydrationStore();
 
   // Get calculated metrics for initializing hydration goal
-  const { metrics: calculatedMetrics, hasCalculatedMetrics } =
-    useCalculatedMetrics();
+  const {
+    metrics: calculatedMetrics,
+    hasCalculatedMetrics,
+    refreshMetrics,
+  } = useCalculatedMetrics();
+
+  // Refresh data on mount and when isVisible changes
+  // Note: Previously used useFocusEffect from React Navigation, but app uses custom navigation
+  useEffect(() => {
+    console.log("[HomeScreen] Screen mounted - refreshing metrics and data");
+
+    // Refresh calculated metrics (forces reload from database/AsyncStorage)
+    refreshMetrics().catch((err) => {
+      console.warn("[HomeScreen] Failed to refresh metrics on mount:", err);
+    });
+
+    // Reload other data services
+    DataRetrievalService.loadAllData()
+      .then(() => {
+        setTodaysData(DataRetrievalService.getTodaysData());
+        setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
+      })
+      .catch((err) => {
+        console.warn("[HomeScreen] Failed to load data on mount:", err);
+      });
+  }, [refreshMetrics]);
 
   // Sync hydration goal from calculated metrics on mount
   useEffect(() => {

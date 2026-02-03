@@ -7,6 +7,8 @@ import {
   Animated,
   Dimensions,
   Vibration,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -29,7 +31,7 @@ interface SwipeGestureProps {
   swipeThreshold?: number;
   hapticFeedback?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const SwipeGesture: React.FC<SwipeGestureProps> = ({

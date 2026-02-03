@@ -8,6 +8,8 @@ import {
   Animated,
   Vibration,
   Dimensions,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -28,7 +30,7 @@ interface LongPressMenuProps {
   hapticFeedback?: boolean;
   longPressDuration?: number;
   disabled?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const LongPressMenu: React.FC<LongPressMenuProps> = ({

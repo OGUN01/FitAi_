@@ -11,6 +11,8 @@ import {
   Animated,
   TextInput,
   Keyboard,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native";
 import { PanGestureHandler } from "react-native-gesture-handler";
@@ -25,7 +27,7 @@ interface CustomSliderProps {
   maximumValue: number;
   value: number;
   onValueChange: (value: number) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const CustomSlider: React.FC<CustomSliderProps> = ({

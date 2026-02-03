@@ -11,6 +11,7 @@ import {
   calculateWorkoutCalories,
   ExerciseCalorieInput,
 } from "./calorieCalculator";
+import { analyticsDataService } from "./analyticsData";
 
 export interface CompletionEvent {
   id: string;
@@ -162,6 +163,22 @@ class CompletionTrackingService {
                 `✅ Supabase workout_sessions synced for: ${workout.title} (${actualCaloriesBurned} cal MET-based, ${workout.duration} min)`,
               );
 
+              // Save to analytics_metrics for Monthly Summary tracking
+              try {
+                await analyticsDataService.updateTodaysMetrics(userId, {
+                  workoutsCompleted: 1,
+                  caloriesBurned: actualCaloriesBurned,
+                });
+                console.log(
+                  "📊 Analytics metrics updated for workout completion",
+                );
+              } catch (analyticsError) {
+                console.warn(
+                  "⚠️ Failed to update analytics metrics:",
+                  analyticsError,
+                );
+              }
+
               // CRITICAL: Trigger refresh so fitness hooks refetch data
               // This ensures UI updates immediately after workout completion
               try {
@@ -310,6 +327,25 @@ class CompletionTrackingService {
                 console.log(
                   `✅ Supabase meal_logs synced for: ${meal.name} (${meal.totalCalories} cal, P:${meal.totalMacros?.protein}g, C:${meal.totalMacros?.carbohydrates}g, F:${meal.totalMacros?.fat}g)`,
                 );
+
+                // Save to analytics_metrics for Monthly Summary tracking
+                try {
+                  await analyticsDataService.updateTodaysMetrics(
+                    currentUserId,
+                    {
+                      mealsLogged: 1,
+                      caloriesConsumed: meal.totalCalories || 0,
+                    },
+                  );
+                  console.log(
+                    "📊 Analytics metrics updated for meal completion",
+                  );
+                } catch (analyticsError) {
+                  console.warn(
+                    "⚠️ Failed to update analytics metrics:",
+                    analyticsError,
+                  );
+                }
 
                 // CRITICAL: Trigger refresh so useNutritionData hook refetches dailyNutrition
                 // This ensures the calorie ring updates immediately after meal completion

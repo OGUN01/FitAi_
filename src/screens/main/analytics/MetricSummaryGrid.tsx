@@ -99,7 +99,7 @@ const MetricCard: React.FC<{
 
   return (
     <Animated.View
-      entering={FadeInUp.delay(delay).springify()}
+      entering={FadeInUp.delay(delay).duration(400)}
       style={styles.cardWrapper}
     >
       <AnimatedPressable
@@ -348,8 +348,9 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
-    marginBottom: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.xl,
     gap: ResponsiveTheme.spacing.md,
+    zIndex: 3,
   },
   row: {
     flexDirection: "row",

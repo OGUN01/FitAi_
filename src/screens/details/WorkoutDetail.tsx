@@ -40,6 +40,7 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
     useFitnessStore();
   const [selectedExercise, setSelectedExercise] =
     React.useState<Exercise | null>(null);
+  const [isFavorited, setIsFavorited] = React.useState(false);
 
   // Find the workout from the store by ID
   const workout = React.useMemo(() => {
@@ -134,7 +135,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           </Text>
           <Button
             title="Go Back"
-            onPress={onBack || (() => {})}
+            onPress={onBack ?? (() => {})}
+            disabled={!onBack}
             variant="primary"
             style={{ marginTop: THEME.spacing.lg }}
           />
@@ -151,8 +153,11 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Workout Details</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Text style={styles.favoriteIcon}>♡</Text>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => setIsFavorited(!isFavorited)}
+        >
+          <Text style={styles.favoriteIcon}>{isFavorited ? "❤️" : "♡"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -273,7 +278,10 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                     Rest: {exercise.restTime}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.exerciseArrow}>
+                <TouchableOpacity
+                  style={styles.exerciseArrow}
+                  onPress={() => setSelectedExercise(exercise)}
+                >
                   <Text style={styles.exerciseArrowText}>→</Text>
                 </TouchableOpacity>
               </View>
@@ -303,7 +311,8 @@ export const WorkoutDetail: React.FC<WorkoutDetailProps> = ({
                 ? "Continue Workout"
                 : "Start Workout"
           }
-          onPress={onStartWorkout || (() => {})}
+          onPress={onStartWorkout ?? (() => {})}
+          disabled={!onStartWorkout}
           variant="primary"
           size="lg"
           fullWidth

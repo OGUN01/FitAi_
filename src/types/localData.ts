@@ -1,7 +1,7 @@
 // Local Data Types for Track B Infrastructure
 // Comprehensive TypeScript interfaces for local storage schema
 
-import { UserProfile, PersonalInfo, FitnessGoals } from './user';
+import { UserProfile, PersonalInfo, FitnessGoals } from "./user";
 
 import {
   Workout,
@@ -10,11 +10,17 @@ import {
   CompletedExercise,
   CompletedSet,
   WorkoutSession,
-} from './workout';
+} from "./workout";
 
-import { Meal, Food, Macronutrients, NutritionPlan, DailyMealPlan } from './diet';
+import {
+  Meal,
+  Food,
+  Macronutrients,
+  NutritionPlan,
+  DailyMealPlan,
+} from "./diet";
 
-import { Achievement } from './ai';
+import { Achievement } from "./ai";
 
 // ============================================================================
 // ONBOARDING DATA
@@ -34,10 +40,10 @@ export interface OnboardingData {
 // ============================================================================
 
 export enum SyncStatus {
-  SYNCED = 'synced',
-  PENDING = 'pending',
-  FAILED = 'failed',
-  CONFLICT = 'conflict',
+  SYNCED = "synced",
+  PENDING = "pending",
+  FAILED = "failed",
+  CONFLICT = "conflict",
 }
 
 export interface SyncMetadata {
@@ -45,7 +51,7 @@ export interface SyncMetadata {
   lastModifiedAt: string;
   syncVersion: number;
   deviceId: string;
-  conflictResolution?: 'local' | 'remote' | 'manual';
+  conflictResolution?: "local" | "remote" | "manual";
 }
 
 // ============================================================================
@@ -64,9 +70,9 @@ export interface LocalUserProfile extends UserProfile {
 }
 
 export interface UserSettings {
-  units: 'metric' | 'imperial';
-  language: 'en' | 'es' | 'fr' | 'de' | 'pt';
-  theme: 'light' | 'dark' | 'system';
+  units: "metric" | "imperial";
+  language: "en" | "es" | "fr" | "de" | "pt";
+  theme: "light" | "dark" | "system";
   notifications: {
     workoutReminders: boolean;
     mealReminders: boolean;
@@ -88,7 +94,7 @@ export interface UserSettings {
     dataCollection: boolean;
   };
   accessibility: {
-    fontSize: 'small' | 'medium' | 'large';
+    fontSize: "small" | "medium" | "large";
     highContrast: boolean;
     reduceMotion: boolean;
     screenReader: boolean;
@@ -117,8 +123,8 @@ export interface WorkoutPerformance {
   completionRate: number; // 0-1
   notes?: string;
   modifications?: string[];
-  difficulty: 'too_easy' | 'just_right' | 'too_hard';
-  mood: 'energetic' | 'normal' | 'tired';
+  difficulty: "too_easy" | "just_right" | "too_hard";
+  mood: "energetic" | "normal" | "tired";
 }
 
 export interface LocalWorkoutPlan extends WorkoutPlan {
@@ -137,7 +143,7 @@ export interface LocalWorkoutPlan extends WorkoutPlan {
 
 export interface LocalWorkoutSession extends WorkoutSession {
   localId: string;
-  syncStatus: SyncStatus | 'local';
+  syncStatus: SyncStatus | "local";
   syncMetadata: SyncMetadata;
   mediaFiles?: {
     photos: string[]; // Local file paths
@@ -156,7 +162,7 @@ export interface LocalFood extends Food {
   lastUsed?: string;
   usageCount: number;
   userNotes?: string;
-  verificationStatus: 'verified' | 'user_created' | 'ai_suggested';
+  verificationStatus: "verified" | "user_created" | "ai_suggested";
 }
 
 export interface LoggedFood {
@@ -187,7 +193,7 @@ export interface BodyMeasurement {
   neck?: number;
   photos?: string[];
   notes?: string;
-  syncStatus?: SyncStatus | 'local' | 'synced' | 'pending';
+  syncStatus?: SyncStatus | "local" | "synced" | "pending";
 }
 
 // ============================================================================
@@ -214,33 +220,59 @@ export interface LocalUserData {
     };
   };
   onboardingData?: OnboardingData | null;
-  profile?: any;
-  preferences?: UserPreferences | any;
+  profile?: UserProfile | null;
+  preferences?: UserPreferences | null;
 }
 
 export interface LocalFitnessData {
-  workouts?: any[];
-  exercises?: any[];
+  workouts?: Workout[];
+  exercises?: Exercise[];
   sessions: WorkoutSession[];
-  plans?: any[];
-  customExercises?: any[];
+  plans?: WorkoutPlan[];
+  customExercises?: Exercise[];
 }
 
 export interface LocalNutritionData {
-  meals?: any[];
-  foods?: any[];
+  meals?: Meal[];
+  foods?: Food[];
   logs: MealLog[];
-  plans?: any[];
-  customFoods?: any[];
+  plans?: NutritionPlan[];
+  customFoods?: Food[];
   waterLogs?: WaterLog[];
+}
+
+// Progress tracking types
+export interface ProgressPhoto {
+  id: string;
+  url: string;
+  date: string;
+  type: "front" | "back" | "side";
+  notes?: string;
+}
+
+export interface AnalyticsData {
+  id: string;
+  date: string;
+  type: string;
+  value: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Goal {
+  id: string;
+  type: string;
+  target: number;
+  current: number;
+  deadline?: string;
+  achieved: boolean;
 }
 
 export interface LocalProgressData {
   measurements: BodyMeasurement[];
-  photos?: any[];
-  achievements?: any[];
-  analytics?: any[];
-  goals?: any[];
+  photos?: ProgressPhoto[];
+  achievements?: Achievement[];
+  analytics?: AnalyticsData[];
+  goals?: Goal[];
 }
 
 export interface LocalStorageSchema {
@@ -252,7 +284,7 @@ export interface LocalStorageSchema {
   fitness: LocalFitnessData;
   nutrition: LocalNutritionData;
   progress: LocalProgressData;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 // Validation result used by validation service and stores
@@ -260,7 +292,7 @@ export interface ValidationError {
   field: string;
   message: string;
   code: string;
-  severity?: 'error' | 'warning';
+  severity?: "error" | "warning";
 }
 export interface ValidationWarning {
   field: string;
@@ -274,14 +306,14 @@ export interface ValidationResult {
 }
 
 // Re-export commonly used types for convenience
-export type { WorkoutSession } from './workout';
+export type { WorkoutSession } from "./workout";
 
 // Re-export types to avoid duplication
-export type { Macronutrients } from './diet';
+export type { Macronutrients } from "./diet";
 
 // User Preferences for local app settings
 export interface UserPreferences {
-  units: 'metric' | 'imperial';
+  units: "metric" | "imperial";
   notifications: boolean;
   darkMode: boolean;
   language: string;
@@ -342,7 +374,7 @@ export interface LocalDailyMealPlan extends DailyMealPlan {
 
 export interface MealLog {
   id: string;
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: "breakfast" | "lunch" | "dinner" | "snack";
   foods: LoggedFood[];
   totalCalories: number;
   totalMacros: Macronutrients;
@@ -358,7 +390,7 @@ export interface MealLog {
     lat?: number;
     lng?: number;
   };
-  mood?: 'satisfied' | 'still_hungry' | 'too_full';
+  mood?: "satisfied" | "still_hungry" | "too_full";
   syncStatus: SyncStatus;
   syncMetadata: SyncMetadata;
 }
@@ -379,7 +411,7 @@ export interface WaterLog {
 export interface ProgressEntry {
   id: string;
   date: string;
-  type: 'weight' | 'body_fat' | 'measurements' | 'photos' | 'performance';
+  type: "weight" | "body_fat" | "measurements" | "photos" | "performance";
   data: {
     weight?: number; // kg
     bodyFat?: number; // percentage
@@ -415,7 +447,7 @@ export interface StreakData {
     startDate: string;
     endDate: string;
     length: number;
-    type: 'workout' | 'nutrition' | 'both';
+    type: "workout" | "nutrition" | "both";
   }[];
 }
 
@@ -448,14 +480,14 @@ export interface CacheEntry<T> {
 
 export interface OfflineQueue {
   id: string;
-  action: 'create' | 'update' | 'delete' | 'sync';
-  entity: 'workout' | 'meal' | 'progress' | 'user' | 'achievement';
+  action: "create" | "update" | "delete" | "sync";
+  entity: "workout" | "meal" | "progress" | "user" | "achievement";
   entityId: string;
-  data: any;
+  data: Record<string, unknown>;
   attempts: number;
   lastAttemptAt?: string;
   error?: string;
-  priority: 'low' | 'normal' | 'high';
+  priority: "low" | "normal" | "high";
   createdAt: string;
 }
 
@@ -529,7 +561,7 @@ export interface MigrationRecord {
   toVersion: string;
   startedAt: string;
   completedAt?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  status: "pending" | "in_progress" | "completed" | "failed";
   migratedEntities: {
     [entity: string]: {
       total: number;
@@ -538,23 +570,38 @@ export interface MigrationRecord {
       errors?: string[];
     };
   };
-  rollbackData?: any;
+  rollbackData?: unknown;
 }
 
 // ============================================================================
 // TYPE GUARDS
 // ============================================================================
 
-export const isLocalWorkout = (workout: any): workout is LocalWorkout => {
-  return workout && 'localId' in workout && 'syncStatus' in workout;
+export const isLocalWorkout = (workout: unknown): workout is LocalWorkout => {
+  return (
+    workout !== null &&
+    typeof workout === "object" &&
+    "localId" in workout &&
+    "syncStatus" in workout
+  );
 };
 
-export const isLocalFood = (food: any): food is LocalFood => {
-  return food && 'localId' in food && 'isCustom' in food;
+export const isLocalFood = (food: unknown): food is LocalFood => {
+  return (
+    food !== null &&
+    typeof food === "object" &&
+    "localId" in food &&
+    "isCustom" in food
+  );
 };
 
 export const isSyncable = (
-  entity: any
+  entity: unknown,
 ): entity is { syncStatus: SyncStatus; syncMetadata: SyncMetadata } => {
-  return entity && 'syncStatus' in entity && 'syncMetadata' in entity;
+  return (
+    entity !== null &&
+    typeof entity === "object" &&
+    "syncStatus" in entity &&
+    "syncMetadata" in entity
+  );
 };

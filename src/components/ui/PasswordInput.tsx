@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, ViewStyle, TextStyle } from "react-native";
 import { Input } from "./Input";
 import { THEME } from "../../utils/constants";
 
@@ -10,8 +10,8 @@ interface PasswordInputProps {
   onChangeText: (text: string) => void;
   error?: string;
   disabled?: boolean;
-  style?: any;
-  inputStyle?: any;
+  style?: ViewStyle;
+  inputStyle?: TextStyle;
 }
 
 export const PasswordInput: React.FC<PasswordInputProps> = ({

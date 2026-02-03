@@ -14,6 +14,9 @@ import type {
   WorkoutPreferences as BaseWorkoutPreferences,
   BodyMetrics,
 } from "./user";
+import type { WorkoutSession } from "./workout";
+import type { MealLog } from "./diet";
+import type { BodyMeasurement } from "./localData";
 
 // ============================================================================
 // CORE TYPE RE-EXPORTS (Single source of truth from user.ts)
@@ -102,8 +105,8 @@ export interface DataValidationSchema {
 export interface SyncConflict {
   id: string;
   field: string;
-  localValue: any;
-  remoteValue: any;
+  localValue: unknown;
+  remoteValue: unknown;
   localTimestamp: string;
   remoteTimestamp: string;
   conflictType: "value_mismatch" | "version_conflict" | "deletion_conflict";
@@ -112,7 +115,7 @@ export interface SyncConflict {
 export interface ConflictResolution {
   conflictId: string;
   resolution: "use_local" | "use_remote" | "merge" | "manual";
-  mergedValue?: any;
+  mergedValue?: unknown;
   userChoice?: boolean;
 }
 
@@ -136,7 +139,7 @@ export interface StorageOperation {
     | "workoutPreferences"
     | "bodyAnalysis"
     | "userProfile";
-  data: any;
+  data: Record<string, unknown>;
   timestamp: string;
   userId?: string;
 }
@@ -177,17 +180,42 @@ export interface MigrationResult {
     workoutPreferences?: boolean;
     bodyAnalysis?: boolean;
     advancedReview?: boolean;
-    workoutSessions?: any[];
-    mealLogs?: any[];
-    bodyMeasurements?: any[];
+    workoutSessions?: WorkoutSession[];
+    mealLogs?: MealLog[];
+    bodyMeasurements?: BodyMeasurement[];
   };
   conflicts: SyncConflict[];
   errors: string[];
   warnings?: string[];
-  duration: number; // in milliseconds
+  duration: number;
   migrationId?: string;
-  progress?: any;
-  migratedDataCount?: any;
+  progress?: {
+    migrationId: string;
+    status: string;
+    currentStep: string;
+    currentStepIndex: number;
+    totalSteps: number;
+    percentage: number;
+    startTime: Date;
+    endTime?: Date;
+    message?: string;
+    errors: Array<{
+      step: string;
+      code: string;
+      message: string;
+      timestamp: Date;
+      retryCount: number;
+      recoverable: boolean;
+    }>;
+    warnings: string[];
+  };
+  migratedDataCount?: {
+    userProfiles: number;
+    workoutSessions: number;
+    mealLogs: number;
+    bodyMeasurements: number;
+    achievements: number;
+  };
   migratedKeys?: string[];
   localSyncKeys?: string[];
   remoteSyncKeys?: string[];
@@ -204,15 +232,15 @@ export interface EditContextData {
     | "dietPreferences"
     | "workoutPreferences"
     | null;
-  originalData: any;
-  currentData: any;
+  originalData: Record<string, unknown>;
+  currentData: Record<string, unknown>;
   hasChanges: boolean;
   validationErrors: string[];
 }
 
 export interface EditActions {
-  startEdit: (section: string, data: any) => void;
-  updateData: (data: any) => void;
+  startEdit: (section: string, data: Record<string, unknown>) => void;
+  updateData: (data: Record<string, unknown>) => void;
   saveChanges: () => Promise<boolean>;
   cancelEdit: () => void;
   validateData: () => ValidationResult;

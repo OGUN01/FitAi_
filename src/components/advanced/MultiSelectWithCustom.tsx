@@ -8,6 +8,8 @@ import {
   Modal,
   TextInput,
   Alert,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Button, THEME } from "../ui";
 
@@ -30,7 +32,7 @@ interface MultiSelectWithCustomProps {
   maxSelections?: number;
   searchable?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   allowCustom?: boolean;
   customLabel?: string;
   customPlaceholder?: string;

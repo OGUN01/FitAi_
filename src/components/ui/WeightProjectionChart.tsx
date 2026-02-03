@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -25,7 +25,7 @@ interface WeightProjectionChartProps {
   width?: number;
   height?: number;
   milestones?: number[];
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({

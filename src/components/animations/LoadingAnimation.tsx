@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Easing,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { THEME } from "../../utils/constants";
 
 interface LoadingAnimationProps {
@@ -7,7 +15,7 @@ interface LoadingAnimationProps {
   size?: "sm" | "md" | "lg";
   color?: string;
   text?: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const LoadingAnimation: React.FC<LoadingAnimationProps> = ({

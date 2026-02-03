@@ -403,6 +403,9 @@ export class EnhancedLocalStorageService {
     > = {
       // Migration from 0.1.0 to 0.1.1: Added sync queue
       "0.1.0->0.1.1": (s) => {
+        if (!s.metadata) {
+          s.metadata = {};
+        }
         if (!s.metadata.syncQueue) {
           s.metadata.syncQueue = [];
         }
@@ -434,6 +437,9 @@ export class EnhancedLocalStorageService {
       },
       // Migration from 0.1.4 to 0.1.5: Added storage info and compression ratio
       "0.1.4->0.1.5": (s) => {
+        if (!s.metadata) {
+          s.metadata = {};
+        }
         if (!s.metadata.storageInfo) {
           s.metadata.storageInfo = {
             totalSize: 0,

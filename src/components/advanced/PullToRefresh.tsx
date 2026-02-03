@@ -7,6 +7,8 @@ import {
   Animated,
   PanResponder,
   Vibration,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -17,7 +19,7 @@ interface PullToRefreshProps {
   pullThreshold?: number;
   maxPullDistance?: number;
   hapticFeedback?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const PullToRefresh: React.FC<PullToRefreshProps> = ({

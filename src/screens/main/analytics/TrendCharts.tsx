@@ -567,7 +567,7 @@ const ChartCard: React.FC<{
   children: React.ReactNode;
 }> = ({ title, icon, iconColor, legend, delay = 0, onPress, children }) => {
   return (
-    <Animated.View entering={FadeInUp.delay(delay).springify()}>
+    <Animated.View entering={FadeInUp.delay(delay).duration(400)}>
       <AnimatedPressable
         onPress={onPress}
         scaleValue={0.98}
@@ -748,14 +748,17 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: ResponsiveTheme.spacing.xl,
     marginBottom: ResponsiveTheme.spacing.lg,
+    zIndex: 1,
   },
   headerContainer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
   chartsContainer: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
-    gap: ResponsiveTheme.spacing.sm,
+    gap: ResponsiveTheme.spacing.lg,
   },
   chartHeader: {
     marginBottom: ResponsiveTheme.spacing.md,
@@ -907,11 +910,12 @@ const styles = StyleSheet.create({
 
   // Empty chart state - enhanced
   emptyChart: {
-    height: rh(180),
+    minHeight: rh(180),
     justifyContent: "center",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
+    paddingVertical: ResponsiveTheme.spacing.md,
   },
   emptyChartIconContainer: {
     width: rw(70),

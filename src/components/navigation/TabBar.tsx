@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { THEME } from "../../utils/constants";
 import { useResponsiveTheme } from "../../hooks/useResponsiveTheme";
@@ -32,6 +33,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   onTabPress,
 }) => {
   const responsiveTheme = useResponsiveTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View
@@ -39,7 +41,7 @@ export const TabBar: React.FC<TabBarProps> = ({
         styles.container,
         {
           backgroundColor: responsiveTheme.colors.backgroundSecondary,
-          paddingBottom: rp(20),
+          paddingBottom: Math.max(insets.bottom, rp(10)),
           borderTopWidth: 1,
           borderTopColor: responsiveTheme.colors.border,
         },

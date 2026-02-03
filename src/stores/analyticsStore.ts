@@ -18,10 +18,25 @@ import {
   SleepWellnessAnalytics,
   PredictiveInsights,
 } from "../services/analyticsEngine";
-import {
-  getHydrationGoal,
-  getHealthMetrics,
-} from "../services/StoreCoordinator";
+
+// LAZY IMPORTS: Avoid circular dependency with StoreCoordinator
+// These functions get store data without creating import cycles
+let _hydrationStoreModule: any = null;
+let _healthDataStoreModule: any = null;
+
+const getHydrationGoal = (): number | null => {
+  if (!_hydrationStoreModule) {
+    _hydrationStoreModule = require("./hydrationStore");
+  }
+  return _hydrationStoreModule.useHydrationStore.getState().dailyGoalML;
+};
+
+const getHealthMetrics = () => {
+  if (!_healthDataStoreModule) {
+    _healthDataStoreModule = require("./healthDataStore");
+  }
+  return _healthDataStoreModule.useHealthDataStore.getState().metrics;
+};
 
 interface AnalyticsStore {
   // State

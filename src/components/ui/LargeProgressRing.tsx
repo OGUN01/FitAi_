@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -27,7 +27,7 @@ interface LargeProgressRingProps {
   showGlow?: boolean;
   showValue?: boolean;
   label?: string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const LargeProgressRing: React.FC<LargeProgressRingProps> = ({

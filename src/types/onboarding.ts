@@ -307,10 +307,10 @@ export interface AdvancedReviewData {
 
   // Validation results (NEW)
   validation_status?: "passed" | "warnings" | "blocked";
-  validation_errors?: any; // JSONB
-  validation_warnings?: any; // JSONB
-  refeed_schedule?: any; // JSONB
-  medical_adjustments?: string[]; // TEXT[]
+  validation_errors?: Array<{ field: string; message: string; code: string }>;
+  validation_warnings?: string[];
+  refeed_schedule?: Record<string, unknown>;
+  medical_adjustments?: string[];
 
   // Additional missing properties
   bmi_category?: string;
@@ -322,7 +322,7 @@ export interface AdvancedReviewData {
   health_grade?: string;
   vo2_max_estimate?: number;
   vo2_max_classification?: string;
-  heart_rate_zones?: any;
+  heart_rate_zones?: Record<string, { min: number; max: number }>;
 }
 
 // ============================================================================
@@ -514,8 +514,8 @@ export interface BodyAnalysisRow {
   ideal_weight_max?: number | null;
   waist_hip_ratio?: number | null;
   // Legacy JSONB fields
-  photos?: any;
-  analysis?: any;
+  photos?: string[];
+  analysis?: Record<string, unknown>;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -596,9 +596,9 @@ export interface AdvancedReviewRow {
   reliability_score?: number | null;
   personalization_level?: number | null;
   validation_status?: string | null;
-  validation_errors?: any;
-  validation_warnings?: any;
-  refeed_schedule?: any;
+  validation_errors?: Array<{ field: string; message: string; code: string }>;
+  validation_warnings?: string[];
+  refeed_schedule?: Record<string, unknown>;
   medical_adjustments?: string[] | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -609,7 +609,10 @@ export interface OnboardingProgressRow {
   user_id: string;
   current_tab?: number | null;
   completed_tabs?: number[] | null;
-  tab_validation_status?: any; // JSONB
+  tab_validation_status?: Record<
+    number,
+    { is_valid: boolean; errors: string[]; warnings: string[] }
+  >;
   total_completion_percentage?: number | null;
   started_at?: string | null;
   completed_at?: string | null;
@@ -665,3 +668,62 @@ export const VALIDATION_RULES = {
 
 // Note: All types are already exported with their interface/type declarations above
 // No need for duplicate export statements
+
+// ============================================================================
+// LEGACY ONBOARDING REVIEW DATA TYPE
+// ============================================================================
+
+/**
+ * OnboardingReviewData - Legacy type for backwards compatibility
+ * This type is used by App.tsx and OnboardingContainer to pass data
+ * after onboarding completion. It maps the new tab-based data to a
+ * structure expected by the app's main flow.
+ */
+export interface OnboardingReviewData {
+  personalInfo: {
+    first_name: string;
+    last_name: string;
+    name?: string;
+    email?: string;
+    age: number;
+    gender: "male" | "female" | "other" | "prefer_not_to_say";
+    height?: number;
+    weight?: number;
+    occupation_type?: string;
+    country?: string;
+    state?: string;
+    wake_time?: string;
+    sleep_time?: string;
+  };
+  fitnessGoals: {
+    primary_goals: string[];
+    time_commitment: string;
+    experience: "beginner" | "intermediate" | "advanced";
+    experience_level: "beginner" | "intermediate" | "advanced";
+    preferred_equipment?: string[];
+    target_areas?: string[];
+  };
+  dietPreferences: {
+    dietType: "vegetarian" | "vegan" | "non-veg" | "pescatarian";
+    allergies: string[];
+    restrictions: string[];
+    calorieTarget: number;
+  };
+  workoutPreferences: {
+    location: "home" | "gym" | "both";
+    equipment: string[];
+    workoutTypes: string[];
+    timePreference: number;
+    intensity: "beginner" | "intermediate" | "advanced";
+  };
+  bodyAnalysis: {
+    photos: Record<string, string>;
+    analysis?: {
+      bodyType: string;
+      muscleMass: string;
+      bodyFat: string;
+      fitnessLevel: string;
+      recommendations: string[];
+    };
+  };
+}

@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Card, THEME } from "../ui";
 import { DayMeal } from "../../types/ai";
@@ -14,7 +16,7 @@ interface MealCardProps {
   onViewDetails?: (meal: DayMeal) => void;
   onStartMeal?: (meal: DayMeal) => void;
   progress?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 // PERF-010 FIX: Wrap component in React.memo to prevent unnecessary re-renders in FlatList

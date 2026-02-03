@@ -29,7 +29,7 @@ import WorkoutPreferencesTab from "./tabs/WorkoutPreferencesTab";
 import AdvancedReviewTab from "./tabs/AdvancedReviewTab";
 import { CustomDialog } from "../../components/ui/CustomDialog";
 import { OnboardingCompleteModal } from "../../components/ui/OnboardingCompleteModal";
-import type { OnboardingReviewData } from "./ReviewScreen";
+import type { OnboardingReviewData } from "../../types/onboarding";
 
 // ============================================================================
 // TYPES

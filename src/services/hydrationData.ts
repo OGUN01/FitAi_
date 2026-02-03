@@ -10,7 +10,7 @@
  */
 
 import { supabase } from "./supabase";
-import { getCurrentUserId } from "./StoreCoordinator";
+import { getCurrentUserId } from "./authUtils";
 
 interface WaterLogEntry {
   id: string;

@@ -385,7 +385,7 @@ export interface Achievement {
 export interface AIError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: string;
   retryable: boolean;
   userMessage?: string;

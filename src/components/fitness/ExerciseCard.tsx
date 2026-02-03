@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Animated,
   LayoutAnimation,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Card, THEME } from "../ui";
 import { Exercise, WorkoutSet } from "../../types/workout";
@@ -21,7 +23,7 @@ interface ExerciseCardProps {
   onToggleExpand?: () => void;
   showTimer?: boolean;
   remainingTime?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({

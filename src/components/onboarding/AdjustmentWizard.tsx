@@ -23,7 +23,11 @@ import Animated, {
 import { rf, rw, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
 import { Button } from "../ui";
-import { ValidationResult } from "../../services/validationEngine";
+import {
+  ValidationResult,
+  SmartAlternative,
+  RiskLevel,
+} from "../../services/validationEngine";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -61,6 +65,132 @@ export interface Alternative {
   newStrengthSessions?: number; // weekly strength sessions for muscle/strength goals
   newMobilitySessions?: number; // weekly mobility sessions for flexibility goals
 }
+
+// ============================================================================
+// SMART ALTERNATIVE TO ALTERNATIVE TRANSFORMATION
+// Maps ValidationEngine's SmartAlternative to AdjustmentWizard's Alternative
+// ============================================================================
+
+const getIconForRiskLevel = (
+  riskLevel: RiskLevel,
+  icon: string,
+): keyof typeof Ionicons.glyphMap => {
+  const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+    flame: "flame",
+    flash: "flash",
+    fitness: "fitness",
+    "shield-checkmark": "shield-checkmark",
+    leaf: "leaf",
+    walk: "walk",
+    bicycle: "bicycle",
+    barbell: "barbell",
+  };
+  return iconMap[icon] || "ellipse";
+};
+
+const getIconColorForRiskLevel = (riskLevel: RiskLevel): string => {
+  switch (riskLevel) {
+    case "blocked":
+      return "#9CA3AF";
+    case "dangerous":
+      return "#EF4444";
+    case "caution":
+      return "#F59E0B";
+    case "moderate":
+      return "#EAB308";
+    case "safe":
+      return "#22C55E";
+    case "easy":
+      return "#3B82F6";
+    default:
+      return "#6B7280";
+  }
+};
+
+const getProsForAlternative = (alt: SmartAlternative): string[] => {
+  const pros: string[] = [];
+
+  if (alt.isRecommended) {
+    pros.push("Recommended approach");
+  }
+
+  if (alt.riskLevel === "safe" || alt.riskLevel === "easy") {
+    pros.push("Sustainable long-term");
+    pros.push("Minimal hunger");
+  } else if (alt.riskLevel === "moderate") {
+    pros.push("Faster results");
+    pros.push("Still manageable");
+  } else if (alt.riskLevel === "caution" || alt.riskLevel === "dangerous") {
+    pros.push("Fastest possible");
+  }
+
+  if (alt.requiresExercise) {
+    pros.push("Eat more calories");
+    pros.push("Fitness benefits");
+  }
+
+  if (alt.bmrDifference >= 0) {
+    pros.push("Eating above BMR");
+    pros.push("Preserves metabolism");
+  }
+
+  // Ensure at least one pro is returned
+  if (pros.length === 0) {
+    pros.push("Progress toward goal");
+  }
+
+  return pros.slice(0, 4);
+};
+
+const getConsForAlternative = (alt: SmartAlternative): string[] => {
+  const cons: string[] = [];
+
+  if (alt.bmrDifference < 0) {
+    cons.push(`${Math.abs(alt.bmrDifference)} cal below BMR`);
+  }
+
+  if (alt.riskLevel === "dangerous") {
+    cons.push("Health risks");
+    cons.push("Not recommended");
+  } else if (alt.riskLevel === "caution") {
+    cons.push("Requires monitoring");
+  }
+
+  if (alt.requiresExercise) {
+    cons.push(`${alt.exerciseDescription || "Exercise"} required`);
+  }
+
+  if (alt.timelineWeeks > 20) {
+    cons.push(`Takes ${alt.timelineWeeks} weeks`);
+  }
+
+  if (alt.isBlocked) {
+    cons.push(alt.blockReason || "Not available");
+  }
+
+  return cons.slice(0, 2);
+};
+
+const transformSmartAlternativeToAlternative = (
+  smartAlt: SmartAlternative,
+): Alternative => {
+  return {
+    name: smartAlt.label,
+    icon: getIconForRiskLevel(smartAlt.riskLevel, smartAlt.icon),
+    iconColor: getIconColorForRiskLevel(smartAlt.riskLevel),
+    newTimeline: smartAlt.timelineWeeks,
+    dailyCalories: smartAlt.dailyCalories,
+    weeklyRate: smartAlt.weeklyRate,
+    approach: smartAlt.description,
+    pros: getProsForAlternative(smartAlt),
+    cons: getConsForAlternative(smartAlt),
+    goalType: "weight-loss",
+    newWorkoutFrequency: smartAlt.requiresExercise ? 4 : undefined,
+    newCardioMinutes: smartAlt.exerciseMinutes
+      ? smartAlt.exerciseMinutes * 7
+      : undefined,
+  };
+};
 
 interface AdjustmentWizardProps {
   visible: boolean;
@@ -222,7 +352,7 @@ const AlternativeCard: React.FC<AlternativeCardProps> = ({
               <MetricPill
                 icon="flame-outline"
                 label="Calories"
-                value={`${alternative.dailyCalories}`}
+                value={`${alternative.dailyCalories != null && !isNaN(alternative.dailyCalories) ? alternative.dailyCalories : "--"}`}
                 color="#F97316"
               />
               {alternative.newWorkoutFrequency && (
@@ -236,7 +366,7 @@ const AlternativeCard: React.FC<AlternativeCardProps> = ({
               <MetricPill
                 icon="trending-down-outline"
                 label="Rate"
-                value={`${alternative.weeklyRate.toFixed(2)} kg/wk`}
+                value={`${alternative.weeklyRate != null ? alternative.weeklyRate.toFixed(2) : "--"} kg/wk`}
                 color="#EC4899"
               />
             </View>
@@ -253,7 +383,7 @@ const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   />
                   <Text style={styles.prosTitle}>Benefits</Text>
                 </View>
-                {alternative.pros.slice(0, 2).map((pro, i) => (
+                {(alternative.pros || []).slice(0, 2).map((pro, i) => (
                   <Text key={i} style={styles.prosText} numberOfLines={1}>
                     {pro}
                   </Text>
@@ -269,7 +399,7 @@ const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   <Ionicons name="alert-circle" size={rf(14)} color="#F59E0B" />
                   <Text style={styles.consTitle}>Trade-offs</Text>
                 </View>
-                {alternative.cons.slice(0, 2).map((con, i) => (
+                {(alternative.cons || []).slice(0, 2).map((con, i) => (
                   <Text key={i} style={styles.consText} numberOfLines={1}>
                     {con}
                   </Text>
@@ -333,14 +463,82 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = ({
 
   // Calculate alternatives when modal opens or data changes
   // Uses ERROR-DRIVEN approach: alternatives are based on the specific validation error
+  // OR uses pre-computed alternatives if provided in the error object
   useEffect(() => {
     if (visible && error.code) {
-      const calculatedAlternatives = calculateAlternativesForError(
-        error.code,
-        currentData,
-        primaryGoals,
-      );
-      setAlternatives(calculatedAlternatives);
+      console.log("[AdjustmentWizard] Visible with error:", {
+        errorCode: error.code,
+        hasPrecomputedAlternatives: !!(
+          error.alternatives && error.alternatives.length > 0
+        ),
+        precomputedCount: error.alternatives?.length || 0,
+        currentData: {
+          bmr: currentData.bmr,
+          tdee: currentData.tdee,
+          currentWeight: currentData.currentWeight,
+          targetWeight: currentData.targetWeight,
+          currentTimeline: currentData.currentTimeline,
+          currentFrequency: currentData.currentFrequency,
+        },
+      });
+
+      // Check if pre-computed alternatives are COMPLETE (have required fields)
+      const hasCompleteAlternatives =
+        error.alternatives &&
+        error.alternatives.length > 0 &&
+        error.alternatives.every(
+          (alt: any) =>
+            // Must have calories and rate, or be a fully-formed Alternative
+            (typeof alt.dailyCalories === "number" && alt.dailyCalories > 0) ||
+            (typeof alt.weeklyRate === "number" && alt.weeklyRate > 0) ||
+            ("name" in alt && "pros" in alt && "cons" in alt),
+        );
+
+      if (hasCompleteAlternatives && error.alternatives) {
+        console.log(
+          "[AdjustmentWizard] Using complete pre-computed alternatives:",
+          error.alternatives.length,
+        );
+        const transformedAlternatives = error.alternatives!.map((alt: any) => {
+          if ("name" in alt && "pros" in alt && "cons" in alt) {
+            return alt as Alternative;
+          }
+          return transformSmartAlternativeToAlternative(
+            alt as SmartAlternative,
+          );
+        });
+        console.log("[AdjustmentWizard] Transformed alternatives:", {
+          count: transformedAlternatives.length,
+          alternatives: transformedAlternatives.map((a: Alternative) => ({
+            name: a.name,
+            dailyCalories: a.dailyCalories,
+            weeklyRate: a.weeklyRate,
+            prosCount: a.pros?.length || 0,
+            consCount: a.cons?.length || 0,
+          })),
+        });
+        setAlternatives(transformedAlternatives);
+      } else {
+        // Calculate alternatives based on error code
+        console.log(
+          "[AdjustmentWizard] Calculating alternatives for error code:",
+          error.code,
+        );
+        const calculatedAlternatives = calculateAlternativesForError(
+          error.code,
+          currentData,
+          primaryGoals,
+        );
+        console.log("[AdjustmentWizard] Calculated alternatives:", {
+          count: calculatedAlternatives.length,
+          alternatives: calculatedAlternatives.map((a) => ({
+            name: a.name,
+            dailyCalories: a.dailyCalories,
+            weeklyRate: a.weeklyRate,
+          })),
+        });
+        setAlternatives(calculatedAlternatives);
+      }
       setSelectedIndex(null);
     }
   }, [visible, currentData, error, primaryGoals]);
@@ -352,8 +550,10 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = ({
       // First notify parent to update state
       onSelectAlternative(alternatives[selectedIndex]);
 
-      // Then save to database immediately if function provided
+      // Wait for React to process state updates before saving to database
+      // This ensures stateRef.current has the updated values
       if (onSaveToDatabase) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
         try {
           await onSaveToDatabase();
           console.log("[AdjustmentWizard] Successfully saved to database");
@@ -385,6 +585,41 @@ export const AdjustmentWizard: React.FC<AdjustmentWizardProps> = ({
       currentTimeline,
       currentFrequency,
     } = data;
+
+    // CRITICAL: Validate required data before calculations
+    const hasValidData =
+      bmr > 0 &&
+      tdee > 0 &&
+      currentWeight > 0 &&
+      targetWeight > 0 &&
+      currentTimeline > 0;
+
+    if (!hasValidData) {
+      console.warn("[AdjustmentWizard] Invalid data for calculations:", {
+        bmr,
+        tdee,
+        currentWeight,
+        targetWeight,
+        currentTimeline,
+      });
+      // Return a fallback alternative with sensible defaults
+      return [
+        {
+          name: "Extend Timeline",
+          icon: "calendar-outline",
+          iconColor: "#3B82F6",
+          goalType: "weight-loss",
+          newTimeline: Math.max(currentTimeline * 2, 12),
+          dailyCalories: bmr > 0 ? Math.round(bmr * 1.2) : 1500,
+          weeklyRate: 0.5,
+          newWorkoutFrequency: currentFrequency || 3,
+          approach: "Safe, gradual approach to your goal",
+          pros: ["Sustainable", "Preserves muscle", "Easier to maintain"],
+          cons: ["Takes longer"],
+        },
+      ];
+    }
+
     const weightDiff = Math.abs(targetWeight - currentWeight);
     const isWeightLoss = currentWeight > targetWeight;
     const isWeightGain = currentWeight < targetWeight;

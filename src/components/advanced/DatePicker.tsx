@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Button, Card, THEME } from "../ui";
 
@@ -18,7 +20,7 @@ interface DatePickerProps {
   label?: string;
   placeholder?: string;
   disabled?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({

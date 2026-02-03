@@ -3,6 +3,7 @@ import { crudOperations } from "./crudOperations";
 import { dataBridge } from "./DataBridge";
 import { AuthUser } from "../types/user";
 import { BodyMeasurement } from "../types/localData";
+import { analyticsDataService } from "./analyticsData";
 
 // Types for progress data
 export interface ProgressEntry {
@@ -22,6 +23,7 @@ export interface ProgressEntry {
   };
   progress_photos?: string[];
   notes?: string;
+  recorded_at: string;
   created_at: string;
 }
 
@@ -207,7 +209,9 @@ class ProgressDataService {
     },
   ): Promise<ProgressDataResponse<ProgressEntry>> {
     try {
-      const entryDate = new Date().toISOString().split("T")[0];
+      const now = new Date();
+      const entryDate = now.toISOString().split("T")[0];
+      const recordedAt = now.toISOString();
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {
@@ -236,6 +240,7 @@ class ProgressDataService {
           measurements: entryData.measurements || {},
           progress_photos: entryData.progress_photos || [],
           notes: entryData.notes,
+          recorded_at: recordedAt,
         })
         .select()
         .single();
@@ -246,6 +251,16 @@ class ProgressDataService {
           success: false,
           error: error.message,
         };
+      }
+
+      // Save weight to analytics_metrics for Monthly Summary tracking
+      try {
+        await analyticsDataService.updateTodaysMetrics(userId, {
+          weightKg: entryData.weight_kg,
+        });
+        console.log("📊 Analytics metrics updated for weight entry");
+      } catch (analyticsError) {
+        console.warn("⚠️ Failed to update analytics metrics:", analyticsError);
       }
 
       return {
@@ -544,6 +559,7 @@ class ProgressDataService {
       measurements: (measurement as any).measurements || {},
       progress_photos: measurement.photos || [],
       notes: measurement.notes,
+      recorded_at: measurement.date,
       created_at: measurement.date,
     };
   }

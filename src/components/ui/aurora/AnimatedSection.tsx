@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -44,7 +44,7 @@ export interface AnimatedSectionProps {
   /**
    * Custom style
    */
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 // ============================================================================

@@ -1,11 +1,18 @@
 import React from "react";
-import { View, Text, StyleSheet, Animated } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { DayMeal } from "../../types/ai";
 import { THEME } from "../ui";
 
 interface MacroDashboardProps {
   meal: DayMeal;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   showTitle?: boolean;
   compact?: boolean;
   animated?: boolean;

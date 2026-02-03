@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -17,7 +19,7 @@ interface WorkoutDay {
 
 interface WorkoutIntensityChartProps {
   data: WorkoutDay[];
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const WorkoutIntensityChart: React.FC<WorkoutIntensityChartProps> = ({

@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   Animated,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { THEME } from "../../utils/constants";
 
@@ -17,7 +19,7 @@ interface RatingSelectorProps {
   showValue?: boolean;
   disabled?: boolean;
   size?: "sm" | "md" | "lg";
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const RatingSelector: React.FC<RatingSelectorProps> = ({

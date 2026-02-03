@@ -6,7 +6,21 @@
  * and this coordinator handles the orchestration.
  *
  * ARCHITECTURE FIX (ARCH-001): Removes direct cross-store dependencies
+ *
+ * NOTE: For simple auth utilities (getCurrentUserId, getUserIdOrGuest, etc.),
+ * prefer importing from './authUtils' directly to avoid potential circular dependencies.
  */
+
+// Re-export auth utilities for backward compatibility
+export {
+  getCurrentUserId,
+  requireUserId,
+  isAuthenticated,
+  getUserIdOrGuest,
+} from "./authUtils";
+
+// Import getCurrentUserId locally for use in this file
+import { getCurrentUserId as getAuthUserId } from "./authUtils";
 
 import { useAuthStore } from "../stores/authStore";
 import { useNutritionStore } from "../stores/nutritionStore";
@@ -22,40 +36,6 @@ export interface OperationResult<T = void> {
   error?: Error | string;
 }
 
-/**
- * Get the current authenticated user ID
- * Single point of access for user authentication state
- */
-export const getCurrentUserId = (): string | null => {
-  const authState = useAuthStore.getState();
-  return authState.user?.id ?? null;
-};
-
-/**
- * Get the current user or throw if not authenticated
- */
-export const requireUserId = (): string => {
-  const userId = getCurrentUserId();
-  if (!userId) {
-    throw new Error("User must be authenticated for this operation");
-  }
-  return userId;
-};
-
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = (): boolean => {
-  return getCurrentUserId() !== null;
-};
-
-/**
- * Get user ID with fallback for guest mode
- */
-export const getUserIdOrGuest = (): string => {
-  return getCurrentUserId() ?? "guest";
-};
-
 // ===========================================
 // NUTRITION STORE COORDINATION
 // ===========================================
@@ -70,7 +50,7 @@ export const saveWeeklyMealPlanWithUser = async (
   >[0],
 ): Promise<OperationResult> => {
   try {
-    const userId = getCurrentUserId();
+    const userId = getAuthUserId();
     if (!userId) {
       return {
         success: false,
@@ -119,7 +99,7 @@ export const saveWeeklyWorkoutPlanWithUser = async (
   >[0],
 ): Promise<OperationResult> => {
   try {
-    const userId = getCurrentUserId();
+    const userId = getAuthUserId();
     if (!userId) {
       return {
         success: false,
@@ -273,10 +253,10 @@ export const getDashboardData = () => {
 
 // Export as default for convenience
 const StoreCoordinator = {
-  getCurrentUserId,
-  requireUserId,
-  isAuthenticated,
-  getUserIdOrGuest,
+  getCurrentUserId: getAuthUserId,
+  requireUserId: require("./authUtils").requireUserId,
+  isAuthenticated: require("./authUtils").isAuthenticated,
+  getUserIdOrGuest: require("./authUtils").getUserIdOrGuest,
   saveWeeklyMealPlanWithUser,
   completeMealWithUser,
   saveWeeklyWorkoutPlanWithUser,

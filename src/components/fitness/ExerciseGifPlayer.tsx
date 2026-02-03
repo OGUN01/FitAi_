@@ -8,6 +8,8 @@ import {
   Modal,
   StatusBar,
   Dimensions,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Image } from "expo-image"; // ✅ Use Expo Image for GIF animation support
 import { Card, THEME } from "../ui";
@@ -22,7 +24,7 @@ interface ExerciseGifPlayerProps {
   showInstructions?: boolean;
   onInstructionsPress?: () => void;
   autoPlay?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ExerciseGifPlayer: React.FC<ExerciseGifPlayerProps> = ({

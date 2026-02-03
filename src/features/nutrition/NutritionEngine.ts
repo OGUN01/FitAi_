@@ -12,7 +12,16 @@ import {
   AIResponse,
 } from "../../types/ai";
 import { PersonalInfo, FitnessGoals } from "../../types/user";
-import { aiService } from "../../ai/index";
+
+// LAZY IMPORT: Avoid circular dependency with ai/index.ts
+// ai/index.ts exports nutritionEngine, and NutritionEngine imports aiService from ai/index.ts
+let _aiService: any = null;
+const getAiService = () => {
+  if (!_aiService) {
+    _aiService = require("../../ai/index").aiService;
+  }
+  return _aiService;
+};
 
 // ============================================================================
 // NUTRITION ENGINE SERVICE
@@ -40,7 +49,7 @@ class NutritionEngineService {
       );
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
-      const result = await aiService.generateMeal(
+      const result = await getAiService().generateMeal(
         personalInfo,
         fitnessGoals,
         mealType,
@@ -106,7 +115,7 @@ class NutritionEngineService {
       );
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
-      const result = await aiService.generateDailyMealPlan(
+      const result = await getAiService().generateDailyMealPlan(
         personalInfo,
         fitnessGoals,
         {

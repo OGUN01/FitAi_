@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
@@ -41,9 +41,12 @@ import {
 import {
   ValidationEngine,
   ValidationResults,
+  SmartAlternative,
+  SmartAlternativesResult,
 } from "../../../services/validationEngine";
 import { ErrorCard } from "../../../components/onboarding/ErrorCard";
 import { WarningCard } from "../../../components/onboarding/WarningCard";
+import { RateComparisonCard } from "../../../components/onboarding/RateComparisonCard";
 import {
   AdjustmentWizard,
   Alternative,
@@ -203,6 +206,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   const [currentError, setCurrentError] = useState<any | null>(null);
   const [warningsAcknowledged, setWarningsAcknowledged] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [smartAlternatives, setSmartAlternatives] =
+    useState<SmartAlternativesResult | null>(null);
+  const [selectedAlternativeId, setSelectedAlternativeId] = useState<
+    string | null
+  >(null);
 
   // Calculate all metrics when component mounts or data changes
   useEffect(() => {
@@ -403,6 +411,83 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
       setCalculatedData(finalCalculations);
       onUpdate(finalCalculations);
 
+      // Calculate smart alternatives if the user's rate requires eating below BMR
+      console.log("[DEBUG] Checking weight loss condition:", {
+        current: bodyAnalysis.current_weight_kg,
+        target: bodyAnalysis.target_weight_kg,
+        timeline_weeks: bodyAnalysis.target_timeline_weeks,
+        isWeightLoss:
+          bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg,
+      });
+      if (bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg) {
+        const weightDifference = Math.abs(
+          bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
+        );
+
+        // Safeguard against division by zero - use 12 weeks as default
+        const timelineWeeks =
+          bodyAnalysis.target_timeline_weeks &&
+          bodyAnalysis.target_timeline_weeks > 0
+            ? bodyAnalysis.target_timeline_weeks
+            : 12;
+        const userRequestedRate = weightDifference / timelineWeeks;
+
+        console.log("[DEBUG] Calculating smart alternatives:", {
+          weightDifference,
+          timelineWeeks,
+          userRequestedRate,
+          bmr: validationResults.calculatedMetrics.bmr,
+          tdee: validationResults.calculatedMetrics.tdee,
+          gender: personalInfo.gender,
+        });
+
+        try {
+          const alternativesResult =
+            ValidationEngine.calculateSmartAlternatives(
+              userRequestedRate,
+              validationResults.calculatedMetrics.bmr,
+              validationResults.calculatedMetrics.tdee,
+              bodyAnalysis.current_weight_kg,
+              bodyAnalysis.target_weight_kg,
+              personalInfo.gender as "male" | "female",
+            );
+
+          console.log("[DEBUG] Smart Alternatives Result:", {
+            count: alternativesResult.alternatives.length,
+            showRateComparison: alternativesResult.showRateComparison,
+            alternatives: alternativesResult.alternatives.map((a) => ({
+              id: a.id,
+              label: a.label,
+              rate: a.weeklyRate,
+              calories: a.dailyCalories,
+              blocked: a.isBlocked,
+            })),
+          });
+          setSmartAlternatives(alternativesResult);
+
+          // Auto-select the user's original rate if no selection yet
+          if (
+            !selectedAlternativeId &&
+            alternativesResult.alternatives.length > 0
+          ) {
+            const userOriginal = alternativesResult.alternatives.find(
+              (alt: { isUserOriginal: boolean }) => alt.isUserOriginal,
+            );
+            if (userOriginal) {
+              setSelectedAlternativeId(userOriginal.id);
+            }
+          }
+        } catch (altError) {
+          console.error(
+            "[ERROR] Failed to calculate smart alternatives:",
+            altError,
+          );
+          setSmartAlternatives(null);
+        }
+      } else {
+        setSmartAlternatives(null);
+      }
+
       console.log(
         "[SUCCESS] AdvancedReviewTab: Validation and calculations completed",
       );
@@ -540,6 +625,65 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
     }
 
     return Math.max(0, score);
+  };
+
+  /**
+   * Handle when user selects a different rate alternative from the RateComparisonCard
+   */
+  const handleRateSelection = async (alternative: SmartAlternative) => {
+    console.log("[RATE SELECTION] User selected alternative:", alternative.id);
+    setSelectedAlternativeId(alternative.id);
+
+    // If it's the user's original selection, no changes needed
+    if (alternative.isUserOriginal) {
+      console.log("[RATE SELECTION] User kept their original rate");
+      return;
+    }
+
+    // Calculate the new timeline based on the selected rate
+    const weightToLose = Math.abs(
+      (bodyAnalysis?.current_weight_kg || 0) -
+        (bodyAnalysis?.target_weight_kg || 0),
+    );
+    const newTimelineWeeks = Math.ceil(weightToLose / alternative.weeklyRate);
+
+    console.log(
+      `[RATE SELECTION] Updating timeline: ${bodyAnalysis?.target_timeline_weeks} -> ${newTimelineWeeks} weeks`,
+    );
+
+    // Update body analysis with new timeline
+    if (onUpdateBodyAnalysis) {
+      const updates: Partial<BodyAnalysisData> = {
+        target_timeline_weeks: newTimelineWeeks,
+      };
+      onUpdateBodyAnalysis(updates);
+    }
+
+    // If exercise option, update workout preferences
+    if (alternative.requiresExercise && onUpdateWorkoutPreferences) {
+      // Increase workout frequency if needed for exercise options
+      const currentFrequency =
+        workoutPreferences?.workout_frequency_per_week || 0;
+      if (currentFrequency < 3) {
+        onUpdateWorkoutPreferences({
+          workout_frequency_per_week: Math.max(3, currentFrequency),
+        });
+        console.log(
+          `[RATE SELECTION] Increased workout frequency to 3+ for exercise option`,
+        );
+      }
+    }
+
+    // Show success message
+    setSuccessMessage(
+      `Rate updated to ${alternative.weeklyRate} kg/week. Recalculating...`,
+    );
+
+    // Recalculate after a short delay to allow state updates
+    setTimeout(() => {
+      performCalculations();
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }, 300);
   };
 
   // ============================================================================
@@ -1058,7 +1202,10 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                   color={ResponsiveTheme.colors.primary}
                 />
                 <Text style={styles.nutrientBadgeText}>
-                  {(calculatedData.daily_water_ml! / 1000).toFixed(1)}L
+                  {calculatedData.daily_water_ml
+                    ? (calculatedData.daily_water_ml / 1000).toFixed(1)
+                    : "--"}
+                  L
                 </Text>
               </View>
               <View style={styles.nutrientBadge}>
@@ -1257,11 +1404,23 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
                 {calculatedData.total_calorie_deficit} calories
               </Text>
               <Text style={styles.deficitDaily}>
-                ({Math.round(calculatedData.total_calorie_deficit! / 7)}{" "}
+                (
+                {calculatedData.total_calorie_deficit
+                  ? Math.round(calculatedData.total_calorie_deficit / 7)
+                  : "--"}{" "}
                 cal/day)
               </Text>
             </View>
           </GlassCard>
+
+          {/* Smart Rate Alternatives Card - Only show when rate requires eating below BMR */}
+          {smartAlternatives?.showRateComparison && (
+            <RateComparisonCard
+              alternativesResult={smartAlternatives}
+              selectedAlternativeId={selectedAlternativeId}
+              onSelectAlternative={handleRateSelection}
+            />
+          )}
         </View>
         <View style={styles.sectionBottomPad} />
       </GlassCard>
@@ -1928,10 +2087,11 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
   // ============================================================================
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 150 }}
       >
         {/* Hero Section with Background Image */}
         <HeroSection
@@ -2039,6 +2199,14 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             <WarningCard
               warnings={validationResults.warnings}
               onAcknowledgmentChange={setWarningsAcknowledged}
+              onAdjust={(warning) => {
+                console.log(
+                  "[ADJUSTMENT] Opening adjustment wizard for warning:",
+                  warning,
+                );
+                setCurrentError(warning); // Use the same currentError state for warnings with alternatives
+                setShowAdjustmentWizard(true);
+              }}
             />
           )}
 
@@ -2261,14 +2429,12 @@ const AdvancedReviewTab: React.FC<AdvancedReviewTabProps> = ({
             // Close wizard
             setShowAdjustmentWizard(false);
 
-            // Stay on Review tab, show success message, and recalculate
+            // Show success message - recalculation happens automatically via useEffect
+            // when bodyAnalysis/workoutPreferences props change
             setSuccessMessage(
               "Changes applied and saved! Recalculating metrics...",
             );
-            setTimeout(() => {
-              performCalculations();
-              setTimeout(() => setSuccessMessage(null), 3000); // Hide after 3s
-            }, 500);
+            setTimeout(() => setSuccessMessage(null), 3000);
           }}
           onClose={() => setShowAdjustmentWizard(false)}
         />

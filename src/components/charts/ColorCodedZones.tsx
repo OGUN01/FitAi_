@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -20,7 +20,7 @@ interface HeartRateZone {
 interface ColorCodedZonesProps {
   zones: HeartRateZone[];
   maxHR?: number; // Maximum heart rate for calculations
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ColorCodedZones: React.FC<ColorCodedZonesProps> = ({

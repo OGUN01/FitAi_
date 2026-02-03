@@ -2,13 +2,20 @@
 // Shows whether the app is using real AI or demo mode
 
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { THEME } from "../../utils/constants";
 import { aiService } from "../../ai";
 
 interface AIStatusIndicatorProps {
   onPress?: () => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({

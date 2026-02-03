@@ -8,6 +8,8 @@ import {
   PanResponder,
   GestureResponderEvent,
   PanResponderGestureState,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -45,7 +47,7 @@ interface SwipeableCardStackProps {
   onSwipeLeft?: (card: SwipeableCard) => void;
   onSwipeRight?: (card: SwipeableCard) => void;
   onCardChange?: (index: number) => void;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const SwipeableCardStack: React.FC<SwipeableCardStackProps> = ({

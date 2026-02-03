@@ -16,7 +16,16 @@ import {
   AIResponse,
 } from "../../types/ai";
 import { PersonalInfo, FitnessGoals } from "../../types/user";
-import { aiService } from "../../ai/index";
+
+// LAZY IMPORT: Avoid circular dependency with ai/index.ts
+// ai/index.ts exports workoutEngine, and WorkoutEngine imports aiService from ai/index.ts
+let _aiService: any = null;
+const getAiService = () => {
+  if (!_aiService) {
+    _aiService = require("../../ai/index").aiService;
+  }
+  return _aiService;
+};
 
 // ============================================================================
 // WORKOUT ENGINE SERVICE
@@ -41,7 +50,7 @@ class WorkoutEngineService {
       console.log("🏋️ [WorkoutEngine] Delegating to aiService.generateWorkout");
 
       // Delegate to the UnifiedAIService which connects to Cloudflare Workers
-      const result = await aiService.generateWorkout(
+      const result = await getAiService().generateWorkout(
         personalInfo,
         fitnessGoals,
         {

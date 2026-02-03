@@ -7,10 +7,7 @@ import { dataBridge } from "../services/DataBridge";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
-import {
-  getCurrentUserId,
-  getUserIdOrGuest,
-} from "../services/StoreCoordinator";
+import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 
 interface WorkoutProgress {
   workoutId: string;

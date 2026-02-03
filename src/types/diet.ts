@@ -104,7 +104,7 @@ export interface MealItem {
   category?: string;
   preparationTime?: number;
   instructions?: string[];
-  preparation?: any;
+  preparation?: { time?: number; instructions?: string[] };
   // Tracking
   isLogged?: boolean; // Whether this item has been logged by the user
 }

@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  Easing,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { THEME } from "../../utils/constants";
 
 interface ProgressAnimationProps {
@@ -11,7 +19,7 @@ interface ProgressAnimationProps {
   showPercentage?: boolean;
   label?: string;
   duration?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const ProgressAnimation: React.FC<ProgressAnimationProps> = ({

@@ -21,6 +21,8 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -70,7 +72,7 @@ interface PremiumMealCardProps {
   onCompleteMeal?: () => void;
   progress?: number;
   macroTargets?: MacroTargets;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 // ============================================================================

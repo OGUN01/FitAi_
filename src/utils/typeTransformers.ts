@@ -36,6 +36,18 @@ export function camelToSnake(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
+export function toDisplayLabel(str: string): string {
+  return str
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .replace(/([A-Z])/g, " $1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
 /**
  * Deep transform object keys from snake_case to camelCase
  * Handles nested objects and arrays

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Svg, { Circle, Path, G, Text as SvgText, Rect } from "react-native-svg";
 import { rf, rp, rw, rh } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -8,7 +8,7 @@ interface CircularClockProps {
   sleepTime: string; // Format: "HH:MM" (24-hour)
   wakeTime: string; // Format: "HH:MM" (24-hour)
   size?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CircularClock: React.FC<CircularClockProps> = ({

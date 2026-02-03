@@ -41,7 +41,16 @@ import {
   Period,
 } from "./analytics";
 
-export const AnalyticsScreen: React.FC = () => {
+interface AnalyticsScreenProps {
+  navigation?: {
+    navigate: (screen: string, params?: any) => void;
+    goBack: () => void;
+  };
+}
+
+export const AnalyticsScreen: React.FC<AnalyticsScreenProps> = ({
+  navigation,
+}) => {
   const insets = useSafeAreaInsets();
 
   // State
@@ -281,6 +290,17 @@ export const AnalyticsScreen: React.FC = () => {
     console.log("Chart pressed:", chartType);
   }, []);
 
+  // Navigation handlers
+  const handleProgressPress = useCallback(() => {
+    haptics.light();
+    navigation?.navigate("Progress");
+  }, [navigation]);
+
+  const handleTrendsPress = useCallback(() => {
+    haptics.light();
+    navigation?.navigate("ProgressTrends");
+  }, [navigation]);
+
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -305,26 +325,34 @@ export const AnalyticsScreen: React.FC = () => {
             <AnalyticsHeader
               selectedPeriod={selectedPeriod}
               onPeriodChange={handlePeriodChange}
+              onProgressPress={navigation ? handleProgressPress : undefined}
+              onTrendsPress={navigation ? handleTrendsPress : undefined}
             />
 
             {/* 2. Metric Summary Grid */}
-            <MetricSummaryGrid
-              data={metricsData as any}
-              period={selectedPeriod}
-              onMetricPress={handleMetricPress}
-            />
+            <View style={styles.sectionContainer}>
+              <MetricSummaryGrid
+                data={metricsData as any}
+                period={selectedPeriod}
+                onMetricPress={handleMetricPress}
+              />
+            </View>
 
             {/* 3. Achievement Showcase */}
-            <AchievementShowcase />
+            <View style={styles.sectionContainer}>
+              <AchievementShowcase />
+            </View>
 
             {/* 4. Trend Charts */}
-            <TrendCharts
-              weightData={chartData.weightData}
-              calorieData={chartData.calorieData}
-              workoutData={chartData.workoutData}
-              period={selectedPeriod}
-              onChartPress={handleChartPress}
-            />
+            <View style={styles.sectionContainer}>
+              <TrendCharts
+                weightData={chartData.weightData}
+                calorieData={chartData.calorieData}
+                workoutData={chartData.workoutData}
+                period={selectedPeriod}
+                onChartPress={handleChartPress}
+              />
+            </View>
 
             {/* Bottom Spacing */}
             <View style={{ height: insets.bottom + rh(90) }} />
@@ -348,6 +376,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: ResponsiveTheme.spacing.md,
+  },
+  sectionContainer: {
+    position: "relative" as const,
   },
 });
 

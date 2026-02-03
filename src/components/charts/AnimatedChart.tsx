@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -29,7 +29,7 @@ interface AnimatedChartProps {
   progressWeeks?: number;
   width?: number;
   height?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const AnimatedChart: React.FC<AnimatedChartProps> = ({

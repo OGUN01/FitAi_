@@ -50,8 +50,9 @@ export const AchievementShowcase: React.FC<AchievementShowcaseProps> = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: ResponsiveTheme.spacing.xl,
+    marginBottom: ResponsiveTheme.spacing.md,
     paddingHorizontal: ResponsiveTheme.spacing.lg,
+    zIndex: 2,
   },
   headerContainer: {
     marginBottom: ResponsiveTheme.spacing.sm,

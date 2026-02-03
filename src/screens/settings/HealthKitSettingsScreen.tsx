@@ -15,8 +15,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useHealthKitSync } from "../../hooks/useHealthKitSync";
-import { useNavigation } from "@react-navigation/native";
 import { THEME } from "../../utils/constants";
+
+interface HealthKitSettingsScreenProps {
+  onBack: () => void;
+}
 
 interface HealthDataType {
   key: keyof ReturnType<typeof useHealthKitSync>["settings"]["dataTypesToSync"];
@@ -64,8 +67,9 @@ const HEALTH_DATA_TYPES: HealthDataType[] = [
   },
 ];
 
-export const HealthKitSettingsScreen: React.FC = () => {
-  const navigation = useNavigation();
+export const HealthKitSettingsScreen: React.FC<
+  HealthKitSettingsScreenProps
+> = ({ onBack }) => {
   const {
     isAvailable,
     isAuthorized,
@@ -253,10 +257,7 @@ export const HealthKitSettingsScreen: React.FC = () => {
           borderBottomColor: THEME.colors.border,
         }}
       >
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{ marginRight: 16 }}
-        >
+        <TouchableOpacity onPress={onBack} style={{ marginRight: 16 }}>
           <Ionicons name="arrow-back" size={24} color={THEME.colors.text} />
         </TouchableOpacity>
         <Text

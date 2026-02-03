@@ -4,13 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  LayoutChangeEvent,
-  Dimensions,
-} from "react-native";
+import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -108,9 +102,6 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
   );
 };
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const HORIZONTAL_PADDING = ResponsiveTheme.spacing.lg * 2; // Account for parent padding
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -118,7 +109,6 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: rp(4),
     position: "relative",
-    width: SCREEN_WIDTH - HORIZONTAL_PADDING,
   },
   indicator: {
     position: "absolute",

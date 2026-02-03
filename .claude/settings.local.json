@@ -94,6 +94,7 @@
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
+    "browsermcp",
     "supabase"
   ],
   "local_overrides": {

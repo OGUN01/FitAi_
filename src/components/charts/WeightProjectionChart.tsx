@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Dimensions,
   LayoutChangeEvent,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -32,7 +34,7 @@ interface WeightProjectionChartProps {
   width?: number | string; // Now accepts percentage strings too
   height?: number;
   milestones?: number[];
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const WeightProjectionChart: React.FC<WeightProjectionChartProps> = ({

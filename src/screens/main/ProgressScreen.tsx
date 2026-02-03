@@ -9,8 +9,12 @@ import {
   Animated,
   FlatList,
   Modal,
+  Share,
 } from "react-native";
-import { SafeAreaView } from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
@@ -33,7 +37,17 @@ import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { useHealthDataStore } from "../../stores/healthDataStore";
 import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
 
-export const ProgressScreen: React.FC = () => {
+interface ProgressScreenProps {
+  navigation?: {
+    navigate: (screen: string, params?: any) => void;
+    goBack: () => void;
+  };
+}
+
+export const ProgressScreen: React.FC<ProgressScreenProps> = ({
+  navigation,
+}) => {
+  const insets = useSafeAreaInsets();
   const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [refreshing, setRefreshing] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -241,20 +255,13 @@ export const ProgressScreen: React.FC = () => {
           weeklyAvg: progressStats.muscleChange.current,
         },
         bmi: {
-          // Use calculated BMI from onboarding
-          current:
-            calculatedMetrics?.calculatedBMI ??
-            (progressStats.weightChange.current > 0 &&
-            calculatedMetrics?.heightCm
-              ? progressStats.weightChange.current /
-                Math.pow(calculatedMetrics.heightCm / 100, 2)
-              : null),
-          change: null, // TODO: Calculate based on weight change
+          // Use calculated BMI from onboarding - Single Source of Truth
+          current: calculatedMetrics?.calculatedBMI || null,
+          change: null,
           unit: "",
-          goal: null, // Calculate from user data - no hardcoded values
-          trend:
-            progressStats.weightChange.change < 0 ? "decreasing" : "increasing",
-          weeklyAvg: calculatedMetrics?.calculatedBMI ?? null,
+          goal: null,
+          trend: "stable",
+          weeklyAvg: calculatedMetrics?.calculatedBMI || null,
         },
       }
     : {
@@ -284,12 +291,12 @@ export const ProgressScreen: React.FC = () => {
           weeklyAvg: null,
         },
         bmi: {
-          current: calculatedMetrics?.calculatedBMI,
-          change: 0,
+          current: calculatedMetrics?.calculatedBMI || null,
+          change: null,
           unit: "",
           goal: null,
           trend: "stable",
-          weeklyAvg: 0,
+          weeklyAvg: null,
         },
       };
 
@@ -437,7 +444,6 @@ export const ProgressScreen: React.FC = () => {
     }
   };
 
-  // Handle adding new progress entry
   const handleAddProgressEntry = async () => {
     if (!user?.id) {
       Alert.alert(
@@ -447,14 +453,40 @@ export const ProgressScreen: React.FC = () => {
       return;
     }
 
-    // Open the weight entry modal instead of creating hardcoded demo data
     setShowWeightModal(true);
+  };
+
+  const handleShareProgress = async () => {
+    try {
+      const currentWeight = progressStats?.weightChange?.current;
+      const weightDisplay = currentWeight
+        ? `${currentWeight.toFixed(1)} kg`
+        : "Not recorded";
+      const bmi = calculatedMetrics?.calculatedBMI
+        ? calculatedMetrics.calculatedBMI.toFixed(1)
+        : "Not calculated";
+
+      const message = `My FitAI Progress Update!
+
+Current Weight: ${weightDisplay}
+BMI: ${bmi}
+Period: ${selectedPeriod === "week" ? "This Week" : selectedPeriod === "month" ? "This Month" : "This Year"}
+
+Track your fitness journey with FitAI!`;
+
+      await Share.share({
+        message,
+        title: "My FitAI Progress",
+      });
+    } catch (error) {
+      console.error("Error sharing progress:", error);
+    }
   };
 
   return (
     <>
       <AuroraBackground theme="space" animated={true} intensity={0.3}>
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
           <Animated.View
             style={{
               flex: 1,
@@ -479,27 +511,32 @@ export const ProgressScreen: React.FC = () => {
               <View>
                 {/* Header */}
                 <View style={styles.header}>
-                  <Text style={styles.title}>Progress</Text>
-                  <View style={styles.headerButtons}>
-                    {/* Track B Status Indicator */}
+                  {/* Back button */}
+                  {navigation && (
                     <AnimatedPressable
-                      style={styles.statusButton}
+                      style={styles.backButton}
+                      onPress={() => navigation.goBack()}
                       scaleValue={0.95}
                     >
                       <Ionicons
-                        name={
-                          trackBStatus.isConnected
-                            ? "checkmark-circle"
-                            : "close-circle"
-                        }
-                        size={rf(16)}
-                        color={
-                          trackBStatus.isConnected
-                            ? ResponsiveTheme.colors.success
-                            : ResponsiveTheme.colors.error
-                        }
+                        name="arrow-back"
+                        size={rf(20)}
+                        color={ResponsiveTheme.colors.text}
                       />
                     </AnimatedPressable>
+                  )}
+                  <Text style={styles.title}>Progress</Text>
+                  <View style={styles.headerButtons}>
+                    {/* Track B Status Indicator - Only show when connected */}
+                    {trackBStatus.isConnected && (
+                      <View style={styles.statusButton}>
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={rf(16)}
+                          color={ResponsiveTheme.colors.success}
+                        />
+                      </View>
+                    )}
                     <AnimatedPressable
                       style={
                         showAnalytics
@@ -537,6 +574,7 @@ export const ProgressScreen: React.FC = () => {
                     </AnimatedPressable>
                     <AnimatedPressable
                       style={styles.shareButton}
+                      onPress={handleShareProgress}
                       scaleValue={0.95}
                     >
                       <Ionicons
@@ -596,7 +634,7 @@ export const ProgressScreen: React.FC = () => {
                 )}
 
                 {/* No Authentication State */}
-                {!isAuthenticated && (
+                {!isAuthenticated && !calculatedMetrics?.calculatedBMI && (
                   <GlassCard
                     style={styles.errorCard}
                     elevation={1}
@@ -624,7 +662,7 @@ export const ProgressScreen: React.FC = () => {
                 )}
 
                 {/* No Data State */}
-                {isAuthenticated &&
+                {(isAuthenticated || calculatedMetrics?.calculatedBMI) &&
                   progressEntries.length === 0 &&
                   !progressLoading && (
                     <GlassCard
@@ -665,178 +703,207 @@ export const ProgressScreen: React.FC = () => {
                   )}
 
                 {/* Today's Progress */}
-                {isAuthenticated && todaysData && !showAnalytics && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Today's Progress</Text>
-                    <GlassCard
-                      style={styles.todaysCard}
-                      elevation={2}
-                      blurIntensity="light"
-                      padding="lg"
-                      borderRadius="lg"
-                    >
-                      <View style={styles.todaysHeader}>
-                        <Text style={styles.todaysDate}>
-                          {new Date().toLocaleDateString("en-US", {
-                            weekday: "long",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </Text>
-                      </View>
-
-                      <View style={styles.todaysStats}>
-                        {/* Workout Progress */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="barbell-outline"
-                            size={rf(24)}
-                            color={ResponsiveTheme.colors.primary}
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Workout</Text>
-                            <Text style={styles.todaysStatValue}>
-                              {todaysData.workout
-                                ? `${todaysData.progress.workoutProgress}%`
-                                : "Rest Day"}
-                            </Text>
-                          </View>
+                {(isAuthenticated || calculatedMetrics?.calculatedBMI) &&
+                  todaysData &&
+                  !showAnalytics && (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionTitle}>Today's Progress</Text>
+                      <GlassCard
+                        style={styles.todaysCard}
+                        elevation={2}
+                        blurIntensity="light"
+                        padding="lg"
+                        borderRadius="lg"
+                      >
+                        <View style={styles.todaysHeader}>
+                          <Text style={styles.todaysDate}>
+                            {new Date().toLocaleDateString("en-US", {
+                              weekday: "long",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </Text>
                         </View>
 
-                        {/* Meals Progress */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="restaurant-outline"
-                            size={rf(24)}
-                            color={ResponsiveTheme.colors.primary}
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Meals</Text>
-                            <Text style={styles.todaysStatValue}>
-                              {todaysData.progress.mealsCompleted}/
-                              {todaysData.progress.totalMeals}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Calories Progress */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="flame-outline"
-                            size={rf(24)}
-                            color={ResponsiveTheme.colors.primary}
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Calories</Text>
-                            <Text style={styles.todaysStatValue}>
-                              {todaysData.progress.caloriesConsumed}/
-                              {todaysData.progress.targetCalories}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                    </GlassCard>
-                  </View>
-                )}
-
-                {/* Wearable Health Data */}
-                {isAuthenticated && isWearableConnected && !showAnalytics && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Wearable Activity</Text>
-                    <GlassCard
-                      style={styles.todaysCard}
-                      elevation={2}
-                      blurIntensity="light"
-                      padding="lg"
-                      borderRadius="lg"
-                    >
-                      <View style={styles.wearableHeader}>
-                        <Ionicons
-                          name="watch-outline"
-                          size={rf(20)}
-                          color={ResponsiveTheme.colors.primary}
-                        />
-                        <Text style={styles.wearableLabel}>
-                          From your smartwatch
-                        </Text>
-                      </View>
-                      <View style={styles.todaysStats}>
-                        {/* Steps */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="walk-outline"
-                            size={rf(24)}
-                            color="#4CAF50"
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Steps</Text>
-                            <Text style={styles.todaysStatValue}>
-                              {healthMetrics.steps.toLocaleString()}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Active Calories */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="flame-outline"
-                            size={rf(24)}
-                            color="#FF9800"
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>Burned</Text>
-                            <Text style={styles.todaysStatValue}>
-                              {healthMetrics.activeCalories} cal
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Heart Rate */}
-                        <View style={styles.todaysStat}>
-                          <Ionicons
-                            name="heart-outline"
-                            size={rf(24)}
-                            color="#F44336"
-                            style={{ marginBottom: ResponsiveTheme.spacing.xs }}
-                          />
-                          <View style={styles.todaysStatContent}>
-                            <Text style={styles.todaysStatLabel}>
-                              Heart Rate
-                            </Text>
-                            <Text style={styles.todaysStatValue}>
-                              {healthMetrics.heartRate || "--"} bpm
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Sleep Hours */}
-                        {healthMetrics.sleepHours && (
+                        <View style={styles.todaysStats}>
+                          {/* Workout Progress */}
                           <View style={styles.todaysStat}>
                             <Ionicons
-                              name="bed-outline"
+                              name="barbell-outline"
                               size={rf(24)}
-                              color="#9C27B0"
+                              color={ResponsiveTheme.colors.primary}
                               style={{
                                 marginBottom: ResponsiveTheme.spacing.xs,
                               }}
                             />
                             <View style={styles.todaysStatContent}>
-                              <Text style={styles.todaysStatLabel}>Sleep</Text>
+                              <Text style={styles.todaysStatLabel}>
+                                Workout
+                              </Text>
                               <Text style={styles.todaysStatValue}>
-                                {healthMetrics.sleepHours.toFixed(1)}h
+                                {todaysData.workout
+                                  ? `${todaysData.progress.workoutProgress}%`
+                                  : "Rest Day"}
                               </Text>
                             </View>
                           </View>
-                        )}
-                      </View>
-                    </GlassCard>
-                  </View>
-                )}
+
+                          {/* Meals Progress */}
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="restaurant-outline"
+                              size={rf(24)}
+                              color={ResponsiveTheme.colors.primary}
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>Meals</Text>
+                              <Text style={styles.todaysStatValue}>
+                                {todaysData.progress.totalMeals > 0
+                                  ? `${todaysData.progress.mealsCompleted}/${todaysData.progress.totalMeals}`
+                                  : todaysData.progress.mealsCompleted > 0
+                                    ? `${todaysData.progress.mealsCompleted} logged`
+                                    : "No meals"}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Calories Progress */}
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="flame-outline"
+                              size={rf(24)}
+                              color={ResponsiveTheme.colors.primary}
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>
+                                Calories
+                              </Text>
+                              <Text style={styles.todaysStatValue}>
+                                {(calculatedMetrics?.dailyCalories ??
+                                  todaysData.progress.targetCalories) > 0
+                                  ? `${todaysData.progress.caloriesConsumed}/${calculatedMetrics?.dailyCalories ?? todaysData.progress.targetCalories}`
+                                  : todaysData.progress.caloriesConsumed > 0
+                                    ? `${todaysData.progress.caloriesConsumed} cal`
+                                    : "No data"}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </GlassCard>
+                    </View>
+                  )}
+
+                {/* Wearable Health Data */}
+                {(isAuthenticated || calculatedMetrics?.calculatedBMI) &&
+                  isWearableConnected &&
+                  !showAnalytics && (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionTitle}>Wearable Activity</Text>
+                      <GlassCard
+                        style={styles.todaysCard}
+                        elevation={2}
+                        blurIntensity="light"
+                        padding="lg"
+                        borderRadius="lg"
+                      >
+                        <View style={styles.wearableHeader}>
+                          <Ionicons
+                            name="watch-outline"
+                            size={rf(20)}
+                            color={ResponsiveTheme.colors.primary}
+                          />
+                          <Text style={styles.wearableLabel}>
+                            From your smartwatch
+                          </Text>
+                        </View>
+                        <View style={styles.todaysStats}>
+                          {/* Steps */}
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="walk-outline"
+                              size={rf(24)}
+                              color="#4CAF50"
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>Steps</Text>
+                              <Text style={styles.todaysStatValue}>
+                                {healthMetrics.steps.toLocaleString()}
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Active Calories */}
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="flame-outline"
+                              size={rf(24)}
+                              color="#FF9800"
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>Burned</Text>
+                              <Text style={styles.todaysStatValue}>
+                                {healthMetrics.activeCalories} cal
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Heart Rate */}
+                          <View style={styles.todaysStat}>
+                            <Ionicons
+                              name="heart-outline"
+                              size={rf(24)}
+                              color="#F44336"
+                              style={{
+                                marginBottom: ResponsiveTheme.spacing.xs,
+                              }}
+                            />
+                            <View style={styles.todaysStatContent}>
+                              <Text style={styles.todaysStatLabel}>
+                                Heart Rate
+                              </Text>
+                              <Text style={styles.todaysStatValue}>
+                                {healthMetrics.heartRate || "--"} bpm
+                              </Text>
+                            </View>
+                          </View>
+
+                          {/* Sleep Hours */}
+                          {healthMetrics.sleepHours && (
+                            <View style={styles.todaysStat}>
+                              <Ionicons
+                                name="bed-outline"
+                                size={rf(24)}
+                                color="#9C27B0"
+                                style={{
+                                  marginBottom: ResponsiveTheme.spacing.xs,
+                                }}
+                              />
+                              <View style={styles.todaysStatContent}>
+                                <Text style={styles.todaysStatLabel}>
+                                  Sleep
+                                </Text>
+                                <Text style={styles.todaysStatValue}>
+                                  {healthMetrics.sleepHours.toFixed(1)}h
+                                </Text>
+                              </View>
+                            </View>
+                          )}
+                        </View>
+                      </GlassCard>
+                    </View>
+                  )}
 
                 {/* Progress Analytics Component */}
                 {showAnalytics && <ProgressAnalytics />}
@@ -886,22 +953,27 @@ export const ProgressScreen: React.FC = () => {
                     >
                       <View style={styles.statHeader}>
                         <Text style={styles.statValue}>
-                          {stats.weight.current}
+                          {stats.weight.current && stats.weight.current > 0
+                            ? stats.weight.current
+                            : "--"}
                         </Text>
                         <Text style={styles.statUnit}>{stats.weight.unit}</Text>
-                        <Ionicons
-                          name={
-                            stats.weight.trend === "decreasing"
-                              ? "trending-down-outline"
-                              : "trending-up-outline"
-                          }
-                          size={rf(16)}
-                          color={
-                            stats.weight.trend === "decreasing"
-                              ? ResponsiveTheme.colors.success
-                              : ResponsiveTheme.colors.error
-                          }
-                        />
+                        {stats.weight.change !== null &&
+                          stats.weight.change !== 0 && (
+                            <Ionicons
+                              name={
+                                stats.weight.trend === "decreasing"
+                                  ? "trending-down-outline"
+                                  : "trending-up-outline"
+                              }
+                              size={rf(16)}
+                              color={
+                                stats.weight.trend === "decreasing"
+                                  ? ResponsiveTheme.colors.success
+                                  : ResponsiveTheme.colors.error
+                              }
+                            />
+                          )}
                       </View>
                       <Text style={styles.statLabel}>Weight</Text>
                       <Text
@@ -912,9 +984,37 @@ export const ProgressScreen: React.FC = () => {
                             : styles.statChangeNegative,
                         ]}
                       >
-                        {(stats.weight.change ?? 0) > 0 ? "+" : ""}
-                        {stats.weight.change ?? 0} {stats.weight.unit}
+                        {stats.weight.change !== null
+                          ? `${(stats.weight.change ?? 0) > 0 ? "+" : ""}${stats.weight.change} ${stats.weight.unit}`
+                          : "--"}
                       </Text>
+                      {stats.weight.current && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <Ionicons
+                            name="create-outline"
+                            size={rf(12)}
+                            color={ResponsiveTheme.colors.textSecondary}
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: rf(11),
+                              color: ResponsiveTheme.colors.textSecondary,
+                            }}
+                          >
+                            Manual
+                            {progressEntries[0]?.entry_date
+                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                              : ""}
+                          </Text>
+                        </View>
+                      )}
                       <View style={styles.goalProgress}>
                         <Text style={styles.goalText}>
                           Goal: {stats.weight.goal}
@@ -951,10 +1051,32 @@ export const ProgressScreen: React.FC = () => {
                       padding="md"
                       borderRadius="lg"
                     >
-                      <Text style={styles.statValue}>
-                        {stats.bodyFat.current}
-                      </Text>
-                      <Text style={styles.statUnit}>{stats.bodyFat.unit}</Text>
+                      <View style={styles.statHeader}>
+                        <Text style={styles.statValue}>
+                          {stats.bodyFat.current && stats.bodyFat.current > 0
+                            ? stats.bodyFat.current
+                            : "--"}
+                        </Text>
+                        <Text style={styles.statUnit}>
+                          {stats.bodyFat.unit}
+                        </Text>
+                        {stats.bodyFat.change !== null &&
+                          stats.bodyFat.change !== 0 && (
+                            <Ionicons
+                              name={
+                                stats.bodyFat.trend === "decreasing"
+                                  ? "trending-down-outline"
+                                  : "trending-up-outline"
+                              }
+                              size={rf(16)}
+                              color={
+                                stats.bodyFat.trend === "decreasing"
+                                  ? ResponsiveTheme.colors.success
+                                  : ResponsiveTheme.colors.error
+                              }
+                            />
+                          )}
+                      </View>
                       <Text style={styles.statLabel}>Body Fat</Text>
                       <Text
                         style={[
@@ -964,10 +1086,37 @@ export const ProgressScreen: React.FC = () => {
                             : styles.statChangeNegative,
                         ]}
                       >
-                        {(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}
-                        {stats.bodyFat.change ?? 0}
-                        {stats.bodyFat.unit}
+                        {stats.bodyFat.change !== null
+                          ? `${(stats.bodyFat.change ?? 0) > 0 ? "+" : ""}${stats.bodyFat.change}${stats.bodyFat.unit}`
+                          : "--"}
                       </Text>
+                      {stats.bodyFat.current && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <Ionicons
+                            name="create-outline"
+                            size={rf(12)}
+                            color={ResponsiveTheme.colors.textSecondary}
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: rf(11),
+                              color: ResponsiveTheme.colors.textSecondary,
+                            }}
+                          >
+                            Manual
+                            {progressEntries[0]?.entry_date
+                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                              : ""}
+                          </Text>
+                        </View>
+                      )}
                     </GlassCard>
                   </View>
 
@@ -979,10 +1128,30 @@ export const ProgressScreen: React.FC = () => {
                       padding="md"
                       borderRadius="lg"
                     >
-                      <Text style={styles.statValue}>
-                        {stats.muscle.current}
-                      </Text>
-                      <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                      <View style={styles.statHeader}>
+                        <Text style={styles.statValue}>
+                          {stats.muscle.current && stats.muscle.current > 0
+                            ? stats.muscle.current
+                            : "--"}
+                        </Text>
+                        <Text style={styles.statUnit}>{stats.muscle.unit}</Text>
+                        {stats.muscle.change !== null &&
+                          stats.muscle.change !== 0 && (
+                            <Ionicons
+                              name={
+                                stats.muscle.trend === "decreasing"
+                                  ? "trending-down-outline"
+                                  : "trending-up-outline"
+                              }
+                              size={rf(16)}
+                              color={
+                                stats.muscle.trend === "decreasing"
+                                  ? ResponsiveTheme.colors.error
+                                  : ResponsiveTheme.colors.success
+                              }
+                            />
+                          )}
+                      </View>
                       <Text style={styles.statLabel}>Muscle Mass</Text>
                       <Text
                         style={[
@@ -992,9 +1161,37 @@ export const ProgressScreen: React.FC = () => {
                             : styles.statChangeNegative,
                         ]}
                       >
-                        {(stats.muscle.change ?? 0) > 0 ? "+" : ""}
-                        {stats.muscle.change ?? 0} {stats.muscle.unit}
+                        {stats.muscle.change !== null
+                          ? `${(stats.muscle.change ?? 0) > 0 ? "+" : ""}${stats.muscle.change} ${stats.muscle.unit}`
+                          : "--"}
                       </Text>
+                      {stats.muscle.current && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <Ionicons
+                            name="create-outline"
+                            size={rf(12)}
+                            color={ResponsiveTheme.colors.textSecondary}
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: rf(11),
+                              color: ResponsiveTheme.colors.textSecondary,
+                            }}
+                          >
+                            Manual
+                            {progressEntries[0]?.entry_date
+                              ? ` • ${new Date(progressEntries[0].entry_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+                              : ""}
+                          </Text>
+                        </View>
+                      )}
                     </GlassCard>
 
                     <GlassCard
@@ -1004,20 +1201,47 @@ export const ProgressScreen: React.FC = () => {
                       padding="md"
                       borderRadius="lg"
                     >
-                      <Text style={styles.statValue}>{stats.bmi.current}</Text>
-                      <Text style={styles.statUnit}>BMI</Text>
+                      <View style={styles.statHeader}>
+                        <Text style={styles.statValue}>
+                          {stats.bmi.current && stats.bmi.current > 0
+                            ? Number(stats.bmi.current).toFixed(1)
+                            : "--"}
+                        </Text>
+                        <Text style={styles.statUnit}>BMI</Text>
+                      </View>
                       <Text style={styles.statLabel}>Body Mass Index</Text>
                       <Text
                         style={[
                           styles.statChange,
-                          (stats.bmi.change ?? 0) < 0
-                            ? styles.statChangePositive
-                            : styles.statChangeNegative,
+                          { color: ResponsiveTheme.colors.textSecondary },
                         ]}
                       >
-                        {(stats.bmi.change ?? 0) > 0 ? "+" : ""}
-                        {stats.bmi.change ?? 0}
+                        --
                       </Text>
+                      {stats.bmi.current && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 4,
+                          }}
+                        >
+                          <Ionicons
+                            name="calculator-outline"
+                            size={rf(12)}
+                            color={ResponsiveTheme.colors.textSecondary}
+                            style={{ marginRight: 4 }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: rf(11),
+                              color: ResponsiveTheme.colors.textSecondary,
+                            }}
+                          >
+                            Calculated
+                          </Text>
+                        </View>
+                      )}
                     </GlassCard>
                   </View>
                 </View>
@@ -1466,7 +1690,7 @@ export const ProgressScreen: React.FC = () => {
               />
             </SafeAreaView>
           </Modal>
-        </SafeAreaView>
+        </View>
       </AuroraBackground>
 
       {/* Weight Entry Modal */}
@@ -1508,6 +1732,17 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.xxl,
     fontWeight: ResponsiveTheme.fontWeight.bold,
     color: ResponsiveTheme.colors.text,
+    flex: 1,
+  },
+
+  backButton: {
+    width: rw(40),
+    height: rh(40),
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    marginRight: ResponsiveTheme.spacing.sm,
   },
 
   shareButton: {
@@ -1537,14 +1772,17 @@ const styles = StyleSheet.create({
 
   periodSelector: {
     flexDirection: "row",
+    justifyContent: "space-evenly",
     backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.xs,
+    gap: ResponsiveTheme.spacing.xs,
   },
 
   periodButton: {
     flex: 1,
     paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.xs,
     alignItems: "center" as const,
     borderRadius: ResponsiveTheme.borderRadius.md,
   },

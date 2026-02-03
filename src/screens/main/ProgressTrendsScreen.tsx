@@ -19,10 +19,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -43,6 +40,13 @@ import {
 
 type TrendPeriod = "week" | "month" | "quarter" | "year";
 
+interface ProgressTrendsScreenProps {
+  navigation?: {
+    navigate: (screen: string, params?: any) => void;
+    goBack: () => void;
+  };
+}
+
 interface TrendData {
   labels: string[];
   data: number[];
@@ -53,7 +57,9 @@ interface TrendData {
   changePercent: number;
 }
 
-export const ProgressTrendsScreen: React.FC = () => {
+export const ProgressTrendsScreen: React.FC<ProgressTrendsScreenProps> = ({
+  navigation,
+}) => {
   const insets = useSafeAreaInsets();
   const { width } = Dimensions.get("window");
 
@@ -244,13 +250,33 @@ export const ProgressTrendsScreen: React.FC = () => {
 
   return (
     <AuroraBackground style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         {/* Header */}
         <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
-          <Text style={styles.headerTitle}>Progress Trends</Text>
-          <Text style={styles.headerSubtitle}>
-            Track your fitness journey over time
-          </Text>
+          <View style={styles.headerRow}>
+            {/* Back button */}
+            {navigation && (
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => {
+                  haptics.light();
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons
+                  name="arrow-back"
+                  size={rf(22)}
+                  color={ResponsiveTheme.colors.text}
+                />
+              </TouchableOpacity>
+            )}
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>Progress Trends</Text>
+              <Text style={styles.headerSubtitle}>
+                Track your fitness journey over time
+              </Text>
+            </View>
+          </View>
         </Animated.View>
 
         {/* Period Selector */}
@@ -299,8 +325,9 @@ export const ProgressTrendsScreen: React.FC = () => {
             style={styles.summaryCard}
           >
             <Text style={styles.summaryTitle}>
-              {selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)}
-              ly Summary
+              {selectedPeriod.charAt(0).toUpperCase() +
+                selectedPeriod.slice(1) +
+                "ly Summary"}
             </Text>
             <View style={styles.summaryStats}>
               <View style={styles.summaryStatItem}>
@@ -325,8 +352,7 @@ export const ProgressTrendsScreen: React.FC = () => {
                       (sum, m) => sum + (m.waterIntakeMl || 0),
                       0,
                     ) / 1000
-                  ).toFixed(1)}
-                  L
+                  ).toFixed(1) + "L"}
                 </Text>
                 <Text style={styles.summaryStatLabel}>Water</Text>
               </View>
@@ -370,7 +396,8 @@ export const ProgressTrendsScreen: React.FC = () => {
 
             <View style={styles.goalContainer}>
               {calculatedMetrics?.targetWeightKg &&
-                profile?.bodyMetrics?.current_weight_kg && (
+                profile?.bodyMetrics?.current_weight_kg &&
+                calculatedMetrics?.currentWeightKg && (
                   <View style={styles.goalItem}>
                     <Text style={styles.goalLabel}>Weight Goal</Text>
                     <View style={styles.goalProgressBar}>
@@ -380,10 +407,11 @@ export const ProgressTrendsScreen: React.FC = () => {
                           {
                             width: `${Math.min(
                               100,
-                              Math.abs(
-                                ((profile.bodyMetrics.current_weight_kg -
-                                  calculatedMetrics.targetWeightKg) /
-                                  (profile.bodyMetrics.current_weight_kg -
+                              Math.max(
+                                0,
+                                ((calculatedMetrics.currentWeightKg -
+                                  profile.bodyMetrics.current_weight_kg) /
+                                  (calculatedMetrics.currentWeightKg -
                                     calculatedMetrics.targetWeightKg)) *
                                   100,
                               ),
@@ -411,7 +439,7 @@ export const ProgressTrendsScreen: React.FC = () => {
             </View>
           </Animated.View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </AuroraBackground>
   );
 };
@@ -427,6 +455,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: rw(20),
     paddingTop: rh(10),
     paddingBottom: rh(15),
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backButton: {
+    width: rw(40),
+    height: rw(40),
+    borderRadius: rw(12),
+    backgroundColor: ResponsiveTheme.colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: rw(12),
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
     fontSize: rf(28),

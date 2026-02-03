@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -29,7 +29,7 @@ interface AnimatedChartProps {
   progressWeeks?: number;
   width?: number;
   height?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const AnimatedChart: React.FC<AnimatedChartProps> = ({
@@ -362,7 +362,11 @@ export const AnimatedChart: React.FC<AnimatedChartProps> = ({
             📅 {progressWeeks}-week progression plan
           </Text>
           <Text style={styles.timelineSubtext}>
-            {(Math.abs(currentValue - targetValue) / progressWeeks).toFixed(2)}{" "}
+            {progressWeeks > 0
+              ? (Math.abs(currentValue - targetValue) / progressWeeks).toFixed(
+                  2,
+                )
+              : "--"}{" "}
             {unit}/week
           </Text>
         </View>

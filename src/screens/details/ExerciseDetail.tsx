@@ -43,6 +43,7 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
   const [isPlaying, setIsPlaying] = React.useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [visualData, setVisualData] = useState<ExerciseData | null>(null);
+  const [isFavorited, setIsFavorited] = useState(false);
   const animationValue = React.useRef(new Animated.Value(0)).current;
 
   const { weeklyWorkoutPlan } = useFitnessStore();
@@ -229,7 +230,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           </Text>
           <Button
             title="Go Back"
-            onPress={onBack || (() => {})}
+            onPress={onBack ?? (() => {})}
+            disabled={!onBack}
             variant="primary"
             style={{ marginTop: THEME.spacing.lg }}
           />
@@ -263,8 +265,11 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Exercise Guide</Text>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Text style={styles.favoriteIcon}>♡</Text>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={() => setIsFavorited(!isFavorited)}
+        >
+          <Text style={styles.favoriteIcon}>{isFavorited ? "❤️" : "♡"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -469,7 +474,8 @@ export const ExerciseDetail: React.FC<ExerciseDetailProps> = ({
       <View style={styles.bottomContainer}>
         <Button
           title="Start Exercise"
-          onPress={onStartExercise || (() => {})}
+          onPress={onStartExercise ?? (() => {})}
+          disabled={!onStartExercise}
           variant="primary"
           size="lg"
           fullWidth

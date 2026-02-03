@@ -1,26 +1,48 @@
 /**
  * AnalyticsHeader Component
- * Screen title with period selector
+ * Screen title with period selector and navigation buttons
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  StatusBar,
+} from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh } from "../../../utils/responsive";
 import { PeriodSelector, Period } from "./PeriodSelector";
+import { haptics } from "../../../utils/haptics";
 
 interface AnalyticsHeaderProps {
   selectedPeriod: Period;
   onPeriodChange: (period: Period) => void;
+  onProgressPress?: () => void;
+  onTrendsPress?: () => void;
 }
 
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   selectedPeriod,
   onPeriodChange,
+  onProgressPress,
+  onTrendsPress,
 }) => {
+  const insets = useSafeAreaInsets();
+
+  // Calculate top padding - use insets on Android where SafeAreaView may not work properly
+  const topPadding =
+    Platform.OS === "android"
+      ? Math.max(insets.top, StatusBar.currentHeight || 0) +
+        ResponsiveTheme.spacing.sm
+      : ResponsiveTheme.spacing.md;
+
   // Get period label for display
   const getPeriodLabel = () => {
     switch (selectedPeriod) {
@@ -36,7 +58,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPadding }]}>
       {/* Title Row */}
       <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
         <View style={styles.titleLeft}>
@@ -53,9 +75,50 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             <Text style={styles.subtitle}>{getPeriodLabel()}</Text>
           </View>
         </View>
-        <View style={styles.badge}>
-          <Ionicons name="sparkles" size={rf(12)} color="#FFD700" />
-          <Text style={styles.badgeText}>AI</Text>
+
+        {/* Right side: Navigation icons + AI badge */}
+        <View style={styles.titleRight}>
+          {/* Progress Screen Button */}
+          {onProgressPress && (
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => {
+                haptics.light();
+                onProgressPress();
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="fitness-outline"
+                size={rf(18)}
+                color={ResponsiveTheme.colors.primary}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* Trends Screen Button */}
+          {onTrendsPress && (
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={() => {
+                haptics.light();
+                onTrendsPress();
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="trending-up-outline"
+                size={rf(18)}
+                color={ResponsiveTheme.colors.secondary}
+              />
+            </TouchableOpacity>
+          )}
+
+          {/* AI Badge */}
+          <View style={styles.badge}>
+            <Ionicons name="sparkles" size={rf(12)} color="#FFD700" />
+            <Text style={styles.badgeText}>AI</Text>
+          </View>
         </View>
       </Animated.View>
 
@@ -76,7 +139,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
-    paddingTop: ResponsiveTheme.spacing.sm,
+    // paddingTop is applied dynamically via style prop to handle safe area
     paddingBottom: ResponsiveTheme.spacing.lg,
     gap: ResponsiveTheme.spacing.sm,
     alignItems: "stretch",
@@ -90,6 +153,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.sm,
+  },
+  titleRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.sm,
+  },
+  navButton: {
+    width: rw(36),
+    height: rw(36),
+    borderRadius: rw(10),
+    backgroundColor: "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   iconContainer: {
     width: rw(36),

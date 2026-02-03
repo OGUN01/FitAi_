@@ -1,5 +1,12 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   useSharedValue,
@@ -17,6 +24,7 @@ import { ValidationResult } from "../../services/validationEngine";
 interface WarningCardProps {
   warnings: ValidationResult[];
   onAcknowledgmentChange?: (acknowledged: boolean) => void;
+  onAdjust?: (warning: ValidationResult) => void; // NEW: For opening AdjustmentWizard
 }
 
 // ============================================================================
@@ -26,9 +34,28 @@ interface WarningCardProps {
 export const WarningCard: React.FC<WarningCardProps> = ({
   warnings,
   onAcknowledgmentChange,
+  onAdjust,
 }) => {
   const [acknowledged, setAcknowledged] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const checkScale = useSharedValue(1);
+
+  // Check if any warning has alternatives (actionable warnings)
+  const warningsWithAlternatives = warnings.filter(
+    (w) => w.alternatives && w.alternatives.length > 0,
+  );
+  const warningsWithoutAlternatives = warnings.filter(
+    (w) => !w.alternatives || w.alternatives.length === 0,
+  );
+  const hasActionableWarnings = warningsWithAlternatives.length > 0;
+
+  // Auto-acknowledge if no warnings require checkbox (all have alternatives)
+  useEffect(() => {
+    if (warningsWithoutAlternatives.length === 0 && hasActionableWarnings) {
+      // All warnings have alternatives, no checkbox needed
+      onAcknowledgmentChange?.(true);
+    }
+  }, [warningsWithoutAlternatives.length, hasActionableWarnings]);
 
   const handleAcknowledgmentToggle = () => {
     const newValue = !acknowledged;
@@ -39,23 +66,39 @@ export const WarningCard: React.FC<WarningCardProps> = ({
     });
   };
 
+  const handleAdjustPlan = async (warning: ValidationResult) => {
+    if (isLoading || !onAdjust) return;
+    setIsLoading(true);
+    try {
+      await onAdjust(warning);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const animatedCheckStyle = useAnimatedStyle(() => ({
     transform: [{ scale: checkScale.value }],
   }));
+
+  // Determine header based on warning types
+  const headerTitle = hasActionableWarnings
+    ? "Choose Your Pace"
+    : "Important Considerations";
+  const headerIcon = hasActionableWarnings ? "options" : "information-circle";
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerIcon}>
-          <Ionicons name="information-circle" size={rf(20)} color="#F59E0B" />
+          <Ionicons name={headerIcon} size={rf(20)} color="#F59E0B" />
         </View>
-        <Text style={styles.headerTitle}>Important Considerations</Text>
+        <Text style={styles.headerTitle}>{headerTitle}</Text>
       </View>
 
-      {/* Warning Items */}
-      {warnings.map((warning, index) => (
-        <View key={index} style={styles.warningItem}>
+      {/* Actionable Warnings (with alternatives) - Show "Adjust Plan" button */}
+      {warningsWithAlternatives.map((warning, index) => (
+        <View key={`actionable-${index}`} style={styles.warningItem}>
           <Text style={styles.warningMessage}>{warning.message}</Text>
 
           {warning.impact && (
@@ -77,7 +120,69 @@ export const WarningCard: React.FC<WarningCardProps> = ({
               </View>
               {warning.risks.map((risk, i) => (
                 <Text key={i} style={styles.riskText}>
-                  • {risk}
+                  {risk}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {/* Adjust Plan Button for warnings with alternatives */}
+          <TouchableOpacity
+            style={[
+              styles.adjustButton,
+              isLoading && styles.adjustButtonDisabled,
+            ]}
+            onPress={() => handleAdjustPlan(warning)}
+            activeOpacity={0.8}
+            disabled={isLoading}
+          >
+            <LinearGradient
+              colors={
+                isLoading ? ["#9CA3AF", "#6B7280"] : ["#F59E0B", "#D97706"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.adjustButtonGradient}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="options-outline" size={rf(16)} color="#fff" />
+              )}
+              <Text style={styles.adjustButtonText}>
+                {isLoading ? "Loading..." : "Adjust Plan"}
+              </Text>
+              <Ionicons name="chevron-forward" size={rf(16)} color="#fff" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      ))}
+
+      {/* Non-actionable Warnings (without alternatives) - Show info only */}
+      {warningsWithoutAlternatives.map((warning, index) => (
+        <View key={`info-${index}`} style={styles.warningItem}>
+          <Text style={styles.warningMessage}>{warning.message}</Text>
+
+          {warning.impact && (
+            <View style={styles.impactContainer}>
+              <Ionicons name="flash-outline" size={rf(12)} color="#F59E0B" />
+              <Text style={styles.impactText}>{warning.impact}</Text>
+            </View>
+          )}
+
+          {warning.risks && warning.risks.length > 0 && (
+            <View style={styles.risksContainer}>
+              <View style={styles.riskHeader}>
+                <Ionicons
+                  name="warning-outline"
+                  size={rf(12)}
+                  color="#F97316"
+                />
+                <Text style={styles.risksTitle}>Risks</Text>
+              </View>
+              {warning.risks.map((risk, i) => (
+                <Text key={i} style={styles.riskText}>
+                  {risk}
                 </Text>
               ))}
             </View>
@@ -100,27 +205,29 @@ export const WarningCard: React.FC<WarningCardProps> = ({
         </View>
       ))}
 
-      {/* Acknowledgment Checkbox */}
-      <TouchableOpacity
-        style={styles.checkboxContainer}
-        onPress={handleAcknowledgmentToggle}
-        activeOpacity={0.7}
-      >
-        <Animated.View
-          style={[
-            styles.checkboxBox,
-            acknowledged && styles.checkboxBoxChecked,
-            animatedCheckStyle,
-          ]}
+      {/* Acknowledgment Checkbox - Only show if there are non-actionable warnings */}
+      {warningsWithoutAlternatives.length > 0 && (
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={handleAcknowledgmentToggle}
+          activeOpacity={0.7}
         >
-          {acknowledged && (
-            <Ionicons name="checkmark" size={rf(14)} color="#fff" />
-          )}
-        </Animated.View>
-        <Text style={styles.checkboxLabel}>
-          Focus on consistency over aggressive timelines
-        </Text>
-      </TouchableOpacity>
+          <Animated.View
+            style={[
+              styles.checkboxBox,
+              acknowledged && styles.checkboxBoxChecked,
+              animatedCheckStyle,
+            ]}
+          >
+            {acknowledged && (
+              <Ionicons name="checkmark" size={rf(14)} color="#fff" />
+            )}
+          </Animated.View>
+          <Text style={styles.checkboxLabel}>
+            I understand and will focus on consistency
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -163,7 +270,7 @@ const styles = StyleSheet.create({
   },
 
   warningItem: {
-    marginBottom: ResponsiveTheme.spacing.sm,
+    marginBottom: ResponsiveTheme.spacing.md,
   },
 
   warningMessage: {
@@ -232,6 +339,34 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     color: ResponsiveTheme.colors.textSecondary,
     lineHeight: rf(16),
+  },
+
+  // Adjust Plan Button
+  adjustButton: {
+    marginTop: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    overflow: "hidden",
+  },
+
+  adjustButtonDisabled: {
+    opacity: 0.7,
+  },
+
+  adjustButtonGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    gap: ResponsiveTheme.spacing.xs,
+  },
+
+  adjustButtonText: {
+    flex: 1,
+    fontSize: rf(14),
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
   },
 
   // Checkbox

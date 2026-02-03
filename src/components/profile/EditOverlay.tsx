@@ -1,7 +1,14 @@
 /**
  * Professional Edit Overlay Modal
- * Provides smooth overlay experience for profile editing with proper animations
- * Designed for $1M app quality with seamless user experience
+ *
+ * NOTE: This component is now largely deprecated. The new architecture uses
+ * dedicated edit modals from src/screens/main/profile/modals/:
+ * - PersonalInfoEditModal
+ * - GoalsPreferencesEditModal
+ * - BodyMeasurementsEditModal
+ *
+ * This overlay is kept for backward compatibility but simply shows
+ * a message directing users to the appropriate section.
  */
 
 import React, { useEffect, useRef } from "react";
@@ -15,17 +22,11 @@ import {
   TouchableWithoutFeedback,
   SafeAreaView,
   StatusBar,
-  Platform,
-  ScrollView,
+  TouchableOpacity,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useEditContext } from "../../contexts/EditContext";
 import { THEME } from "../ui";
-
-// Import onboarding screens for reuse
-import { PersonalInfoScreen } from "../../screens/onboarding/PersonalInfoScreen";
-import { DietPreferencesScreen } from "../../screens/onboarding/DietPreferencesScreen";
-import { WorkoutPreferencesScreen } from "../../screens/onboarding/WorkoutPreferencesScreen";
-import { FitnessGoalsScreen } from "../../screens/onboarding/FitnessGoalsScreen";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -33,6 +34,37 @@ interface EditOverlayProps {
   visible: boolean;
   onClose: () => void;
 }
+
+// Map section names to user-friendly labels
+const SECTION_LABELS: Record<
+  string,
+  { title: string; description: string; icon: string }
+> = {
+  personalInfo: {
+    title: "Personal Information",
+    description:
+      "Edit your name, age, gender, and activity level from the Profile screen.",
+    icon: "person-outline",
+  },
+  fitnessGoals: {
+    title: "Fitness Goals",
+    description:
+      "Update your fitness goals and preferences from the Profile screen.",
+    icon: "trophy-outline",
+  },
+  dietPreferences: {
+    title: "Diet Preferences",
+    description:
+      "Modify your diet type, allergies, and meal preferences from the Profile screen.",
+    icon: "nutrition-outline",
+  },
+  workoutPreferences: {
+    title: "Workout Preferences",
+    description:
+      "Change your workout settings and exercise preferences from the Profile screen.",
+    icon: "barbell-outline",
+  },
+};
 
 export const EditOverlay: React.FC<EditOverlayProps> = ({
   visible,
@@ -100,49 +132,57 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
   // ============================================================================
 
   const renderEditScreen = () => {
-    if (!editSection) {
+    const sectionInfo = editSection ? SECTION_LABELS[editSection] : null;
+
+    if (!sectionInfo) {
       return (
-        <View style={styles.errorContainer}>
-          <Text>No edit section selected</Text>
+        <View style={styles.contentContainer}>
+          <View style={styles.iconCircle}>
+            <Ionicons
+              name="information-circle-outline"
+              size={48}
+              color={THEME.colors.primary}
+            />
+          </View>
+          <Text style={styles.title}>No Section Selected</Text>
+          <Text style={styles.description}>
+            Please use the dedicated edit buttons on the Profile screen to
+            modify your information.
+          </Text>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Text style={styles.closeButtonText}>Close</Text>
+          </TouchableOpacity>
         </View>
       );
     }
 
-    // Common props for all onboarding screens when used in edit mode
-    const commonProps = {
-      isEditMode: true,
-      onEditComplete: onClose,
-      onEditCancel: onClose,
-    };
-
-    try {
-      switch (editSection) {
-        case "personalInfo":
-          return <PersonalInfoScreen {...commonProps} />;
-        case "fitnessGoals":
-          return <FitnessGoalsScreen {...commonProps} />;
-        case "dietPreferences":
-          return <DietPreferencesScreen {...commonProps} />;
-        case "workoutPreferences":
-          return <WorkoutPreferencesScreen {...commonProps} />;
-        default:
-          return (
-            <View style={styles.errorContainer}>
-              <Text>Unknown edit section: {editSection}</Text>
-            </View>
-          );
-      }
-    } catch (error) {
-      console.error("🚨 EditOverlay: Error rendering edit screen:", error);
-      return (
-        <View style={styles.errorContainer}>
-          <Text>Error loading edit screen</Text>
-          <Text style={{ marginTop: 10, fontSize: 12, color: "#666" }}>
-            {error instanceof Error ? error.message : "Unknown error"}
+    return (
+      <View style={styles.contentContainer}>
+        <View style={styles.iconCircle}>
+          <Ionicons
+            name={sectionInfo.icon as any}
+            size={48}
+            color={THEME.colors.primary}
+          />
+        </View>
+        <Text style={styles.title}>{sectionInfo.title}</Text>
+        <Text style={styles.description}>{sectionInfo.description}</Text>
+        <View style={styles.infoBox}>
+          <Ionicons
+            name="bulb-outline"
+            size={20}
+            color={THEME.colors.warning}
+          />
+          <Text style={styles.infoText}>
+            This overlay is deprecated. Use the edit icons on each section of
+            the Profile screen for a better experience.
           </Text>
         </View>
-      );
-    }
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>Got it</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   // ============================================================================
@@ -199,14 +239,7 @@ export const EditOverlay: React.FC<EditOverlayProps> = ({
             </View>
 
             {/* Content */}
-            <ScrollView
-              style={styles.contentContainer}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              bounces={true}
-            >
-              {renderEditScreen()}
-            </ScrollView>
+            {renderEditScreen()}
           </View>
         </SafeAreaView>
       </Animated.View>
@@ -268,8 +301,8 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: SCREEN_HEIGHT * 0.95,
-    minHeight: SCREEN_HEIGHT * 0.6,
+    maxHeight: SCREEN_HEIGHT * 0.6,
+    minHeight: SCREEN_HEIGHT * 0.4,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -296,8 +329,66 @@ const styles = StyleSheet.create({
   },
 
   contentContainer: {
-    flexGrow: 1,
-    backgroundColor: THEME.colors.surface,
+    flex: 1,
+    padding: THEME.spacing.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: `${THEME.colors.primary}15`,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: THEME.spacing.lg,
+  },
+
+  title: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: THEME.colors.text,
+    marginBottom: THEME.spacing.sm,
+    textAlign: "center",
+  },
+
+  description: {
+    fontSize: 15,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: THEME.spacing.lg,
+  },
+
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: `${THEME.colors.warning}15`,
+    padding: THEME.spacing.md,
+    borderRadius: 12,
+    marginBottom: THEME.spacing.lg,
+    gap: THEME.spacing.sm,
+  },
+
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: THEME.colors.textSecondary,
+    lineHeight: 18,
+  },
+
+  closeButton: {
+    backgroundColor: THEME.colors.primary,
+    paddingVertical: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.xl * 2,
+    borderRadius: 12,
+  },
+
+  closeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 
   loadingOverlay: {
@@ -333,14 +424,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: THEME.colors.border,
     borderTopColor: THEME.colors.primary,
-    // Note: In a real app, you'd use an ActivityIndicator or Lottie animation
-  },
-
-  errorContainer: {
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 100,
   },
 });
 

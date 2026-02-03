@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
@@ -1591,7 +1591,7 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   // ============================================================================
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Info Tooltip Modal */}
       <InfoTooltipModal
         visible={tooltipModal.visible}

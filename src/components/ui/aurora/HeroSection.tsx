@@ -18,12 +18,13 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   GradientConfig,
   toLinearGradientProps,
   gradients,
 } from "../../../theme/gradients";
-import { rw, rh } from "../../../utils/responsive";
+import { rw, rh, rp } from "../../../utils/responsive";
 
 const AnimatedImageBackground =
   Animated.createAnimatedComponent(ImageBackground);
@@ -121,6 +122,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   contentStyle,
   resizeMode = "cover",
 }) => {
+  const insets = useSafeAreaInsets();
+
   // Get gradient props for the overlay
   const gradientProps = toLinearGradientProps(overlayGradient);
 
@@ -143,13 +146,19 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     };
   }, [parallaxEnabled, scrollY, height, parallaxIntensity]);
 
-  // Content position styles
+  // Content position styles - use safe area insets for top/bottom padding
   const getContentPositionStyle = (): ViewStyle => {
     switch (contentPosition) {
       case "top":
-        return { justifyContent: "flex-start" as const, paddingTop: 40 };
+        return {
+          justifyContent: "flex-start" as const,
+          paddingTop: Math.max(insets.top, rp(20)),
+        };
       case "bottom":
-        return { justifyContent: "flex-end" as const, paddingBottom: 40 };
+        return {
+          justifyContent: "flex-end" as const,
+          paddingBottom: Math.max(insets.bottom, rp(20)),
+        };
       case "center":
       default:
         return { justifyContent: "center" as const };

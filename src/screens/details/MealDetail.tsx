@@ -252,7 +252,8 @@ export const MealDetail: React.FC<MealDetailProps> = ({
           </Text>
           <Button
             title="Go Back"
-            onPress={onBack || (() => {})}
+            onPress={onBack ?? (() => {})}
+            disabled={!onBack}
             variant="primary"
             style={{ marginTop: THEME.spacing.lg }}
           />
@@ -409,13 +410,15 @@ export const MealDetail: React.FC<MealDetailProps> = ({
         <View style={styles.actionButtons}>
           <Button
             title="Edit Meal"
-            onPress={onEdit || (() => {})}
+            onPress={onEdit ?? (() => {})}
+            disabled={!onEdit}
             variant="outline"
             style={styles.actionButton}
           />
           <Button
             title="Delete Meal"
-            onPress={onDelete || (() => {})}
+            onPress={onDelete ?? (() => {})}
+            disabled={!onDelete}
             variant="outline"
             style={[styles.actionButton, styles.deleteButton] as any}
             textStyle={styles.deleteButtonText}

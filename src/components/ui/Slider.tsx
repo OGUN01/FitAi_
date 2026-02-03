@@ -7,6 +7,8 @@ import {
   Platform,
   PanResponder,
   Animated as RNAnimated,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -35,7 +37,7 @@ interface SliderProps {
   label?: string;
   showTooltip?: boolean;
   formatValue?: (value: number) => string;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   trackColor?: string;
   thumbColor?: string;
   disabled?: boolean;

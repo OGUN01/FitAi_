@@ -9,10 +9,7 @@ import { dataBridge } from "../services/DataBridge";
 import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
-import {
-  getCurrentUserId,
-  getUserIdOrGuest,
-} from "../services/StoreCoordinator";
+import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
 
 // Type guard for MealType - ensures type safety without 'as any'
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";

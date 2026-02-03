@@ -18,7 +18,7 @@
     },
     "supabase": {
       "type": "local",
-      "command": ["cmd", "/c", "pnpm", "dlx", "@supabase/mcp-server-supabase@latest", "--project-ref=mqfrwtmkokivoxgukgsz"],
+      "command": ["cmd", "/c", "npx", "-y", "@supabase/mcp-server-supabase@latest", "--project-ref=mqfrwtmkokivoxgukgsz"],
       "environment": {
         "SUPABASE_ACCESS_TOKEN": "sbp_37b87f98d57e0e4d68545b2e9818f136366cdeef"
       }

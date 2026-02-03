@@ -245,7 +245,7 @@ export interface UserProfile extends User {
     totalCaloriesBurned: number;
     currentStreak: number;
     longestStreak: number;
-    achievements?: any[];
+    achievements?: Array<{ id: string; title: string; unlockedAt?: string }>;
   };
   // ✅ NEW: Body metrics from body_analysis table
   bodyMetrics?: BodyMetrics;

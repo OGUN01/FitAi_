@@ -7,6 +7,7 @@ import {
   Dimensions,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { THEME } from "../../utils/constants";
 import { ResponsiveTheme } from "../../utils/constants";
@@ -38,6 +39,8 @@ export const Modal: React.FC<ModalProps> = ({
   contentStyle,
   closeOnOverlayPress = true,
 }) => {
+  const insets = useSafeAreaInsets();
+
   const handleOverlayPress = () => {
     if (closeOnOverlayPress) {
       onClose();
@@ -52,7 +55,7 @@ export const Modal: React.FC<ModalProps> = ({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={[styles.overlay, overlayStyle]}>
+      <View style={[styles.overlay, overlayStyle, { paddingTop: insets.top }]}>
         <TouchableOpacity
           style={styles.overlayTouchable}
           activeOpacity={1}
@@ -87,6 +90,8 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
   overlayStyle,
   closeOnOverlayPress = true,
 }) => {
+  const insets = useSafeAreaInsets();
+
   const handleOverlayPress = () => {
     if (closeOnOverlayPress) {
       onClose();
@@ -101,7 +106,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={[styles.overlay, overlayStyle]}>
+      <View style={[styles.overlay, overlayStyle, { paddingTop: insets.top }]}>
         <TouchableOpacity
           style={styles.overlayTouchable}
           activeOpacity={1}
@@ -110,7 +115,13 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
           <View style={styles.bottomSheetContainer}>
             <TouchableOpacity
               activeOpacity={1}
-              style={[styles.bottomSheetContent, { height: height as any }]}
+              style={[
+                styles.bottomSheetContent,
+                {
+                  height: height as any,
+                  paddingBottom: insets.bottom + ResponsiveTheme.spacing.lg,
+                },
+              ]}
               onPress={(e) => e.stopPropagation()}
             >
               <View style={styles.bottomSheetHandle} />
@@ -126,7 +137,7 @@ export const BottomSheetModal: React.FC<BottomSheetModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
 
   overlayTouchable: {

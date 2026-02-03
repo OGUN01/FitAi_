@@ -7,6 +7,8 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Button, THEME } from "../ui";
 
@@ -27,7 +29,7 @@ interface MultiSelectProps {
   maxSelections?: number;
   searchable?: boolean;
   disabled?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const MultiSelect: React.FC<MultiSelectProps> = ({

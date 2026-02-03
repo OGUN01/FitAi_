@@ -8,14 +8,14 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "./src/theme/gluestack-ui.config";
 import { OnboardingContainer } from "./src/screens/onboarding/OnboardingContainer";
 import { MainNavigation } from "./src/components/navigation/MainNavigation";
-import { OnboardingReviewData } from "./src/screens/onboarding/ReviewScreen";
+import { OnboardingReviewData } from "./src/types/onboarding";
 import { THEME } from "./src/utils/constants";
 import { initializeBackend } from "./src/utils/integration";
 import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
 import { useUserStore } from "./src/stores/userStore";
 import { useAuthStore } from "./src/stores/authStore";
-import { UserProfile } from "./src/types/user";
+import { UserProfile, PersonalInfo, FitnessGoals } from "./src/types/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { googleAuthService } from "./src/services/googleAuth";
@@ -27,6 +27,7 @@ import {
   WorkoutPreferencesService,
   AdvancedReviewService,
 } from "./src/services/onboardingService";
+import { invalidateMetricsCache } from "./src/hooks/useCalculatedMetrics";
 // validateProductionEnvironment removed - AI moved to Cloudflare Workers
 
 // Enhanced Expo Go detection with bulletproof methods and debugging
@@ -192,8 +193,15 @@ export default function App() {
       personalInfo: {
         ...data.personalInfo,
         name: computedName, // Ensure name is always computed
-      },
-      fitnessGoals: fitnessGoals,
+        // Provide defaults for required fields
+        country: data.personalInfo.country || "",
+        state: data.personalInfo.state || "",
+        wake_time: data.personalInfo.wake_time || "07:00",
+        sleep_time: data.personalInfo.sleep_time || "23:00",
+        occupation_type:
+          (data.personalInfo.occupation_type as any) || "moderate_active",
+      } as PersonalInfo,
+      fitnessGoals: fitnessGoals as FitnessGoals,
       dietPreferences: data.dietPreferences
         ? {
             // Basic diet info
@@ -1081,6 +1089,10 @@ export default function App() {
       console.log(
         "🎉 App: Now setting isOnboardingComplete=true to show MainNavigation",
       );
+
+      // Invalidate metrics cache to ensure HomeScreen loads fresh data
+      console.log("📊 App: Invalidating metrics cache before navigation");
+      invalidateMetricsCache();
 
       // Set complete flag LAST after all async operations finish
       setIsOnboardingComplete(true);

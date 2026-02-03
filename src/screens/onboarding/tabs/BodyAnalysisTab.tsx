@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw } from "../../../utils/responsive";
@@ -723,7 +723,9 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         </View>
 
         {/* BMI Display */}
-        {formData.bmi && (
+        {formData.bmi !== undefined &&
+        formData.bmi !== null &&
+        formData.bmi > 0 ? (
           <GlassCard
             elevation={3}
             blurIntensity="default"
@@ -752,7 +754,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                 </Text>
               </View>
 
-              {formData.ideal_weight_min && formData.ideal_weight_max && (
+              {formData.ideal_weight_min != null &&
+              formData.ideal_weight_max != null &&
+              formData.ideal_weight_min > 0 &&
+              formData.ideal_weight_max > 0 ? (
                 <Text
                   style={styles.idealWeightText}
                   numberOfLines={1}
@@ -761,59 +766,59 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
                   Ideal weight range: {formData.ideal_weight_min}kg -{" "}
                   {formData.ideal_weight_max}kg
                 </Text>
-              )}
+              ) : null}
 
               {/* Weight Loss Rate Warning */}
-              {formData.current_weight_kg &&
-                formData.target_weight_kg &&
-                formData.target_timeline_weeks && (
-                  <View style={styles.weightLossInfo}>
-                    {(() => {
-                      const weeklyRate =
-                        Math.abs(
-                          formData.current_weight_kg -
-                            formData.target_weight_kg,
-                        ) / formData.target_timeline_weeks;
-                      const isHealthyRate = weeklyRate <= 1;
+              {formData.current_weight_kg != null &&
+              formData.current_weight_kg > 0 &&
+              formData.target_weight_kg != null &&
+              formData.target_weight_kg > 0 &&
+              formData.target_timeline_weeks != null &&
+              formData.target_timeline_weeks > 0 ? (
+                <View style={styles.weightLossInfo}>
+                  {(() => {
+                    const weeklyRate =
+                      Math.abs(
+                        formData.current_weight_kg - formData.target_weight_kg,
+                      ) / formData.target_timeline_weeks;
+                    const isHealthyRate = weeklyRate <= 1;
 
-                      return (
-                        <View style={styles.weightLossRateRow}>
-                          <Ionicons
-                            name={
-                              isHealthyRate
-                                ? "checkmark-circle"
-                                : "alert-circle"
-                            }
-                            size={rf(16)}
-                            color={
-                              isHealthyRate
+                    return (
+                      <View style={styles.weightLossRateRow}>
+                        <Ionicons
+                          name={
+                            isHealthyRate ? "checkmark-circle" : "alert-circle"
+                          }
+                          size={rf(16)}
+                          color={
+                            isHealthyRate
+                              ? ResponsiveTheme.colors.success
+                              : ResponsiveTheme.colors.warning
+                          }
+                        />
+                        <Text
+                          style={[
+                            styles.weightLossRate,
+                            {
+                              color: isHealthyRate
                                 ? ResponsiveTheme.colors.success
-                                : ResponsiveTheme.colors.warning
-                            }
-                          />
-                          <Text
-                            style={[
-                              styles.weightLossRate,
-                              {
-                                color: isHealthyRate
-                                  ? ResponsiveTheme.colors.success
-                                  : ResponsiveTheme.colors.warning,
-                              },
-                            ]}
-                            numberOfLines={2}
-                            ellipsizeMode="tail"
-                          >
-                            Weekly rate: {weeklyRate.toFixed(2)}kg/week
-                            {!isHealthyRate && " (Consider slower pace)"}
-                          </Text>
-                        </View>
-                      );
-                    })()}
-                  </View>
-                )}
+                                : ResponsiveTheme.colors.warning,
+                            },
+                          ]}
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
+                        >
+                          Weekly rate: {weeklyRate.toFixed(2)}kg/week
+                          {!isHealthyRate && " (Consider slower pace)"}
+                        </Text>
+                      </View>
+                    );
+                  })()}
+                </View>
+              ) : null}
             </View>
           </GlassCard>
-        )}
+        ) : null}
       </View>
       <View style={styles.sectionBottomPad} />
     </GlassCard>
@@ -821,7 +826,10 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
 
   const renderGoalVisualizationSection = () => {
     const hasWeightGoal =
-      formData.current_weight_kg && formData.target_weight_kg;
+      formData.current_weight_kg != null &&
+      formData.current_weight_kg > 0 &&
+      formData.target_weight_kg != null &&
+      formData.target_weight_kg > 0;
 
     if (!hasWeightGoal) return null;
 
@@ -979,49 +987,50 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         </View>
 
         {/* Waist-Hip Ratio Display */}
-        {formData.waist_hip_ratio &&
-          (() => {
-            const threshold =
-              personalInfoData?.gender === "female" ? 0.85 : 0.9;
-            const isHealthy = formData.waist_hip_ratio! < threshold;
-            return (
-              <GlassCard
-                elevation={2}
-                blurIntensity="default"
-                padding="md"
-                borderRadius="lg"
-                style={styles.ratioCardInline}
-              >
-                <Text style={styles.ratioTitle} numberOfLines={1}>
-                  Waist-Hip Ratio: {formData.waist_hip_ratio}
-                </Text>
-                <View style={styles.ratioStatusRow}>
-                  <Ionicons
-                    name={isHealthy ? "checkmark-circle" : "alert-circle"}
-                    size={rf(16)}
-                    color={
-                      isHealthy
-                        ? ResponsiveTheme.colors.secondary
-                        : ResponsiveTheme.colors.warning
-                    }
-                  />
-                  <Text
-                    style={[
-                      styles.ratioDescription,
-                      {
-                        color: isHealthy
-                          ? ResponsiveTheme.colors.secondary
-                          : ResponsiveTheme.colors.warning,
-                      },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {isHealthy ? "Healthy ratio" : "Consider waist reduction"}
+        {formData.waist_hip_ratio != null && formData.waist_hip_ratio > 0
+          ? (() => {
+              const threshold =
+                personalInfoData?.gender === "female" ? 0.85 : 0.9;
+              const isHealthy = formData.waist_hip_ratio! < threshold;
+              return (
+                <GlassCard
+                  elevation={2}
+                  blurIntensity="default"
+                  padding="md"
+                  borderRadius="lg"
+                  style={styles.ratioCardInline}
+                >
+                  <Text style={styles.ratioTitle} numberOfLines={1}>
+                    Waist-Hip Ratio: {formData.waist_hip_ratio}
                   </Text>
-                </View>
-              </GlassCard>
-            );
-          })()}
+                  <View style={styles.ratioStatusRow}>
+                    <Ionicons
+                      name={isHealthy ? "checkmark-circle" : "alert-circle"}
+                      size={rf(16)}
+                      color={
+                        isHealthy
+                          ? ResponsiveTheme.colors.secondary
+                          : ResponsiveTheme.colors.warning
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.ratioDescription,
+                        {
+                          color: isHealthy
+                            ? ResponsiveTheme.colors.secondary
+                            : ResponsiveTheme.colors.warning,
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {isHealthy ? "Healthy ratio" : "Consider waist reduction"}
+                    </Text>
+                  </View>
+                </GlassCard>
+              );
+            })()
+          : null}
       </View>
       <View style={styles.sectionBottomPad} />
     </GlassCard>
@@ -1155,7 +1164,8 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         </View>
 
         {/* AI Analysis Results - Compact inline display */}
-        {formData.ai_estimated_body_fat && (
+        {formData.ai_estimated_body_fat != null &&
+        formData.ai_estimated_body_fat > 0 ? (
           <View style={styles.edgeToEdgeContentPadded}>
             <View style={styles.aiResultsCompact}>
               <View style={styles.aiResultItem}>
@@ -1194,7 +1204,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
               </AnimatedPressable>
             </View>
           </View>
-        )}
+        ) : null}
 
         <View style={styles.sectionBottomPad} />
       </GlassCard>
@@ -1631,7 +1641,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
   // ============================================================================
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       {/* OB-UX-006: KeyboardAvoidingView for proper keyboard handling */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}

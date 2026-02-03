@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+  StyleProp,
+  ViewStyle,
+} from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import { THEME } from "../../utils/constants";
 
@@ -16,7 +23,7 @@ interface NutritionData {
 interface NutritionChartProps {
   data: NutritionData;
   targetCalories?: number;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const NutritionChart: React.FC<NutritionChartProps> = ({

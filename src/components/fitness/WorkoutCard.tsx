@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
 import { Card, Button, THEME } from "../ui";
 import { Workout } from "../../types/workout";
@@ -15,7 +17,7 @@ interface WorkoutCardProps {
   onViewDetails?: () => void;
   isInProgress?: boolean;
   progress?: number; // 0-100
-  style?: any;
+  style?: StyleProp<ViewStyle>;
   animatedValue?: Animated.Value;
 }
 
