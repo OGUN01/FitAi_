@@ -9,374 +9,43 @@
  * - FadeInDown entry animations
  */
 
-import React, { useState, useCallback, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  Alert,
-} from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// UI Components
-import { GlassCard } from "../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
+import { PrivacyToggle } from "../../components/settings/PrivacyToggle";
+import { ActionItem } from "../../components/settings/ActionItem";
+import { SectionHeader } from "../../components/settings/SectionHeader";
 
-// Theme & Utils
+import { usePrivacySecurityLogic } from "../../hooks/usePrivacySecurityLogic";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
-
-// Services
-import { supabase } from "../../services/supabase";
 
 interface PrivacySecurityScreenProps {
   onBack?: () => void;
 }
 
-interface PrivacyToggleProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  title: string;
-  description: string;
-  value: boolean;
-  onToggle: () => void;
-  animationDelay: number;
-}
-
-const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
-  icon,
-  iconColor,
-  title,
-  description,
-  value,
-  onToggle,
-  animationDelay,
-}) => {
-  return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <GlassCard
-        elevation={1}
-        padding="md"
-        blurIntensity="light"
-        borderRadius="lg"
-        style={styles.toggleCard}
-      >
-        <View style={styles.toggleContent}>
-          <View
-            style={[
-              styles.iconContainer,
-              { backgroundColor: `${iconColor}15` },
-            ]}
-          >
-            <Ionicons name={icon} size={rf(18)} color={iconColor} />
-          </View>
-          <View style={styles.textContainer}>
-            <Text style={styles.toggleTitle}>{title}</Text>
-            <Text style={styles.toggleDescription} numberOfLines={2}>
-              {description}
-            </Text>
-          </View>
-          <Switch
-            value={value}
-            onValueChange={() => {
-              haptics.light();
-              onToggle();
-            }}
-            trackColor={{
-              false: "rgba(255, 255, 255, 0.1)",
-              true: `${ResponsiveTheme.colors.primary}50`,
-            }}
-            thumbColor={
-              value
-                ? ResponsiveTheme.colors.primary
-                : "rgba(255, 255, 255, 0.4)"
-            }
-            ios_backgroundColor="rgba(255, 255, 255, 0.1)"
-          />
-        </View>
-      </GlassCard>
-    </Animated.View>
-  );
-};
-
-interface ActionItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  title: string;
-  description: string;
-  onPress: () => void;
-  isDanger?: boolean;
-  animationDelay: number;
-}
-
-const ActionItem: React.FC<ActionItemProps> = ({
-  icon,
-  iconColor,
-  title,
-  description,
-  onPress,
-  isDanger = false,
-  animationDelay,
-}) => {
-  return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <AnimatedPressable
-        onPress={() => {
-          haptics.light();
-          onPress();
-        }}
-        scaleValue={0.98}
-        hapticFeedback={false}
-      >
-        <GlassCard
-          elevation={1}
-          padding="md"
-          blurIntensity="light"
-          borderRadius="lg"
-          style={
-            (isDanger
-              ? [styles.actionCard, styles.dangerCard]
-              : styles.actionCard) as any
-          }
-        >
-          <View style={styles.actionContent}>
-            <View
-              style={[
-                styles.iconContainer,
-                {
-                  backgroundColor: isDanger
-                    ? "rgba(244, 67, 54, 0.15)"
-                    : `${iconColor}15`,
-                },
-              ]}
-            >
-              <Ionicons
-                name={icon}
-                size={rf(18)}
-                color={isDanger ? "#F44336" : iconColor}
-              />
-            </View>
-            <View style={styles.textContainer}>
-              <Text
-                style={[styles.actionTitle, isDanger && styles.dangerTitle]}
-              >
-                {title}
-              </Text>
-              <Text style={styles.actionDescription}>{description}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
-            />
-          </View>
-        </GlassCard>
-      </AnimatedPressable>
-    </Animated.View>
-  );
-};
-
 export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
   onBack,
 }) => {
-  const PRIVACY_SETTINGS_KEY = "@fitai_privacy_settings";
-
-  const [settings, setSettings] = useState({
-    dataSharing: false,
-    analytics: true,
-    crashReports: true,
-    locationTracking: false,
-    biometricAuth: false,
-    autoLock: true,
-  });
-
-  const [hasChanges, setHasChanges] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load settings from AsyncStorage on mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(PRIVACY_SETTINGS_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setSettings((prev) => ({ ...prev, ...parsed }));
-        }
-      } catch (error) {
-        console.error("Failed to load privacy settings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  const toggleSetting = useCallback((key: keyof typeof settings) => {
-    setSettings((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-    setHasChanges(true);
-  }, []);
-
-  const handleDataExport = useCallback(async () => {
-    Alert.alert(
-      "Export Data",
-      "Your data export will be prepared. This may take a few moments.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Export",
-          onPress: async () => {
-            try {
-              haptics.success();
-
-              // Get current user
-              const {
-                data: { user },
-              } = await supabase.auth.getUser();
-              if (!user) {
-                Alert.alert("Error", "You must be logged in to export data.");
-                return;
-              }
-
-              // Collect all user data from local storage
-              const allKeys = await AsyncStorage.getAllKeys();
-              const fitaiKeys = allKeys.filter(
-                (key) => key.startsWith("@fitai") || key.startsWith("fitai"),
-              );
-              const userData = await AsyncStorage.multiGet(fitaiKeys);
-
-              // Create export object
-              const exportData = {
-                exportDate: new Date().toISOString(),
-                userId: user.id,
-                email: user.email,
-                localData: Object.fromEntries(
-                  userData
-                    .map(([key, value]) => [
-                      key,
-                      value ? JSON.parse(value) : null,
-                    ])
-                    .filter(([_, value]) => value !== null),
-                ),
-              };
-
-              // In a real app, this would upload to a storage bucket and email the link
-              // For now, we log it and show success
-              console.log(
-                "Data export prepared:",
-                JSON.stringify(exportData, null, 2),
-              );
-
-              Alert.alert(
-                "Export Complete",
-                "Your data has been exported. In a production app, this would be emailed to you.",
-              );
-            } catch (error) {
-              console.error("Data export failed:", error);
-              Alert.alert("Error", "Failed to export data. Please try again.");
-            }
-          },
-        },
-      ],
-    );
-  }, []);
-
-  const handleDeleteAccount = useCallback(async () => {
-    Alert.alert(
-      "Delete Account",
-      "This action cannot be undone. All your data will be permanently deleted.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            Alert.alert(
-              "Final Confirmation",
-              "Are you absolutely sure? This will permanently delete your account and all associated data.",
-              [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete Forever",
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      haptics.medium();
-
-                      // Get current user
-                      const {
-                        data: { user },
-                      } = await supabase.auth.getUser();
-                      if (!user) {
-                        Alert.alert(
-                          "Error",
-                          "You must be logged in to delete your account.",
-                        );
-                        return;
-                      }
-
-                      // Clear all local data
-                      const allKeys = await AsyncStorage.getAllKeys();
-                      const fitaiKeys = allKeys.filter(
-                        (key) =>
-                          key.startsWith("@fitai") || key.startsWith("fitai"),
-                      );
-                      await AsyncStorage.multiRemove(fitaiKeys);
-
-                      // Sign out (actual account deletion would require server-side implementation)
-                      await supabase.auth.signOut();
-
-                      Alert.alert(
-                        "Account Deleted",
-                        "Your local data has been cleared and you have been signed out. Contact support to complete server-side deletion.",
-                      );
-                    } catch (error) {
-                      console.error("Account deletion failed:", error);
-                      Alert.alert(
-                        "Error",
-                        "Failed to delete account. Please try again.",
-                      );
-                    }
-                  },
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
-  }, []);
-
-  const saveSettings = useCallback(async () => {
-    try {
-      haptics.success();
-      // Persist settings to AsyncStorage
-      await AsyncStorage.setItem(
-        PRIVACY_SETTINGS_KEY,
-        JSON.stringify(settings),
-      );
-      setHasChanges(false);
-      Alert.alert("Success", "Privacy settings saved successfully!");
-    } catch (error) {
-      console.error("Failed to save privacy settings:", error);
-      Alert.alert("Error", "Failed to save settings. Please try again.");
-    }
-  }, [settings]);
+  const {
+    settings,
+    hasChanges,
+    toggleSetting,
+    handleDataExport,
+    handleDeleteAccount,
+    saveSettings,
+  } = usePrivacySecurityLogic();
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
-        {/* Header */}
         <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
           <AnimatedPressable
             onPress={() => {
@@ -406,16 +75,12 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Section: Data Privacy */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="eye-outline"
-                size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>Data Privacy</Text>
-            </View>
+            <SectionHeader
+              icon="eye-outline"
+              iconColor={ResponsiveTheme.colors.textSecondary}
+              title="Data Privacy"
+            />
 
             <PrivacyToggle
               icon="share-social-outline"
@@ -458,16 +123,12 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
           </View>
 
-          {/* Section: Security */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="lock-closed-outline"
-                size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>Security</Text>
-            </View>
+            <SectionHeader
+              icon="lock-closed-outline"
+              iconColor={ResponsiveTheme.colors.textSecondary}
+              title="Security"
+            />
 
             <PrivacyToggle
               icon="finger-print-outline"
@@ -490,16 +151,12 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
           </View>
 
-          {/* Section: Data Management */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons
-                name="folder-outline"
-                size={rf(14)}
-                color={ResponsiveTheme.colors.textSecondary}
-              />
-              <Text style={styles.sectionTitle}>Data Management</Text>
-            </View>
+            <SectionHeader
+              icon="folder-outline"
+              iconColor={ResponsiveTheme.colors.textSecondary}
+              title="Data Management"
+            />
 
             <ActionItem
               icon="cloud-download-outline"
@@ -539,14 +196,13 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
           </View>
 
-          {/* Section: Danger Zone */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="warning-outline" size={rf(14)} color="#F44336" />
-              <Text style={[styles.sectionTitle, styles.dangerSectionTitle]}>
-                Danger Zone
-              </Text>
-            </View>
+            <SectionHeader
+              icon="warning-outline"
+              iconColor="#F44336"
+              title="Danger Zone"
+              isDanger={true}
+            />
 
             <ActionItem
               icon="trash-outline"
@@ -559,7 +215,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             />
           </View>
 
-          {/* Save Button */}
           {hasChanges && (
             <Animated.View
               entering={FadeInDown.delay(100).duration(400)}
@@ -587,7 +242,6 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
             </Animated.View>
           )}
 
-          {/* Bottom Spacing */}
           <View style={styles.bottomSpacing} />
         </ScrollView>
       </SafeAreaView>
@@ -636,80 +290,6 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-    gap: ResponsiveTheme.spacing.xs,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    marginLeft: ResponsiveTheme.spacing.xs,
-  },
-  sectionTitle: {
-    fontSize: rf(12),
-    fontWeight: "700",
-    color: ResponsiveTheme.colors.textSecondary,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  dangerSectionTitle: {
-    color: "#F44336",
-  },
-  toggleCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  toggleContent: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-  },
-  iconContainer: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(12),
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-    marginRight: ResponsiveTheme.spacing.md,
-  },
-  textContainer: {
-    flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
-  },
-  toggleTitle: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
-  },
-  toggleDescription: {
-    fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-    lineHeight: rf(16),
-  },
-  actionCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  dangerCard: {
-    backgroundColor: "rgba(244, 67, 54, 0.06)",
-    borderWidth: 1,
-    borderColor: "rgba(244, 67, 54, 0.2)",
-  },
-  actionContent: {
-    flexDirection: "row",
-    alignItems: "center" as const,
-  },
-  actionTitle: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
-  },
-  dangerTitle: {
-    color: "#F44336",
-  },
-  actionDescription: {
-    fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
   },
   saveContainer: {
     marginBottom: ResponsiveTheme.spacing.lg,
