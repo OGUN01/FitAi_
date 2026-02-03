@@ -16,6 +16,10 @@ import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
 import { authEvents } from "./authEvents";
 import { syncMutex } from "./syncMutex";
+import {
+  conflictResolutionService,
+  ConflictContext,
+} from "./conflictResolution";
 
 // ============================================================================
 // TYPES
@@ -354,7 +358,41 @@ class SyncEngine {
   }
 
   /**
-   * Execute a single sync operation with retry logic
+   * Fetch remote data from database for conflict detection
+   */
+  private async fetchRemoteData(
+    type: DataType,
+    userId: string,
+  ): Promise<{ data: any; updatedAt: Date | null }> {
+    const tableMap: Record<DataType, { table: string; idField: string }> = {
+      personalInfo: { table: "profiles", idField: "id" },
+      dietPreferences: { table: "diet_preferences", idField: "user_id" },
+      bodyAnalysis: { table: "body_analysis", idField: "user_id" },
+      workoutPreferences: { table: "workout_preferences", idField: "user_id" },
+      advancedReview: { table: "advanced_review", idField: "user_id" },
+    };
+
+    const { table, idField } = tableMap[type];
+    const { data, error } = await supabase
+      .from(table)
+      .select("*")
+      .eq(idField, userId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 = no rows found, which is fine
+      console.warn(
+        `[SyncEngine] Failed to fetch remote data for ${type}:`,
+        error.message,
+      );
+    }
+
+    const updatedAt = data?.updated_at ? new Date(data.updated_at) : null;
+    return { data: data || {}, updatedAt };
+  }
+
+  /**
+   * Execute a single sync operation with retry logic and conflict detection
    */
   private async executeOperation(operation: SyncOperation): Promise<void> {
     const { type, data, userId, retryCount } = operation;
@@ -366,21 +404,91 @@ class SyncEngine {
       await this.sleep(delay);
     }
 
+    // Conflict detection: fetch remote data and check for conflicts
+    let resolvedData = data;
+    try {
+      const { data: remoteData, updatedAt: remoteUpdatedAt } =
+        await this.fetchRemoteData(type, userId);
+
+      // Only check for conflicts if remote data exists
+      if (remoteData && Object.keys(remoteData).length > 0) {
+        const localUpdatedAt = data.updated_at
+          ? new Date(data.updated_at)
+          : new Date(operation.timestamp);
+
+        const context: ConflictContext = {
+          tableName: type,
+          recordId: userId,
+          userId,
+          lastModified: {
+            local: localUpdatedAt,
+            remote: remoteUpdatedAt || new Date(0),
+          },
+        };
+
+        const conflicts = conflictResolutionService.detectConflicts(
+          data,
+          remoteData,
+          context,
+        );
+
+        if (conflicts.length > 0) {
+          console.log(
+            `[SyncEngine] Detected ${conflicts.length} conflicts for ${type}, resolving with last-write-wins...`,
+          );
+
+          // Register last-write-wins as default strategy for this operation
+          conflictResolutionService.registerResolutionRule(
+            ".*",
+            () => "use_latest_timestamp",
+          );
+
+          const resolution =
+            await conflictResolutionService.resolveConflicts(conflicts);
+
+          if (resolution.unresolvedConflicts.length > 0) {
+            console.warn(
+              `[SyncEngine] ${resolution.unresolvedConflicts.length} conflicts could not be auto-resolved for ${type}`,
+            );
+          }
+
+          // Merge resolved data with original local data, preferring resolved values
+          resolvedData = {
+            ...data,
+            ...resolution.mergedData,
+            updated_at: new Date().toISOString(),
+          };
+
+          console.log(
+            `[SyncEngine] Resolved ${resolution.summary.autoResolved} conflicts automatically`,
+          );
+        }
+      }
+    } catch (conflictError) {
+      // Log but don't fail - proceed with original data if conflict detection fails
+      console.warn(
+        `[SyncEngine] Conflict detection failed for ${type}, proceeding with original data:`,
+        conflictError instanceof Error
+          ? conflictError.message
+          : "Unknown error",
+      );
+    }
+
     switch (type) {
       case "personalInfo":
-        await this.syncPersonalInfo(userId, data);
+        await this.syncPersonalInfo(userId, resolvedData);
         break;
       case "dietPreferences":
-        await this.syncDietPreferences(userId, data);
+        await this.syncDietPreferences(userId, resolvedData);
         break;
       case "bodyAnalysis":
-        await this.syncBodyAnalysis(userId, data);
+        await this.syncBodyAnalysis(userId, resolvedData);
         break;
       case "workoutPreferences":
-        await this.syncWorkoutPreferences(userId, data);
+        await this.syncWorkoutPreferences(userId, resolvedData);
         break;
       case "advancedReview":
-        await this.syncAdvancedReview(userId, data);
+        await this.syncAdvancedReview(userId, resolvedData);
         break;
       default:
         throw new Error(`Unknown data type: ${type}`);
@@ -1063,7 +1171,7 @@ class SyncEngine {
    * Generate a unique operation ID
    */
   private generateOperationId(): string {
-    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   /**

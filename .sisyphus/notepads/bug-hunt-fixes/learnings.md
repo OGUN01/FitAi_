@@ -898,3 +898,20 @@ All TODOs either removed or converted to informational comments that explain arc
 - src/screens/main/ProgressScreen.tsx: Added `analysisError`, `statsError`, `syncError` to existing Error Card.
   **Pattern**: Used `GlassCard` with red text/border and `Button` for retry actions.
   **Verification**: Grep count 9 (>5), TSC passed.
+## [2026-02-03T16:41:19] Task 3.2: Integrate Conflict Resolution
+
+**Status**: COMPLETE
+**Changes**: Integrated ConflictResolutionService into SyncEngine.executeOperation()
+
+**Pattern**: Before sync operations, fetch remote data, detect conflicts via conflictResolutionService.detectConflicts(), resolve with "use_latest_timestamp" strategy (last-write-wins), then sync with resolved data.
+
+**Implementation**:
+- Added import: conflictResolutionService, ConflictContext from ./conflictResolution
+- Added fetchRemoteData() helper method (maps DataType to table/idField)
+- Modified executeOperation(): detect conflicts -> resolve -> sync with resolved data
+- Graceful failure: if conflict detection fails, proceed with original data
+
+**Verification**:
+- grep 'conflictResolution' src/services/SyncEngine.ts: 5 matches (import + 3 usages)
+- npx tsc --noEmit: 0 errors
+
