@@ -188,3 +188,50 @@ To make tests pass would require:
 
 **Decision**: Document as blocker. Test infrastructure issues prevent verification but implementations are sound (verified via TypeScript compilation).
 
+
+## [2026-02-03 23:10] Batch 2 Failure Analysis
+
+### Issue: All 5 Batch 2 Tasks Failed
+
+**Tasks Launched:**
+1. WorkoutDetail.tsx - Task ID: bg_462e3674
+2. ProfileScreen.tsx - Task ID: bg_dc241832
+3. PrivacySecurityScreen.tsx - Task ID: bg_d6ec3d3d
+4. MealDetail.tsx - Task ID: bg_a191cd7f
+5. OnboardingContainer.tsx - Task ID: bg_7df5f739
+
+**Expected Behavior:**
+- Each screen refactored to <500 lines
+- Hooks and components created
+- TypeScript clean
+- Success rate: 100% (based on batch 1)
+
+**Actual Behavior:**
+- 0/5 screens successfully refactored
+- Only 1 hook file created (useWorkoutDetailLogic.ts) but screen not modified
+- MealSession.tsx was modified (from previous batch) but referenced missing files
+- Had to revert MealSession and remove orphaned hook
+
+**Root Cause Hypothesis:**
+1. Background tasks may have encountered errors
+2. Tasks may have been rejected by the system
+3. May have hit rate limits or token limits
+4. The "task not found" message may indicate failure, not completion
+
+**Impact:**
+- No progress from batch 2
+- Still at 18 files >500 lines (same as before batch 2)
+- Actually at 18 files, not 17 (MealSession reverted)
+- Wasted ~10 minutes waiting for tasks that didn't complete
+
+**Lessons Learned:**
+1. Need to verify background task success, not just completion
+2. "Task not found" != "Task succeeded"
+3. Should check for actual file changes before assuming success
+4. May need to switch to sequential processing instead of parallel
+
+**Next Steps:**
+1. Try ONE screen at a time (NOT background) to verify pattern still works
+2. If sequential works, continue sequentially instead of parallel
+3. If sequential fails, investigate why pattern broke
+
