@@ -50,6 +50,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
   const insets = useSafeAreaInsets();
   const [selectedPeriod, setSelectedPeriod] = useState("week");
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
@@ -133,10 +134,18 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
   // Load real data on mount and subscribe to completion events
   useEffect(() => {
     // Initial data load
-    refreshProgressData();
-
-    // Load all activities for modal
-    loadAllActivities();
+    const init = async () => {
+      setIsLoading(true);
+      try {
+        await refreshProgressData();
+        loadAllActivities();
+      } catch (e) {
+        console.error("Init error:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    init();
 
     // Subscribe to completion events for real-time updates
     const unsubscribe = completionTrackingService.subscribe((event) => {
@@ -482,6 +491,18 @@ Track your fitness journey with FitAI!`;
       console.error("Error sharing progress:", error);
     }
   };
+
+  if (isLoading) {
+    return (
+      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <AuroraSpinner size="lg" />
+        </View>
+      </AuroraBackground>
+    );
+  }
 
   return (
     <>

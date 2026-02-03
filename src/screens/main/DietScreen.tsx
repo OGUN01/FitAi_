@@ -281,11 +281,13 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               trackBStatus={trackBStatus}
             />
 
-            {(foodsLoading || userMealsLoading) && (
+            {(foodsLoading || userMealsLoading || isGeneratingMeal) && (
               <View style={styles.loadingContainer}>
                 <AuroraSpinner size="lg" theme="primary" />
                 <Text style={styles.loadingText}>
-                  Loading nutrition data...
+                  {isGeneratingMeal
+                    ? "Generating your meal..."
+                    : "Loading nutrition data..."}
                 </Text>
               </View>
             )}

@@ -43,6 +43,7 @@ import {
 // Note: useFocusEffect removed - app uses custom navigation, not React Navigation
 // Focus refresh is handled via useEffect on mount
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { AuroraSpinner } from "../../components/ui/aurora/AuroraSpinner";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rh } from "../../utils/responsive";
@@ -121,6 +122,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   // State
   const [todaysData, setTodaysData] = useState<any>(null);
   const [weeklyProgress, setWeeklyProgress] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -181,6 +183,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setIsLoading(true);
         await DataRetrievalService.loadAllData();
         setTodaysData(DataRetrievalService.getTodaysData());
         setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
@@ -213,6 +216,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         initializeSubscription();
       } catch (err) {
         console.error("Load error:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -487,6 +492,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         onBack={() => setShowGuestSignUp(false)}
         onSignUpSuccess={() => setShowGuestSignUp(false)}
       />
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <AuroraBackground theme="space" animated={true} intensity={0.3}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <AuroraSpinner size="lg" />
+        </View>
+      </AuroraBackground>
     );
   }
 
