@@ -1,3 +1,4 @@
+import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
 import { dataBridge } from "./DataBridge";
@@ -215,7 +216,7 @@ class ProgressDataService {
 
       // Create body measurement for Track B
       const bodyMeasurement: BodyMeasurement = {
-        id: `progress_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `progress_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
         date: entryDate,
         weight: entryData.weight_kg,
         bodyFat: entryData.body_fat_percentage,

@@ -1,3 +1,4 @@
+import * as crypto from "expo-crypto";
 import { supabase } from "./supabase";
 import { crudOperations } from "./crudOperations";
 import { dataBridge } from "./DataBridge";
@@ -426,7 +427,7 @@ class NutritionDataService {
 
       // Create meal log for Track B
       const mealLog: MealLog = {
-        id: `meal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
         userId,
         mealType: mealData.type,
         foods: mealData.foods.map((f) => ({

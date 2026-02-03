@@ -788,15 +788,15 @@ export class BackupRecoveryService {
 
   // Utility methods
   private generateBackupId(): string {
-    return `backup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `backup_${Date.now()}_${Crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private generateRecoveryId(): string {
-    return `recovery_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `recovery_${Date.now()}_${Crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private generateErrorId(): string {
-    return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `error_${Date.now()}_${Crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
   }
 
   private calculateNextBackupTime(): Date {
@@ -817,7 +817,7 @@ export class BackupRecoveryService {
     try {
       let deviceId = await AsyncStorage.getItem("@fitai_device_id");
       if (!deviceId) {
-        deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        deviceId = `device_${Date.now()}_${Crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
         await AsyncStorage.setItem("@fitai_device_id", deviceId);
       }
       return deviceId;

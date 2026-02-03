@@ -1,8 +1,9 @@
 // Conflict Resolution Service for Track B Infrastructure
 // Handles data conflicts during migration with intelligent resolution strategies
 
-import { validationService } from '../utils/validation';
-import { LocalStorageSchema } from '../types/localData';
+import * as crypto from "expo-crypto";
+import { validationService } from "../utils/validation";
+import { LocalStorageSchema } from "../types/localData";
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -15,7 +16,7 @@ export interface DataConflict {
   localValue: any;
   remoteValue: any;
   timestamp: Date;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   autoResolvable: boolean;
   suggestedResolution: ResolutionStrategy;
   context?: ConflictContext;
@@ -33,22 +34,22 @@ export interface ConflictContext {
 }
 
 export type ConflictType =
-  | 'value_mismatch'
-  | 'missing_local'
-  | 'missing_remote'
-  | 'type_mismatch'
-  | 'validation_error'
-  | 'duplicate_record'
-  | 'schema_version_mismatch';
+  | "value_mismatch"
+  | "missing_local"
+  | "missing_remote"
+  | "type_mismatch"
+  | "validation_error"
+  | "duplicate_record"
+  | "schema_version_mismatch";
 
 export type ResolutionStrategy =
-  | 'local_wins'
-  | 'remote_wins'
-  | 'merge_values'
-  | 'user_choice'
-  | 'create_new'
-  | 'skip_field'
-  | 'use_latest_timestamp';
+  | "local_wins"
+  | "remote_wins"
+  | "merge_values"
+  | "user_choice"
+  | "create_new"
+  | "skip_field"
+  | "use_latest_timestamp";
 
 export interface ConflictResolution {
   conflictId: string;
@@ -77,8 +78,14 @@ export interface ConflictResolutionResult {
 // ============================================================================
 
 export class ConflictResolutionService {
-  private resolutionRules: Map<string, (conflict: DataConflict) => ResolutionStrategy>;
-  private userChoiceCallbacks: Map<string, (conflict: DataConflict) => Promise<ResolutionStrategy>>;
+  private resolutionRules: Map<
+    string,
+    (conflict: DataConflict) => ResolutionStrategy
+  >;
+  private userChoiceCallbacks: Map<
+    string,
+    (conflict: DataConflict) => Promise<ResolutionStrategy>
+  >;
 
   constructor() {
     this.resolutionRules = new Map();
@@ -93,7 +100,11 @@ export class ConflictResolutionService {
   /**
    * Detect conflicts between local and remote data
    */
-  detectConflicts(localData: any, remoteData: any, context: ConflictContext): DataConflict[] {
+  detectConflicts(
+    localData: any,
+    remoteData: any,
+    context: ConflictContext,
+  ): DataConflict[] {
     const conflicts: DataConflict[] = [];
 
     // Compare each field
@@ -102,7 +113,12 @@ export class ConflictResolutionService {
         const localValue = localData[field];
         const remoteValue = remoteData[field];
 
-        const conflict = this.compareValues(field, localValue, remoteValue, context);
+        const conflict = this.compareValues(
+          field,
+          localValue,
+          remoteValue,
+          context,
+        );
         if (conflict) {
           conflicts.push(conflict);
         }
@@ -111,17 +127,20 @@ export class ConflictResolutionService {
 
     // Check for missing fields in local data
     for (const field in remoteData) {
-      if (remoteData.hasOwnProperty(field) && !localData.hasOwnProperty(field)) {
+      if (
+        remoteData.hasOwnProperty(field) &&
+        !localData.hasOwnProperty(field)
+      ) {
         conflicts.push({
           id: this.generateConflictId(),
-          type: 'missing_local',
+          type: "missing_local",
           field,
           localValue: undefined,
           remoteValue: remoteData[field],
           timestamp: new Date(),
           severity: this.determineSeverity(field, undefined, remoteData[field]),
           autoResolvable: true,
-          suggestedResolution: 'remote_wins',
+          suggestedResolution: "remote_wins",
           context,
         });
       }
@@ -133,7 +152,9 @@ export class ConflictResolutionService {
   /**
    * Resolve conflicts using automatic and user-defined strategies
    */
-  async resolveConflicts(conflicts: DataConflict[]): Promise<ConflictResolutionResult> {
+  async resolveConflicts(
+    conflicts: DataConflict[],
+  ): Promise<ConflictResolutionResult> {
     const resolvedConflicts: ConflictResolution[] = [];
     const unresolvedConflicts: DataConflict[] = [];
     const mergedData: any = {};
@@ -155,7 +176,10 @@ export class ConflictResolutionService {
           requiresUserInput = true;
         }
       } catch (error) {
-        console.error(`Failed to resolve conflict for field ${conflict.field}:`, error);
+        console.error(
+          `Failed to resolve conflict for field ${conflict.field}:`,
+          error,
+        );
         unresolvedConflicts.push(conflict);
       }
     }
@@ -179,7 +203,7 @@ export class ConflictResolutionService {
    */
   registerResolutionRule(
     fieldPattern: string,
-    rule: (conflict: DataConflict) => ResolutionStrategy
+    rule: (conflict: DataConflict) => ResolutionStrategy,
   ): void {
     this.resolutionRules.set(fieldPattern, rule);
   }
@@ -189,7 +213,7 @@ export class ConflictResolutionService {
    */
   registerUserChoiceCallback(
     conflictType: ConflictType,
-    callback: (conflict: DataConflict) => Promise<ResolutionStrategy>
+    callback: (conflict: DataConflict) => Promise<ResolutionStrategy>,
   ): void {
     this.userChoiceCallbacks.set(conflictType, callback);
   }
@@ -239,7 +263,7 @@ export class ConflictResolutionService {
     field: string,
     localValue: any,
     remoteValue: any,
-    context: ConflictContext
+    context: ConflictContext,
   ): DataConflict | null {
     // Skip if values are identical
     if (this.deepEqual(localValue, remoteValue)) {
@@ -250,14 +274,14 @@ export class ConflictResolutionService {
     if (localValue == null && remoteValue != null) {
       return {
         id: this.generateConflictId(),
-        type: 'missing_local',
+        type: "missing_local",
         field,
         localValue,
         remoteValue,
         timestamp: new Date(),
         severity: this.determineSeverity(field, localValue, remoteValue),
         autoResolvable: true,
-        suggestedResolution: 'remote_wins',
+        suggestedResolution: "remote_wins",
         context,
       };
     }
@@ -265,14 +289,14 @@ export class ConflictResolutionService {
     if (localValue != null && remoteValue == null) {
       return {
         id: this.generateConflictId(),
-        type: 'missing_remote',
+        type: "missing_remote",
         field,
         localValue,
         remoteValue,
         timestamp: new Date(),
         severity: this.determineSeverity(field, localValue, remoteValue),
         autoResolvable: true,
-        suggestedResolution: 'local_wins',
+        suggestedResolution: "local_wins",
         context,
       };
     }
@@ -281,14 +305,14 @@ export class ConflictResolutionService {
     if (typeof localValue !== typeof remoteValue) {
       return {
         id: this.generateConflictId(),
-        type: 'type_mismatch',
+        type: "type_mismatch",
         field,
         localValue,
         remoteValue,
         timestamp: new Date(),
-        severity: 'high',
+        severity: "high",
         autoResolvable: false,
-        suggestedResolution: 'user_choice',
+        suggestedResolution: "user_choice",
         context,
       };
     }
@@ -296,19 +320,26 @@ export class ConflictResolutionService {
     // Handle value mismatches
     return {
       id: this.generateConflictId(),
-      type: 'value_mismatch',
+      type: "value_mismatch",
       field,
       localValue,
       remoteValue,
       timestamp: new Date(),
       severity: this.determineSeverity(field, localValue, remoteValue),
       autoResolvable: this.isAutoResolvable(field, localValue, remoteValue),
-      suggestedResolution: this.suggestResolution(field, localValue, remoteValue, context),
+      suggestedResolution: this.suggestResolution(
+        field,
+        localValue,
+        remoteValue,
+        context,
+      ),
       context,
     };
   }
 
-  private async resolveConflict(conflict: DataConflict): Promise<ConflictResolution | null> {
+  private async resolveConflict(
+    conflict: DataConflict,
+  ): Promise<ConflictResolution | null> {
     let strategy = conflict.suggestedResolution;
     let userChoice = false;
 
@@ -321,7 +352,10 @@ export class ConflictResolutionService {
     }
 
     // Handle user choice conflicts
-    if (strategy === 'user_choice' && this.userChoiceCallbacks.has(conflict.type)) {
+    if (
+      strategy === "user_choice" &&
+      this.userChoiceCallbacks.has(conflict.type)
+    ) {
       const callback = this.userChoiceCallbacks.get(conflict.type)!;
       strategy = await callback(conflict);
       userChoice = true;
@@ -330,7 +364,7 @@ export class ConflictResolutionService {
     // Apply resolution strategy
     const resolvedValue = this.applyResolutionStrategy(strategy, conflict);
 
-    if (resolvedValue === undefined && strategy !== 'skip_field') {
+    if (resolvedValue === undefined && strategy !== "skip_field") {
       return null; // Could not resolve
     }
 
@@ -344,28 +378,34 @@ export class ConflictResolutionService {
     };
   }
 
-  private applyResolutionStrategy(strategy: ResolutionStrategy, conflict: DataConflict): any {
+  private applyResolutionStrategy(
+    strategy: ResolutionStrategy,
+    conflict: DataConflict,
+  ): any {
     switch (strategy) {
-      case 'local_wins':
+      case "local_wins":
         return conflict.localValue;
 
-      case 'remote_wins':
+      case "remote_wins":
         return conflict.remoteValue;
 
-      case 'merge_values':
+      case "merge_values":
         return this.mergeValues(conflict.localValue, conflict.remoteValue);
 
-      case 'use_latest_timestamp':
+      case "use_latest_timestamp":
         if (conflict.context?.lastModified) {
           const { local, remote } = conflict.context.lastModified;
           return local > remote ? conflict.localValue : conflict.remoteValue;
         }
         return conflict.remoteValue; // Default to remote if no timestamp info
 
-      case 'create_new':
-        return this.createMergedValue(conflict.localValue, conflict.remoteValue);
+      case "create_new":
+        return this.createMergedValue(
+          conflict.localValue,
+          conflict.remoteValue,
+        );
 
-      case 'skip_field':
+      case "skip_field":
         return undefined;
 
       default:
@@ -379,7 +419,7 @@ export class ConflictResolutionService {
       return [...new Set([...localValue, ...remoteValue])];
     }
 
-    if (typeof localValue === 'object' && typeof remoteValue === 'object') {
+    if (typeof localValue === "object" && typeof remoteValue === "object") {
       // Merge objects
       return { ...remoteValue, ...localValue };
     }
@@ -390,11 +430,11 @@ export class ConflictResolutionService {
 
   private createMergedValue(localValue: any, remoteValue: any): any {
     // Create a new value that combines both
-    if (typeof localValue === 'string' && typeof remoteValue === 'string') {
+    if (typeof localValue === "string" && typeof remoteValue === "string") {
       return `${localValue} | ${remoteValue}`;
     }
 
-    if (typeof localValue === 'number' && typeof remoteValue === 'number') {
+    if (typeof localValue === "number" && typeof remoteValue === "number") {
       return (localValue + remoteValue) / 2; // Average
     }
 
@@ -404,38 +444,44 @@ export class ConflictResolutionService {
   private determineSeverity(
     field: string,
     localValue: any,
-    remoteValue: any
-  ): 'low' | 'medium' | 'high' | 'critical' {
+    remoteValue: any,
+  ): "low" | "medium" | "high" | "critical" {
     // Critical fields that affect core functionality
-    const criticalFields = ['id', 'user_id', 'email', 'password'];
+    const criticalFields = ["id", "user_id", "email", "password"];
     if (criticalFields.includes(field.toLowerCase())) {
-      return 'critical';
+      return "critical";
     }
 
     // High importance fields
-    const highFields = ['name', 'age', 'weight', 'height', 'goals'];
+    const highFields = ["name", "age", "weight", "height", "goals"];
     if (highFields.some((f) => field.toLowerCase().includes(f))) {
-      return 'high';
+      return "high";
     }
 
     // Medium importance fields
-    const mediumFields = ['preferences', 'settings', 'notes'];
+    const mediumFields = ["preferences", "settings", "notes"];
     if (mediumFields.some((f) => field.toLowerCase().includes(f))) {
-      return 'medium';
+      return "medium";
     }
 
-    return 'low';
+    return "low";
   }
 
-  private isAutoResolvable(field: string, localValue: any, remoteValue: any): boolean {
+  private isAutoResolvable(
+    field: string,
+    localValue: any,
+    remoteValue: any,
+  ): boolean {
     // Auto-resolvable if it's a low-severity field or has clear resolution logic
     const severity = this.determineSeverity(field, localValue, remoteValue);
-    return severity === 'low' || this.hasTimestampInfo(field);
+    return severity === "low" || this.hasTimestampInfo(field);
   }
 
   private hasTimestampInfo(field: string): boolean {
     return (
-      field.includes('updated_at') || field.includes('created_at') || field.includes('timestamp')
+      field.includes("updated_at") ||
+      field.includes("created_at") ||
+      field.includes("timestamp")
     );
   }
 
@@ -443,67 +489,79 @@ export class ConflictResolutionService {
     field: string,
     localValue: any,
     remoteValue: any,
-    context: ConflictContext
+    context: ConflictContext,
   ): ResolutionStrategy {
     // Use timestamp-based resolution if available
     if (context.lastModified && this.hasTimestampInfo(field)) {
-      return 'use_latest_timestamp';
+      return "use_latest_timestamp";
     }
 
     // For arrays, suggest merging
     if (Array.isArray(localValue) && Array.isArray(remoteValue)) {
-      return 'merge_values';
+      return "merge_values";
     }
 
     // For objects, suggest merging
-    if (typeof localValue === 'object' && typeof remoteValue === 'object') {
-      return 'merge_values';
+    if (typeof localValue === "object" && typeof remoteValue === "object") {
+      return "merge_values";
     }
 
     // For critical fields, require user choice
-    if (this.determineSeverity(field, localValue, remoteValue) === 'critical') {
-      return 'user_choice';
+    if (this.determineSeverity(field, localValue, remoteValue) === "critical") {
+      return "user_choice";
     }
 
     // Default to remote wins (server is source of truth)
-    return 'remote_wins';
+    return "remote_wins";
   }
 
-  private getResolutionReasoning(strategy: ResolutionStrategy, conflict: DataConflict): string {
+  private getResolutionReasoning(
+    strategy: ResolutionStrategy,
+    conflict: DataConflict,
+  ): string {
     switch (strategy) {
-      case 'local_wins':
-        return 'Local value was more recent or preferred';
-      case 'remote_wins':
-        return 'Remote value was used as source of truth';
-      case 'merge_values':
-        return 'Values were merged to preserve both data sets';
-      case 'use_latest_timestamp':
-        return 'Most recently updated value was selected';
-      case 'user_choice':
-        return 'User manually selected the preferred value';
-      case 'create_new':
-        return 'New combined value was created';
-      case 'skip_field':
-        return 'Field was skipped due to irreconcilable differences';
+      case "local_wins":
+        return "Local value was more recent or preferred";
+      case "remote_wins":
+        return "Remote value was used as source of truth";
+      case "merge_values":
+        return "Values were merged to preserve both data sets";
+      case "use_latest_timestamp":
+        return "Most recently updated value was selected";
+      case "user_choice":
+        return "User manually selected the preferred value";
+      case "create_new":
+        return "New combined value was created";
+      case "skip_field":
+        return "Field was skipped due to irreconcilable differences";
       default:
-        return 'Default resolution strategy applied';
+        return "Default resolution strategy applied";
     }
   }
 
   private initializeDefaultRules(): void {
     // Rule for timestamp fields - always use latest
-    this.registerResolutionRule('.*(_at|timestamp)$', () => 'use_latest_timestamp');
+    this.registerResolutionRule(
+      ".*(_at|timestamp)$",
+      () => "use_latest_timestamp",
+    );
 
     // Rule for array fields - merge by default
-    this.registerResolutionRule('.*(preferences|tags|categories).*', (conflict) => {
-      if (Array.isArray(conflict.localValue) && Array.isArray(conflict.remoteValue)) {
-        return 'merge_values';
-      }
-      return 'remote_wins';
-    });
+    this.registerResolutionRule(
+      ".*(preferences|tags|categories).*",
+      (conflict) => {
+        if (
+          Array.isArray(conflict.localValue) &&
+          Array.isArray(conflict.remoteValue)
+        ) {
+          return "merge_values";
+        }
+        return "remote_wins";
+      },
+    );
 
     // Rule for settings - prefer local (user customizations)
-    this.registerResolutionRule('.*settings.*', () => 'local_wins');
+    this.registerResolutionRule(".*settings.*", () => "local_wins");
   }
 
   private deepEqual(a: any, b: any): boolean {
@@ -516,7 +574,7 @@ export class ConflictResolutionService {
       return a.every((item, index) => this.deepEqual(item, b[index]));
     }
 
-    if (typeof a === 'object') {
+    if (typeof a === "object") {
       const keysA = Object.keys(a);
       const keysB = Object.keys(b);
       if (keysA.length !== keysB.length) return false;
@@ -527,7 +585,7 @@ export class ConflictResolutionService {
   }
 
   private generateConflictId(): string {
-    return `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `conflict_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 

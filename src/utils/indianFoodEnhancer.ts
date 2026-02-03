@@ -1,3 +1,4 @@
+import * as crypto from "expo-crypto";
 import { RecognizedFood } from "../services/foodRecognitionService";
 import {
   INDIAN_FOOD_DATABASE,
@@ -77,7 +78,7 @@ export class IndianFoodEnhancer {
 
     // Step 6: Build enhanced food object
     const enhancedFood: RecognizedFood = {
-      id: `indian_food_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `indian_food_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
       name: this.standardizeFoodName(geminiFood.name),
       localName: dbMatch?.hindiName,
       category: this.categorizeFood(foodName),
@@ -685,7 +686,7 @@ export class IndianFoodEnhancer {
     const nutrition = this.extractGeminiNutrition(geminiFood);
 
     return {
-      id: `basic_indian_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `basic_indian_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
       name: this.standardizeFoodName(geminiFood.name),
       category: this.categorizeFood(geminiFood.name),
       cuisine: "indian",

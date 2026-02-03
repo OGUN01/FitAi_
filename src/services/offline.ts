@@ -1,11 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-import { supabase } from './supabase';
+import * as crypto from "expo-crypto";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import { supabase } from "./supabase";
 
 // Types for offline operations
 export interface OfflineAction {
   id: string;
-  type: 'CREATE' | 'UPDATE' | 'DELETE';
+  type: "CREATE" | "UPDATE" | "DELETE";
   table: string;
   data: any;
   timestamp: number;
@@ -23,6 +24,45 @@ export interface SyncResult {
   syncedActions: number;
   failedActions: number;
   errors: string[];
+}
+
+interface SupabaseResponse {
+  data?: unknown;
+  error?: {
+    message: string;
+    code?: string;
+  } | null;
+}
+
+function isValidSupabaseResponse(
+  response: unknown,
+): response is SupabaseResponse {
+  if (!response || typeof response !== "object") {
+    return false;
+  }
+  return true;
+}
+
+function validateSupabaseResponse(
+  response: unknown,
+  operation: string,
+  table: string,
+): { valid: boolean; error?: string } {
+  if (!isValidSupabaseResponse(response)) {
+    const errorMsg = `Received malformed Supabase response for ${operation} on ${table}: ${typeof response}`;
+    console.error(errorMsg, response);
+    return { valid: false, error: errorMsg };
+  }
+
+  const supabaseRes = response as SupabaseResponse;
+
+  if (supabaseRes.error) {
+    const errorMsg = `Supabase error for ${operation} on ${table}: ${supabaseRes.error.message}`;
+    console.error(errorMsg, supabaseRes.error);
+    return { valid: false, error: errorMsg };
+  }
+
+  return { valid: true };
 }
 
 class OfflineService {
@@ -68,7 +108,7 @@ class OfflineService {
         }
       });
     } catch (error) {
-      console.warn('Failed to initialize network listener:', error);
+      console.warn("Failed to initialize network listener:", error);
     }
   }
 
@@ -78,8 +118,8 @@ class OfflineService {
   private async loadOfflineData(): Promise<void> {
     try {
       const [queueData, offlineData] = await Promise.all([
-        AsyncStorage.getItem('offline_sync_queue'),
-        AsyncStorage.getItem('offline_data'),
+        AsyncStorage.getItem("offline_sync_queue"),
+        AsyncStorage.getItem("offline_data"),
       ]);
 
       if (queueData) {
@@ -91,7 +131,7 @@ class OfflineService {
         this.offlineData = new Map(Object.entries(data));
       }
     } catch (error) {
-      console.warn('Failed to load offline data:', error);
+      console.warn("Failed to load offline data:", error);
     }
   }
 
@@ -101,11 +141,17 @@ class OfflineService {
   private async saveOfflineData(): Promise<void> {
     try {
       await Promise.all([
-        AsyncStorage.setItem('offline_sync_queue', JSON.stringify(this.syncQueue)),
-        AsyncStorage.setItem('offline_data', JSON.stringify(Object.fromEntries(this.offlineData))),
+        AsyncStorage.setItem(
+          "offline_sync_queue",
+          JSON.stringify(this.syncQueue),
+        ),
+        AsyncStorage.setItem(
+          "offline_data",
+          JSON.stringify(Object.fromEntries(this.offlineData)),
+        ),
       ]);
     } catch (error) {
-      console.warn('Failed to save offline data:', error);
+      console.warn("Failed to save offline data:", error);
     }
   }
 
@@ -127,7 +173,9 @@ class OfflineService {
   /**
    * Queue an action for offline sync
    */
-  async queueAction(action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>): Promise<void> {
+  async queueAction(
+    action: Omit<OfflineAction, "id" | "timestamp" | "retryCount">,
+  ): Promise<void> {
     const offlineAction: OfflineAction = {
       ...action,
       id: this.generateId(),
@@ -226,7 +274,9 @@ class OfflineService {
       }
 
       // Remove successful and failed actions from queue
-      this.syncQueue = this.syncQueue.filter((action) => !successfulActions.includes(action.id));
+      this.syncQueue = this.syncQueue.filter(
+        (action) => !successfulActions.includes(action.id),
+      );
       await this.saveOfflineData();
 
       result.success = result.failedActions === 0;
@@ -250,41 +300,67 @@ class OfflineService {
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`🔄 Attempting ${type} on ${table} (attempt ${attempt}/${maxRetries})`);
+        console.log(
+          `🔄 Attempting ${type} on ${table} (attempt ${attempt}/${maxRetries})`,
+        );
 
         switch (type) {
-          case 'CREATE':
-            const { error: createError } = await supabase.from(table).insert([data]);
-            if (createError) {
-              console.error(`❌ CREATE error on ${table}:`, createError);
-              throw createError;
+          case "CREATE":
+            const createResponse = await supabase.from(table).insert([data]);
+            const createValidation = validateSupabaseResponse(
+              createResponse,
+              "CREATE",
+              table,
+            );
+            if (!createValidation.valid) {
+              throw new Error(createValidation.error);
             }
             console.log(`✅ Successfully created record in ${table}`);
             break;
 
-          case 'UPDATE':
+          case "UPDATE":
             const { id, ...updateData } = data;
             if (!id) {
-              throw new Error(`UPDATE operation missing required 'id' field for table ${table}`);
+              throw new Error(
+                `UPDATE operation missing required 'id' field for table ${table}`,
+              );
             }
-            const { error: updateError } = await supabase.from(table).update(updateData).eq('id', id);
-            if (updateError) {
-              console.error(`❌ UPDATE error on ${table}:`, updateError);
-              throw updateError;
+            const updateResponse = await supabase
+              .from(table)
+              .update(updateData)
+              .eq("id", id);
+            const updateValidation = validateSupabaseResponse(
+              updateResponse,
+              "UPDATE",
+              table,
+            );
+            if (!updateValidation.valid) {
+              throw new Error(updateValidation.error);
             }
             console.log(`✅ Successfully updated record ${id} in ${table}`);
             break;
 
-          case 'DELETE':
+          case "DELETE":
             if (!data.id) {
-              throw new Error(`DELETE operation missing required 'id' field for table ${table}`);
+              throw new Error(
+                `DELETE operation missing required 'id' field for table ${table}`,
+              );
             }
-            const { error: deleteError } = await supabase.from(table).delete().eq('id', data.id);
-            if (deleteError) {
-              console.error(`❌ DELETE error on ${table}:`, deleteError);
-              throw deleteError;
+            const deleteResponse = await supabase
+              .from(table)
+              .delete()
+              .eq("id", data.id);
+            const deleteValidation = validateSupabaseResponse(
+              deleteResponse,
+              "DELETE",
+              table,
+            );
+            if (!deleteValidation.valid) {
+              throw new Error(deleteValidation.error);
             }
-            console.log(`✅ Successfully deleted record ${data.id} from ${table}`);
+            console.log(
+              `✅ Successfully deleted record ${data.id} from ${table}`,
+            );
             break;
 
           default:
@@ -293,16 +369,18 @@ class OfflineService {
 
         // Success - exit retry loop
         return;
-
       } catch (error) {
         lastError = error as Error;
-        console.error(`❌ Attempt ${attempt} failed for ${type} on ${table}:`, error);
+        console.error(
+          `❌ Attempt ${attempt} failed for ${type} on ${table}:`,
+          error,
+        );
 
         if (attempt < maxRetries) {
           // Wait before retry with exponential backoff
           const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
           console.log(`⏳ Retrying in ${backoffDelay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay));
         }
       }
     }
@@ -320,8 +398,8 @@ class OfflineService {
     this.syncQueue = [];
     this.offlineData.clear();
     await Promise.all([
-      AsyncStorage.removeItem('offline_sync_queue'),
-      AsyncStorage.removeItem('offline_data'),
+      AsyncStorage.removeItem("offline_sync_queue"),
+      AsyncStorage.removeItem("offline_data"),
     ]);
   }
 
@@ -330,12 +408,14 @@ class OfflineService {
    */
   async clearFailedActionsForTable(table: string): Promise<void> {
     const initialCount = this.syncQueue.length;
-    this.syncQueue = this.syncQueue.filter(action => action.table !== table);
+    this.syncQueue = this.syncQueue.filter((action) => action.table !== table);
     const clearedCount = initialCount - this.syncQueue.length;
-    
+
     if (clearedCount > 0) {
       await this.saveOfflineData();
-      console.log(`🧹 Cleared ${clearedCount} failed actions for table ${table}`);
+      console.log(
+        `🧹 Cleared ${clearedCount} failed actions for table ${table}`,
+      );
     }
   }
 
@@ -353,7 +433,9 @@ class OfflineService {
       isOnline: this.isOnline,
       syncInProgress: this.syncInProgress,
       lastSyncAttempt:
-        this.syncQueue.length > 0 ? Math.max(...this.syncQueue.map((a) => a.timestamp)) : null,
+        this.syncQueue.length > 0
+          ? Math.max(...this.syncQueue.map((a) => a.timestamp))
+          : null,
     };
   }
 
@@ -366,7 +448,7 @@ class OfflineService {
         success: false,
         syncedActions: 0,
         failedActions: 0,
-        errors: ['Device is offline'],
+        errors: ["Device is offline"],
       };
     }
 
@@ -377,7 +459,7 @@ class OfflineService {
    * Generate unique ID
    */
   private generateId(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   /**
@@ -394,14 +476,19 @@ class OfflineService {
   /**
    * Optimistic update - update local data immediately and queue for sync
    */
-  async optimisticUpdate(table: string, id: string, data: any, userId: string): Promise<void> {
+  async optimisticUpdate(
+    table: string,
+    id: string,
+    data: any,
+    userId: string,
+  ): Promise<void> {
     // Update local data immediately
     const key = `${table}_${id}`;
     await this.storeOfflineData(key, { ...data, id });
 
     // Queue for sync
     await this.queueAction({
-      type: 'UPDATE',
+      type: "UPDATE",
       table,
       data: { ...data, id },
       userId,
@@ -416,7 +503,7 @@ class OfflineService {
     table: string,
     data: any,
     userId: string,
-    tempId?: string
+    tempId?: string,
   ): Promise<string> {
     const id = tempId || this.generateId();
     const dataWithId = { ...data, id };
@@ -427,7 +514,7 @@ class OfflineService {
 
     // Queue for sync
     await this.queueAction({
-      type: 'CREATE',
+      type: "CREATE",
       table,
       data: dataWithId,
       userId,
@@ -440,14 +527,18 @@ class OfflineService {
   /**
    * Optimistic delete - remove local data immediately and queue for sync
    */
-  async optimisticDelete(table: string, id: string, userId: string): Promise<void> {
+  async optimisticDelete(
+    table: string,
+    id: string,
+    userId: string,
+  ): Promise<void> {
     // Remove local data immediately
     const key = `${table}_${id}`;
     await this.removeOfflineData(key);
 
     // Queue for sync
     await this.queueAction({
-      type: 'DELETE',
+      type: "DELETE",
       table,
       data: { id },
       userId,

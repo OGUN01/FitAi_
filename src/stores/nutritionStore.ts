@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as crypto from "expo-crypto";
 import { WeeklyMealPlan, DayMeal, MealItem } from "../ai";
 import { SyncStatus, LoggedFood } from "../types/localData";
 import { Meal } from "../types/ai";
@@ -189,7 +190,7 @@ export const useNutritionStore = create<NutritionState>()(
               try {
                 // Create a proper MealLog object matching the expected schema
                 const mealLog: import("../types/localData").MealLog = {
-                  id: `meal_${meal.id}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`,
+                  id: `meal_${meal.id}_${timestamp}_${crypto.randomUUID().replace(/-/g, '').substring(0, 5)}`,
                   mealType: toMealType(meal.type),
                   foods: (meal.items || []).map(
                     (item: MealItem, index: number) =>

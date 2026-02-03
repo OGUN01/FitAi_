@@ -2,6 +2,7 @@
 
 // Note: workoutGenerator is deprecated. Use Cloudflare Workers backend instead.
 // Workout generation is now delegated to aiService which connects to Cloudflare Workers.
+import * as crypto from "expo-crypto";
 import {
   EXERCISES,
   getExerciseById,
@@ -463,7 +464,7 @@ class WorkoutEngineService {
   }
 
   private generateWorkoutId(): string {
-    return `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `workout_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 

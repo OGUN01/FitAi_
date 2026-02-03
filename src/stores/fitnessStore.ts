@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as crypto from "expo-crypto";
 import { WeeklyWorkoutPlan, DayWorkout, WorkoutSet } from "../ai";
 import { crudOperations } from "../services/crudOperations";
 import { dataBridge } from "../services/DataBridge";
@@ -162,7 +163,7 @@ export const useFitnessStore = create<FitnessState>()(
               // Create a proper WorkoutSession object matching the expected schema
               const workoutSession: import("../types/localData").LocalWorkoutSession =
                 {
-                  id: `workout_${workout.id}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                  id: `workout_${workout.id}_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 5)}`,
                   localId: `local_${workout.id}_${Date.now()}`,
                   workoutId: workout.id,
                   userId: getUserIdOrGuest(),

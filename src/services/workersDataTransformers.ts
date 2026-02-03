@@ -6,10 +6,15 @@
  * - Workers API types (WorkoutGenerationRequest, WorkoutResponse, etc.)
  */
 
-import { PersonalInfo, FitnessGoals, WorkoutPreferences } from '../types/user';
-import { WorkoutGenerationRequest, DietGenerationRequest, WorkersResponse } from './fitaiWorkersClient';
-import { DayWorkout, WeeklyWorkoutPlan } from '../types/ai';
-import { BodyAnalysisData } from '../types/onboarding';
+import * as crypto from "expo-crypto";
+import { PersonalInfo, FitnessGoals, WorkoutPreferences } from "../types/user";
+import {
+  WorkoutGenerationRequest,
+  DietGenerationRequest,
+  WorkersResponse,
+} from "./fitaiWorkersClient";
+import { DayWorkout, WeeklyWorkoutPlan } from "../types/ai";
+import { BodyAnalysisData } from "../types/onboarding";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
 // where we have access to the user's actual weight from their profile
 
@@ -24,7 +29,7 @@ export interface WorkoutResponse {
   title: string;
   description: string;
   duration: number;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   warmup?: WorkoutExercise[];
   exercises: WorkoutExercise[];
   cooldown?: WorkoutExercise[];
@@ -56,16 +61,23 @@ export function transformProfileForWorkoutRequest(
   personalInfo: PersonalInfo,
   fitnessGoals: FitnessGoals,
   bodyAnalysis: BodyAnalysisData,
-  workoutPreferences?: WorkoutPreferences
-): WorkoutGenerationRequest['profile'] {
+  workoutPreferences?: WorkoutPreferences,
+): WorkoutGenerationRequest["profile"] {
   return {
     age: personalInfo.age,
-    gender: personalInfo.gender === 'prefer_not_to_say' ? 'other' : personalInfo.gender,
+    gender:
+      personalInfo.gender === "prefer_not_to_say"
+        ? "other"
+        : personalInfo.gender,
     weight: bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
-    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || 'get_fit',
-    experienceLevel: (fitnessGoals.experience_level as 'beginner' | 'intermediate' | 'advanced') || 'beginner',
-    availableEquipment: workoutPreferences?.equipment || ['bodyweight'],
+    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
+    experienceLevel:
+      (fitnessGoals.experience_level as
+        | "beginner"
+        | "intermediate"
+        | "advanced") || "beginner",
+    availableEquipment: workoutPreferences?.equipment || ["bodyweight"],
     injuries: bodyAnalysis.physical_limitations || [],
   };
 }
@@ -78,15 +90,18 @@ export function transformProfileForDietRequest(
   fitnessGoals: FitnessGoals,
   bodyAnalysis: BodyAnalysisData,
   workoutPreferences?: WorkoutPreferences,
-  dietPreferences?: any
-): DietGenerationRequest['profile'] {
+  dietPreferences?: any,
+): DietGenerationRequest["profile"] {
   return {
     age: personalInfo.age,
-    gender: personalInfo.gender === 'prefer_not_to_say' ? 'other' : personalInfo.gender,
+    gender:
+      personalInfo.gender === "prefer_not_to_say"
+        ? "other"
+        : personalInfo.gender,
     weight: bodyAnalysis.current_weight_kg,
     height: bodyAnalysis.height_cm,
-    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || 'get_fit',
-    activityLevel: (workoutPreferences?.activity_level as any) || 'moderate',
+    fitnessGoal: (fitnessGoals.primaryGoals?.[0] as any) || "get_fit",
+    activityLevel: (workoutPreferences?.activity_level as any) || "moderate",
   };
 }
 
@@ -99,21 +114,21 @@ export function transformProfileForDietRequest(
  */
 export function transformWorkoutResponse(
   workoutResponse: WorkoutResponse,
-  dayOfWeek?: string
+  dayOfWeek?: string,
 ): DayWorkout {
   // Combine all exercises (warmup + main + cooldown)
   const allExercises = [
     ...(workoutResponse.warmup || []).map((ex: WorkoutExercise) => ({
       ...ex,
-      section: 'warmup' as const,
+      section: "warmup" as const,
     })),
     ...(workoutResponse.exercises || []).map((ex: WorkoutExercise) => ({
       ...ex,
-      section: 'main' as const,
+      section: "main" as const,
     })),
     ...(workoutResponse.cooldown || []).map((ex: WorkoutExercise) => ({
       ...ex,
-      section: 'cooldown' as const,
+      section: "cooldown" as const,
     })),
   ];
 
@@ -123,13 +138,13 @@ export function transformWorkoutResponse(
   const estimatedCalories = 0;
 
   return {
-    id: `workout_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    dayOfWeek: dayOfWeek || 'monday',
+    id: `workout_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
+    dayOfWeek: dayOfWeek || "monday",
     title: workoutResponse.title,
     description: workoutResponse.description,
     duration: workoutResponse.duration,
     difficulty: workoutResponse.difficulty,
-    category: 'strength', // Default, can be enhanced
+    category: "strength", // Default, can be enhanced
     estimatedCalories,
     exercises: allExercises.map((ex: any) => ({
       exerciseId: ex.exerciseId,
@@ -152,22 +167,22 @@ export function transformWorkoutResponse(
     })),
     equipment: [],
     targetMuscleGroups: [],
-    icon: '💪',
-    tags: ['ai-generated'],
+    icon: "💪",
+    tags: ["ai-generated"],
     isPersonalized: true,
     aiGenerated: true,
     createdAt: new Date().toISOString(),
-    subCategory: 'full-body',
-    intensityLevel: 'moderate',
+    subCategory: "full-body",
+    intensityLevel: "moderate",
     warmUp: (workoutResponse.warmup || []).map((ex: WorkoutExercise) => ({
       name: ex.exerciseData?.name || ex.exerciseId,
       duration: ex.restSeconds,
-      instructions: ex.exerciseData?.instructions?.join('\n') || '',
+      instructions: ex.exerciseData?.instructions?.join("\n") || "",
     })),
     coolDown: (workoutResponse.cooldown || []).map((ex: WorkoutExercise) => ({
       name: ex.exerciseData?.name || ex.exerciseId,
       duration: ex.restSeconds,
-      instructions: ex.exerciseData?.instructions?.join('\n') || '',
+      instructions: ex.exerciseData?.instructions?.join("\n") || "",
     })),
     progressionNotes: [],
     safetyConsiderations: [],
@@ -180,13 +195,13 @@ export function transformWorkoutResponse(
  */
 export function transformToWeeklyPlan(
   workouts: Array<{ workout: WorkoutResponse; dayOfWeek: string }>,
-  weekNumber: number = 1
+  weekNumber: number = 1,
 ): WeeklyWorkoutPlan {
   return {
     id: `weekly_plan_${Date.now()}`,
     weekNumber,
     workouts: workouts.map(({ workout, dayOfWeek }) =>
-      transformWorkoutResponse(workout, dayOfWeek)
+      transformWorkoutResponse(workout, dayOfWeek),
     ),
   };
 }
@@ -204,15 +219,18 @@ export function validateWorkoutResponse(response: WorkoutResponse): {
 } {
   const errors: string[] = [];
 
-  if (!response.title) errors.push('Missing workout title');
-  if (!response.description) errors.push('Missing workout description');
-  if (!response.duration || response.duration <= 0) errors.push('Invalid workout duration');
-  if (!response.exercises || response.exercises.length === 0) errors.push('No exercises in workout');
+  if (!response.title) errors.push("Missing workout title");
+  if (!response.description) errors.push("Missing workout description");
+  if (!response.duration || response.duration <= 0)
+    errors.push("Invalid workout duration");
+  if (!response.exercises || response.exercises.length === 0)
+    errors.push("No exercises in workout");
 
   // Validate exercises have GIF URLs
-  const exercisesWithoutGifs = response.exercises?.filter(
-    (ex: WorkoutExercise) => !ex.exerciseData?.gifUrl
-  ) || [];
+  const exercisesWithoutGifs =
+    response.exercises?.filter(
+      (ex: WorkoutExercise) => !ex.exerciseData?.gifUrl,
+    ) || [];
 
   if (exercisesWithoutGifs.length > 0) {
     errors.push(`${exercisesWithoutGifs.length} exercises missing GIF URLs`);
@@ -246,15 +264,11 @@ export function getWorkoutStats(response: WorkoutResponse): {
   ];
 
   const muscleGroups = Array.from(
-    new Set(
-      allExercises.flatMap(ex => ex.exerciseData?.targetMuscles || [])
-    )
+    new Set(allExercises.flatMap((ex) => ex.exerciseData?.targetMuscles || [])),
   );
 
   const equipment = Array.from(
-    new Set(
-      allExercises.flatMap(ex => ex.exerciseData?.equipments || [])
-    )
+    new Set(allExercises.flatMap((ex) => ex.exerciseData?.equipments || [])),
   );
 
   return {

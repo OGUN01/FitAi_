@@ -3,6 +3,7 @@
  * Provides comprehensive error management for production-ready applications
  */
 
+import * as crypto from "expo-crypto";
 import { Alert } from "react-native";
 
 // ============================================================================
@@ -114,7 +115,7 @@ class ErrorLogger {
   }
 
   private generateErrorId(): string {
-    return `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `error_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   private generateUserFriendlyMessage(
@@ -239,7 +240,7 @@ export class ErrorHandler {
     const retryable = this.isRetryable(error, type);
 
     return {
-      id: `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `error_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`,
       type,
       severity,
       message: error.message,

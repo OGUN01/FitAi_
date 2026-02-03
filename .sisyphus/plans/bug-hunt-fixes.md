@@ -687,7 +687,7 @@ git tag phase-1-complete
 
 ---
 
-- [ ] 2.3. Split DietScreen into Sub-Components
+- [x] 2.3. Split DietScreen into Sub-Components
 
   **What to do**:
   - Extract FoodRecognitionPanel component
@@ -730,7 +730,7 @@ git tag phase-1-complete
 
 ---
 
-- [ ] 2.4. Split Remaining Onboarding Tabs
+- [x] 2.4. Split Remaining Onboarding Tabs
 
   **What to do**:
   - Split WorkoutPreferencesTab (3,548 lines)
@@ -771,7 +771,7 @@ git tag phase-1-complete
 
 ---
 
-- [ ] 2.5. Split God Services
+- [x] 2.5. Split God Services
 
   **What to do**:
   - Split achievementEngine.ts (2,829 lines) by badge category
@@ -829,7 +829,7 @@ git tag phase-2-complete
 
 #### Wave 3.1: Critical - Data Loss Prevention
 
-- [ ] 3.1. Fix Fake Connectivity Check
+- [x] 3.1. Fix Fake Connectivity Check
 
   **What to do**:
   - Replace `Math.random() > 0.1` with real NetInfo check
@@ -967,7 +967,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.4. Fix Backup Timer Memory Leak
+- [x] 3.4. Fix Backup Timer Memory Leak
 
   **What to do**:
   - Add clearInterval in service cleanup/destroy
@@ -1011,7 +1011,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.5. Verify and Fix Mounted Checks in Async Hooks
+- [x] 3.5. Verify and Fix Mounted Checks in Async Hooks
 
   **What to do**:
   - Verify useAsyncMealGeneration uses mountedRef correctly (pattern exists at line 78)
@@ -1058,7 +1058,7 @@ git tag phase-2-complete
 
 #### Wave 3.2: High - UI States
 
-- [ ] 3.6. Add Loading States to All Screens
+- [x] 3.6. Add Loading States to All Screens
 
   **What to do**:
   - Add AuroraSpinner during async operations
@@ -1264,7 +1264,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.11. Persist Sync Status in Zustand
+- [x] 3.11. Persist Sync Status in Zustand
 
   **What to do**:
   - Add syncStatus and syncError to Zustand persist partialize
@@ -1425,7 +1425,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.15. Replace Math.random() IDs with UUID
+- [x] 3.15. Replace Math.random() IDs with UUID
 
   **What to do**:
   - Replace `Math.random().toString(36)` with proper UUID

@@ -1,6 +1,7 @@
 // Real-time Sync Service for Track B Infrastructure
 // Provides bidirectional data synchronization with Supabase and intelligent sync scheduling
 
+import * as crypto from "expo-crypto";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
@@ -630,15 +631,15 @@ export class RealTimeSyncService {
 
   // Utility methods
   private generateSyncId(): string {
-    return `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `sync_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   private generateOperationId(): string {
-    return `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `op_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   private generateErrorId(): string {
-    return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `err_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   private chunkArray<T>(array: T[], size: number): T[][] {

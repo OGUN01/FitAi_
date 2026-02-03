@@ -9,6 +9,8 @@
  * - Proper error handling and logging
  */
 
+import * as crypto from "expo-crypto";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
@@ -1061,7 +1063,7 @@ class SyncEngine {
    * Generate a unique operation ID
    */
   private generateOperationId(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   /**

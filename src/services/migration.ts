@@ -1,6 +1,7 @@
 // Migration Engine for Track B Infrastructure
 // Provides comprehensive data migration from local storage to Supabase with retry mechanism and progress tracking
 
+import * as crypto from "expo-crypto";
 import { enhancedLocalStorage } from "./localStorage";
 import { dataTransformation } from "./dataTransformation";
 import { validationService } from "../utils/validation";
@@ -341,7 +342,7 @@ export class MigrationEngine {
   }
 
   private generateMigrationId(): string {
-    return `migration_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `migration_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 
   private async executeMigrationSteps(
