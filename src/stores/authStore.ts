@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthUser, LoginCredentials, RegisterCredentials } from "../types/user";
 import { authService, AuthResponse } from "../services/auth";
 import { generateGuestId, migrateGuestId } from "../utils/uuid";
+import { authEvents } from "../services/authEvents";
 
 interface AuthState {
   // State
@@ -58,10 +59,14 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: response.user,
               isAuthenticated: true,
-              isGuestMode: false, // Exit guest mode on login
+              isGuestMode: false,
               guestId: null,
               isLoading: false,
               error: null,
+            });
+            authEvents.emit("SIGNED_IN", {
+              userId: response.user.id,
+              email: response.user.email,
             });
           } else {
             set({
@@ -99,16 +104,20 @@ export const useAuthStore = create<AuthState>()(
           const response = await authService.register(credentials);
 
           if (response.success && response.user) {
-            // Only set as authenticated if email is verified
-            // For unverified users after signup, store user data but don't mark as authenticated
             set({
               user: response.user,
               isAuthenticated: response.user.isEmailVerified,
-              isGuestMode: false, // Exit guest mode on registration
+              isGuestMode: false,
               guestId: null,
               isLoading: false,
               error: null,
             });
+            if (response.user.isEmailVerified) {
+              authEvents.emit("SIGNED_IN", {
+                userId: response.user.id,
+                email: response.user.email,
+              });
+            }
           } else {
             set({
               user: null,
@@ -149,6 +158,7 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
               error: null,
             });
+            authEvents.emit("SIGNED_OUT");
           } else {
             set({
               isLoading: false,
@@ -336,10 +346,14 @@ export const useAuthStore = create<AuthState>()(
             set({
               user: response.user,
               isAuthenticated: true,
-              isGuestMode: false, // Exit guest mode on Google Sign-In
+              isGuestMode: false,
               guestId: null,
               isLoading: false,
               error: null,
+            });
+            authEvents.emit("SIGNED_IN", {
+              userId: response.user.id,
+              email: response.user.email,
             });
           } else {
             set({
