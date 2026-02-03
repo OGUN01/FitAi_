@@ -588,6 +588,10 @@ export class BackupRecoveryService {
     }
   }
 
+  public destroy(): void {
+    this.stopAutoBackup();
+  }
+
   private async processBackupData(backupData: BackupData): Promise<BackupData> {
     let processedData = JSON.stringify(backupData.data);
 
