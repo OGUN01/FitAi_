@@ -2,6 +2,7 @@
 // Provides bidirectional data synchronization with Supabase and intelligent sync scheduling
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import { supabase } from "./supabase";
 import { syncMutex } from "./syncMutex";
 
@@ -587,10 +588,13 @@ export class RealTimeSyncService {
     }, 5000);
   }
 
-  private updateConnectionStatus(): void {
-    // Simulate connection quality assessment
-    // In real implementation, this would check actual network conditions
-    const isOnline = Math.random() > 0.1; // 90% online simulation
+  private async updateConnectionStatus(): Promise<void> {
+    // Check actual network conditions using NetInfo
+    const netState = await NetInfo.fetch();
+    const isOnline = !!(
+      netState.isConnected &&
+      (netState.isInternetReachable ?? true)
+    );
     const quality = isOnline ? "good" : "offline";
 
     this.updateSyncStatus({
