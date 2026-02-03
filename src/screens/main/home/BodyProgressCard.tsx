@@ -9,27 +9,16 @@
  * - Trend analysis
  */
 
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Animated, { FadeInRight } from "react-native-reanimated";
-import Svg, {
-  Path,
-  Circle,
-  Defs,
-  LinearGradient,
-  Stop,
-  Line,
-} from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { GlassCard } from "../../../components/ui/aurora/GlassCard";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh } from "../../../utils/responsive";
-
-interface WeightEntry {
-  date: string;
-  weight: number;
-}
+import { useBodyProgressLogic, WeightEntry } from "./useBodyProgressLogic";
+import { TrendChart } from "./components/TrendChart";
+import { GoalProgressBar } from "./components/GoalProgressBar";
 
 interface BodyProgressCardProps {
   currentWeight?: number; // in kg or lbs
@@ -42,131 +31,6 @@ interface BodyProgressCardProps {
   onLogWeight?: () => void;
 }
 
-// Mini Trend Chart Component
-const TrendChart: React.FC<{
-  data: number[];
-  width: number;
-  height: number;
-  color: string;
-}> = ({ data, width, height, color }) => {
-  // Filter out NaN and invalid values
-  const validData = data.filter((v) => Number.isFinite(v));
-
-  if (validData.length < 2) {
-    return (
-      <View style={[styles.emptyChart, { width, height }]}>
-        <Text style={styles.emptyChartText}>Not enough data</Text>
-      </View>
-    );
-  }
-
-  const padding = 8;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
-
-  const minValue = Math.min(...validData) - 1;
-  const maxValue = Math.max(...validData) + 1;
-  const range = maxValue - minValue || 1;
-
-  const points = validData.map((value, index) => {
-    // Guard against division by zero when only 1 data point
-    const xDivisor = validData.length > 1 ? validData.length - 1 : 1;
-    const x = Math.round(padding + (index / xDivisor) * chartWidth);
-    const y = Math.round(
-      padding + chartHeight - ((value - minValue) / range) * chartHeight,
-    );
-    return { x, y };
-  });
-
-  // Create smooth curve path - round all values to prevent NaN in Android native
-  const pathData = points.reduce((acc, point, index) => {
-    if (index === 0) {
-      return `M ${point.x} ${point.y}`;
-    }
-    const prev = points[index - 1];
-    const cpX = Math.round((prev.x + point.x) / 2);
-    const cpY = Math.round((prev.y + point.y) / 2);
-    return `${acc} Q ${cpX} ${prev.y}, ${cpX} ${cpY} T ${point.x} ${point.y}`;
-  }, "");
-
-  // Area fill path
-  const lastX = points[points.length - 1]?.x ?? padding;
-  const areaPath = `${pathData} L ${lastX} ${height - padding} L ${padding} ${height - padding} Z`;
-
-  const lastPoint = points[points.length - 1];
-
-  return (
-    <Svg width={width} height={height}>
-      <Defs>
-        <LinearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <Stop offset="0%" stopColor={color} stopOpacity={0.3} />
-          <Stop offset="100%" stopColor={color} stopOpacity={0.05} />
-        </LinearGradient>
-      </Defs>
-      {/* Grid lines */}
-      <Line
-        x1={padding}
-        y1={padding}
-        x2={padding}
-        y2={height - padding}
-        stroke="rgba(255,255,255,0.05)"
-        strokeWidth={1}
-      />
-      <Line
-        x1={padding}
-        y1={height - padding}
-        x2={width - padding}
-        y2={height - padding}
-        stroke="rgba(255,255,255,0.05)"
-        strokeWidth={1}
-      />
-      {/* Area fill */}
-      <Path d={areaPath} fill="url(#chartGradient)" />
-      {/* Line */}
-      <Path
-        d={pathData}
-        fill="none"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-      />
-      {/* Current point */}
-      <Circle cx={lastPoint.x} cy={lastPoint.y} r={4} fill={color} />
-      <Circle
-        cx={lastPoint.x}
-        cy={lastPoint.y}
-        r={6}
-        fill={color}
-        fillOpacity={0.3}
-      />
-    </Svg>
-  );
-};
-
-// Progress Bar Component
-const GoalProgressBar: React.FC<{
-  progress: number;
-  color: string;
-}> = ({ progress, color }) => {
-  const clampedProgress = Math.min(Math.max(progress, 0), 100);
-
-  return (
-    <View style={styles.progressBarContainer}>
-      <View style={styles.progressBarBg}>
-        <Animated.View
-          style={[
-            styles.progressBarFill,
-            {
-              width: `${clampedProgress}%`,
-              backgroundColor: color,
-            },
-          ]}
-        />
-      </View>
-    </View>
-  );
-};
-
 export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
   currentWeight,
   goalWeight,
@@ -177,109 +41,13 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
   onPhotoPress,
   onLogWeight,
 }) => {
-  // Calculate progress and trend
-  const { progress, remaining, trend, trendDirection } = useMemo(() => {
-    if (!currentWeight || !goalWeight || !startingWeight) {
-      return {
-        progress: 0,
-        remaining: 0,
-        trend: 0,
-        trendDirection: "stable" as const,
-      };
-    }
-
-    const totalChange = Math.abs(startingWeight - goalWeight);
-    const currentChange = Math.abs(startingWeight - currentWeight);
-    const progressPercent =
-      totalChange > 0 ? (currentChange / totalChange) * 100 : 0;
-
-    // For weight loss: starting > goal, for weight gain: starting < goal
-    const isLosing = startingWeight > goalWeight;
-    const remainingWeight = isLosing
-      ? Math.max(currentWeight - goalWeight, 0)
-      : Math.max(goalWeight - currentWeight, 0);
-
-    // Calculate 7-day trend
-    const recentWeights = weightHistory.slice(-7).map((e) => e.weight);
-    let trendValue = 0;
-    let direction: "up" | "down" | "stable" = "stable";
-
-    if (recentWeights.length >= 2) {
-      const firstHalf = recentWeights.slice(
-        0,
-        Math.floor(recentWeights.length / 2),
-      );
-      const secondHalf = recentWeights.slice(
-        Math.floor(recentWeights.length / 2),
-      );
-      const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-      const secondAvg =
-        secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-      trendValue = secondAvg - firstAvg;
-
-      if (Math.abs(trendValue) < 0.2) {
-        direction = "stable";
-      } else if (trendValue > 0) {
-        direction = "up";
-      } else {
-        direction = "down";
-      }
-    }
-
-    return {
-      progress: Math.min(progressPercent, 100),
-      remaining: remainingWeight,
-      trend: trendValue,
-      trendDirection: direction,
-    };
-  }, [currentWeight, goalWeight, startingWeight, weightHistory]);
-
-  // Get trend color and icon
-  const getTrendInfo = () => {
-    const isLosing =
-      startingWeight && goalWeight && startingWeight > goalWeight;
-
-    if (trendDirection === "stable") {
-      return { icon: "remove" as const, color: "#9E9E9E", label: "Stable" };
-    }
-
-    // For weight loss: down is good, for weight gain: up is good
-    if (isLosing) {
-      return trendDirection === "down"
-        ? {
-            icon: "trending-down" as const,
-            color: "#4CAF50",
-            label: "On track",
-          }
-        : {
-            icon: "trending-up" as const,
-            color: "#FF9800",
-            label: "Review needed",
-          };
-    } else {
-      return trendDirection === "up"
-        ? { icon: "trending-up" as const, color: "#4CAF50", label: "On track" }
-        : {
-            icon: "trending-down" as const,
-            color: "#FF9800",
-            label: "Review needed",
-          };
-    }
-  };
-
-  const trendInfo = getTrendInfo();
-  const chartData = weightHistory.slice(-7).map((e) => e.weight);
-  const hasData = currentWeight !== undefined;
-
-  // Progress color based on percentage
-  const progressColor =
-    progress >= 75
-      ? "#4CAF50"
-      : progress >= 50
-        ? "#8BC34A"
-        : progress >= 25
-          ? "#FFC107"
-          : "#FF9800";
+  const { progress, remaining, trendInfo, chartData, hasData, progressColor } =
+    useBodyProgressLogic({
+      currentWeight,
+      goalWeight,
+      startingWeight,
+      weightHistory,
+    });
 
   return (
     <AnimatedPressable
@@ -525,19 +293,6 @@ const styles = StyleSheet.create({
     fontSize: rf(12),
     fontWeight: "700",
   },
-  progressBarContainer: {
-    marginBottom: ResponsiveTheme.spacing.xs,
-  },
-  progressBarBg: {
-    height: rh(6),
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: rh(3),
-    overflow: "hidden",
-  },
-  progressBarFill: {
-    height: "100%",
-    borderRadius: rh(3),
-  },
   remainingText: {
     fontSize: rf(11),
     fontWeight: "500",
@@ -609,17 +364,6 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  emptyChart: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.03)",
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-  },
-  emptyChartText: {
-    fontSize: rf(10),
-    fontWeight: "500",
-    color: ResponsiveTheme.colors.textSecondary,
   },
 });
 
