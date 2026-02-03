@@ -68,7 +68,7 @@ Fix all 90 identified bugs/issues in FitAI app while establishing sustainable ar
 - [ ] `npm test` passes with coverage > 60% (PARTIAL: 72% tests passing, 1.12% coverage - needs 60%+)
 - [x] `npx tsc --strict --noEmit` reports 0 errors
 - [x] `npx madge --circular src/` reports 0 circular dependencies
-- [ ] No file in `src/screens/` > 500 lines (12 files still >500 - boulder accelerating: 10 done, 12 remaining)
+- [ ] No file in `src/screens/` > 500 lines (7 files still >500 - boulder final push: 15 done, 7 remaining - 68% complete!)
 - [ ] All 90 issues have passing tests (BLOCKED: TDD not followed, would need retroactive test writing)
 
 ### Must Have
