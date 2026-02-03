@@ -73,7 +73,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
   const { user, isAuthenticated } = useAuth();
 
   // Wearable health data from Health Connect / HealthKit
-  const healthMetrics = useHealthDataStore((state) => state.metrics);
+  const { metrics: healthMetrics, syncError } = useHealthDataStore((state) => ({
+    metrics: state.metrics,
+    syncError: state.syncError,
+  }));
   const isWearableConnected = useHealthDataStore(
     (state) => state.isHealthKitAuthorized || state.isHealthConnectAuthorized,
   );
@@ -90,7 +93,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({
     progressError,
     loadProgressEntries,
     bodyAnalysis,
+    analysisError,
     progressStats,
+    statsError,
     statsLoading,
     progressGoals,
     createProgressEntry,
@@ -621,7 +626,10 @@ Track your fitness journey with FitAI!`;
                 )}
 
                 {/* Error State */}
-                {progressError && (
+                {(progressError ||
+                  analysisError ||
+                  statsError ||
+                  syncError) && (
                   <GlassCard
                     style={styles.errorCard}
                     elevation={1}
@@ -642,7 +650,12 @@ Track your fitness journey with FitAI!`;
                         size={rf(24)}
                         color={ResponsiveTheme.colors.error}
                       />
-                      <Text style={styles.errorText}>{progressError}</Text>
+                      <Text style={styles.errorText}>
+                        {progressError ||
+                          analysisError ||
+                          statsError ||
+                          syncError}
+                      </Text>
                     </View>
                     <Button
                       title="Retry"

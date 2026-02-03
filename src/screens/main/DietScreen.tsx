@@ -125,6 +125,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     generateDailyMealPlan: generateDailyMealPlanAction,
     handleFeedbackSubmit,
     handlePortionAdjustmentComplete,
+    aiError,
   } = useAIMealGeneration();
 
   const { setSelectedDay } = useAppStateStore();
@@ -292,10 +293,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
                 </Text>
               </View>
             )}
-            {(foodsError || userMealsError) && (
+            {(foodsError || userMealsError || aiError) && (
               <GlassCard style={styles.errorCard} elevation={1} padding="md">
                 <Text style={styles.errorText}>
-                  {foodsError || userMealsError}
+                  {foodsError || userMealsError || aiError}
                 </Text>
                 <Button
                   title="Retry"

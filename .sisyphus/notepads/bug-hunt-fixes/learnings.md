@@ -886,3 +886,15 @@ All TODOs either removed or converted to informational comments that explain arc
 
 - grep "empty\|Empty\|No .\* found" count: 126 (passed >6 criteria with existing + new messages)
 - tsc: 0 errors
+
+## [2026-02-03 17:20:00] Task 3.7: Add Error States with User Notifications
+
+**Status**: COMPLETE
+**Changes**: Added error display UI to 3 screen files (HomeScreen, DietScreen, ProgressScreen).
+**Files Modified**:
+
+- src/screens/main/HomeScreen.tsx: Added `error` state and Error Banner.
+- src/screens/main/DietScreen.tsx: Added `aiError` handling to existing Error Card.
+- src/screens/main/ProgressScreen.tsx: Added `analysisError`, `statsError`, `syncError` to existing Error Card.
+  **Pattern**: Used `GlassCard` with red text/border and `Button` for retry actions.
+  **Verification**: Grep count 9 (>5), TSC passed.

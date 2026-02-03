@@ -64,6 +64,8 @@ import {
 } from "../../stores";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
 import { Ionicons } from "@expo/vector-icons";
+import { GlassCard } from "../../components/ui/aurora/GlassCard";
+import { Button } from "../../components/ui";
 
 import {
   HomeHeader,
@@ -127,6 +129,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const [showGuestSignUp, setShowGuestSignUp] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // HYDRATION - Single Source of Truth from hydrationStore
   const {
@@ -185,6 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         await DataRetrievalService.loadAllData();
         setTodaysData(DataRetrievalService.getTodaysData());
         setWeeklyProgress(DataRetrievalService.getWeeklyProgress());
@@ -217,6 +221,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         initializeSubscription();
       } catch (err) {
         console.error("Load error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard data",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -358,6 +365,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     haptics.light();
+    setError(null);
     try {
       await Promise.all([loadFitnessData(), loadNutritionData()]);
       setTodaysData(DataRetrievalService.getTodaysData());
@@ -371,6 +379,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
       }
     } catch (err) {
       console.error("Refresh error:", err);
+      setError(err instanceof Error ? err.message : "Failed to refresh data");
     } finally {
       setRefreshing(false);
     }
@@ -538,6 +547,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                   Alert.alert("Streak", `${realStreak} day streak! Keep going!`)
                 }
               />
+
+              {/* Error Banner */}
+              {error && (
+                <View style={styles.section}>
+                  <GlassCard
+                    style={{
+                      padding: ResponsiveTheme.spacing.md,
+                      alignItems: "center",
+                      borderColor: ResponsiveTheme.colors.error,
+                      borderWidth: 1,
+                    }}
+                    elevation={1}
+                  >
+                    <Text
+                      style={{
+                        color: ResponsiveTheme.colors.error,
+                        marginBottom: ResponsiveTheme.spacing.sm,
+                        textAlign: "center",
+                      }}
+                    >
+                      {error}
+                    </Text>
+                    <Button
+                      title="Tap to Retry"
+                      onPress={handleRefresh}
+                      variant="outline"
+                      size="sm"
+                    />
+                  </GlassCard>
+                </View>
+              )}
 
               {/* 2. Motivation Banner */}
               <View style={styles.section}>
