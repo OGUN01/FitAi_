@@ -1385,7 +1385,7 @@ git tag phase-2-complete
 
 #### Wave 3.5: Low - Code Quality
 
-- [ ] 3.14. Remove DEBUG Console.logs
+- [x] 3.14. Remove DEBUG Console.logs
 
   **What to do**:
   - Remove all console.log with DEBUG in message

@@ -234,13 +234,6 @@ export const useReviewValidation = ({
       onUpdate(finalCalculations);
 
       // Calculate smart alternatives if the user's rate requires eating below BMR
-      console.log("[DEBUG] Checking weight loss condition:", {
-        current: bodyAnalysis.current_weight_kg,
-        target: bodyAnalysis.target_weight_kg,
-        timeline_weeks: bodyAnalysis.target_timeline_weeks,
-        isWeightLoss:
-          bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg,
-      });
       if (bodyAnalysis.current_weight_kg > bodyAnalysis.target_weight_kg) {
         const weightDifference = Math.abs(
           bodyAnalysis.current_weight_kg - bodyAnalysis.target_weight_kg,
@@ -254,15 +247,6 @@ export const useReviewValidation = ({
             : 12;
         const userRequestedRate = weightDifference / timelineWeeks;
 
-        console.log("[DEBUG] Calculating smart alternatives:", {
-          weightDifference,
-          timelineWeeks,
-          userRequestedRate,
-          bmr: validationResultsData.calculatedMetrics.bmr,
-          tdee: validationResultsData.calculatedMetrics.tdee,
-          gender: personalInfo.gender,
-        });
-
         try {
           const alternativesResult =
             ValidationEngine.calculateSmartAlternatives(
@@ -274,17 +258,6 @@ export const useReviewValidation = ({
               personalInfo.gender as "male" | "female",
             );
 
-          console.log("[DEBUG] Smart Alternatives Result:", {
-            count: alternativesResult.alternatives.length,
-            showRateComparison: alternativesResult.showRateComparison,
-            alternatives: alternativesResult.alternatives.map((a) => ({
-              id: a.id,
-              label: a.label,
-              rate: a.weeklyRate,
-              calories: a.dailyCalories,
-              blocked: a.isBlocked,
-            })),
-          });
           setSmartAlternatives(alternativesResult);
         } catch (altError) {
           console.error(

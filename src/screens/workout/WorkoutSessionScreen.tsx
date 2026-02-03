@@ -143,16 +143,6 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       "🔍 CRITICAL DEBUG - First Exercise Structure:",
       JSON.stringify(workout.exercises[0], null, 2),
     );
-    console.log(
-      "🔍 CRITICAL DEBUG - Exercise Keys:",
-      Object.keys(workout.exercises[0] || {}),
-    );
-    console.log("🔍 CRITICAL DEBUG - Looking for ID in:", {
-      exerciseId: workout.exercises[0]?.exerciseId,
-      id: workout.exercises[0]?.id,
-      exerciseName: workout.exercises[0]?.exerciseName,
-      name: workout.exercises[0]?.name,
-    });
   }
 
   // Enhanced safety checks

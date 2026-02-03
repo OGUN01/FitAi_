@@ -107,35 +107,8 @@ export const useFitnessStore = create<FitnessState>()(
             plan.planTitle || `Week ${plan.weekNumber} Workout Plan`;
           console.log("💾 Saving weekly workout plan:", planTitle);
 
-          // 🔍 Debug: Validate incoming plan data
-          console.log("🔍 Store Debug - Plan validation:");
-          console.log("  - Plan object:", plan ? "✅" : "❌");
-          console.log("  - Plan title:", plan?.planTitle || "undefined");
-          console.log(
-            "  - Workouts array:",
-            Array.isArray(plan?.workouts) ? "✅" : "❌",
-          );
-          console.log("  - Workouts count:", plan?.workouts?.length || 0);
-
           // Save to local storage via Zustand persist first
-          console.log("🔍 Store Debug - Setting state...");
           set({ weeklyWorkoutPlan: plan });
-
-          // 🔍 Debug: Verify state was set
-          const currentState = get();
-          console.log("🔍 Store Debug - State after set:");
-          console.log(
-            "  - State has plan:",
-            currentState.weeklyWorkoutPlan ? "✅" : "❌",
-          );
-          console.log(
-            "  - State plan title:",
-            currentState.weeklyWorkoutPlan?.planTitle || "undefined",
-          );
-          console.log(
-            "  - State workouts count:",
-            currentState.weeklyWorkoutPlan?.workouts?.length || 0,
-          );
 
           console.log("✅ Plan saved to local storage");
 
@@ -163,7 +136,7 @@ export const useFitnessStore = create<FitnessState>()(
               // Create a proper WorkoutSession object matching the expected schema
               const workoutSession: import("../types/localData").LocalWorkoutSession =
                 {
-                  id: `workout_${workout.id}_${Date.now()}_${crypto.randomUUID().replace(/-/g, '').substring(0, 5)}`,
+                  id: `workout_${workout.id}_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
                   localId: `local_${workout.id}_${Date.now()}`,
                   workoutId: workout.id,
                   userId: getUserIdOrGuest(),

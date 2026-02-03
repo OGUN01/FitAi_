@@ -1105,8 +1105,6 @@ const PersonalInfoTab: React.FC<PersonalInfoTabProps> = ({
                     <TouchableOpacity
                       style={styles.debugButton}
                       onPress={() => {
-                        console.log("[DEBUG] Manual validation trigger");
-                        console.log("[DEBUG] Current formData:", formData);
                         // Force update parent state
                         const finalData =
                           showCustomCountry && customCountry
