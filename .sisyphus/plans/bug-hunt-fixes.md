@@ -1223,7 +1223,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.10. Add Realtime Subscriptions
+- [x] 3.10. Add Realtime Subscriptions
 
   **What to do**:
   - Subscribe to workout_sessions table changes

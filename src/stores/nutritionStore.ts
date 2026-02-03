@@ -11,6 +11,9 @@ import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
+import { RealtimeChannel } from "@supabase/supabase-js";
+
+let mealLogsChannel: RealtimeChannel | null = null;
 
 // Type guard for MealType - ensures type safety without 'as any'
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
@@ -132,6 +135,10 @@ interface NutritionState {
   loadData: () => Promise<void>;
   clearData: () => void;
 
+  // Realtime subscriptions
+  setupRealtimeSubscription: (userId: string) => void;
+  cleanupRealtimeSubscription: () => void;
+
   // Reset store (for logout)
   reset: () => void;
 }
@@ -190,7 +197,7 @@ export const useNutritionStore = create<NutritionState>()(
               try {
                 // Create a proper MealLog object matching the expected schema
                 const mealLog: import("../types/localData").MealLog = {
-                  id: `meal_${meal.id}_${timestamp}_${crypto.randomUUID().replace(/-/g, '').substring(0, 5)}`,
+                  id: `meal_${meal.id}_${timestamp}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
                   mealType: toMealType(meal.type),
                   foods: (meal.items || []).map(
                     (item: MealItem, index: number) =>
@@ -868,8 +875,38 @@ export const useNutritionStore = create<NutritionState>()(
         });
       },
 
-      // Reset store to initial state (for logout)
+      setupRealtimeSubscription: (userId: string) => {
+        if (mealLogsChannel) {
+          mealLogsChannel.unsubscribe();
+        }
+
+        mealLogsChannel = supabase
+          .channel("meal_logs_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "meal_logs",
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              console.log("📡 Meal log change detected:", payload.eventType);
+              get().loadData();
+            },
+          )
+          .subscribe();
+      },
+
+      cleanupRealtimeSubscription: () => {
+        if (mealLogsChannel) {
+          mealLogsChannel.unsubscribe();
+          mealLogsChannel = null;
+        }
+      },
+
       reset: () => {
+        get().cleanupRealtimeSubscription();
         set({
           weeklyMealPlan: null,
           isGeneratingPlan: false,

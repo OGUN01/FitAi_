@@ -953,3 +953,61 @@ All TODOs either removed or converted to informational comments that explain arc
 - npx tsc --noEmit: 0 errors
 
 **Files Modified**: src/services/offline.ts only
+
+## [2026-02-03T17:55:00] Task 3.10: Add Realtime Subscriptions
+
+**Status**: COMPLETE
+**Changes**: Added Supabase realtime subscriptions for workout_sessions and meal_logs tables
+
+**Implementation**:
+
+1. **fitnessStore.ts**:
+   - Added `RealtimeChannel` import from `@supabase/supabase-js`
+   - Created `workoutSessionsChannel` module-level variable for subscription persistence
+   - Added `setupRealtimeSubscription(userId)`: Subscribes to workout_sessions table changes filtered by user_id
+   - Added `cleanupRealtimeSubscription()`: Unsubscribes and cleans up channel
+   - Modified `reset()`: Calls cleanup before state reset
+
+2. **nutritionStore.ts**:
+   - Added `RealtimeChannel` import from `@supabase/supabase-js`
+   - Created `mealLogsChannel` module-level variable for subscription persistence
+   - Added `setupRealtimeSubscription(userId)`: Subscribes to meal_logs table changes filtered by user_id
+   - Added `cleanupRealtimeSubscription()`: Unsubscribes and cleans up channel
+   - Modified `reset()`: Calls cleanup before state reset
+
+**Pattern Used**:
+
+```typescript
+supabase
+  .channel("table_changes")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "table_name",
+      filter: `user_id=eq.${userId}`,
+    },
+    (payload) => {
+      loadData(); // Refresh store on remote changes
+    },
+  )
+  .subscribe();
+```
+
+**Key Design Decisions**:
+
+- Channel reference stored outside Zustand store (module-level) to persist across re-renders
+- Cleanup called in `reset()` to unsubscribe on logout
+- `loadData()` called on any change (INSERT/UPDATE/DELETE) for simplicity
+- Filter by user_id ensures only current user's changes trigger refresh
+
+**Verification**:
+
+- grep count for `.channel` and `postgres_changes`: 4 matches (>2 requirement met)
+- npx tsc --noEmit: 0 errors
+
+**Files Modified**:
+
+- src/stores/fitnessStore.ts
+- src/stores/nutritionStore.ts

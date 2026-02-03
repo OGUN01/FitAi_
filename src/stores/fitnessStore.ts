@@ -9,6 +9,10 @@ import { offlineService } from "../services/offline";
 import { supabase } from "../services/supabase";
 import { generateUUID, isValidUUID } from "../utils/uuid";
 import { getCurrentUserId, getUserIdOrGuest } from "../services/authUtils";
+import { RealtimeChannel } from "@supabase/supabase-js";
+
+// Realtime subscription channel reference (outside store to persist across re-renders)
+let workoutSessionsChannel: RealtimeChannel | null = null;
 
 interface WorkoutProgress {
   workoutId: string;
@@ -81,6 +85,10 @@ interface FitnessState {
   clearData: () => void;
   clearOldWorkoutData: () => Promise<void>;
   forceWorkoutRegeneration: () => void;
+
+  // Realtime subscriptions
+  setupRealtimeSubscription: (userId: string) => void;
+  cleanupRealtimeSubscription: () => void;
 
   // Reset store (for logout)
   reset: () => void;
@@ -707,17 +715,6 @@ export const useFitnessStore = create<FitnessState>()(
         });
       },
 
-      // Reset store to initial state (for logout)
-      reset: () => {
-        set({
-          weeklyWorkoutPlan: null,
-          isGeneratingPlan: false,
-          planError: null,
-          workoutProgress: {},
-          currentWorkoutSession: null,
-        });
-      },
-
       clearOldWorkoutData: async () => {
         try {
           console.log(
@@ -756,6 +753,50 @@ export const useFitnessStore = create<FitnessState>()(
           isGeneratingPlan: false,
         });
         console.log("✅ Ready for fresh workout generation with database IDs");
+      },
+
+      setupRealtimeSubscription: (userId: string) => {
+        if (workoutSessionsChannel) {
+          workoutSessionsChannel.unsubscribe();
+        }
+
+        workoutSessionsChannel = supabase
+          .channel("workout_sessions_changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "workout_sessions",
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              console.log(
+                "📡 Workout session change detected:",
+                payload.eventType,
+              );
+              get().loadData();
+            },
+          )
+          .subscribe();
+      },
+
+      cleanupRealtimeSubscription: () => {
+        if (workoutSessionsChannel) {
+          workoutSessionsChannel.unsubscribe();
+          workoutSessionsChannel = null;
+        }
+      },
+
+      reset: () => {
+        get().cleanupRealtimeSubscription();
+        set({
+          weeklyWorkoutPlan: null,
+          isGeneratingPlan: false,
+          planError: null,
+          workoutProgress: {},
+          currentWorkoutSession: null,
+        });
       },
     }),
     {
