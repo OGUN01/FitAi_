@@ -206,6 +206,7 @@ export class BackupRecoveryService {
   private isInitialized = false;
   private statusCallbacks: ((status: BackupStatus) => void)[] = [];
   private resultCallbacks: ((result: BackupResult) => void)[] = [];
+  private appStateSubscription: { remove: () => void } | null = null;
 
   constructor(config?: Partial<BackupConfig>) {
     this.config = {
