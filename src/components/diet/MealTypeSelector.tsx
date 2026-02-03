@@ -322,9 +322,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: rw(32),
-    height: rh(32),
-    borderRadius: rs(16),
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
     justifyContent: "center",
     alignItems: "center",

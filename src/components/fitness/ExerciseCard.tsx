@@ -371,9 +371,9 @@ const styles = StyleSheet.create({
   },
 
   playButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: THEME.colors.backgroundSecondary,
     justifyContent: "center" as const,
     alignItems: "center" as const,
@@ -536,6 +536,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
+    minHeight: 44,
+    justifyContent: "center",
   },
 
   completeButtonText: {

@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   sm: {
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
-    minHeight: 36,
+    minHeight: 44,
   },
   md: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,

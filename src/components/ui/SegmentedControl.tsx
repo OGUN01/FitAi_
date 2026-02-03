@@ -165,6 +165,7 @@ const styles = StyleSheet.create({
     alignItems: "center" as const,
     justifyContent: "center" as const,
     minWidth: 0,
+    minHeight: 44,
   },
 
   segmentText: {

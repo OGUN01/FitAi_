@@ -412,9 +412,9 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: THEME.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,
@@ -432,9 +432,9 @@ const styles = StyleSheet.create({
   },
 
   flashButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: THEME.colors.surface,
     alignItems: "center" as const,
     justifyContent: "center" as const,

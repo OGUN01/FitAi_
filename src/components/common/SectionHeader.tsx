@@ -55,6 +55,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           hapticType="light"
           accessibilityLabel={actionText}
           accessibilityRole="button"
+          style={styles.actionButton}
         >
           <Text style={styles.actionText}>{actionText}</Text>
         </AnimatedPressable>
@@ -82,6 +83,13 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveTheme.fontSize.lg,
     fontWeight: ResponsiveTheme.fontWeight.semibold,
     color: ResponsiveTheme.colors.text,
+  },
+  actionButton: {
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: ResponsiveTheme.spacing.sm,
   },
   actionText: {
     fontSize: ResponsiveTheme.fontSize.sm,

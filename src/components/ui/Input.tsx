@@ -198,6 +198,10 @@ const styles = StyleSheet.create({
   rightIconContainer: {
     paddingRight: ResponsiveTheme.spacing.md,
     paddingLeft: ResponsiveTheme.spacing.sm,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   errorText: {

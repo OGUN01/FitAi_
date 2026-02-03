@@ -1304,7 +1304,7 @@ git tag phase-2-complete
 
 #### Wave 3.4: Medium - Accessibility
 
-- [ ] 3.12. Fix Touch Targets Below 44px
+- [x] 3.12. Fix Touch Targets Below 44px
 
   **What to do**:
   - Audit all Pressable/TouchableOpacity for minHeight/minWidth

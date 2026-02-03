@@ -817,3 +817,34 @@ All TODOs either removed or converted to informational comments that explain arc
 
 **Key Learning**: AnimatedPressable correctly passes accessibility props to underlying Pressable.
 
+
+## [2026-02-03 16:45:00] Task 3.12: Fix Touch Targets Below 44px
+**Status**: COMPLETE
+**Changes**: Added minHeight/minWidth: 44 to 31 interactive elements across 12 component files
+**Files Modified**:
+- src/components/ui/Button.tsx
+- src/components/ui/PulseButton.tsx
+- src/components/ui/ToggleCard.tsx
+- src/components/ui/ChipSelector.tsx
+- src/components/ui/SegmentedControl.tsx
+- src/components/ui/Input.tsx
+- src/components/navigation/TabBar.tsx
+- src/components/common/SectionHeader.tsx
+- src/components/fitness/ExerciseCard.tsx
+- src/components/fitness/DayWorkoutView.tsx
+- src/components/diet/MealTypeSelector.tsx
+- src/components/advanced/Camera.tsx
+
+**Pattern Applied**:
+- Base buttons: minHeight: 44 directly on style prop
+- Icon-only buttons: Both minHeight and minWidth: 44
+- Small chips/badges: hitSlop={{top: 8, bottom: 8, left: 8, right: 8}} as alternative
+- List item pressables: Already had adequate height (48-60px)
+
+**Verification**:
+- Touch target fixes: 31 instances ✅
+- TypeScript compilation: 0 errors ✅
+- Grep count of minHeight.*44|minWidth.*44: >10 ✅
+
+**Key Learning**: Icon buttons and compact UI elements (camera controls, chips, segment controls) are the most common accessibility violations. Always ensure interactive elements have minimum 44px touch area or adequate hitSlop padding.
+

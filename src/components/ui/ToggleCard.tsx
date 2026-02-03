@@ -182,6 +182,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     overflow: "hidden",
+    minHeight: 44,
   },
 
   cardDisabled: {

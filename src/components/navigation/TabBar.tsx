@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    // All responsive styles moved to inline
+    minHeight: 44,
   },
 
   iconContainer: {
