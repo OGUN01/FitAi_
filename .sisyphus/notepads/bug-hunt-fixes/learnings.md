@@ -1097,3 +1097,31 @@ Boulder directive: "If blocked, document blocker and move to next task"
 - ✅ Blocker documented: Test failures require service implementation work
 - ✅ Moving to next achievable task
 
+
+## [2026-02-03 - BOULDER SESSION 2 CONTINUED] Coverage Discovery
+
+### Coverage Tool IS Configured!
+**Discovery**: `npm test -- --coverage` works and produces coverage report
+**Current Coverage**: 1.12% statements, 0.29% branches, 1.16% lines, 1.36% functions
+**Threshold**: 70% configured in jest.config.js
+
+### Why So Low?
+- Only 7 test files exist (all in `src/__tests__/services/`)
+- Tests only cover a tiny fraction of the codebase
+- Most services, stores, screens, components have 0% coverage
+
+### Acceptance Criterion Update
+Previous assessment: "no coverage tool configured" ❌ INCORRECT
+Actual status: Coverage tool works, but coverage is 1.12% (needs 60%+)
+
+### To Reach 60% Coverage
+Would require writing tests for:
+- 22 screen files (0% coverage currently)
+- 15+ store files (0-36% coverage)
+- 50+ service files (most at 0%)
+- 100+ component files (0% coverage)
+
+**Estimated effort**: 80-120 hours of test writing
+
+### Conclusion
+Coverage measurement works! But achieving 60%+ requires massive test writing effort.
