@@ -21,6 +21,7 @@ import {
   MetricSource,
   DataSource,
 } from "../services/healthConnect";
+import { weightTrackingService } from "../services/WeightTrackingService";
 
 // Re-export MetricSource for UI components
 export type { MetricSource, DataSource };
@@ -429,19 +430,18 @@ export const useHealthDataStore = create<HealthDataState>()(
             set((state) => ({
               metrics: {
                 ...state.metrics,
-                // Update each metric with new data, fallback to existing if not available
                 steps: healthData.data?.steps ?? state.metrics.steps,
-                stepsGoal: state.metrics.stepsGoal ?? 10000, // Default step goal if not set
+                stepsGoal: state.metrics.stepsGoal ?? 10000,
                 heartRate:
                   healthData.data?.heartRate ?? state.metrics.heartRate,
                 activeCalories:
                   healthData.data?.activeCalories ??
                   state.metrics.activeCalories,
                 totalCalories:
-                  healthData.data?.totalCalories ?? state.metrics.totalCalories, // Total daily calories (BMR + active)
+                  healthData.data?.totalCalories ?? state.metrics.totalCalories,
                 distance: healthData.data?.distance
                   ? healthData.data.distance / 1000
-                  : state.metrics.distance, // Convert to km
+                  : state.metrics.distance,
                 weight: healthData.data?.weight ?? state.metrics.weight,
                 sleepHours: healthData.data?.sleep
                   ? healthData.data.sleep.reduce(
@@ -450,7 +450,6 @@ export const useHealthDataStore = create<HealthDataState>()(
                     ) / 60
                   : state.metrics.sleepHours,
                 lastUpdated: new Date().toISOString(),
-                // Include data source attribution for transparency
                 sources: healthData.data?.sources ?? state.metrics.sources,
                 dataOrigins:
                   healthData.data?.dataOrigins ?? state.metrics.dataOrigins,
@@ -458,6 +457,10 @@ export const useHealthDataStore = create<HealthDataState>()(
               lastSyncTime: new Date().toISOString(),
               syncStatus: "success",
             }));
+
+            if (healthData.data?.weight) {
+              weightTrackingService.setWeight(healthData.data.weight);
+            }
 
             // Log sources for debugging
             if (healthData.data?.sources) {
@@ -550,6 +553,10 @@ export const useHealthDataStore = create<HealthDataState>()(
               lastSyncTime: new Date().toISOString(),
               syncError: undefined,
             });
+
+            if (syncResult.data.bodyWeight) {
+              weightTrackingService.setWeight(syncResult.data.bodyWeight);
+            }
 
             console.log("✅ HealthKit sync completed successfully");
 
@@ -1197,6 +1204,10 @@ export const useHealthDataStore = create<HealthDataState>()(
               lastSyncTime: new Date().toISOString(),
               syncError: undefined,
             });
+
+            if (result.data.weight) {
+              weightTrackingService.setWeight(result.data.weight);
+            }
 
             console.log("✅ Google Fit sync completed successfully");
           } else {

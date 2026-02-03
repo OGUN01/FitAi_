@@ -30,6 +30,7 @@ import {
   WorkoutPreferencesData,
   DietPreferencesData,
 } from "../types/onboarding";
+import { weightTrackingService } from "../services/WeightTrackingService";
 
 // ============================================================================
 // TYPES
@@ -232,6 +233,12 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           return null;
         }
 
+        if (bodyAnalysis?.current_weight_kg) {
+          weightTrackingService.initializeFromBodyAnalysis({
+            current_weight_kg: bodyAnalysis.current_weight_kg,
+          });
+        }
+
         return mapToCalculatedMetrics(
           advancedReview,
           bodyAnalysis,
@@ -303,6 +310,14 @@ export const useCalculatedMetrics = (): UseCalculatedMetricsReturn => {
           "✅ [useCalculatedMetrics] Found advancedReview with daily_water_ml:",
           advancedReview.daily_water_ml,
         );
+
+        const guestBodyWeight =
+          bodyAnalysis?.current_weight_kg ?? bodyAnalysis?.currentWeightKg;
+        if (guestBodyWeight) {
+          weightTrackingService.initializeFromBodyAnalysis({
+            current_weight_kg: guestBodyWeight,
+          });
+        }
 
         return mapToCalculatedMetrics(
           advancedReview,
