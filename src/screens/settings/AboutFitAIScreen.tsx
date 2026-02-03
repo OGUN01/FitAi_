@@ -9,244 +9,47 @@
  * - FadeInDown entry animations
  */
 
-import React, { useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Linking,
-} from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, {
-  FadeInDown,
-  FadeIn,
-  FadeInUp,
-} from "react-native-reanimated";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Application from "expo-application";
-import Constants from "expo-constants";
 
-// UI Components
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
-import { AnimatedPressable } from "../../components/ui/aurora/AnimatedPressable";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
+import { AboutFitAIHeader } from "../../components/settings/AboutFitAIHeader";
+import { AboutFitAIActionItem } from "../../components/settings/AboutFitAIActionItem";
+import { AboutFitAIFeatureCard } from "../../components/settings/AboutFitAIFeatureCard";
+import { AboutFitAISocialButtons } from "../../components/settings/AboutFitAISocialButtons";
+import { useAboutFitAILogic } from "../../hooks/useAboutFitAILogic";
 
-// Theme & Utils
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rw, rh } from "../../utils/responsive";
-import { haptics } from "../../utils/haptics";
 
 interface AboutFitAIScreenProps {
   onBack?: () => void;
 }
 
-interface FeatureItem {
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  title: string;
-  description: string;
-}
-
-interface ActionItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  title: string;
-  description: string;
-  onPress: () => void;
-  animationDelay: number;
-}
-
-const ActionItem: React.FC<ActionItemProps> = ({
-  icon,
-  iconColor,
-  title,
-  description,
-  onPress,
-  animationDelay,
-}) => {
-  return (
-    <Animated.View entering={FadeInDown.delay(animationDelay).duration(400)}>
-      <AnimatedPressable
-        onPress={() => {
-          haptics.light();
-          onPress();
-        }}
-        scaleValue={0.98}
-        hapticFeedback={false}
-      >
-        <GlassCard
-          elevation={1}
-          padding="md"
-          blurIntensity="light"
-          borderRadius="lg"
-          style={styles.actionCard}
-        >
-          <View style={styles.actionContent}>
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: `${iconColor}15` },
-              ]}
-            >
-              <Ionicons name={icon} size={rf(18)} color={iconColor} />
-            </View>
-            <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>{title}</Text>
-              <Text style={styles.actionDescription}>{description}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={rf(18)}
-              color={ResponsiveTheme.colors.textMuted}
-            />
-          </View>
-        </GlassCard>
-      </AnimatedPressable>
-    </Animated.View>
-  );
-};
-
 export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
   onBack,
 }) => {
-  // Get version from expo-constants (reads from app.config.js/app.json)
-  // Falls back to expo-application for native build info
-  const appVersion =
-    Constants.expoConfig?.version ||
-    Application.nativeApplicationVersion ||
-    "1.0.0";
-  const buildNumber =
-    Constants.expoConfig?.android?.versionCode?.toString() ||
-    Application.nativeBuildVersion ||
-    new Date().toISOString().split("T")[0];
-
-  const features: FeatureItem[] = [
-    {
-      icon: "sparkles-outline",
-      color: "#667eea",
-      title: "100% AI-Powered",
-      description: "Every workout and meal plan is uniquely generated for you",
-    },
-    {
-      icon: "flag-outline",
-      color: "#4CAF50",
-      title: "Personalized Goals",
-      description: "Tailored fitness plans based on your specific objectives",
-    },
-    {
-      icon: "analytics-outline",
-      color: "#FF9800",
-      title: "Smart Tracking",
-      description: "Comprehensive progress monitoring and analytics",
-    },
-    {
-      icon: "nutrition-outline",
-      color: "#FF6B6B",
-      title: "Nutrition Planning",
-      description: "AI-generated meal plans with macro tracking",
-    },
-    {
-      icon: "barbell-outline",
-      color: "#9C27B0",
-      title: "Adaptive Workouts",
-      description: "Exercises that evolve with your fitness level",
-    },
-    {
-      icon: "sync-outline",
-      color: "#2196F3",
-      title: "Real-time Sync",
-      description: "Seamless data synchronization across all devices",
-    },
-  ];
-
-  const handleRateApp = useCallback(() => {
-    Alert.alert(
-      "Rate FitAI",
-      "Thank you for using FitAI! Your feedback helps us improve.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Rate on App Store",
-          onPress: () => {
-            haptics.success();
-            Alert.alert(
-              "App Store",
-              "App Store link will be available after app publication.",
-            );
-          },
-        },
-      ],
-    );
-  }, []);
-
-  const handleShareApp = useCallback(() => {
-    Alert.alert(
-      "Share FitAI",
-      "Invite your friends to join you on your fitness journey!",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Share",
-          onPress: () => {
-            haptics.success();
-            Alert.alert("Share", "Native sharing will be implemented here.");
-          },
-        },
-      ],
-    );
-  }, []);
-
-  const handleWebsite = useCallback(() => {
-    haptics.light();
-    Linking.openURL("https://fitai.app");
-  }, []);
-
-  const handleSocialMedia = useCallback((platform: string) => {
-    const urls: Record<string, string> = {
-      twitter: "https://twitter.com/fitai_app",
-      instagram: "https://instagram.com/fitai_app",
-      facebook: "https://facebook.com/fitai.app",
-    };
-
-    const url = urls[platform];
-    if (url) {
-      haptics.light();
-      Linking.openURL(url).catch(() => {
-        Alert.alert("Error", "Could not open social media link.");
-      });
-    }
-  }, []);
+  const {
+    appVersion,
+    features,
+    handleRateApp,
+    handleShareApp,
+    handleWebsite,
+    handleSocialMedia,
+    handleTermsOfService,
+    handlePrivacyPolicy,
+    handleOpenSourceLicenses,
+  } = useAboutFitAILogic();
 
   return (
     <AuroraBackground theme="space" animated={true} intensity={0.3}>
       <SafeAreaView style={styles.container} edges={["top"]}>
-        {/* Header */}
-        <Animated.View entering={FadeIn.duration(300)} style={styles.header}>
-          <AnimatedPressable
-            onPress={() => {
-              haptics.light();
-              onBack?.();
-            }}
-            scaleValue={0.9}
-            hapticFeedback={false}
-          >
-            <View style={styles.backButton}>
-              <Ionicons name="chevron-back" size={rf(20)} color="#fff" />
-            </View>
-          </AnimatedPressable>
-          <View style={styles.headerCenter}>
-            <Ionicons
-              name="information-circle-outline"
-              size={rf(18)}
-              color={ResponsiveTheme.colors.primary}
-            />
-            <Text style={styles.headerTitle}>About FitAI</Text>
-          </View>
-          <View style={styles.headerSpacer} />
-        </Animated.View>
+        <AboutFitAIHeader onBack={onBack} />
 
         <ScrollView
           style={styles.scrollView}
@@ -317,36 +120,11 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
 
             <View style={styles.featuresGrid}>
               {features.map((feature, index) => (
-                <Animated.View
+                <AboutFitAIFeatureCard
                   key={feature.title}
-                  entering={FadeInDown.delay(300 + index * 50).duration(400)}
-                  style={styles.featureWrapper}
-                >
-                  <GlassCard
-                    elevation={1}
-                    padding="md"
-                    blurIntensity="light"
-                    borderRadius="lg"
-                    style={styles.featureCard}
-                  >
-                    <View
-                      style={[
-                        styles.featureIcon,
-                        { backgroundColor: `${feature.color}15` },
-                      ]}
-                    >
-                      <Ionicons
-                        name={feature.icon}
-                        size={rf(20)}
-                        color={feature.color}
-                      />
-                    </View>
-                    <Text style={styles.featureTitle}>{feature.title}</Text>
-                    <Text style={styles.featureDescription}>
-                      {feature.description}
-                    </Text>
-                  </GlassCard>
-                </Animated.View>
+                  feature={feature}
+                  index={index}
+                />
               ))}
             </View>
           </View>
@@ -362,7 +140,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Text style={styles.sectionTitle}>Support FitAI</Text>
             </View>
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="star-outline"
               iconColor="#FFD700"
               title="Rate the App"
@@ -371,7 +149,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               animationDelay={600}
             />
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="share-social-outline"
               iconColor="#4CAF50"
               title="Share with Friends"
@@ -380,7 +158,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               animationDelay={650}
             />
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="globe-outline"
               iconColor="#2196F3"
               title="Visit Our Website"
@@ -401,72 +179,7 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Text style={styles.sectionTitle}>Follow Us</Text>
             </View>
 
-            <Animated.View
-              entering={FadeInDown.delay(750).duration(400)}
-              style={styles.socialGrid}
-            >
-              <AnimatedPressable
-                onPress={() => handleSocialMedia("twitter")}
-                scaleValue={0.95}
-                hapticFeedback={false}
-                style={styles.socialButtonWrapper}
-              >
-                <GlassCard
-                  elevation={1}
-                  padding="md"
-                  blurIntensity="light"
-                  borderRadius="lg"
-                  style={styles.socialButton}
-                >
-                  <Ionicons name="logo-twitter" size={rf(20)} color="#1DA1F2" />
-                  <Text style={styles.socialText}>Twitter</Text>
-                </GlassCard>
-              </AnimatedPressable>
-
-              <AnimatedPressable
-                onPress={() => handleSocialMedia("instagram")}
-                scaleValue={0.95}
-                hapticFeedback={false}
-                style={styles.socialButtonWrapper}
-              >
-                <GlassCard
-                  elevation={1}
-                  padding="md"
-                  blurIntensity="light"
-                  borderRadius="lg"
-                  style={styles.socialButton}
-                >
-                  <Ionicons
-                    name="logo-instagram"
-                    size={rf(20)}
-                    color="#E4405F"
-                  />
-                  <Text style={styles.socialText}>Instagram</Text>
-                </GlassCard>
-              </AnimatedPressable>
-
-              <AnimatedPressable
-                onPress={() => handleSocialMedia("facebook")}
-                scaleValue={0.95}
-                hapticFeedback={false}
-                style={styles.socialButtonWrapper}
-              >
-                <GlassCard
-                  elevation={1}
-                  padding="md"
-                  blurIntensity="light"
-                  borderRadius="lg"
-                  style={styles.socialButton}
-                >
-                  <Ionicons
-                    name="logo-facebook"
-                    size={rf(20)}
-                    color="#1877F2"
-                  />
-                  <Text style={styles.socialText}>Facebook</Text>
-                </GlassCard>
-              </AnimatedPressable>
-            </Animated.View>
+            <AboutFitAISocialButtons onSocialPress={handleSocialMedia} />
           </View>
 
           {/* Legal */}
@@ -480,61 +193,30 @@ export const AboutFitAIScreen: React.FC<AboutFitAIScreenProps> = ({
               <Text style={styles.sectionTitle}>Legal</Text>
             </View>
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="document-text-outline"
               iconColor="#607D8B"
               title="Terms of Service"
               description="Review our terms and conditions"
-              onPress={() => {
-                haptics.light();
-                Linking.openURL("https://fitai.app/terms").catch(() =>
-                  Alert.alert(
-                    "Terms of Service",
-                    "Visit https://fitai.app/terms to view our Terms of Service.",
-                  ),
-                );
-              }}
+              onPress={handleTermsOfService}
               animationDelay={800}
             />
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="shield-outline"
               iconColor="#607D8B"
               title="Privacy Policy"
               description="Learn how we protect your data"
-              onPress={() => {
-                haptics.light();
-                Linking.openURL("https://fitai.app/privacy").catch(() =>
-                  Alert.alert(
-                    "Privacy Policy",
-                    "Visit https://fitai.app/privacy to view our Privacy Policy.",
-                  ),
-                );
-              }}
+              onPress={handlePrivacyPolicy}
               animationDelay={850}
             />
 
-            <ActionItem
+            <AboutFitAIActionItem
               icon="code-slash-outline"
               iconColor="#607D8B"
               title="Open Source Licenses"
               description="Third-party libraries we use"
-              onPress={() => {
-                haptics.light();
-                Linking.openURL("https://fitai.app/licenses").catch(() =>
-                  Alert.alert(
-                    "Open Source Licenses",
-                    "FitAI uses the following open source libraries:\n\n" +
-                      "• React Native (MIT)\n" +
-                      "• Expo (MIT)\n" +
-                      "• Zustand (MIT)\n" +
-                      "• React Navigation (MIT)\n" +
-                      "• Supabase JS (MIT)\n" +
-                      "• And many more...\n\n" +
-                      "Visit https://fitai.app/licenses for the complete list.",
-                  ),
-                );
-              }}
+              onPress={handleOpenSourceLicenses}
               animationDelay={900}
             />
           </View>
@@ -566,34 +248,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: ResponsiveTheme.spacing.md,
-    paddingVertical: ResponsiveTheme.spacing.md,
-  },
-  backButton: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(20),
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: ResponsiveTheme.spacing.sm,
-  },
-  headerTitle: {
-    fontSize: rf(18),
-    fontWeight: "700",
-    color: "#fff",
-  },
-  headerSpacer: {
-    width: rw(40),
-  },
   scrollView: {
     flex: 1,
   },
@@ -601,7 +255,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingTop: ResponsiveTheme.spacing.sm,
   },
-  // App Section
   appSection: {
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -642,7 +295,6 @@ const styles = StyleSheet.create({
     color: ResponsiveTheme.colors.textMuted,
     fontWeight: "500",
   },
-  // Mission Card
   missionCard: {
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
@@ -670,7 +322,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: rf(22),
   },
-  // Sections
   section: {
     marginBottom: ResponsiveTheme.spacing.lg,
   },
@@ -688,94 +339,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  // Features Grid
   featuresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: ResponsiveTheme.spacing.sm,
   },
-  featureWrapper: {
-    width: "48.5%",
-  },
-  featureCard: {
-    alignItems: "center",
-    paddingVertical: ResponsiveTheme.spacing.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  featureIcon: {
-    width: rw(44),
-    height: rw(44),
-    borderRadius: rw(22),
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
-  },
-  featureTitle: {
-    fontSize: rf(13),
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: ResponsiveTheme.spacing.xs,
-    textAlign: "center",
-  },
-  featureDescription: {
-    fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
-    textAlign: "center",
-    lineHeight: rf(15),
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-  },
-  // Actions
-  actionCard: {
-    marginBottom: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  actionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconContainer: {
-    width: rw(40),
-    height: rw(40),
-    borderRadius: rw(12),
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: ResponsiveTheme.spacing.md,
-  },
-  actionTextContainer: {
-    flex: 1,
-    marginRight: ResponsiveTheme.spacing.sm,
-  },
-  actionTitle: {
-    fontSize: rf(15),
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 2,
-  },
-  actionDescription: {
-    fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
-  },
-  // Social Grid
-  socialGrid: {
-    flexDirection: "row",
-    gap: ResponsiveTheme.spacing.sm,
-  },
-  socialButtonWrapper: {
-    flex: 1,
-  },
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: ResponsiveTheme.spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-  },
-  socialText: {
-    fontSize: rf(12),
-    fontWeight: "500",
-    color: "#fff",
-  },
-  // Copyright
   copyrightSection: {
     alignItems: "center",
     marginBottom: ResponsiveTheme.spacing.lg,
