@@ -1,6 +1,12 @@
 import { supabase } from "./supabase";
 import { authService } from "./auth";
 import { userProfileService } from "./userProfile";
+import {
+  calculateBMI,
+  getBMICategory,
+} from "../utils/healthCalculations/core/bmiCalculation";
+import { calculateBMRHarrisBenedict } from "../utils/healthCalculations/core/bmrCalculation";
+import { calculateTDEE } from "../utils/healthCalculations/core/tdeeCalculation";
 
 // Re-export all services for easy access
 export { authService } from "./auth";
@@ -208,25 +214,21 @@ export const apiUtils = {
   },
 
   /**
-   * Calculate BMI
+   * Calculate BMI - delegates to SSOT
    */
   calculateBMI(weightKg: number, heightCm: number): number {
-    const heightM = heightCm / 100;
-    return weightKg / (heightM * heightM);
+    return calculateBMI(weightKg, heightCm);
   },
 
   /**
-   * Get BMI category
+   * Get BMI category - delegates to SSOT
    */
   getBMICategory(bmi: number): string {
-    if (bmi < 18.5) return "Underweight";
-    if (bmi < 25) return "Normal weight";
-    if (bmi < 30) return "Overweight";
-    return "Obese";
+    return getBMICategory(bmi);
   },
 
   /**
-   * Calculate daily calorie needs (Harris-Benedict equation)
+   * Calculate daily calorie needs - delegates to SSOT (Harris-Benedict BMR + TDEE)
    */
   calculateDailyCalories(
     weightKg: number,
@@ -235,24 +237,11 @@ export const apiUtils = {
     gender: "male" | "female",
     activityLevel: "sedentary" | "light" | "moderate" | "active" | "extreme",
   ): number {
-    // Calculate BMR
-    let bmr: number;
-    if (gender === "male") {
-      bmr = 88.362 + 13.397 * weightKg + 4.799 * heightCm - 5.677 * age;
-    } else {
-      bmr = 447.593 + 9.247 * weightKg + 3.098 * heightCm - 4.33 * age;
-    }
+    // Use SSOT Harris-Benedict BMR calculation
+    const bmr = calculateBMRHarrisBenedict(weightKg, heightCm, age, gender);
 
-    // Apply activity multiplier
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      extreme: 1.9,
-    };
-
-    return Math.round(bmr * activityMultipliers[activityLevel]);
+    // Use SSOT TDEE calculation
+    return calculateTDEE(bmr, activityLevel);
   },
 
   /**

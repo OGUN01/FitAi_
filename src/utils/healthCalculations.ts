@@ -8,6 +8,12 @@ import {
   WorkoutPreferencesData,
   AdvancedReviewData,
 } from "../types/onboarding";
+import { calculateBMI as calculateBMICore } from "./healthCalculations/core/bmiCalculation";
+import { calculateBMR as calculateBMRCore } from "./healthCalculations/core/bmrCalculation";
+import {
+  calculateTDEE as calculateTDEECore,
+  calculateBaseTDEE as calculateBaseTDEECore,
+} from "./healthCalculations/core/tdeeCalculation";
 
 // ============================================================================
 // BASIC METABOLIC CALCULATIONS
@@ -15,32 +21,14 @@ import {
 
 export class MetabolicCalculations {
   /**
-   * Calculate BMI (Body Mass Index)
-   * Formula: weight(kg) / height(m)²
-   * VALIDATION: Throws error if weight or height is missing
+   * Calculate BMI (Body Mass Index) - delegates to SSOT
    */
   static calculateBMI(weightKg: number, heightCm: number): number {
-    // CRITICAL VALIDATION: No fallbacks allowed
-    if (!weightKg || weightKg === 0) {
-      throw new Error(
-        "Weight is required for BMI calculation. Please complete your profile.",
-      );
-    }
-    if (!heightCm || heightCm === 0) {
-      throw new Error(
-        "Height is required for BMI calculation. Please complete your profile.",
-      );
-    }
-
-    const heightM = heightCm / 100;
-    return weightKg / (heightM * heightM);
+    return calculateBMICore(weightKg, heightCm);
   }
 
   /**
-   * Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor Equation
-   * Men: 10 × weight(kg) + 6.25 × height(cm) - 5 × age + 5
-   * Women: 10 × weight(kg) + 6.25 × height(cm) - 5 × age - 161
-   * VALIDATION: Throws error if any critical parameter is missing
+   * Calculate BMR (Basal Metabolic Rate) - delegates to SSOT
    */
   static calculateBMR(
     weightKg: number,
@@ -48,77 +36,21 @@ export class MetabolicCalculations {
     age: number,
     gender: string,
   ): number {
-    // CRITICAL VALIDATION: No fallbacks allowed
-    if (!weightKg || weightKg === 0) {
-      throw new Error(
-        "Weight is required for BMR calculation. Please complete your profile.",
-      );
-    }
-    if (!heightCm || heightCm === 0) {
-      throw new Error(
-        "Height is required for BMR calculation. Please complete your profile.",
-      );
-    }
-    if (!age || age === 0) {
-      throw new Error(
-        "Age is required for BMR calculation. Please complete your profile.",
-      );
-    }
-    if (!gender || gender === "") {
-      throw new Error(
-        "Gender is required for accurate BMR calculation. Please complete your profile.",
-      );
-    }
-
-    const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-
-    if (gender === "male") {
-      return base + 5;
-    } else if (gender === "female") {
-      return base - 161;
-    } else {
-      // For 'other'/'prefer_not_to_say', use average of male/female formulas
-      // Male: base + 5, Female: base - 161
-      // Average: (base + 5 + base - 161) / 2 = (2*base - 156) / 2 = base - 78
-      return base - 78;
-    }
+    return calculateBMRCore(weightKg, heightCm, age, gender);
   }
 
   /**
-   * Calculate TDEE (Total Daily Energy Expenditure)
-   * Formula: BMR × Activity Factor
-   * NOTE: This is legacy - new approach uses occupation-based calculation
+   * Calculate TDEE (Total Daily Energy Expenditure) - delegates to SSOT
    */
   static calculateTDEE(bmr: number, activityLevel: string): number {
-    const activityFactors = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      extreme: 1.9,
-    };
-
-    return (
-      bmr *
-      (activityFactors[activityLevel as keyof typeof activityFactors] || 1.2)
-    );
+    return calculateTDEECore(bmr, activityLevel as any);
   }
 
   /**
-   * Calculate Base TDEE from Occupation (NEW APPROACH)
-   * This represents daily metabolism from occupation NEAT (without exercise)
+   * Calculate Base TDEE from Occupation - delegates to SSOT
    */
   static calculateBaseTDEE(bmr: number, occupation: string): number {
-    const BASE_OCCUPATION_MULTIPLIERS: Record<string, number> = {
-      desk_job: 1.25, // Sitting most of day
-      light_active: 1.35, // Standing, light movement throughout day
-      moderate_active: 1.45, // Regular movement, on feet often
-      heavy_labor: 1.6, // Physical work all day
-      very_active: 1.7, // Constant intense physical activity
-    };
-
-    const multiplier = BASE_OCCUPATION_MULTIPLIERS[occupation] || 1.25;
-    return bmr * multiplier;
+    return calculateBaseTDEECore(bmr, occupation);
   }
 
   /**

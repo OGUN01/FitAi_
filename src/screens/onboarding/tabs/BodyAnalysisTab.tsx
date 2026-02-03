@@ -42,6 +42,7 @@ import {
   MetabolicCalculations,
   BodyCompositionCalculations,
 } from "../../../utils/healthCalculations";
+import { calculateBMI } from "../../../utils/healthCalculations/core/bmiCalculation";
 
 // ============================================================================
 // TYPES
@@ -332,8 +333,7 @@ const BodyAnalysisTab: React.FC<BodyAnalysisTabProps> = ({
         "kg",
       );
 
-      const heightM = formData.height_cm / 100;
-      const bmi = formData.current_weight_kg / (heightM * heightM);
+      const bmi = calculateBMI(formData.current_weight_kg, formData.height_cm);
       const bmr = calculateBMRMemo(
         formData.current_weight_kg,
         formData.height_cm,
