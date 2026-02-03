@@ -149,7 +149,7 @@ export interface ProgressAnalysis {
 
 // ============================================================================
 // DEPRECATED AI TYPES (moved from old generators - for backward compatibility)
-// TODO: These will be replaced by Workers API types after migration
+// Will be replaced by Workers API types after migration
 // ============================================================================
 
 export interface DayMeal {

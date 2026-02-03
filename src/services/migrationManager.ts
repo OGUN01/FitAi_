@@ -312,7 +312,7 @@ export class MigrationManager {
     }
 
     try {
-      // TODO: Implement migration cancellation in migration engine
+      // Migration cancellation - pending implementation in migration engine
       console.log("Migration cancellation requested");
 
       if (this.currentMigration.unsubscribe) {

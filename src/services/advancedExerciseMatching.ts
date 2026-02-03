@@ -444,7 +444,7 @@ class AdvancedExerciseMatchingService {
         }
       `;
 
-      // TODO: Restore AI-powered exercise matching when UnifiedAIService supports it
+      // AI-powered exercise matching disabled - UnifiedAIService doesn't support generateResponse yet
       // For now, return null without AI assistance
       console.warn(
         "[advancedExerciseMatching] AI semantic mapping disabled - returning null",
@@ -467,7 +467,7 @@ class AdvancedExerciseMatchingService {
   private async generateComprehensiveExerciseData(
     exerciseName: string,
   ): Promise<GeneratedExerciseData> {
-    // TODO: Restore when UnifiedAIService supports generateResponse
+    // AI exercise data generation disabled - UnifiedAIService doesn't support generateResponse yet
     console.warn(
       "[advancedExerciseMatching] AI exercise data generation disabled",
     );

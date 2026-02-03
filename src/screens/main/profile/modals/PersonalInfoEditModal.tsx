@@ -323,8 +323,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         }
       }
 
-      // TODO: If height/weight are changed, update bodyMetrics separately
-      // This should be handled by BodyMeasurementsEditModal instead
+      // Height/weight changes handled by BodyMeasurementsEditModal
 
       haptics.success();
       onClose();

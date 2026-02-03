@@ -12,7 +12,7 @@ export {
   type WorkersResponse,
   type DietGenerationRequest,
   type WorkoutGenerationRequest,
-} from '../fitaiWorkersClient';
+} from "../fitaiWorkersClient";
 
 // Data Transformers
 export {
@@ -26,9 +26,9 @@ export {
   type TransformedDietPlan,
   type TransformedWorkoutPlan,
   type ValidationError,
-} from '../dataTransformers';
+} from "../dataTransformers";
 
-// TODO: Implement these API services when needed
+// Future API services (implement when needed):
 // export { authService } from './authService';
 // export { bodyAnalysisService } from './bodyAnalysisService';
 // export { storageService } from './storageService';

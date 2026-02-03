@@ -157,11 +157,9 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     </GlassView>
   );
 
-  // TODO: Add gradient border wrapper when implementing advanced features
-  // For now, return basic glass card
+  // Advanced features (gradient border, AnimatedPressable) pending implementation
 
   if (pressable && onPress) {
-    // TODO: Wrap with AnimatedPressable when implemented
     return content;
   }
 

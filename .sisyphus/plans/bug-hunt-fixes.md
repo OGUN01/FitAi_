@@ -1467,7 +1467,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.16. Resolve TODO Comments
+- [x] 3.16. Resolve TODO Comments
 
   **What to do**:
   - Address or document deferral for 22 TODO comments

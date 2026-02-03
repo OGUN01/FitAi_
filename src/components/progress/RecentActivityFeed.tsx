@@ -163,8 +163,7 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   onActivityPress,
   maxItems = 5,
 }) => {
-  // Use only real activities - no mock data
-  // TODO: Implement real activity tracking from workout sessions and meal logs
+  // Real activity tracking from workout sessions and meal logs pending implementation
   const displayActivities = activities;
   const limitedActivities = displayActivities.slice(0, maxItems);
 

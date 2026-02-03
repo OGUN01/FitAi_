@@ -387,8 +387,8 @@ export const useOnboardingIntegration = () => {
     try {
       const currentUserId = getUserId();
 
-      // For now, body analysis is stored locally only since it's optional
-      // TODO: In future, could implement remote storage for body analysis
+      // Body analysis stored locally only (optional feature)
+      // Future enhancement: implement remote storage
       console.log("📱 Body analysis saved locally only (feature is optional)");
 
       // If user is authenticated, also try to save to remote

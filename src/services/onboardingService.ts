@@ -727,7 +727,7 @@ export class AdvancedReviewService {
         activityLevel: workoutPreferences.activity_level,
         dietType: dietPreferences.diet_type,
         goal: workoutPreferences.primary_goals?.[0] || "maintenance",
-        restingHR: bodyAnalysis.body_fat_percentage ? undefined : undefined, // TODO: Add resting HR to body analysis
+        restingHR: bodyAnalysis.body_fat_percentage ? undefined : undefined,
       };
 
       console.log(

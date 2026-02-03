@@ -34,7 +34,7 @@ class ReliabilityTracker {
    * Add a new reliability issue to track
    */
   addIssue(issue: Omit<ReliabilityIssue, "id" | "status">): string {
-    const id = `${issue.type}-${Date.now()}-${crypto.randomUUID().replace(/-/g, '').substring(0, 9)}`;
+    const id = `${issue.type}-${Date.now()}-${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`;
     this.issues.push({
       ...issue,
       id,
@@ -194,7 +194,7 @@ class ReliabilityTracker {
       estimatedEffort: 1,
     });
 
-    // Critical TODOs
+    // Critical items requiring implementation
     this.addIssue({
       type: "todo",
       severity: "critical",

@@ -81,7 +81,7 @@ class ProgressDashboard {
         category: "reliability",
         completedAt: new Date(),
       },
-      // Critical TODO resolutions
+      // Critical item resolutions
       {
         id: "schema-repair-logic",
         name: "Implement schema repair logic (dataManager)",

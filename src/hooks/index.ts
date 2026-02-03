@@ -1,7 +1,7 @@
 // Hooks Barrel Export
 // This file exports all custom React hooks
 
-// TODO: Implement these custom hooks when needed
+// Future hooks (implement when needed):
 // export { useCamera } from './useCamera';
 // export { useOfflineSync } from './useOfflineSync';
 // export { usePerformance } from './usePerformance';

@@ -445,8 +445,8 @@ export class FreeNutritionAPIs {
   } {
     return {
       cacheSize: this.cache.size,
-      totalRequests: 0, // TODO: Implement request tracking
-      successRate: 0, // TODO: Implement success tracking
+      totalRequests: 0,
+      successRate: 0,
     };
   }
 

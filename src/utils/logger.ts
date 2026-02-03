@@ -15,11 +15,7 @@
  * logger.info('User logged in', { userId: '123' });
  * logger.error('Failed to fetch data', { error: err.message });
  *
- * TODO: In production, integrate with a real logging service like:
- * - Sentry
- * - LogRocket
- * - Datadog
- * - Firebase Crashlytics
+ * Production integration options: Sentry, LogRocket, Datadog, Firebase Crashlytics
  */
 
 type LogLevel = "debug" | "info" | "warn" | "error";
@@ -145,7 +141,7 @@ function log(level: LogLevel, message: string, context?: LogContext): void {
   const entry = createLogEntry(level, message, context);
   outputLog(entry);
 
-  // TODO: In production, send to external logging service
+  // Production: send to external logging service (Sentry, LogRocket, etc.)
   // if (!__DEV__) {
   //   sendToLoggingService(entry);
   // }
