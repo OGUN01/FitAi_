@@ -49,6 +49,9 @@ jest.mock("../../services/supabase", () => ({
   },
 }));
 
+// Import service at top level
+import { offlineService } from "../../services/offline";
+
 describe("Optimistic Update Rollback", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,10 +64,6 @@ describe("Optimistic Update Rollback", () => {
 
   describe("optimisticUpdate with rollback", () => {
     it("should store original state before optimistic update", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Store existing data first
       const originalData = { id: "item-1", name: "Original", value: 100 };
       await offlineService.storeOfflineData("items_item-1", originalData);
@@ -85,10 +84,6 @@ describe("Optimistic Update Rollback", () => {
     });
 
     it("should rollback to original state when sync fails", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
         update: jest.fn().mockReturnThis(),
@@ -118,10 +113,6 @@ describe("Optimistic Update Rollback", () => {
     });
 
     it("should notify user when rollback occurs", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
         update: jest.fn().mockReturnThis(),
@@ -152,10 +143,6 @@ describe("Optimistic Update Rollback", () => {
     });
 
     it("should not rollback if sync succeeds", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Setup successful sync
       mockSupabaseFrom.mockReturnValue({
         update: jest.fn().mockReturnThis(),
@@ -185,10 +172,6 @@ describe("Optimistic Update Rollback", () => {
     });
 
     it("should handle rollback for optimisticCreate on failure", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
         insert: jest
@@ -218,10 +201,6 @@ describe("Optimistic Update Rollback", () => {
     });
 
     it("should handle rollback for optimisticDelete on failure", async () => {
-      // Import fresh instance
-      jest.resetModules();
-      const { offlineService } = await import("../../services/offline");
-
       // Setup failing sync
       mockSupabaseFrom.mockReturnValue({
         delete: jest.fn().mockReturnThis(),

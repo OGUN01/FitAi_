@@ -1044,3 +1044,56 @@ supabase
 - Estimated: 30-60 minutes additional work
 
 **Impact**: Significant improvement - test infrastructure now mostly working (88% test pass rate)
+
+## [2026-02-03 - BOULDER SESSION 2] Test Infrastructure Investigation
+
+### Test Pass Rate Improvement Attempted
+- **Starting**: 46/72 tests passing (64%)
+- **Ending**: 48/72 tests passing (67%)
+- **Improvement**: +2 tests (+3%)
+
+### Dynamic Import Fixes Applied
+Fixed 3 occurrences of dynamic imports in `offline.rollback.test.ts`:
+- Changed `await import()` → static import at top of file
+- Removed `jest.resetModules()` calls
+- Pattern: Jest doesn't support dynamic imports without --experimental-vm-modules flag
+
+### Remaining Test Failures (24 tests)
+**Root causes identified:**
+
+1. **backupRecoveryService.cleanup.test.ts** (3 failures)
+   - Issue: `service.destroy()` method doesn't exist in BackupRecoveryService class
+   - Cause: Test was written but implementation never added
+   - Fix required: Add destroy() method to BackupRecoveryService
+   - Impact: Implementation work, not test infrastructure
+
+2. **offline.rollback.test.ts** (6 failures)
+   - Issue: Rollback behavior not working as tests expect
+   - Cause: Tests expect `optimisticCreate` to remove items on failure, but implementation doesn't do this
+   - Fix required: Implement actual rollback logic in offlineService
+   - Impact: Feature implementation, not test infrastructure
+
+3. **offline.validation.test.ts** (13 failures)
+   - Issue: `syncOfflineActions()` returns success=true but syncedActions=0
+   - Cause: Sync logic isn't properly executing queued actions
+   - Fix required: Debug and fix sync execution logic
+   - Impact: Complex service debugging
+
+4. **dataManager.test.ts** (2 failures)
+   - Issue: Jest worker crashes
+   - Cause: Unknown (process exceptions)
+   - Fix required: Investigate worker crash
+
+### Conclusion
+Test failures are **NOT test infrastructure issues**. They are:
+- Missing implementation features (destroy method)
+- Incorrect service behavior (rollback not working)
+- Complex sync logic bugs
+
+These require implementation work on actual services, not test fixes.
+
+### Decision
+Boulder directive: "If blocked, document blocker and move to next task"
+- ✅ Blocker documented: Test failures require service implementation work
+- ✅ Moving to next achievable task
+
