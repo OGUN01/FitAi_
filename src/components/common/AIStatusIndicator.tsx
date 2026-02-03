@@ -44,6 +44,9 @@ export const AIStatusIndicator: React.FC<AIStatusIndicatorProps> = ({
     <Component
       style={[styles.container, { borderColor: getStatusColor() }, style]}
       onPress={onPress}
+      accessibilityLabel={`AI Status: ${getStatusText()}`}
+      accessibilityRole={onPress ? "button" : "text"}
+      accessibilityHint={onPress ? "Double tap to view AI details" : undefined}
     >
       <Text style={styles.icon}>{getStatusIcon()}</Text>
       <Text style={[styles.text, { color: getStatusColor() }]}>

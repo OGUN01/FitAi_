@@ -52,6 +52,11 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
       <AnimatedPressable
         onPress={onCompleteOnboarding ? handlePress : undefined}
         style={styles.compactContainer}
+        accessibilityLabel={message || `Complete onboarding for ${feature}`}
+        accessibilityRole="button"
+        accessibilityHint={
+          onCompleteOnboarding ? "Double tap to complete onboarding" : undefined
+        }
       >
         <Ionicons
           name="information-circle-outline"
@@ -123,7 +128,13 @@ export const OnboardingRequired: React.FC<OnboardingRequiredProps> = ({
       </View>
 
       {onCompleteOnboarding && (
-        <AnimatedPressable onPress={handlePress} style={styles.button}>
+        <AnimatedPressable
+          onPress={handlePress}
+          style={styles.button}
+          accessibilityLabel="Complete Onboarding"
+          accessibilityRole="button"
+          accessibilityHint="Double tap to start onboarding process"
+        >
           <LinearGradient
             colors={[
               ResponsiveTheme.colors.primary,

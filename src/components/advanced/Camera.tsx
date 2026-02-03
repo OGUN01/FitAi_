@@ -195,11 +195,23 @@ const CameraComponent: React.FC<CameraProps> = ({
     <View style={[styles.container, style]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          accessibilityLabel="Close camera"
+          accessibilityRole="button"
+          accessibilityHint="Double tap to close the camera"
+        >
           <Text style={styles.closeIcon}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{getModeTitle()}</Text>
-        <TouchableOpacity style={styles.flashButton} onPress={toggleFlash}>
+        <TouchableOpacity
+          style={styles.flashButton}
+          onPress={toggleFlash}
+          accessibilityLabel={`Flash ${flashMode === "on" ? "on" : "off"}`}
+          accessibilityRole="button"
+          accessibilityHint="Double tap to toggle flash"
+        >
           <Text style={styles.flashIcon}>
             {flashMode === "on" ? "⚡" : "⚡"}
           </Text>
@@ -292,7 +304,13 @@ const CameraComponent: React.FC<CameraProps> = ({
 
       {/* Controls */}
       <View style={styles.controls}>
-        <TouchableOpacity style={styles.flipButton} onPress={toggleCameraType}>
+        <TouchableOpacity
+          style={styles.flipButton}
+          onPress={toggleCameraType}
+          accessibilityLabel="Flip camera"
+          accessibilityRole="button"
+          accessibilityHint="Double tap to switch between front and back camera"
+        >
           <Text style={styles.flipIcon}>🔄</Text>
         </TouchableOpacity>
 
@@ -304,6 +322,9 @@ const CameraComponent: React.FC<CameraProps> = ({
             ]}
             onPress={takePicture}
             disabled={isCapturing}
+            accessibilityLabel="Take picture"
+            accessibilityRole="button"
+            accessibilityHint="Double tap to take a photo"
           >
             <View style={styles.captureButtonInner} />
           </TouchableOpacity>

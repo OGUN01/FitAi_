@@ -1343,7 +1343,7 @@ git tag phase-2-complete
 
 ---
 
-- [ ] 3.13. Add Accessibility Labels
+- [x] 3.13. Add Accessibility Labels
 
   **What to do**:
   - Add accessibilityLabel to all Pressable/TouchableOpacity

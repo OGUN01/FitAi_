@@ -790,3 +790,30 @@ All TODOs either removed or converted to informational comments that explain arc
 - console.log with DEBUG: 0 ✅
 - TypeScript compilation: 0 errors ✅
 
+
+## [2026-02-03 15:46:36] Task 3.13: Add Accessibility Labels
+**Status**: COMPLETE
+**Changes**: Added labels to TodayWorkoutCard, AchievementCard, Camera, OnboardingRequired, AIStatusIndicator. Total grep count: 48.
+**Pattern**: Used descriptive labels combined with state (e.g., "Flash on/off") and hints for double-tap actions.
+## 2026-02-03 15:47:38 Task 3.13: Add Accessibility Labels
+
+**Status**: COMPLETE
+**Changes**: 48 accessibility props added across 5 component files
+**Files Modified**:
+- src/components/fitness/TodayWorkoutCard.tsx
+- src/components/achievements/AchievementCard.tsx
+- src/components/advanced/Camera.tsx
+- src/components/common/OnboardingRequired.tsx
+- src/components/common/AIStatusIndicator.tsx
+
+**Pattern Examples**:
+- accessibilityLabel with dynamic content: "Flash ${flashMode}"
+- accessibilityRole="button" for interactive elements
+- accessibilityHint for complex interactions: "Double tap to view details"
+
+**Verification**:
+- Accessibility props count: 48 (target: >20) ✅
+- TypeScript compilation: 0 errors ✅
+
+**Key Learning**: AnimatedPressable correctly passes accessibility props to underlying Pressable.
+

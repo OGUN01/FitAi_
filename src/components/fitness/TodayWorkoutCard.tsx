@@ -84,6 +84,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
           scaleValue={0.98}
           hapticFeedback={true}
           hapticType="light"
+          accessibilityLabel={`${isRestDay ? "Rest & Recover" : workout?.title || "Today's Workout"}, ${config.label}`}
+          accessibilityHint="Double tap to view details"
         >
           <View style={styles.container}>
             {/* Top Section - Status + Info */}
@@ -190,6 +192,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
                 hapticFeedback={true}
                 hapticType="medium"
                 style={styles.actionButton}
+                accessibilityLabel={config.buttonText}
+                accessibilityHint={`Double tap to ${config.buttonText.toLowerCase()}`}
               >
                 <LinearGradient
                   colors={config.gradient}

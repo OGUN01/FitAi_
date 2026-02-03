@@ -62,6 +62,9 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       style={
         [cardStyle, { borderTopColor: tierColor, borderTopWidth: 3 }] as any
       }
+      accessibilityLabel={`${achievement.title}, ${achievement.tier} tier achievement. ${isCompleted ? "Earned" : "Locked"}.`}
+      accessibilityRole="button"
+      accessibilityHint={onPress ? "Double tap to view details" : undefined}
     >
       <View style={styles.content}>
         <View style={styles.header}>
