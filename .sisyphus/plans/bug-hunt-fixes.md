@@ -65,7 +65,7 @@ Fix all 90 identified bugs/issues in FitAI app while establishing sustainable ar
 
 ### Definition of Done
 
-- [ ] `npm test` passes with coverage > 60% (PARTIAL: 67% tests passing, 1.12% coverage - needs 60%+)
+- [ ] `npm test` passes with coverage > 60% (PARTIAL: 72% tests passing, 1.12% coverage - needs 60%+)
 - [x] `npx tsc --strict --noEmit` reports 0 errors
 - [x] `npx madge --circular src/` reports 0 circular dependencies
 - [ ] No file in `src/screens/` > 500 lines (22 files still >500 - deferred)
