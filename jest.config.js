@@ -25,6 +25,7 @@ module.exports = {
     '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',
     '^@types/(.*)$': '<rootDir>/src/types/$1',
     '^@assets/(.*)$': '<rootDir>/src/assets/$1',
+    '^expo-crypto$': '<rootDir>/src/__mocks__/expo-crypto.js',
   },
   
   // Test match patterns
