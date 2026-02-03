@@ -285,7 +285,7 @@ export const useProfileStore = create<ProfileStore>()(
       {
         name: "profile-storage-v2", // v2 to avoid conflicts with existing storage
         storage: createJSONStorage(() => AsyncStorage),
-        // Only persist the data fields, not the sync status or hydration flag
+        // Persist data fields, sync status, and sync error for recovery after app restart
         partialize: (state) => ({
           personalInfo: state.personalInfo,
           dietPreferences: state.dietPreferences,
@@ -293,6 +293,8 @@ export const useProfileStore = create<ProfileStore>()(
           workoutPreferences: state.workoutPreferences,
           advancedReview: state.advancedReview,
           lastSyncedAt: state.lastSyncedAt,
+          syncStatus: state.syncStatus,
+          syncError: state.syncError,
           isHydrated: state.isHydrated,
         }),
         // Handle rehydration from storage
