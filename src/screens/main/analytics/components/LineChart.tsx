@@ -10,22 +10,28 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import Svg, {
-  Path,
-  Circle,
   Defs,
   LinearGradient as SvgLinearGradient,
   Stop,
-  Line,
-  G,
-  Rect,
-  Text as SvgText,
 } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf, rw, rh } from "../../../../utils/responsive";
-
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+import {
+  GridLines,
+  YAxisLabels,
+  AnimatedChartPaths,
+  DataPoints,
+  XAxisLabels,
+  SelectedPointTooltip,
+} from "./ChartSvgElements";
+import {
+  generateSmoothPath,
+  generateAreaPath,
+  calculateChartBounds,
+  calculateTrend,
+} from "./chartUtils";
 
 export interface ChartData {
   label: string;
@@ -60,20 +66,12 @@ export const LineChart: React.FC<LineChartProps> = ({
   const chartAreaWidth = CHART_WIDTH - PADDING_LEFT - PADDING_RIGHT;
   const chartAreaHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
 
-  // Check if we have valid data
   const hasData = data && data.length > 0;
 
-  // Calculate data bounds with nice padding (use safe defaults when no data)
-  const values = hasData ? data.map((d) => d.value) : [0];
-  const maxVal = Math.max(...values);
-  const minVal = Math.min(...values);
-  const range = maxVal - minVal || 1;
-  const paddingAmount = range * 0.2;
-  const chartMax = maxVal + paddingAmount;
-  const chartMin = Math.max(0, minVal - paddingAmount);
-  const chartRange = chartMax - chartMin || 1;
+  const { chartMax, chartMin, chartRange } = calculateChartBounds(
+    hasData ? data : [],
+  );
 
-  // Calculate coordinates
   const getX = (index: number) => {
     const divisor = hasData && data.length > 1 ? data.length - 1 : 1;
     return PADDING_LEFT + (index / divisor) * chartAreaWidth;
@@ -87,48 +85,25 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   };
 
-  // Generate smooth bezier curve path
-  const generateSmoothPath = () => {
-    if (!hasData) return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight}`;
+  const smoothPath = generateSmoothPath(
+    hasData ? data : [],
+    getX,
+    getY,
+    PADDING_LEFT,
+    PADDING_TOP,
+    chartAreaHeight,
+  );
 
-    if (data.length < 2) {
-      const x = getX(0);
-      const y = getY(data[0].value);
-      return `M ${x} ${y}`;
-    }
+  const areaPath = generateAreaPath(
+    hasData ? data : [],
+    smoothPath,
+    getX,
+    PADDING_LEFT,
+    PADDING_TOP,
+    chartAreaWidth,
+    chartAreaHeight,
+  );
 
-    let path = `M ${getX(0)} ${getY(data[0].value)}`;
-
-    for (let i = 0; i < data.length - 1; i++) {
-      const x0 = getX(i);
-      const y0 = getY(data[i].value);
-      const x1 = getX(i + 1);
-      const y1 = getY(data[i + 1].value);
-
-      // Control point distance
-      const cpDist = (x1 - x0) * 0.4;
-
-      // Smooth bezier curve
-      path += ` C ${x0 + cpDist} ${y0}, ${x1 - cpDist} ${y1}, ${x1} ${y1}`;
-    }
-
-    return path;
-  };
-
-  // Generate gradient fill area path
-  const generateAreaPath = () => {
-    if (!hasData)
-      return `M ${PADDING_LEFT} ${PADDING_TOP + chartAreaHeight} L ${PADDING_LEFT + chartAreaWidth} ${PADDING_TOP + chartAreaHeight} Z`;
-
-    const linePath = generateSmoothPath();
-    const lastX = getX(data.length - 1);
-    const firstX = getX(0);
-    const bottomY = PADDING_TOP + chartAreaHeight;
-
-    return `${linePath} L ${lastX} ${bottomY} L ${firstX} ${bottomY} Z`;
-  };
-
-  // Animation - MUST be called unconditionally (before any early returns)
   useEffect(() => {
     if (hasData) {
       animationProgress.value = withTiming(1, {
@@ -147,10 +122,8 @@ export const LineChart: React.FC<LineChartProps> = ({
     opacity: interpolate(animationProgress.value, [0, 0.5, 1], [0, 0, 0.3]),
   }));
 
-  // Y-axis labels
   const yLabels = [chartMax, (chartMax + chartMin) / 2, chartMin];
 
-  // ✅ EARLY RETURN - Now AFTER all hooks are called
   if (!hasData) {
     return (
       <View style={styles.emptyChart}>
@@ -183,12 +156,7 @@ export const LineChart: React.FC<LineChartProps> = ({
     );
   }
 
-  // Trend calculation
-  const trend =
-    data.length >= 2 ? data[data.length - 1].value - data[0].value : 0;
-  const trendPercent =
-    data[0].value > 0 ? ((trend / data[0].value) * 100).toFixed(1) : "0";
-  const isPositiveTrend = trend >= 0;
+  const { trend, trendPercent, isPositiveTrend } = calculateTrend(data);
 
   return (
     <View style={styles.premiumChartContainer}>
@@ -233,7 +201,6 @@ export const LineChart: React.FC<LineChartProps> = ({
       {/* SVG Chart */}
       <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
         <Defs>
-          {/* Gradient for area fill */}
           <SvgLinearGradient
             id="areaGradient"
             x1="0%"
@@ -246,7 +213,6 @@ export const LineChart: React.FC<LineChartProps> = ({
             <Stop offset="100%" stopColor={color} stopOpacity="0" />
           </SvgLinearGradient>
 
-          {/* Gradient for line stroke */}
           <SvgLinearGradient
             id="lineGradient"
             x1="0%"
@@ -259,7 +225,6 @@ export const LineChart: React.FC<LineChartProps> = ({
             <Stop offset="100%" stopColor={color} stopOpacity="1" />
           </SvgLinearGradient>
 
-          {/* Glow filter effect */}
           <SvgLinearGradient
             id="glowGradient"
             x1="0%"
@@ -272,166 +237,52 @@ export const LineChart: React.FC<LineChartProps> = ({
           </SvgLinearGradient>
         </Defs>
 
-        {/* Subtle grid lines */}
-        {yLabels.map((_, index) => {
-          const y =
-            PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
-          return (
-            <Line
-              key={`grid-${index}`}
-              x1={PADDING_LEFT}
-              y1={y}
-              x2={PADDING_LEFT + chartAreaWidth}
-              y2={y}
-              stroke="rgba(255, 255, 255, 0.06)"
-              strokeWidth={1}
-              strokeDasharray={index === yLabels.length - 1 ? "0" : "4,6"}
-            />
-          );
-        })}
-
-        {/* Y-axis labels */}
-        {yLabels.map((value, index) => {
-          const y =
-            PADDING_TOP + (index / (yLabels.length - 1)) * chartAreaHeight;
-          return (
-            <SvgText
-              key={`y-label-${index}`}
-              x={PADDING_LEFT - 8}
-              y={y + 4}
-              fill={ResponsiveTheme.colors.textMuted}
-              fontSize={rf(9)}
-              textAnchor="end"
-              fontWeight="500"
-            >
-              {value.toFixed(1)}
-            </SvgText>
-          );
-        })}
-
-        {/* Area fill with animation */}
-        <AnimatedPath
-          d={generateAreaPath()}
-          fill="url(#areaGradient)"
-          animatedProps={animatedAreaProps}
+        <GridLines
+          yLabels={yLabels}
+          paddingLeft={PADDING_LEFT}
+          paddingTop={PADDING_TOP}
+          chartAreaWidth={chartAreaWidth}
+          chartAreaHeight={chartAreaHeight}
         />
 
-        {/* Main line with animation */}
-        <AnimatedPath
-          d={generateSmoothPath()}
-          stroke="url(#lineGradient)"
-          strokeWidth={3}
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeDasharray={1000}
-          animatedProps={animatedLineProps}
+        <YAxisLabels
+          yLabels={yLabels}
+          paddingLeft={PADDING_LEFT}
+          paddingTop={PADDING_TOP}
+          chartAreaHeight={chartAreaHeight}
         />
 
-        {/* Data points */}
-        {data.map((item, index) => {
-          const x = getX(index);
-          const y = getY(item.value);
-          const isLast = index === data.length - 1;
-          const isSelected = selectedPoint === index;
+        <AnimatedChartPaths
+          smoothPath={smoothPath}
+          areaPath={areaPath}
+          animatedLineProps={animatedLineProps}
+          animatedAreaProps={animatedAreaProps}
+        />
 
-          return (
-            <G key={`point-${index}`}>
-              {/* Outer glow for last point */}
-              {isLast && (
-                <>
-                  <Circle
-                    cx={x}
-                    cy={y}
-                    r={rw(16)}
-                    fill={color}
-                    opacity={0.15}
-                  />
-                  <Circle
-                    cx={x}
-                    cy={y}
-                    r={rw(10)}
-                    fill={color}
-                    opacity={0.25}
-                  />
-                </>
-              )}
+        <DataPoints
+          data={data}
+          getX={getX}
+          getY={getY}
+          color={color}
+          selectedPoint={selectedPoint}
+          onPointPress={(idx) => setSelectedPoint(idx === -1 ? null : idx)}
+        />
 
-              {/* Point circle */}
-              <Circle
-                cx={x}
-                cy={y}
-                r={isLast ? rw(6) : isSelected ? rw(5) : rw(4)}
-                fill={isLast ? color : "rgba(255,255,255,0.9)"}
-                stroke={color}
-                strokeWidth={isLast ? 3 : 2}
-              />
+        <XAxisLabels
+          data={data}
+          getX={getX}
+          chartHeight={CHART_HEIGHT}
+          color={color}
+        />
 
-              {/* Touchable area */}
-              <Circle
-                cx={x}
-                cy={y}
-                r={rw(15)}
-                fill="transparent"
-                onPress={() =>
-                  setSelectedPoint(selectedPoint === index ? null : index)
-                }
-              />
-            </G>
-          );
-        })}
-
-        {/* X-axis labels */}
-        {data.map((item, index) => {
-          const x = getX(index);
-          const isFirst = index === 0;
-          const isLast = index === data.length - 1;
-          const showLabel =
-            isFirst ||
-            isLast ||
-            data.length <= 5 ||
-            index % Math.ceil(data.length / 4) === 0;
-
-          if (!showLabel) return null;
-
-          return (
-            <SvgText
-              key={`x-label-${index}`}
-              x={x}
-              y={CHART_HEIGHT - 8}
-              fill={isLast ? color : ResponsiveTheme.colors.textMuted}
-              fontSize={rf(10)}
-              textAnchor="middle"
-              fontWeight={isLast ? "700" : "500"}
-            >
-              {item.label}
-            </SvgText>
-          );
-        })}
-
-        {/* Selected point tooltip */}
         {selectedPoint !== null && (
-          <G>
-            <Rect
-              x={getX(selectedPoint) - rw(30)}
-              y={getY(data[selectedPoint].value) - rh(35)}
-              width={rw(60)}
-              height={rh(26)}
-              rx={rw(8)}
-              fill="rgba(0,0,0,0.85)"
-            />
-            <SvgText
-              x={getX(selectedPoint)}
-              y={getY(data[selectedPoint].value) - rh(18)}
-              fill="#fff"
-              fontSize={rf(11)}
-              textAnchor="middle"
-              fontWeight="700"
-            >
-              {data[selectedPoint].value.toFixed(1)}
-              {unit}
-            </SvgText>
-          </G>
+          <SelectedPointTooltip
+            selectedPoint={selectedPoint}
+            data={data}
+            getX={getX}
+            getY={getY}
+            unit={unit}
+          />
         )}
       </Svg>
 
@@ -514,7 +365,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: ResponsiveTheme.colors.textSecondary,
   },
-  // Empty chart state
   emptyChart: {
     minHeight: rh(180),
     justifyContent: "center",

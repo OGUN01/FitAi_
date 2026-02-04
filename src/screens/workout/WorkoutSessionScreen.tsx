@@ -4,12 +4,10 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  Alert,
   ScrollView,
   Animated,
-  Platform,
 } from "react-native";
-import { Button, THEME } from "../../components/ui";
+import { THEME } from "../../components/ui";
 import { DayWorkout } from "../../types/ai";
 import { WorkoutTimer } from "../../components/fitness/WorkoutTimer";
 import { ExerciseGifPlayer } from "../../components/fitness/ExerciseGifPlayer";
@@ -26,6 +24,13 @@ import { WorkoutProgressBar } from "../../components/workout/WorkoutProgressBar"
 import { ExerciseCard } from "../../components/workout/ExerciseCard";
 import { WorkoutNavigation } from "../../components/workout/WorkoutNavigation";
 import { AchievementNotifications } from "../../components/workout/AchievementNotifications";
+import { WorkoutErrorState } from "../../components/workout/WorkoutErrorState";
+import { NextExercisePreview } from "../../components/workout/NextExercisePreview";
+import {
+  showWorkoutCompleteAlert,
+  showWorkoutCompleteErrorAlert,
+  showExitWorkoutAlert,
+} from "./workoutAlerts";
 
 interface WorkoutSessionScreenProps {
   route: {
@@ -101,41 +106,19 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
 
   if (!workout) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
-          <Text style={styles.errorText}>No Workout Data</Text>
-          <Text style={styles.errorSubtext}>
-            Unable to load workout information
-          </Text>
-          <Button
-            title="Go Back"
-            onPress={() => navigation.goBack()}
-            variant="outline"
-            style={styles.errorButton}
-          />
-        </View>
-      </SafeAreaView>
+      <WorkoutErrorState
+        errorType="no-data"
+        onGoBack={() => navigation.goBack()}
+      />
     );
   }
 
   if (!workout.exercises || workout.exercises.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>🏋️‍♂️</Text>
-          <Text style={styles.errorText}>No Exercises Found</Text>
-          <Text style={styles.errorSubtext}>
-            This workout appears to be empty
-          </Text>
-          <Button
-            title="Go Back"
-            onPress={() => navigation.goBack()}
-            variant="outline"
-            style={styles.errorButton}
-          />
-        </View>
-      </SafeAreaView>
+      <WorkoutErrorState
+        errorType="no-exercises"
+        onGoBack={() => navigation.goBack()}
+      />
     );
   }
 
@@ -266,45 +249,22 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           workout.title,
         );
 
-        let completionMessage =
-          `Outstanding performance! You completed "${safeString(workout.title, "Workout")}" in ${safeString(finalStats.totalDuration)} minutes.\n\n` +
-          `📊 Stats:\n` +
-          `• Exercises: ${safeString(finalStats.exercisesCompleted)}/${safeString(session.totalExercises)}\n` +
-          `• Sets: ${safeString(finalStats.setsCompleted)}\n` +
-          `• Calories: ~${safeString(finalStats.caloriesBurned)}`;
-
-        if (achievements.recentAchievements.length > 0) {
-          completionMessage += `\n\n🏆 Achievements Earned:\n`;
-          achievements.recentAchievements.forEach((achievement) => {
-            completionMessage += `• ${achievement.icon} ${achievement.title}\n`;
-          });
-        }
-
-        Alert.alert("🎉 Workout Complete!", completionMessage, [
-          {
-            text: "View Achievements",
-            onPress: () => navigation.navigate("Analytics"),
-            style: "default",
-          },
-          {
-            text: "View Progress",
-            onPress: () => navigation.navigate("Progress"),
-          },
-          {
-            text: "Done",
-            onPress: () => navigation.goBack(),
-            style: "default",
-          },
-        ]);
+        showWorkoutCompleteAlert(
+          workout,
+          finalStats,
+          session.totalExercises,
+          achievements.recentAchievements,
+          () => navigation.navigate("Analytics"),
+          () => navigation.navigate("Progress"),
+          () => navigation.goBack(),
+        );
       } else {
         throw new Error("Failed to save workout completion");
       }
     } catch (error) {
       console.error("🚨 Error completing workout:", error);
-      Alert.alert(
-        "Workout Complete!",
-        `Great job! You completed "${safeString(workout.title, "Workout")}" in ${safeString(session.workoutStats.totalDuration)} minutes.\n\nNote: Progress may not have been saved.`,
-        [{ text: "Done", onPress: () => navigation.goBack() }],
+      showWorkoutCompleteErrorAlert(workout, session.workoutStats, () =>
+        navigation.goBack(),
       );
     }
   }, [workout, sessionId, session, achievements, navigation]);
@@ -314,85 +274,40 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       session.workoutStats.exercisesCompleted > 0 ||
       session.workoutStats.setsCompleted > 0;
 
-    if (Platform.OS === "web") {
-      if (hasProgress) {
-        try {
-          const progressPercentage =
-            session.totalExercises > 0
-              ? Math.round(
-                  (session.workoutStats.exercisesCompleted /
-                    session.totalExercises) *
-                    100,
-                )
-              : 0;
-          await completionTrackingService.updateWorkoutProgress(
-            workout.id || "unknown",
-            progressPercentage,
-            {
-              sessionId: sessionId || "unknown",
-              partialCompletion: true,
-              exitedAt: new Date().toISOString(),
-              stats: session.workoutStats,
-            },
-          );
-        } catch (error) {
-          console.error("❌ Failed to save progress:", error);
-        }
+    const saveProgress = async () => {
+      try {
+        const progressPercentage =
+          session.totalExercises > 0
+            ? Math.round(
+                (session.workoutStats.exercisesCompleted /
+                  session.totalExercises) *
+                  100,
+              )
+            : 0;
+        await completionTrackingService.updateWorkoutProgress(
+          workout.id || "unknown",
+          progressPercentage,
+          {
+            sessionId: sessionId || "unknown",
+            partialCompletion: true,
+            exitedAt: new Date().toISOString(),
+            stats: session.workoutStats,
+          },
+        );
+      } catch (error) {
+        console.error("❌ Failed to save progress:", error);
       }
       navigation.goBack();
-      return;
-    }
+    };
 
-    if (hasProgress) {
-      Alert.alert(
-        "Save Progress?",
-        `You've completed ${safeString(session.workoutStats.exercisesCompleted)}/${safeString(session.totalExercises)} exercises and ${safeString(session.workoutStats.setsCompleted)} sets.\n\nYour progress will be saved.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Save & Exit",
-            onPress: async () => {
-              try {
-                const progressPercentage =
-                  session.totalExercises > 0
-                    ? Math.round(
-                        (session.workoutStats.exercisesCompleted /
-                          session.totalExercises) *
-                          100,
-                      )
-                    : 0;
-                await completionTrackingService.updateWorkoutProgress(
-                  workout.id || "unknown",
-                  progressPercentage,
-                  {
-                    sessionId: sessionId || "unknown",
-                    partialCompletion: true,
-                    exitedAt: new Date().toISOString(),
-                    stats: session.workoutStats,
-                  },
-                );
-              } catch (error) {
-                console.error("❌ Failed to save progress:", error);
-              }
-              navigation.goBack();
-            },
-          },
-        ],
-      );
-    } else {
-      Alert.alert(
-        "Exit Workout?",
-        "Are you sure you want to exit? No progress has been made.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Exit",
-            style: "destructive",
-            onPress: () => navigation.goBack(),
-          },
-        ],
-      );
-    }
+    showExitWorkoutAlert(
+      hasProgress,
+      session.workoutStats.exercisesCompleted,
+      session.totalExercises,
+      session.workoutStats.setsCompleted,
+      saveProgress,
+      () => navigation.goBack(),
+    );
   }, [session, workout.id, sessionId, navigation]);
 
   return (
@@ -446,16 +361,13 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
       </WorkoutTimer>
 
       {session.showNextExercisePreview && session.nextExercise && (
-        <View style={styles.nextExercisePreview}>
-          <Text style={styles.nextExerciseTitle}>Next Up:</Text>
-          <Text style={styles.nextExerciseName}>
-            {safeString(
-              session.nextExercise.name ||
-                getExerciseName(session.nextExercise.exerciseId),
-              "Next Exercise",
-            )}
-          </Text>
-        </View>
+        <NextExercisePreview
+          exerciseName={safeString(
+            session.nextExercise.name ||
+              getExerciseName(session.nextExercise.exerciseId),
+            "Next Exercise",
+          )}
+        />
       )}
 
       <ScrollView
@@ -567,71 +479,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: THEME.spacing.xl,
-  },
-
-  errorEmoji: {
-    fontSize: 64,
-    marginBottom: THEME.spacing.lg,
-  },
-
-  errorText: {
-    fontSize: THEME.fontSize.xl,
-    fontWeight: THEME.fontWeight.bold,
-    color: THEME.colors.error,
-    textAlign: "center",
-    marginBottom: THEME.spacing.md,
-  },
-
-  errorSubtext: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.textSecondary,
-    textAlign: "center",
-    marginBottom: THEME.spacing.xl,
-  },
-
-  errorButton: {
-    minWidth: 120,
-  },
-
-  nextExercisePreview: {
-    backgroundColor: THEME.colors.primary + "20",
-    marginHorizontal: THEME.spacing.lg,
-    marginTop: THEME.spacing.md,
-    padding: THEME.spacing.md,
-    borderRadius: THEME.borderRadius.md,
-    borderLeftWidth: 4,
-    borderLeftColor: THEME.colors.primary,
-  },
-
-  nextExerciseTitle: {
-    fontSize: THEME.fontSize.sm,
-    color: THEME.colors.primary,
-    fontWeight: THEME.fontWeight.semibold,
-    marginBottom: THEME.spacing.xs,
-  },
-
-  nextExerciseName: {
-    fontSize: THEME.fontSize.md,
-    color: THEME.colors.text,
-    fontWeight: THEME.fontWeight.medium,
-  },
-
   content: {
     flex: 1,
     paddingHorizontal: THEME.spacing.lg,
   },
-
   exerciseContainer: {
     marginTop: THEME.spacing.lg,
     alignItems: "center",
   },
-
   exerciseGifPlayer: {
     marginBottom: THEME.spacing.lg,
     alignSelf: "center",
