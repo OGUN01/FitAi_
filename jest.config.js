@@ -4,6 +4,9 @@ module.exports = {
   // Test environment
   testEnvironment: 'node',
   
+  // Use single worker on Windows to prevent process crashes
+  maxWorkers: 1,
+  
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   
