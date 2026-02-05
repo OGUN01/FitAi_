@@ -1,0 +1,91 @@
+name: Generate iOS Native Project
+
+on:
+  push:
+    branches: [master, main, develop]
+    paths:
+      - "app.config.js"
+      - "package.json"
+      - "package-lock.json"
+      - "eas.json"
+      - ".github/workflows/ios-prebuild.yml"
+  workflow_dispatch:
+
+jobs:
+  prebuild:
+    name: Generate iOS Project with Expo Prebuild
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate iOS project
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Verify iOS project structure
+        run: |
+          echo "=== Checking iOS project exists ==="
+          if [ ! -d "ios/FitAI.xcodeproj" ]; then
+            echo "ERROR: ios/FitAI.xcodeproj not found"
+            exit 1
+          fi
+          echo "✓ iOS project found"
+
+          echo "=== Verifying HealthKit entitlements ==="
+          if [ ! -f "ios/FitAI/FitAI.entitlements" ]; then
+            echo "ERROR: Entitlements file not found"
+            exit 1
+          fi
+
+          if grep -q "com.apple.developer.healthkit" "ios/FitAI/FitAI.entitlements"; then
+            echo "✓ HealthKit entitlements found"
+          else
+            echo "ERROR: HealthKit entitlements not configured"
+            exit 1
+          fi
+
+          echo "=== Checking Info.plist ==="
+          if [ -f "ios/FitAI/Info.plist" ]; then
+            if grep -q "NSHealthShareUsageDescription" "ios/FitAI/Info.plist"; then
+              echo "✓ NSHealthShareUsageDescription found"
+            else
+              echo "WARNING: NSHealthShareUsageDescription not found in Info.plist"
+            fi
+          fi
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Commit generated iOS project
+        run: |
+          # Check if ios/ directory changed
+          if git status --porcelain | grep -q "^??.*ios/\|^ M.*ios/"; then
+            # Add ios directory and commit
+            git add ios/
+            git commit -m "chore(ios): generate native iOS project with expo prebuild" || true
+            git push origin ${{ github.ref }}
+          else
+            echo "No changes to iOS project detected"
+          fi
+
+      - name: Upload iOS project artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-project
+          path: ios/
+          retention-days: 30
