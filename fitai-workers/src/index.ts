@@ -18,6 +18,7 @@ import { handleMediaServe, handleMediaUpload, handleMediaDelete } from './handle
 import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
+import { handleHealthSync, handleHealthLatest, handleWorkoutSession } from './handlers/healthSync';
 import { authMiddleware, optionalAuthMiddleware, AuthContext } from './middleware/auth';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
@@ -362,6 +363,33 @@ app.post('/media/upload', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GEN
  * - Users can only delete their own uploads
  */
 app.delete('/media/:category/:id', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GENERATION), handleMediaDelete);
+
+/**
+ * POST /api/health/sync - Sync health data from wearables
+ * - Requires authentication
+ * - Rate limit: 100 requests per minute
+ * - Accepts health metrics (steps, calories, heart_rate, etc.)
+ * - Idempotent upserts with data_source tracking
+ */
+app.post('/api/health/sync', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleHealthSync);
+
+/**
+ * GET /api/health/latest - Retrieve latest health metrics
+ * - Requires authentication
+ * - Rate limit: 100 requests per minute
+ * - Query params: days (1-365, default: 7)
+ * - Returns health logs for specified date range
+ */
+app.get('/api/health/latest', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleHealthLatest);
+
+/**
+ * POST /api/health/workout - Save workout session
+ * - Requires authentication
+ * - Rate limit: 100 requests per minute
+ * - Accepts workout details (type, duration, intensity, etc.)
+ * - Stores in workout_sessions table
+ */
+app.post('/api/health/workout', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleWorkoutSession);
 
 // ============================================================================
 // EXPORT WORKER
