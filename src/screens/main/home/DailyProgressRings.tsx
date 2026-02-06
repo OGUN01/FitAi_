@@ -340,10 +340,10 @@ export const DailyProgressRings: React.FC<DailyProgressRingsProps> = ({
                 size={rf(14)}
                 color={RINGS.nutrition.color}
               />
-              <Text style={styles.statLabel}>Meals</Text>
+              <Text style={styles.statLabel}>Nutrition</Text>
               <Text style={styles.statValue}>
                 {mealsLogged}
-                <Text style={styles.statUnit}>/{mealsGoal}</Text>
+                <Text style={styles.statUnit}>/{mealsGoal} cal</Text>
               </Text>
             </View>
             {/* Steps from Health Connect/HealthKit */}

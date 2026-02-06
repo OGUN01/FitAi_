@@ -258,17 +258,11 @@ export const useHomeLogic = () => {
     };
   }, [healthMetrics, userProfile, calculatedMetrics]);
 
-  const mealsLogged = useMemo(() => {
-    const today = new Date()
-      .toLocaleDateString("en-US", { weekday: "long" })
-      .toLowerCase();
-    const todaysMeals =
-      weeklyMealPlan?.meals?.filter(
-        (m: any) => m.dayOfWeek?.toLowerCase() === today,
-      ) ||
-      dailyMeals ||
-      [];
-    return todaysMeals.length;
+  const caloriesConsumed = useMemo(() => {
+    const consumedNutrition = useNutritionStore
+      .getState()
+      .getTodaysConsumedNutrition();
+    return consumedNutrition.calories;
   }, [weeklyMealPlan, dailyMeals]);
 
   const workoutMinutes = useMemo(() => {
@@ -364,7 +358,7 @@ export const useHomeLogic = () => {
     // Workout/nutrition data
     todaysWorkoutInfo,
     todaysData,
-    mealsLogged,
+    caloriesConsumed,
     workoutMinutes,
     weekCalendarData,
 

@@ -55,9 +55,11 @@ import {
   EmptyMealsMessage,
   EmptyCalendarMessage,
   createQuickActions,
+  AchievementShowcase,
 } from "./home";
 import { WeightEntryModal } from "../../components/progress/WeightEntryModal";
 import { useHomeLogic } from "../../hooks/useHomeLogic";
+import { useAchievementStore } from "../../stores/achievementStore";
 
 interface HomeScreenProps {
   onNavigateToTab?: (tab: string) => void;
@@ -84,7 +86,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     actualCaloriesGoal,
     todaysWorkoutInfo,
     todaysData,
-    mealsLogged,
+    caloriesConsumed,
     workoutMinutes,
     weekCalendarData,
     waterIntakeML,
@@ -95,6 +97,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
     handleAddWater,
   } = useHomeLogic();
 
+  // Achievement data
+  const {
+    getRecentAchievements,
+    getNearlyCompletedAchievements,
+    getTotalBadgesEarned,
+  } = useAchievementStore();
+  const recentAchievements = getRecentAchievements(3);
+  const nearlyComplete = getNearlyCompletedAchievements(3);
+  const totalBadges = getTotalBadgesEarned();
+
   const quickActions = React.useMemo(
     () =>
       createQuickActions({
@@ -103,8 +115,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
         syncHealthData: async () => {},
         syncFromHealthConnect: async () => {},
         onLogWeight: () => setShowWeightModal(true),
+        onScanFood: () => onNavigateToTab?.("diet"),
+        onLogMeal: () => onNavigateToTab?.("diet"),
+        onLogWater: () => onNavigateToTab?.("diet"),
       }),
-    [healthMetrics, setShowWeightModal],
+    [healthMetrics, setShowWeightModal, onNavigateToTab],
   );
 
   if (showGuestSignUp) {
@@ -213,14 +228,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     calculatedMetrics?.recommendedCardioMinutes ??
                     30
                   } // User's preferred workout duration from onboarding
-                  mealsLogged={mealsLogged}
-                  mealsGoal={calculatedMetrics?.mealsPerDay ?? 3} // Default 3 meals if not set
+                  mealsLogged={caloriesConsumed}
+                  mealsGoal={actualCaloriesGoal}
                   steps={healthMetrics?.steps ?? 0} // From Health Connect/HealthKit - TODAY only
                   stepsGoal={healthMetrics?.stepsGoal ?? 10000} // Default 10k steps if not set
                   stepsSource={healthMetrics?.sources?.steps} // Data source attribution
                   onPress={() => onNavigateToTab?.("progress")}
                 />
-                <EmptyMealsMessage mealsLogged={mealsLogged} />
+                <EmptyMealsMessage mealsLogged={caloriesConsumed} />
                 {/* Wearable Sync Status */}
                 {wearableConnected && (
                   <View style={{ marginTop: ResponsiveTheme.spacing.sm }}>
@@ -271,6 +286,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigateToTab }) => {
                     )
                   }
                   onLogWeight={() => setShowWeightModal(true)}
+                />
+              </View>
+
+              {/* 10. Achievements */}
+              <View style={styles.section}>
+                <AchievementShowcase
+                  recentAchievements={recentAchievements}
+                  nearlyComplete={nearlyComplete}
+                  totalBadges={totalBadges}
+                  onViewAll={() => onNavigateToTab?.("achievements")}
+                  onAchievementPress={(achievement) => {
+                    Alert.alert("Achievement", achievement.title);
+                  }}
                 />
               </View>
 
