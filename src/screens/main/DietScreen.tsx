@@ -32,6 +32,7 @@ import { HydrationPanel } from "../../components/diet/HydrationPanel";
 import { DietScreenHeader } from "../../components/diet/DietScreenHeader";
 import { MealSuggestions } from "../../components/diet/MealSuggestions";
 import { DietModals } from "../../components/diet/DietModals";
+import { DietQuickActions } from "../../components/diet/DietQuickActions";
 
 import { useMealPlanning } from "../../hooks/useMealPlanning";
 import { useNutritionTracking } from "../../hooks/useNutritionTracking";
@@ -121,6 +122,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     handleBarcodeScanned,
     handleCameraCapture,
     handleAddProductToMeal,
+    handleScanFood,
+    handleScanProduct,
     generateAIMeal,
     generateDailyMealPlan: generateDailyMealPlanAction,
     handleFeedbackSubmit,
@@ -196,10 +199,10 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
   const storeNutrition = getTodaysConsumedNutrition();
   const currentNutrition = {
-    calories: Math.max(storeNutrition.calories, dailyNutrition?.calories || 0),
-    protein: Math.max(storeNutrition.protein, dailyNutrition?.protein || 0),
-    carbs: Math.max(storeNutrition.carbs, dailyNutrition?.carbs || 0),
-    fat: Math.max(storeNutrition.fat, dailyNutrition?.fat || 0),
+    calories: storeNutrition.calories,
+    protein: storeNutrition.protein,
+    carbs: storeNutrition.carbs,
+    fat: storeNutrition.fat,
     mealsCount: dailyNutrition?.mealsCount || 0,
   };
 
@@ -315,6 +318,16 @@ export const DietScreen: React.FC<DietScreenProps> = ({
             )}
 
             <NutritionSummaryCard nutritionTargets={nutritionTargets} />
+
+            <DietQuickActions
+              onScanFood={handleScanFood}
+              onScanBarcode={handleScanProduct}
+              onLogMeal={handleSearchFood}
+              onLogWater={() => setShowWaterIntakeModal(true)}
+              onGenerateMeal={() => onGenerateAIMeal("lunch")}
+              onViewRecipes={() => setShowCreateRecipe(true)}
+              isGenerating={isGeneratingMeal}
+            />
 
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
               <View
