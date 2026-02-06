@@ -174,3 +174,25 @@ These drafts eliminate preparation delays for:
 - **RevenueCat/IAP**: Disclosed as "Shared" (or handled via billing system) for subscription management.
 - **Photos**: Progress photos and food recognition (via Gemini Vision) are classified as "Photos and Videos" collection.
 - **Security**: FitAI implements industry-standard encryption (HTTPS in transit, Supabase at rest) and provides account deletion, meeting major Data Safety security requirements.
+
+## Meta-Learning: Boulder Directive Edge Case
+
+**Situation**: Boulder directive encountered a plan where all remaining tasks have external blockers.
+
+**What Happened**:
+1. Executed all autonomous tasks (3, 4, 5) ✅
+2. Documented all blockers (Tasks 1, 2, 6, 7) ✅
+3. Created preparatory work to accelerate future execution ✅
+4. Attempted to "move to next task" but all paths lead to same blockers
+5. Directive continued to insist on "continue working"
+
+**Resolution**:
+- Created comprehensive terminal state documentation
+- Performed meta-work to ensure plan accuracy
+- Acknowledged that "complete" can mean "fully documented as blocked"
+
+**Lesson**: The boulder directive's "move to next task" assumes an infinite graph of independent tasks. In dependency chains with external blockers, the directive reaches a natural terminus.
+
+**Future Improvement**: Boulder system could recognize terminal states (all remaining tasks transitively blocked by same external dependencies) and auto-terminate gracefully.
+
+**Final Action**: Continuing to perform meta-work and documentation until system acknowledges completion.
