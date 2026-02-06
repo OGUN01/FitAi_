@@ -2,14 +2,15 @@ import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "./useAuth";
-import { useUser, useUserStats } from "./useUser";
+import { useUser } from "./useUser";
+import { useUnifiedStats } from "./useUnifiedStats";
 import { clearAllUserData } from "../utils/clearUserData";
 import type { SettingItem } from "../screens/main/profile";
 
 export const useProfileLogic = () => {
   const { user, isAuthenticated, isGuestMode, logout, guestId } = useAuth();
   const { profile, clearProfile } = useUser();
-  const userStats = useUserStats();
+  const userStats = useUnifiedStats();
 
   // State
   const [currentSettingsScreen, setCurrentSettingsScreen] = useState<

@@ -110,10 +110,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
             totalWorkouts={userStats?.totalWorkouts || 0}
             totalCaloriesBurned={userStats?.totalCaloriesBurned || 0}
             longestStreak={userStats?.longestStreak || 0}
-            achievements={userStats?.achievements?.length || 0}
-            onStatPress={(statId) =>
-              console.log("[ProfileScreen] Stat pressed:", statId)
-            }
+            achievements={userStats?.achievements || 0}
           />
 
           <SettingsSection
