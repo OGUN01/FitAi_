@@ -2,17 +2,21 @@
 // Individual achievement display with progress and celebration
 
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Achievement, UserAchievement } from "../../services/achievementEngine";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Achievement,
+  UserAchievement,
+} from "../../services/achievements/types";
 import { ResponsiveTheme } from "../../utils/constants";
-import { rf, rp, rh, rw, rs } from "../../utils/responsive";
+import { rf, rh, rw, rs } from "../../utils/responsive";
+import GlassCard from "../ui/GlassCard";
+import { Ionicons } from "@expo/vector-icons";
 
 interface AchievementCardProps {
   achievement: Achievement;
   userProgress?: UserAchievement;
   onPress?: () => void;
   showProgress?: boolean;
-  size?: "small" | "medium" | "large";
 }
 
 const AchievementCard: React.FC<AchievementCardProps> = ({
@@ -20,7 +24,6 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   userProgress,
   onPress,
   showProgress = true,
-  size = "medium",
 }) => {
   const isCompleted = userProgress?.isCompleted || false;
   const progress = userProgress?.progress || 0;
@@ -42,219 +45,196 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
 
   const tierColor = getTierColor(achievement.tier);
 
-  const cardStyle = [
-    styles.card,
-    size === "small" && styles.cardSmall,
-    size === "large" && styles.cardLarge,
-    isCompleted && styles.cardCompleted,
-  ].filter(Boolean);
-
-  const iconStyle = [
-    styles.icon,
-    size === "small" && styles.iconSmall,
-    size === "large" && styles.iconLarge,
-    !isCompleted && styles.iconLocked,
-  ].filter(Boolean);
-
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={onPress}
-      style={
-        [cardStyle, { borderTopColor: tierColor, borderTopWidth: 3 }] as any
-      }
+      activeOpacity={0.8}
       accessibilityLabel={`${achievement.title}, ${achievement.tier} tier achievement. ${isCompleted ? "Earned" : "Locked"}.`}
       accessibilityRole="button"
-      accessibilityHint={onPress ? "Double tap to view details" : undefined}
     >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={iconStyle}>{isCompleted ? achievement.icon : "🔒"}</Text>
-          <View style={styles.info}>
-            <Text style={[styles.title, !isCompleted && styles.titleLocked]}>
-              {achievement.title}
-            </Text>
-            <Text style={styles.tier}>{achievement.tier.toUpperCase()}</Text>
-          </View>
-        </View>
+      <GlassCard
+        elevation={isCompleted ? 4 : 1}
+        blurIntensity={isCompleted ? "default" : "light"}
+        style={StyleSheet.flatten([
+          styles.container,
+          !isCompleted && progress === 0 ? styles.lockedCard : undefined,
+        ])}
+      >
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <View
+              style={[styles.iconContainer, !isCompleted && styles.iconLocked]}
+            >
+              <Text style={styles.icon}>{achievement.icon}</Text>
+              {isCompleted && (
+                <View style={styles.checkBadge}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color={ResponsiveTheme.colors.success}
+                  />
+                </View>
+              )}
+            </View>
 
-        {achievement.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {achievement.description}
-          </Text>
-        )}
-
-        {showProgress && (
-          <View style={styles.progressSection}>
-            <View style={styles.progressBar}>
-              <View style={styles.progressTrack}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${progressPercent}%`,
-                      backgroundColor: tierColor,
-                    },
-                  ]}
-                />
+            <View style={styles.info}>
+              <View style={styles.titleRow}>
+                <Text
+                  style={[styles.title, !isCompleted && styles.titleLocked]}
+                >
+                  {achievement.title}
+                </Text>
+                <View style={[styles.tierBadge, { borderColor: tierColor }]}>
+                  <Text style={[styles.tierText, { color: tierColor }]}>
+                    {achievement.tier.toUpperCase()}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.progressText}>
-                {Math.round(progressPercent)}%
-              </Text>
-            </View>
 
-            <View style={styles.rewardSection}>
-              <Text style={styles.rewardText}>
-                🪙 {achievement.reward.value} FitCoins
+              <Text style={styles.description} numberOfLines={2}>
+                {achievement.description}
               </Text>
             </View>
           </View>
-        )}
 
-        {isCompleted && (
-          <View style={[styles.completedBadge, { backgroundColor: tierColor }]}>
-            <Text style={styles.completedText}>✓ EARNED</Text>
-          </View>
-        )}
-      </View>
-    </Pressable>
+          {showProgress && (isCompleted || progress > 0) && (
+            <View style={styles.progressSection}>
+              <View style={styles.progressBar}>
+                <View style={styles.progressTrack}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progressPercent}%`,
+                        backgroundColor: tierColor,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressText}>
+                  {Math.round(progressPercent)}%
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {isCompleted && (
+            <Text style={styles.unlockedText}>
+              Unlocked{" "}
+              {new Date(
+                userProgress?.unlockedAt || Date.now(),
+              ).toLocaleDateString()}
+            </Text>
+          )}
+        </View>
+      </GlassCard>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
-    borderRadius: ResponsiveTheme.borderRadius.lg,
-    padding: ResponsiveTheme.spacing.md,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  container: {
+    marginBottom: rh(1.5),
   },
-
-  cardSmall: {
-    padding: ResponsiveTheme.spacing.sm,
+  lockedCard: {
+    opacity: 0.7,
   },
-
-  cardLarge: {
-    padding: ResponsiveTheme.spacing.lg,
-  },
-
-  cardCompleted: {
-    backgroundColor: ResponsiveTheme.colors.backgroundTertiary,
-  },
-
   content: {
     flex: 1,
   },
-
   header: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: rh(1),
+  },
+  iconContainer: {
+    width: rw(12),
+    height: rw(12),
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.sm,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: rw(3),
+    marginRight: rw(3),
   },
-
   icon: {
-    fontSize: rf(32),
-    marginRight: ResponsiveTheme.spacing.sm,
+    fontSize: rf(3.5),
   },
-
-  iconSmall: {
-    fontSize: rf(24),
-  },
-
-  iconLarge: {
-    fontSize: rf(40),
-  },
-
   iconLocked: {
     opacity: 0.5,
+    backgroundColor: "rgba(0,0,0,0.1)",
   },
-
+  checkBadge: {
+    position: "absolute",
+    bottom: -4,
+    right: -4,
+    backgroundColor: ResponsiveTheme.colors.background,
+    borderRadius: 8,
+  },
   info: {
     flex: 1,
   },
-
-  title: {
-    fontSize: ResponsiveTheme.fontSize.md,
-    fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: rh(0.5),
   },
-
+  title: {
+    fontSize: rf(1.8),
+    fontWeight: "700",
+    color: ResponsiveTheme.colors.text,
+    flex: 1,
+    marginRight: rw(2),
+  },
   titleLocked: {
     color: ResponsiveTheme.colors.textMuted,
   },
-
-  tier: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: "bold",
-    color: ResponsiveTheme.colors.primary,
-    marginTop: ResponsiveTheme.spacing.xs,
+  tierBadge: {
+    borderWidth: 1,
+    paddingHorizontal: rw(1.5),
+    paddingVertical: rh(0.2),
+    borderRadius: 6,
   },
-
+  tierText: {
+    fontSize: rf(1),
+    fontWeight: "800",
+  },
   description: {
-    fontSize: ResponsiveTheme.fontSize.sm,
+    fontSize: rf(1.5),
     color: ResponsiveTheme.colors.textSecondary,
-    marginBottom: ResponsiveTheme.spacing.sm,
-    lineHeight: rf(18),
+    lineHeight: rf(2),
   },
-
   progressSection: {
-    marginTop: ResponsiveTheme.spacing.sm,
+    marginTop: rh(1),
   },
-
   progressBar: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: ResponsiveTheme.spacing.xs,
   },
-
   progressTrack: {
     flex: 1,
-    height: rh(6),
-    backgroundColor: ResponsiveTheme.colors.border,
+    height: rh(0.6),
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: rs(3),
-    marginRight: ResponsiveTheme.spacing.sm,
+    marginRight: rw(2),
     overflow: "hidden",
   },
-
   progressFill: {
     height: "100%",
     borderRadius: rs(3),
   },
-
   progressText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
+    fontSize: rf(1.2),
     fontWeight: "600",
-    color: ResponsiveTheme.colors.textSecondary,
-    minWidth: rw(35),
+    color: ResponsiveTheme.colors.textTertiary,
+    width: rw(10),
     textAlign: "right",
   },
-
-  rewardSection: {
-    alignItems: "flex-end",
-  },
-
-  rewardText: {
-    fontSize: ResponsiveTheme.fontSize.xs,
-    color: ResponsiveTheme.colors.primary,
-    fontWeight: "500",
-  },
-
-  completedBadge: {
-    position: "absolute",
-    top: ResponsiveTheme.spacing.sm,
-    right: ResponsiveTheme.spacing.sm,
-    paddingHorizontal: ResponsiveTheme.spacing.xs,
-    paddingVertical: ResponsiveTheme.spacing.xs,
-    borderRadius: ResponsiveTheme.borderRadius.sm,
-  },
-
-  completedText: {
-    color: ResponsiveTheme.colors.white,
-    fontSize: ResponsiveTheme.fontSize.xs,
-    fontWeight: "bold",
+  unlockedText: {
+    fontSize: rf(1.2),
+    color: ResponsiveTheme.colors.success,
+    marginTop: rh(1),
+    textAlign: "right",
   },
 });
 

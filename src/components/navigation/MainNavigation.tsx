@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, BackHandler, Platform, Alert } from "react-native";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { TabBar } from "./TabBar";
 import {
@@ -15,6 +15,7 @@ import { FitnessScreen } from "../../screens/main/FitnessScreen";
 import { DietScreen } from "../../screens/main/DietScreen";
 import { ProgressScreen } from "../../screens/main/ProgressScreen";
 import { ProgressTrendsScreen } from "../../screens/main/ProgressTrendsScreen";
+import { AchievementsScreen } from "../../screens/main/AchievementsScreen";
 import { ProfileScreen } from "../../screens/main/ProfileScreen";
 import AnalyticsScreen from "../../screens/main/AnalyticsScreen";
 import { WorkoutSessionScreen } from "../../screens/workout/WorkoutSessionScreen";
@@ -68,6 +69,11 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
     isActive: boolean;
   }>({ isActive: false });
 
+  // NEW: Achievements screen session state
+  const [achievementsSession, setAchievementsSession] = useState<{
+    isActive: boolean;
+  }>({ isActive: false });
+
   // Navigation object to pass to screens
   const navigation = {
     navigate: (screen: string, params?: any) => {
@@ -107,6 +113,9 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       } else if (screen === "ProgressTrends") {
         console.log(`🧭 Setting progress trends session`);
         setProgressTrendsSession({ isActive: true });
+      } else if (screen === "Achievements") {
+        console.log(`🧭 Setting achievements session`);
+        setAchievementsSession({ isActive: true });
       }
     },
     goBack: () => {
@@ -117,8 +126,49 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       setOnboardingEditSession({ isActive: false });
       setProgressSession({ isActive: false });
       setProgressTrendsSession({ isActive: false });
+      setAchievementsSession({ isActive: false });
     },
   };
+
+  // Handle Android back button
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // If any session is active, go back
+        if (
+          workoutSession.isActive ||
+          mealSession.isActive ||
+          cookingSession.isActive ||
+          onboardingEditSession.isActive ||
+          progressSession.isActive ||
+          progressTrendsSession.isActive ||
+          achievementsSession.isActive
+        ) {
+          navigation.goBack();
+          return true; // Prevent default behavior
+        }
+
+        // On root screen, show exit confirmation
+        Alert.alert("Exit App", "Are you sure you want to exit?", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [
+    workoutSession.isActive,
+    mealSession.isActive,
+    cookingSession.isActive,
+    onboardingEditSession.isActive,
+    progressSession.isActive,
+    progressTrendsSession.isActive,
+  ]);
 
   const tabs = [
     {
@@ -242,10 +292,25 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
       return <ProgressTrendsScreen navigation={navigation} />;
     }
 
+    // If achievements session is active, show achievements screen
+    if (achievementsSession.isActive) {
+      return <AchievementsScreen navigation={navigation} />;
+    }
+
     // Otherwise show normal tab screens
     switch (activeTab) {
       case "home":
-        return <HomeScreen onNavigateToTab={setActiveTab} />;
+        return (
+          <HomeScreen
+            onNavigateToTab={(tab) => {
+              if (tab === "achievements") {
+                setAchievementsSession({ isActive: true });
+              } else {
+                setActiveTab(tab);
+              }
+            }}
+          />
+        );
       case "fitness":
         return <FitnessScreen navigation={navigation} />;
       case "analytics":
@@ -271,7 +336,8 @@ export const MainNavigation: React.FC<MainNavigationProps> = ({
         !cookingSession.isActive &&
         !onboardingEditSession.isActive &&
         !progressSession.isActive &&
-        !progressTrendsSession.isActive && (
+        !progressTrendsSession.isActive &&
+        !achievementsSession.isActive && (
           <TabBar tabs={tabs} activeTab={activeTab} onTabPress={setActiveTab} />
         )}
     </View>
