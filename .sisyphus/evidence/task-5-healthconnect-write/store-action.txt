@@ -1,0 +1,45 @@
+  writeWorkoutToHealthConnect: async (workout: {
+    workoutType: string;
+    startTime: Date;
+    endTime: Date;
+    title?: string;
+    calories?: number;
+    notes?: string;
+  }): Promise<WriteWorkoutResult> => {
+    try {
+      console.log("📝 Writing workout to Health Connect from store...");
+
+      const state = get();
+      if (!state.isHealthConnectAvailable) {
+        return { success: false, error: "Health Connect not available" };
+      }
+
+      if (!state.isHealthConnectAuthorized) {
+        return { success: false, error: "Health Connect not authorized" };
+      }
+
+      const exerciseType = mapWorkoutTypeToHealthConnect(workout.workoutType);
+
+      const result = await healthConnectService.writeWorkoutSession({
+        exerciseType,
+        startTime: workout.startTime,
+        endTime: workout.endTime,
+        title: workout.title,
+        calories: workout.calories,
+        notes: workout.notes,
+      });
+
+      if (result.success) {
+        console.log("✅ Workout synced to Health Connect:", result.recordId);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("❌ Failed to write workout to Health Connect:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  },
+});

@@ -1,0 +1,1357 @@
+
+> fitai@0.1.6 test
+> jest --verbose
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ✅ Successfully created record in workouts
+
+      at log (src/services/offline.ts:360:21)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ✅ Successfully created record in workouts
+
+      at log (src/services/offline.ts:360:21)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ✅ Successfully updated record 123 in workouts
+
+      at log (src/services/offline.ts:382:21)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ✅ Successfully deleted record 123 from workouts
+
+      at log (src/services/offline.ts:403:21)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting DELETE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting CREATE on workouts (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on specific_table (attempt 1/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 1000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on specific_table (attempt 2/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+  console.log
+    ⏳ Retrying in 2000ms...
+
+      at log (src/services/offline.ts:424:19)
+          at _loop.next (<anonymous>)
+
+  console.log
+    🔄 Attempting UPDATE on specific_table (attempt 3/3)
+
+      at log (src/services/offline.ts:345:17)
+          at _loop.next (<anonymous>)
+
+PASS src/__tests__/services/offline.validation.test.ts (27.58 s)
+  OfflineService - Supabase Response Validation
+    CREATE operations
+      √ should handle valid CREATE response (68 ms)
+      √ should handle CREATE response with error object (3028 ms)
+      √ should handle CREATE response with undefined error field (4 ms)
+      √ should handle malformed CREATE response (null response) (3021 ms)
+      √ should handle CREATE response with wrong type (string instead of object) (3027 ms)
+    UPDATE operations
+      √ should handle valid UPDATE response (4 ms)
+      √ should handle UPDATE response with error (3025 ms)
+      √ should handle malformed UPDATE response (3032 ms)
+    DELETE operations
+      √ should handle valid DELETE response (9 ms)
+      √ should handle DELETE response with error (3040 ms)
+      √ should handle malformed DELETE response (array instead of object) (3020 ms)
+    Validation logging
+      √ should log validation failures for debugging (3035 ms)
+      √ should include context in validation error logs (3023 ms)
+
+  console.log
+    [DataBridge] Initialized - Using NEW architecture only (old system removed)
+
+      at new log (src/services/DataBridge.ts:135:13)
+
+  console.log
+    [ProfileStore] Rehydrated from storage, sections present: {
+      personalInfo: false,
+      dietPreferences: false,
+      bodyAnalysis: false,
+      workoutPreferences: false,
+      advancedReview: false
+    }
+
+      at log (src/stores/profileStore.ts:303:21)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+  console.log
+    Backup and recovery service stopped
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:537:13)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+  console.log
+    Backup and recovery service initialized
+
+      at BackupRecoveryService.log (src/services/backupRecoveryService.ts:258:15)
+
+PASS src/__tests__/services/backupRecoveryService.cleanup.test.ts
+  BackupRecoveryService - Timer Cleanup
+    destroy() method
+      √ should clear backup timer when destroy is called (12 ms)
+      √ should set timer reference to null after destroy (4 ms)
+      √ should not throw error if destroy called when no timer exists (3 ms)
+      √ should prevent memory leak by clearing timer on multiple destroy calls (5 ms)
+    AppState background integration
+      ○ skipped should cleanup timer when app goes to background
+      ○ skipped should restart timer when app becomes active
+      ○ skipped should remove AppState listener on destroy
+    stop() method
+      √ should call stopAutoBackup which clears timer (6 ms)
+    memory leak prevention
+      √ should not accumulate timers on config updates (4 ms)
+      √ should properly cleanup when toggling auto backup (4 ms)
+
+  console.log
+    [DataBridge] Initialized - Using NEW architecture only (old system removed)
+
+      at new log (src/services/DataBridge.ts:135:13)
+
+  console.log
+    [ProfileStore] Rehydrated from storage, sections present: {
+      personalInfo: false,
+      dietPreferences: false,
+      bodyAnalysis: false,
+      workoutPreferences: false,
+      advancedReview: false
+    }
+
+      at log (src/stores/profileStore.ts:303:21)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:25:15)
+
+  console.log
+    💾 [DB-SERVICE] Input data: {
+      first_name: 'John',
+      last_name: 'Doe',
+      age: 25,
+      gender: 'male',
+      country: 'USA',
+      state: 'CA',
+      wake_time: '07:00',
+      sleep_time: '23:00',
+      occupation_type: 'desk_job',
+      name: 'John Doe'
+    }
+
+      at Function.log (src/services/onboardingService.ts:29:15)
+
+  console.log
+    [SyncEngine] Queueing operation: personalInfo
+
+      at SyncEngine.log (src/services/SyncEngine.ts:243:13)
+
+  console.log
+    [SyncEngine] Processing queue (1 operations)...
+
+      at SyncEngine.log (src/services/SyncEngine.ts:291:13)
+
+  console.log
+    [SyncEngine] Syncing personal info to profiles table...
+
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+
+  console.log
+    [SyncEngine] Queue processing complete. Synced: 0, Failed: 0
+
+      at SyncEngine.log (src/services/SyncEngine.ts:354:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:25:15)
+
+  console.log
+    💾 [DB-SERVICE] Input data: {
+      first_name: 'John',
+      last_name: 'Doe',
+      age: 25,
+      gender: 'male',
+      country: 'USA',
+      state: 'CA',
+      wake_time: '07:00',
+      sleep_time: '23:00',
+      occupation_type: 'desk_job',
+      name: 'John Doe'
+    }
+
+      at Function.log (src/services/onboardingService.ts:29:15)
+
+  console.log
+    [SyncEngine] Queueing operation: personalInfo
+
+      at SyncEngine.log (src/services/SyncEngine.ts:243:13)
+
+  console.log
+    [SyncEngine] Processing queue (2 operations)...
+
+      at SyncEngine.log (src/services/SyncEngine.ts:291:13)
+
+  console.log
+    [SyncEngine] Waiting 1000ms before retry...
+
+      at SyncEngine.log (src/services/SyncEngine.ts:403:15)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] User ID set to: guest
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    [DataBridge] Saved personalInfo to local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:1506:15)
+
+  console.log
+    [DataBridge] loadAllData called, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:250:13)
+
+  console.log
+    [DataBridge] Loading from local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:266:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] loadAllData called, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:250:13)
+
+  console.log
+    [DataBridge] Loading from database for user: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:331:13)
+
+  console.log
+    📥 [DB-SERVICE] PersonalInfoService.load - Loading for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:98:15)
+
+  console.log
+    📥 [DB-SERVICE] DietPreferencesService.load - Loading for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:282:15)
+
+  console.log
+    📥 [DB-SERVICE] BodyAnalysisService.load - Loading for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:456:15)
+
+  console.log
+    📥 [DB-SERVICE] WorkoutPreferencesService.load - Loading for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:618:15)
+
+  console.log
+    📥 [DB-SERVICE] AdvancedReviewService.load - Loading for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:844:15)
+
+  console.log
+    📭 [DB-SERVICE] PersonalInfoService: No personal info found in database
+
+      at Function.log (src/services/onboardingService.ts:118:17)
+
+  console.log
+    📭 [DB-SERVICE] DietPreferencesService: No diet preferences found in database
+
+      at Function.log (src/services/onboardingService.ts:303:17)
+
+  console.log
+    📭 [DB-SERVICE] BodyAnalysisService: No body analysis found in database
+
+      at Function.log (src/services/onboardingService.ts:476:17)
+
+  console.log
+    📭 [DB-SERVICE] WorkoutPreferencesService: No workout preferences found in database
+
+      at Function.log (src/services/onboardingService.ts:638:17)
+
+  console.log
+    📭 [DB-SERVICE] AdvancedReviewService: No advanced review found in database
+
+      at Function.log (src/services/onboardingService.ts:864:17)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [SyncEngine] Setting user ID: new-user-456
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: new-user-456
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] User ID set to: guest
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    [DataBridge] Saved personalInfo to local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:1506:15)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:25:15)
+
+  console.log
+    💾 [DB-SERVICE] Input data: {
+      first_name: 'John',
+      last_name: 'Doe',
+      age: 25,
+      gender: 'male',
+      country: 'USA',
+      state: 'CA',
+      wake_time: '07:00',
+      sleep_time: '23:00',
+      occupation_type: 'desk_job',
+      name: 'John Doe'
+    }
+
+      at Function.log (src/services/onboardingService.ts:29:15)
+
+  console.log
+    [SyncEngine] Queueing operation: personalInfo
+
+      at SyncEngine.log (src/services/SyncEngine.ts:243:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] User ID set to: guest
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    [DataBridge] Saved personalInfo to local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:1506:15)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:25:15)
+
+  console.log
+    💾 [DB-SERVICE] Input data: {
+      first_name: 'John',
+      last_name: 'Doe',
+      age: 25,
+      gender: 'male',
+      country: 'USA',
+      state: 'CA',
+      wake_time: '07:00',
+      sleep_time: '23:00',
+      occupation_type: 'desk_job',
+      name: 'John Doe'
+    }
+
+      at Function.log (src/services/onboardingService.ts:29:15)
+
+  console.log
+    [SyncEngine] Queueing operation: personalInfo
+
+      at SyncEngine.log (src/services/SyncEngine.ts:243:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [DataBridge] Local data cleared
+
+      at DataBridge.log (src/services/DataBridge.ts:1010:15)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: test-user-123
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    💾 [DB-SERVICE] PersonalInfoService.save - Starting save for user: test-user-123
+
+      at Function.log (src/services/onboardingService.ts:25:15)
+
+  console.log
+    💾 [DB-SERVICE] Input data: {
+      first_name: 'John',
+      last_name: 'Doe',
+      age: 25,
+      gender: 'male',
+      country: 'USA',
+      state: 'CA',
+      wake_time: '07:00',
+      sleep_time: '23:00',
+      occupation_type: 'desk_job',
+      name: 'John Doe'
+    }
+
+      at Function.log (src/services/onboardingService.ts:29:15)
+
+  console.log
+    [SyncEngine] Queueing operation: personalInfo
+
+      at SyncEngine.log (src/services/SyncEngine.ts:243:13)
+
+  console.log
+    [ProfileStore] reset called - clearing all profile data
+
+      at Object.log [as reset] (src/stores/profileStore.ts:279:19)
+
+  console.log
+    [SyncEngine] Setting user ID: test-user-123
+
+      at SyncEngine.log [as setUserId] (src/services/SyncEngine.ts:206:13)
+
+  console.log
+    [DataBridge] User ID set to: test-user-123
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] Online status: true
+
+      at DataBridge.log [as setOnlineStatus] (src/services/DataBridge.ts:196:13)
+
+  console.log
+    [DataBridge] User ID set to: guest
+
+      at DataBridge.log [as setUserId] (src/services/DataBridge.ts:183:13)
+
+  console.log
+    [DataBridge] savePersonalInfo, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:435:13)
+
+  console.log
+    [ProfileStore] updatePersonalInfo called with: [
+      'first_name',
+      'last_name',
+      'age',
+      'gender',
+      'country',
+      'state',
+      'wake_time',
+      'sleep_time',
+      'occupation_type',
+      'name'
+    ]
+
+      at Object.log [as updatePersonalInfo] (src/stores/profileStore.ts:145:19)
+
+  console.log
+    [DataBridge] Saved personalInfo to local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:1506:15)
+
+  console.log
+    [DataBridge] loadAllData called, userId: guest
+
+      at DataBridge.log (src/services/DataBridge.ts:250:13)
+
+  console.log
+    [DataBridge] Loading from local storage
+
+      at DataBridge.log (src/services/DataBridge.ts:266:13)
+
+PASS src/__tests__/services/dataManager.test.ts
+  DataBridge
+    Personal Info Management
+      √ should save personal info and return SaveResult (62 ms)
+      √ should update ProfileStore when saving (23 ms)
+      √ should load personal info from ProfileStore in guest mode (14 ms)
+      √ should return null when ProfileStore has no personal info (33 ms)
+    User ID Management
+      √ should set user ID via setUserId method (5 ms)
+      √ should handle guest mode (null user ID) (10 ms)
+    Online/Offline Behavior
+      √ should queue for sync when database save fails (10 ms)
+      √ should save to local storage in guest mode (11 ms)
+    Data Clearing
+      √ should clear local data and reset ProfileStore (19 ms)
+    Error Handling
+      √ should handle Supabase errors gracefully (16 ms)
+    Integration Tests
+      √ should complete full save-load cycle in guest mode (22 ms)
+
+PASS src/__tests__/services/syncMutex.test.ts
+  syncMutex
+    acquire
+      √ should acquire lock when not held (2 ms)
+      √ should return false immediately if lock is already held (1 ms)
+      √ should track which operation holds the lock (1 ms)
+    release
+      √ should release the lock (1 ms)
+      √ should allow new acquire after release (1 ms)
+      √ should be safe to call release when not locked (5 ms)
+    waitForRelease
+      √ should resolve immediately if lock is not held (1 ms)
+      √ should wait until lock is released (3 ms)
+    withLock
+      √ should execute function while holding lock (2 ms)
+      √ should release lock even if function throws (35 ms)
+      √ should release lock after successful execution (1 ms)
+      √ should wait for existing lock before executing (2 ms)
+    race condition prevention
+      √ should serialize concurrent sync operations (3 ms)
+    timeout
+      √ should timeout if lock cannot be acquired (2 ms)
+    forceRelease
+      √ should release lock regardless of owner (1 ms)
+
+PASS src/__tests__/services/authEvents.test.ts
+  authEvents
+    subscribe
+      √ should return an unsubscribe function (2 ms)
+      √ should allow multiple subscribers to the same event (1 ms)
+    emit
+      √ should call subscribed callbacks with event data on SIGNED_IN (1 ms)
+      √ should call subscribed callbacks on SIGNED_OUT (1 ms)
+      √ should not call callbacks for other event types
+      √ should handle AUTH_STATE_CHANGE event (1 ms)
+    unsubscribe
+      √ should stop receiving events after unsubscribe (1 ms)
+    removeAllListeners
+      √ should remove all subscriptions
+    getCurrentUserId
+      √ should return null when no user is signed in
+      √ should return userId after SIGNED_IN event (1 ms)
+      √ should return null after SIGNED_OUT event
+
+PASS src/__tests__/services/WeightTrackingService.test.ts
+  WeightTrackingService
+    getCurrentWeight
+      √ should return null when no weight is set (1 ms)
+      √ should return the current weight after setWeight is called (1 ms)
+    setWeight
+      √ should update the current weight (1 ms)
+      √ should emit WEIGHT_CHANGED event when weight is set (1 ms)
+      √ should include previous weight in event data (1 ms)
+      √ should not emit event if weight is unchanged
+      √ should handle weight with decimal precision (1 ms)
+    subscribe
+      √ should return an unsubscribe function (1 ms)
+      √ should allow multiple subscribers
+      √ should stop receiving events after unsubscribe (1 ms)
+    removeAllListeners
+      √ should remove all subscriptions (1 ms)
+      √ should reset current weight to null
+    getWeightHistory
+      √ should return empty array when no weight changes recorded
+      √ should track weight change history (2 ms)
+    initializeFromBodyAnalysis
+      √ should set weight from body analysis data
+      √ should not emit event during initialization (1 ms)
+      √ should handle null weight in body analysis (1 ms)
+
+Test Suites: 1 skipped, 6 passed, 6 of 7 total
+Tests:       9 skipped, 74 passed, 83 total
+Snapshots:   0 total
+Time:        32.849 s
+Ran all test suites.
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Syncing personal info to profiles table...".
+
+    [0m [90m 584 |[39m [90m   */[39m
+     [90m 585 |[39m   [36masync[39m syncPersonalInfo(userId[33m:[39m string[33m,[39m data[33m:[39m any)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 586 |[39m     console[33m.[39mlog([32m"[SyncEngine] Syncing personal info to profiles table..."[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 587 |[39m
+     [90m 588 |[39m     [90m// CRITICAL: Get email from auth session - it's NOT in guest onboarding data[39m
+     [90m 589 |[39m     [36mconst[39m {[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at SyncEngine.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at SyncEngine.apply [as syncPersonalInfo] (src/services/SyncEngine.ts:585:25)
+      at SyncEngine.syncPersonalInfo (src/services/SyncEngine.ts:479:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Syncing personal info to profiles table...".
+
+    [0m [90m 584 |[39m [90m   */[39m
+     [90m 585 |[39m   [36masync[39m syncPersonalInfo(userId[33m:[39m string[33m,[39m data[33m:[39m any)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 586 |[39m     console[33m.[39mlog([32m"[SyncEngine] Syncing personal info to profiles table..."[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 587 |[39m
+     [90m 588 |[39m     [90m// CRITICAL: Get email from auth session - it's NOT in guest onboarding data[39m
+     [90m 589 |[39m     [36mconst[39m {[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at SyncEngine.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at SyncEngine.apply [as syncPersonalInfo] (src/services/SyncEngine.ts:585:25)
+      at SyncEngine.syncPersonalInfo (src/services/SyncEngine.ts:479:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Syncing personal info to profiles table...".
+
+    [0m [90m 584 |[39m [90m   */[39m
+     [90m 585 |[39m   [36masync[39m syncPersonalInfo(userId[33m:[39m string[33m,[39m data[33m:[39m any)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 586 |[39m     console[33m.[39mlog([32m"[SyncEngine] Syncing personal info to profiles table..."[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 587 |[39m
+     [90m 588 |[39m     [90m// CRITICAL: Get email from auth session - it's NOT in guest onboarding data[39m
+     [90m 589 |[39m     [36mconst[39m {[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at SyncEngine.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at SyncEngine.apply [as syncPersonalInfo] (src/services/SyncEngine.ts:585:25)
+      at SyncEngine.syncPersonalInfo (src/services/SyncEngine.ts:479:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Syncing personal info to profiles table...".
+
+    [0m [90m 584 |[39m [90m   */[39m
+     [90m 585 |[39m   [36masync[39m syncPersonalInfo(userId[33m:[39m string[33m,[39m data[33m:[39m any)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 586 |[39m     console[33m.[39mlog([32m"[SyncEngine] Syncing personal info to profiles table..."[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 587 |[39m
+     [90m 588 |[39m     [90m// CRITICAL: Get email from auth session - it's NOT in guest onboarding data[39m
+     [90m 589 |[39m     [36mconst[39m {[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at SyncEngine.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at SyncEngine.apply [as syncPersonalInfo] (src/services/SyncEngine.ts:585:25)
+      at SyncEngine.syncPersonalInfo (src/services/SyncEngine.ts:479:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Syncing personal info to profiles table...".
+
+    [0m [90m 584 |[39m [90m   */[39m
+     [90m 585 |[39m   [36masync[39m syncPersonalInfo(userId[33m:[39m string[33m,[39m data[33m:[39m any)[33m:[39m [33mPromise[39m[33m<[39m[36mvoid[39m[33m>[39m {
+    [31m[1m>[22m[39m[90m 586 |[39m     console[33m.[39mlog([32m"[SyncEngine] Syncing personal info to profiles table..."[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 587 |[39m
+     [90m 588 |[39m     [90m// CRITICAL: Get email from auth session - it's NOT in guest onboarding data[39m
+     [90m 589 |[39m     [36mconst[39m {[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:586:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+      at node_modules/@babel/runtime/helpers/asyncToGenerator.js:22:7
+      at SyncEngine.<anonymous> (node_modules/@babel/runtime/helpers/asyncToGenerator.js:14:12)
+      at SyncEngine.apply [as syncPersonalInfo] (src/services/SyncEngine.ts:585:25)
+      at SyncEngine.syncPersonalInfo (src/services/SyncEngine.ts:479:20)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+
+
+  ●  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[SyncEngine] Queue processing complete. Synced: 0, Failed: 0".
+
+    [0m [90m 352 |[39m     }
+     [90m 353 |[39m
+    [31m[1m>[22m[39m[90m 354 |[39m     console[33m.[39mlog(
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 355 |[39m       [32m`[SyncEngine] Queue processing complete. Synced: ${result.syncedItems}, Failed: ${result.failedItems}`[39m[33m,[39m
+     [90m 356 |[39m     )[33m;[39m
+     [90m 357 |[39m     [36mreturn[39m result[33m;[39m[0m
+
+      at console.log (node_modules/@jest/console/build/CustomConsole.js:141:10)
+      at SyncEngine.log (src/services/SyncEngine.ts:354:13)
+      at asyncGeneratorStep (node_modules/@babel/runtime/helpers/asyncToGenerator.js:3:17)
+      at _next (node_modules/@babel/runtime/helpers/asyncToGenerator.js:17:9)
+

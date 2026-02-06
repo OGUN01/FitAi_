@@ -1,0 +1,41 @@
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, BackHandler, Platform, Alert } from "react-native";
+  // Handle Android back button
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        // If any session is active, go back
+        if (
+          workoutSession.isActive ||
+          mealSession.isActive ||
+          cookingSession.isActive ||
+          onboardingEditSession.isActive ||
+          progressSession.isActive ||
+          progressTrendsSession.isActive ||
+          achievementsSession.isActive
+        ) {
+          navigation.goBack();
+          return true; // Prevent default behavior
+        }
+
+        // On root screen, show exit confirmation
+        Alert.alert("Exit App", "Are you sure you want to exit?", [
+          { text: "Cancel", style: "cancel" },
+          { text: "Exit", onPress: () => BackHandler.exitApp() },
+        ]);
+        return true;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [
+    workoutSession.isActive,
+    mealSession.isActive,
+    cookingSession.isActive,
+    onboardingEditSession.isActive,
+    progressSession.isActive,
+    progressTrendsSession.isActive,
+  ]);
