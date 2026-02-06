@@ -67,7 +67,10 @@ export default {
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE_VARIABILITY",
         "android.permission.health.READ_OXYGEN_SATURATION",
-        "android.permission.health.READ_BODY_FAT"
+        "android.permission.health.READ_BODY_FAT",
+        // Health Connect WRITE permissions for workout sync
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"
       ],
       allowBackup: false,
       googleServicesFile: "./google-services.json",

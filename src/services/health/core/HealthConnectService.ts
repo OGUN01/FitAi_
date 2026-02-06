@@ -1,92 +1,23 @@
-import { Platform, NativeModules } from "react-native";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  HealthConnectData,
-  HealthConnectSyncResult,
-  PermissionType,
-} from "./types";
-import { syncAllMetrics, SyncContext } from "./syncHelpers";
+import { HealthConnectData, HealthConnectSyncResult } from "../types";
+import { getHealthConnectModule } from "./moduleLoader";
+import { PermissionsManager } from "./permissions";
+import { SyncManager } from "./sync";
+import { StorageManager } from "./storage";
+import { SdkAvailabilityStatus, STORAGE_KEYS } from "./types";
 
-const isHealthConnectNativeAvailable = (): boolean => {
-  try {
-    const hasNativeModule = !!(
-      NativeModules.HealthConnect || NativeModules.RNHealthConnect
-    );
-    if (!hasNativeModule) {
-      console.log(
-        "Health Connect native module not found - package may not be linked",
-      );
-      return false;
-    }
-    return true;
-  } catch (error) {
-    console.log(
-      "Error checking Health Connect native module availability:",
-      error,
-    );
-    return false;
-  }
-};
-
-let healthConnectModule: any = null;
-let healthConnectAvailable: boolean | null = null;
-
-const getHealthConnectModule = async (): Promise<any | null> => {
-  if (healthConnectAvailable === false) {
-    return null;
-  }
-
-  if (healthConnectModule) {
-    return healthConnectModule;
-  }
-
-  try {
-    if (!isHealthConnectNativeAvailable()) {
-      healthConnectAvailable = false;
-      return null;
-    }
-
-    const module = await import("react-native-health-connect");
-    healthConnectModule = module;
-    healthConnectAvailable = true;
-    return module;
-  } catch (error) {
-    console.warn("Failed to load react-native-health-connect:", error);
-    healthConnectAvailable = false;
-    return null;
-  }
-};
-
-const SdkAvailabilityStatus = {
-  SDK_AVAILABLE: "SDK_AVAILABLE",
-  SDK_UNAVAILABLE: "SDK_UNAVAILABLE",
-  SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED:
-    "SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED",
-} as const;
-
-class HealthConnectService {
-  private readonly STORAGE_KEY = "fitai_healthconnect_data";
-  private readonly SYNC_INTERVAL_KEY = "fitai_healthconnect_last_sync";
+export class HealthConnectService {
   private isInitialized = false;
-  private permissionsGranted = false;
-  private readonly EXCLUDED_RAW_SOURCES = ["android"];
+  private permissionsManager: PermissionsManager;
+  private syncManager: SyncManager;
+  private storageManager: StorageManager;
 
-  private readonly permissions: PermissionType[] = [
-    { accessType: "read", recordType: "Steps" },
-    { accessType: "read", recordType: "HeartRate" },
-    { accessType: "read", recordType: "ActiveCaloriesBurned" },
-    { accessType: "read", recordType: "TotalCaloriesBurned" },
-    { accessType: "read", recordType: "BasalMetabolicRate" },
-    { accessType: "read", recordType: "Distance" },
-    { accessType: "read", recordType: "Weight" },
-    { accessType: "read", recordType: "SleepSession" },
-    { accessType: "read", recordType: "ExerciseSession" },
-    { accessType: "read", recordType: "HeartRateVariabilityRmssd" },
-    { accessType: "read", recordType: "OxygenSaturation" },
-    { accessType: "read", recordType: "BodyFat" },
-    { accessType: "write", recordType: "ExerciseSession" },
-    { accessType: "write", recordType: "ActiveCaloriesBurned" },
-  ];
+  constructor() {
+    this.permissionsManager = new PermissionsManager();
+    this.syncManager = new SyncManager();
+    this.storageManager = new StorageManager();
+  }
 
   async initializeHealthConnect(): Promise<boolean> {
     try {
@@ -146,7 +77,7 @@ class HealthConnectService {
       this.isInitialized = isInitialized;
 
       await AsyncStorage.setItem(
-        "fitai_healthconnect_initialized",
+        STORAGE_KEYS.INITIALIZED_KEY,
         isInitialized.toString(),
       );
 
@@ -166,91 +97,21 @@ class HealthConnectService {
         if (!initialized) return false;
       }
 
-      const hcModule = await getHealthConnectModule();
-      if (!hcModule) {
-        this.permissionsGranted = false;
-        return false;
-      }
-
-      const { requestPermission } = hcModule;
-      const grantedPermissions = await requestPermission(this.permissions);
-
-      const hasPermissions =
-        Array.isArray(grantedPermissions) && grantedPermissions.length > 0;
-      this.permissionsGranted = hasPermissions;
-
-      if (!hasPermissions) {
-        console.warn("⚠️ No Health Connect permissions were granted");
-      }
-
-      await AsyncStorage.setItem(
-        "fitai_healthconnect_permissions",
-        this.permissionsGranted ? "granted" : "denied",
-      );
-
-      return this.permissionsGranted;
+      const result = await this.permissionsManager.requestPermissions();
+      return result;
     } catch (error) {
       console.error("❌ Permission request failed:", error);
-      this.permissionsGranted = false;
       return false;
     }
   }
 
   async hasPermissions(): Promise<boolean> {
-    try {
-      if (Platform.OS !== "android") return false;
-
-      const hcModule = await getHealthConnectModule();
-      if (!hcModule) {
-        const cachedPermissions = await AsyncStorage.getItem(
-          "fitai_healthconnect_permissions",
-        );
-        const hasCache = cachedPermissions === "granted";
-        this.permissionsGranted = hasCache;
-        return hasCache;
-      }
-
-      const { getSdkStatus, getGrantedPermissions } = hcModule;
-
-      try {
-        const sdkStatus = await getSdkStatus();
-        if (sdkStatus !== 3) {
-          this.permissionsGranted = false;
-          return false;
-        }
-
-        const grantedPermissions = await getGrantedPermissions();
-        const hasPermissions =
-          Array.isArray(grantedPermissions) && grantedPermissions.length > 0;
-
-        this.permissionsGranted = hasPermissions;
-        await AsyncStorage.setItem(
-          "fitai_healthconnect_permissions",
-          hasPermissions ? "granted" : "denied",
-        );
-
-        return hasPermissions;
-      } catch (sdkError) {
-        console.warn("⚠️ SDK check failed, falling back to cache:", sdkError);
-        const cachedPermissions = await AsyncStorage.getItem(
-          "fitai_healthconnect_permissions",
-        );
-        const hasCache = cachedPermissions === "granted";
-        this.permissionsGranted = hasCache;
-        return hasCache;
-      }
-    } catch (error) {
-      console.error("❌ Error checking Health Connect permissions:", error);
-      this.permissionsGranted = false;
-      return false;
-    }
+    return this.permissionsManager.hasPermissions();
   }
 
   async syncHealthData(daysBack: number = 7): Promise<HealthConnectSyncResult> {
-    const startTime = Date.now();
-
     try {
-      if (!this.permissionsGranted) {
+      if (!this.permissionsManager.isPermissionsGranted()) {
         const hasPerms = await this.hasPermissions();
         if (!hasPerms) {
           return {
@@ -265,69 +126,29 @@ class HealthConnectService {
         return {
           success: false,
           error: "Health Connect native module not available.",
-          syncTime: Date.now() - startTime,
+          syncTime: 0,
         };
       }
 
       const { readRecords, aggregateRecord } = hcModule;
 
-      console.log(
-        `📥 Syncing Health Connect data from last ${daysBack} days...`,
+      const result = await this.syncManager.syncHealthData(
+        daysBack,
+        readRecords,
+        aggregateRecord,
       );
 
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - daysBack);
+      if (result.success && result.data) {
+        await this.storageManager.cacheHealthData(result.data);
+      }
 
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      const healthData: HealthConnectData = {
-        sources: {},
-        dataOrigins: [],
-        metadata: {
-          isPartial: false,
-          failedMetrics: [],
-          isFallback: false,
-          estimatedMetrics: [],
-        },
-      };
-
-      const allDataOrigins = new Set<string>();
-
-      const ctx: SyncContext = {
-        healthData,
-        allDataOrigins,
-        excludedRawSources: this.EXCLUDED_RAW_SOURCES,
-        aggregateRecord,
-        readRecords,
-        startDate,
-        endDate,
-        todayStart,
-      };
-
-      await syncAllMetrics(ctx);
-
-      healthData.dataOrigins = Array.from(allDataOrigins);
-      healthData.lastSyncDate = endDate.toISOString();
-
-      await this.cacheHealthData(healthData);
-
-      const syncTime = Date.now() - startTime;
-      console.log(`✅ Health Connect sync completed in ${syncTime}ms`);
-
-      return {
-        success: true,
-        data: healthData,
-        syncTime,
-        partial: healthData.metadata?.isPartial,
-      };
+      return result;
     } catch (error) {
       console.error("❌ Health Connect sync failed:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown sync error",
-        syncTime: Date.now() - startTime,
+        syncTime: 0,
       };
     }
   }
@@ -349,41 +170,15 @@ class HealthConnectService {
   }
 
   async getCachedHealthData(): Promise<HealthConnectData | null> {
-    try {
-      const cachedData = await AsyncStorage.getItem(this.STORAGE_KEY);
-      return cachedData ? JSON.parse(cachedData) : null;
-    } catch (error) {
-      console.error("❌ Error reading cached Health Connect data:", error);
-      return null;
-    }
-  }
-
-  private async cacheHealthData(data: HealthConnectData): Promise<void> {
-    try {
-      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-      await AsyncStorage.setItem(this.SYNC_INTERVAL_KEY, Date.now().toString());
-    } catch (error) {
-      console.error("❌ Error caching Health Connect data:", error);
-    }
+    return this.storageManager.getCachedHealthData();
   }
 
   async getLastSyncTime(): Promise<Date | null> {
-    try {
-      const timestamp = await AsyncStorage.getItem(this.SYNC_INTERVAL_KEY);
-      return timestamp ? new Date(parseInt(timestamp)) : null;
-    } catch (error) {
-      console.error("❌ Error getting last sync time:", error);
-      return null;
-    }
+    return this.storageManager.getLastSyncTime();
   }
 
   async shouldSync(intervalHours: number = 1): Promise<boolean> {
-    const lastSync = await this.getLastSyncTime();
-    if (!lastSync) return true;
-
-    const hoursSinceLastSync =
-      (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
-    return hoursSinceLastSync >= intervalHours;
+    return this.storageManager.shouldSync(intervalHours);
   }
 
   async getHealthSummary(): Promise<{
@@ -438,24 +233,14 @@ class HealthConnectService {
   }
 
   async clearCache(): Promise<void> {
-    try {
-      await AsyncStorage.multiRemove([
-        this.STORAGE_KEY,
-        this.SYNC_INTERVAL_KEY,
-        "fitai_healthconnect_permissions",
-        "fitai_healthconnect_initialized",
-      ]);
-      console.log("✅ Health Connect cache cleared");
-    } catch (error) {
-      console.error("❌ Error clearing Health Connect cache:", error);
-    }
+    await this.storageManager.clearCache();
   }
 
   async disconnect(): Promise<boolean> {
     try {
       console.log("🔌 Disconnecting from Health Connect...");
       await this.clearCache();
-      this.permissionsGranted = false;
+      this.permissionsManager.setPermissionsGranted(false);
       this.isInitialized = false;
       console.log("✅ Successfully disconnected from Health Connect");
       return true;
@@ -475,16 +260,14 @@ class HealthConnectService {
         return false;
       }
 
-      const { revokeAllPermissions } = hcModule;
-
-      await revokeAllPermissions();
-      this.permissionsGranted = false;
+      await this.permissionsManager.revokeAllPermissions();
+      this.permissionsManager.setPermissionsGranted(false);
       this.isInitialized = false;
       await AsyncStorage.multiRemove([
-        "fitai_healthconnect_permissions",
-        "fitai_healthconnect_initialized",
-        this.STORAGE_KEY,
-        this.SYNC_INTERVAL_KEY,
+        STORAGE_KEYS.PERMISSIONS_KEY,
+        STORAGE_KEYS.INITIALIZED_KEY,
+        STORAGE_KEYS.STORAGE_KEY,
+        STORAGE_KEYS.SYNC_INTERVAL_KEY,
       ]);
 
       const initialized = await this.initializeHealthConnect();
@@ -656,21 +439,3 @@ class HealthConnectService {
     }
   }
 }
-
-export const healthConnectService = new HealthConnectService();
-
-export const isHealthConnectModuleAvailable = (): boolean => {
-  try {
-    return !!(NativeModules.HealthConnect || NativeModules.RNHealthConnect);
-  } catch {
-    return false;
-  }
-};
-
-export const canUseHealthConnect = async (): Promise<boolean> => {
-  if (Platform.OS !== "android") return false;
-  const module = await getHealthConnectModule();
-  return module !== null;
-};
-
-export { HealthConnectService };
