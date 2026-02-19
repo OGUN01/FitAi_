@@ -3,7 +3,8 @@
  * Integrates camera scanning with nutrition database lookup
  */
 
-import { FreeNutritionAPIs } from './freeNutritionAPIs';
+import { FreeNutritionAPIs, BarcodeSearchResult } from "./freeNutritionAPIs";
+import { normalizeBarcode } from "@/utils/countryMapping";
 
 // Enhanced product information interface
 export interface ScannedProduct {
@@ -32,6 +33,11 @@ export interface ScannedProduct {
   confidence: number;
   source: string;
   lastScanned: string;
+  nutriScore?: string;
+  novaGroup?: number;
+  isAIEstimated?: boolean;
+  gs1Country?: string;
+  needsNutritionEstimate?: boolean;
 }
 
 export interface BarcodeValidationResult {
@@ -69,43 +75,43 @@ class BarcodeService {
       if (!cleanBarcode) {
         return {
           isValid: false,
-          format: 'unknown',
-          error: 'Empty barcode'
+          format: "unknown",
+          error: "Empty barcode",
         };
       }
 
       // Check for common barcode formats
       if (this.isUPCA(cleanBarcode)) {
-        return { isValid: true, format: 'UPC-A' };
+        return { isValid: true, format: "UPC-A" };
       }
-      
+
       if (this.isEAN13(cleanBarcode)) {
-        return { isValid: true, format: 'EAN-13' };
+        return { isValid: true, format: "EAN-13" };
       }
-      
+
       if (this.isEAN8(cleanBarcode)) {
-        return { isValid: true, format: 'EAN-8' };
+        return { isValid: true, format: "EAN-8" };
       }
 
       if (this.isQRCode(cleanBarcode)) {
-        return { isValid: true, format: 'QR Code' };
+        return { isValid: true, format: "QR Code" };
       }
 
       // If we can't identify the format but it contains only digits/alphanumeric
       if (/^[0-9A-Za-z\-_]+$/.test(cleanBarcode)) {
-        return { isValid: true, format: 'Generic' };
+        return { isValid: true, format: "Generic" };
       }
 
       return {
         isValid: false,
-        format: 'unknown',
-        error: 'Invalid barcode format'
+        format: "unknown",
+        error: "Invalid barcode format",
       };
     } catch (error) {
       return {
         isValid: false,
-        format: 'unknown',
-        error: `Validation error: ${error}`
+        format: "unknown",
+        error: `Validation error: ${error}`,
       };
     }
   }
@@ -117,139 +123,99 @@ class BarcodeService {
     try {
       console.log(`🔍 Looking up product with barcode: ${barcode}`);
 
-      // Validate barcode first
-      const validation = this.validateBarcode(barcode);
-      if (!validation.isValid) {
+      // Normalize barcode (zero-pad UPC-A → EAN-13, validate format)
+      const normalizedBarcode = normalizeBarcode(barcode);
+      if (!normalizedBarcode) {
         return {
           success: false,
-          error: validation.error || 'Invalid barcode',
-          confidence: 0
+          error: "Invalid barcode format",
+          confidence: 0,
         };
       }
 
       // Check cache first
-      const cachedProduct = this.scanCache.get(barcode);
+      const cachedProduct = this.scanCache.get(normalizedBarcode);
       if (cachedProduct) {
-        console.log('✅ Found cached product:', cachedProduct.name);
-        this.updateRecentScans(barcode);
+        console.log("✅ Found cached product:", cachedProduct.name);
+        this.updateRecentScans(normalizedBarcode);
         return {
           success: true,
           product: cachedProduct,
-          confidence: cachedProduct.confidence
+          confidence: cachedProduct.confidence,
         };
       }
 
-      // Use existing nutrition API for lookup
-      const nutritionData = await this.nutritionAPI.searchByBarcode(barcode);
+      // Single API call via freeNutritionAPIs (OFF v2 → UPCitemdb fallback)
+      const result = await this.nutritionAPI.searchByBarcode(normalizedBarcode);
 
-      if (!nutritionData) {
+      if (!result) {
         return {
           success: false,
-          error: 'Product not found in database',
-          confidence: 0
+          error: "Product not found in database",
+          confidence: 0,
         };
       }
 
-      // Get additional product info from OpenFoodFacts
-      const productDetails = await this.fetchProductDetails(barcode);
+      // Map BarcodeSearchResult → ScannedProduct
+      const nutrition = result.nutrition;
+      const info = result.productInfo;
 
-      // Create comprehensive product object
       const scannedProduct: ScannedProduct = {
-        barcode,
-        name: productDetails?.name || `Product ${barcode}`,
-        brand: productDetails?.brand,
-        category: productDetails?.category,
+        barcode: normalizedBarcode,
+        name: info.name || `Product ${normalizedBarcode}`,
+        brand: info.brand,
         nutrition: {
-          calories: nutritionData.calories,
-          protein: nutritionData.protein,
-          carbs: nutritionData.carbs,
-          fat: nutritionData.fat,
-          fiber: nutritionData.fiber,
-          sugar: nutritionData.sugar,
-          sodium: nutritionData.sodium,
-          servingSize: 100, // Default to 100g
-          servingUnit: 'g'
+          calories: nutrition?.calories ?? 0,
+          protein: nutrition?.protein ?? 0,
+          carbs: nutrition?.carbs ?? 0,
+          fat: nutrition?.fat ?? 0,
+          fiber: nutrition?.fiber ?? 0,
+          sugar: nutrition?.sugar,
+          sodium: nutrition?.sodium,
+          servingSize: 100,
+          servingUnit: "g",
         },
         additionalInfo: {
-          ingredients: productDetails?.ingredients,
-          allergens: productDetails?.allergens,
-          labels: productDetails?.labels,
-          imageUrl: productDetails?.imageUrl
+          ingredients: info.ingredients
+            ? info.ingredients.split(",").map((i: string) => i.trim())
+            : undefined,
+          allergens: info.allergens,
+          labels: info.labels,
+          imageUrl: info.imageUrl,
         },
-        healthScore: this.calculateHealthScore(nutritionData),
-        confidence: nutritionData.confidence,
-        source: nutritionData.source,
-        lastScanned: new Date().toISOString()
+        healthScore: nutrition
+          ? this.calculateHealthScore(nutrition)
+          : undefined,
+        confidence: result.confidence,
+        source: result.source,
+        lastScanned: new Date().toISOString(),
+        nutriScore: info.nutriScore,
+        novaGroup: info.novaGroup,
+        isAIEstimated: false,
+        gs1Country: info.gs1Country,
+        needsNutritionEstimate: result.needsNutritionEstimate,
       };
 
       // Cache the result
-      this.cacheProduct(barcode, scannedProduct);
-      this.updateRecentScans(barcode);
+      this.cacheProduct(normalizedBarcode, scannedProduct);
+      this.updateRecentScans(normalizedBarcode);
 
-      console.log(`✅ Product lookup successful: ${scannedProduct.name} (Health Score: ${scannedProduct.healthScore}/100)`);
+      console.log(
+        `✅ Product lookup successful: ${scannedProduct.name} (Health Score: ${scannedProduct.healthScore ?? "N/A"}/100)`,
+      );
 
       return {
         success: true,
         product: scannedProduct,
-        confidence: scannedProduct.confidence
+        confidence: scannedProduct.confidence,
       };
-
     } catch (error) {
-      console.error('❌ Product lookup error:', error);
+      console.error("❌ Product lookup error:", error);
       return {
         success: false,
         error: `Lookup failed: ${error}`,
-        confidence: 0
+        confidence: 0,
       };
-    }
-  }
-
-  /**
-   * Fetch additional product details from OpenFoodFacts
-   */
-  private async fetchProductDetails(barcode: string): Promise<{
-    name?: string;
-    brand?: string;
-    category?: string;
-    ingredients?: string[];
-    allergens?: string[];
-    labels?: string[];
-    imageUrl?: string;
-  } | null> {
-    try {
-      const response = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`
-      );
-
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = await response.json();
-      const product = data.product;
-
-      if (!product) {
-        return null;
-      }
-
-      return {
-        name: product.product_name || product.product_name_en,
-        brand: product.brands,
-        category: product.categories,
-        ingredients: product.ingredients_text ? 
-          product.ingredients_text.split(',').map((i: string) => i.trim()) : 
-          undefined,
-        allergens: product.allergens_tags?.map((tag: string) => 
-          tag.replace('en:', '').replace(/-/g, ' ')
-        ),
-        labels: product.labels_tags?.map((tag: string) => 
-          tag.replace('en:', '').replace(/-/g, ' ')
-        ),
-        imageUrl: product.image_front_url || product.image_url
-      };
-    } catch (error) {
-      console.warn('Failed to fetch product details:', error);
-      return null;
     }
   }
 
@@ -323,17 +289,17 @@ class BarcodeService {
         this.scanCache.delete(oldestBarcode);
       }
     }
-    
+
     this.scanCache.set(barcode, product);
   }
 
   private updateRecentScans(barcode: string): void {
     // Remove if already exists
-    this.recentScans = this.recentScans.filter(b => b !== barcode);
-    
+    this.recentScans = this.recentScans.filter((b) => b !== barcode);
+
     // Add to beginning
     this.recentScans.unshift(barcode);
-    
+
     // Trim to max size
     if (this.recentScans.length > this.maxRecentScans) {
       this.recentScans = this.recentScans.slice(0, this.maxRecentScans);
@@ -345,7 +311,7 @@ class BarcodeService {
    */
   getRecentScans(): ScannedProduct[] {
     return this.recentScans
-      .map(barcode => this.scanCache.get(barcode))
+      .map((barcode) => this.scanCache.get(barcode))
       .filter((product): product is ScannedProduct => product !== undefined);
   }
 
@@ -355,7 +321,7 @@ class BarcodeService {
   clearCache(): void {
     this.scanCache.clear();
     this.recentScans = [];
-    console.log('🗑️ Barcode cache cleared');
+    console.log("🗑️ Barcode cache cleared");
   }
 
   /**
@@ -369,7 +335,7 @@ class BarcodeService {
     return {
       cacheSize: this.scanCache.size,
       recentScans: this.recentScans.length,
-      maxCacheSize: this.maxCacheSize
+      maxCacheSize: this.maxCacheSize,
     };
   }
 }

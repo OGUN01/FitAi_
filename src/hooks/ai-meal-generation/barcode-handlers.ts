@@ -1,9 +1,61 @@
-import { Alert } from "react-native";
 import { barcodeService, ScannedProduct } from "../../services/barcodeService";
 import { recognizedFoodLogger } from "../../services/recognizedFoodLogger";
-import { MealType } from "../../services/foodRecognitionService";
+import {
+  MealType,
+  RecognizedFood,
+  CuisineType,
+} from "../../services/foodRecognitionService";
 import { generateHealthAssessment } from "./health-assessment";
 import { HealthAssessment } from "./types";
+
+function mapScannedProductToRecognizedFood(
+  product: ScannedProduct,
+): RecognizedFood {
+  const servingGrams = product.nutrition.servingSize || 100;
+
+  const nutrition: RecognizedFood["nutrition"] = {
+    calories: product.nutrition.calories,
+    protein: product.nutrition.protein,
+    carbs: product.nutrition.carbs,
+    fat: product.nutrition.fat,
+    fiber: product.nutrition.fiber,
+    sugar: product.nutrition.sugar,
+    sodium: product.nutrition.sodium,
+  };
+
+  // Per-100g values: if serving is already 100g reuse; otherwise scale
+  const scale = servingGrams === 0 ? 1 : 100 / servingGrams;
+  const nutritionPer100g: RecognizedFood["nutritionPer100g"] = {
+    calories: Math.round(product.nutrition.calories * scale),
+    protein: Math.round(product.nutrition.protein * scale * 10) / 10,
+    carbs: Math.round(product.nutrition.carbs * scale * 10) / 10,
+    fat: Math.round(product.nutrition.fat * scale * 10) / 10,
+    fiber: Math.round(product.nutrition.fiber * scale * 10) / 10,
+    sugar:
+      product.nutrition.sugar != null
+        ? Math.round(product.nutrition.sugar * scale * 10) / 10
+        : undefined,
+    sodium:
+      product.nutrition.sodium != null
+        ? Math.round(product.nutrition.sodium * scale * 10) / 10
+        : undefined,
+  };
+
+  const cuisine: CuisineType = "other";
+  const category: RecognizedFood["category"] = "main";
+
+  return {
+    id: `barcode_${product.barcode}_${Date.now()}`,
+    name: product.name,
+    category,
+    cuisine,
+    estimatedGrams: servingGrams,
+    servingDescription: product.nutrition.servingUnit || "serving",
+    nutrition,
+    nutritionPer100g,
+    confidence: product.confidence,
+  };
+}
 
 export const createBarcodeHandlers = (
   isGuestMode: boolean,
@@ -23,27 +75,60 @@ export const createBarcodeHandlers = (
       const lookupResult = await barcodeService.lookupProduct(barcode);
 
       if (!lookupResult.success || !lookupResult.product) {
-        Alert.alert(
-          "Product Not Found",
-          lookupResult.error || "Product not in database.",
-        );
+        // Let the caller/UI handle the "not found" state via scannedProduct being null
+        setScannedProduct(null);
+        setProductHealthAssessment(null);
         return;
       }
 
-      const product = lookupResult.product;
+      let product = lookupResult.product;
+
+      // AI estimation routing: if product has name/brand but no nutrition data
+      if (product.needsNutritionEstimate && product.name) {
+        try {
+          const { estimateNutritionWithAI } = await import(
+            "../../services/freeNutritionAPIs"
+          );
+          if (typeof estimateNutritionWithAI === "function") {
+            const aiResult = await estimateNutritionWithAI(
+              product.name,
+              product.brand || "",
+              product.gs1Country || "",
+            );
+            if (aiResult?.nutrition) {
+              product = {
+                ...product,
+                nutrition: {
+                  ...product.nutrition,
+                  calories: aiResult.nutrition.calories,
+                  protein: aiResult.nutrition.protein,
+                  carbs: aiResult.nutrition.carbs,
+                  fat: aiResult.nutrition.fat,
+                  fiber: aiResult.nutrition.fiber,
+                  sugar: aiResult.nutrition.sugar,
+                  sodium: aiResult.nutrition.sodium,
+                },
+                isAIEstimated: true,
+              };
+            }
+          }
+        } catch {
+          // estimateNutritionWithAI not available yet — continue with existing data
+          console.warn(
+            "[barcode-handlers] AI nutrition estimation unavailable",
+          );
+        }
+      }
+
       const healthAssessment = generateHealthAssessment(product);
 
       setScannedProduct(product);
       setProductHealthAssessment(healthAssessment);
       setShowProductModal(true);
-
-      Alert.alert(
-        "Product Scanned Successfully!",
-        `Found: ${product.name}\nHealth Score: ${healthAssessment.overallScore}/100`,
-        [{ text: "View Details", onPress: () => setShowProductModal(true) }],
-      );
     } catch (error) {
-      Alert.alert("Scanning Error", String(error));
+      setScannedProduct(null);
+      setProductHealthAssessment(null);
+      console.warn("[barcode-handlers] Scanning error:", String(error));
     } finally {
       setIsProcessingBarcode(false);
     }
@@ -54,71 +139,40 @@ export const createBarcodeHandlers = (
     setShowGuestSignUp: (show: boolean) => void,
   ) => {
     if (isGuestMode || !userId) {
-      Alert.alert(
-        "Sign Up to Log Meals",
-        "Create an account to track your meals.",
-        [
-          { text: "Just Viewing", style: "cancel" },
-          {
-            text: "Sign Up Free",
-            onPress: () => {
-              setShowProductModal(false);
-              setShowGuestSignUp(true);
-            },
-            style: "default",
-          },
-        ],
-      );
+      setShowProductModal(false);
+      setShowGuestSignUp(true);
       return;
     }
 
-    Alert.alert("Add to Meal", `Add ${product.name} to your current meal?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Add",
-        onPress: async () => {
-          try {
-            const foodEntry = {
-              id: `barcode_${product.barcode}_${Date.now()}`,
-              name: product.name,
-              category: "main",
-              cuisine: "international",
-              portionSize: {
-                estimatedGrams: product.nutrition.servingSize || 100,
-                confidence: 95,
-                servingType: "medium",
-              },
-              nutrition: product.nutrition,
-              confidence: product.confidence,
-              enhancementSource: "barcode",
-              estimatedGrams: product.nutrition.servingSize || 100,
-              servingDescription: product.nutrition.servingUnit || "serving",
-              nutritionPer100g: product.nutrition,
-            } as any;
+    const foodEntry = mapScannedProductToRecognizedFood(product);
 
-            const logResult = await recognizedFoodLogger.logRecognizedFoods(
-              userId,
-              [foodEntry],
-              selectedMealType,
-            );
+    const doAdd = async () => {
+      try {
+        const logResult = await recognizedFoodLogger.logRecognizedFoods(
+          userId,
+          [foodEntry],
+          selectedMealType,
+        );
 
-            if (logResult.success) {
-              Alert.alert(
-                "Added to Meal",
-                `${product.name} added to ${selectedMealType}.`,
-              );
-              setShowProductModal(false);
-              await loadDailyNutrition();
-              await refreshAll();
-            } else {
-              throw new Error(logResult.error || "Failed to log meal");
-            }
-          } catch (error) {
-            Alert.alert("Error", "Failed to add product to meal.");
-          }
-        },
-      },
-    ]);
+        if (logResult.success) {
+          setShowProductModal(false);
+          await loadDailyNutrition();
+          await refreshAll();
+        } else {
+          console.warn(
+            "[barcode-handlers] Failed to log meal:",
+            logResult.error,
+          );
+        }
+      } catch (error) {
+        console.warn(
+          "[barcode-handlers] Error adding product to meal:",
+          String(error),
+        );
+      }
+    };
+
+    doAdd();
   };
 
   return {

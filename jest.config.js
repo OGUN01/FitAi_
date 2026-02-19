@@ -12,8 +12,10 @@ module.exports = {
   
   // Transform files
   transform: {
-    '^.+\\.(ts|tsx)$': 'babel-jest',
-    '^.+\\.(js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', {
+      presets: ['babel-preset-expo'],
+      plugins: ['react-native-reanimated/plugin'],
+    }],
   },
   
   // Module name mapping for absolute imports

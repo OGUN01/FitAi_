@@ -1,13 +1,10 @@
 {
-  "active_plan": "D:\FitAi\FitAI\.sisyphus\plans\p0-data-integrity-fixes.md",
-  "started_at": "2026-02-06T17:15:30.000Z",
-  "session_ids": ["ses_3cc4695ffffeOPm3i5r766YFqz"],
-  "plan_name": "p0-data-integrity-fixes",
-  "completed_plans": [
-    {
-      "name": "unified-stats-source-of-truth",
-      "completed_at": "2026-02-06T17:15:00.000Z",
-      "commit": "e7daf08"
-    }
-  ]
+  "active_plan": "D:\\FitAi\\FitAI\\.sisyphus\\plans\\barcode-scanner-fix.md",
+  "started_at": "2026-02-19T12:06:09.107Z",
+  "session_ids": [
+    "ses_38a84770cffechv5Q5rctyy5Jb",
+    "ses_389fa5b09ffeRXdvcl7jUwchMZ"
+  ],
+  "plan_name": "barcode-scanner-fix",
+  "agent": "atlas"
 }

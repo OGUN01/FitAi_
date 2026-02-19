@@ -1,5 +1,16 @@
 // Jest setup file for React Native testing
 
+// Mock nativewind CSS interop to prevent _ReactNativeCSSInterop errors
+jest.mock("nativewind", () => ({
+  styled: (component) => component,
+  StyledComponent: (component) => component,
+  useColorScheme: () => ({ colorScheme: "light" }),
+}));
+jest.mock("react-native-css-interop", () => ({
+  cssInterop: jest.fn(),
+  remapProps: jest.fn(),
+}));
+
 // Mock react-native-reanimated
 jest.mock("react-native-reanimated", () => {
   const Reanimated = require("react-native-reanimated/mock");

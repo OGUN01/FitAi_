@@ -8,6 +8,8 @@
  * - FatSecret Basic (150K requests/month - free tier)
  */
 
+import { getCountryFromBarcode } from "@/utils/countryMapping";
+
 interface NutritionData {
   calories: number;
   protein: number;
@@ -19,6 +21,25 @@ interface NutritionData {
   source: string;
   confidence: number;
   canonicalName?: string;
+}
+
+export interface BarcodeSearchResult {
+  nutrition: NutritionData | null;
+  productInfo: {
+    name?: string;
+    brand?: string;
+    imageUrl?: string;
+    ingredients?: string;
+    allergens?: string[];
+    labels?: string[];
+    nutriScore?: string;
+    novaGroup?: number;
+    gs1Country?: string;
+  };
+  source: string;
+  needsNutritionEstimate: boolean;
+  confidence: number;
+  isAIEstimated?: boolean;
 }
 
 interface USDAFood {
@@ -41,6 +62,172 @@ interface OpenFoodFactsProduct {
     salt_100g: number;
   };
   product_name: string;
+}
+
+interface OFFv2Product {
+  product_name?: string;
+  product_name_en?: string;
+  brands?: string;
+  nutriments?: Record<string, number>;
+  ingredients_text?: string;
+  allergens_tags?: string[];
+  nutrition_grades?: string;
+  nova_group?: number;
+  image_front_url?: string;
+  countries_tags?: string[];
+  labels_tags?: string[];
+}
+
+interface UPCitemdbItem {
+  title?: string;
+  brand?: string;
+}
+
+interface GeminiNutritionResponse {
+  calories_kcal: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g: number;
+  sugar_g: number;
+  sodium_mg: number;
+  confidence_0_to_100: number;
+}
+
+interface GeminiAPIResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+}
+
+function getGeminiKeys(): string[] {
+  const keys: string[] = [];
+  const mainKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (mainKey && mainKey.trim()) keys.push(mainKey.trim());
+
+  const keyNames = [
+    "EXPO_PUBLIC_GEMINI_KEY_1",
+    "EXPO_PUBLIC_GEMINI_KEY_2",
+    "EXPO_PUBLIC_GEMINI_KEY_3",
+    "EXPO_PUBLIC_GEMINI_KEY_4",
+    "EXPO_PUBLIC_GEMINI_KEY_5",
+    "EXPO_PUBLIC_GEMINI_KEY_6",
+    "EXPO_PUBLIC_GEMINI_KEY_7",
+    "EXPO_PUBLIC_GEMINI_KEY_8",
+    "EXPO_PUBLIC_GEMINI_KEY_9",
+    "EXPO_PUBLIC_GEMINI_KEY_10",
+    "EXPO_PUBLIC_GEMINI_KEY_11",
+    "EXPO_PUBLIC_GEMINI_KEY_12",
+    "EXPO_PUBLIC_GEMINI_KEY_13",
+    "EXPO_PUBLIC_GEMINI_KEY_14",
+    "EXPO_PUBLIC_GEMINI_KEY_15",
+    "EXPO_PUBLIC_GEMINI_KEY_16",
+    "EXPO_PUBLIC_GEMINI_KEY_17",
+    "EXPO_PUBLIC_GEMINI_KEY_18",
+    "EXPO_PUBLIC_GEMINI_KEY_19",
+    "EXPO_PUBLIC_GEMINI_KEY_20",
+    "EXPO_PUBLIC_GEMINI_KEY_21",
+    "EXPO_PUBLIC_GEMINI_KEY_22",
+  ];
+
+  for (const name of keyNames) {
+    const key = process.env[name];
+    if (key && key.trim()) keys.push(key.trim());
+  }
+
+  return keys;
+}
+
+export async function estimateNutritionWithAI(
+  productName: string,
+  brand: string,
+  gs1Country: string,
+): Promise<BarcodeSearchResult | null> {
+  const keys = getGeminiKeys();
+  if (keys.length === 0) {
+    console.warn("[estimateNutritionWithAI] No Gemini API keys configured");
+    return null;
+  }
+
+  const prompt = `Estimate the nutritional information per 100g for: ${productName} by ${brand} from ${gs1Country}. Return ONLY valid JSON: {"calories_kcal": number, "protein_g": number, "carbs_g": number, "fat_g": number, "fiber_g": number, "sugar_g": number, "sodium_mg": number, "confidence_0_to_100": number}`;
+
+  for (const key of keys) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+      const response = await withTimeout(
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+          }),
+        }),
+        10000,
+      );
+
+      if (response.status === 401 || response.status === 429) {
+        continue;
+      }
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data: GeminiAPIResponse = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) continue;
+
+      const parsed: GeminiNutritionResponse = JSON.parse(text);
+
+      const confidence = Math.min(parsed.confidence_0_to_100 ?? 30, 40);
+
+      return {
+        nutrition: {
+          calories: Math.round(parsed.calories_kcal ?? 0),
+          protein: Math.round((parsed.protein_g ?? 0) * 10) / 10,
+          carbs: Math.round((parsed.carbs_g ?? 0) * 10) / 10,
+          fat: Math.round((parsed.fat_g ?? 0) * 10) / 10,
+          fiber: Math.round((parsed.fiber_g ?? 0) * 10) / 10,
+          sugar: Math.round((parsed.sugar_g ?? 0) * 10) / 10,
+          sodium: Math.round((parsed.sodium_mg ?? 0) / 2.5) / 100,
+          source: "gemini-estimation",
+          confidence,
+        },
+        productInfo: {
+          name: productName,
+          brand,
+          gs1Country,
+        },
+        source: "gemini-estimation",
+        needsNutritionEstimate: false,
+        confidence,
+        isAIEstimated: true,
+      };
+    } catch (error) {
+      continue;
+    }
+  }
+
+  console.warn(
+    "[estimateNutritionWithAI] failed: all keys exhausted or errors",
+  );
+  return null;
+}
+
+const barcodeCache = new Map<string, BarcodeSearchResult>();
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),
+    ),
+  ]);
 }
 
 export class FreeNutritionAPIs {
@@ -391,46 +578,159 @@ export class FreeNutritionAPIs {
     return Math.round(30 + wordMatchRatio * 50); // 30-80 range
   }
 
-  /**
-   * Search for barcode (mainly for packaged Indian foods)
-   */
-  async searchByBarcode(barcode: string): Promise<NutritionData | null> {
+  async searchByBarcode(barcode: string): Promise<BarcodeSearchResult | null> {
+    if (barcodeCache.has(barcode)) return barcodeCache.get(barcode)!;
+
+    let offResult: BarcodeSearchResult | null = null;
     try {
-      // OpenFoodFacts barcode search
-      const response = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`,
+      const offUrl = `https://world.openfoodfacts.org/api/v2/product/${barcode}?fields=product_name,product_name_en,brands,nutriments,ingredients_text,allergens_tags,nutrition_grades,nova_group,image_front_url,countries_tags,labels_tags`;
+      const response = await withTimeout(
+        fetch(offUrl, {
+          headers: { "User-Agent": "FitAI/1.0 (fitai@example.com)" },
+        }),
+        5000,
       );
 
-      if (!response.ok) {
-        return null;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 1 && data.product) {
+          const product = data.product as OFFv2Product;
+          const nutrients = product.nutriments || {};
+          const hasNutrition = Boolean(
+            nutrients["energy-kcal_100g"] || nutrients["energy-kcal"],
+          );
+
+          offResult = {
+            nutrition: hasNutrition
+              ? {
+                  calories:
+                    nutrients["energy-kcal_100g"] ||
+                    nutrients["energy-kcal"] ||
+                    0,
+                  protein: nutrients["proteins_100g"] || 0,
+                  carbs: nutrients["carbohydrates_100g"] || 0,
+                  fat: nutrients["fat_100g"] || 0,
+                  fiber: nutrients["fiber_100g"] || 0,
+                  sugar: nutrients["sugars_100g"] || 0,
+                  sodium: (nutrients["salt_100g"] || 0) / 2.5,
+                  source: "OpenFoodFacts",
+                  confidence: 90,
+                }
+              : null,
+            productInfo: {
+              name:
+                product.product_name_en || product.product_name || undefined,
+              brand: product.brands || undefined,
+              imageUrl: product.image_front_url || undefined,
+              ingredients: product.ingredients_text || undefined,
+              allergens:
+                product.allergens_tags?.map((t: string) =>
+                  t.replace("en:", ""),
+                ) || [],
+              labels:
+                product.labels_tags?.map((t: string) => t.replace("en:", "")) ||
+                [],
+              nutriScore: product.nutrition_grades || undefined,
+              novaGroup: product.nova_group
+                ? Number(product.nova_group)
+                : undefined,
+              gs1Country: getCountryFromBarcode(barcode),
+            },
+            source: "openfoodfacts",
+            needsNutritionEstimate: !hasNutrition,
+            confidence: hasNutrition ? 90 : 50,
+          };
+        }
       }
-
-      const data = await response.json();
-
-      if (data.status !== 1 || !data.product) {
-        return null;
-      }
-
-      const product = data.product;
-      const nutrients = product.nutriments;
-
-      if (!nutrients) {
-        return null;
-      }
-
-      return {
-        calories: nutrients["energy-kcal_100g"] || 0,
-        protein: nutrients["proteins_100g"] || 0,
-        carbs: nutrients["carbohydrates_100g"] || 0,
-        fat: nutrients["fat_100g"] || 0,
-        fiber: nutrients["fiber_100g"] || 0,
-        sugar: nutrients["sugars_100g"] || 0,
-        sodium: (nutrients["salt_100g"] || 0) / 2.5,
-        source: "OpenFoodFacts_Barcode",
-        confidence: 90, // High confidence for barcode matches
-      };
     } catch (error) {
-      console.warn("Barcode search error:", error);
+      console.warn("[searchByBarcode] OFF v2 failed:", error);
+    }
+
+    if (offResult) {
+      // OFF found product but no nutrition data — try Gemini AI estimation
+      if (offResult.needsNutritionEstimate && offResult.productInfo.name) {
+        const aiResult = await estimateNutritionWithAI(
+          offResult.productInfo.name,
+          offResult.productInfo.brand || "",
+          offResult.productInfo.gs1Country || getCountryFromBarcode(barcode),
+        );
+        if (aiResult && aiResult.nutrition) {
+          offResult.nutrition = aiResult.nutrition;
+          offResult.needsNutritionEstimate = false;
+          offResult.isAIEstimated = true;
+          offResult.confidence = aiResult.confidence;
+          offResult.source = "openfoodfacts+gemini-estimation";
+        }
+      }
+      if (barcodeCache.size >= 100) {
+        const firstKey = barcodeCache.keys().next().value;
+        if (firstKey !== undefined) barcodeCache.delete(firstKey);
+      }
+      barcodeCache.set(barcode, offResult);
+      return offResult;
+    }
+
+    const gs1Country = getCountryFromBarcode(barcode);
+    if (gs1Country === "India" || gs1Country === "South Korea") {
+      // OFF failed for regional barcode — try Gemini directly with barcode as fallback name
+      const aiResult = await estimateNutritionWithAI(barcode, "", gs1Country);
+      if (aiResult) {
+        if (barcodeCache.size >= 100) {
+          const firstKey = barcodeCache.keys().next().value;
+          if (firstKey !== undefined) barcodeCache.delete(firstKey);
+        }
+        barcodeCache.set(barcode, aiResult);
+      }
+      return aiResult;
+    }
+
+    try {
+      const upcUrl = `https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`;
+      const upcResponse = await withTimeout(fetch(upcUrl), 5000);
+
+      if (!upcResponse.ok) {
+        return null;
+      }
+
+      const upcData = await upcResponse.json();
+      const item = (upcData.items?.[0] || {}) as UPCitemdbItem;
+
+      const upcResult: BarcodeSearchResult = {
+        nutrition: null,
+        productInfo: {
+          name: item.title || undefined,
+          brand: item.brand || undefined,
+          gs1Country,
+        },
+        source: "upcitemdb",
+        needsNutritionEstimate: true,
+        confidence: 40,
+      };
+
+      // UPCitemdb returned name but no nutrition — try Gemini AI estimation
+      if (upcResult.productInfo.name) {
+        const aiResult = await estimateNutritionWithAI(
+          upcResult.productInfo.name,
+          upcResult.productInfo.brand || "",
+          gs1Country || "",
+        );
+        if (aiResult && aiResult.nutrition) {
+          upcResult.nutrition = aiResult.nutrition;
+          upcResult.needsNutritionEstimate = false;
+          upcResult.isAIEstimated = true;
+          upcResult.confidence = aiResult.confidence;
+          upcResult.source = "upcitemdb+gemini-estimation";
+        }
+      }
+
+      if (barcodeCache.size >= 100) {
+        const firstKey = barcodeCache.keys().next().value;
+        if (firstKey !== undefined) barcodeCache.delete(firstKey);
+      }
+      barcodeCache.set(barcode, upcResult);
+      return upcResult;
+    } catch (error) {
+      console.warn("[searchByBarcode] UPCitemdb failed:", error);
       return null;
     }
   }
