@@ -134,7 +134,8 @@ export default {
             targetSdkVersion: 34,   // Optimal compatibility
           },
         },
-      ]
+      ],
+      ["expo-camera", { "cameraPermission": "Allow FitAI to use your camera for barcode scanning and food recognition", "recordAudioAndroid": false }]
     ],
     extra: {
       eas: {
