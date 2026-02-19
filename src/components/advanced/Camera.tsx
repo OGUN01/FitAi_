@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { Button, THEME } from "../ui";
+import { isProductBarcode, normalizeBarcode } from "@/utils/countryMapping";
 
 // Error Boundary Component
 class CameraErrorBoundary extends React.Component<
@@ -125,10 +126,19 @@ const CameraComponent: React.FC<CameraProps> = ({
     type: string;
     data: string;
   }) => {
+    if (!isProductBarcode(type)) {
+      console.warn("[Camera] Non-product barcode rejected:", type);
+      return;
+    }
+    const normalized = normalizeBarcode(data);
+    if (normalized === null) {
+      console.warn("[Camera] Invalid barcode format:", data);
+      return;
+    }
     if (!isScanning && onBarcodeScanned) {
       setIsScanning(true);
-      console.log("Barcode scanned:", { type, data });
-      onBarcodeScanned(data, type);
+      console.log("Barcode scanned:", { type, data: normalized });
+      onBarcodeScanned(normalized, type);
 
       // Reset scanning state after a delay to prevent multiple scans
       setTimeout(() => {
@@ -185,7 +195,7 @@ const CameraComponent: React.FC<CameraProps> = ({
       case "progress":
         return "Stand in good lighting and position yourself in the frame";
       case "barcode":
-        return "Point your camera at the barcode or QR code on the product";
+        return "Point your camera at the barcode on the product packaging";
       default:
         return "Take a photo";
     }
@@ -234,15 +244,7 @@ const CameraComponent: React.FC<CameraProps> = ({
           barcodeScannerSettings={
             mode === "barcode"
               ? {
-                  barcodeTypes: [
-                    "qr",
-                    "ean13",
-                    "ean8",
-                    "upc_a",
-                    "upc_e",
-                    "code128",
-                    "pdf417",
-                  ],
+                  barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"],
                 }
               : undefined
           }
