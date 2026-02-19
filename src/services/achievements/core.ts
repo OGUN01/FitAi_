@@ -51,7 +51,11 @@ class AchievementEngine extends EventEmitter {
       ...createFitnessAchievements(),
       ...createNutritionAchievements(),
       ...createConsistencyAchievements(),
-      ...createSocialAchievements(),
+      // DISABLED: Social achievement badges disabled until social features are implemented
+      // Investigation (2026-02-06): 12 social badges exist but are unreachable (no friend system, leaderboards, kudos, challenges)
+      // To re-enable: Uncomment line below + implement social UI features
+      // See: .sisyphus/notepads/ui-backend-gap-fixes/decisions.md
+      // ...createSocialAchievements(),
       ...createMilestoneAchievements(),
       ...createStreakAchievements(),
       ...createChallengeAchievements(),

@@ -99,7 +99,7 @@ export const useProgressData = (): UseProgressDataReturn => {
         console.error("Failed to initialize Track B integration:", error);
       });
     }
-  }, [isAuthenticated, trackB.integration.isInitialized, trackB.actions]);
+  }, [isAuthenticated, trackB.integration.isInitialized]);
 
   // Load progress entries
   const loadProgressEntries = useCallback(
@@ -302,7 +302,7 @@ export const useProgressData = (): UseProgressDataReturn => {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, user?.id, trackB.integration.isInitialized, refreshAll]);
+  }, [isAuthenticated, user?.id, trackB.integration.isInitialized]);
 
   // Track B status
   const trackBStatus = {

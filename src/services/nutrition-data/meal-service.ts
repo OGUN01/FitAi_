@@ -1,0 +1,238 @@
+import * as crypto from "expo-crypto";
+import { supabase } from "../supabase";
+import { crudOperations } from "../crudOperations";
+import { MealLog, SyncStatus } from "../../types/localData";
+import { Meal, NutritionDataResponse } from "./types";
+import { FoodService } from "./food-service";
+
+export class MealService {
+  private foodService: FoodService;
+
+  constructor(foodService: FoodService) {
+    this.foodService = foodService;
+  }
+
+  async getUserMeals(
+    userId: string,
+    date?: string,
+    limit?: number,
+  ): Promise<NutritionDataResponse<Meal[]>> {
+    try {
+      let query = supabase
+        .from("meal_logs")
+        .select("*")
+        .eq("user_id", userId)
+        .order("logged_at", { ascending: false });
+
+      if (date) {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+
+        query = query
+          .gte("logged_at", startDate.toISOString())
+          .lte("logged_at", endDate.toISOString());
+      }
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error fetching meal_logs:", error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      console.log(
+        `📊 meal_logs query result: ${data?.length || 0} meals for date ${date || "all"}`,
+      );
+
+      const meals =
+        data?.map((mealLog: any) => ({
+          id: mealLog.id,
+          type: mealLog.meal_type,
+          name: mealLog.meal_name,
+          total_calories: mealLog.total_calories || 0,
+          total_protein: mealLog.total_protein || 0,
+          total_carbohydrates: mealLog.total_carbohydrates || 0,
+          total_carbs: mealLog.total_carbohydrates || 0,
+          total_fat: mealLog.total_fat || 0,
+          consumed_at: mealLog.logged_at,
+          logged_at: mealLog.logged_at,
+          food_items: mealLog.food_items || [],
+          foods: [],
+        })) || [];
+
+      return {
+        success: true,
+        data: meals as any,
+      };
+    } catch (error) {
+      console.error("Error in getUserMeals:", error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to fetch user meals",
+      };
+    }
+  }
+
+  async logMeal(
+    userId: string,
+    mealData: {
+      name: string;
+      type: "breakfast" | "lunch" | "dinner" | "snack";
+      foods: {
+        food_id: string;
+        quantity_grams: number;
+      }[];
+    },
+  ): Promise<NutritionDataResponse<Meal>> {
+    try {
+      const nutritionTotals = await this.foodService.calculateNutrition(
+        mealData.foods,
+      );
+
+      const mealLog: MealLog = {
+        id: `meal_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 9)}`,
+        userId,
+        mealType: mealData.type,
+        foods: mealData.foods.map((f) => ({
+          id: `${f.food_id}_${Date.now()}`,
+          foodId: f.food_id,
+          quantity: f.quantity_grams,
+          unit: "grams",
+          macros: undefined,
+        })),
+        totalCalories: nutritionTotals.calories,
+        totalMacros: {
+          protein: nutritionTotals.protein,
+          carbohydrates: nutritionTotals.carbs,
+          fat: nutritionTotals.fat,
+          fiber: 0,
+        },
+        loggedAt: new Date().toISOString(),
+        notes: mealData.name,
+        syncStatus: SyncStatus.PENDING,
+        syncMetadata: {
+          lastSyncedAt: undefined,
+          lastModifiedAt: new Date().toISOString(),
+          syncVersion: 1,
+          deviceId: "dev-device",
+        },
+      };
+
+      await crudOperations.createMealLog(mealLog);
+
+      const { data, error } = await supabase
+        .from("meals")
+        .insert({
+          user_id: userId,
+          name: mealData.name,
+          type: mealData.type,
+          total_calories: nutritionTotals.calories,
+          total_protein: nutritionTotals.protein,
+          total_carbs: nutritionTotals.carbs,
+          total_fat: nutritionTotals.fat,
+          consumed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating meal:", error);
+        return {
+          success: false,
+          error: error.message,
+        };
+      }
+
+      if (data && mealData.foods.length > 0) {
+        const mealFoodsData = await Promise.all(
+          mealData.foods.map(async (food) => {
+            const { data: foodData } = await supabase
+              .from("foods")
+              .select(
+                "calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g",
+              )
+              .eq("id", food.food_id)
+              .single();
+
+            const multiplier = food.quantity_grams / 100;
+            return {
+              meal_id: data.id,
+              food_id: food.food_id,
+              quantity_grams: food.quantity_grams,
+              calories: foodData
+                ? Math.round(foodData.calories_per_100g * multiplier)
+                : 0,
+              protein: foodData
+                ? Math.round(foodData.protein_per_100g * multiplier * 10) / 10
+                : 0,
+              carbs: foodData
+                ? Math.round(foodData.carbs_per_100g * multiplier * 10) / 10
+                : 0,
+              fat: foodData
+                ? Math.round(foodData.fat_per_100g * multiplier * 10) / 10
+                : 0,
+            };
+          }),
+        );
+
+        const { error: mealFoodsError } = await supabase
+          .from("meal_foods")
+          .insert(mealFoodsData);
+
+        if (mealFoodsError) {
+          console.warn(
+            "Warning: Failed to create meal_foods entries:",
+            mealFoodsError,
+          );
+        }
+      }
+
+      return {
+        success: true,
+        data,
+      };
+    } catch (error) {
+      console.error("Error in logMeal:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to log meal",
+      };
+    }
+  }
+
+  convertMealLogToMeal(mealLog: MealLog): Meal {
+    return {
+      id: mealLog.id,
+      user_id: mealLog.userId || "local-user",
+      name: mealLog.notes || `${mealLog.mealType} meal`,
+      type: mealLog.mealType,
+      total_calories: mealLog.totalCalories,
+      total_protein: mealLog.totalMacros?.protein ?? 0,
+      total_carbs: mealLog.totalMacros?.carbohydrates ?? 0,
+      total_fat: mealLog.totalMacros?.fat ?? 0,
+      consumed_at: mealLog.loggedAt,
+      created_at: mealLog.loggedAt,
+      foods:
+        mealLog.foods?.map((f) => ({
+          id: `${mealLog.id}_${f.foodId}`,
+          meal_id: mealLog.id,
+          food_id: f.foodId,
+          quantity_grams: f.quantity,
+          calories: f.calories ?? 0,
+          protein: f.macros?.protein ?? 0,
+          carbs: f.macros?.carbohydrates ?? 0,
+          fat: f.macros?.fat ?? 0,
+        })) || [],
+    };
+  }
+}

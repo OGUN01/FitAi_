@@ -1,5 +1,17 @@
-import { offlineService } from "../../services/offline";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Mock supabase BEFORE importing offlineService
+const mockInsert = jest.fn();
+const mockUpdate = jest.fn();
+const mockDelete = jest.fn();
+const mockEq = jest.fn();
+const mockFrom = jest.fn();
+
+jest.mock("../../services/supabase", () => ({
+  supabase: {
+    from: jest.fn(),
+  },
+}));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   getItem: jest.fn(),
@@ -12,17 +24,9 @@ jest.mock("@react-native-community/netinfo", () => ({
   addEventListener: jest.fn(),
 }));
 
-const mockInsert = jest.fn();
-const mockUpdate = jest.fn();
-const mockDelete = jest.fn();
-const mockEq = jest.fn();
-const mockFrom = jest.fn();
-
-jest.mock("../../services/supabase", () => ({
-  supabase: {
-    from: mockFrom,
-  },
-}));
+// Import after mocks are set up
+import { offlineService } from "../../services/offline";
+import { supabase } from "../../services/supabase";
 
 describe("OfflineService - Supabase Response Validation", () => {
   beforeEach(async () => {
@@ -37,13 +41,15 @@ describe("OfflineService - Supabase Response Validation", () => {
       delete: mockDelete,
     });
 
+    (supabase.from as jest.Mock).mockImplementation(mockFrom);
+
     mockInsert.mockResolvedValue({ data: [{ id: "123" }], error: null });
     mockUpdate.mockReturnValue({ eq: mockEq });
     mockDelete.mockReturnValue({ eq: mockEq });
     mockEq.mockResolvedValue({ data: [{ id: "123" }], error: null });
 
     await offlineService.clearOfflineData();
-    (offlineService as any).isOnline = true;
+    (offlineService as any).isOnline = false;
     (offlineService as any).syncInProgress = false;
   });
 
@@ -62,6 +68,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 3,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.success).toBe(true);
@@ -83,6 +90,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -103,6 +111,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 3,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.success).toBe(true);
@@ -120,6 +129,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -137,6 +147,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -159,6 +170,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 3,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.success).toBe(true);
@@ -179,6 +191,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -196,6 +209,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -218,6 +232,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 3,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.success).toBe(true);
@@ -238,6 +253,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -255,6 +271,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       const result = await offlineService.syncOfflineActions();
 
       expect(result.failedActions).toBeGreaterThan(0);
@@ -276,11 +293,12 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       await offlineService.syncOfflineActions();
 
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining("malformed"),
-        expect.anything(),
+        null,
       );
 
       consoleSpy.mockRestore();
@@ -299,6 +317,7 @@ describe("OfflineService - Supabase Response Validation", () => {
         maxRetries: 1,
       });
 
+      (offlineService as any).isOnline = true;
       await offlineService.syncOfflineActions();
 
       expect(consoleSpy).toHaveBeenCalledWith(

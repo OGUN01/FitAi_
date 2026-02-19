@@ -1,0 +1,165 @@
+import type {
+  PersonalInfo,
+  FitnessGoals,
+  WorkoutPreferences,
+  BodyMetrics,
+} from "../../types/user";
+import type {
+  WorkoutGenerationRequest,
+  WorkersResponse,
+  WorkoutPlan,
+} from "../fitaiWorkersClient";
+import type { WeeklyWorkoutPlan, Workout } from "../../types/ai";
+import { FITNESS_GOAL_MAP, EQUIPMENT_MAP } from "./mapping-constants";
+import {
+  getWorkoutDaysFromPreferences,
+  mapWorkoutCategory,
+  mapDifficulty,
+  calculateEstimatedCalories,
+  transformExercises,
+  transformExerciseItem,
+  extractEquipment,
+  extractTargetMuscles,
+  getWorkoutIcon,
+} from "./helper-utils";
+
+export function transformForWorkoutRequest(
+  personalInfo: PersonalInfo,
+  fitnessGoals: FitnessGoals,
+  bodyMetrics?: BodyMetrics,
+  workoutPreferences?: WorkoutPreferences,
+  options?: {
+    requestWeeklyPlan?: boolean;
+    workoutType?: string;
+    duration?: number;
+    focusMuscles?: string[];
+  },
+): WorkoutGenerationRequest {
+  const experienceLevel =
+    workoutPreferences?.intensity ||
+    fitnessGoals.experience_level ||
+    fitnessGoals.experience ||
+    "beginner";
+
+  const rawGoal =
+    fitnessGoals.primary_goals?.[0] ||
+    fitnessGoals.primaryGoals?.[0] ||
+    "general_fitness";
+  const primaryGoal = FITNESS_GOAL_MAP[rawGoal] || "maintenance";
+
+  const rawEquipment = workoutPreferences?.equipment ||
+    fitnessGoals.preferred_equipment || ["bodyweight"];
+
+  const equipment = rawEquipment
+    .map((eq) => EQUIPMENT_MAP[eq.toLowerCase()] || eq)
+    .filter((value, index, self) => self.indexOf(value) === index);
+
+  const injuries = bodyMetrics?.physical_limitations || [];
+
+  const medicalConditions = bodyMetrics?.medical_conditions || [];
+  const medications = bodyMetrics?.medications || [];
+
+  const pregnancyStatus = bodyMetrics?.pregnancy_status || false;
+  const pregnancyTrimester = bodyMetrics?.pregnancy_trimester;
+  const breastfeedingStatus = bodyMetrics?.breastfeeding_status || false;
+
+  const preferredWorkoutTime =
+    workoutPreferences?.preferred_workout_times?.[0] || "morning";
+
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const preferredDays = getWorkoutDaysFromPreferences(
+    workoutPreferences,
+    workoutsPerWeek,
+  );
+
+  const weeklyPlan = {
+    workoutsPerWeek: workoutsPerWeek,
+    preferredDays: preferredDays,
+    workoutTypes: workoutPreferences?.workout_types || [],
+    prefersVariety: workoutPreferences?.prefers_variety || false,
+    activityLevel: workoutPreferences?.activity_level,
+    preferredWorkoutTime: preferredWorkoutTime,
+  };
+
+  return {
+    profile: {
+      age: personalInfo.age,
+      gender: personalInfo.gender,
+      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number,
+      height: (bodyMetrics?.height_cm ?? personalInfo.height) as number,
+      fitnessGoal: primaryGoal,
+      experienceLevel: experienceLevel,
+      availableEquipment: equipment,
+      injuries: injuries,
+      medications: medications,
+      pregnancyStatus: pregnancyStatus,
+      pregnancyTrimester: pregnancyTrimester,
+      breastfeedingStatus: breastfeedingStatus,
+    } as any,
+    focusMuscles: options?.focusMuscles,
+  } as any;
+}
+
+export function transformWorkoutResponseToWeeklyPlan(
+  response: WorkersResponse<WorkoutPlan>,
+  weekNumber: number = 1,
+  workoutPreferences?: WorkoutPreferences,
+): WeeklyWorkoutPlan | null {
+  if (!response.success || !response.data) {
+    console.error("[Transformer] Workout response failed:", response.error);
+    return null;
+  }
+
+  const workoutPlan = response.data;
+
+  const workouts: Workout[] = [];
+  const workoutsPerWeek = workoutPreferences?.workout_frequency_per_week || 3;
+  const workoutDays = getWorkoutDaysFromPreferences(
+    workoutPreferences,
+    workoutsPerWeek,
+  );
+
+  for (let i = 0; i < workoutDays.length; i++) {
+    const day = workoutDays[i];
+    workouts.push({
+      id: `${day}_workout_${Date.now()}_${i}`,
+      title: workoutPlan.title || "AI Generated Workout",
+      description: workoutPlan.description || "",
+      category: mapWorkoutCategory(workoutPlan) as
+        | "strength"
+        | "flexibility"
+        | "cardio"
+        | "hiit"
+        | "yoga"
+        | "pilates"
+        | "hybrid",
+      difficulty: mapDifficulty(workoutPlan.difficulty),
+      duration: workoutPlan.totalDuration || workoutPlan.duration || 30,
+      estimatedCalories: calculateEstimatedCalories(workoutPlan),
+      exercises: transformExercises(workoutPlan),
+      equipment: extractEquipment(workoutPlan),
+      targetMuscleGroups: extractTargetMuscles(workoutPlan),
+      icon: getWorkoutIcon(workoutPlan),
+      tags: ["ai-generated", workoutPlan.difficulty || "intermediate"],
+      isPersonalized: true,
+      aiGenerated: true,
+      dayOfWeek: day,
+      warmup: workoutPlan.warmup?.map(transformExerciseItem) || [],
+      cooldown: workoutPlan.cooldown?.map(transformExerciseItem) || [],
+      createdAt: new Date().toISOString(),
+    } as any);
+  }
+
+  return {
+    id: workoutPlan.id || `weekly_workout_${Date.now()}`,
+    weekNumber,
+    workouts: workouts as any,
+    planTitle: workoutPlan.title || "Your Personalized Workout Plan",
+    planDescription: workoutPlan.description,
+    restDays: [1, 3, 5],
+    totalEstimatedCalories: workouts.reduce(
+      (sum, w) => sum + (w.estimatedCalories || 0),
+      0,
+    ),
+  };
+}

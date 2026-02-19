@@ -31,11 +31,9 @@ export const useProgressScreen = (navigation: any) => {
   // Authentication and user data
   const { user, isAuthenticated } = useAuth();
 
-  // Wearable health data from Health Connect / HealthKit
-  const { metrics: healthMetrics, syncError } = useHealthDataStore((state) => ({
-    metrics: state.metrics,
-    syncError: state.syncError,
-  }));
+  // Wearable health data from Health Connect / HealthKit - use separate selectors to avoid object creation
+  const healthMetrics = useHealthDataStore((state) => state.metrics);
+  const syncError = useHealthDataStore((state) => state.syncError);
   const isWearableConnected = useHealthDataStore(
     (state) => state.isHealthKitAuthorized || state.isHealthConnectAuthorized,
   );

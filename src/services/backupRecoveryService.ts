@@ -507,6 +507,9 @@ export class BackupRecoveryService {
    * Update backup configuration
    */
   updateConfig(newConfig: Partial<BackupConfig>): void {
+    const oldInterval = this.config.backupIntervalMs;
+    const wasAutoBackupEnabled = this.config.enableAutoBackup;
+
     this.config = { ...this.config, ...newConfig };
 
     if (newConfig.enableAutoBackup !== undefined) {
@@ -515,6 +518,12 @@ export class BackupRecoveryService {
       } else {
         this.stopAutoBackup();
       }
+    } else if (
+      newConfig.backupIntervalMs !== undefined &&
+      newConfig.backupIntervalMs !== oldInterval &&
+      this.config.enableAutoBackup
+    ) {
+      this.startAutoBackup();
     }
   }
 

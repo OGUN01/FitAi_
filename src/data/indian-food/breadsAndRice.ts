@@ -1,0 +1,67 @@
+import { IndianFoodData } from "./types";
+
+export const BREADS_AND_RICE: Record<string, IndianFoodData> = {
+  roti: {
+    name: "Roti",
+    hindiName: "रोटी",
+    regionalName: "Chapati",
+    region: "pan-indian",
+    category: "main",
+    spiceLevel: "mild",
+    cookingMethod: "grilled",
+    nutritionPer100g: {
+      calories: 280,
+      protein: 9,
+      carbs: 58,
+      fat: 2,
+      fiber: 8,
+      sugar: 2,
+      sodium: 5,
+    },
+    commonIngredients: ["whole wheat flour", "water", "salt"],
+    traditionalServing: 40,
+    tags: ["bread", "vegetarian", "fiber-rich", "staple"],
+  },
+
+  pulao: {
+    name: "Pulao",
+    hindiName: "पुलाव",
+    region: "pan-indian",
+    category: "main",
+    spiceLevel: "mild",
+    cookingMethod: "boiled",
+    nutritionPer100g: {
+      calories: 185,
+      protein: 4,
+      carbs: 38,
+      fat: 3,
+      fiber: 1,
+      sugar: 2,
+      sodium: 380,
+    },
+    commonIngredients: ["basmati rice", "vegetables", "whole spices", "ghee"],
+    traditionalServing: 150,
+    tags: ["rice", "vegetarian", "aromatic", "mild"],
+  },
+
+  "jeera rice": {
+    name: "Jeera Rice",
+    hindiName: "जीरा राइस",
+    region: "pan-indian",
+    category: "main",
+    spiceLevel: "mild",
+    cookingMethod: "boiled",
+    nutritionPer100g: {
+      calories: 170,
+      protein: 3,
+      carbs: 35,
+      fat: 2,
+      fiber: 1,
+      sugar: 1,
+      sodium: 320,
+    },
+    commonIngredients: ["basmati rice", "cumin seeds", "ghee", "salt"],
+    traditionalServing: 150,
+    tags: ["rice", "vegetarian", "simple", "aromatic"],
+  },
+};

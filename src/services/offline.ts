@@ -37,7 +37,7 @@ interface SupabaseResponse {
 function isValidSupabaseResponse(
   response: unknown,
 ): response is SupabaseResponse {
-  if (!response || typeof response !== "object") {
+  if (!response || typeof response !== "object" || Array.isArray(response)) {
     return false;
   }
   return true;

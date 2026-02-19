@@ -1,0 +1,26 @@
+import { SemanticPattern } from "./types";
+
+export const semanticPatterns: SemanticPattern[] = [
+  { pattern: /push.*up/i, target: "push-up", confidence: 0.9 },
+  { pattern: /squat/i, target: "squat", confidence: 0.85 },
+  { pattern: /lunge/i, target: "lunge", confidence: 0.85 },
+  { pattern: /plank/i, target: "plank", confidence: 0.9 },
+  { pattern: /burpee/i, target: "burpee", confidence: 0.95 },
+  { pattern: /jump.*jack/i, target: "jumping jack", confidence: 0.9 },
+  { pattern: /mountain.*climb/i, target: "mountain climber", confidence: 0.9 },
+  { pattern: /sit.*up/i, target: "sit-up", confidence: 0.85 },
+  { pattern: /crunch/i, target: "crunch", confidence: 0.85 },
+  { pattern: /deadlift/i, target: "deadlift", confidence: 0.95 },
+  { pattern: /bench.*press/i, target: "bench press", confidence: 0.9 },
+  { pattern: /pull.*up/i, target: "pull-up", confidence: 0.9 },
+  { pattern: /chin.*up/i, target: "chin up", confidence: 0.9 },
+  { pattern: /dip/i, target: "dip", confidence: 0.8 },
+  { pattern: /row/i, target: "row", confidence: 0.8 },
+  { pattern: /curl/i, target: "curl", confidence: 0.8 },
+  { pattern: /press/i, target: "press", confidence: 0.7 },
+  { pattern: /raise/i, target: "raise", confidence: 0.7 },
+  { pattern: /extension/i, target: "extension", confidence: 0.7 },
+  { pattern: /fly/i, target: "fly", confidence: 0.8 },
+  { pattern: /bridge/i, target: "bridge", confidence: 0.85 },
+  { pattern: /twist/i, target: "twist", confidence: 0.8 },
+];

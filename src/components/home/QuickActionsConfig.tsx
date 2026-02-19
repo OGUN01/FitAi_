@@ -16,6 +16,9 @@ interface QuickActionsConfigProps {
   syncHealthData: (force?: boolean) => Promise<void>;
   syncFromHealthConnect: (days: number) => Promise<void>;
   onLogWeight: () => void;
+  onScanFood?: () => void;
+  onLogMeal?: () => void;
+  onLogWater?: () => void;
 }
 
 export const createQuickActions = ({
@@ -24,6 +27,9 @@ export const createQuickActions = ({
   syncHealthData,
   syncFromHealthConnect,
   onLogWeight,
+  onScanFood,
+  onLogMeal,
+  onLogWater,
 }: QuickActionsConfigProps): QuickAction[] => [
   {
     id: "log-weight",
@@ -32,43 +38,44 @@ export const createQuickActions = ({
     color: "#9C27B0",
     onPress: onLogWeight,
   },
-  {
-    id: "progress-photo",
-    label: "Photo",
-    icon: "camera-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#FF6B6B",
-    onPress: () =>
-      Alert.alert(
-        "Coming Soon",
-        "Progress photos feature will be available in the next update. This will allow you to take and compare before/after photos to track your transformation.",
-        [{ text: "OK" }],
-      ),
-  },
-  {
-    id: "log-sleep",
-    label: "Sleep",
-    icon: "moon-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#667eea",
-    onPress: () =>
-      Alert.alert(
-        "Coming Soon",
-        "Sleep tracking will be available in the next update. Connect your wearable device in Settings to automatically sync sleep data.",
-        [
-          {
-            text: "Go to Settings",
-            onPress: () => {
-              console.log("Navigate to Settings for wearables");
-            },
-          },
-          { text: "OK" },
-        ],
-      ),
-  },
+  ...(onScanFood
+    ? [
+        {
+          id: "scan-food",
+          label: "Scan Food",
+          icon: "camera-outline" as keyof typeof Ionicons.glyphMap,
+          color: "#FF6B6B",
+          onPress: onScanFood,
+        },
+      ]
+    : []),
+  ...(onLogMeal
+    ? [
+        {
+          id: "log-meal",
+          label: "Log Meal",
+          icon: "restaurant-outline" as keyof typeof Ionicons.glyphMap,
+          color: "#4CAF50",
+          onPress: onLogMeal,
+        },
+      ]
+    : []),
+  ...(onLogWater
+    ? [
+        {
+          id: "log-water",
+          label: "Water",
+          icon: "water-outline" as keyof typeof Ionicons.glyphMap,
+          color: "#2196F3",
+          onPress: onLogWater,
+        },
+      ]
+    : []),
   {
     id: "health-sync",
     label: "Sync",
     icon: "sync-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#4CAF50",
+    color: "#10b981",
     onPress: async () => {
       haptics.medium();
       if (Platform.OS === "ios" && isHealthKitAuthorized) {

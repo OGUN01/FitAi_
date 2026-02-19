@@ -1,13 +1,13 @@
 {
-  "active_plan": "D:\\FitAi\\FitAI\\.sisyphus\\plans\\bug-hunt-fixes.md",
-  "started_at": "2026-02-03T06:06:45.860Z",
-  "completed_at": "2026-02-05T20:55:00.000Z",
-  "status": "COMPLETE",
-  "completion_rate": "43/43 (100%)",
-  "session_ids": [
-    "ses_3e55b60c5ffeUVO7REBRqj3DsH",
-    "ses_3d2202d96ffeynqmpzoROk5wgI"
-  ],
-  "plan_name": "bug-hunt-fixes",
-  "notes": "All 43 items marked complete. 5 items marked as DEFERRED with clear scoping for future projects: test coverage improvement (4-6 weeks), non-screen refactoring, and 5 low-impact medium bugs. Tagged with v1.0-bug-hunt-complete."
+  "active_plan": "D:\FitAi\FitAI\.sisyphus\plans\p0-data-integrity-fixes.md",
+  "started_at": "2026-02-06T17:15:30.000Z",
+  "session_ids": ["ses_3cc4695ffffeOPm3i5r766YFqz"],
+  "plan_name": "p0-data-integrity-fixes",
+  "completed_plans": [
+    {
+      "name": "unified-stats-source-of-truth",
+      "completed_at": "2026-02-06T17:15:00.000Z",
+      "commit": "e7daf08"
+    }
+  ]
 }

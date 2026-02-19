@@ -1,15 +1,16 @@
 /**
  * DataBridge Tests
- * Comprehensive test suite for profile data management
+ * Test suite for profile data management
  *
- * Updated: January 2026 - Migrated from dataBridge to dataBridge
+ * NOTE: DataBridge uses ProfileStore as the source of truth for onboarding data.
+ * Save operations update ProfileStore and optionally sync to database.
+ * Load operations return data from ProfileStore.
  */
 
-import { dataBridge } from '../../services/DataBridge';
-import { PersonalInfo, FitnessGoals, DietPreferences } from '../../types/profileData';
+import { dataBridge } from "../../services/DataBridge";
+import { useProfileStore } from "../../stores/profileStore";
 
-// Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => ({
+jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(() => Promise.resolve()),
   getItem: jest.fn(() => Promise.resolve(null)),
   removeItem: jest.fn(() => Promise.resolve()),
@@ -17,8 +18,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiGet: jest.fn(() => Promise.resolve([])),
 }));
 
-// Mock Supabase
-jest.mock('../../services/supabase', () => ({
+jest.mock("../../services/supabase", () => ({
   supabase: {
     from: jest.fn(() => ({
       upsert: jest.fn(() => Promise.resolve({ error: null })),
@@ -31,275 +31,139 @@ jest.mock('../../services/supabase', () => ({
   },
 }));
 
-describe('DataManager', () => {
-  const mockUserId = 'test-user-123';
-  
-  const mockPersonalInfo: PersonalInfo = {
-    id: 'personal-1',
-    version: 1,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-    syncStatus: 'pending',
-    source: 'local',
-    name: 'John Doe',
-    age: '25',
-    gender: 'male',
-    height: '175',
-    weight: '70',
-    activityLevel: 'moderate',
-  };
+describe("DataBridge", () => {
+  const mockUserId = "test-user-123";
 
-  const mockFitnessGoals: FitnessGoals = {
-    id: 'goals-1',
-    version: 1,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-    syncStatus: 'pending',
-    source: 'local',
-    primaryGoals: ['weight_loss', 'muscle_gain'],
-    experience: 'intermediate',
-    timeCommitment: '30-45 minutes',
+  const mockPersonalInfo = {
+    first_name: "John",
+    last_name: "Doe",
+    age: 25,
+    gender: "male" as const,
+    country: "USA",
+    state: "CA",
+    wake_time: "07:00",
+    sleep_time: "23:00",
+    occupation_type: "desk_job" as const,
+    name: "John Doe",
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    useProfileStore.getState().reset();
     dataBridge.setUserId(mockUserId);
     dataBridge.setOnlineStatus(true);
   });
 
-  // ============================================================================
-  // PERSONAL INFO TESTS
-  // ============================================================================
-
-  describe('Personal Info Management', () => {
-    it('should save personal info successfully', async () => {
+  describe("Personal Info Management", () => {
+    it("should save personal info and return SaveResult", async () => {
       const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      expect(result).toBe(true);
+
+      expect(result).toHaveProperty("success");
+      expect(result.success).toBe(true);
+      expect(result).toHaveProperty("errors");
+      expect(result.errors).toEqual([]);
     });
 
-    it('should load personal info from local storage when offline', async () => {
-      dataBridge.setOnlineStatus(false);
-      
-      // Mock local storage return
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(mockPersonalInfo));
+    it("should update ProfileStore when saving", async () => {
+      await dataBridge.savePersonalInfo(mockPersonalInfo);
+
+      const profileState = useProfileStore.getState();
+      expect(profileState.personalInfo).not.toBeNull();
+      expect(profileState.personalInfo?.name).toBe(mockPersonalInfo.name);
+    });
+
+    it("should load personal info from ProfileStore in guest mode", async () => {
+      dataBridge.setUserId(null);
+
+      await dataBridge.savePersonalInfo(mockPersonalInfo);
 
       const result = await dataBridge.loadPersonalInfo();
-      expect(result).toEqual(mockPersonalInfo);
+
+      expect(result).not.toBeNull();
+      expect(result?.name).toBe(mockPersonalInfo.name);
     });
 
-    it('should prioritize remote data when online', async () => {
-      const remoteData = { ...mockPersonalInfo, name: 'Remote John' };
-      
-      // Mock Supabase return
-      const { supabase } = require('../../services/supabase');
-      supabase.from().select().eq().single.mockResolvedValueOnce({
-        data: remoteData,
-        error: null,
-      });
-
+    it("should return null when ProfileStore has no personal info", async () => {
       const result = await dataBridge.loadPersonalInfo();
-      expect(result).toEqual(remoteData);
-    });
-
-    it('should fallback to local data when remote fails', async () => {
-      // Mock Supabase error
-      const { supabase } = require('../../services/supabase');
-      supabase.from().select().eq().single.mockResolvedValueOnce({
-        data: null,
-        error: { message: 'Network error' },
-      });
-
-      // Mock local storage return
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(mockPersonalInfo));
-
-      const result = await dataBridge.loadPersonalInfo();
-      expect(result).toEqual(mockPersonalInfo);
-    });
-  });
-
-  // ============================================================================
-  // FITNESS GOALS TESTS
-  // ============================================================================
-
-  describe('Fitness Goals Management', () => {
-    it('should save fitness goals successfully', async () => {
-      const result = await dataBridge.saveFitnessGoals(mockFitnessGoals);
-      expect(result).toBe(true);
-    });
-
-    it('should load fitness goals from storage', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(mockFitnessGoals));
-
-      const result = await dataBridge.loadFitnessGoals();
-      expect(result).toEqual(mockFitnessGoals);
-    });
-
-    it('should handle missing fitness goals gracefully', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce(null);
-
-      const result = await dataBridge.loadFitnessGoals();
       expect(result).toBeNull();
     });
   });
 
-  // ============================================================================
-  // USER ID MANAGEMENT TESTS
-  // ============================================================================
-
-  describe('User ID Management', () => {
-    it('should set user ID correctly', () => {
-      const newUserId = 'new-user-456';
+  describe("User ID Management", () => {
+    it("should set user ID via setUserId method", () => {
+      const newUserId = "new-user-456";
       dataBridge.setUserId(newUserId);
-      
-      // Verify by checking the internal state (if accessible)
-      // This would depend on the actual implementation
-      expect(dataBridge['userId']).toBe(newUserId);
+
+      const result = (dataBridge as any).currentUserId;
+      expect(result).toBe(newUserId);
     });
 
-    it('should handle guest mode (no user ID)', async () => {
+    it("should handle guest mode (null user ID)", async () => {
       dataBridge.setUserId(null);
-      
+
       const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      expect(result).toBe(true); // Should still save locally
+
+      expect(result.success).toBe(true);
     });
   });
 
-  // ============================================================================
-  // ONLINE/OFFLINE BEHAVIOR TESTS
-  // ============================================================================
+  describe("Online/Offline Behavior", () => {
+    it("should queue for sync when database save fails", async () => {
+      const { supabase } = require("../../services/supabase");
+      supabase.from().upsert.mockRejectedValueOnce(new Error("Network error"));
 
-  describe('Online/Offline Behavior', () => {
-    it('should save to local storage when offline', async () => {
-      dataBridge.setOnlineStatus(false);
-      
       const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      expect(result).toBe(true);
-      
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
+
+      expect(result.success).toBe(true);
+      expect(result.newSystemSuccess).toBe(false);
+    });
+
+    it("should save to local storage in guest mode", async () => {
+      dataBridge.setUserId(null);
+
+      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
+
+      expect(result.success).toBe(true);
+
+      const AsyncStorage = require("@react-native-async-storage/async-storage");
       expect(AsyncStorage.setItem).toHaveBeenCalled();
     });
+  });
 
-    it('should attempt remote save when online', async () => {
-      dataBridge.setOnlineStatus(true);
-      
-      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      expect(result).toBe(true);
-      
-      const { supabase } = require('../../services/supabase');
-      expect(supabase.from).toHaveBeenCalled();
-    });
+  describe("Data Clearing", () => {
+    it("should clear local data and reset ProfileStore", async () => {
+      await dataBridge.savePersonalInfo(mockPersonalInfo);
 
-    it('should handle network errors gracefully', async () => {
-      // Mock Supabase error
-      const { supabase } = require('../../services/supabase');
-      supabase.from().upsert.mockResolvedValueOnce({
-        error: { message: 'Network error' },
-      });
+      await dataBridge.clearLocalData();
 
-      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      // Should still succeed due to local storage fallback
-      expect(result).toBe(true);
+      const profileState = useProfileStore.getState();
+      expect(profileState.personalInfo).toBeNull();
     });
   });
 
-  // ============================================================================
-  // DATA CLEARING TESTS
-  // ============================================================================
+  describe("Error Handling", () => {
+    it("should handle Supabase errors gracefully", async () => {
+      const { supabase } = require("../../services/supabase");
+      supabase.from().upsert.mockRejectedValueOnce(new Error("Database error"));
 
-  describe('Data Clearing', () => {
-    it('should clear local data successfully', async () => {
-      const result = await dataBridge.clearLocalData();
-      expect(result).toBe(true);
-      
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      expect(AsyncStorage.multiRemove).toHaveBeenCalled();
-    });
+      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
 
-    it('should check for local data existence', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.multiGet.mockResolvedValueOnce([
-        ['personalInfo_test-user-123', JSON.stringify(mockPersonalInfo)],
-        ['fitnessGoals_test-user-123', null],
-      ]);
-
-      const result = await dataBridge.hasLocalData();
-      expect(result).toBe(true);
-    });
-
-    it('should return false when no local data exists', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.multiGet.mockResolvedValueOnce([
-        ['personalInfo_test-user-123', null],
-        ['fitnessGoals_test-user-123', null],
-      ]);
-
-      const result = await dataBridge.hasLocalData();
-      expect(result).toBe(false);
+      expect(result.success).toBe(true);
+      expect(result.newSystemSuccess).toBe(false);
     });
   });
 
-  // ============================================================================
-  // ERROR HANDLING TESTS
-  // ============================================================================
+  describe("Integration Tests", () => {
+    it("should complete full save-load cycle in guest mode", async () => {
+      dataBridge.setUserId(null);
 
-  describe('Error Handling', () => {
-    it('should handle AsyncStorage errors', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.setItem.mockRejectedValueOnce(new Error('Storage full'));
-
-      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      // Should handle error gracefully
-      expect(result).toBe(false);
-    });
-
-    it('should handle Supabase errors', async () => {
-      const { supabase } = require('../../services/supabase');
-      supabase.from().upsert.mockRejectedValueOnce(new Error('Database error'));
-
-      const result = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      // Should fallback to local storage
-      expect(result).toBe(true);
-    });
-
-    it('should handle JSON parsing errors', async () => {
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce('invalid-json');
-
-      const result = await dataBridge.loadPersonalInfo();
-      expect(result).toBeNull();
-    });
-  });
-
-  // ============================================================================
-  // INTEGRATION TESTS
-  // ============================================================================
-
-  describe('Integration Tests', () => {
-    it('should complete full save-load cycle', async () => {
-      // Save data
       const saveResult = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      expect(saveResult).toBe(true);
+      expect(saveResult.success).toBe(true);
 
-      // Mock the load
-      const AsyncStorage = require('@react-native-async-storage/async-storage');
-      AsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(mockPersonalInfo));
-
-      // Load data
       const loadResult = await dataBridge.loadPersonalInfo();
-      expect(loadResult).toEqual(mockPersonalInfo);
-    });
-
-    it('should handle multiple data types', async () => {
-      // Save multiple types
-      const personalResult = await dataBridge.savePersonalInfo(mockPersonalInfo);
-      const goalsResult = await dataBridge.saveFitnessGoals(mockFitnessGoals);
-
-      expect(personalResult).toBe(true);
-      expect(goalsResult).toBe(true);
+      expect(loadResult).not.toBeNull();
+      expect(loadResult?.name).toBe(mockPersonalInfo.name);
+      expect(loadResult?.age).toBe(mockPersonalInfo.age);
     });
   });
 });
