@@ -1,7 +1,4 @@
 module.exports = {
-  preset: 'react-native',
-  
-  // Test environment
   testEnvironment: 'node',
   
   // Use single worker on Windows to prevent process crashes
