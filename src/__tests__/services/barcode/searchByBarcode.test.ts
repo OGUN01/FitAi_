@@ -6,6 +6,7 @@ import {
 
 let api: FreeNutritionAPIs;
 const originalFetch = global.fetch;
+const originalEnv = { ...process.env };
 
 function makeOFFResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -56,11 +57,17 @@ beforeEach(() => {
   api = new FreeNutritionAPIs();
   global.fetch = jest.fn();
   jest.useRealTimers();
+  process.env.EXPO_PUBLIC_GEMINI_API_KEY = "test-gemini-key";
 });
 
 afterEach(() => {
   global.fetch = originalFetch;
   jest.restoreAllMocks();
+  // Restore original env, removing any keys we added
+  delete process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  Object.keys(process.env).forEach((key) => {
+    if (!(key in originalEnv)) delete process.env[key];
+  });
 });
 
 describe("searchByBarcode", () => {
@@ -230,20 +237,27 @@ describe("searchByBarcode", () => {
     expect(result).toBeNull();
   });
 
-  it("skips UPCitemdb for Indian barcodes (890 prefix) and returns null after OFF fails", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => makeOFFNotFound(),
-    });
+  it("skips UPCitemdb for Indian barcodes (890 prefix) and tries Gemini after OFF fails", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
 
     const result = await api.searchByBarcode("8901234567890");
 
     expect(result).toBeNull();
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const fetchCallUrl = (global.fetch as jest.Mock).mock.calls[0][0];
-    expect(fetchCallUrl).toContain("openfoodfacts.org");
-    expect(fetchCallUrl).not.toContain("upcitemdb");
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const offUrl = (global.fetch as jest.Mock).mock.calls[0][0];
+    expect(offUrl).toContain("openfoodfacts.org");
+    expect(offUrl).not.toContain("upcitemdb");
+    const geminiUrl = (global.fetch as jest.Mock).mock.calls[1][0];
+    expect(geminiUrl).toContain("generativelanguage.googleapis.com");
   });
 
   it("returns cached result on second call without additional fetch", async () => {
@@ -327,16 +341,21 @@ describe("searchByBarcode", () => {
     expect(result!.productInfo.novaGroup).toBe(4);
   });
 
-  it("skips UPCitemdb for South Korean barcodes (880 prefix)", async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => makeOFFNotFound(),
-    });
+  it("skips UPCitemdb for South Korean barcodes (880 prefix) and tries Gemini", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      });
 
     const result = await api.searchByBarcode("8801234567890");
 
     expect(result).toBeNull();
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("calls OFF v2 API with correct URL and fields", async () => {
@@ -354,5 +373,187 @@ describe("searchByBarcode", () => {
     expect(callUrl).toContain("nutriments");
     expect(callUrl).toContain("nutrition_grades");
     expect(callUrl).toContain("nova_group");
+  });
+});
+
+function makeGeminiResponse(overrides: Record<string, unknown> = {}) {
+  const nutrition = {
+    calories_kcal: 462,
+    protein_g: 6.7,
+    carbs_g: 72.3,
+    fat_g: 16.7,
+    fiber_g: 2.4,
+    sugar_g: 26.9,
+    sodium_mg: 340,
+    confidence_0_to_100: 75,
+    ...overrides,
+  };
+  return {
+    candidates: [
+      {
+        content: {
+          parts: [{ text: JSON.stringify(nutrition) }],
+        },
+      },
+    ],
+  };
+}
+
+describe("estimateNutritionWithAI", () => {
+  it("returns nutrition data with source gemini-estimation and isAIEstimated", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => makeGeminiResponse(),
+    });
+
+    const result = await estimateNutritionWithAI("Parle-G", "Parle", "India");
+
+    expect(result).not.toBeNull();
+    expect(result!.source).toBe("gemini-estimation");
+    expect(result!.isAIEstimated).toBe(true);
+    expect(result!.needsNutritionEstimate).toBe(false);
+    expect(result!.confidence).toBeLessThanOrEqual(40);
+    expect(result!.nutrition).not.toBeNull();
+    expect(result!.nutrition!.calories).toBe(462);
+    expect(result!.nutrition!.protein).toBe(6.7);
+  });
+
+  it("caps confidence at 40 even if Gemini returns higher", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => makeGeminiResponse({ confidence_0_to_100: 95 }),
+    });
+
+    const result = await estimateNutritionWithAI("Oreo", "Mondelez", "USA");
+
+    expect(result).not.toBeNull();
+    expect(result!.confidence).toBe(40);
+  });
+
+  it("returns null on malformed JSON from Gemini", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: "not valid json {{{" }] } }],
+      }),
+    });
+
+    const result = await estimateNutritionWithAI("Bad Product", "Brand", "USA");
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  it("returns null when Gemini API times out", async () => {
+    jest.useFakeTimers();
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+
+    (global.fetch as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                status: 200,
+                json: async () => makeGeminiResponse(),
+              }),
+            30000,
+          );
+        }),
+    );
+
+    const promise = estimateNutritionWithAI("Slow Product", "Brand", "USA");
+    jest.advanceTimersByTime(11000);
+    const result = await promise;
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    jest.useRealTimers();
+  });
+
+  it("returns null when all keys return 429", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 429,
+    });
+
+    const result = await estimateNutritionWithAI(
+      "Rate Limited",
+      "Brand",
+      "USA",
+    );
+
+    expect(result).toBeNull();
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+});
+
+describe("searchByBarcode Gemini integration", () => {
+  it("wires Gemini when UPCitemdb returns name-only result", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () =>
+          makeUPCitemdbResponse({ title: "Fancy Chips", brand: "ChipCo" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => makeGeminiResponse(),
+      });
+
+    const result = await api.searchByBarcode("0012345678950");
+
+    expect(result).not.toBeNull();
+    expect(result!.source).toBe("upcitemdb+gemini-estimation");
+    expect(result!.isAIEstimated).toBe(true);
+    expect(result!.nutrition).not.toBeNull();
+    expect(result!.nutrition!.calories).toBe(462);
+    expect(result!.needsNutritionEstimate).toBe(false);
+  });
+
+  it("calls Gemini directly for Indian 890 barcode when OFF fails", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => makeOFFNotFound(),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => makeGeminiResponse(),
+      });
+
+    const result = await api.searchByBarcode("8901234567891");
+
+    expect(result).not.toBeNull();
+    expect(result!.source).toBe("gemini-estimation");
+    expect(result!.isAIEstimated).toBe(true);
+    expect(result!.nutrition).not.toBeNull();
+
+    const urls = (global.fetch as jest.Mock).mock.calls.map(
+      (c: unknown[]) => c[0] as string,
+    );
+    expect(urls[0]).toContain("openfoodfacts.org");
+    expect(urls[1]).toContain("generativelanguage.googleapis.com");
+    expect(urls.every((u: string) => !u.includes("upcitemdb"))).toBe(true);
   });
 });

@@ -10,6 +10,7 @@ module.exports = {
   // Transform files
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': ['babel-jest', {
+      configFile: false,
       presets: ['babel-preset-expo'],
       plugins: ['react-native-reanimated/plugin'],
     }],
