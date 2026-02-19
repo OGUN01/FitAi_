@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   RefreshControl,
   Animated,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -33,10 +35,12 @@ import { DietScreenHeader } from "../../components/diet/DietScreenHeader";
 import { MealSuggestions } from "../../components/diet/MealSuggestions";
 import { DietModals } from "../../components/diet/DietModals";
 import { DietQuickActions } from "../../components/diet/DietQuickActions";
+import { ManualBarcodeEntry } from "../../components/diet/ManualBarcodeEntry";
 
 import { useMealPlanning } from "../../hooks/useMealPlanning";
 import { useNutritionTracking } from "../../hooks/useNutritionTracking";
 import { useAIMealGeneration } from "../../hooks/useAIMealGeneration";
+import { ScannedProduct } from "../../services/barcodeService";
 
 interface DietScreenProps {
   navigation?: any;
@@ -56,6 +60,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
   const [showCreateRecipe, setShowCreateRecipe] = useState(false);
   const [userRecipes, setUserRecipes] = useState<any[]>([]);
   const [showAIMealsPanel, setShowAIMealsPanel] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
 
   const fabScale = useRef(new Animated.Value(1)).current;
   const fabRotation = useRef(new Animated.Value(0)).current;
@@ -128,6 +133,7 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     generateDailyMealPlan: generateDailyMealPlanAction,
     handleFeedbackSubmit,
     handlePortionAdjustmentComplete,
+    isProcessingBarcode,
     aiError,
   } = useAIMealGeneration();
 
@@ -196,6 +202,15 @@ export const DietScreen: React.FC<DietScreenProps> = ({
     setUserRecipes((prev) => [recipe, ...prev]);
     setShowCreateRecipe(false);
   };
+
+  const handleManualProductFound = useCallback(
+    (product: ScannedProduct) => {
+      setShowManualEntry(false);
+      // Re-use the existing barcode flow to show the product modal
+      handleBarcodeScanned(product.barcode);
+    },
+    [handleBarcodeScanned],
+  );
 
   const storeNutrition = getTodaysConsumedNutrition();
   const currentNutrition = {
@@ -329,6 +344,19 @@ export const DietScreen: React.FC<DietScreenProps> = ({
               isGenerating={isGeneratingMeal}
             />
 
+            <AnimatedPressable
+              style={styles.manualEntryButton}
+              onPress={() => setShowManualEntry(true)}
+              scaleValue={0.97}
+            >
+              <Ionicons
+                name="keypad-outline"
+                size={rf(18)}
+                color={ResponsiveTheme.colors.primary}
+              />
+              <Text style={styles.manualEntryText}>Enter Barcode Manually</Text>
+            </AnimatedPressable>
+
             {!weeklyMealPlan?.meals || weeklyMealPlan.meals.length === 0 ? (
               <View
                 style={{
@@ -438,6 +466,34 @@ export const DietScreen: React.FC<DietScreenProps> = ({
           onHandleAddProductToMeal={onHandleAddProductToMeal}
         />
 
+        {isProcessingBarcode && (
+          <View style={styles.barcodeLoadingOverlay}>
+            <View style={styles.barcodeLoadingCard}>
+              <ActivityIndicator
+                size="large"
+                color={ResponsiveTheme.colors.primary}
+              />
+              <Text style={styles.barcodeLoadingText}>
+                Looking up product...
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <Modal
+          visible={showManualEntry}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowManualEntry(false)}
+        >
+          <View style={styles.manualEntryOverlay}>
+            <ManualBarcodeEntry
+              onProductFound={handleManualProductFound}
+              onClose={() => setShowManualEntry(false)}
+            />
+          </View>
+        </Modal>
+
         <Animated.View
           style={{
             transform: [
@@ -493,6 +549,49 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
   bottomSpacing: { height: ResponsiveTheme.spacing.xl },
+  manualEntryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: ResponsiveTheme.spacing.sm,
+    paddingHorizontal: ResponsiveTheme.spacing.md,
+    marginHorizontal: ResponsiveTheme.spacing.md,
+    marginBottom: ResponsiveTheme.spacing.md,
+    borderRadius: ResponsiveTheme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    gap: ResponsiveTheme.spacing.xs,
+  },
+  manualEntryText: {
+    fontSize: ResponsiveTheme.fontSize.sm,
+    color: ResponsiveTheme.colors.primary,
+    fontWeight: "600" as const,
+  },
+  barcodeLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  barcodeLoadingCard: {
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderRadius: ResponsiveTheme.borderRadius.lg,
+    padding: ResponsiveTheme.spacing.xl,
+    alignItems: "center",
+    gap: ResponsiveTheme.spacing.md,
+  },
+  barcodeLoadingText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: ResponsiveTheme.colors.text,
+    fontWeight: "500" as const,
+  },
+  manualEntryOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+  },
   fab: {
     position: "absolute",
     right: ResponsiveTheme.spacing.lg,

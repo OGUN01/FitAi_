@@ -13,6 +13,21 @@ import { Modal, Button, THEME } from "../ui";
 import { HealthScoreIndicator } from "./HealthScoreIndicator";
 import type { ScannedProduct } from "../../services/barcodeService";
 
+const NUTRI_SCORE_COLORS: Record<string, string> = {
+  a: "#038141",
+  b: "#85BB2F",
+  c: "#FECB02",
+  d: "#EE8100",
+  e: "#E63E11",
+};
+
+const NOVA_LABELS: Record<number, string> = {
+  1: "Unprocessed or minimally processed",
+  2: "Processed culinary ingredients",
+  3: "Processed foods",
+  4: "Ultra-processed foods",
+};
+
 interface ProductDetailsModalProps {
   visible: boolean;
   onClose: () => void;
@@ -212,6 +227,68 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
             <Text style={styles.barcodeText}>Barcode: {product.barcode}</Text>
           </View>
         </View>
+
+        {/* AI Disclaimer Banner */}
+        {product.isAIEstimated && (
+          <View style={styles.aiDisclaimer}>
+            <Text style={styles.aiDisclaimerText}>
+              ⚠️ Nutrition data estimated by AI. Values may not be accurate.
+              Verify with product packaging.
+            </Text>
+          </View>
+        )}
+
+        {/* Nutri-Score & NOVA & Origin Row */}
+        {(product.nutriScore || product.novaGroup || product.gs1Country) && (
+          <View style={styles.qualityBadgesContainer}>
+            {product.nutriScore && (
+              <View
+                style={[
+                  styles.nutriScoreBadge,
+                  {
+                    backgroundColor:
+                      NUTRI_SCORE_COLORS[product.nutriScore.toLowerCase()] ??
+                      "#aaa",
+                  },
+                ]}
+              >
+                <Text style={styles.nutriScoreLabel}>Nutri-Score</Text>
+                <Text style={styles.nutriScoreText}>
+                  {product.nutriScore.toUpperCase()}
+                </Text>
+              </View>
+            )}
+
+            {product.novaGroup && (
+              <View style={styles.novaContainer}>
+                <Text style={styles.novaTitle}>NOVA {product.novaGroup}</Text>
+                <Text
+                  style={[
+                    styles.novaLabel,
+                    {
+                      color:
+                        product.novaGroup <= 2
+                          ? "#038141"
+                          : product.novaGroup === 4
+                            ? "#E63E11"
+                            : "#EE8100",
+                    },
+                  ]}
+                >
+                  {NOVA_LABELS[product.novaGroup]}
+                </Text>
+              </View>
+            )}
+
+            {product.gs1Country && (
+              <View style={styles.originContainer}>
+                <Text style={styles.originText}>
+                  🌍 Origin: {product.gs1Country}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Health Score */}
         {healthAssessment && (
@@ -587,6 +664,85 @@ const styles = StyleSheet.create({
 
   closeButton: {
     // Outline button styling handled by Button component
+  },
+
+  aiDisclaimer: {
+    backgroundColor: "#FFF3CD",
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: THEME.spacing.md,
+    marginBottom: 12,
+    marginTop: THEME.spacing.sm,
+  },
+
+  aiDisclaimerText: {
+    color: "#856404",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  qualityBadgesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "flex-start",
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm,
+    gap: THEME.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: THEME.colors.border,
+  },
+
+  nutriScoreBadge: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 56,
+  },
+
+  nutriScoreLabel: {
+    fontSize: 9,
+    fontWeight: "700" as const,
+    color: "#fff",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+
+  nutriScoreText: {
+    fontSize: 22,
+    fontWeight: "900" as const,
+    color: "#fff",
+    lineHeight: 26,
+  },
+
+  novaContainer: {
+    flex: 1,
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+
+  novaTitle: {
+    fontSize: THEME.fontSize.sm,
+    fontWeight: THEME.fontWeight.bold as "700",
+    color: THEME.colors.text,
+    marginBottom: 2,
+  },
+
+  novaLabel: {
+    fontSize: THEME.fontSize.sm,
+    lineHeight: 16,
+  },
+
+  originContainer: {
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+
+  originText: {
+    fontSize: THEME.fontSize.sm,
+    color: THEME.colors.textSecondary,
   },
 });
 
