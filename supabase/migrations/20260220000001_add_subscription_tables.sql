@@ -117,6 +117,30 @@ CREATE INDEX IF NOT EXISTS idx_feature_usage_user_feature ON feature_usage(user_
 CREATE INDEX IF NOT EXISTS idx_feature_usage_period ON feature_usage(period_start);
 
 -- ============================================================================
+-- TABLE: webhook_events
+-- ============================================================================
+-- Stores processed webhook event IDs for Razorpay idempotency deduplication
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id TEXT PRIMARY KEY,  -- x-razorpay-event-id header value
+  event_type TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Enable RLS on webhook_events (service_role only — no user access)
+ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
+
+-- Webhook events: only service role can read/write (used internally)
+CREATE POLICY "service_role_all_webhook_events" ON webhook_events
+  FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
+
+-- Index for cleanup queries by age
+CREATE INDEX IF NOT EXISTS webhook_events_processed_at_idx ON webhook_events (processed_at);
+
+-- ============================================================================
 -- RLS POLICIES
 -- ============================================================================
 
