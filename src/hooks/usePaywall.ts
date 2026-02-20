@@ -1,117 +1,181 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Alert } from "react-native";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
-import { SubscriptionPlan } from "../services/SubscriptionService";
+import razorpayService, {
+  RazorpayServiceError,
+} from "../services/RazorpayService";
+import { supabase } from "../services/supabase";
+
+// Plan configuration for the 3 tiers
+const PLAN_CONFIGS = [
+  {
+    id: process.env.RAZORPAY_PLAN_ID_BASIC_MONTHLY || "",
+    tier: "basic" as const,
+    name: "Basic Plan",
+    price_monthly: 299,
+    billing_cycle: "monthly" as const,
+  },
+  {
+    id: process.env.RAZORPAY_PLAN_ID_PRO_MONTHLY || "",
+    tier: "pro" as const,
+    name: "Pro Plan (Monthly)",
+    price_monthly: 499,
+    billing_cycle: "monthly" as const,
+  },
+  {
+    id: process.env.RAZORPAY_PLAN_ID_PRO_YEARLY || "",
+    tier: "pro" as const,
+    name: "Pro Plan (Yearly)",
+    price_monthly: 333, // 3999/12
+    billing_cycle: "yearly" as const,
+  },
+];
 
 export const usePaywall = () => {
-  const {
-    availablePlans,
-    isPurchasing,
-    purchaseError,
-    trialInfo,
-    purchasePlan,
-    restorePurchases,
-  } = useSubscriptionStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallReason, setPaywallReason] = useState<string | null>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [showFeatures, setShowFeatures] = useState(false);
+  const { currentPlan, usage, fetchSubscriptionStatus } =
+    useSubscriptionStore();
 
-  useEffect(() => {
-    if (availablePlans.length > 0 && !selectedPlan) {
-      const yearlyPlan = availablePlans.find((p) => p.period === "yearly");
-      setSelectedPlan(yearlyPlan?.id || availablePlans[0]?.id);
-    }
-  }, [availablePlans, selectedPlan]);
+  /**
+   * Trigger paywall display with a specific upgrade reason
+   */
+  const triggerPaywall = (reason: string) => {
+    setPaywallReason(reason);
+    setShowPaywall(true);
+  };
 
-  const handlePurchase = async (onClose: () => void) => {
-    if (!selectedPlan) return;
+  /**
+   * Dismiss paywall modal
+   */
+  const dismiss = () => {
+    setShowPaywall(false);
+    setPaywallReason(null);
+  };
 
+  /**
+   * Subscribe to a plan via Razorpay checkout flow
+   *
+   * @param planId - Razorpay plan ID (e.g., plan_xxx)
+   * @returns Promise<boolean> - true if successful, false otherwise
+   */
+  const subscribe = async (planId: string): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      const result = await purchasePlan(selectedPlan);
+      // Step 1: Create subscription on backend
+      const { subscription_id, key_id } =
+        await razorpayService.createSubscription(planId);
 
-      if (result.success) {
-        Alert.alert(
-          "🎉 Welcome to Premium!",
-          "Your subscription is now active. Enjoy all premium features!",
-          [{ text: "Get Started", onPress: onClose }],
-        );
+      // Step 2: Get user info for checkout
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error("User not authenticated");
       }
+
+      const userInfo = {
+        name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+        email: user.email || "",
+        phone: user.user_metadata?.phone || "",
+      };
+
+      // Step 3: Open Razorpay checkout modal (SDK handles payment)
+      const result = await razorpayService.openCheckout(
+        subscription_id,
+        key_id,
+        userInfo,
+      );
+
+      // Step 4: Verify payment signature on backend
+      const verified = await razorpayService.verifyPayment(
+        result.razorpay_payment_id,
+        result.razorpay_subscription_id,
+        result.razorpay_signature,
+      );
+
+      if (!verified) {
+        Alert.alert(
+          "Payment Verification Failed",
+          "Unable to verify your payment. Please contact support.",
+          [{ text: "OK" }],
+        );
+        setIsLoading(false);
+        return false;
+      }
+
+      // Step 5: Refresh subscription store to reflect new status
+      await fetchSubscriptionStatus();
+
+      // Step 6: Success! Dismiss paywall and show success message
+      dismiss();
+      Alert.alert(
+        "🎉 Welcome to Premium!",
+        "Your subscription is now active. Enjoy all premium features!",
+        [{ text: "Get Started" }],
+      );
+      setIsLoading(false);
+      return true;
     } catch (error) {
-      console.error("Purchase error:", error);
+      setIsLoading(false);
+
+      // Handle Razorpay-specific errors
+      if (error instanceof RazorpayServiceError) {
+        if (error.code === "CHECKOUT_CANCELLED") {
+          // User cancelled checkout — NOT an error, just dismiss
+          dismiss();
+          return false;
+        }
+
+        if (error.code === "PAYMENT_FAILED") {
+          Alert.alert(
+            "Payment Failed",
+            error.message ||
+              "Your payment could not be processed. Please try again.",
+            [{ text: "OK" }],
+          );
+          return false;
+        }
+
+        if (error.code === "AUTH_ERROR") {
+          Alert.alert("Authentication Error", "Please log in and try again.", [
+            { text: "OK" },
+          ]);
+          return false;
+        }
+
+        // Generic Razorpay error
+        Alert.alert(
+          "Error",
+          error.message || "Something went wrong. Please try again.",
+          [{ text: "OK" }],
+        );
+        return false;
+      }
+
+      // Unknown error
+      console.error("[usePaywall] Unexpected error:", error);
+      Alert.alert(
+        "Error",
+        "An unexpected error occurred. Please try again later.",
+        [{ text: "OK" }],
+      );
+      return false;
     }
   };
-
-  const handleRestore = async () => {
-    await restorePurchases();
-    Alert.alert(
-      "Restore Complete",
-      "Your previous purchases have been restored.",
-      [{ text: "OK" }],
-    );
-  };
-
-  const getPlanBadge = (plan: SubscriptionPlan) => {
-    if (plan.isPopular) return { text: "🔥 MOST POPULAR", color: "#f97316" };
-    if (plan.discount)
-      return { text: `${plan.discount}% OFF`, color: "#22c55e" };
-    if (plan.period === "lifetime")
-      return { text: "⭐ BEST VALUE", color: "#a855f7" };
-    return null;
-  };
-
-  const getFeatureIcon = (feature: string) => {
-    const icons: Record<string, string> = {
-      "Unlimited AI workout generation": "🚀",
-      "Advanced meal planning": "🍽️",
-      "Detailed analytics": "📊",
-      "Exclusive achievements": "🏆",
-      "Personalized coaching": "💪",
-      "Advanced goal setting": "🎯",
-      "Multiple device sync": "📱",
-      "Dark mode and themes": "🌙",
-      "Export data": "📈",
-      "Smart notifications": "🔔",
-      "Premium music": "🎵",
-      "AI photo analysis": "📸",
-      "Advanced wearables": "🏃‍♂️",
-      "Premium community": "👥",
-      "Remove all ads": "❌",
-    };
-
-    return icons[feature] || "✨";
-  };
-
-  const getFeatureTitle = (feature?: string, defaultTitle?: string) => {
-    const titles: Record<string, string> = {
-      unlimited_ai: "Unlimited AI Workouts",
-      advanced_analytics: "Advanced Analytics",
-      custom_themes: "Custom Themes",
-      export_data: "Export Your Data",
-      premium_achievements: "Premium Achievements",
-      advanced_workouts: "Advanced Workouts",
-      multi_device_sync: "Multi-Device Sync",
-      premium_community: "Premium Community",
-    };
-
-    return titles[feature || ""] || defaultTitle || "Upgrade to Premium";
-  };
-
-  const selectedPlanData = availablePlans.find((p) => p.id === selectedPlan);
 
   return {
-    selectedPlan,
-    selectedPlanData,
-    showFeatures,
-    availablePlans,
-    isPurchasing,
-    purchaseError,
-    trialInfo,
-    setSelectedPlan,
-    setShowFeatures,
-    handlePurchase,
-    handleRestore,
-    getPlanBadge,
-    getFeatureIcon,
-    getFeatureTitle,
+    isLoading,
+    showPaywall,
+    paywallReason,
+    currentPlan,
+    plans: PLAN_CONFIGS,
+    usage,
+    subscribe,
+    dismiss,
+    triggerPaywall,
   };
 };
