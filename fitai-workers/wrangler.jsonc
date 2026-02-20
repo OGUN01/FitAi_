@@ -31,6 +31,10 @@
 			"bucket_name": "fitai-media",
 		},
 	],
+	// Secrets (set via: wrangler secret put RAZORPAY_KEY_SECRET, etc.)
+	// Required secrets: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
+	// Required secrets: RAZORPAY_PLAN_BASIC_MONTHLY, RAZORPAY_PLAN_PRO_MONTHLY, RAZORPAY_PLAN_PRO_YEARLY
+	// Required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY
 	"vars": {
 		"VERCEL_AI_GATEWAY_URL": "https://ai-gateway.vercel.sh/v1",
 		"CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID": "914022281183abb7ca6a5590fec4b994",
