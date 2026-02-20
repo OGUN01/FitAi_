@@ -1830,7 +1830,7 @@ Max Concurrent: 5 (Wave 1)
 
 ### Wave 5 Tasks (Integration + Cleanup — after Wave 4)
 
-- [ ] 17. E2E Integration Test
+- [x] 17. E2E Integration Test
 
   **What to do**:
   - Create `fitai-workers/test/integration/subscription-flow.test.ts` — end-to-end flow tests that test multiple components working together:
@@ -1928,7 +1928,7 @@ Max Concurrent: 5 (Wave 1)
   - Message: `test(subscription): add end-to-end integration tests for subscription flows`
   - Files: `fitai-workers/test/integration/subscription-flow.test.ts`
 
-- [ ] 18. Cleanup and Final Touches
+- [x] 18. Cleanup and Final Touches
 
   **What to do**:
   - **Remove residual IAP references**:

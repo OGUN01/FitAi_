@@ -25,8 +25,18 @@ vi.mock('../../src/utils/razorpay', () => ({
 	verifyWebhookSignature: vi.fn(),
 }));
 
+// Guard against mock bleed: subscriptionGate.test.ts mocks usageTracker with
+// bare vi.fn() stubs. In @cloudflare/vitest-pool-workers, that module mock
+// persists across files in the same pool. Re-declaring the mock here ensures
+// this file owns the mock and can configure it per-test via the imports below.
+vi.mock('../../src/services/usageTracker', () => ({
+	checkUsageLimit: vi.fn(),
+	incrementUsage: vi.fn(),
+}));
+
 import { getSupabaseClient } from '../../src/utils/supabase';
 import { razorpayFetch, verifyPaymentSignature, verifyWebhookSignature } from '../../src/utils/razorpay';
+import { checkUsageLimit, incrementUsage } from '../../src/services/usageTracker';
 import worker from '../../src/index';
 
 // ---------------------------------------------------------------------------
@@ -197,34 +207,26 @@ beforeEach(() => {
 
 describe('Flow 1 — Free user hits feature limit', () => {
 	it('returns 403 FEATURE_LIMIT_EXCEEDED when monthly AI limit reached', async () => {
-		const { client } = makeSupabaseMock({
-			// subscriptionGate → subscriptions query (no active sub)
+		makeSupabaseMock({
 			subscriptions: (chain: any) => {
 				chain.maybeSingle.mockResolvedValue({ data: null, error: null });
 				return chain;
 			},
-			// subscriptionGate → free plan fallback
 			subscription_plans: (chain: any) => {
 				chain.single.mockResolvedValue({ data: FREE_PLAN, error: null });
 				return chain;
 			},
-			// logging middleware
 			api_logs: (chain: any) => {
 				chain.insert.mockReturnValue(Promise.resolve({ data: null, error: null }));
 				return chain;
 			},
 		});
 
-		// Usage tracker: checkUsageLimit calls rpc('get_feature_usage')
-		// Free plan has ai_generations_per_month: 1 — current=1 means at limit
-		client.rpc.mockImplementation((fn: string) => {
-			if (fn === 'get_feature_usage') {
-				return Promise.resolve({ data: 1, error: null });
-			}
-			if (fn === 'increment_feature_usage') {
-				return Promise.resolve({ data: 2, error: null });
-			}
-			return Promise.resolve({ data: 0, error: null });
+		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			allowed: false,
+			current: 1,
+			limit: 1,
+			remaining: 0,
 		});
 
 		const req = authRequest('POST', '/workout/generate', {
@@ -243,7 +245,7 @@ describe('Flow 1 — Free user hits feature limit', () => {
 	});
 
 	it('includes usage data in the 403 response', async () => {
-		const { client } = makeSupabaseMock({
+		makeSupabaseMock({
 			subscriptions: (chain: any) => {
 				chain.maybeSingle.mockResolvedValue({ data: null, error: null });
 				return chain;
@@ -255,11 +257,11 @@ describe('Flow 1 — Free user hits feature limit', () => {
 			api_logs: (chain: any) => chain,
 		});
 
-		client.rpc.mockImplementation((fn: string) => {
-			if (fn === 'get_feature_usage') {
-				return Promise.resolve({ data: 1, error: null });
-			}
-			return Promise.resolve({ data: 0, error: null });
+		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			allowed: false,
+			current: 1,
+			limit: 1,
+			remaining: 0,
 		});
 
 		const req = authRequest('POST', '/workout/generate', {
@@ -677,9 +679,7 @@ describe('Flow 5 — Webhook idempotency', () => {
 
 describe('Flow 6 — Usage reset at period boundary', () => {
 	it('allows generation when usage resets in new period', async () => {
-		// This test simulates: user was at limit, period rolls over, usage is now 0
-		const { client } = makeSupabaseMock({
-			// subscriptionGate → no active subscription → free plan
+		makeSupabaseMock({
 			subscriptions: (chain: any) => {
 				chain.maybeSingle.mockResolvedValue({ data: null, error: null });
 				return chain;
@@ -691,20 +691,17 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 			api_logs: (chain: any) => chain,
 		});
 
-		// After period reset, usage is 0 → allowed (limit=1, current=0)
-		client.rpc.mockImplementation((fn: string) => {
-			if (fn === 'get_feature_usage') {
-				return Promise.resolve({ data: 0, error: null }); // reset: 0 usage
-			}
-			if (fn === 'increment_feature_usage') {
-				return Promise.resolve({ data: 1, error: null });
-			}
-			return Promise.resolve({ data: 0, error: null });
+		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			allowed: true,
+			current: 0,
+			limit: 1,
+			remaining: 1,
+		});
+		(incrementUsage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			success: true,
+			newCount: 1,
 		});
 
-		// The actual workout handler will need AI gateway etc., but we just
-		// need to pass the subscription gate. The handler will fail on missing
-		// AI config, but if we get past 403 that proves the gate opened.
 		const req = authRequest('POST', '/workout/generate', {
 			goals: ['strength'],
 			fitnessLevel: 'beginner',
@@ -714,13 +711,11 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 
 		const res = await callWorker(req);
 
-		// Should NOT be 403 (gate passed). Will be 500 because the workout
-		// handler can't reach the real AI service — but that's fine for this test.
 		expect(res.status).not.toBe(403);
 	});
 
 	it('blocks generation when usage is at limit', async () => {
-		const { client } = makeSupabaseMock({
+		makeSupabaseMock({
 			subscriptions: (chain: any) => {
 				chain.maybeSingle.mockResolvedValue({ data: null, error: null });
 				return chain;
@@ -732,12 +727,11 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 			api_logs: (chain: any) => chain,
 		});
 
-		// usage at limit: current=1, limit=1 for free plan
-		client.rpc.mockImplementation((fn: string) => {
-			if (fn === 'get_feature_usage') {
-				return Promise.resolve({ data: 1, error: null });
-			}
-			return Promise.resolve({ data: 0, error: null });
+		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			allowed: false,
+			current: 1,
+			limit: 1,
+			remaining: 0,
 		});
 
 		const req = authRequest('POST', '/workout/generate', {
@@ -752,8 +746,7 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 	});
 
 	it('paid user with high limits is not blocked', async () => {
-		const { client } = makeSupabaseMock({
-			// subscriptionGate → active subscription with basic plan (inner join)
+		makeSupabaseMock({
 			subscriptions: (chain: any) => {
 				chain.maybeSingle.mockResolvedValue({
 					data: {
@@ -772,7 +765,7 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 						notes: {},
 						created_at: '2024-01-01',
 						updated_at: '2024-01-01',
-						plan: BASIC_PLAN, // inner join result
+						plan: BASIC_PLAN,
 					},
 					error: null,
 				});
@@ -781,15 +774,15 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 			api_logs: (chain: any) => chain,
 		});
 
-		// Basic plan: ai_generations_per_month=100, current=5
-		client.rpc.mockImplementation((fn: string) => {
-			if (fn === 'get_feature_usage') {
-				return Promise.resolve({ data: 5, error: null });
-			}
-			if (fn === 'increment_feature_usage') {
-				return Promise.resolve({ data: 6, error: null });
-			}
-			return Promise.resolve({ data: 0, error: null });
+		(checkUsageLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			allowed: true,
+			current: 5,
+			limit: 100,
+			remaining: 95,
+		});
+		(incrementUsage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+			success: true,
+			newCount: 6,
 		});
 
 		const req = authRequest('POST', '/workout/generate', {
@@ -800,7 +793,6 @@ describe('Flow 6 — Usage reset at period boundary', () => {
 		});
 
 		const res = await callWorker(req);
-		// Should pass the gate (not 403). Will be 500 from actual handler, which is fine.
 		expect(res.status).not.toBe(403);
 		expect(res.status).not.toBe(401);
 	});
