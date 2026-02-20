@@ -1,5 +1,5 @@
 // Subscription Store for FitAI
-// Zustand store for managing premium subscription state
+// Zustand store for managing premium subscription state (Razorpay backend)
 
 import { create } from "zustand";
 import {
@@ -8,449 +8,285 @@ import {
   createJSONStorage,
 } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  subscriptionService,
-  SubscriptionPlan,
-  SubscriptionStatus,
-} from "../services/SubscriptionService";
+import razorpayService from "../services/RazorpayService";
 
-// Helper functions
-const calculatePremiumFeatures = (status: SubscriptionStatus) => {
-  const isPremium =
-    subscriptionService.isPremiumActive() ||
-    subscriptionService.isTrialActive();
+// ============================================================================
+// Types - aligned with backend GET /api/subscription/status response
+// ============================================================================
 
-  return {
-    unlimitedAI: isPremium,
-    advancedAnalytics: isPremium,
-    customThemes: isPremium,
-    exportData: isPremium,
-    prioritySupport: isPremium,
-    removeAds: isPremium,
-    premiumAchievements: isPremium,
-    advancedWorkouts: isPremium,
-    multiDeviceSync: isPremium,
-    premiumCommunity: isPremium,
-  };
-};
+type SubscriptionTier = "free" | "basic" | "pro";
 
-const calculateTrialInfo = (status: SubscriptionStatus) => {
-  const isTrialActive = subscriptionService.isTrialActive();
-  let daysRemaining = 0;
+type SubscriptionStatusType =
+  | "active"
+  | "paused"
+  | "cancelled"
+  | "pending"
+  | null;
 
-  if (isTrialActive && status.trialExpiryDate) {
-    const now = new Date();
-    const expiry = new Date(status.trialExpiryDate);
-    const timeDiff = expiry.getTime() - now.getTime();
-    daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-  }
-
-  return {
-    isEligible: !status.isPremium && !isTrialActive,
-    daysRemaining: Math.max(0, daysRemaining),
-    hasUsedTrial: status.isTrialActive === false,
-  };
-};
-
-interface SubscriptionStore {
-  // State
-  isLoading: boolean;
-  isInitialized: boolean;
-  subscriptionStatus: SubscriptionStatus;
-  availablePlans: SubscriptionPlan[];
-  showPaywall: boolean;
-  isPurchasing: boolean;
-  purchaseError: string | null;
-
-  // Premium Feature Flags
-  premiumFeatures: {
-    unlimitedAI: boolean;
-    advancedAnalytics: boolean;
-    customThemes: boolean;
-    exportData: boolean;
-    prioritySupport: boolean;
-    removeAds: boolean;
-    premiumAchievements: boolean;
-    advancedWorkouts: boolean;
-    multiDeviceSync: boolean;
-    premiumCommunity: boolean;
-  };
-
-  // Trial Management
-  trialInfo: {
-    isEligible: boolean;
-    daysRemaining: number;
-    hasUsedTrial: boolean;
-    // Additional properties used in ProfileScreen
-    nextBillingDate?: string;
-    amount?: number;
-  };
-
-  // Actions
-  initialize: () => Promise<void>;
-  loadPlans: () => Promise<void>;
-  purchasePlan: (
-    planId: string,
-  ) => Promise<{ success: boolean; error?: string }>;
-  restorePurchases: () => Promise<void>;
-  showPaywallModal: (feature?: string) => void;
-  hidePaywallModal: () => void;
-  checkPremiumAccess: (feature: string) => boolean;
-  refreshSubscriptionStatus: () => Promise<void>;
-  getSubscriptionAnalytics: () => any;
-
-  // Premium Feature Checks
-  canUseUnlimitedAI: () => boolean;
-  canAccessAdvancedAnalytics: () => boolean;
-  canCustomizeThemes: () => boolean;
-  canExportData: () => boolean;
-  canAccessPremiumAchievements: () => boolean;
-  isAdFree: () => boolean;
+interface PlanInfo {
+  tier: SubscriptionTier;
+  name: string;
+  billing_cycle: string | null;
 }
 
-export const useSubscriptionStore = create<SubscriptionStore>()(
-  persist(
-    subscribeWithSelector((set, get) => ({
-      // Initial State
-      isLoading: false,
-      isInitialized: false,
-      subscriptionStatus: {
-        isActive: false,
-        isPremium: false,
-        plan: "free",
-      },
-      availablePlans: [],
-      showPaywall: false,
-      isPurchasing: false,
-      purchaseError: null,
+interface FeatureLimits {
+  ai_generations_per_day: number | null;
+  ai_generations_per_month: number | null;
+  scans_per_day: number | null;
+  unlimited_scans: boolean;
+  unlimited_ai: boolean;
+  analytics: boolean;
+  coaching: boolean;
+}
 
-      premiumFeatures: {
-        unlimitedAI: false,
-        advancedAnalytics: false,
-        customThemes: false,
-        exportData: false,
-        prioritySupport: false,
-        removeAds: false,
-        premiumAchievements: false,
-        advancedWorkouts: false,
-        multiDeviceSync: false,
-        premiumCommunity: false,
-      },
+interface UsageBucket {
+  current: number;
+  limit: number | null;
+  remaining: number | null;
+}
 
-      trialInfo: {
-        isEligible: true,
-        daysRemaining: 0,
-        hasUsedTrial: false,
-      },
+interface UsageSummary {
+  ai_generation: {
+    daily: UsageBucket;
+    monthly: UsageBucket;
+  };
+  barcode_scan: {
+    daily: UsageBucket;
+  };
+}
 
-      // Initialize subscription system
-      initialize: async () => {
-        set({ isLoading: true });
+/**
+ * Raw shape returned by the backend's GET /api/subscription/status endpoint.
+ * RazorpayService.getSubscriptionStatus() extracts `.data` for us, but the
+ * service-layer type is loosely typed. We define the real shape here.
+ */
+interface BackendStatusData {
+  tier: SubscriptionTier;
+  name: string;
+  status: string;
+  is_active: boolean;
+  billing_cycle: string | null;
+  current_period_end: string | null;
+  razorpay_subscription_id: string | null;
+  features: FeatureLimits;
+}
 
-        try {
-          console.log("💳 Initializing subscription store...");
+// ============================================================================
+// Free-tier defaults
+// ============================================================================
 
-          // Initialize subscription service
-          await subscriptionService.initialize();
+const FREE_FEATURES: FeatureLimits = {
+  ai_generations_per_day: null,
+  ai_generations_per_month: 1,
+  scans_per_day: 10,
+  unlimited_scans: false,
+  unlimited_ai: false,
+  analytics: false,
+  coaching: false,
+};
 
-          // Load current subscription status
-          const status = subscriptionService.getCurrentSubscription();
-
-          // Load available plans (may be empty in backend validation mode)
-          await get().loadPlans();
-
-          // Update premium features based on status
-          const premiumFeatures = calculatePremiumFeatures(status);
-
-          // Calculate trial info
-          const trialInfo = calculateTrialInfo(status);
-
-          set({
-            isInitialized: true,
-            subscriptionStatus: status,
-            premiumFeatures,
-            trialInfo,
-            isLoading: false,
-          });
-
-          console.log(
-            `✅ Subscription store initialized - Plan: ${status.plan}`,
-          );
-        } catch (error) {
-          console.error("❌ Error initializing subscription store:", error);
-          // Set default free tier on error but still mark as initialized
-          set({
-            isLoading: false,
-            isInitialized: true,
-            subscriptionStatus: {
-              isActive: false,
-              isPremium: false,
-              plan: "free",
-            },
-            premiumFeatures: {
-              unlimitedAI: false,
-              advancedAnalytics: false,
-              customThemes: false,
-              exportData: false,
-              prioritySupport: false,
-              removeAds: false,
-              premiumAchievements: false,
-              advancedWorkouts: false,
-              multiDeviceSync: false,
-              premiumCommunity: false,
-            },
-            trialInfo: {
-              isEligible: true,
-              daysRemaining: 0,
-              hasUsedTrial: false,
-            },
-          });
-        }
-      },
-
-      // Load available subscription plans
-      loadPlans: async () => {
-        try {
-          const plans = subscriptionService.getAvailablePlans();
-          set({ availablePlans: plans });
-          console.log(`📦 Loaded ${plans.length} subscription plans`);
-        } catch (error) {
-          console.error("❌ Error loading subscription plans:", error);
-          set({ availablePlans: [] });
-        }
-      },
-
-      // Purchase a subscription plan
-      purchasePlan: async (planId: string) => {
-        set({ isPurchasing: true, purchaseError: null });
-
-        try {
-          console.log("🛒 Starting purchase for plan:", planId);
-
-          const result = await subscriptionService.purchaseSubscription(planId);
-
-          if (result.success) {
-            // Refresh subscription status
-            await get().refreshSubscriptionStatus();
-
-            set({
-              isPurchasing: false,
-              showPaywall: false,
-            });
-
-            console.log("🎉 Purchase completed successfully!");
-            return { success: true };
-          } else {
-            set({
-              isPurchasing: false,
-              purchaseError: result.error || "Purchase failed",
-            });
-
-            return { success: false, error: result.error };
-          }
-        } catch (error: any) {
-          const errorMessage = error.message || "Purchase failed";
-          set({
-            isPurchasing: false,
-            purchaseError: errorMessage,
-          });
-
-          console.error("❌ Purchase error:", error);
-          return { success: false, error: errorMessage };
-        }
-      },
-
-      // Restore previous purchases
-      restorePurchases: async () => {
-        set({ isLoading: true });
-
-        try {
-          console.log("🔄 Restoring purchases...");
-
-          const result = await subscriptionService.restorePurchases();
-
-          if (result.success) {
-            // Refresh subscription status
-            await get().refreshSubscriptionStatus();
-            console.log("✅ Purchases restored successfully");
-          } else {
-            console.error("❌ Failed to restore purchases:", result.error);
-          }
-        } catch (error) {
-          console.error("❌ Error restoring purchases:", error);
-        } finally {
-          set({ isLoading: false });
-        }
-      },
-
-      // Show paywall modal
-      showPaywallModal: (feature?: string) => {
-        console.log("🚧 Showing paywall for feature:", feature || "general");
-        set({ showPaywall: true, purchaseError: null });
-      },
-
-      // Hide paywall modal
-      hidePaywallModal: () => {
-        set({ showPaywall: false, purchaseError: null });
-      },
-
-      // Check if user has premium access to a feature
-      checkPremiumAccess: (feature: string) => {
-        const state = get();
-        const { subscriptionStatus, premiumFeatures } = state;
-
-        // Always allow access in trial
-        if (subscriptionService.isTrialActive()) {
-          return true;
-        }
-
-        // Check premium status
-        if (!subscriptionService.isPremiumActive()) {
-          return false;
-        }
-
-        // Check specific feature access
-        switch (feature) {
-          case "unlimited_ai":
-            return premiumFeatures.unlimitedAI;
-          case "advanced_analytics":
-            return premiumFeatures.advancedAnalytics;
-          case "custom_themes":
-            return premiumFeatures.customThemes;
-          case "export_data":
-            return premiumFeatures.exportData;
-          case "premium_achievements":
-            return premiumFeatures.premiumAchievements;
-          case "remove_ads":
-            return premiumFeatures.removeAds;
-          case "advanced_workouts":
-            return premiumFeatures.advancedWorkouts;
-          case "multi_device_sync":
-            return premiumFeatures.multiDeviceSync;
-          case "premium_community":
-            return premiumFeatures.premiumCommunity;
-          default:
-            return subscriptionStatus.isPremium;
-        }
-      },
-
-      // Refresh subscription status
-      refreshSubscriptionStatus: async () => {
-        try {
-          const status = subscriptionService.getCurrentSubscription();
-          const premiumFeatures = calculatePremiumFeatures(status);
-          const trialInfo = calculateTrialInfo(status);
-
-          set({
-            subscriptionStatus: status,
-            premiumFeatures,
-            trialInfo,
-          });
-
-          console.log("🔄 Subscription status refreshed");
-        } catch (error) {
-          console.error("❌ Error refreshing subscription status:", error);
-        }
-      },
-
-      // Get subscription analytics
-      getSubscriptionAnalytics: () => {
-        return subscriptionService.getSubscriptionAnalytics();
-      },
-
-      // Premium feature helper methods
-      canUseUnlimitedAI: () => {
-        return get().checkPremiumAccess("unlimited_ai");
-      },
-
-      canAccessAdvancedAnalytics: () => {
-        return get().checkPremiumAccess("advanced_analytics");
-      },
-
-      canCustomizeThemes: () => {
-        return get().checkPremiumAccess("custom_themes");
-      },
-
-      canExportData: () => {
-        return get().checkPremiumAccess("export_data");
-      },
-
-      canAccessPremiumAchievements: () => {
-        return get().checkPremiumAccess("premium_achievements");
-      },
-
-      isAdFree: () => {
-        return get().checkPremiumAccess("remove_ads");
-      },
-    })),
-    {
-      name: "subscription-storage",
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        // Persist critical subscription state to survive app restarts
-        subscriptionStatus: state.subscriptionStatus,
-        premiumFeatures: state.premiumFeatures,
-        trialInfo: state.trialInfo,
-        isInitialized: state.isInitialized,
-      }),
-    },
-  ),
-);
-
-// Subscription management helpers
-export const subscriptionHelpers = {
-  // Check if feature requires premium and show paywall if needed
-  requiresPremium: (feature: string, showPaywall = true) => {
-    const store = useSubscriptionStore.getState();
-    const hasAccess = store.checkPremiumAccess(feature);
-
-    if (!hasAccess && showPaywall) {
-      store.showPaywallModal(feature);
-    }
-
-    return hasAccess;
+const EMPTY_USAGE: UsageSummary = {
+  ai_generation: {
+    daily: { current: 0, limit: null, remaining: null },
+    monthly: { current: 0, limit: null, remaining: null },
   },
-
-  // Track premium feature usage for analytics
-  trackPremiumFeatureUsage: (feature: string, usage: any = {}) => {
-    const store = useSubscriptionStore.getState();
-    const hasAccess = store.checkPremiumAccess(feature);
-
-    console.log(`📊 Premium feature usage - ${feature}:`, {
-      hasAccess,
-      isPremium: store.subscriptionStatus.isPremium,
-      plan: store.subscriptionStatus.plan,
-      ...usage,
-    });
-
-    // Here you could send analytics to your backend
-    return hasAccess;
-  },
-
-  // Get feature limit for free users
-  getFeatureLimit: (feature: string): number => {
-    const limits: Record<string, number> = {
-      ai_generations_daily: 3,
-      meal_plans_weekly: 2,
-      workout_exports_monthly: 1,
-      progress_photos: 10,
-      custom_exercises: 5,
-    };
-
-    return limits[feature] || 0;
-  },
-
-  // Check if user has reached free tier limit
-  hasReachedLimit: (feature: string, currentUsage: number): boolean => {
-    const store = useSubscriptionStore.getState();
-
-    if (store.checkPremiumAccess(feature)) {
-      return false; // No limits for premium users
-    }
-
-    const limit = subscriptionHelpers.getFeatureLimit(feature);
-    return currentUsage >= limit;
+  barcode_scan: {
+    daily: { current: 0, limit: null, remaining: null },
   },
 };
+
+// ============================================================================
+// Store interface
+// ============================================================================
+
+interface SubscriptionState {
+  // Loading states
+  isLoading: boolean;
+  isInitialized: boolean;
+
+  // Subscription data
+  currentPlan: PlanInfo | null;
+  subscriptionStatus: SubscriptionStatusType;
+  features: FeatureLimits;
+  usage: UsageSummary;
+  currentPeriodEnd: string | null;
+
+  // Actions
+  fetchSubscriptionStatus: () => Promise<void>;
+  initializeSubscription: () => Promise<void>;
+  refreshUsage: () => Promise<void>;
+  isPremium: () => boolean;
+  canUseFeature: (featureKey: "ai_generation" | "barcode_scan") => boolean;
+  clearSubscription: () => void;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Map the raw backend status string to the narrower type the store cares about.
+ * Razorpay statuses like 'created', 'authenticated', 'halted', 'completed',
+ * 'expired' are collapsed to `null` (treated as no active subscription).
+ */
+function normalizeStatus(raw: string): SubscriptionStatusType {
+  switch (raw) {
+    case "active":
+      return "active";
+    case "paused":
+      return "paused";
+    case "cancelled":
+      return "cancelled";
+    case "pending":
+      return "pending";
+    default:
+      return null;
+  }
+}
+
+/**
+ * Derive usage buckets from feature limits.
+ *
+ * The backend status endpoint returns feature-limit config but not live usage
+ * counts. We initialise limits here so the UI can show caps; actual enforcement
+ * happens server-side. When a dedicated usage endpoint is added, refreshUsage()
+ * can be updated to call it.
+ */
+function deriveUsageFromFeatures(features: FeatureLimits): UsageSummary {
+  return {
+    ai_generation: {
+      daily: {
+        current: 0,
+        limit: features.ai_generations_per_day,
+        remaining: features.ai_generations_per_day,
+      },
+      monthly: {
+        current: 0,
+        limit: features.ai_generations_per_month,
+        remaining: features.ai_generations_per_month,
+      },
+    },
+    barcode_scan: {
+      daily: {
+        current: 0,
+        limit: features.scans_per_day,
+        remaining: features.scans_per_day,
+      },
+    },
+  };
+}
+
+// ============================================================================
+// Store
+// ============================================================================
+
+export const useSubscriptionStore = create<SubscriptionState>()(
+  subscribeWithSelector(
+    persist(
+      (set, get) => ({
+        // ----- Initial State -----
+        isLoading: false,
+        isInitialized: false,
+        currentPlan: null,
+        subscriptionStatus: null,
+        features: FREE_FEATURES,
+        usage: EMPTY_USAGE,
+        currentPeriodEnd: null,
+
+        // ----- Actions -----
+
+        fetchSubscriptionStatus: async () => {
+          set({ isLoading: true });
+          try {
+            // Service-layer type is loosely typed; cast to actual backend shape
+            const data =
+              (await razorpayService.getSubscriptionStatus()) as unknown as BackendStatusData;
+
+            const status = normalizeStatus(data.status);
+            const features: FeatureLimits = data.features ?? FREE_FEATURES;
+            const usage = deriveUsageFromFeatures(features);
+
+            set({
+              currentPlan: {
+                tier: data.tier,
+                name: data.name,
+                billing_cycle: data.billing_cycle,
+              },
+              subscriptionStatus: status,
+              features,
+              usage,
+              currentPeriodEnd: data.current_period_end,
+              isLoading: false,
+            });
+          } catch (error) {
+            console.warn("[subscriptionStore] Failed to fetch status:", error);
+            set({ isLoading: false });
+          }
+        },
+
+        initializeSubscription: async () => {
+          if (get().isInitialized) return;
+          await get().fetchSubscriptionStatus();
+          set({ isInitialized: true });
+        },
+
+        refreshUsage: async () => {
+          await get().fetchSubscriptionStatus();
+        },
+
+        isPremium: () => {
+          const { subscriptionStatus, currentPlan } = get();
+          return (
+            subscriptionStatus === "active" &&
+            (currentPlan?.tier === "basic" || currentPlan?.tier === "pro")
+          );
+        },
+
+        canUseFeature: (
+          featureKey: "ai_generation" | "barcode_scan",
+        ): boolean => {
+          const { usage, features } = get();
+
+          if (featureKey === "ai_generation") {
+            if (features.unlimited_ai) return true;
+            const dailyRemaining = usage.ai_generation.daily.remaining;
+            return dailyRemaining === null || dailyRemaining > 0;
+          }
+
+          if (featureKey === "barcode_scan") {
+            if (features.unlimited_scans) return true;
+            const dailyRemaining = usage.barcode_scan.daily.remaining;
+            return dailyRemaining === null || dailyRemaining > 0;
+          }
+
+          return false;
+        },
+
+        clearSubscription: () => {
+          set({
+            currentPlan: null,
+            subscriptionStatus: null,
+            features: FREE_FEATURES,
+            usage: EMPTY_USAGE,
+            currentPeriodEnd: null,
+            isInitialized: false,
+          });
+        },
+      }),
+      {
+        name: "subscription-storage",
+        storage: createJSONStorage(() => AsyncStorage),
+        partialize: (state) => ({
+          currentPlan: state.currentPlan,
+          subscriptionStatus: state.subscriptionStatus,
+          features: state.features,
+          usage: state.usage,
+          currentPeriodEnd: state.currentPeriodEnd,
+          isInitialized: state.isInitialized,
+        }),
+      },
+    ),
+  ),
+);
 
 export default useSubscriptionStore;

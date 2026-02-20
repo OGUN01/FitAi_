@@ -19,7 +19,15 @@ import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
 import { handleHealthSync, handleHealthLatest, handleWorkoutSession } from './handlers/healthSync';
-import { handleCreateSubscription, handleVerifyPayment, handleWebhook, handleGetSubscriptionStatus } from './handlers/subscription';
+import {
+	handleCreateSubscription,
+	handleVerifyPayment,
+	handleWebhook,
+	handleGetSubscriptionStatus,
+	handleCancelSubscription,
+	handlePauseSubscription,
+	handleResumeSubscription,
+} from './handlers/subscription';
 import { authMiddleware, optionalAuthMiddleware, AuthContext } from './middleware/auth';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
@@ -428,6 +436,12 @@ app.post('/api/subscription/verify', authMiddleware, rateLimitMiddleware(RATE_LI
 app.post('/api/webhook/razorpay', handleWebhook);
 
 app.get('/api/subscription/status', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetSubscriptionStatus);
+
+app.post('/api/subscription/cancel', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleCancelSubscription);
+
+app.post('/api/subscription/pause', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handlePauseSubscription);
+
+app.post('/api/subscription/resume', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleResumeSubscription);
 
 // ============================================================================
 // EXPORT WORKER

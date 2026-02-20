@@ -11,6 +11,14 @@ export const API_CONFIG = {
   WORKOUT_GENERATE_ENDPOINT: "/workout/generate",
   MEAL_GENERATE_ENDPOINT: "/meal/generate",
   NUTRITION_ANALYZE_ENDPOINT: "/nutrition/analyze",
+
+  // Razorpay subscription endpoints
+  SUBSCRIPTION_CREATE_ENDPOINT: "/api/subscription/create",
+  SUBSCRIPTION_VERIFY_ENDPOINT: "/api/subscription/verify",
+  SUBSCRIPTION_STATUS_ENDPOINT: "/api/subscription/status",
+  SUBSCRIPTION_CANCEL_ENDPOINT: "/api/subscription/cancel",
+  SUBSCRIPTION_PAUSE_ENDPOINT: "/api/subscription/pause",
+  SUBSCRIPTION_RESUME_ENDPOINT: "/api/subscription/resume",
 } as const;
 
 export const APP_CONFIG = {
