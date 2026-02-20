@@ -1,48 +1,80 @@
-// Premium Badge Component
-// Shows premium status and trial information
-
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { rf } from "../../utils/responsive";
+import { UsageCounter } from "./UsageCounter";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface PremiumBadgeProps {
   onPress?: () => void;
   size?: "small" | "medium" | "large";
-  showTrial?: boolean;
+  showUsage?: boolean;
   variant?: "badge" | "banner" | "inline";
 }
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const TIER_GRADIENTS: Record<string, readonly [string, string, ...string[]]> = {
+  pro: ["#A855F7", "#EC4899"],
+  basic: ["#4ADE80", "#3B82F6"],
+  free: ["#FBBF24", "#F97316"],
+};
+
+const TIER_LABELS: Record<string, string> = {
+  pro: "PRO",
+  basic: "BASIC",
+  free: "FREE",
+};
+
+const TIER_ICONS: Record<string, string> = {
+  pro: "👑",
+  basic: "⭐",
+  free: "⭐",
+};
+
+// ============================================================================
+// Component
+// ============================================================================
 
 const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   onPress,
   size = "medium",
-  showTrial = true,
+  showUsage = false,
   variant = "badge",
 }) => {
-  const { subscriptionStatus, trialInfo } = useSubscriptionStore();
+  const { currentPlan, isPremium, currentPeriodEnd } = useSubscriptionStore();
 
-  const isPremium = subscriptionStatus.isPremium;
-  const isTrialActive = trialInfo.daysRemaining > 0;
+  const tier = currentPlan?.tier ?? "free";
+  const isActive = isPremium();
+  const gradientColors = TIER_GRADIENTS[tier] ?? TIER_GRADIENTS.free;
+  const tierLabel = TIER_LABELS[tier] ?? "FREE";
+  const tierIcon = TIER_ICONS[tier] ?? "⭐";
 
   const getSizeStyles = () => {
     switch (size) {
       case "small":
         return {
           containerPadding: { paddingHorizontal: 8, paddingVertical: 4 },
-          textStyle: { fontSize: 12 },
-          iconStyle: { fontSize: 14 },
+          textStyle: { fontSize: rf(12) },
+          iconStyle: { fontSize: rf(14) },
         };
       case "large":
         return {
           containerPadding: { paddingHorizontal: 16, paddingVertical: 8 },
-          textStyle: { fontSize: 16, fontWeight: "700" as const },
-          iconStyle: { fontSize: 18 },
+          textStyle: { fontSize: rf(16), fontWeight: "700" as const },
+          iconStyle: { fontSize: rf(18) },
         };
       default:
         return {
           containerPadding: { paddingHorizontal: 12, paddingVertical: 6 },
-          textStyle: { fontSize: 14, fontWeight: "600" as const },
-          iconStyle: { fontSize: 16 },
+          textStyle: { fontSize: rf(14), fontWeight: "600" as const },
+          iconStyle: { fontSize: rf(16) },
         };
     }
   };
@@ -50,11 +82,11 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
   const sizeStyles = getSizeStyles();
 
   if (variant === "badge") {
-    if (!isPremium && !isTrialActive) {
+    if (!isActive && tier === "free") {
       return (
         <Pressable onPress={onPress}>
           <LinearGradient
-            colors={["#FBBF24", "#F97316"]}
+            colors={gradientColors}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={[styles.badgeContainer, sizeStyles.containerPadding]}
@@ -68,53 +100,36 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       );
     }
 
-    if (isTrialActive && showTrial) {
-      return (
-        <LinearGradient
-          colors={["#60A5FA", "#A78BFA"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={[styles.badgeContainer, sizeStyles.containerPadding]}
-        >
-          <Text style={[styles.icon, sizeStyles.iconStyle]}>🎁</Text>
-          <Text style={[styles.badgeText, sizeStyles.textStyle]}>
-            Trial: {trialInfo.daysRemaining}d
-          </Text>
-        </LinearGradient>
-      );
-    }
-
-    if (isPremium) {
-      const gradientColors = (
-        subscriptionStatus.plan === "lifetime"
-          ? ["#A855F7", "#EC4899"]
-          : ["#4ADE80", "#3B82F6"]
-      ) as readonly [string, string, ...string[]];
-      return (
+    return (
+      <View style={styles.badgeWithUsage}>
         <LinearGradient
           colors={gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.badgeContainer, sizeStyles.containerPadding]}
         >
-          <Text style={[styles.icon, sizeStyles.iconStyle]}>👑</Text>
-          <Text
-            style={[styles.badgeText, sizeStyles.textStyle, styles.capitalize]}
-          >
-            {subscriptionStatus.plan === "lifetime" ? "Lifetime" : "Premium"}
+          <Text style={[styles.icon, sizeStyles.iconStyle]}>{tierIcon}</Text>
+          <Text style={[styles.badgeText, sizeStyles.textStyle]}>
+            {tierLabel}
           </Text>
         </LinearGradient>
-      );
-    }
-    return null;
+        {showUsage && (
+          <UsageCounter
+            featureKey="ai_generation"
+            variant="compact"
+            showLabel={false}
+          />
+        )}
+      </View>
+    );
   }
 
   if (variant === "banner") {
-    if (!isPremium && !isTrialActive) {
+    if (!isActive && tier === "free") {
       return (
         <Pressable onPress={onPress}>
           <LinearGradient
-            colors={["#FBBF24", "#F97316"]}
+            colors={TIER_GRADIENTS.free}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.banner}
@@ -138,79 +153,42 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       );
     }
 
-    if (isTrialActive && showTrial) {
-      return (
-        <LinearGradient
-          colors={["#60A5FA", "#A78BFA"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.banner}
-        >
-          <View style={styles.bannerContent}>
-            <View style={styles.bannerTextContainer}>
-              <View style={styles.bannerHeader}>
-                <Text style={styles.bannerIcon}>🎁</Text>
-                <Text style={styles.bannerTitle}>Free Trial Active</Text>
-              </View>
-              <Text style={styles.bannerSubtitle}>
-                {trialInfo.daysRemaining} days remaining - Enjoy all premium
-                features!
-              </Text>
+    return (
+      <LinearGradient
+        colors={gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.banner}
+      >
+        <View style={styles.bannerContent}>
+          <View style={styles.bannerTextContainer}>
+            <View style={styles.bannerHeader}>
+              <Text style={styles.bannerIcon}>{tierIcon}</Text>
+              <Text style={styles.bannerTitle}>{tierLabel} Plan Active</Text>
             </View>
-            <View style={styles.bannerButton}>
-              <Text style={styles.bannerButtonText}>
-                {trialInfo.daysRemaining}d left
-              </Text>
-            </View>
+            <Text style={styles.bannerSubtitle}>
+              You have access to all {tier} features
+              {currentPeriodEnd &&
+                tier !== "pro" &&
+                ` until ${new Date(currentPeriodEnd).toLocaleDateString()}`}
+            </Text>
           </View>
-        </LinearGradient>
-      );
-    }
-
-    if (isPremium) {
-      const gradientColors = (
-        subscriptionStatus.plan === "lifetime"
-          ? ["#A855F7", "#EC4899"]
-          : ["#4ADE80", "#3B82F6"]
-      ) as readonly [string, string, ...string[]];
-      return (
-        <LinearGradient
-          colors={gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.banner}
-        >
-          <View style={styles.bannerContent}>
-            <View style={styles.bannerTextContainer}>
-              <View style={styles.bannerHeader}>
-                <Text style={styles.bannerIcon}>👑</Text>
-                <Text style={[styles.bannerTitle, styles.capitalize]}>
-                  {subscriptionStatus.plan === "lifetime"
-                    ? "Lifetime Premium"
-                    : "Premium Active"}
-                </Text>
-              </View>
-              <Text style={styles.bannerSubtitle}>
-                You have access to all premium features
-                {subscriptionStatus.expiryDate &&
-                  subscriptionStatus.plan !== "lifetime" &&
-                  ` until ${new Date(subscriptionStatus.expiryDate).toLocaleDateString()}`}
-              </Text>
-            </View>
-            <View style={styles.bannerButton}>
-              <Text style={[styles.bannerButtonText, styles.capitalize]}>
-                {subscriptionStatus.plan}
-              </Text>
-            </View>
+          <View style={styles.bannerButton}>
+            <Text style={styles.bannerButtonText}>{tierLabel}</Text>
           </View>
-        </LinearGradient>
-      );
-    }
-    return null;
+        </View>
+        {showUsage && (
+          <View style={styles.bannerUsageRow}>
+            <UsageCounter featureKey="ai_generation" variant="compact" />
+            <UsageCounter featureKey="barcode_scan" variant="compact" />
+          </View>
+        )}
+      </LinearGradient>
+    );
   }
 
   if (variant === "inline") {
-    if (!isPremium && !isTrialActive) {
+    if (!isActive && tier === "free") {
       return (
         <Pressable onPress={onPress} style={styles.inlineContainer}>
           <Text style={styles.inlineIconYellow}>⭐</Text>
@@ -219,38 +197,36 @@ const PremiumBadge: React.FC<PremiumBadgeProps> = ({
       );
     }
 
-    if (isTrialActive && showTrial) {
-      return (
-        <View style={styles.inlineContainer}>
-          <Text style={styles.inlineIconBlue}>🎁</Text>
-          <Text style={styles.inlineTextBlue}>
-            Trial: {trialInfo.daysRemaining} days left
-          </Text>
-        </View>
-      );
-    }
+    const colorMap: Record<string, typeof styles.inlineTextPurple> = {
+      pro: styles.inlineTextPurple,
+      basic: styles.inlineTextGreen,
+    };
 
-    if (isPremium) {
-      const isPurple = subscriptionStatus.plan === "lifetime";
-      return (
-        <View style={styles.inlineContainer}>
-          <Text style={styles.inlineIconYellow}>👑</Text>
-          <Text
-            style={[
-              isPurple ? styles.inlineTextPurple : styles.inlineTextGreen,
-              styles.capitalize,
-            ]}
-          >
-            {subscriptionStatus.plan === "lifetime" ? "Lifetime" : "Premium"}
-          </Text>
-        </View>
-      );
-    }
-    return null;
+    return (
+      <View style={styles.inlineContainer}>
+        <Text style={styles.inlineIconYellow}>{tierIcon}</Text>
+        <Text style={[colorMap[tier] ?? styles.inlineTextGreen]}>
+          {tierLabel}
+        </Text>
+        {showUsage && (
+          <View style={styles.inlineUsageSpacer}>
+            <UsageCounter
+              featureKey="ai_generation"
+              variant="compact"
+              showLabel={false}
+            />
+          </View>
+        )}
+      </View>
+    );
   }
 
   return null;
 };
+
+// ============================================================================
+// Styles
+// ============================================================================
 
 const styles = StyleSheet.create({
   badgeContainer: {
@@ -259,6 +235,11 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   badgeText: { color: "#FFFFFF" },
+  badgeWithUsage: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   icon: { marginRight: 4 },
   banner: {
     padding: 16,
@@ -273,11 +254,11 @@ const styles = StyleSheet.create({
   },
   bannerTextContainer: { flex: 1 },
   bannerHeader: { flexDirection: "row", alignItems: "center" },
-  bannerIcon: { fontSize: 24, marginRight: 8 },
-  bannerTitle: { color: "#FFFFFF", fontWeight: "700", fontSize: 18 },
+  bannerIcon: { fontSize: rf(24), marginRight: 8 },
+  bannerTitle: { color: "#FFFFFF", fontWeight: "700", fontSize: rf(18) },
   bannerSubtitle: {
     color: "rgba(255, 255, 255, 0.9)",
-    fontSize: 14,
+    fontSize: rf(14),
     marginTop: 4,
   },
   bannerButton: {
@@ -286,15 +267,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  bannerButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  bannerButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: rf(14) },
+  bannerUsageRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
+  },
   inlineContainer: { flexDirection: "row", alignItems: "center" },
-  inlineIconYellow: { fontSize: 16, marginRight: 4 },
-  inlineIconBlue: { fontSize: 16, marginRight: 4 },
-  inlineTextYellow: { color: "#D97706", fontSize: 14, fontWeight: "500" },
-  inlineTextBlue: { color: "#2563EB", fontSize: 14, fontWeight: "500" },
-  inlineTextPurple: { color: "#9333EA", fontSize: 14, fontWeight: "500" },
-  inlineTextGreen: { color: "#16A34A", fontSize: 14, fontWeight: "500" },
-  capitalize: { textTransform: "capitalize" },
+  inlineIconYellow: { fontSize: rf(16), marginRight: 4 },
+  inlineTextYellow: { color: "#D97706", fontSize: rf(14), fontWeight: "500" },
+  inlineTextPurple: { color: "#9333EA", fontSize: rf(14), fontWeight: "500" },
+  inlineTextGreen: { color: "#16A34A", fontSize: rf(14), fontWeight: "500" },
+  inlineUsageSpacer: { marginLeft: 8 },
 });
 
 export default PremiumBadge;

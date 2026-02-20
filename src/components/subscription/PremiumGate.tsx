@@ -1,37 +1,63 @@
-// Premium Feature Gate Component
-// Conditionally render content based on subscription status
-
 import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import {
-  useSubscriptionStore,
-  subscriptionHelpers,
-} from "../../stores/subscriptionStore";
-import PremiumBadge from "./PremiumBadge";
+import { View, Text, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSubscriptionStore } from "../../stores/subscriptionStore";
+import { usePaywall } from "../../hooks/usePaywall";
+import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
+import { rf, rw, rh } from "../../utils/responsive";
+import { haptics } from "../../utils/haptics";
+import { UsageCounter } from "./UsageCounter";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+type FeatureKey = "ai_generation" | "barcode_scan";
 
 interface PremiumGateProps {
-  feature: string;
+  featureKey: FeatureKey;
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showUpgrade?: boolean;
+  showUsageCounter?: boolean;
   upgradeText?: string;
   upgradeDescription?: string;
 }
 
+const FEATURE_MESSAGES: Record<FeatureKey, string> = {
+  ai_generation: "You've reached your AI generation limit this month",
+  barcode_scan: "You've reached your daily food scan limit",
+};
+
+// ============================================================================
+// Component
+// ============================================================================
+
 const PremiumGate: React.FC<PremiumGateProps> = ({
-  feature,
+  featureKey,
   children,
   fallback,
   showUpgrade = true,
-  upgradeText = "Upgrade to Premium",
-  upgradeDescription = "This feature requires a premium subscription",
+  showUsageCounter = true,
+  upgradeText = "Upgrade to Continue",
+  upgradeDescription,
 }) => {
-  const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
+  const canUseFeature = useSubscriptionStore((s) => s.canUseFeature);
+  const { triggerPaywall } = usePaywall();
 
-  const hasAccess = checkPremiumAccess(feature);
+  const canUse = canUseFeature(featureKey);
 
-  if (hasAccess) {
-    return <>{children}</>;
+  if (canUse) {
+    return (
+      <View>
+        {children}
+        {showUsageCounter && (
+          <View style={styles.usageCounterRow}>
+            <UsageCounter featureKey={featureKey} variant="compact" />
+          </View>
+        )}
+      </View>
+    );
   }
 
   if (fallback) {
@@ -41,27 +67,39 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   if (showUpgrade) {
     return (
       <View style={styles.container}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>👑</Text>
-        </View>
+        <View style={styles.blurOverlay}>
+          <View style={styles.iconContainer}>
+            <Text style={styles.iconText}>👑</Text>
+          </View>
 
-        <Text style={styles.title}>{upgradeText}</Text>
+          <Text style={styles.title}>{upgradeText}</Text>
 
-        <Text style={styles.description}>{upgradeDescription}</Text>
+          <Text style={styles.description}>
+            {upgradeDescription ?? FEATURE_MESSAGES[featureKey]}
+          </Text>
 
-        <Pressable
-          onPress={() => showPaywallModal(feature)}
-          style={styles.upgradeButton}
-        >
-          <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
-        </Pressable>
-
-        <View style={styles.badgeContainer}>
-          <PremiumBadge
-            size="small"
-            variant="inline"
-            onPress={() => showPaywallModal(feature)}
+          <UsageCounter
+            featureKey={featureKey}
+            variant="detailed"
+            showLabel={false}
           />
+
+          <AnimatedPressable
+            onPress={() => {
+              haptics.light();
+              triggerPaywall(FEATURE_MESSAGES[featureKey]);
+            }}
+            style={styles.upgradeButton}
+          >
+            <LinearGradient
+              colors={["#F97316", "#EA580C"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.upgradeGradient}
+            >
+              <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            </LinearGradient>
+          </AnimatedPressable>
         </View>
       </View>
     );
@@ -70,64 +108,85 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   return null;
 };
 
+// ============================================================================
+// Styles
+// ============================================================================
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 16,
-    padding: 24,
-    margin: 16,
+    borderRadius: rw(16),
+    overflow: "hidden",
+    margin: rw(16),
+  },
+  blurOverlay: {
+    backgroundColor: "rgba(249, 250, 251, 0.95)",
+    borderRadius: rw(16),
+    padding: rw(24),
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(209, 213, 219, 0.5)",
   },
   iconContainer: {
     backgroundColor: "#FEF3C7",
     borderRadius: 9999,
-    padding: 12,
-    marginBottom: 16,
+    padding: rw(12),
+    marginBottom: rh(16),
   },
   iconText: {
-    fontSize: 32,
+    fontSize: rf(32),
   },
   title: {
-    fontSize: 18,
+    fontSize: rf(18),
     fontWeight: "700",
     color: "#111827",
-    marginBottom: 8,
+    marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
-    fontSize: 14,
+    fontSize: rf(14),
     color: "#6B7280",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: rh(16),
+    lineHeight: rf(20),
   },
   upgradeButton: {
-    backgroundColor: "#F97316",
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    minWidth: 120,
+    marginTop: rh(16),
+    borderRadius: rw(16),
+    overflow: "hidden",
+    width: "100%",
+  },
+  upgradeGradient: {
+    paddingVertical: rh(14),
+    paddingHorizontal: rw(24),
     alignItems: "center",
+    borderRadius: rw(16),
   },
   upgradeButtonText: {
     color: "#FFFFFF",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: rf(16),
   },
-  badgeContainer: {
-    marginTop: 16,
+  usageCounterRow: {
+    paddingHorizontal: rw(16),
+    paddingTop: rh(8),
+    alignItems: "flex-end",
   },
 });
 
+// ============================================================================
+// HOC
+// ============================================================================
+
 export const withPremiumGate = (
-  feature: string,
+  featureKey: FeatureKey,
   upgradeProps?: Partial<PremiumGateProps>,
 ) => {
-  return function PremiumWrapped<T extends {}>(
+  return function PremiumWrapped<T extends object>(
     Component: React.ComponentType<T>,
   ): React.ComponentType<T> {
     return function PremiumGatedComponent(props: T) {
       return (
-        <PremiumGate feature={feature} {...upgradeProps}>
+        <PremiumGate featureKey={featureKey} {...upgradeProps}>
           <Component {...props} />
         </PremiumGate>
       );
@@ -135,36 +194,34 @@ export const withPremiumGate = (
   };
 };
 
-export const usePremiumFeature = (feature: string) => {
-  const { checkPremiumAccess, showPaywallModal } = useSubscriptionStore();
+// ============================================================================
+// Hook
+// ============================================================================
 
-  const hasAccess = checkPremiumAccess(feature);
+export const usePremiumFeature = (featureKey: FeatureKey) => {
+  const canUseFeatureFn = useSubscriptionStore((s) => s.canUseFeature);
+  const isPremiumFn = useSubscriptionStore((s) => s.isPremium);
+  const { triggerPaywall } = usePaywall();
 
-  const requireAccess = (showPaywall = true, trackUsage = true) => {
-    if (trackUsage) {
-      subscriptionHelpers.trackPremiumFeatureUsage(feature, {
-        attempted: true,
-      });
-    }
-
-    const access = subscriptionHelpers.requiresPremium(feature, showPaywall);
-    return access;
-  };
-
-  const checkLimit = (currentUsage: number) => {
-    return subscriptionHelpers.hasReachedLimit(feature, currentUsage);
-  };
-
-  const getLimit = () => {
-    return subscriptionHelpers.getFeatureLimit(feature);
-  };
+  const hasAccess = canUseFeatureFn(featureKey);
 
   return {
     hasAccess,
-    requireAccess,
-    checkLimit,
-    getLimit,
-    showPaywall: () => showPaywallModal(feature),
+    isPremium: isPremiumFn(),
+    requireAccess: () => hasAccess,
+    checkLimit: () => !hasAccess,
+    getLimit: () => {
+      const { usage, features } = useSubscriptionStore.getState();
+      if (featureKey === "ai_generation") {
+        return features.unlimited_ai
+          ? Infinity
+          : (usage.ai_generation.monthly.limit ?? Infinity);
+      }
+      return features.unlimited_scans
+        ? Infinity
+        : (usage.barcode_scan.daily.limit ?? Infinity);
+    },
+    showPaywall: () => triggerPaywall(FEATURE_MESSAGES[featureKey]),
   };
 };
 
