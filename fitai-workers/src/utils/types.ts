@@ -56,6 +56,14 @@ export interface Env {
 	CLOUDFLARE_AI_GATEWAY_ACCOUNT_ID: string;
 	CLOUDFLARE_AI_GATEWAY_SLUG: string;
 	CLOUDFLARE_AI_GATEWAY_URL: string;
+
+	// Razorpay Subscription Secrets & Plan IDs
+	RAZORPAY_KEY_ID: string;
+	RAZORPAY_KEY_SECRET: string;
+	RAZORPAY_WEBHOOK_SECRET: string;
+	RAZORPAY_PLAN_ID_BASIC_MONTHLY: string;
+	RAZORPAY_PLAN_ID_PRO_MONTHLY: string;
+	RAZORPAY_PLAN_ID_PRO_YEARLY: string;
 }
 
 // ============================================================================
@@ -257,4 +265,102 @@ export interface JobListItem {
 	created_at: string;
 	completed_at?: string;
 	generation_time_ms?: number;
+}
+
+// ============================================================================
+// RAZORPAY SUBSCRIPTION TYPES
+// ============================================================================
+
+export type SubscriptionTier = 'free' | 'basic' | 'pro';
+
+export type SubscriptionStatus = 'created' | 'authenticated' | 'active' | 'pending' | 'halted' | 'paused' | 'cancelled' | 'completed';
+
+export interface RazorpaySubscription {
+	id: string;
+	entity: 'subscription';
+	plan_id: string;
+	customer_id: string;
+	status: SubscriptionStatus;
+	current_start: number;
+	current_end: number;
+	ended_at: number | null;
+	quantity: number;
+	notes: Record<string, string>;
+	charge_at: number;
+	offer_id: string | null;
+	short_url: string;
+	has_scheduled_changes: boolean;
+	change_scheduled_at: number | null;
+	source: string;
+	payment_method: string;
+}
+
+export interface RazorpayPayment {
+	id: string;
+	entity: 'payment';
+	amount: number;
+	currency: string;
+	status: string;
+	order_id: string | null;
+	invoice_id: string | null;
+	international: boolean;
+	method: string;
+	amount_refunded: number;
+	captured: boolean;
+	description: string | null;
+	email: string;
+	contact: string;
+	fee: number;
+	tax: number;
+	created_at: number;
+}
+
+export interface RazorpayWebhookEvent {
+	entity: 'event';
+	account_id: string;
+	event: string;
+	contains: string[];
+	payload: {
+		subscription?: { entity: RazorpaySubscription };
+		payment?: { entity: RazorpayPayment };
+	};
+	created_at: number;
+}
+
+export interface RazorpayPlan {
+	id: string;
+	entity: 'plan';
+	interval: number;
+	period: 'daily' | 'weekly' | 'monthly' | 'yearly';
+	item: {
+		id: string;
+		active: boolean;
+		name: string;
+		description: string | null;
+		amount: number;
+		currency: string;
+	};
+	notes: Record<string, string>;
+	created_at: number;
+}
+
+export interface FeatureLimitConfig {
+	ai_generations_per_day?: number;
+	ai_generations_per_month?: number;
+	scans_per_day?: number;
+	unlimited_scans?: boolean;
+	unlimited_ai?: boolean;
+	analytics?: boolean;
+	coaching?: boolean;
+}
+
+export interface UsageRecord {
+	id: string;
+	user_id: string;
+	feature_key: string;
+	period_type: 'daily' | 'monthly';
+	period_start: string;
+	usage_count: number;
+	created_at: string;
+	updated_at: string;
 }

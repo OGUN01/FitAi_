@@ -81,6 +81,16 @@ export enum ErrorCode {
 	JOB_EXPIRED = 'JOB_EXPIRED',
 	JOB_TIMEOUT = 'JOB_TIMEOUT',
 	QUEUE_SEND_FAILED = 'QUEUE_SEND_FAILED',
+
+	// ============================================================================
+	// SUBSCRIPTION & FEATURE GATE ERRORS (403, 404, 402)
+	// ============================================================================
+	FEATURE_LIMIT_EXCEEDED = 'FEATURE_LIMIT_EXCEEDED',
+	SUBSCRIPTION_REQUIRED = 'SUBSCRIPTION_REQUIRED',
+	PAYMENT_VERIFICATION_FAILED = 'PAYMENT_VERIFICATION_FAILED',
+	WEBHOOK_SIGNATURE_INVALID = 'WEBHOOK_SIGNATURE_INVALID',
+	SUBSCRIPTION_NOT_FOUND = 'SUBSCRIPTION_NOT_FOUND',
+	SUBSCRIPTION_INACTIVE = 'SUBSCRIPTION_INACTIVE',
 }
 
 /**
@@ -375,6 +385,49 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorCodeMetadata> = {
 		httpStatus: 503,
 		isRetryable: true,
 		category: 'internal',
+	},
+
+	[ErrorCode.FEATURE_LIMIT_EXCEEDED]: {
+		code: ErrorCode.FEATURE_LIMIT_EXCEEDED,
+		defaultMessage: 'Feature usage limit exceeded for your subscription tier',
+		httpStatus: 403,
+		isRetryable: false,
+		category: 'rate_limit',
+	},
+	[ErrorCode.SUBSCRIPTION_REQUIRED]: {
+		code: ErrorCode.SUBSCRIPTION_REQUIRED,
+		defaultMessage: 'This feature requires an active subscription',
+		httpStatus: 402,
+		isRetryable: false,
+		category: 'authentication',
+	},
+	[ErrorCode.PAYMENT_VERIFICATION_FAILED]: {
+		code: ErrorCode.PAYMENT_VERIFICATION_FAILED,
+		defaultMessage: 'Payment signature verification failed',
+		httpStatus: 400,
+		isRetryable: false,
+		category: 'validation',
+	},
+	[ErrorCode.WEBHOOK_SIGNATURE_INVALID]: {
+		code: ErrorCode.WEBHOOK_SIGNATURE_INVALID,
+		defaultMessage: 'Webhook signature verification failed',
+		httpStatus: 401,
+		isRetryable: false,
+		category: 'authentication',
+	},
+	[ErrorCode.SUBSCRIPTION_NOT_FOUND]: {
+		code: ErrorCode.SUBSCRIPTION_NOT_FOUND,
+		defaultMessage: 'Subscription not found',
+		httpStatus: 404,
+		isRetryable: false,
+		category: 'resource',
+	},
+	[ErrorCode.SUBSCRIPTION_INACTIVE]: {
+		code: ErrorCode.SUBSCRIPTION_INACTIVE,
+		defaultMessage: 'Subscription is not active',
+		httpStatus: 403,
+		isRetryable: false,
+		category: 'authentication',
 	},
 };
 
