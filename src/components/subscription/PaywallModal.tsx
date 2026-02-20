@@ -1,7 +1,4 @@
-// Paywall Modal Component
-// Beautiful premium subscription upgrade modal
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -9,319 +6,278 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
-  Alert,
-  Dimensions,
   StyleSheet,
 } from "react-native";
-import { useSubscriptionStore } from "../../stores/subscriptionStore";
-import { SubscriptionPlan } from "../../services/SubscriptionService";
+import { usePaywall } from "../../hooks/usePaywall";
 
 interface PaywallModalProps {
   visible: boolean;
   onClose: () => void;
-  feature?: string;
-  title?: string;
-  description?: string;
+  reason?: string;
 }
 
-const { width: screenWidth } = Dimensions.get("window");
+const TIER_FEATURES: Record<string, string[]> = {
+  basic: [
+    "10 AI generations per day",
+    "Unlimited barcode scans",
+    "Basic analytics dashboard",
+  ],
+  pro: [
+    "Unlimited AI generations",
+    "Unlimited barcode scans",
+    "Advanced analytics & insights",
+    "Personalized AI coaching",
+    "Priority support",
+    "Export your data",
+  ],
+};
 
 const PaywallModal: React.FC<PaywallModalProps> = ({
   visible,
   onClose,
-  feature,
-  title = "Upgrade to Premium",
-  description = "Unlock all premium features and take your fitness journey to the next level!",
+  reason,
 }) => {
-  const {
-    availablePlans,
-    isPurchasing,
-    purchaseError,
-    trialInfo,
-    purchasePlan,
-    restorePurchases,
-  } = useSubscriptionStore();
+  const { plans, currentPlan, isLoading, paywallReason, subscribe, dismiss } =
+    usePaywall();
 
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [showFeatures, setShowFeatures] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "yearly",
+  );
 
-  useEffect(() => {
-    if (availablePlans.length > 0 && !selectedPlan) {
-      // Default to yearly plan (most popular)
-      const yearlyPlan = availablePlans.find((p) => p.period === "yearly");
-      setSelectedPlan(yearlyPlan?.id || availablePlans[0]?.id);
-    }
-  }, [availablePlans, selectedPlan]);
-
-  const handlePurchase = async () => {
-    if (!selectedPlan) return;
-
-    try {
-      const result = await purchasePlan(selectedPlan);
-
-      if (result.success) {
-        Alert.alert(
-          "🎉 Welcome to Premium!",
-          "Your subscription is now active. Enjoy all premium features!",
-          [{ text: "Get Started", onPress: onClose }],
-        );
-      }
-    } catch (error) {
-      console.error("Purchase error:", error);
-    }
-  };
-
-  const handleRestore = async () => {
-    await restorePurchases();
-    Alert.alert(
-      "Restore Complete",
-      "Your previous purchases have been restored.",
-      [{ text: "OK" }],
+  const displayPlans = useMemo(() => {
+    const basicPlan = plans.find(
+      (p) => p.tier === "basic" && p.billing_cycle === "monthly",
     );
+    const proPlan = plans.find(
+      (p) => p.tier === "pro" && p.billing_cycle === billingCycle,
+    );
+    return [basicPlan, proPlan].filter(Boolean);
+  }, [plans, billingCycle]);
+
+  const effectiveSelectedId = useMemo(() => {
+    if (selectedPlanId) return selectedPlanId;
+    const proPlan = displayPlans.find((p) => p?.tier === "pro");
+    return proPlan?.id ?? displayPlans[0]?.id ?? null;
+  }, [selectedPlanId, displayPlans]);
+
+  const selectedPlanData = plans.find((p) => p.id === effectiveSelectedId);
+  const displayReason = reason ?? paywallReason;
+  const isCurrentTier = (tier: string) => currentPlan?.tier === tier;
+
+  const handleDismiss = () => {
+    dismiss();
+    onClose();
   };
 
-  const getPlanBadge = (plan: SubscriptionPlan) => {
-    if (plan.isPopular) return { text: "🔥 MOST POPULAR", color: "#f97316" };
-    if (plan.discount)
-      return { text: `${plan.discount}% OFF`, color: "#22c55e" };
-    if (plan.period === "lifetime")
-      return { text: "⭐ BEST VALUE", color: "#a855f7" };
-    return null;
+  const handleSubscribe = async () => {
+    if (!effectiveSelectedId) return;
+    const success = await subscribe(effectiveSelectedId);
+    if (success) {
+      onClose();
+    }
   };
 
-  const getFeatureIcon = (feature: string) => {
-    const icons: Record<string, string> = {
-      "Unlimited AI workout generation": "🚀",
-      "Advanced meal planning": "🍽️",
-      "Detailed analytics": "📊",
-      "Exclusive achievements": "🏆",
-      "Personalized coaching": "💪",
-      "Advanced goal setting": "🎯",
-      "Multiple device sync": "📱",
-      "Dark mode and themes": "🌙",
-      "Export data": "📈",
-      "Smart notifications": "🔔",
-      "Premium music": "🎵",
-      "AI photo analysis": "📸",
-      "Advanced wearables": "🏃‍♂️",
-      "Premium community": "👥",
-      "Remove all ads": "❌",
-    };
-
-    return icons[feature] || "✨";
+  const formatPrice = (priceMonthly: number, cycle: string) => {
+    if (cycle === "yearly") {
+      return `₹${priceMonthly * 12}/yr`;
+    }
+    return `₹${priceMonthly}/mo`;
   };
 
-  const getFeatureTitle = (feature?: string) => {
-    const titles: Record<string, string> = {
-      unlimited_ai: "Unlimited AI Workouts",
-      advanced_analytics: "Advanced Analytics",
-      custom_themes: "Custom Themes",
-      export_data: "Export Your Data",
-      premium_achievements: "Premium Achievements",
-      advanced_workouts: "Advanced Workouts",
-      multi_device_sync: "Multi-Device Sync",
-      premium_community: "Premium Community",
-    };
-
-    return titles[feature || ""] || title;
+  const getYearlySavingsLabel = () => {
+    const monthlyPro = plans.find(
+      (p) => p.tier === "pro" && p.billing_cycle === "monthly",
+    );
+    const yearlyPro = plans.find(
+      (p) => p.tier === "pro" && p.billing_cycle === "yearly",
+    );
+    if (!monthlyPro || !yearlyPro) return null;
+    const monthlyTotal = monthlyPro.price_monthly * 12;
+    const yearlyTotal = yearlyPro.price_monthly * 12;
+    const pct = Math.round(((monthlyTotal - yearlyTotal) / monthlyTotal) * 100);
+    return pct > 0 ? `Save ${pct}%` : null;
   };
 
   if (!visible) return null;
-
-  const selectedPlanData = availablePlans.find((p) => p.id === selectedPlan);
 
   return (
     <Modal
       transparent
       visible={visible}
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleDismiss}
     >
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <View style={styles.content}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <View style={styles.headerText}>
-                  <Text style={styles.headerTitle}>
-                    {getFeatureTitle(feature)}
+          {/* ── Header ─────────────────────────────────────── */}
+          <View style={styles.header}>
+            <View style={styles.headerRow}>
+              <View style={styles.headerTextWrap}>
+                <Text style={styles.headerTitle}>Choose Your Plan</Text>
+                {displayReason ? (
+                  <Text style={styles.headerReason}>{displayReason}</Text>
+                ) : (
+                  <Text style={styles.headerDesc}>
+                    Unlock premium features and supercharge your fitness journey
                   </Text>
-                  <Text style={styles.headerDescription}>{description}</Text>
-                </View>
-
-                <Pressable onPress={onClose} style={styles.closeButton}>
-                  <Text style={styles.closeButtonText}>×</Text>
-                </Pressable>
-              </View>
-
-              {/* Trial Info */}
-              {trialInfo.isEligible && (
-                <View style={styles.trialBanner}>
-                  <Text style={styles.trialTitle}>
-                    🎁 Start your FREE trial today!
-                  </Text>
-                  <Text style={styles.trialDescription}>
-                    Try all premium features free for 7-14 days
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              style={styles.scrollView}
-            >
-              {/* Subscription Plans */}
-              <View style={styles.plansSection}>
-                <Text style={styles.sectionTitle}>Choose Your Plan</Text>
-
-                <View style={styles.plansList}>
-                  {availablePlans.map((plan) => {
-                    const badge = getPlanBadge(plan);
-                    const isSelected = selectedPlan === plan.id;
-
-                    return (
-                      <Pressable
-                        key={plan.id}
-                        onPress={() => setSelectedPlan(plan.id)}
-                        style={[
-                          styles.planCard,
-                          isSelected
-                            ? styles.planCardSelected
-                            : styles.planCardUnselected,
-                        ]}
-                      >
-                        {/* Badge */}
-                        {badge && (
-                          <View
-                            style={[
-                              styles.badge,
-                              { backgroundColor: badge.color },
-                            ]}
-                          >
-                            <Text style={styles.badgeText}>{badge.text}</Text>
-                          </View>
-                        )}
-
-                        <View style={styles.planContent}>
-                          <View style={styles.planInfo}>
-                            <Text style={styles.planName}>{plan.name}</Text>
-
-                            <Text style={styles.planDescription}>
-                              {plan.description}
-                            </Text>
-
-                            {plan.freeTrialDays && trialInfo.isEligible && (
-                              <Text style={styles.trialText}>
-                                {plan.freeTrialDays} days free trial
-                              </Text>
-                            )}
-                          </View>
-
-                          <View style={styles.planPricing}>
-                            <Text style={styles.planPrice}>{plan.price}</Text>
-
-                            {plan.originalPrice && (
-                              <Text style={styles.originalPrice}>
-                                {plan.originalPrice}
-                              </Text>
-                            )}
-
-                            <Text style={styles.planPeriod}>
-                              {plan.period === "lifetime"
-                                ? "one time"
-                                : `per ${plan.period.slice(0, -2)}`}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Selection Indicator */}
-                        <View style={styles.selectionIndicator}>
-                          {isSelected && (
-                            <View style={styles.checkmark}>
-                              <Text style={styles.checkmarkText}>✓</Text>
-                            </View>
-                          )}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* Features List */}
-              <View style={styles.featuresSection}>
-                <Pressable
-                  onPress={() => setShowFeatures(!showFeatures)}
-                  style={styles.featuresHeader}
-                >
-                  <Text style={styles.featuresTitle}>Premium Features</Text>
-                  <Text style={styles.featuresToggle}>
-                    {showFeatures ? "⌃" : "⌄"}
-                  </Text>
-                </Pressable>
-
-                {showFeatures && selectedPlanData && (
-                  <View style={styles.featuresList}>
-                    {selectedPlanData.features.map((feature, index) => (
-                      <View key={index} style={styles.featureItem}>
-                        <Text style={styles.featureIcon}>
-                          {getFeatureIcon(feature)}
-                        </Text>
-                        <Text style={styles.featureText}>{feature}</Text>
-                      </View>
-                    ))}
-                  </View>
                 )}
               </View>
-            </ScrollView>
 
-            {/* Bottom Actions */}
-            <View style={styles.bottomActions}>
-              {/* Error Message */}
-              {purchaseError && (
-                <View style={styles.errorContainer}>
-                  <Text style={styles.errorText}>{purchaseError}</Text>
-                </View>
-              )}
+              <Pressable onPress={handleDismiss} style={styles.closeBtn}>
+                <Text style={styles.closeBtnText}>✕</Text>
+              </Pressable>
+            </View>
+          </View>
 
-              {/* Purchase Button */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* ── Billing Toggle (Monthly / Yearly) ───────── */}
+            <View style={styles.toggleRow}>
               <Pressable
-                onPress={handlePurchase}
-                disabled={isPurchasing || !selectedPlan}
+                onPress={() => setBillingCycle("monthly")}
                 style={[
-                  styles.purchaseButton,
-                  (isPurchasing || !selectedPlan) &&
-                    styles.purchaseButtonDisabled,
+                  styles.toggleBtn,
+                  billingCycle === "monthly" && styles.toggleBtnActive,
                 ]}
               >
-                {isPurchasing ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.purchaseButtonText}>
-                    {trialInfo.isEligible && selectedPlanData?.freeTrialDays
-                      ? `Start ${selectedPlanData.freeTrialDays}-Day Free Trial`
-                      : `Subscribe for ${selectedPlanData?.price || ""}`}
-                  </Text>
+                <Text
+                  style={[
+                    styles.toggleText,
+                    billingCycle === "monthly" && styles.toggleTextActive,
+                  ]}
+                >
+                  Monthly
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => setBillingCycle("yearly")}
+                style={[
+                  styles.toggleBtn,
+                  billingCycle === "yearly" && styles.toggleBtnActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    billingCycle === "yearly" && styles.toggleTextActive,
+                  ]}
+                >
+                  Yearly
+                </Text>
+                {getYearlySavingsLabel() && (
+                  <View style={styles.savingsBadge}>
+                    <Text style={styles.savingsBadgeText}>
+                      {getYearlySavingsLabel()}
+                    </Text>
+                  </View>
                 )}
               </Pressable>
+            </View>
 
-              {/* Restore Purchases */}
-              <Pressable onPress={handleRestore} style={styles.restoreButton}>
-                <Text style={styles.restoreButtonText}>
-                  Restore Previous Purchases
-                </Text>
-              </Pressable>
+            {/* ── Plan Cards ──────────────────────────────── */}
+            <View style={styles.plansList}>
+              {displayPlans.map((plan) => {
+                if (!plan) return null;
+                const isSelected = effectiveSelectedId === plan.id;
+                const isCurrent = isCurrentTier(plan.tier);
+                const features = TIER_FEATURES[plan.tier] ?? [];
 
-              {/* Terms */}
-              <View style={styles.termsContainer}>
-                <Text style={styles.termsText}>
-                  Subscription automatically renews. Cancel anytime in your{" "}
-                  {"\n"}
-                  App Store or Google Play account settings.
+                return (
+                  <Pressable
+                    key={plan.id}
+                    onPress={() => setSelectedPlanId(plan.id)}
+                    disabled={isCurrent}
+                    style={[
+                      styles.planCard,
+                      isSelected && styles.planCardSelected,
+                      isCurrent && styles.planCardCurrent,
+                    ]}
+                  >
+                    {/* Badges */}
+                    {plan.tier === "pro" && !isCurrent && (
+                      <View style={styles.popularBadge}>
+                        <Text style={styles.popularBadgeText}>
+                          MOST POPULAR
+                        </Text>
+                      </View>
+                    )}
+                    {isCurrent && (
+                      <View style={styles.currentBadge}>
+                        <Text style={styles.currentBadgeText}>
+                          Current Plan
+                        </Text>
+                      </View>
+                    )}
+
+                    <Text style={styles.planName}>{plan.name}</Text>
+
+                    <View style={styles.priceRow}>
+                      <Text style={styles.priceAmount}>
+                        ₹{plan.price_monthly}
+                      </Text>
+                      <Text style={styles.pricePeriod}>/mo</Text>
+                    </View>
+
+                    {plan.billing_cycle === "yearly" && (
+                      <Text style={styles.billedLabel}>
+                        Billed ₹{plan.price_monthly * 12}/year
+                      </Text>
+                    )}
+
+                    {/* Feature list */}
+                    <View style={styles.featureList}>
+                      {features.map((feat, i) => (
+                        <View key={i} style={styles.featureRow}>
+                          <Text style={styles.featureCheck}>✓</Text>
+                          <Text style={styles.featureText}>{feat}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {/* Selection ring */}
+                    {isSelected && !isCurrent && (
+                      <View style={styles.selectRing}>
+                        <View style={styles.selectDot} />
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          {/* ── Bottom Actions ────────────────────────────── */}
+          <View style={styles.actions}>
+            <Pressable
+              onPress={handleSubscribe}
+              disabled={isLoading || !effectiveSelectedId}
+              style={[
+                styles.subscribeBtn,
+                (isLoading || !effectiveSelectedId) &&
+                  styles.subscribeBtnDisabled,
+              ]}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.subscribeBtnText}>
+                  {selectedPlanData
+                    ? `Subscribe — ${formatPrice(selectedPlanData.price_monthly, selectedPlanData.billing_cycle)}`
+                    : "Select a Plan"}
                 </Text>
-              </View>
+              )}
+            </Pressable>
+
+            <View style={styles.termsWrap}>
+              <Text style={styles.termsText}>
+                Subscription automatically renews. Cancel anytime from your
+                account settings. Powered by Razorpay.
+              </Text>
             </View>
           </View>
         </View>
@@ -333,44 +289,50 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   container: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "90%",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "92%",
   },
-  content: {
-    flex: 1,
-  },
+
   header: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#f3f4f6",
   },
-  headerContent: {
+  headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  headerText: {
+  headerTextWrap: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
     color: "#111827",
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  headerDescription: {
+  headerDesc: {
     fontSize: 14,
     color: "#6b7280",
     lineHeight: 20,
   },
-  closeButton: {
+  headerReason: {
+    fontSize: 14,
+    color: "#dc2626",
+    lineHeight: 20,
+    fontWeight: "500",
+  },
+  closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -378,210 +340,210 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  closeButtonText: {
-    fontSize: 24,
-    color: "#6b7280",
-  },
-  trialBanner: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: "#dbeafe",
-    borderRadius: 8,
-  },
-  trialTitle: {
+  closeBtnText: {
     fontSize: 16,
+    color: "#6b7280",
     fontWeight: "600",
-    color: "#1e40af",
-    marginBottom: 4,
   },
-  trialDescription: {
-    fontSize: 14,
-    color: "#1e40af",
-  },
-  scrollView: {
+
+  scrollArea: {
     flex: 1,
   },
-  plansSection: {
-    padding: 20,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
-  sectionTitle: {
-    fontSize: 18,
+
+  toggleRow: {
+    flexDirection: "row",
+    backgroundColor: "#f3f4f6",
+    borderRadius: 10,
+    padding: 4,
+    marginTop: 16,
+    marginBottom: 20,
+  },
+  toggleBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  toggleBtnActive: {
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  toggleText: {
+    fontSize: 14,
     fontWeight: "600",
-    color: "#111827",
-    marginBottom: 16,
+    color: "#6b7280",
   },
+  toggleTextActive: {
+    color: "#111827",
+  },
+  savingsBadge: {
+    marginLeft: 6,
+    backgroundColor: "#dcfce7",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  savingsBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#16a34a",
+  },
+
   plansList: {
-    gap: 12,
+    gap: 14,
   },
   planCard: {
     borderWidth: 2,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderColor: "#e5e7eb",
+    borderRadius: 16,
+    padding: 18,
+    backgroundColor: "#fff",
+    position: "relative",
   },
   planCardSelected: {
     borderColor: "#3b82f6",
     backgroundColor: "#eff6ff",
   },
-  planCardUnselected: {
-    borderColor: "#e5e7eb",
-    backgroundColor: "#fff",
+  planCardCurrent: {
+    borderColor: "#d1d5db",
+    backgroundColor: "#f9fafb",
+    opacity: 0.7,
   },
-  badge: {
+
+  popularBadge: {
     position: "absolute",
-    top: -8,
+    top: -10,
     right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: "#f97316",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
-  badgeText: {
+  popularBadgeText: {
     fontSize: 10,
-    fontWeight: "bold",
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.5,
+  },
+  currentBadge: {
+    position: "absolute",
+    top: -10,
+    right: 16,
+    backgroundColor: "#6b7280",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  currentBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
     color: "#fff",
   },
-  planContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  planInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
+
   planName: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#111827",
+    marginBottom: 8,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
     marginBottom: 4,
   },
-  planDescription: {
+  priceAmount: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#111827",
+  },
+  pricePeriod: {
     fontSize: 14,
+    color: "#6b7280",
+    marginLeft: 2,
+  },
+  billedLabel: {
+    fontSize: 12,
     color: "#6b7280",
     marginBottom: 4,
   },
-  trialText: {
-    fontSize: 12,
-    color: "#10b981",
-    fontWeight: "600",
+
+  featureList: {
+    marginTop: 12,
   },
-  planPricing: {
-    alignItems: "flex-end",
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
   },
-  planPrice: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  originalPrice: {
+  featureCheck: {
     fontSize: 14,
-    color: "#9ca3af",
-    textDecorationLine: "line-through",
-  },
-  planPeriod: {
-    fontSize: 12,
-    color: "#6b7280",
-  },
-  selectionIndicator: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    width: 24,
-    height: 24,
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#3b82f6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkmarkText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  featuresSection: {
-    padding: 20,
-    paddingTop: 0,
-  },
-  featuresHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  featuresTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  featuresToggle: {
-    fontSize: 24,
-    color: "#6b7280",
-  },
-  featuresList: {
-    marginTop: 8,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  featureIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    color: "#22c55e",
+    fontWeight: "700",
+    marginRight: 8,
+    width: 18,
   },
   featureText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#374151",
     flex: 1,
   },
-  bottomActions: {
-    padding: 20,
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
+
+  selectRing: {
+    position: "absolute",
+    top: 18,
+    left: 18,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#3b82f6",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  errorContainer: {
-    padding: 12,
-    backgroundColor: "#fee2e2",
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  errorText: {
-    color: "#dc2626",
-    fontSize: 14,
-  },
-  purchaseButton: {
+  selectDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: "#3b82f6",
-    borderRadius: 12,
-    padding: 16,
+  },
+
+  actions: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#f3f4f6",
+  },
+  subscribeBtn: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: "center",
     marginBottom: 12,
   },
-  purchaseButtonDisabled: {
+  subscribeBtnDisabled: {
     backgroundColor: "#9ca3af",
   },
-  purchaseButtonText: {
+  subscribeBtnText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
-  restoreButton: {
-    padding: 12,
-    alignItems: "center",
-  },
-  restoreButtonText: {
-    color: "#3b82f6",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  termsContainer: {
-    marginTop: 8,
+  termsWrap: {
+    marginTop: 4,
   },
   termsText: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#9ca3af",
     textAlign: "center",
     lineHeight: 16,
