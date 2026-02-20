@@ -6,6 +6,7 @@ import {
   AboutFitAIScreen,
   WearableConnectionScreen,
 } from "../../screens/settings";
+import { SubscriptionManagement } from "../../screens/profile";
 
 interface SettingsScreenRendererProps {
   currentScreen: string | null;
@@ -29,6 +30,8 @@ export const SettingsScreenRenderer: React.FC<SettingsScreenRendererProps> = ({
       return <AboutFitAIScreen onBack={onBack} />;
     case "wearables":
       return <WearableConnectionScreen onBack={onBack} />;
+    case "subscription":
+      return <SubscriptionManagement onBack={onBack} />;
     default:
       return null;
   }

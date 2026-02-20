@@ -98,6 +98,9 @@ export const useProfileLogic = () => {
         // Use dedicated edit modal instead of onboarding
         setShowEditModal("measurements");
         break;
+      case "subscription":
+        setCurrentSettingsScreen("subscription");
+        break;
       case "notifications":
         setCurrentSettingsScreen("notifications");
         break;
@@ -193,6 +196,14 @@ export const useProfileLogic = () => {
       icon: "body-outline",
       iconColor: "#667eea",
       isIncomplete: isProfileIncomplete("measurements"),
+    },
+    {
+      id: "subscription",
+      title: "Manage Subscription",
+      subtitle: "Plan, usage, billing",
+      icon: "diamond-outline",
+      iconColor: "#8B5CF6",
+      isPremium: true,
     },
   ];
 
