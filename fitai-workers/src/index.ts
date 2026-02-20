@@ -19,9 +19,11 @@ import { handleDebugTest } from './handlers/debugTest';
 import { handleAnalytics } from './handlers/analytics';
 import { handleFoodRecognition } from './handlers/foodRecognition';
 import { handleHealthSync, handleHealthLatest, handleWorkoutSession } from './handlers/healthSync';
+import { handleCreateSubscription, handleVerifyPayment, handleWebhook, handleGetSubscriptionStatus } from './handlers/subscription';
 import { authMiddleware, optionalAuthMiddleware, AuthContext } from './middleware/auth';
 import { rateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimit';
 import { loggingMiddleware } from './middleware/logging';
+import { subscriptionGateMiddleware } from './middleware/subscriptionGate';
 
 // ============================================================================
 // INITIALIZE HONO APP
@@ -219,7 +221,13 @@ app.get('/debug/supabase', handleDebugTest);
  * - Rate limit: 50 requests per hour
  * - Uses AI to generate custom workouts with 100% GIF coverage
  */
-app.post('/workout/generate', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GENERATION), handleWorkoutGeneration);
+app.post(
+	'/workout/generate',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleWorkoutGeneration,
+);
 
 /**
  * POST /diet/generate - Generate personalized diet/meal plan
@@ -227,7 +235,13 @@ app.post('/workout/generate', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI
  * - Rate limit: 50 requests per hour
  * - Uses AI to generate balanced meal plans with nutritional accuracy
  */
-app.post('/diet/generate', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GENERATION), handleDietGeneration);
+app.post(
+	'/diet/generate',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleDietGeneration,
+);
 
 /**
  * GET /diet/jobs/:jobId - Check status of async diet generation job
@@ -301,7 +315,13 @@ app.get('/diet/jobs', authMiddleware, rateLimitMiddleware(RATE_LIMITS.JOB_STATUS
  * - Accepts base64 image, returns recognized foods with nutrition
  * - Supports Indian and international cuisines
  */
-app.post('/food/recognize', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GENERATION), handleFoodRecognition);
+app.post(
+	'/food/recognize',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('barcode_scan'),
+	handleFoodRecognition,
+);
 
 /**
  * POST /chat/ai - AI conversational fitness coaching
@@ -310,7 +330,13 @@ app.post('/food/recognize', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_G
  * - Supports streaming (SSE) and non-streaming responses
  * - Context-aware based on user's workouts and diet
  */
-app.post('/chat/ai', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AI_GENERATION), handleChat);
+app.post(
+	'/chat/ai',
+	authMiddleware,
+	rateLimitMiddleware(RATE_LIMITS.AI_GENERATION),
+	subscriptionGateMiddleware('ai_generation'),
+	handleChat,
+);
 
 /**
  * GET /chat/conversations - Get user's conversation list
@@ -390,6 +416,18 @@ app.get('/api/health/latest', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AU
  * - Stores in workout_sessions table
  */
 app.post('/api/health/workout', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleWorkoutSession);
+
+// ============================================================================
+// SUBSCRIPTION & PAYMENT ROUTES
+// ============================================================================
+
+app.post('/api/subscription/create', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleCreateSubscription);
+
+app.post('/api/subscription/verify', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleVerifyPayment);
+
+app.post('/api/webhook/razorpay', handleWebhook);
+
+app.get('/api/subscription/status', authMiddleware, rateLimitMiddleware(RATE_LIMITS.AUTHENTICATED), handleGetSubscriptionStatus);
 
 // ============================================================================
 // EXPORT WORKER

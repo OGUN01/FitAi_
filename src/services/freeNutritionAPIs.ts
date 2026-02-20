@@ -221,6 +221,10 @@ export async function estimateNutritionWithAI(
 
 const barcodeCache = new Map<string, BarcodeSearchResult>();
 
+export function clearBarcodeCache(): void {
+  barcodeCache.clear();
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,

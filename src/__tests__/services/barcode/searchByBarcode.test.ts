@@ -2,6 +2,7 @@ import {
   FreeNutritionAPIs,
   BarcodeSearchResult,
   estimateNutritionWithAI,
+  clearBarcodeCache,
 } from "@/services/freeNutritionAPIs";
 
 let api: FreeNutritionAPIs;
@@ -55,6 +56,7 @@ function makeUPCitemdbResponse(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   api = new FreeNutritionAPIs();
+  clearBarcodeCache();
   global.fetch = jest.fn();
   jest.useRealTimers();
   process.env.EXPO_PUBLIC_GEMINI_API_KEY = "test-gemini-key";

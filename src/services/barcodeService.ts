@@ -121,8 +121,6 @@ class BarcodeService {
    */
   async lookupProduct(barcode: string): Promise<ProductLookupResult> {
     try {
-      console.log(`🔍 Looking up product with barcode: ${barcode}`);
-
       // Normalize barcode (zero-pad UPC-A → EAN-13, validate format)
       const normalizedBarcode = normalizeBarcode(barcode);
       if (!normalizedBarcode) {
@@ -134,9 +132,8 @@ class BarcodeService {
       }
 
       // Check cache first
-      const cachedProduct = this.scanCache.get(normalizedBarcode);
-      if (cachedProduct) {
-        console.log("✅ Found cached product:", cachedProduct.name);
+      if (this.scanCache.has(normalizedBarcode)) {
+        const cachedProduct = this.scanCache.get(normalizedBarcode)!;
         this.updateRecentScans(normalizedBarcode);
         return {
           success: true,
@@ -200,10 +197,6 @@ class BarcodeService {
       this.cacheProduct(normalizedBarcode, scannedProduct);
       this.updateRecentScans(normalizedBarcode);
 
-      console.log(
-        `✅ Product lookup successful: ${scannedProduct.name} (Health Score: ${scannedProduct.healthScore ?? "N/A"}/100)`,
-      );
-
       return {
         success: true,
         product: scannedProduct,
@@ -222,7 +215,14 @@ class BarcodeService {
   /**
    * Calculate health score based on nutrition data
    */
-  private calculateHealthScore(nutrition: any): number {
+  private calculateHealthScore(nutrition: {
+    calories: number;
+    protein?: number;
+    fat?: number;
+    sugar?: number;
+    sodium?: number;
+    fiber?: number;
+  }): number {
     let score = 100;
 
     // Penalize high calories (>400 per 100g)
@@ -231,7 +231,7 @@ class BarcodeService {
     }
 
     // Penalize high fat (>20g per 100g)
-    if (nutrition.fat > 20) {
+    if (nutrition.fat && nutrition.fat > 20) {
       score -= Math.min(20, (nutrition.fat - 20) * 2);
     }
 
@@ -246,12 +246,12 @@ class BarcodeService {
     }
 
     // Reward high protein (>10g per 100g)
-    if (nutrition.protein > 10) {
+    if (nutrition.protein && nutrition.protein > 10) {
       score += Math.min(15, (nutrition.protein - 10) * 0.5);
     }
 
     // Reward high fiber (>5g per 100g)
-    if (nutrition.fiber > 5) {
+    if (nutrition.fiber && nutrition.fiber > 5) {
       score += Math.min(10, (nutrition.fiber - 5) * 1);
     }
 
@@ -321,7 +321,6 @@ class BarcodeService {
   clearCache(): void {
     this.scanCache.clear();
     this.recentScans = [];
-    console.log("🗑️ Barcode cache cleared");
   }
 
   /**
