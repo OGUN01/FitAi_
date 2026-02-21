@@ -50,7 +50,7 @@ export const useHomeLogic = () => {
     initialize: initializeAnalytics,
     refreshAnalytics,
   } = useAnalyticsStore();
-  const { initialize: initializeSubscription } = useSubscriptionStore();
+  const { initializeSubscription } = useSubscriptionStore();
 
   // Hydration
   const {

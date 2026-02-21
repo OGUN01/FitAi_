@@ -67,7 +67,7 @@ function formatDate(isoDate: string | null): string {
 const NEXT_TIER_BENEFITS: Record<string, string[]> = {
   free: [
     "Unlimited food scans",
-    "30 AI generations per month",
+    "10 AI generations per day",
     "Detailed analytics",
   ],
   basic: [
