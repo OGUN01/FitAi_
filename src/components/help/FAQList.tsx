@@ -47,10 +47,10 @@ export const FAQList: React.FC<FAQListProps> = ({
                 <View
                   style={[
                     styles.faqIcon,
-                    { backgroundColor: "rgba(102, 126, 234, 0.15)" },
+                    { backgroundColor: "rgba(255, 107, 53, 0.15)" },
                   ]}
                 >
-                  <Ionicons name={faq.icon} size={rf(16)} color="#667eea" />
+                  <Ionicons name={faq.icon} size={rf(16)} color="#FF6B35" />
                 </View>
                 <Text style={styles.faqQuestion}>{faq.question}</Text>
                 <View
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   faqCardExpanded: {
-    backgroundColor: "rgba(102, 126, 234, 0.08)",
+    backgroundColor: "rgba(255, 107, 53, 0.08)",
   },
   faqHeader: {
     flexDirection: "row",

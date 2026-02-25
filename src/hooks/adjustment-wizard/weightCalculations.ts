@@ -69,7 +69,7 @@ export const calculateWeightRateAlternatives = (
   alternatives.push({
     name: hasMuscleGoal ? "Add Strength Training" : "Add Exercise",
     icon: "barbell-outline",
-    iconColor: "#8B5CF6",
+    iconColor: "#FF8A5C",
     goalType: hasMuscleGoal
       ? "muscle-gain"
       : isWeightLoss
@@ -180,7 +180,7 @@ export const calculateExerciseAlternatives = (
   alternatives.push({
     name: "Add Strength Training",
     icon: "barbell-outline",
-    iconColor: "#8B5CF6",
+    iconColor: "#FF8A5C",
     goalType: "strength",
     newWorkoutFrequency: Math.min(currentFrequency + 3, 6),
     newStrengthSessions: 4,
@@ -357,7 +357,7 @@ export const calculateTrainingReductionAlternatives = (
   alternatives.push({
     name: "Add Deload Weeks",
     icon: "analytics-outline",
-    iconColor: "#8B5CF6",
+    iconColor: "#FF8A5C",
     goalType: "strength",
     newWorkoutFrequency: currentFrequency,
     newStrengthSessions: Math.ceil(currentFrequency * 0.6),

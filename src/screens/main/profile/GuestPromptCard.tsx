@@ -70,7 +70,7 @@ export const GuestPromptCard: React.FC<GuestPromptCardProps> = ({
             ]}
           >
             <LinearGradient
-              colors={["#667eea", "#764ba2"]}
+              colors={["#FF6B35", "#E55A2B"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconGradient}
@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.md,
   },
   card: {
-    backgroundColor: "rgba(102, 126, 234, 0.08)",
+    backgroundColor: "rgba(255, 107, 53, 0.08)",
     borderWidth: 1,
-    borderColor: "rgba(102, 126, 234, 0.2)",
+    borderColor: "rgba(255, 107, 53, 0.2)",
     overflow: "hidden",
   },
   content: {
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(22),
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#667eea",
+    shadowColor: "#FF6B35",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -7,10 +7,7 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { rf, rw, rh } from "../../utils/responsive";
 import { haptics } from "../../utils/haptics";
 import { UsageCounter } from "./UsageCounter";
-
-// ============================================================================
-// Types
-// ============================================================================
+import { colors } from "../../theme/aurora-tokens";
 
 type FeatureKey = "ai_generation" | "barcode_scan";
 
@@ -28,10 +25,6 @@ const FEATURE_MESSAGES: Record<FeatureKey, string> = {
   ai_generation: "You've reached your AI generation limit this month",
   barcode_scan: "You've reached your daily food scan limit",
 };
-
-// ============================================================================
-// Component
-// ============================================================================
 
 const PremiumGate: React.FC<PremiumGateProps> = ({
   featureKey,
@@ -92,7 +85,7 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
             style={styles.upgradeButton}
           >
             <LinearGradient
-              colors={["#F97316", "#EA580C"]}
+              colors={[colors.primary.DEFAULT, colors.primary.dark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.upgradeGradient}
@@ -108,10 +101,6 @@ const PremiumGate: React.FC<PremiumGateProps> = ({
   return null;
 };
 
-// ============================================================================
-// Styles
-// ============================================================================
-
 const styles = StyleSheet.create({
   container: {
     borderRadius: rw(16),
@@ -119,18 +108,20 @@ const styles = StyleSheet.create({
     margin: rw(16),
   },
   blurOverlay: {
-    backgroundColor: "rgba(249, 250, 251, 0.95)",
+    backgroundColor: "rgba(26, 31, 46, 0.95)",
     borderRadius: rw(16),
     padding: rw(24),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "rgba(209, 213, 219, 0.5)",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   iconContainer: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "rgba(255, 107, 53, 0.15)",
     borderRadius: 9999,
     padding: rw(12),
     marginBottom: rh(16),
+    borderWidth: 1,
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   iconText: {
     fontSize: rf(32),
@@ -138,13 +129,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: "#111827",
+    color: colors.text.primary,
     marginBottom: rh(8),
     textAlign: "center",
   },
   description: {
     fontSize: rf(14),
-    color: "#6B7280",
+    color: colors.text.secondary,
     textAlign: "center",
     marginBottom: rh(16),
     lineHeight: rf(20),
@@ -162,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: rw(16),
   },
   upgradeButtonText: {
-    color: "#FFFFFF",
+    color: colors.text.primary,
     fontWeight: "700",
     fontSize: rf(16),
   },
@@ -172,10 +163,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
 });
-
-// ============================================================================
-// HOC
-// ============================================================================
 
 export const withPremiumGate = (
   featureKey: FeatureKey,
@@ -193,10 +180,6 @@ export const withPremiumGate = (
     };
   };
 };
-
-// ============================================================================
-// Hook
-// ============================================================================
 
 export const usePremiumFeature = (featureKey: FeatureKey) => {
   const canUseFeatureFn = useSubscriptionStore((s) => s.canUseFeature);

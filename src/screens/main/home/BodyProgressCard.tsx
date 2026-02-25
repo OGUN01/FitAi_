@@ -65,7 +65,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Ionicons name="body" size={rf(16)} color="#9C27B0" />
+            <Ionicons name="body" size={rf(16)} color="#FF6B35" />
             <Text style={styles.headerTitle}>Body Progress</Text>
           </View>
           {hasData && (
@@ -111,7 +111,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                   }
                   width={rw(120)}
                   height={rh(50)}
-                  color="#9C27B0"
+                  color="#FF6B35"
                 />
               </View>
 
@@ -154,7 +154,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 <Ionicons
                   name="add-circle-outline"
                   size={rf(16)}
-                  color="#9C27B0"
+                  color="#FF6B35"
                 />
                 <Text style={styles.actionButtonText}>Log Weight</Text>
               </AnimatedPressable>
@@ -168,7 +168,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
                 hapticType="light"
                 style={styles.actionButton}
               >
-                <Ionicons name="camera-outline" size={rf(16)} color="#9C27B0" />
+                <Ionicons name="camera-outline" size={rf(16)} color="#FF6B35" />
                 <Text style={styles.actionButtonText}>Progress Photo</Text>
               </AnimatedPressable>
             </View>
@@ -177,7 +177,7 @@ export const BodyProgressCard: React.FC<BodyProgressCardProps> = ({
           /* Empty State */
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <Ionicons name="scale-outline" size={rf(32)} color="#9C27B0" />
+              <Ionicons name="scale-outline" size={rf(32)} color="#FF6B35" />
             </View>
             <Text style={styles.emptyTitle}>Track Your Progress</Text>
             <Text style={styles.emptyDescription}>
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: rf(12),
     fontWeight: "600",
-    color: "#9C27B0",
+    color: "#FF6B35",
   },
   actionDivider: {
     width: 1,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: ResponsiveTheme.spacing.xs,
-    backgroundColor: "#9C27B0",
+    backgroundColor: "#FF6B35",
     paddingHorizontal: ResponsiveTheme.spacing.lg,
     paddingVertical: ResponsiveTheme.spacing.sm,
     borderRadius: ResponsiveTheme.borderRadius.full,

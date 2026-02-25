@@ -19,7 +19,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassCard } from "../../../../components/ui/aurora/GlassCard";
-import { useUserStore } from "../../../../stores/userStore";
+import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
@@ -37,7 +37,7 @@ export const BodyMeasurementsEditModal: React.FC<
 > = ({ visible, onClose }) => {
   const { profile } = useUser();
   const { user } = useAuth();
-  const { setProfile } = useUserStore();
+  const { updateBodyAnalysis } = useProfileStore();
 
   // Form state
   const [height, setHeight] = useState("");
@@ -137,33 +137,22 @@ export const BodyMeasurementsEditModal: React.FC<
         throw new Error("Profile not found");
       }
 
-      // ✅ Update bodyMetrics in profile
-      const updatedBodyMetrics = {
-        ...profile.bodyMetrics,
+      // ✅ Update bodyAnalysis in profileStore
+      updateBodyAnalysis({
         height_cm: parseFloat(height),
         current_weight_kg: parseFloat(weight),
-        target_weight_kg: targetWeight ? parseFloat(targetWeight) : undefined,
+        target_weight_kg: targetWeight ? parseFloat(targetWeight) : undefined as any,
         body_fat_percentage: bodyFat ? parseFloat(bodyFat) : undefined,
-        // Preserve other fields
+        // Preserve other fields from existing profile data
         medical_conditions: profile.bodyMetrics?.medical_conditions || [],
         medications: profile.bodyMetrics?.medications || [],
         physical_limitations: profile.bodyMetrics?.physical_limitations || [],
         pregnancy_status: profile.bodyMetrics?.pregnancy_status || false,
         breastfeeding_status:
           profile.bodyMetrics?.breastfeeding_status || false,
-      };
-
-      // Update profile with new bodyMetrics
-      const updatedProfile = {
-        ...profile,
-        bodyMetrics: updatedBodyMetrics,
-        updatedAt: new Date().toISOString(),
-      };
-
-      setProfile(updatedProfile);
+      });
       console.log(
-        "✅ BodyMeasurementsEditModal: Saved body metrics locally:",
-        updatedBodyMetrics,
+        "✅ BodyMeasurementsEditModal: Saved body metrics locally",
       );
 
       // Sync to Supabase body_analysis table
@@ -218,7 +207,7 @@ export const BodyMeasurementsEditModal: React.FC<
     user,
     onClose,
     validate,
-    setProfile,
+    updateBodyAnalysis,
   ]);
 
   const hasChanges = useCallback(() => {
@@ -238,7 +227,7 @@ export const BodyMeasurementsEditModal: React.FC<
       title="Body Measurements"
       subtitle="Track your body composition"
       icon="body-outline"
-      iconColor="#667eea"
+      iconColor="#FF6B35"
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -342,7 +331,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
-        iconColor="#9C27B0"
+        iconColor="#FF6B35"
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"

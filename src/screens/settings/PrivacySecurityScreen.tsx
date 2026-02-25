@@ -84,7 +84,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="share-social-outline"
-              iconColor="#667eea"
+              iconColor="#FF6B35"
               title="Data Sharing"
               description="Allow sharing anonymous usage data to improve the app"
               value={settings.dataSharing}
@@ -132,7 +132,7 @@ export const PrivacySecurityScreen: React.FC<PrivacySecurityScreenProps> = ({
 
             <PrivacyToggle
               icon="finger-print-outline"
-              iconColor="#9C27B0"
+              iconColor="#FF6B35"
               title="Biometric Authentication"
               description="Use fingerprint or face recognition to secure your app"
               value={settings.biometricAuth}

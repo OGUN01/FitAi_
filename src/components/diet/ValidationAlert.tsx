@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#667eea",
+    backgroundColor: "#FF6B35",
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.sm,
     marginTop: ResponsiveTheme.spacing.sm,

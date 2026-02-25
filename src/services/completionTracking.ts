@@ -137,18 +137,19 @@ class CompletionTrackingService {
               .from("workout_sessions")
               .insert({
                 user_id: userId,
-                workout_id: workoutId,
+                workout_plan_id: null,
                 workout_name: workout.title,
                 workout_type: workout.category || "general",
-                duration_minutes:
+                total_duration_minutes:
                   workout.duration || sessionData?.duration || null,
                 calories_burned: actualCaloriesBurned,
                 exercises_completed:
-                  sessionData?.exercisesCompleted ||
-                  workout.exercises?.length ||
-                  0,
+                  sessionData?.stats?.exercises || workout.exercises || [],
                 started_at: sessionData?.startedAt || new Date().toISOString(),
                 completed_at: new Date().toISOString(),
+                is_completed: true,
+                completion_percentage: 100,
+                enjoyment_rating: sessionData?.rating || null,
                 notes:
                   sessionData?.notes || `Weekly workout plan: ${workout.title}`,
               });

@@ -286,10 +286,13 @@ export const useMealPlanning = (navigation: any) => {
   };
 
   const getTodaysMeals = (): DayMeal[] => {
-    if (!weeklyMealPlan?.meals) return [];
-    return weeklyMealPlan.meals.filter(
+    if (!weeklyMealPlan?.meals) {
+      return [];
+    }
+    const filtered = weeklyMealPlan.meals.filter(
       (meal) => meal.dayOfWeek === selectedDay,
     );
+    return filtered;
   };
 
   const handleDeleteMeal = async (meal: DayMeal) => {

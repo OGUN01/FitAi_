@@ -44,8 +44,8 @@ export const TodayWorkoutCard: React.FC<TodayWorkoutCardProps> = ({
     if (isRestDay) {
       return {
         icon: "moon" as const,
-        color: "#667eea",
-        gradient: ["#667eea", "#764ba2"] as [string, string],
+        color: "#FF6B35",
+        gradient: ["#FF6B35", "#E55A2B"] as [string, string],
         label: "Rest Day",
         buttonText: "Recovery Tips",
       };

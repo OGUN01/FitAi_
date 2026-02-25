@@ -30,9 +30,9 @@ const MEAL_CONFIG = {
   },
   dinner: {
     icon: "moon-outline" as const,
-    color: "#667eea",
+    color: "#FF6B35",
     time: "7:00 PM",
-    gradient: ["#667eea", "#764ba2"],
+    gradient: ["#FF6B35", "#FF8A5C"],
   },
   snack: {
     icon: "nutrition-outline" as const,
@@ -223,7 +223,7 @@ const EmptyMealsState: React.FC<{ onGenerate?: () => void }> = ({
             style={styles.generateButton}
           >
             <LinearGradient
-              colors={["#667eea", "#764ba2"]}
+              colors={["#FF6B35", "#FF8A5C"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.generateButtonGradient}
@@ -268,7 +268,7 @@ export const TodaysMealsSection: React.FC<TodaysMealsSectionProps> = ({
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: "rgba(102,126,234,0.15)" },
+                { backgroundColor: "rgba(255, 107, 53, 0.15)" },
               ]}
             >
               <View

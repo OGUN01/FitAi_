@@ -49,7 +49,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
     return {
       greeting: "Good evening",
       icon: "moon" as const,
-      gradientColors: ["#667eea", "#764ba2"] as [string, string],
+      gradientColors: ["#FF6B35", "#E55A2B"] as [string, string],
     };
   }, []);
 

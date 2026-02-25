@@ -6,7 +6,7 @@
  * - Experience Level (picker)
  * - Time Commitment (picker)
  *
- * Uses useUserStore.updateFitnessGoalsLocal() to save changes.
+ * Uses useProfileStore.updateWorkoutPreferences() to save changes.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormPicker } from "../components/GlassFormPicker";
-import { useUserStore } from "../../../../stores/userStore";
+import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
 import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
@@ -120,7 +120,7 @@ export const GoalsPreferencesEditModal: React.FC<
 > = ({ visible, onClose }) => {
   const { profile } = useUser();
   const { user } = useAuth();
-  const { updateFitnessGoalsLocal } = useUserStore();
+  const { updateWorkoutPreferences } = useProfileStore();
 
   // Form state
   const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
@@ -215,7 +215,7 @@ export const GoalsPreferencesEditModal: React.FC<
       };
 
       // Update local state
-      updateFitnessGoalsLocal(updatedGoals);
+      updateWorkoutPreferences(updatedGoals);
 
       // Sync to Supabase
       if (user?.id) {
@@ -257,7 +257,7 @@ export const GoalsPreferencesEditModal: React.FC<
     experience,
     timeCommitment,
     profile,
-    updateFitnessGoalsLocal,
+    updateWorkoutPreferences,
     onClose,
     validate,
   ]);

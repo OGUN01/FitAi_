@@ -263,7 +263,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
 
             <NotificationItem
               icon="moon-outline"
-              iconColor="#9C27B0"
+              iconColor="#FF6B35"
               title="Sleep Reminders"
               description="Smart bedtime notifications for better recovery"
               timeInfo={

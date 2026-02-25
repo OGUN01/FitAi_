@@ -156,7 +156,7 @@ export const AlternativeCard: React.FC<AlternativeCardProps> = ({
                   icon="barbell-outline"
                   label="Workouts"
                   value={`${alternative.newWorkoutFrequency}×/wk`}
-                  color="#8B5CF6"
+                  color="#FF8A5C"
                 />
               )}
               <MetricPill

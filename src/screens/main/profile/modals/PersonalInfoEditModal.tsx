@@ -9,7 +9,7 @@
  * - Weight
  * - Activity Level (picker)
  *
- * Uses useUserStore.updatePersonalInfo() to save changes.
+ * Uses useProfileStore to save changes.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -18,14 +18,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../components/SettingsModalWrapper";
 import { GlassFormInput } from "../components/GlassFormInput";
 import { GlassFormPicker } from "../components/GlassFormPicker";
-import { useUserStore } from "../../../../stores/userStore";
+import { useProfileStore } from "../../../../stores/profileStore";
 import { useUser } from "../../../../hooks/useUser";
-import { useAuth } from "../../../../hooks/useAuth";
 import { ResponsiveTheme } from "../../../../utils/constants";
 import { rf } from "../../../../utils/responsive";
 import { haptics } from "../../../../utils/haptics";
-import type { PersonalInfo } from "../../../../types/user";
-import { userProfileService } from "../../../../services/userProfile";
 
 interface PersonalInfoEditModalProps {
   visible: boolean;
@@ -76,8 +73,8 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   onClose,
 }) => {
   const { profile } = useUser();
-  const { user } = useAuth();
-  const { updatePersonalInfo, setProfile } = useUserStore();
+
+  const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } = useProfileStore();
 
   // Form state
   const [name, setName] = useState("");
@@ -253,15 +250,13 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
-      const updatedInfo: PersonalInfo = {
+      // Update personal info via profileStore
+      updatePersonalInfo({
         first_name: firstName,
         last_name: lastName,
         name: name.trim(),
-        // ✅ Convert age string back to number for database
         age: parseInt(age, 10),
         gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-        // ✅ FIX: activityLevel removed from PersonalInfo - it belongs in workoutPreferences
-        // Preserve existing optional fields
         email: profile?.personalInfo?.email || "",
         country: profile?.personalInfo?.country || "",
         state: profile?.personalInfo?.state || "",
@@ -269,58 +264,24 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
         wake_time: profile?.personalInfo?.wake_time || "",
         sleep_time: profile?.personalInfo?.sleep_time || "",
         occupation_type: profile?.personalInfo?.occupation_type as any,
-      };
+      });
 
-      updatePersonalInfo(updatedInfo);
+      // ✅ Update body measurements via profileStore's bodyAnalysis
+      if (height && weight) {
+        updateBodyAnalysis({
+          height_cm: parseFloat(height),
+          current_weight_kg: parseFloat(weight),
+        });
+      }
 
-      // ✅ FIX: Update activity level in workoutPreferences if changed
+      // ✅ Update activity level in workoutPreferences if changed
       if (
-        profile?.workoutPreferences &&
-        activityLevel !== profile.workoutPreferences.activity_level
+        activityLevel &&
+        activityLevel !== profile?.workoutPreferences?.activity_level
       ) {
-        const updatedWorkoutPrefs = {
-          ...profile.workoutPreferences,
-          activity_level: activityLevel,
-        };
-
-        // Update local state
-        setProfile({ ...profile, workoutPreferences: updatedWorkoutPrefs });
-
-        // Save to database via updateWorkoutPreferences service
-        if (user?.id) {
-          try {
-            const result = await userProfileService.updateWorkoutPreferences(
-              user.id,
-              {
-                activity_level: activityLevel,
-                workout_types: profile.workoutPreferences.workoutTypes,
-                equipment: profile.workoutPreferences.equipment,
-                location: profile.workoutPreferences.location,
-                time_preference: profile.workoutPreferences.timePreference,
-                intensity: profile.workoutPreferences.intensity,
-              },
-            );
-
-            if (!result.success) {
-              console.error(
-                "Failed to update workout preferences:",
-                result.error,
-              );
-              Alert.alert(
-                "Warning",
-                "Activity level updated locally but failed to sync to database.",
-              );
-            } else {
-              console.log("✅ Workout preferences saved to database");
-            }
-          } catch (error) {
-            console.error("Error updating workout preferences:", error);
-            Alert.alert(
-              "Warning",
-              "Activity level updated locally but failed to sync to database.",
-            );
-          }
-        }
+        updateWorkoutPreferences({
+          activity_level: activityLevel as any,
+        });
       }
 
       // Height/weight changes handled by BodyMeasurementsEditModal
@@ -337,9 +298,13 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     name,
     age,
     gender,
+    height,
+    weight,
     activityLevel,
     profile,
     updatePersonalInfo,
+    updateBodyAnalysis,
+    updateWorkoutPreferences,
     onClose,
     validate,
   ]);
@@ -427,7 +392,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Weight"
         icon="scale-outline"
-        iconColor="#9C27B0"
+        iconColor="#FF6B35"
         value={weight}
         onChangeText={handleWeightChange}
         placeholder="Enter your weight"

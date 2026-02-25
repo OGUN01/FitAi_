@@ -102,16 +102,7 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 				.maybeSingle();
 
 			if (error) {
-				return c.json(
-					{
-						success: false,
-						error: {
-							code: ErrorCode.INTERNAL_ERROR,
-							message: 'Failed to verify subscription status',
-						},
-					},
-					500,
-				);
+				// Query error — treat as no subscription and fall through to free plan
 			}
 
 			if (data) {
@@ -134,7 +125,7 @@ export function subscriptionGateMiddleware(featureKey: FeatureKey, periodType: P
 
 		if (!subscription) {
 			try {
-				const { data: freePlan, error: freeError } = await supabase.from('subscription_plans').select('*').eq('id', 'free').single();
+				const { data: freePlan, error: freeError } = await supabase.from('subscription_plans').select('*').eq('tier', 'free').single();
 
 				if (freeError || !freePlan) {
 					return c.json(

@@ -6,7 +6,7 @@
  * - Height (slider/input)
  * - BMI (calculated, display only)
  *
- * Uses useUserStore.updatePersonalInfo() to save changes.
+ * Uses useProfileStore to save changes.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -17,12 +17,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormInput } from "../../form/GlassFormInput";
 import { GlassCard } from "../../ui/aurora/GlassCard";
-import { useUserStore } from "../../../stores/userStore";
+import { useProfileStore } from "../../../stores/profileStore";
 import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
-import type { PersonalInfo } from "../../../types/user";
+
 
 interface BodyMeasurementsEditModalProps {
   visible: boolean;
@@ -33,7 +33,7 @@ export const BodyMeasurementsEditModal: React.FC<
   BodyMeasurementsEditModalProps
 > = ({ visible, onClose }) => {
   const { profile } = useUser();
-  const { updatePersonalInfo } = useUserStore();
+  const { updateBodyAnalysis } = useProfileStore();
 
   // Form state
   const [weight, setWeight] = useState("");
@@ -106,30 +106,11 @@ export const BodyMeasurementsEditModal: React.FC<
 
     setIsSaving(true);
     try {
-      // Merge with existing personal info
-      const updatedInfo: PersonalInfo = {
-        ...profile?.personalInfo,
-        first_name: profile?.personalInfo?.first_name || "",
-        last_name: profile?.personalInfo?.last_name || "",
-        age:
-          typeof profile?.personalInfo?.age === "number"
-            ? profile.personalInfo.age
-            : 18,
-        gender: (profile?.personalInfo?.gender || "male") as
-          | "male"
-          | "female"
-          | "other"
-          | "prefer_not_to_say",
-        country: profile?.personalInfo?.country || "",
-        state: profile?.personalInfo?.state || "",
-        wake_time: profile?.personalInfo?.wake_time || "07:00",
-        sleep_time: profile?.personalInfo?.sleep_time || "23:00",
-        occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
-        height: parseFloat(height),
-        weight: parseFloat(weight),
-      };
-
-      updatePersonalInfo(updatedInfo);
+      // ✅ Update body measurements via profileStore's bodyAnalysis
+      updateBodyAnalysis({
+        height_cm: parseFloat(height),
+        current_weight_kg: parseFloat(weight),
+      });
       haptics.success();
       onClose();
     } catch (error) {
@@ -138,7 +119,7 @@ export const BodyMeasurementsEditModal: React.FC<
     } finally {
       setIsSaving(false);
     }
-  }, [height, weight, profile, updatePersonalInfo, onClose, validate]);
+  }, [height, weight, profile, updateBodyAnalysis, onClose, validate]);
 
   const hasChanges = useCallback(() => {
     if (!profile?.personalInfo) return true;
@@ -155,7 +136,7 @@ export const BodyMeasurementsEditModal: React.FC<
       title="Body Measurements"
       subtitle="Track your body composition"
       icon="body-outline"
-      iconColor="#667eea"
+      iconColor="#FF6B35"
       onClose={onClose}
       onSave={handleSave}
       isSaving={isSaving}
@@ -259,7 +240,7 @@ export const BodyMeasurementsEditModal: React.FC<
       <GlassFormInput
         label="Current Weight"
         icon="scale-outline"
-        iconColor="#9C27B0"
+        iconColor="#FF6B35"
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"

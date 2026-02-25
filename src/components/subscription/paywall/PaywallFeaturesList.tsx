@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 
 interface PaywallFeaturesListProps {
   features: string[];
@@ -37,7 +38,7 @@ const PaywallFeaturesList: React.FC<PaywallFeaturesListProps> = ({
 
 const styles = StyleSheet.create({
   featuresSection: {
-    padding: 20,
+    padding: spacing.md,
     paddingTop: 0,
   },
   featuresHeader: {
@@ -49,19 +50,19 @@ const styles = StyleSheet.create({
   featuresTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
   },
   featuresToggle: {
     fontSize: 24,
-    color: "#6b7280",
+    color: colors.text.secondary,
   },
   featuresList: {
-    marginTop: 8,
+    marginTop: spacing.sm,
   },
   featureItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
   },
   featureIcon: {
     fontSize: 20,
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: "#374151",
+    color: colors.text.secondary,
     flex: 1,
   },
 });

@@ -33,7 +33,7 @@ const AnalyticsCard: React.FC<AnalyticsCardProps> = ({
     const colors = {
       blue: THEME.colors.primary,
       green: "#10B981",
-      purple: "#8B5CF6",
+      purple: "#FF8A5C",
       orange: "#F59E0B",
       red: "#EF4444",
       gray: "#6B7280",

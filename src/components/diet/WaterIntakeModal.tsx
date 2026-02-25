@@ -161,7 +161,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                       colors={
                         isGoalReached
                           ? ["#10b981", "#059669"]
-                          : [ResponsiveTheme.colors.primary, "#8B5CF6"]
+                          : [ResponsiveTheme.colors.primary, "#FF8A5C"]
                       }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
@@ -196,8 +196,8 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                         >
                           <LinearGradient
                             colors={[
-                              "rgba(99, 102, 241, 0.2)",
-                              "rgba(139, 92, 246, 0.2)",
+                              "rgba(255, 107, 53, 0.2)",
+                              "rgba(255, 138, 92, 0.2)",
                             ]}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
@@ -291,7 +291,7 @@ export const WaterIntakeModal: React.FC<WaterIntakeModalProps> = ({
                         activeOpacity={0.8}
                       >
                         <LinearGradient
-                          colors={[ResponsiveTheme.colors.primary, "#8B5CF6"]}
+                          colors={[ResponsiveTheme.colors.primary, "#FF8A5C"]}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
                           style={styles.submitButtonGradient}
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(20),
     borderRadius: ResponsiveTheme.borderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   quickOptionLabel: {
     fontSize: rf(14),
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
     borderStyle: "dashed",
   },
   customButtonText: {
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   inputIcon: {
     marginRight: rp(12),

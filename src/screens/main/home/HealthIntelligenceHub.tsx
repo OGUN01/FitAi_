@@ -135,7 +135,7 @@ export const HealthIntelligenceHub: React.FC<HealthIntelligenceHubProps> = ({
                 sleepHours && sleepHours > 0 ? `${sleepHours.toFixed(1)}` : "--"
               }
               subvalue="hrs"
-              color="#667eea"
+              color="#FF6B35"
               onPress={() => onDetailPress?.("sleep")}
               delay={200}
             />

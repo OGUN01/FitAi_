@@ -21,7 +21,7 @@ interface PremiumBadgeProps {
 // ============================================================================
 
 const TIER_GRADIENTS: Record<string, readonly [string, string, ...string[]]> = {
-  pro: ["#A855F7", "#EC4899"],
+  pro: ["#FF8A5C", "#EC4899"],
   basic: ["#4ADE80", "#3B82F6"],
   free: ["#FBBF24", "#F97316"],
 };

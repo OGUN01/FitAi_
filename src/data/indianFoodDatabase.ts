@@ -1,7 +1,10 @@
 /**
- * Comprehensive Indian Food Nutrition Database
+ * Comprehensive Indian Food Nutrition Database (India-specific)
  * Curated from ICMR, NIN, and traditional nutrition sources
  * All nutrition values are per 100g serving
+ *
+ * NOTE: This file is scoped to Indian foods only.
+ * For multi-country cuisine data, see src/data/regionalCuisineData.ts
  */
 
 export interface IndianFoodData {

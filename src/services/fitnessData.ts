@@ -251,7 +251,7 @@ class FitnessDataService {
         .single();
 
       if (error) {
-        console.error("Error fetching fitness goals:", error);
+        console.warn("Error fetching fitness goals:", error);
         return {
           success: false,
           error: error.message,
@@ -263,7 +263,7 @@ class FitnessDataService {
         data,
       };
     } catch (error) {
-      console.error("Error in getUserFitnessGoals:", error);
+      console.warn("Error in getUserFitnessGoals:", error);
       return {
         success: false,
         error:

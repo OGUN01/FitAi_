@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   mealIndicator: {
     position: "absolute",
     bottom: rh(6),
-    backgroundColor: "rgba(102, 126, 234, 0.2)",
+    backgroundColor: "rgba(255, 107, 53, 0.2)",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,

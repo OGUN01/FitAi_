@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { rf } from "../../../utils/responsive";
 import { ResponsiveTheme } from "../../../utils/constants";
-import { AnimatedSection, HeroSection } from "../../../components/ui/aurora";
+import { AnimatedPressable, AnimatedSection, HeroSection } from "../../../components/ui/aurora";
 import { gradients } from "../../../theme/gradients";
 import {
   DietPreferencesData,
@@ -49,6 +49,8 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
   onBack,
   onUpdate,
   isAutoSaving = false,
+  isEditingFromReview = false,
+  onReturnToReview,
 }) => {
   const {
     formData,
@@ -177,6 +179,47 @@ const DietPreferencesTab: React.FC<DietPreferencesTabProps> = ({
           <ValidationSection validationResult={validationResult} />
         </ScrollView>
       </KeyboardAvoidingView>
+      {/* Footer Navigation */}
+      <View style={styles.footer}>
+        <View style={styles.buttonRow}>
+          <AnimatedPressable
+            style={styles.backButtonCompact}
+            onPress={onBack}
+            scaleValue={0.96}
+          >
+            <Ionicons
+              name="chevron-back"
+              size={rf(18)}
+              color={ResponsiveTheme.colors.primary}
+            />
+            <Text style={styles.backButtonText}>Back</Text>
+          </AnimatedPressable>
+
+          <AnimatedPressable
+            style={styles.nextButtonCompact}
+            onPress={() => {
+              onUpdate(formData);
+              if (isEditingFromReview && onReturnToReview) {
+                onReturnToReview();
+              } else {
+                setTimeout(() => {
+                  onNext(formData);
+                }, 100);
+              }
+            }}
+            scaleValue={0.96}
+          >
+            <Text style={styles.nextButtonText}>
+              {isEditingFromReview ? "Review" : "Next"}
+            </Text>
+            <Ionicons
+              name={isEditingFromReview ? "checkmark-circle-outline" : "chevron-forward"}
+              size={rf(18)}
+              color="#FFFFFF"
+            />
+          </AnimatedPressable>
+        </View>
+      </View>
     </SafeAreaView>
   );
 };
@@ -223,6 +266,49 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: ResponsiveTheme.spacing.lg,
+  },
+  footer: {
+    padding: ResponsiveTheme.spacing.lg,
+    paddingBottom: Platform.OS === "ios" ? ResponsiveTheme.spacing.lg : ResponsiveTheme.spacing.xl,
+    backgroundColor: "transparent",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: ResponsiveTheme.spacing.md,
+  },
+  backButtonCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: ResponsiveTheme.colors.backgroundSecondary,
+    borderWidth: 1,
+    borderColor: ResponsiveTheme.colors.border,
+    minWidth: 100,
+  },
+  backButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: ResponsiveTheme.colors.primary,
+    marginLeft: ResponsiveTheme.spacing.xs,
+  },
+  nextButtonCompact: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: ResponsiveTheme.spacing.md,
+    paddingHorizontal: ResponsiveTheme.spacing.lg,
+    borderRadius: ResponsiveTheme.borderRadius.xl,
+    backgroundColor: ResponsiveTheme.colors.primary,
+  },
+  nextButtonText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    fontWeight: ResponsiveTheme.fontWeight.semibold,
+    color: "#FFFFFF",
+    marginRight: ResponsiveTheme.spacing.xs,
   },
 });
 

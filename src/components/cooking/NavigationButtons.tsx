@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
+import { colors } from "../../theme/aurora-tokens";
 
 interface NavigationButtonsProps {
   cookingFlow: CookingFlow | null;
@@ -40,7 +41,7 @@ export default function NavigationButtons({
         <Ionicons
           name="chevron-back"
           size={24}
-          color={currentStepIndex === 0 ? "#9CA3AF" : "#FFFFFF"}
+          color={currentStepIndex === 0 ? colors.text.disabled : "#FFFFFF"}
         />
         <Text
           style={[
@@ -95,38 +96,38 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background.secondary,
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
   },
   navButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#6B7280",
+    backgroundColor: colors.background.tertiary,
     paddingVertical: 14,
     borderRadius: 8,
     marginHorizontal: 4,
   },
   disabledButton: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   finishButton: {
-    backgroundColor: "#10B981",
+    backgroundColor: colors.success.DEFAULT,
   },
   completeStepButton: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4F46E5",
+    backgroundColor: colors.primary.DEFAULT,
     paddingVertical: 14,
     borderRadius: 8,
     marginHorizontal: 4,
   },
   completedStepButton: {
-    backgroundColor: "#10B981",
+    backgroundColor: colors.success.DEFAULT,
   },
   navButtonText: {
     fontSize: 16,
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   disabledButtonText: {
-    color: "#9CA3AF",
+    color: colors.text.disabled,
   },
   completeButtonText: {
     fontSize: 16,

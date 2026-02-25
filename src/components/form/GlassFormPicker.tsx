@@ -113,8 +113,8 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                   {selected && (
                     <LinearGradient
                       colors={[
-                        "rgba(102, 126, 234, 0.2)",
-                        "rgba(118, 75, 162, 0.15)",
+                        "rgba(255, 107, 53, 0.2)",
+                        "rgba(229, 90, 43, 0.15)",
                       ]}
                       style={StyleSheet.absoluteFill}
                     />
@@ -133,7 +133,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                           size={rf(18)}
                           color={
                             selected
-                              ? "#667eea"
+                              ? "#FF6B35"
                               : ResponsiveTheme.colors.textSecondary
                           }
                         />
@@ -164,7 +164,7 @@ export const GlassFormPicker: React.FC<GlassFormPickerProps> = ({
                         <Ionicons
                           name="checkmark"
                           size={rf(14)}
-                          color="#667eea"
+                          color="#FF6B35"
                         />
                       </View>
                     )}
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     justifyContent: "center" as const,
   },
   optionButtonSelected: {
-    borderColor: "rgba(102, 126, 234, 0.4)",
+    borderColor: "rgba(255, 107, 53, 0.4)",
   },
   optionContent: {
     flexDirection: "row",
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     marginRight: ResponsiveTheme.spacing.sm,
   },
   optionIconSelected: {
-    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    backgroundColor: "rgba(255, 107, 53, 0.15)",
   },
   optionTextContainer: {
     flex: 1,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     width: rw(22),
     height: rw(22),
     borderRadius: rw(11),
-    backgroundColor: "rgba(102, 126, 234, 0.2)",
+    backgroundColor: "rgba(255, 107, 53, 0.2)",
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },

@@ -91,7 +91,7 @@ export const WearableActivityCard: React.FC<WearableActivityCardProps> = ({
               <Ionicons
                 name="bed-outline"
                 size={rf(24)}
-                color="#9C27B0"
+                color="#FF6B35"
                 style={{
                   marginBottom: ResponsiveTheme.spacing.xs,
                 }}

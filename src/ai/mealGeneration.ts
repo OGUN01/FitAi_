@@ -10,10 +10,7 @@ import { handleError } from "./utils";
 import { fitaiWorkersClient } from "../services/fitaiWorkersClient";
 import { transformForDietRequest } from "../services/aiRequestTransformers";
 
-declare function transformDietResponseToWeeklyPlan(
-  response: any,
-  weekNumber: number,
-): WeeklyMealPlan | null;
+import { transformDietResponseToWeeklyPlan } from "../services/aiRequestTransformers";
 
 export async function generateMeal(
   personalInfo: PersonalInfo,

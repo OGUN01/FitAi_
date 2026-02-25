@@ -32,7 +32,7 @@ export const QuickAddOptions: React.FC<QuickAddOptionsProps> = ({
             activeOpacity={0.7}
           >
             <LinearGradient
-              colors={["rgba(99, 102, 241, 0.2)", "rgba(139, 92, 246, 0.2)"]}
+              colors={["rgba(255, 107, 53, 0.2)", "rgba(255, 138, 92, 0.2)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.quickOptionGradient}
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(20),
     borderRadius: ResponsiveTheme.borderRadius.xl,
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   quickOptionLabel: {
     fontSize: rf(14),
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingVertical: rp(14),
     borderRadius: ResponsiveTheme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
     borderStyle: "dashed",
   },
   customButtonText: {

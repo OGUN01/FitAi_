@@ -206,7 +206,7 @@ export const LifestyleFields: React.FC<LifestyleFieldsProps> = ({
                 onPress={() => setShowSleepTimePicker(true)}
               >
                 <View style={styles.timeIconContainer}>
-                  <Ionicons name="moon-outline" size={rf(20)} color="#6366F1" />
+                  <Ionicons name="moon-outline" size={rf(20)} color="#FF6B35" />
                   <Text style={styles.timeText} numberOfLines={1}>
                     {formatTimeForDisplay(formData.sleep_time)}
                   </Text>

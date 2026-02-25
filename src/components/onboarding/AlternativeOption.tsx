@@ -106,6 +106,53 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
   const riskStyles = getRiskStyles(alternative.riskLevel);
   const isBlocked = alternative.isBlocked;
 
+  if (isBlocked) {
+    return (
+      <TouchableOpacity
+        style={[styles.container, styles.blockedContainer]}
+        disabled
+        activeOpacity={1}
+      >
+        {/* Left: Locked icon */}
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: "rgba(255,255,255,0.05)" },
+          ]}
+        >
+          <Ionicons
+            name="lock-closed"
+            size={rf(18)}
+            color="rgba(255,255,255,0.25)"
+          />
+        </View>
+
+        {/* Middle: Content */}
+        <View style={styles.content}>
+          <Text
+            style={[
+              styles.label,
+              { color: "rgba(255,255,255,0.25)", fontSize: rf(12) },
+            ]}
+            numberOfLines={1}
+          >
+            {alternative.label}
+          </Text>
+          <Text style={styles.blockedText}>{alternative.blockReason}</Text>
+        </View>
+
+        {/* Right: LOCKED badge */}
+        <View
+          style={[styles.badge, { backgroundColor: "rgba(255,255,255,0.05)" }]}
+        >
+          <Text style={[styles.badgeText, { color: "rgba(255,255,255,0.2)" }]}>
+            LOCKED
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity
       style={[
@@ -116,12 +163,9 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
             : "transparent",
           borderColor: isSelected ? riskStyles.border : "transparent",
           borderWidth: isSelected ? 2 : 1,
-          opacity: isBlocked ? 0.5 : 1,
         },
-        isBlocked && styles.blockedContainer,
       ]}
-      onPress={() => !isBlocked && onSelect(alternative)}
-      disabled={isBlocked}
+      onPress={() => onSelect(alternative)}
       activeOpacity={0.7}
     >
       {/* Left: Icon */}
@@ -192,14 +236,6 @@ export const AlternativeOption: React.FC<AlternativeOptionProps> = ({
           <Ionicons name="checkmark" size={rf(12)} color="#FFFFFF" />
         </View>
       )}
-
-      {/* Blocked overlay */}
-      {isBlocked && (
-        <View style={styles.blockedOverlay}>
-          <Ionicons name="lock-closed" size={rf(14)} color="#9CA3AF" />
-          <Text style={styles.blockedText}>{alternative.blockReason}</Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 };
@@ -220,7 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.05)",
   },
   blockedContainer: {
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
   },
   iconContainer: {
     width: rf(36),
@@ -306,18 +342,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  blockedOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(243, 244, 246, 0.9)",
-    borderRadius: rp(12),
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: rp(6),
-  },
   blockedText: {
     fontSize: rf(11),
-    color: "#6B7280",
+    color: "rgba(255, 255, 255, 0.6)",
     fontWeight: "500",
   },
 });

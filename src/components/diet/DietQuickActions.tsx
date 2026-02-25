@@ -67,7 +67,7 @@ export const DietQuickActions: React.FC<DietQuickActionsProps> = ({
       id: "ai-meal",
       label: "AI Meal",
       icon: "sparkles-outline",
-      color: "#667eea",
+      color: "#FF6B35",
       onPress: onGenerateMeal,
       disabled: isGenerating,
     },

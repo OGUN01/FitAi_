@@ -7,7 +7,7 @@ export { FitnessHeader } from './FitnessHeader';
 export { TodayWorkoutCard } from './TodayWorkoutCard';
 export { WeeklyPlanOverview } from './WeeklyPlanOverview';
 export { WorkoutHistoryList } from './WorkoutHistoryList';
-export { SuggestedWorkouts } from './SuggestedWorkouts';
+export { SuggestedWorkouts } from '../../../components/fitness/SuggestedWorkouts';
 export { EmptyPlanState } from './EmptyPlanState';
 export { RecoveryTipsModal } from './RecoveryTipsModal';
 

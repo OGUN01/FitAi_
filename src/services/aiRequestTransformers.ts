@@ -29,6 +29,7 @@ import type {
   DayMeal,
   Workout,
 } from "../types/ai";
+import type { MealItem, Food } from "../types/diet";
 // Note: MET-based calorie calculation happens at workout completion (completionTracking.ts)
 // where we have access to the user's actual weight from their profile
 
@@ -78,6 +79,8 @@ export function transformForDietRequest(
     const dietType = dietPreferences.diet_type.toLowerCase();
     if (["vegetarian", "vegan", "pescatarian", "keto"].includes(dietType)) {
       dietaryRestrictions.push(dietType);
+    } else if (dietType === "non-veg") {
+      dietaryRestrictions.push("non-vegetarian");
     }
   }
   // Add any explicit restrictions
@@ -102,13 +105,14 @@ export function transformForDietRequest(
       activityLevel: activityLevel,
       fitnessGoal: primaryGoal,
     },
+    country: personalInfo.country,
     // Diet preferences (may be stripped by backend, but included for compatibility)
     dietPreferences: dietPreferences
       ? {
           dietType: dietPreferences.diet_type,
           allergies: dietPreferences.allergies ?? [],
           restrictions: dietPreferences.restrictions ?? [],
-          cuisinePreferences: [],
+          cuisinePreferences: dietPreferences.cuisine_preferences ?? [],
           dislikes: [],
         }
       : undefined,
@@ -293,27 +297,29 @@ export function transformForWorkoutRequest(
     preferredWorkoutTime: preferredWorkoutTime, // ✅ NEW
   };
 
+  // Map gender: worker expects 'male' | 'female' | 'other'
+  const mappedGender: 'male' | 'female' | 'other' =
+    personalInfo.gender === 'male' || personalInfo.gender === 'female'
+      ? personalInfo.gender
+      : 'other';
   return {
     profile: {
-      age: personalInfo.age, // NO FALLBACK - must come from onboarding
-      gender: personalInfo.gender, // NO FALLBACK
-      weight: (bodyMetrics?.current_weight_kg ?? personalInfo.weight) as number, // Type assertion
-      height: (bodyMetrics?.height_cm ?? personalInfo.height) as number, // Type assertion
+      age: personalInfo.age,
+      gender: mappedGender,
+      weight: bodyMetrics?.current_weight_kg ?? personalInfo.weight ?? 70,
+      height: bodyMetrics?.height_cm ?? personalInfo.height ?? 170,
       fitnessGoal: primaryGoal,
       experienceLevel: experienceLevel,
       availableEquipment: equipment,
       injuries: injuries,
-      // ✅ CRITICAL: Add medical safety fields
-      // medicalConditions: medicalConditions,  // Removed - not in type
       medications: medications,
       pregnancyStatus: pregnancyStatus,
       pregnancyTrimester: pregnancyTrimester,
       breastfeedingStatus: breastfeedingStatus,
-    } as any,
-    // ✅ NEW: Weekly plan parameters (ALWAYS REQUIRED - NO FALLBACK)
-    // weeklyPlan: weeklyPlan,  // Removed - not in type
+    },
+    weeklyPlan: weeklyPlan,
     focusMuscles: options?.focusMuscles,
-  } as any;
+  };
 }
 
 /**
@@ -323,13 +329,6 @@ function getWorkoutDaysFromPreferences(
   workoutPreferences?: WorkoutPreferences,
   workoutsPerWeek: number = 3,
 ): string[] {
-  // Use user's preferred workout times if available
-  if (
-    workoutPreferences?.preferred_workout_times &&
-    workoutPreferences.preferred_workout_times.length > 0
-  ) {
-    return workoutPreferences.preferred_workout_times.slice(0, workoutsPerWeek);
-  }
 
   // Otherwise, distribute evenly based on frequency
   const allDays = [
@@ -421,6 +420,152 @@ export function transformWorkoutResponseToWeeklyPlan(
       (sum, w) => sum + (w.estimatedCalories || 0),
       0,
     ),
+  };
+}
+
+// ============================================================================
+// DIET RESPONSE TRANSFORMERS
+// ============================================================================
+
+/**
+ * Transform backend diet response to frontend WeeklyMealPlan format
+ *
+ * Backend meals have: { name, mealType, foods: [{ name, quantity, nutrition: { calories, protein, carbs, fats, fiber } }], totalCalories, totalNutrition: { protein, carbs, fats, fiber } }
+ * Frontend DayMeal expects: { type, items: MealItem[], totalCalories, totalMacros: { protein, carbohydrates, fat, fiber } }
+ *
+ * Key field mappings:
+ *   backend 'fats' → frontend 'fat'
+ *   backend 'carbs' → frontend 'carbohydrates'
+ *   backend 'foods' → frontend 'items' (MealItem[])
+ */
+export function transformDietResponseToWeeklyPlan(
+  response: WorkersResponse<DietPlan>,
+  weekNumber: number = 1,
+): WeeklyMealPlan | null {
+  if (!response.success || !response.data) {
+    console.error("[Transformer] Diet response failed:", response.error);
+    return null;
+  }
+
+  const dietPlan = response.data;
+  const meals = dietPlan.meals;
+
+  if (!meals || !Array.isArray(meals) || meals.length === 0) {
+    console.error("[Transformer] No meals in diet response");
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  const daysOfWeek = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+
+  // Get current day of week for single-day assignment
+  const todayIndex = new Date().getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const todayName = daysOfWeek[todayIndex === 0 ? 6 : todayIndex - 1]; // Adjust to Mon-based
+
+  const dayMeals: DayMeal[] = meals.map(
+    (meal: any, index: number): DayMeal => {
+      // Map backend foods[] to frontend MealItem[]
+      const items: MealItem[] = (meal.foods || meal.items || []).map(
+        (food: any, foodIndex: number): MealItem => {
+          const nutrition = food.nutrition || {};
+          const calories =
+            nutrition.calories || food.calories || 0;
+          const macros = {
+            protein: nutrition.protein || food.protein || 0,
+            carbohydrates:
+              nutrition.carbs ||
+              nutrition.carbohydrates ||
+              food.carbs ||
+              food.carbohydrates ||
+              0,
+            fat:
+              nutrition.fats ||
+              nutrition.fat ||
+              food.fats ||
+              food.fat ||
+              0,
+            fiber: nutrition.fiber || food.fiber || 0,
+          };
+
+          // Build a minimal Food object for the MealItem
+          const foodObj: Food = {
+            id: food.id || `food_${Date.now()}_${index}_${foodIndex}`,
+            name: food.name || "Unknown Food",
+            category: "prepared_foods",
+            nutrition: {
+              calories,
+              macros,
+              servingSize: parseFloat(String(food.quantity)) || 100,
+              servingUnit: food.unit || "g",
+            },
+            allergens: [],
+            dietaryLabels: [],
+            verified: false,
+            createdAt: now,
+            updatedAt: now,
+          };
+
+          return {
+            id: food.id || `meal_item_${Date.now()}_${index}_${foodIndex}`,
+            foodId: foodObj.id,
+            food: foodObj,
+            name: food.name || "Unknown Food",
+            quantity: food.quantity || food.amount || 1,
+            calories,
+            macros,
+          };
+        },
+      );
+
+      // Map backend totalNutrition to frontend totalMacros
+      const totalNutrition = meal.totalNutrition || {};
+      const totalMacros = {
+        protein: totalNutrition.protein || 0,
+        carbohydrates:
+          totalNutrition.carbs || totalNutrition.carbohydrates || 0,
+        fat: totalNutrition.fats || totalNutrition.fat || 0,
+        fiber: totalNutrition.fiber || 0,
+      };
+
+      return {
+        id: meal.id || `meal_${Date.now()}_${index}`,
+        type: mapMealType(meal.mealType || meal.type || "lunch"),
+        name: meal.name || `Meal ${index + 1}`,
+        description:
+          meal.description ||
+          `${mapMealType(meal.mealType || meal.type || "lunch")} - ${items.length} items`,
+        items,
+        foods: items, // Backward compatibility alias
+        totalCalories: totalNutrition.calories || meal.totalCalories || 0,
+        totalMacros,
+        preparationTime: meal.preparationTime || meal.prepTime || 15,
+        cookingInstructions: meal.cookingInstructions || [],
+        difficulty: mapDifficultyLevel(meal.difficulty),
+        tags: [
+          "ai-generated",
+          mapMealType(meal.mealType || meal.type || "lunch"),
+        ],
+        dayOfWeek: meal.dayOfWeek || todayName,
+        isPersonalized: true,
+        aiGenerated: true,
+        createdAt: now,
+      };
+    },
+  );
+
+  return {
+    id: dietPlan.id || `weekly_meal_plan_${Date.now()}`,
+    weekNumber,
+    meals: dayMeals,
+    planTitle: dietPlan.title || "Your Personalized Meal Plan",
   };
 }
 

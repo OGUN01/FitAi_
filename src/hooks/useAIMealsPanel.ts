@@ -54,7 +54,7 @@ export const mealOptions: MealGenerationOption[] = [
     title: "Dinner",
     emoji: "🌙",
     description: "Satisfying evening meals for recovery",
-    color: "#8b5cf6",
+    color: "#FF8A5C",
     suggestions: [
       "Family friendly",
       "Comfort food",

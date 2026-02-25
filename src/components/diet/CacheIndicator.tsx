@@ -45,7 +45,7 @@ export const CacheIndicator: React.FC<CacheIndicatorProps> = ({
         <Ionicons
           name={cached ? "flash" : "sparkles"}
           size={rf(12)}
-          color={cached ? "#10B981" : "#667eea"}
+          color={cached ? "#10B981" : "#FF6B35"}
         />
         <Text
           style={[
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 185, 129, 0.15)",
   },
   freshBadge: {
-    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    backgroundColor: "rgba(255, 107, 53, 0.15)",
   },
   badgeText: {
     fontSize: rf(11),
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     color: "#10B981",
   },
   freshText: {
-    color: "#667eea",
+    color: "#FF6B35",
   },
   metaBadgeText: {
     fontSize: rf(11),

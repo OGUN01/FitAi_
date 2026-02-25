@@ -16,6 +16,7 @@ import { useSubscriptionStore } from "../../stores/subscriptionStore";
 import razorpayService from "../../services/RazorpayService";
 import { RazorpayServiceError } from "../../services/RazorpayService";
 import { usePaywall } from "../../hooks/usePaywall";
+import PaywallModal from "../../components/subscription/PaywallModal";
 
 // ============================================================================
 // Types
@@ -32,7 +33,7 @@ interface SubscriptionManagementProps {
 const TIER_COLORS: Record<string, readonly [string, string]> = {
   free: ["#6B7280", "#9CA3AF"] as const,
   basic: ["#3B82F6", "#60A5FA"] as const,
-  pro: ["#8B5CF6", "#A78BFA"] as const,
+  pro: ["#FF8A5C", "#A78BFA"] as const,
 };
 
 const TIER_LABELS: Record<string, string> = {
@@ -95,7 +96,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
     isLoading: storeLoading,
   } = useSubscriptionStore();
 
-  const { triggerPaywall } = usePaywall();
+  const { triggerPaywall, showPaywall, dismiss, paywallReason } = usePaywall();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const tier = currentPlan?.tier ?? "free";
@@ -389,7 +390,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                 aiMonthly.limit,
                 features.unlimited_ai,
                 aiProgress,
-                "#8B5CF6",
+                "#FF8A5C",
               )}
 
               {renderProgressBar(
@@ -496,9 +497,9 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                     <Ionicons
                       name="arrow-up-circle-outline"
                       size={rf(20)}
-                      color="#8B5CF6"
+                      color="#FF8A5C"
                     />
-                    <Text style={[styles.actionText, { color: "#8B5CF6" }]}>
+                    <Text style={[styles.actionText, { color: "#FF8A5C" }]}>
                       Resubscribe
                     </Text>
                   </AnimatedPressable>
@@ -516,7 +517,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
                     colors={
                       tier === "free"
                         ? (["#3B82F6", "#2563EB"] as const)
-                        : (["#8B5CF6", "#7C3AED"] as const)
+                        : (["#FF8A5C", "#7C3AED"] as const)
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
@@ -567,6 +568,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({
           <View style={styles.bottomSpacing} />
         </ScrollView>
       </SafeAreaView>
+      <PaywallModal visible={showPaywall} onClose={dismiss} reason={paywallReason ?? undefined} />
     </AuroraBackground>
   );
 };

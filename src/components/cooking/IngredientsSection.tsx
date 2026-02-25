@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import MacroDashboard from "../nutrition/MacroDashboard";
+import { colors } from "../../theme/aurora-tokens";
 
 interface IngredientsSectionProps {
   meal: DayMeal;
@@ -40,7 +41,11 @@ export default function IngredientsSection({
               <Text style={styles.ingredientCalories}>
                 {Math.round(item.calories)} cal
               </Text>
-              <Ionicons name="information-circle" size={16} color="#6B7280" />
+              <Ionicons
+                name="information-circle"
+                size={16}
+                color={colors.text.muted}
+              />
             </TouchableOpacity>
           )) || []}
         </View>
@@ -51,7 +56,7 @@ export default function IngredientsSection({
 
 const styles = StyleSheet.create({
   ingredientsSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background.secondary,
     marginBottom: 16,
     paddingHorizontal: 16,
     paddingVertical: 20,
@@ -59,7 +64,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
     paddingBottom: 8,
   },
   macroDashboard: {
@@ -71,7 +76,7 @@ const styles = StyleSheet.create({
   ingredientsTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
     marginBottom: 12,
   },
   ingredientsGrid: {
@@ -82,21 +87,21 @@ const styles = StyleSheet.create({
   ingredientChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.background.tertiary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   ingredientText: {
     fontSize: 14,
-    color: "#374151",
+    color: colors.text.secondary,
     marginRight: 6,
   },
   ingredientCalories: {
     fontSize: 12,
-    color: "#6B7280",
+    color: colors.text.muted,
     marginRight: 8,
   },
 });

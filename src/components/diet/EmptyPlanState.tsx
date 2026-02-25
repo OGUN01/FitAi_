@@ -53,7 +53,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           {/* Icon */}
           <View style={styles.iconWrapper}>
             <LinearGradient
-              colors={["#667eea", "#764ba2"]}
+              colors={["#FF6B35", "#FF8A5C"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.iconContainer}
@@ -81,21 +81,21 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
                 <Ionicons
                   name="calendar-outline"
                   size={rf(16)}
-                  color="#667eea"
+                  color="#FF6B35"
                 />
                 <Text style={styles.previewText}>
                   {planDetails.workouts} workouts
                 </Text>
               </View>
               <View style={styles.previewItem}>
-                <Ionicons name="time-outline" size={rf(16)} color="#667eea" />
+                <Ionicons name="time-outline" size={rf(16)} color="#FF6B35" />
                 <Text style={styles.previewText}>{planDetails.duration}</Text>
               </View>
             </View>
 
             <View style={styles.previewRow}>
               <View style={styles.previewItem}>
-                <Ionicons name="trophy-outline" size={rf(16)} color="#667eea" />
+                <Ionicons name="trophy-outline" size={rf(16)} color="#FF6B35" />
                 <Text style={styles.previewText} numberOfLines={1}>
                   {experienceLevel.charAt(0).toUpperCase() +
                     experienceLevel.slice(1)}{" "}
@@ -104,7 +104,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
               </View>
               {primaryGoals.length > 0 && (
                 <View style={styles.previewItem}>
-                  <Ionicons name="flag-outline" size={rf(16)} color="#667eea" />
+                  <Ionicons name="flag-outline" size={rf(16)} color="#FF6B35" />
                   <Text style={styles.previewText} numberOfLines={1}>
                     {primaryGoals[0]}
                   </Text>
@@ -145,7 +145,7 @@ export const EmptyPlanState: React.FC<EmptyPlanStateProps> = ({
           >
             <LinearGradient
               colors={
-                isGenerating ? ["#6b7280", "#4b5563"] : ["#667eea", "#764ba2"]
+                isGenerating ? ["#6b7280", "#4b5563"] : ["#FF6B35", "#FF8A5C"]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     width: "100%",
-    backgroundColor: "rgba(102, 126, 234, 0.08)",
+    backgroundColor: "rgba(255, 107, 53, 0.08)",
     borderRadius: ResponsiveTheme.borderRadius.lg,
     padding: ResponsiveTheme.spacing.md,
     marginBottom: ResponsiveTheme.spacing.lg,

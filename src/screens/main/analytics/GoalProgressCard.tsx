@@ -23,9 +23,9 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
     >
       <View style={styles.trendHeader}>
         <View
-          style={[styles.trendIconContainer, { backgroundColor: "#9C27B020" }]}
+          style={[styles.trendIconContainer, { backgroundColor: "#FF6B3520" }]}
         >
-          <Ionicons name="flag-outline" size={20} color="#9C27B0" />
+          <Ionicons name="flag-outline" size={20} color="#FF6B35" />
         </View>
         <Text style={styles.trendTitle}>Goal Progress</Text>
       </View>
@@ -52,7 +52,7 @@ export const GoalProgressCard: React.FC<GoalProgressCardProps> = ({
                             100,
                         ),
                       )}%`,
-                      backgroundColor: "#9C27B0",
+                      backgroundColor: "#FF6B35",
                     },
                   ]}
                 />

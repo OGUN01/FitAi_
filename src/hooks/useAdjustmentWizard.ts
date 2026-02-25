@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FALLBACK_DAILY_CALORIES } from "../constants/diet";
 import { Ionicons } from "@expo/vector-icons";
 import {
   ValidationResult,
@@ -266,7 +267,7 @@ export const useAdjustmentWizard = ({
     alternatives.push({
       name: hasMuscleGoal ? "Add Strength Training" : "Add Exercise",
       icon: "barbell-outline",
-      iconColor: "#8B5CF6",
+      iconColor: "#FF8A5C",
       goalType: hasMuscleGoal
         ? "muscle-gain"
         : isWeightLoss
@@ -380,7 +381,7 @@ export const useAdjustmentWizard = ({
     alternatives.push({
       name: "Add Strength Training",
       icon: "barbell-outline",
-      iconColor: "#8B5CF6",
+      iconColor: "#FF8A5C",
       goalType: "strength",
       newWorkoutFrequency: Math.min(currentFrequency + 3, 6),
       newStrengthSessions: 4,
@@ -564,7 +565,7 @@ export const useAdjustmentWizard = ({
     alternatives.push({
       name: "Add Deload Weeks",
       icon: "analytics-outline",
-      iconColor: "#8B5CF6",
+      iconColor: "#FF8A5C",
       goalType: "strength",
       newWorkoutFrequency: currentFrequency,
       newStrengthSessions: Math.ceil(currentFrequency * 0.6),
@@ -631,7 +632,7 @@ export const useAdjustmentWizard = ({
     alternatives.push({
       name: "Strength Focus",
       icon: "barbell-outline",
-      iconColor: "#8B5CF6",
+      iconColor: "#FF8A5C",
       goalType: "strength",
       newTimeline: Math.ceil(weightDiff / moderateGainRate),
       newWorkoutFrequency: Math.min(currentFrequency, 5),
@@ -739,7 +740,7 @@ export const useAdjustmentWizard = ({
           iconColor: "#3B82F6",
           goalType: "weight-loss",
           newTimeline: Math.max(currentTimeline * 2, 12),
-          dailyCalories: bmr > 0 ? Math.round(bmr * 1.2) : 1500,
+          dailyCalories: bmr > 0 ? Math.round(bmr * 1.2) : FALLBACK_DAILY_CALORIES,
           weeklyRate: 0.5,
           newWorkoutFrequency: currentFrequency || 3,
           approach: "Safe, gradual approach to your goal",

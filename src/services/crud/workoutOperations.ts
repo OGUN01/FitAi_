@@ -49,18 +49,20 @@ async function syncWorkoutSessionToSupabase(
     }
 
     const { error } = await supabase.from("workout_sessions").upsert({
-      id: session.id,
       user_id: userId,
-      workout_id: session.workoutId,
+      workout_plan_id: null, // session.workoutId is not a UUID FK to user_workout_plans
+      workout_name: session.notes?.split(' - ')[1] || 'Workout',
+      workout_type: 'general',
       started_at: session.startedAt,
       completed_at: session.completedAt,
-      duration: session.duration,
+      total_duration_minutes: session.duration,
       calories_burned: session.caloriesBurned,
-      exercises: session.exercises,
+      exercises_completed: session.exercises,
       notes: session.notes || "",
-      rating: session.rating || 0,
+      enjoyment_rating: session.rating || 0,
       is_completed: session.isCompleted,
-    });
+      completion_percentage: session.isCompleted ? 100 : 0,
+    }, { onConflict: 'id', ignoreDuplicates: false });
 
     if (error) {
       console.warn(

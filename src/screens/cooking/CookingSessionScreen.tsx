@@ -22,6 +22,7 @@ import IngredientsSection from "../../components/cooking/IngredientsSection";
 import CurrentStepDisplay from "../../components/cooking/CurrentStepDisplay";
 import StepsList from "../../components/cooking/StepsList";
 import NavigationButtons from "../../components/cooking/NavigationButtons";
+import { colors } from "../../theme/aurora-tokens";
 
 interface CookingSessionScreenProps {
   route: {
@@ -122,7 +123,7 @@ export default function CookingSessionScreen({
           }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="close" size={28} color="#111827" />
+          <Ionicons name="close" size={28} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.mealName}>{meal.name}</Text>
@@ -201,16 +202,16 @@ export default function CookingSessionScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.background.DEFAULT,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background.secondary,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerContent: {
     flex: 1,
@@ -219,11 +220,11 @@ const styles = StyleSheet.create({
   mealName: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#111827",
+    color: colors.text.primary,
   },
   mealMeta: {
     fontSize: 14,
-    color: "#6B7280",
+    color: colors.text.secondary,
     marginTop: 2,
   },
   content: {

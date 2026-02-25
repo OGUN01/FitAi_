@@ -39,7 +39,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = ({
 const styles = StyleSheet.create({
   descriptionCard: {
     marginBottom: ResponsiveTheme.spacing.lg,
-    backgroundColor: "rgba(102, 126, 234, 0.1)",
+    backgroundColor: "rgba(255, 107, 53, 0.1)",
   },
   descriptionContent: {
     flexDirection: "row",

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { THEME } from "../../ui";
+import { colors } from "../../../theme/aurora-tokens";
 
 interface GifPlayerContentProps {
   exercise: any;
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   gif: {
     borderTopLeftRadius: THEME.borderRadius.lg,
     borderTopRightRadius: THEME.borderRadius.lg,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.background.secondary,
     borderWidth: 0.5,
     borderColor: THEME.colors.primary + "10",
   },
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
   },
 
   zoomHintText: {
-    color: "white",
+    color: colors.text.primary,
     fontSize: 10,
     fontWeight: "500",
   },

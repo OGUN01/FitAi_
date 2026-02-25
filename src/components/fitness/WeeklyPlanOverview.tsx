@@ -156,7 +156,7 @@ export const WeeklyPlanOverview: React.FC<WeeklyPlanOverviewProps> = ({
                   {status.isCompleted ? (
                     <Ionicons name="checkmark" size={rf(14)} color="#10b981" />
                   ) : status.isRestDay ? (
-                    <Ionicons name="moon" size={rf(12)} color="#667eea" />
+                    <Ionicons name="moon" size={rf(12)} color="#FF6B35" />
                   ) : status.hasWorkout ? (
                     <View
                       style={[

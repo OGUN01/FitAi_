@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
+import { colors } from "../../theme/aurora-tokens";
 
 interface StepsListProps {
   cookingFlow: CookingFlow;
@@ -73,7 +74,11 @@ export default function StepsList({
                 )}
               </View>
               {completedSteps.has(index) && (
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={24}
+                  color={colors.success.DEFAULT}
+                />
               )}
             </View>
           </TouchableOpacity>
@@ -96,7 +101,7 @@ export default function StepsList({
 
 const styles = StyleSheet.create({
   stepsListSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background.secondary,
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 12,
@@ -105,7 +110,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
     padding: 16,
     paddingBottom: 8,
   },
@@ -116,13 +121,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   currentStepItem: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "rgba(255, 107, 53, 0.10)",
   },
   completedStepItem: {
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "rgba(76, 175, 80, 0.08)",
   },
   stepItemContent: {
     flexDirection: "row",
@@ -132,7 +137,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -140,13 +145,13 @@ const styles = StyleSheet.create({
   stepNumberText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6B7280",
+    color: colors.text.secondary,
   },
   currentStepText: {
-    color: "#4F46E5",
+    color: colors.primary.DEFAULT,
   },
   completedStepText: {
-    color: "#10B981",
+    color: colors.success.DEFAULT,
   },
   stepTextContainer: {
     flex: 1,
@@ -155,15 +160,15 @@ const styles = StyleSheet.create({
   stepItemText: {
     flex: 1,
     fontSize: 16,
-    color: "#374151",
+    color: colors.text.secondary,
   },
   stepTimeText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: colors.text.muted,
     marginTop: 4,
   },
   proTipsSection: {
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "rgba(255, 152, 0, 0.10)",
     padding: 16,
     borderRadius: 12,
     marginTop: 16,
@@ -171,12 +176,12 @@ const styles = StyleSheet.create({
   proTipsTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#166534",
+    color: colors.warning.DEFAULT,
     marginBottom: 8,
   },
   proTipText: {
     fontSize: 14,
-    color: "#166534",
+    color: colors.warning.DEFAULT,
     lineHeight: 20,
     marginBottom: 4,
   },

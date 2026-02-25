@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Alert } from "react-native";
-import { useUserStore } from "../stores";
+import { useUserStore, useNutritionStore } from "../stores";
 import { aiService } from "../ai";
 import {
   foodRecognitionService,
@@ -12,7 +12,7 @@ import { barcodeService, ScannedProduct } from "../services/barcodeService";
 import { useAuth } from "./useAuth";
 import { useNutritionData } from "./useNutritionData";
 import { useCalculatedMetrics } from "./useCalculatedMetrics";
-import { Meal, DayMeal } from "../types/ai";
+import { Meal, DayMeal, WeeklyMealPlan } from "../types/ai";
 
 const generateHealthAssessment = (product: ScannedProduct) => {
   const { nutrition, healthScore } = product;
@@ -140,12 +140,13 @@ const generateHealthAssessment = (product: ScannedProduct) => {
 
 export const useAIMealGeneration = () => {
   const { user, isGuestMode } = useAuth();
+  const { weeklyMealPlan, setWeeklyMealPlan } = useNutritionStore();
   const { profile } = useUserStore();
   const { foods, loadDailyNutrition, refreshAll, dietPreferences } =
     useNutritionData();
   const { getCalorieTarget } = useCalculatedMetrics();
 
-  const [aiMeals, setAiMeals] = useState<Meal[]>([]);
+  const [aiMeals, setAiMeals] = useState<DayMeal[]>([]);
   const [isGeneratingMeal, setIsGeneratingMeal] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
@@ -603,9 +604,15 @@ export const useAIMealGeneration = () => {
 
       if (response.success && response.data) {
         setAiMeals((prev) => [response.data!, ...prev]);
-
-        if (user?.id && response.data.ingredients && foods.length > 0) {
-        }
+        // Push generated meal to Zustand nutrition store so DietScreen renders it
+        const currentMeals = weeklyMealPlan?.meals || [];
+        const updatedPlan: WeeklyMealPlan = {
+          id: weeklyMealPlan?.id || `meal_plan_${Date.now()}`,
+          weekNumber: weeklyMealPlan?.weekNumber || Math.ceil(new Date().getDate() / 7),
+          meals: [...currentMeals, response.data],
+          planTitle: weeklyMealPlan?.planTitle || "AI Generated Meals",
+        };
+        setWeeklyMealPlan(updatedPlan);
 
         Alert.alert(
           "Meal Generated!",

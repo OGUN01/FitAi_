@@ -3,6 +3,7 @@
 
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
+import { colors } from "../../theme/aurora-tokens";
 
 // Temporarily disabled victory-native to resolve Skia module issues
 // import { VictoryChart, VictoryLine, VictoryArea, VictoryBar, VictoryAxis, VictoryTheme, VictoryTooltip } from 'victory-native';
@@ -42,22 +43,21 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       style={{
         width: screenWidth - 40,
         height: height + 60,
-        backgroundColor: "#f8f9fa",
+        backgroundColor: colors.background.secondary,
         borderRadius: 12,
         padding: 20,
         marginVertical: 10,
         justifyContent: "center",
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#e9ecef",
-      }}
-    >
+        borderColor: "rgba(255, 255, 255, 0.08)",
+      }}    >
       <Text
         style={{
           fontSize: 18,
           fontWeight: "600",
           marginBottom: 10,
-          color: "#333",
+          color: colors.text.primary,
         }}
       >
         {title}
@@ -65,7 +65,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       <Text
         style={{
           fontSize: 14,
-          color: "#666",
+          color: colors.text.secondary,
           textAlign: "center",
         }}
       >
@@ -74,7 +74,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
       <Text
         style={{
           fontSize: 12,
-          color: "#999",
+          color: colors.text.tertiary,
           marginTop: 8,
           textAlign: "center",
         }}

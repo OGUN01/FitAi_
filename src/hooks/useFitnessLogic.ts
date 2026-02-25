@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 // Stores
-import { useUserStore, useFitnessStore, useAppStateStore } from "../stores";
+import { useUserStore, useFitnessStore, useAppStateStore, useProfileStore } from "../stores";
 import { useAuth } from "./useAuth";
 import { useFitnessData } from "./useFitnessData";
 
@@ -17,6 +17,7 @@ export const useFitnessLogic = (navigation: any) => {
   // Auth & User
   const { user, isGuestMode } = useAuth();
   const { profile } = useUserStore();
+  const { bodyAnalysis, workoutPreferences: profileWorkoutPreferences } = useProfileStore();
 
   // Fitness Store
   const {
@@ -29,6 +30,7 @@ export const useFitnessLogic = (navigation: any) => {
     startWorkoutSession: startStoreWorkoutSession,
     loadData: loadFitnessData,
     getWorkoutProgress,
+    getCompletedWorkoutStats,
   } = useFitnessStore();
 
   // Fitness Data Hook
@@ -142,14 +144,12 @@ export const useFitnessLogic = (navigation: any) => {
     );
   }, [workoutProgress, weeklyWorkoutPlan]);
 
-  // Calculate week stats
+  // Calculate week stats — delegates to store's single source of truth
   const weekStats = useMemo(() => {
     const totalWorkouts = weeklyWorkoutPlan?.workouts?.length || 0;
-    const completedCount = Object.values(workoutProgress).filter(
-      (p) => p.progress === 100,
-    ).length;
+    const completedCount = getCompletedWorkoutStats().count;
     return { totalWorkouts, completedCount };
-  }, [weeklyWorkoutPlan, workoutProgress]);
+  }, [weeklyWorkoutPlan, getCompletedWorkoutStats]);
 
   // Get suggested workouts from plan (upcoming ones)
   const suggestedWorkouts = useMemo(() => {
@@ -220,6 +220,10 @@ export const useFitnessLogic = (navigation: any) => {
         profile.personalInfo,
         profile.fitnessGoals,
         1,
+        {
+          bodyMetrics: bodyAnalysis ?? undefined,
+          workoutPreferences: profileWorkoutPreferences ?? undefined,
+        },
       );
 
       if (response.success && response.data) {
@@ -248,6 +252,8 @@ export const useFitnessLogic = (navigation: any) => {
   }, [
     user,
     profile,
+    bodyAnalysis,
+    profileWorkoutPreferences,
     setGeneratingPlan,
     setWeeklyWorkoutPlan,
     saveWeeklyWorkoutPlan,
@@ -302,6 +308,25 @@ export const useFitnessLogic = (navigation: any) => {
       handleStartWorkout(selectedDayWorkout as any);
     } else if (!weeklyWorkoutPlan) {
       generateWeeklyWorkoutPlan();
+    } else {
+      const dayOrder = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+      const todayIndex = new Date().getDay();
+      const workoutDays = (weeklyWorkoutPlan.workouts ?? []).map((w) =>
+        w.dayOfWeek ? dayOrder.indexOf(w.dayOfWeek.toLowerCase()) : -1,
+      ).filter((i) => i !== -1);
+      const nextDay = dayOrder.find(
+        (_, i) => i > todayIndex && workoutDays.includes(i),
+      ) ?? dayOrder.find((_, i) => workoutDays.includes(i));
+      const todayName = dayOrder[todayIndex];
+      const capitalizedToday = todayName.charAt(0).toUpperCase() + todayName.slice(1);
+      const capitalizedNext = nextDay
+        ? nextDay.charAt(0).toUpperCase() + nextDay.slice(1)
+        : "a future day";
+      Alert.alert(
+        "No Workout Today",
+        `${capitalizedToday} is a rest day in your current plan. Your next scheduled workout is on ${capitalizedNext}.`,
+        [{ text: "OK" }],
+      );
     }
   }, [
     selectedDayWorkout,

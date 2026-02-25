@@ -39,10 +39,12 @@ export const getHealthConnectModule = async (): Promise<any | null> => {
       return null;
     }
 
-    const module = await import("react-native-health-connect");
-    healthConnectModule = module as any;
+    // Use require() instead of import() — Hermes module resolution errors
+    // from dynamic import() are not catchable by try-catch, but require() is.
+    const module = require("react-native-health-connect");
+    healthConnectModule = module;
     healthConnectAvailable = true;
-    return module as any;
+    return module;
   } catch (error) {
     console.warn("Failed to load react-native-health-connect:", error);
     healthConnectAvailable = false;

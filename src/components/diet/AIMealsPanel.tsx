@@ -14,6 +14,7 @@ import {
 import { Card } from "../ui";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rf, rh, rw, rs, rp } from "../../utils/responsive";
+import { colors } from "../../theme/aurora-tokens";
 
 interface AIMealsPanelProps {
   visible: boolean;
@@ -66,7 +67,7 @@ const mealOptions: MealGenerationOption[] = [
     title: "Dinner",
     emoji: "🌙",
     description: "Satisfying evening meals for recovery",
-    color: "#8b5cf6", // violet
+    color: "#FF8A5C", // violet
     suggestions: [
       "Family friendly",
       "Comfort food",
@@ -247,7 +248,14 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
               styles.statusBanner,
               {
                 backgroundColor:
-                  profileStatus.status === "complete" ? "#dcfce7" : "#fef3c7",
+                  profileStatus.status === "complete"
+                    ? `rgba(76, 175, 80, 0.15)`
+                    : `rgba(255, 152, 0, 0.15)`,
+                borderWidth: 1,
+                borderColor:
+                  profileStatus.status === "complete"
+                    ? `rgba(76, 175, 80, 0.3)`
+                    : `rgba(255, 152, 0, 0.3)`,
               },
             ]}
           >
@@ -259,7 +267,9 @@ export const AIMealsPanel: React.FC<AIMealsPanelProps> = ({
                 styles.statusText,
                 {
                   color:
-                    profileStatus.status === "complete" ? "#15803d" : "#92400e",
+                    profileStatus.status === "complete"
+                      ? colors.success.DEFAULT
+                      : colors.warning.DEFAULT,
                 },
               ]}
             >

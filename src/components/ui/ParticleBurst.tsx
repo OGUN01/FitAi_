@@ -88,7 +88,7 @@ const ParticleItem: React.FC<{
 
 export const ParticleBurst: React.FC<ParticleBurstProps> = ({
   particleCount = 12,
-  colors = ["#4CAF50", "#FF6B35", "#2196F3", "#FF9800", "#9C27B0"],
+  colors = ["#4CAF50", "#FF6B35", "#2196F3", "#FF9800", "#00D4FF"],
   duration = 1500,
   radius = 100,
   autoPlay = true,

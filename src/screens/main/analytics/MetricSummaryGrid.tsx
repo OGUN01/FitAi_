@@ -208,7 +208,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor="#667eea"
+        iconColor="#FF6B35"
       />
 
       {/* Row 1: Weight + Calories */}
@@ -217,7 +217,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Weight"
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
-          color="#9C27B0"
+          color="#FF6B35"
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
             hasWeightHistory && data.weight?.change
@@ -299,7 +299,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
                   : undefined
               }
               icon="body-outline"
-              color="#8B5CF6"
+              color="#FF8A5C"
               delay={400}
               onPress={() => onMetricPress?.("bmi")}
             />

@@ -1,4 +1,5 @@
 import { DayWorkout } from "../../ai";
+import { generateUUID } from "../../utils/uuid";
 import { FitnessState, CurrentWorkoutSession } from "./types";
 import { crudOperations } from "../../services/crudOperations";
 import { getUserIdOrGuest } from "../../services/authUtils";
@@ -13,7 +14,7 @@ export const createSessionActions = (
   get: () => FitnessState,
 ) => ({
   startWorkoutSession: async (workout: DayWorkout): Promise<string> => {
-    const sessionId = `session_${workout.id}_${Date.now()}`;
+    const sessionId = generateUUID();
 
     try {
       const workoutSession: LocalWorkoutSession = {

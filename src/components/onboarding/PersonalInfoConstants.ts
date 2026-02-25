@@ -97,7 +97,7 @@ export const OCCUPATION_OPTIONS = [
     value: "desk_job",
     label: "Desk Job",
     iconName: "laptop-outline",
-    gradient: ["#6366F1", "#8B5CF6"],
+    gradient: ["#FF6B35", "#FF8A5C"],
     description: "Office worker, programmer, student - mostly sitting",
   },
   {

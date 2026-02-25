@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     marginTop: ResponsiveTheme.spacing.sm,
     paddingHorizontal: ResponsiveTheme.spacing.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
-    backgroundColor: "rgba(102, 126, 234, 0.1)",
+    backgroundColor: "rgba(255, 107, 53, 0.1)",
     borderRadius: rw(16),
   },
   emptyChartHintText: {

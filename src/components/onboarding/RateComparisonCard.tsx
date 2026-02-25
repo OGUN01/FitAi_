@@ -76,7 +76,7 @@ export const RateComparisonCard: React.FC<RateComparisonCardProps> = ({
           <Text style={styles.goalText}>
             Your Goal:{" "}
             <Text style={styles.goalHighlight}>
-              {originalRequestedRate} kg/week
+              {typeof originalRequestedRate === 'number' ? originalRequestedRate.toFixed(2) : originalRequestedRate} kg/week
             </Text>{" "}
             • Target:{" "}
             <Text style={styles.goalHighlight}>{targetWeight} kg</Text>

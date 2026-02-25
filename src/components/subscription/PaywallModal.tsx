@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { usePaywall } from "../../hooks/usePaywall";
+import { colors, spacing, borderRadius } from "../../theme/aurora-tokens";
 
 interface PaywallModalProps {
   visible: boolean;
@@ -263,7 +264,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               ]}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.text.primary} />
               ) : (
                 <Text style={styles.subscribeBtnText}>
                   {selectedPlanData
@@ -289,22 +290,26 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "flex-end",
   },
   container: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: colors.background.secondary,
+    borderTopLeftRadius: borderRadius.xxl,
+    borderTopRightRadius: borderRadius.xxl,
     maxHeight: "92%",
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerRow: {
     flexDirection: "row",
@@ -318,17 +323,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#111827",
+    color: colors.text.primary,
     marginBottom: 6,
   },
   headerDesc: {
     fontSize: 14,
-    color: "#6b7280",
+    color: colors.text.secondary,
     lineHeight: 20,
   },
   headerReason: {
     fontSize: 14,
-    color: "#dc2626",
+    color: colors.error.light,
     lineHeight: 20,
     fontWeight: "500",
   },
@@ -336,13 +341,13 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   closeBtnText: {
     fontSize: 16,
-    color: "#6b7280",
+    color: colors.text.secondary,
     fontWeight: "600",
   },
 
@@ -350,17 +355,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
   },
 
   toggleRow: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
+    backgroundColor: colors.background.tertiary,
+    borderRadius: borderRadius.lg,
     padding: 4,
-    marginTop: 16,
-    marginBottom: 20,
+    marginTop: spacing.md,
+    marginBottom: spacing.md + 4,
   },
   toggleBtn: {
     flex: 1,
@@ -368,55 +373,57 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
   },
   toggleBtnActive: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.background.secondary,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 2,
     elevation: 2,
   },
   toggleText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6b7280",
+    color: colors.text.secondary,
   },
   toggleTextActive: {
-    color: "#111827",
+    color: colors.text.primary,
   },
   savingsBadge: {
     marginLeft: 6,
-    backgroundColor: "#dcfce7",
-    borderRadius: 6,
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.4)",
   },
   savingsBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#16a34a",
+    color: colors.success.light,
   },
 
   plansList: {
     gap: 14,
   },
   planCard: {
-    borderWidth: 2,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: borderRadius.xl,
     padding: 18,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(26, 31, 46, 0.8)",
     position: "relative",
   },
   planCardSelected: {
-    borderColor: "#3b82f6",
-    backgroundColor: "#eff6ff",
+    borderColor: colors.primary.DEFAULT,
+    backgroundColor: "rgba(255, 107, 53, 0.1)",
   },
   planCardCurrent: {
-    borderColor: "#d1d5db",
-    backgroundColor: "#f9fafb",
+    borderColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: colors.background.tertiary,
     opacity: 0.7,
   },
 
@@ -424,36 +431,36 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -10,
     right: 16,
-    backgroundColor: "#f97316",
-    borderRadius: 8,
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   popularBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.primary,
     letterSpacing: 0.5,
   },
   currentBadge: {
     position: "absolute",
     top: -10,
     right: 16,
-    backgroundColor: "#6b7280",
-    borderRadius: 8,
+    backgroundColor: colors.text.muted,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   currentBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.primary,
   },
 
   planName: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: colors.text.primary,
     marginBottom: 8,
   },
   priceRow: {
@@ -464,16 +471,16 @@ const styles = StyleSheet.create({
   priceAmount: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#111827",
+    color: colors.text.primary,
   },
   pricePeriod: {
     fontSize: 14,
-    color: "#6b7280",
+    color: colors.text.secondary,
     marginLeft: 2,
   },
   billedLabel: {
     fontSize: 12,
-    color: "#6b7280",
+    color: colors.text.secondary,
     marginBottom: 4,
   },
 
@@ -487,14 +494,14 @@ const styles = StyleSheet.create({
   },
   featureCheck: {
     fontSize: 14,
-    color: "#22c55e",
+    color: colors.success.DEFAULT,
     fontWeight: "700",
     marginRight: 8,
     width: 18,
   },
   featureText: {
     fontSize: 13,
-    color: "#374151",
+    color: colors.text.secondary,
     flex: 1,
   },
 
@@ -506,7 +513,7 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: "#3b82f6",
+    borderColor: colors.primary.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -514,28 +521,29 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.primary.DEFAULT,
   },
 
   actions: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
   },
   subscribeBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 14,
+    backgroundColor: colors.primary.DEFAULT,
+    borderRadius: borderRadius.lg,
     paddingVertical: 16,
     alignItems: "center",
     marginBottom: 12,
   },
   subscribeBtnDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: colors.background.tertiary,
+    opacity: 0.6,
   },
   subscribeBtnText: {
-    color: "#fff",
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -544,7 +552,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 11,
-    color: "#9ca3af",
+    color: colors.text.muted,
     textAlign: "center",
     lineHeight: 16,
   },

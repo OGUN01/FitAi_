@@ -25,12 +25,12 @@ export const ContactCard: React.FC<ContactCardProps> = ({ onContactEmail }) => {
         style={styles.contactCard}
       >
         <LinearGradient
-          colors={["rgba(102, 126, 234, 0.15)", "rgba(118, 75, 162, 0.1)"]}
+          colors={["rgba(255, 107, 53, 0.15)", "rgba(229, 90, 43, 0.1)"]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.contactIconContainer}>
           <LinearGradient
-            colors={["#667eea", "#764ba2"]}
+            colors={["#FF6B35", "#FF8A5C"]}
             style={styles.contactIcon}
           >
             <Ionicons name="headset-outline" size={rf(24)} color="#fff" />

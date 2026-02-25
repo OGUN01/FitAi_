@@ -76,7 +76,7 @@ export const CustomInputSection: React.FC<CustomInputSectionProps> = ({
           activeOpacity={0.8}
         >
           <LinearGradient
-            colors={[ResponsiveTheme.colors.primary, "#8B5CF6"]}
+            colors={[ResponsiveTheme.colors.primary, "#FF8A5C"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.submitButtonGradient}
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rp(16),
     marginBottom: rp(16),
     borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   inputIcon: {
     marginRight: rp(12),

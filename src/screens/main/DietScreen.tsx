@@ -23,7 +23,7 @@ import { useAuth } from "../../hooks/useAuth";
 import {
   useNutritionStore,
   useAppStateStore,
-  useUserStore,
+  useProfileStore,
 } from "../../stores";
 import { AuroraBackground } from "../../components/ui/aurora/AuroraBackground";
 import { GuestSignUpScreen } from "./GuestSignUpScreen";
@@ -139,7 +139,8 @@ export const DietScreen: React.FC<DietScreenProps> = ({
 
   const { setSelectedDay } = useAppStateStore();
   const { getMealProgress: storeGetMealProgress } = useNutritionStore();
-  const { profile: userProfile } = useUserStore();
+  const { personalInfo, bodyAnalysis, dietPreferences, workoutPreferences, advancedReview } = useProfileStore();
+  const userProfile = { personalInfo, bodyMetrics: bodyAnalysis, fitnessGoals: advancedReview, dietPreferences, workoutPreferences };
 
   const canAccessMealFeatures = isAuthenticated || isGuestMode;
 

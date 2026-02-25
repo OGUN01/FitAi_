@@ -141,7 +141,7 @@ export const Button: React.FC<ButtonProps> = ({
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={["#6366F1", "#8B5CF6"]}
+          colors={["#FF6B35", "#FF8A5C"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.gradientContainer, styles[size]]}

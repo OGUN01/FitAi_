@@ -43,10 +43,10 @@ export const StatsPreview: React.FC<StatsPreviewProps> = ({ stats }) => {
             <View
               style={[
                 styles.statIcon,
-                { backgroundColor: "rgba(102, 126, 234, 0.15)" },
+                { backgroundColor: "rgba(255, 107, 53, 0.15)" },
               ]}
             >
-              <Ionicons name="barbell" size={rf(18)} color="#667eea" />
+              <Ionicons name="barbell" size={rf(18)} color="#FF6B35" />
             </View>
             <Text style={styles.statLabel}>Weekly</Text>
             <Text style={styles.statValue}>

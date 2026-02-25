@@ -31,7 +31,7 @@ export const useAboutFitAILogic = () => {
   const features: FeatureItem[] = [
     {
       icon: "sparkles-outline",
-      color: "#667eea",
+      color: "#FF6B35",
       title: "100% AI-Powered",
       description: "Every workout and meal plan is uniquely generated for you",
     },
@@ -55,7 +55,7 @@ export const useAboutFitAILogic = () => {
     },
     {
       icon: "barbell-outline",
-      color: "#9C27B0",
+      color: "#FF6B35",
       title: "Adaptive Workouts",
       description: "Exercises that evolve with your fitness level",
     },

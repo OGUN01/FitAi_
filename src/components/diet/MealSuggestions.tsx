@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,8 +13,89 @@ import { AnimatedPressable } from "../ui/aurora/AnimatedPressable";
 import { haptics } from "../../utils/haptics";
 import { ResponsiveTheme } from "../../utils/constants";
 import { rw } from "../../utils/responsive";
+import { useProfileStore } from "../../stores/profileStore";
+import { getCuisineDataForCountry } from "../../data/regionalCuisineData";
+import type { CuisineFoodItem } from "../../data/regionalCuisineData";
+import { colors } from "../../theme/aurora-tokens";
+
+/** Max number of meal suggestions shown at a time */
+const MAX_SUGGESTIONS = 5;
+
+interface MealSuggestion {
+  id: number;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/**
+ * Filter meals from the cuisine database based on the user's diet_type.
+ *
+ * - vegetarian / vegan → only isVegetarian items
+ * - pescatarian → vegetarian items (fish items in the DB are tagged non-veg,
+ *   but the cuisine data doesn't have a separate "fish" flag, so we include
+ *   all items whose name contains common fish keywords OR are vegetarian)
+ * - non-veg → all items
+ */
+function filterMealsByDiet(
+  meals: CuisineFoodItem[],
+  dietType: string | undefined,
+): CuisineFoodItem[] {
+  switch (dietType) {
+    case "vegetarian":
+    case "vegan":
+      return meals.filter((m) => m.isVegetarian);
+    case "pescatarian": {
+      const fishKeywords = [
+        "fish",
+        "salmon",
+        "prawn",
+        "shrimp",
+        "tuna",
+        "sea bass",
+        "sushi",
+      ];
+      return meals.filter(
+        (m) =>
+          m.isVegetarian ||
+          fishKeywords.some((kw) => m.name.toLowerCase().includes(kw)),
+      );
+    }
+    case "non-veg":
+    default:
+      return meals;
+  }
+}
+
+/** Map CuisineFoodItem[] to the card data format, capped at MAX_SUGGESTIONS */
+function mapToSuggestions(items: CuisineFoodItem[]): MealSuggestion[] {
+  return items.slice(0, MAX_SUGGESTIONS).map((item, idx) => ({
+    id: idx + 1,
+    name: item.name,
+    calories: item.caloriesPerServing,
+    protein: item.proteinPerServing,
+    carbs: item.carbsPerServing,
+    fat: item.fatPerServing,
+  }));
+}
 
 export const MealSuggestions: React.FC = () => {
+  const personalInfo = useProfileStore((s) => s.personalInfo);
+  const dietPreferences = useProfileStore((s) => s.dietPreferences);
+
+  const suggestions = useMemo<MealSuggestion[]>(() => {
+    const country = personalInfo?.country ?? "global";
+    const dietType = dietPreferences?.diet_type;
+
+    // For vegetarian/vegan we can use the dedicated helper for clarity,
+    // but filterMealsByDiet handles all cases uniformly.
+    const cuisineData = getCuisineDataForCountry(country);
+    const filtered = filterMealsByDiet(cuisineData.typicalMeals, dietType);
+    return mapToSuggestions(filtered);
+  }, [personalInfo?.country, dietPreferences?.diet_type]);
+
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<number>>(
     new Set(),
   );
@@ -135,51 +216,26 @@ export const MealSuggestions: React.FC = () => {
     });
   };
 
+  const visibleSuggestions = suggestions.filter(
+    (s) => !dismissedSuggestions.has(s.id),
+  );
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Meal Suggestions</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.suggestionsScrollContent}
-      >
-        {[
-          {
-            id: 1,
-            name: "Grilled Chicken Salad",
-            icon: "restaurant-outline",
-            cookTime: "15 min",
-            difficulty: "Easy",
-            calories: 320,
-            protein: 35,
-            carbs: 20,
-            fat: 10,
-          },
-          {
-            id: 2,
-            name: "Salmon with Quinoa",
-            icon: "fish-outline",
-            cookTime: "25 min",
-            difficulty: "Medium",
-            calories: 450,
-            protein: 40,
-            carbs: 35,
-            fat: 15,
-          },
-          {
-            id: 3,
-            name: "Veggie Buddha Bowl",
-            icon: "leaf-outline",
-            cookTime: "20 min",
-            difficulty: "Easy",
-            calories: 380,
-            protein: 18,
-            carbs: 55,
-            fat: 12,
-          },
-        ]
-          .filter((s) => !dismissedSuggestions.has(s.id))
-          .map((suggestion) => {
+      {visibleSuggestions.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            No meal suggestions available for your preferences
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.suggestionsScrollContent}
+        >
+          {visibleSuggestions.map((suggestion) => {
             const panResponder = createSuggestionPanResponder(suggestion.id);
             const swipeState = getSuggestionSwipeState(suggestion.id);
             const isAdded = addedToPlan.has(suggestion.id);
@@ -216,7 +272,8 @@ export const MealSuggestions: React.FC = () => {
               </Animated.View>
             );
           })}
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -229,7 +286,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: ResponsiveTheme.fontSize.xl,
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     marginBottom: ResponsiveTheme.spacing.lg,
   },
   suggestionsScrollContent: { paddingHorizontal: ResponsiveTheme.spacing.lg },
@@ -238,18 +295,27 @@ const styles = StyleSheet.create({
   suggestionName: {
     fontSize: ResponsiveTheme.fontSize.md,
     fontWeight: "600",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     marginBottom: ResponsiveTheme.spacing.sm,
   },
   addToPlanButton: {
-    backgroundColor: ResponsiveTheme.colors.primary,
+    backgroundColor: colors.primary.DEFAULT,
     borderRadius: ResponsiveTheme.borderRadius.md,
     paddingVertical: ResponsiveTheme.spacing.xs,
     alignItems: "center",
   },
   addToPlanButtonText: {
-    color: ResponsiveTheme.colors.white,
+    color: colors.text.primary,
     fontSize: ResponsiveTheme.fontSize.xs,
     fontWeight: "600",
+  },
+  emptyState: {
+    paddingVertical: ResponsiveTheme.spacing.xl,
+    alignItems: "center",
+  },
+  emptyStateText: {
+    fontSize: ResponsiveTheme.fontSize.md,
+    color: colors.text.secondary,
+    textAlign: "center",
   },
 });

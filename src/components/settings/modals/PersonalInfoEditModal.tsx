@@ -9,7 +9,7 @@
  * - Weight
  * - Activity Level (picker)
  *
- * Uses useUserStore.updatePersonalInfo() to save changes.
+ * Uses useProfileStore to save changes.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -18,12 +18,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormInput } from "../../form/GlassFormInput";
 import { GlassFormPicker } from "../../form/GlassFormPicker";
-import { useUserStore } from "../../../stores/userStore";
+import { useProfileStore } from "../../../stores/profileStore";
 import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
 import { haptics } from "../../../utils/haptics";
-import type { PersonalInfo } from "../../../types/user";
+
 
 interface PersonalInfoEditModalProps {
   visible: boolean;
@@ -74,7 +74,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
   onClose,
 }) => {
   const { profile } = useUser();
-  const { updatePersonalInfo } = useUserStore();
+  const { updatePersonalInfo, updateBodyAnalysis, updateWorkoutPreferences } = useProfileStore();
 
   // Form state
   const [name, setName] = useState("");
@@ -151,26 +151,41 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
 
     setIsSaving(true);
     try {
-      const updatedInfo: PersonalInfo = {
+      // Split name into first_name and last_name
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // ✅ Update personal info via profileStore (snake_case fields)
+      updatePersonalInfo({
+        first_name: firstName,
+        last_name: lastName,
         name: name.trim(),
-        first_name: profile?.personalInfo?.first_name || "",
-        last_name: profile?.personalInfo?.last_name || "",
         age: parseFloat(age),
         gender: gender as "male" | "female" | "other" | "prefer_not_to_say",
-        height: parseFloat(height),
-        weight: parseFloat(weight),
-        activityLevel,
         country: profile?.personalInfo?.country || "",
         state: profile?.personalInfo?.state || "",
         wake_time: profile?.personalInfo?.wake_time || "07:00",
         sleep_time: profile?.personalInfo?.sleep_time || "23:00",
         occupation_type: profile?.personalInfo?.occupation_type || "desk_job",
-        // Preserve existing optional fields
         email: profile?.personalInfo?.email ?? undefined,
         region: profile?.personalInfo?.region ?? undefined,
-      };
+      });
 
-      updatePersonalInfo(updatedInfo);
+      // ✅ Update body measurements via profileStore's bodyAnalysis
+      if (height && weight) {
+        updateBodyAnalysis({
+          height_cm: parseFloat(height),
+          current_weight_kg: parseFloat(weight),
+        });
+      }
+
+      // ✅ Update activity level in workoutPreferences if changed
+      if (activityLevel && activityLevel !== profile?.personalInfo?.activityLevel) {
+        updateWorkoutPreferences({
+          activity_level: activityLevel as any,
+        });
+      }
       haptics.success();
       onClose();
     } catch (error) {
@@ -188,6 +203,8 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
     activityLevel,
     profile,
     updatePersonalInfo,
+    updateBodyAnalysis,
+    updateWorkoutPreferences,
     onClose,
     validate,
   ]);
@@ -273,7 +290,7 @@ export const PersonalInfoEditModal: React.FC<PersonalInfoEditModalProps> = ({
       <GlassFormInput
         label="Weight"
         icon="scale-outline"
-        iconColor="#9C27B0"
+        iconColor="#FF6B35"
         value={weight}
         onChangeText={setWeight}
         placeholder="Enter your weight"

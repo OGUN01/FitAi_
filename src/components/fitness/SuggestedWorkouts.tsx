@@ -52,8 +52,8 @@ const getCategoryConfig = (category: string) => {
     case "yoga":
       return {
         icon: "body-outline" as const,
-        gradient: ["#667eea", "#764ba2"] as [string, string],
-        bgColor: "rgba(102, 126, 234, 0.15)",
+        gradient: ["#FF6B35", "#E55A2B"] as [string, string],
+        bgColor: "rgba(255, 107, 53, 0.15)",
       };
     default:
       return {

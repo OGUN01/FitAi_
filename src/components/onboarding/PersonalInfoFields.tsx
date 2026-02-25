@@ -115,7 +115,7 @@ export const PersonalInfoFields: React.FC<PersonalInfoFieldsProps> = ({
               onSelect={(id) =>
                 updateField("gender", id as PersonalInfoData["gender"])
               }
-              gradient={["#6366F1", "#8B5CF6"]}
+              gradient={["#FF6B35", "#FF8A5C"]}
               style={styles.genderSegmentedControl}
             />
             {hasFieldError("gender") && (

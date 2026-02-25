@@ -76,12 +76,12 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: "#667eea",
+        color: "#FF6B35",
         gradientColors: [
-          "rgba(102,126,234,0.15)",
-          "rgba(102,126,234,0.05)",
+          "rgba(255,107,53,0.15)",
+          "rgba(255,107,53,0.05)",
         ] as [string, string],
-        borderColor: "rgba(102,126,234,0.3)",
+        borderColor: "rgba(255,107,53,0.3)",
       };
     default:
       return {
@@ -225,7 +225,7 @@ export const AIRecommendationBanner: React.FC<{
     >
       <View style={styles.aiContainer}>
         <LinearGradient
-          colors={["rgba(102,126,234,0.15)", "rgba(118,75,162,0.15)"]}
+          colors={["rgba(255,107,53,0.15)", "rgba(255,138,92,0.15)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.aiGradient}
@@ -233,7 +233,7 @@ export const AIRecommendationBanner: React.FC<{
           <View style={styles.aiContent}>
             <View style={styles.aiHeader}>
               <LinearGradient
-                colors={["#667eea", "#764ba2"]}
+                colors={["#FF6B35", "#FF8A5C"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.aiIconContainer}
@@ -246,7 +246,7 @@ export const AIRecommendationBanner: React.FC<{
             {onLearnMore && (
               <View style={styles.aiAction}>
                 <Text style={styles.aiActionText}>Learn More</Text>
-                <Ionicons name="arrow-forward" size={rf(14)} color="#667eea" />
+                <Ionicons name="arrow-forward" size={rf(14)} color="#FF6B35" />
               </View>
             )}
           </View>
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     borderRadius: ResponsiveTheme.borderRadius.xl,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(102,126,234,0.3)",
+    borderColor: "rgba(255,107,53,0.3)",
   },
   aiGradient: {
     flex: 1,
@@ -377,14 +377,14 @@ const styles = StyleSheet.create({
     width: rw(32),
     height: rw(32),
     borderRadius: rw(8),
-    backgroundColor: "rgba(102,126,234,0.2)",
+    backgroundColor: "rgba(255,107,53,0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
   aiTitle: {
     fontSize: rf(15),
     fontWeight: "700",
-    color: "#667eea",
+    color: "#FF6B35",
     letterSpacing: 0.3,
   },
   aiText: {
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   aiActionText: {
     fontSize: rf(13),
     fontWeight: "600",
-    color: "#667eea",
+    color: "#FF6B35",
   },
 });
 

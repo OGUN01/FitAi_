@@ -71,7 +71,7 @@ export const PeriodSelector: React.FC<PeriodSelectorProps> = ({
       {/* Sliding Indicator */}
       <Animated.View style={[styles.indicator, indicatorStyle]}>
         <LinearGradient
-          colors={["#667eea", "#764ba2"]}
+          colors={["#FF6B35", "#E55A2B"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.indicatorGradient}

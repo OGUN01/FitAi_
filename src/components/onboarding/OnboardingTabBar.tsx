@@ -118,7 +118,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
             </View>
           ) : isActive ? (
             <LinearGradient
-              colors={["#6366F1", "#8B5CF6"]}
+              colors={["#FF6B35", "#FF8A5C"]}
               style={styles.activeCircleGradient}
             >
               <Text style={styles.stepNumber}>{tab.id}</Text>
@@ -193,7 +193,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
             style={[styles.progressBarFill, animatedProgressStyle]}
           >
             <LinearGradient
-              colors={["#6366F1", "#8B5CF6", "#A855F7"]}
+              colors={["#FF6B35", "#FF8A5C", "#FF8A5C"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={StyleSheet.absoluteFill}
@@ -229,7 +229,7 @@ export const OnboardingTabBar: React.FC<OnboardingTabBarProps> = ({
       {/* Minimal Step Counter */}
       <View style={styles.stepCounter}>
         <Text style={styles.stepCounterText}>
-          {completedCount}/{tabs.length}
+          {activeTab}/{tabs.length}
         </Text>
       </View>
     </View>
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   stepCircleActive: {
     backgroundColor: "transparent",
     borderWidth: 0,
-    shadowColor: "#6366F1",
+    shadowColor: "#FF6B35",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,

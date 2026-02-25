@@ -1,5 +1,6 @@
 import { BodyMeasurement } from "../../types/localData";
 import { ProgressEntry } from "./types";
+import { FALLBACK_DAILY_CALORIES } from "../../constants/diet";
 
 export function convertBodyMeasurementToProgressEntry(
   measurement: BodyMeasurement,
@@ -29,7 +30,7 @@ export function getDefaultGoals(userId: string) {
     target_measurements: {},
     target_date: undefined,
     weekly_workout_goal: 3,
-    daily_calorie_goal: 2000,
+    daily_calorie_goal: FALLBACK_DAILY_CALORIES,
     daily_protein_goal: 150,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

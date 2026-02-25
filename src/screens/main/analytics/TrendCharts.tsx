@@ -36,7 +36,7 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <SectionHeader
           title="Detailed Analytics"
           icon="bar-chart"
-          iconColor="#667eea"
+          iconColor="#FF6B35"
         />
       </View>
 
@@ -44,16 +44,16 @@ export const TrendCharts: React.FC<TrendChartsProps> = ({
         <ChartCard
           title="Weight Progress"
           icon="trending-down"
-          iconColor="#9C27B0"
+          iconColor="#FF6B35"
           legend={
             weightData && weightData.length > 0
-              ? [{ color: "#9C27B0", label: "Weight" }]
+              ? [{ color: "#FF6B35", label: "Weight" }]
               : undefined
           }
           delay={0}
           onPress={() => onChartPress?.("weight")}
         >
-          <LineChart data={weightData || []} color="#9C27B0" unit="kg" />
+          <LineChart data={weightData || []} color="#FF6B35" unit="kg" />
         </ChartCard>
 
         <ChartCard

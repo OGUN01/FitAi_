@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { THEME } from "../ui";
+import { colors } from "../../theme/aurora-tokens";
 
 interface HealthScoreIndicatorProps {
   score: number;
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: colors.background.secondary,
   },
 
   scoreText: {

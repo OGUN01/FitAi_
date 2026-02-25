@@ -34,7 +34,7 @@ export const DayWorkoutView: React.FC<DayWorkoutViewProps> = ({
           </Pressable>
         </View>
         <View style={styles.emptyState}>
-          <Ionicons name="moon" size={rf(48)} color="#667eea" />
+          <Ionicons name="moon" size={rf(48)} color="#FF6B35" />
           <Text style={styles.emptyText}>
             No workout scheduled for this day
           </Text>

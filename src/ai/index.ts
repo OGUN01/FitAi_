@@ -46,6 +46,7 @@ import {
 import {
   Workout,
   Meal,
+  DayMeal,
   DailyMealPlan,
   MotivationalContent,
   AIResponse,
@@ -65,7 +66,7 @@ import {
 import {
   transformForDietRequest,
   transformForWorkoutRequest,
-  // transformDietResponseToWeeklyPlan,  // Commented out - not exported
+  transformDietResponseToWeeklyPlan,
   transformWorkoutResponseToWeeklyPlan,
 } from "../services/aiRequestTransformers";
 
@@ -209,25 +210,23 @@ class UnifiedAIService {
     preferences?: {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
+      calorieTarget?: number;
     },
-  ): Promise<AIResponse<Meal>> {
+  ): Promise<AIResponse<DayMeal>> {
     console.log("🍽️ [aiService] generateMeal called for:", mealType);
-
     try {
       const request = transformForDietRequest(
         personalInfo,
         fitnessGoals,
         preferences?.bodyMetrics,
         preferences?.dietPreferences,
+        preferences?.calorieTarget,
       );
-
       console.log("🍽️ [aiService] Calling backend /diet/generate");
       const response = await fitaiWorkersClient.generateDietPlan(request);
-
       if (response.metadata) {
         this.lastMetadata = response.metadata as AIServiceMetadata;
       }
-
       if (!response.success || !response.data) {
         return {
           success: false,
@@ -235,24 +234,31 @@ class UnifiedAIService {
         };
       }
 
-      // Find the meal of requested type
-      const meal = response.data.meals?.find(
-        (m: any) =>
-          m.mealType?.toLowerCase() === mealType ||
-          m.type?.toLowerCase() === mealType,
+      // Transform backend response to frontend-compatible WeeklyMealPlan
+      const weekNumber = Math.ceil(
+        (new Date().getTime() - new Date(new Date().getFullYear(), 0, 1).getTime()) /
+          (7 * 24 * 60 * 60 * 1000),
+      );
+      const weeklyPlan = transformDietResponseToWeeklyPlan(
+        response,
+        weekNumber,
       );
 
-      if (!meal) {
+      if (!weeklyPlan || !weeklyPlan.meals || weeklyPlan.meals.length === 0) {
         return {
           success: false,
-          error: `No ${mealType} found in generated plan`,
+          error: "No meals found in generated plan",
         };
       }
-
+      // Find the meal of requested type, fall back to first available meal
+      const meal =
+        weeklyPlan.meals.find(
+          (m) => m.type?.toLowerCase() === mealType,
+        ) ?? weeklyPlan.meals[0];
       console.log("✅ [aiService] Meal generated successfully");
       return {
         success: true,
-        data: meal as Meal,
+        data: meal,
       };
     } catch (error) {
       return this.handleError(error, "generateMeal");
@@ -268,6 +274,7 @@ class UnifiedAIService {
     preferences?: {
       bodyMetrics?: BodyMetrics;
       dietPreferences?: DietPreferences;
+      calorieTarget?: number;
     },
   ): Promise<AIResponse<DailyMealPlan>> {
     console.log("🍽️ [aiService] generateDailyMealPlan called");
@@ -278,6 +285,7 @@ class UnifiedAIService {
         fitnessGoals,
         preferences?.bodyMetrics,
         preferences?.dietPreferences,
+        preferences?.calorieTarget,
       );
 
       console.log("🍽️ [aiService] Calling backend /diet/generate");
@@ -523,7 +531,6 @@ class UnifiedAIService {
       }
 
       // Transform backend response to frontend format
-      // @ts-ignore - transformDietResponseToWeeklyPlan is temporarily commented out
       const weeklyPlan = transformDietResponseToWeeklyPlan(
         response,
         weekNumber,
@@ -606,7 +613,6 @@ class UnifiedAIService {
         }
 
         // Transform backend response to frontend format
-        // @ts-ignore - transformDietResponseToWeeklyPlan is temporarily commented out
         const weeklyPlan = transformDietResponseToWeeklyPlan(
           { ...response, data: response.data },
           weekNumber,
@@ -675,7 +681,6 @@ class UnifiedAIService {
 
       // If completed, transform the result
       if (jobData.status === "completed" && jobData.result) {
-        // @ts-ignore - transformDietResponseToWeeklyPlan is temporarily commented out
         const weeklyPlan = transformDietResponseToWeeklyPlan(
           { success: true, data: jobData.result },
           weekNumber,

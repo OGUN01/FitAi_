@@ -52,7 +52,7 @@ export const MigrationSteps: React.FC<MigrationStepsProps> = ({
                 name={isCompleted ? "checkmark" : (step.icon as any)}
                 size={20}
                 color={
-                  isCompleted ? "#10B981" : isCurrent ? "#4F46E5" : "#6B7280"
+                  isCompleted ? "#10B981" : isCurrent ? "#E55A2B" : "#6B7280"
                 }
               />
             </View>
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   },
   stepIconCurrent: {
     backgroundColor: "rgba(79, 70, 229, 0.2)",
-    borderColor: "#4F46E5",
+    borderColor: "#E55A2B",
   },
   stepIconUpcoming: {
     backgroundColor: "rgba(107, 114, 128, 0.1)",

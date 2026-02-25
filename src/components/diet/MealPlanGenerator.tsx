@@ -38,7 +38,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
       {/* Section Header */}
       <View style={styles.sectionHeader}>
         <View style={styles.headerLeft}>
-          <Ionicons name="sparkles" size={rf(18)} color="#667eea" />
+          <Ionicons name="sparkles" size={rf(18)} color="#FF6B35" />
           <Text style={styles.sectionTitle}>AI Meal Planning</Text>
         </View>
         {hasPlan && (
@@ -63,7 +63,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
           borderRadius="lg"
         >
           <LinearGradient
-            colors={["rgba(102, 126, 234, 0.15)", "rgba(118, 75, 162, 0.1)"]}
+            colors={["rgba(255, 107, 53, 0.15)", "rgba(229, 90, 43, 0.1)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientBg}
@@ -74,7 +74,7 @@ export const MealPlanGenerator: React.FC<MealPlanGeneratorProps> = ({
                 {isGenerating ? (
                   <AuroraSpinner size="md" theme="primary" />
                 ) : (
-                  <Ionicons name="restaurant" size={rf(32)} color="#667eea" />
+                  <Ionicons name="restaurant" size={rf(32)} color="#FF6B35" />
                 )}
               </View>
 
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     width: rw(56),
     height: rw(56),
     borderRadius: rw(16),
-    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    backgroundColor: "rgba(255, 107, 53, 0.15)",
     justifyContent: "center" as const,
     alignItems: "center" as const,
     marginRight: ResponsiveTheme.spacing.md,

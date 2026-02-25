@@ -44,7 +44,7 @@ export const DietHeader: React.FC<DietHeaderProps> = ({
     if (percentage >= 100) return { text: "Goal reached!", color: "#4CAF50" };
     if (percentage >= 75) return { text: "Almost there", color: "#FF9800" };
     if (percentage >= 50) return { text: "On track", color: "#2196F3" };
-    return { text: "Keep going", color: "#667eea" };
+    return { text: "Keep going", color: "#FF6B35" };
   }, [caloriesRemaining, caloriesGoal]);
 
   return (

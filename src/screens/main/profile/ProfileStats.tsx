@@ -136,16 +136,16 @@ export const ProfileStats: React.FC<ProfileStatsProps> = ({
       label: "Best Streak",
       value: longestStreak,
       icon: "trophy",
-      color: "#667eea",
-      gradientColors: ["#667eea", "#764ba2"],
+      color: "#FF6B35",
+      gradientColors: ["#FF6B35", "#E55A2B"],
     },
     {
       id: "achievements",
       label: "Achievements",
       value: achievements,
       icon: "ribbon",
-      color: "#9C27B0",
-      gradientColors: ["#9C27B0", "#E91E63"],
+      color: "#FF6B35",
+      gradientColors: ["#FF6B35", "#E55A2B"],
     },
   ];
 

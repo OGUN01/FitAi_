@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
+import { colors, spacing, borderRadius } from "../../../theme/aurora-tokens";
 
 interface PaywallHeaderProps {
   title: string;
@@ -41,9 +42,9 @@ const PaywallHeader: React.FC<PaywallHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    padding: 20,
+    padding: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   headerContent: {
     flexDirection: "row",
@@ -52,46 +53,48 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 8,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   headerDescription: {
     fontSize: 14,
-    color: "#6b7280",
+    color: colors.text.secondary,
     lineHeight: 20,
   },
   closeButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: colors.background.tertiary,
     justifyContent: "center",
     alignItems: "center",
   },
   closeButtonText: {
     fontSize: 24,
-    color: "#6b7280",
+    color: colors.text.secondary,
   },
   trialBanner: {
-    marginTop: 16,
+    marginTop: spacing.md,
     padding: 12,
-    backgroundColor: "#dbeafe",
-    borderRadius: 8,
+    backgroundColor: "rgba(255, 107, 53, 0.12)",
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 107, 53, 0.3)",
   },
   trialTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1e40af",
+    color: colors.primary.light,
     marginBottom: 4,
   },
   trialDescription: {
     fontSize: 14,
-    color: "#1e40af",
+    color: colors.primary.DEFAULT,
   },
 });
 

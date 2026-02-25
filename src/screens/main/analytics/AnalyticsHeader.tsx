@@ -65,7 +65,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       <Animated.View entering={FadeInDown.delay(100)} style={styles.titleRow}>
         <View style={styles.titleLeft}>
           <LinearGradient
-            colors={["#667eea", "#764ba2"]}
+            colors={["#FF6B35", "#E55A2B"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconContainer}

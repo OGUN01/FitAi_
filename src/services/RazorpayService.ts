@@ -30,7 +30,7 @@ interface UserInfo {
 interface WorkersApiResponse<T> {
   success: boolean;
   data?: T;
-  error?: string;
+  error?: string | { code?: string; message?: string; details?: unknown };
 }
 
 export class RazorpayServiceError extends Error {
@@ -107,8 +107,14 @@ class RazorpayService {
     const json: WorkersApiResponse<T> = await response.json();
 
     if (!response.ok || !json.success) {
+      const errorMsg =
+        typeof json.error === 'string'
+          ? json.error
+          : typeof json.error === 'object' && json.error?.message
+            ? json.error.message
+            : `Request failed with status ${response.status}`;
       throw new RazorpayServiceError(
-        json.error ?? `Request failed with status ${response.status}`,
+        errorMsg,
         "API_ERROR",
         { status: response.status, error: json.error },
       );
@@ -123,11 +129,12 @@ class RazorpayService {
    */
   async createSubscription(
     planId: string,
+    billingCycle: 'monthly' | 'yearly',
   ): Promise<CreateSubscriptionResponse> {
     return this.request<CreateSubscriptionResponse>(
       API_CONFIG.SUBSCRIPTION_CREATE_ENDPOINT,
       "POST",
-      { planId },
+      { plan_id: planId, billing_cycle: billingCycle },
     );
   }
 
@@ -150,7 +157,7 @@ class RazorpayService {
         contact: userInfo.phone,
         name: userInfo.name,
       },
-      theme: { color: "#4F46E5" },
+      theme: { color: "#FF6B35" },
     };
 
     try {

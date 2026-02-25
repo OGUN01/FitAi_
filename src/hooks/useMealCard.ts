@@ -38,7 +38,7 @@ export const mealTypeGradients: Record<
     icon: "restaurant",
   },
   dinner: {
-    colors: ["#6366F1", "#818CF8"] as const,
+    colors: ["#FF6B35", "#FF8A5C"] as const,
     icon: "moon",
   },
   snack: {

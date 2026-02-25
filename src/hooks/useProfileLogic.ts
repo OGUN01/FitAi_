@@ -194,7 +194,7 @@ export const useProfileLogic = () => {
       title: "Body Measurements",
       subtitle: "Track body composition",
       icon: "body-outline",
-      iconColor: "#667eea",
+      iconColor: "#FF6B35",
       isIncomplete: isProfileIncomplete("measurements"),
     },
     {
@@ -202,7 +202,7 @@ export const useProfileLogic = () => {
       title: "Manage Subscription",
       subtitle: "Plan, usage, billing",
       icon: "diamond-outline",
-      iconColor: "#8B5CF6",
+      iconColor: "#FF8A5C",
       isPremium: true,
     },
   ];
@@ -220,7 +220,7 @@ export const useProfileLogic = () => {
       title: "Theme Preference",
       subtitle: "Dark, light, auto",
       icon: "color-palette-outline",
-      iconColor: "#9C27B0",
+      iconColor: "#FF6B35",
     },
     {
       id: "units",
@@ -244,7 +244,7 @@ export const useProfileLogic = () => {
       title: "Privacy & Security",
       subtitle: "Data protection settings",
       icon: "lock-closed-outline",
-      iconColor: "#667eea",
+      iconColor: "#FF6B35",
     },
     {
       id: "help",
@@ -268,7 +268,7 @@ export const useProfileLogic = () => {
       title: "Connect Wearables",
       subtitle: "Sync smartwatch & fitness bands",
       icon: "watch-outline",
-      iconColor: "#E91E63",
+      iconColor: "#E55A2B",
     },
     {
       id: "export",

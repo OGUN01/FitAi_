@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { THEME } from "../../ui";
+import { colors } from "../../../theme/aurora-tokens";
 
 interface AlertsSectionProps {
   alerts?: string[];
@@ -62,16 +63,16 @@ const styles = StyleSheet.create({
     borderTopColor: THEME.colors.border,
   },
   alertItem: {
-    backgroundColor: "#fef2f2",
+    backgroundColor: "rgba(244, 67, 54, 0.12)",
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: "#ef4444",
+    borderLeftColor: colors.error.DEFAULT,
     marginBottom: THEME.spacing.sm,
   },
   alertText: {
     fontSize: THEME.fontSize.sm,
-    color: "#dc2626",
+    color: colors.error.light,
   },
   benefitsContainer: {
     padding: THEME.spacing.md,
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
   },
   benefitText: {
     fontSize: THEME.fontSize.sm,
-    color: "#059669",
+    color: colors.success.light,
     lineHeight: 20,
   },
   concernsContainer: {
@@ -96,7 +97,7 @@ const styles = StyleSheet.create({
   },
   concernText: {
     fontSize: THEME.fontSize.sm,
-    color: "#dc2626",
+    color: colors.warning.light,
     lineHeight: 20,
   },
 });

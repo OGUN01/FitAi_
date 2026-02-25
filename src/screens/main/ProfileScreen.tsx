@@ -6,6 +6,7 @@
  */
 
 import React from "react";
+import Constants from "expo-constants";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -141,7 +142,7 @@ const ProfileScreenInternal: React.FC<{ navigation?: any }> = ({
             animationDelay={500}
           />
 
-          <AppInfoCard version="1.0.0" animationDelay={600} />
+          <AppInfoCard version={Constants.expoConfig?.version ?? "0.0.0"} animationDelay={600} />
 
           {isAuthenticated && (
             <LogoutButton onPress={handleSignOut} animationDelay={700} />

@@ -16,6 +16,7 @@ import { ExerciseSessionModal } from "../../components/fitness/ExerciseSessionMo
 import completionTrackingService from "../../services/completionTracking";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { exerciseFilterService } from "../../services/exerciseFilterService";
+import { getCurrentUserId } from "../../services/authUtils";
 import { useWorkoutSession } from "../../hooks/useWorkoutSession";
 import { useWorkoutAchievements } from "../../hooks/useWorkoutAchievements";
 import { useWorkoutAnimations } from "../../hooks/useWorkoutAnimations";
@@ -236,6 +237,7 @@ export const WorkoutSessionScreen: React.FC<WorkoutSessionScreenProps> = ({
           completedAt: new Date().toISOString(),
           stats: finalStats,
         },
+        getCurrentUserId() || undefined,
       );
 
       if (success) {

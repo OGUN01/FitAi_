@@ -36,7 +36,7 @@ const RINGS = {
     icon: "restaurant" as const,
   },
   steps: {
-    color: "#9C27B0",
+    color: "#FF6B35",
     gradientEnd: "#E040FB",
     icon: "footsteps" as const,
   },

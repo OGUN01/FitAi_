@@ -42,7 +42,7 @@ export const HealthSummaryCard: React.FC<HealthSummaryCardProps> = ({
           <Text style={styles.label}>BPM</Text>
         </View>
         <View style={styles.item}>
-          <Ionicons name="bed" size={rf(24)} color="#9C27B0" />
+          <Ionicons name="bed" size={rf(24)} color="#FF6B35" />
           <Text style={styles.value}>
             {metrics.sleepHours ? `${metrics.sleepHours.toFixed(1)}h` : "--"}
           </Text>

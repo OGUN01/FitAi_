@@ -208,7 +208,7 @@ export const OnboardingCompleteModal: React.FC<
               <FloatingParticle
                 key={i}
                 delay={i * 200}
-                color={["#10b981", "#667eea", "#FF6B6B", "#4ECDC4"][i % 4]}
+                color={["#10b981", "#FF6B35", "#FF6B6B", "#4ECDC4"][i % 4]}
               />
             ))}
           </View>
@@ -271,13 +271,13 @@ export const OnboardingCompleteModal: React.FC<
                         <View
                           style={[
                             styles.statIcon,
-                            { backgroundColor: "rgba(102, 126, 234, 0.15)" },
+                            { backgroundColor: "rgba(255, 107, 53, 0.15)" },
                           ]}
                         >
                           <Ionicons
                             name="barbell"
                             size={rf(18)}
-                            color="#667eea"
+                            color="#FF6B35"
                           />
                         </View>
                         <Text style={styles.statLabel}>Weekly</Text>
@@ -319,7 +319,7 @@ export const OnboardingCompleteModal: React.FC<
                   {
                     icon: "sparkles",
                     text: "AI-powered workout plans",
-                    color: "#667eea",
+                    color: "#FF6B35",
                   },
                   {
                     icon: "nutrition",
@@ -356,7 +356,7 @@ export const OnboardingCompleteModal: React.FC<
                   style={styles.button}
                 >
                   <LinearGradient
-                    colors={["#667eea", "#764ba2"]}
+                    colors={["#FF6B35", "#E55A2B"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.buttonGradient}
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     marginBottom: ResponsiveTheme.spacing.xs,
   },
   userName: {
-    color: "#667eea",
+    color: "#FF6B35",
     fontWeight: "700",
   },
   description: {

@@ -126,88 +126,8 @@ export const useFitnessStore = create<FitnessState>()(
             return;
           }
 
-          console.log(`📋 Saving ${plan.workouts.length} workouts to database`);
+          console.log(`📋 Plan saved with ${plan.workouts.length} workouts (sessions will be created on start)`);
 
-          // Save individual workouts to database for tracking
-          let savedCount = 0;
-          let errorCount = 0;
-
-          for (const workout of plan.workouts) {
-            try {
-              // Validate workout data
-              if (!workout.id || !workout.title) {
-                console.error("❌ Invalid workout data:", workout);
-                errorCount++;
-                continue;
-              }
-
-              // Create a proper WorkoutSession object matching the expected schema
-              const workoutSession: import("../types/localData").LocalWorkoutSession =
-                {
-                  id: `workout_${workout.id}_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
-                  localId: `local_${workout.id}_${Date.now()}`,
-                  workoutId: workout.id,
-                  userId: getUserIdOrGuest(),
-                  startedAt: new Date().toISOString(),
-                  completedAt: null,
-                  duration: workout.duration
-                    ? Math.max(5, Math.min(300, workout.duration))
-                    : null, // NO FALLBACK - null if missing
-                  caloriesBurned: workout.estimatedCalories
-                    ? Math.max(0, Math.min(10000, workout.estimatedCalories))
-                    : null, // NO FALLBACK - null if missing
-                  exercises: (workout.exercises || []).map((exercise) => ({
-                    exerciseId: exercise.exerciseId || "unknown_exercise",
-                    sets: Array.from(
-                      { length: Math.max(1, exercise.sets || 3) },
-                      (_, index) => ({
-                        reps:
-                          typeof exercise.reps === "string"
-                            ? parseInt(exercise.reps) || 10
-                            : exercise.reps || 10,
-                        weight: exercise.weight || 0,
-                        duration: 0,
-                        restTime: exercise.restTime || 60,
-                        rpe: 5, // Default RPE
-                        completed: false,
-                      }),
-                    ),
-                    notes: exercise.notes || "",
-                    personalRecord: false,
-                  })),
-                  notes: `${workout.dayOfWeek || "unknown"} - ${workout.description || workout.title}`,
-                  rating: 0,
-                  isCompleted: false,
-                  syncStatus:
-                    "pending" as import("../types/localData").SyncStatus,
-                  syncMetadata: {
-                    lastSyncedAt: undefined,
-                    lastModifiedAt: new Date().toISOString(),
-                    syncVersion: 1,
-                    deviceId: "dev-device",
-                  },
-                };
-
-              await crudOperations.createWorkoutSession(workoutSession);
-              savedCount++;
-            } catch (workoutError) {
-              console.error(
-                `❌ Failed to save workout ${workout.title}:`,
-                workoutError,
-              );
-              errorCount++;
-            }
-          }
-
-          console.log(
-            `✅ Weekly workout plan saved: ${savedCount} successful, ${errorCount} errors`,
-          );
-
-          if (errorCount > 0 && savedCount === 0) {
-            throw new Error(
-              `Failed to save any workouts (${errorCount} errors)`,
-            );
-          }
         } catch (error) {
           console.error("❌ Failed to save workout plan:", error);
           // ARCH-003 FIX: Set error state instead of silently swallowing
@@ -520,7 +440,7 @@ export const useFitnessStore = create<FitnessState>()(
 
       // Workout session actions
       startWorkoutSession: async (workout) => {
-        const sessionId = `session_${workout.id}_${Date.now()}`;
+        const sessionId = crypto.randomUUID();
 
         try {
           // Create a proper WorkoutSession object for active session

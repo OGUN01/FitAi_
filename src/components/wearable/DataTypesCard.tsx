@@ -49,7 +49,7 @@ export const HEALTH_DATA_TYPES: HealthDataType[] = [
     title: "Sleep Data",
     description: "Sleep duration and quality",
     icon: "bed-outline",
-    color: "#9C27B0",
+    color: "#FF6B35",
   },
   {
     key: "weight",
@@ -84,7 +84,7 @@ export const HEALTH_DATA_TYPES: HealthDataType[] = [
     title: "Body Fat",
     description: "Body composition from scales",
     icon: "analytics-outline",
-    color: "#E91E63",
+    color: "#E55A2B",
   },
 ];
 

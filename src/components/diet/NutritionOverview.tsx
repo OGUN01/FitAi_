@@ -164,8 +164,8 @@ export const NutritionOverview: React.FC<NutritionOverviewProps> = ({
                 progress={calorieProgress}
                 size={outerSize}
                 strokeWidth={strokeWidth}
-                color="#667eea"
-                gradientEnd="#764ba2"
+                color="#FF6B35"
+                gradientEnd="#FF8A5C"
                 gradientId="calorieGrad"
                 delay={0}
               />

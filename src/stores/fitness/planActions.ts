@@ -49,7 +49,7 @@ export const createPlanActions = (
           }
 
           const workoutSession: LocalWorkoutSession = {
-            id: `workout_${workout.id}_${Date.now()}_${crypto.randomUUID().replace(/-/g, "").substring(0, 5)}`,
+            id: crypto.randomUUID(),
             localId: `local_${workout.id}_${Date.now()}`,
             workoutId: workout.id,
             userId: getUserIdOrGuest(),

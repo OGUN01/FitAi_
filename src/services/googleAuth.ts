@@ -106,7 +106,7 @@ class GoogleAuthService {
         const iosClientId = getEnvVar('EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID') || '';
 
         if (!webClientId) {
-          console.error('❌ CRITICAL: Web Client ID not found! Google Sign-In will fail.');
+          console.warn('⚠️ CRITICAL: Web Client ID not found! Google Sign-In will fail.');
         }
 
         console.log('🔍 Client IDs loaded:');
@@ -124,7 +124,7 @@ class GoogleAuthService {
       this.isConfigured = true;
       console.log('✅ Google Sign-In configured successfully');
     } catch (error) {
-      console.error('❌ Google Sign-In configuration failed:', error);
+      console.warn('⚠️ Google Sign-In configuration failed:', error);
     }
   }
 

@@ -54,7 +54,7 @@ const mealTypeOptions: MealTypeOption[] = [
     emoji: "🌙",
     description: "Evening meal for recovery and rest",
     suggestedTime: "6:00 - 9:00 PM",
-    color: "#8b5cf6", // violet
+    color: "#FF8A5C", // violet
   },
   {
     type: "snack",

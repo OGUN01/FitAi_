@@ -128,6 +128,7 @@ export interface DietGenerationRequest {
     activityLevel: string;
     fitnessGoal: string;
   };
+  country?: string;
   dietPreferences?: {
     dietType?: string;
     allergies?: string[];
@@ -205,11 +206,21 @@ export interface WorkoutGenerationRequest {
     experienceLevel: string;
     availableEquipment: string[];
     injuries?: string[];
+    medications?: string[];
+    pregnancyStatus?: boolean;
+    pregnancyTrimester?: number;
+    breastfeedingStatus?: boolean;
   };
-  workoutType: string;
-  duration: number;
-  difficultyOverride?: string;
+  weeklyPlan: {
+    workoutsPerWeek: number;
+    preferredDays?: string[];
+    workoutTypes?: string[];
+    prefersVariety?: boolean;
+    activityLevel?: string;
+    preferredWorkoutTime?: string;
+  };
   focusMuscles?: string[];
+  excludeExercises?: string[];
   model?: string;
   temperature?: number;
 }
@@ -422,7 +433,7 @@ export class FitAIWorkersClient {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({ ...request, async: false }),
     });
   }
 

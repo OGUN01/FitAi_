@@ -95,7 +95,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
               <QuickAction
                 icon="chatbubbles-outline"
                 iconColor="#fff"
-                gradientColors={["#667eea", "#764ba2"]}
+                gradientColors={["#FF6B35", "#E55A2B"]}
                 title="Contact Support"
                 onPress={handleContactSupport}
                 animationDelay={100}
@@ -176,7 +176,7 @@ export const HelpSupportScreen: React.FC<HelpSupportScreenProps> = ({
 
             <ResourceItem
               icon="people-outline"
-              iconColor="#667eea"
+              iconColor="#FF6B35"
               title="Community Forum"
               description="Connect with other FitAI users"
               onPress={handleCommunityForum}

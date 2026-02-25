@@ -3,7 +3,7 @@
  * Displays recovery tips and recommendations for rest days
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, Modal, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, {
@@ -16,6 +16,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AnimatedPressable } from "../../../components/ui/aurora/AnimatedPressable";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf, rw, rh } from "../../../utils/responsive";
+import { colors } from "../../../theme/aurora-tokens";
+import { useProfileStore } from "../../../stores/profileStore";
 
 interface RecoveryTipsModalProps {
   visible: boolean;
@@ -38,7 +40,7 @@ const RECOVERY_TIPS: RecoveryTip[] = [
     title: "Prioritize Sleep",
     description:
       "Aim for 7-9 hours of quality sleep. Your muscles repair and grow during deep sleep cycles.",
-    gradient: ["#667eea", "#764ba2"],
+    gradient: [colors.primary.DEFAULT, colors.primary.light],
     duration: "7-9 hours",
   },
   {
@@ -87,6 +89,62 @@ const RECOVERY_TIPS: RecoveryTip[] = [
   },
 ];
 
+
+function buildPriorityScores(
+  workoutPreferences: {
+    intensity?: string;
+    workout_types?: string[];
+  } | null,
+): Record<string, number> {
+  const scores: Record<string, number> = {
+    sleep: 0,
+    hydration: 0,
+    stretching: 0,
+    nutrition: 0,
+    walking: 0,
+    "foam-rolling": 0,
+  };
+
+  if (!workoutPreferences) return scores;
+
+  const { intensity, workout_types = [] } = workoutPreferences;
+
+
+  if (intensity === "advanced" || intensity === "intermediate") {
+    scores["foam-rolling"] += 3;
+    scores["stretching"] += 2;
+    scores["nutrition"] += 2;
+  } else if (intensity === "beginner") {
+    scores["sleep"] += 3;
+    scores["hydration"] += 2;
+    scores["walking"] += 2;
+  }
+
+
+  const lowerTypes = workout_types.map((t) => t.toLowerCase());
+
+  const isStrength = lowerTypes.some(
+    (t) =>
+      t.includes("strength") ||
+      t.includes("weight_training") ||
+      t.includes("weight training"),
+  );
+  const isCardio = lowerTypes.some(
+    (t) => t.includes("cardio") || t.includes("running"),
+  );
+
+  if (isStrength) {
+    scores["nutrition"] += 3;
+    scores["foam-rolling"] += 2;
+  }
+  if (isCardio) {
+    scores["hydration"] += 3;
+    scores["stretching"] += 2;
+  }
+
+  return scores;
+}
+
 const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
   tip,
   index,
@@ -115,7 +173,7 @@ const RecoveryTipCard: React.FC<{ tip: RecoveryTip; index: number }> = ({
                 <Ionicons
                   name="time-outline"
                   size={rf(10)}
-                  color={ResponsiveTheme.colors.textSecondary}
+                  color={colors.text.secondary}
                 />
                 <Text style={styles.durationText}>{tip.duration}</Text>
               </View>
@@ -132,6 +190,17 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
   visible,
   onClose,
 }) => {
+  const workoutPreferences = useProfileStore(
+    (state) => state.workoutPreferences,
+  );
+
+  const sortedTips = useMemo(() => {
+    const scores = buildPriorityScores(workoutPreferences);
+    return [...RECOVERY_TIPS].sort(
+      (a, b) => (scores[b.id] ?? 0) - (scores[a.id] ?? 0),
+    );
+  }, [workoutPreferences]);
+
   if (!visible) return null;
 
   return (
@@ -152,7 +221,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
               {/* Header */}
               <View style={styles.header}>
                 <LinearGradient
-                  colors={["#667eea", "#764ba2"]}
+                  colors={[colors.primary.DEFAULT, colors.primary.light]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.headerIconContainer}
@@ -175,7 +244,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   <Ionicons
                     name="close"
                     size={rf(24)}
-                    color={ResponsiveTheme.colors.textSecondary}
+                    color={colors.text.secondary}
                   />
                 </AnimatedPressable>
               </View>
@@ -199,7 +268,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                 </Animated.View>
 
                 {/* Tips List */}
-                {RECOVERY_TIPS.map((tip, index) => (
+                {sortedTips.map((tip, index) => (
                   <RecoveryTipCard key={tip.id} tip={tip} index={index} />
                 ))}
 
@@ -227,7 +296,7 @@ export const RecoveryTipsModal: React.FC<RecoveryTipsModalProps> = ({
                   style={styles.gotItButton}
                 >
                   <LinearGradient
-                    colors={["#667eea", "#764ba2"]}
+                    colors={[colors.primary.DEFAULT, colors.primary.light]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={styles.gotItButtonGradient}
@@ -295,11 +364,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: rf(18),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   headerSubtitle: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     marginTop: 2,
   },
   closeButton: {
@@ -329,7 +398,7 @@ const styles = StyleSheet.create({
   introText: {
     flex: 1,
     fontSize: rf(13),
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     lineHeight: rf(20),
   },
   tipCard: {
@@ -363,7 +432,7 @@ const styles = StyleSheet.create({
   tipTitle: {
     fontSize: rf(14),
     fontWeight: "700",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   durationBadge: {
     flexDirection: "row",
@@ -376,30 +445,30 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: rf(10),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
   },
   tipDescription: {
     fontSize: rf(12),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     lineHeight: rf(18),
   },
   quoteContainer: {
     marginTop: ResponsiveTheme.spacing.md,
     padding: ResponsiveTheme.spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: "#667eea",
-    backgroundColor: "rgba(102, 126, 234, 0.15)",
+    borderLeftColor: colors.primary.DEFAULT,
+    backgroundColor: "rgba(255, 107, 53, 0.15)",
     borderRadius: ResponsiveTheme.borderRadius.md,
   },
   quoteText: {
     fontSize: rf(13),
     fontStyle: "italic",
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
     lineHeight: rf(20),
   },
   quoteAuthor: {
     fontSize: rf(11),
-    color: ResponsiveTheme.colors.textSecondary,
+    color: colors.text.secondary,
     marginTop: ResponsiveTheme.spacing.xs,
   },
   footer: {

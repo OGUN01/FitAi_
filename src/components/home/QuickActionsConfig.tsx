@@ -35,7 +35,7 @@ export const createQuickActions = ({
     id: "log-weight",
     label: "Log Weight",
     icon: "scale-outline" as keyof typeof Ionicons.glyphMap,
-    color: "#9C27B0",
+    color: "#FF6B35",
     onPress: onLogWeight,
   },
   ...(onScanFood

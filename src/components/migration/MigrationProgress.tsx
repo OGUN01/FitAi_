@@ -203,7 +203,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
             ]}
           >
             <LinearGradient
-              colors={["#4F46E5", "#7C3AED", "#EC4899"]}
+              colors={["#E55A2B", "#7C3AED", "#EC4899"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.progressGradient}
@@ -258,7 +258,7 @@ export const MigrationProgressComponent: React.FC<MigrationProgressProps> = ({
                   name={isCompleted ? "checkmark" : (step.icon as any)}
                   size={20}
                   color={
-                    isCompleted ? "#10B981" : isCurrent ? "#4F46E5" : "#6B7280"
+                    isCompleted ? "#10B981" : isCurrent ? "#E55A2B" : "#6B7280"
                   }
                 />
               </View>
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
   },
   stepIconCurrent: {
     backgroundColor: "rgba(79, 70, 229, 0.2)",
-    borderColor: "#4F46E5",
+    borderColor: "#E55A2B",
   },
   stepIconUpcoming: {
     backgroundColor: "rgba(107, 114, 128, 0.1)",
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     flex: 1,
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#E55A2B",
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: "center",

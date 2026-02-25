@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { DayMeal } from "../../types/ai";
 import { CookingFlow } from "../../utils/cookingFlowGenerator";
 import { mealMotivationService } from "../../features/nutrition/MealMotivation";
+import { colors } from "../../theme/aurora-tokens";
 
 interface CurrentStepDisplayProps {
   cookingFlow: CookingFlow;
@@ -57,7 +58,11 @@ export default function CurrentStepDisplay({
             style={styles.timerButton}
             onPress={() => onStartTimer(currentStep.timeRequired!)}
           >
-            <Ionicons name="timer-outline" size={20} color="#4F46E5" />
+            <Ionicons
+              name="timer-outline"
+              size={20}
+              color={colors.primary.DEFAULT}
+            />
             <Text style={styles.timerButtonText}>
               {currentStep.timeRequired}m
             </Text>
@@ -85,13 +90,13 @@ export default function CurrentStepDisplay({
 
 const styles = StyleSheet.create({
   currentStepSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(26, 31, 46, 0.8)",
     marginHorizontal: 16,
     marginBottom: 16,
     padding: 20,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#4F46E5",
+    borderColor: colors.primary.DEFAULT,
   },
   progressHeader: {
     marginBottom: 16,
@@ -99,19 +104,19 @@ const styles = StyleSheet.create({
   encouragementText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#4F46E5",
+    color: colors.primary.DEFAULT,
     textAlign: "center",
     marginBottom: 12,
   },
   progressBarContainer: {
     height: 8,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: colors.background.tertiary,
     borderRadius: 4,
     overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#4F46E5",
+    backgroundColor: colors.primary.DEFAULT,
     borderRadius: 4,
   },
   stepHeader: {
@@ -126,37 +131,37 @@ const styles = StyleSheet.create({
   stepCounter: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#4F46E5",
+    color: colors.primary.DEFAULT,
   },
   stepTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
     lineHeight: 24,
     marginTop: 4,
   },
   timerButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "rgba(255, 107, 53, 0.12)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
   timerButtonText: {
     fontSize: 14,
-    color: "#4F46E5",
+    color: colors.primary.DEFAULT,
     marginLeft: 4,
   },
   tipsContainer: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "rgba(255, 152, 0, 0.12)",
     padding: 12,
     borderRadius: 8,
     marginTop: 12,
   },
   tipText: {
     fontSize: 14,
-    color: "#92400E",
+    color: colors.warning.DEFAULT,
     lineHeight: 20,
   },
   activeTimer: {
@@ -165,12 +170,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 16,
     padding: 12,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "rgba(255, 152, 0, 0.12)",
     borderRadius: 8,
   },
   timerDisplay: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#D97706",
+    color: colors.warning.DEFAULT,
   },
 });

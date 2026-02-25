@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import razorpayService, {
@@ -6,38 +6,100 @@ import razorpayService, {
 } from "../services/RazorpayService";
 import { supabase } from "../services/supabase";
 
-// Plan configuration for the 3 tiers
-const PLAN_CONFIGS = [
-  {
-    id: process.env.RAZORPAY_PLAN_ID_BASIC_MONTHLY || "",
-    tier: "basic" as const,
-    name: "Basic Plan",
-    price_monthly: 299,
-    billing_cycle: "monthly" as const,
-  },
-  {
-    id: process.env.RAZORPAY_PLAN_ID_PRO_MONTHLY || "",
-    tier: "pro" as const,
-    name: "Pro Plan (Monthly)",
-    price_monthly: 499,
-    billing_cycle: "monthly" as const,
-  },
-  {
-    id: process.env.RAZORPAY_PLAN_ID_PRO_YEARLY || "",
-    tier: "pro" as const,
-    name: "Pro Plan (Yearly)",
-    price_monthly: 333, // 3999/12
-    billing_cycle: "yearly" as const,
-  },
-];
+// ============================================================================
+// Types
+// ============================================================================
+
+interface PlanConfig {
+  id: string;
+  tier: "basic" | "pro";
+  name: string;
+  price_monthly: number;
+  billing_cycle: "monthly" | "yearly";
+}
+
+interface SubscriptionPlanRow {
+  id: string;
+  tier: "free" | "basic" | "pro";
+  name: string;
+  price_monthly: number | null;
+  price_yearly: number | null;
+  razorpay_plan_id_monthly: string | null;
+  razorpay_plan_id_yearly: string | null;
+  unlimited_scans: boolean;
+  unlimited_ai: boolean;
+  analytics: boolean;
+  coaching: boolean;
+  active: boolean;
+}
+
+// ============================================================================
+// Hook
+// ============================================================================
 
 export const usePaywall = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallReason, setPaywallReason] = useState<string | null>(null);
+  const [plans, setPlans] = useState<PlanConfig[]>([]);
 
   const { currentPlan, usage, fetchSubscriptionStatus } =
     useSubscriptionStore();
+
+  /**
+   * Fetch subscription plans from Supabase on mount.
+   * Maps each paid row into one or two PlanConfig entries (monthly + yearly).
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchPlans = async () => {
+      const { data, error } = await supabase
+        .from("subscription_plans")
+        .select("*")
+        .eq("active", true)
+        .neq("tier", "free")
+        .order("price_monthly");
+
+      if (cancelled || error || !data) return;
+
+      const configs: PlanConfig[] = [];
+
+      for (const row of data as SubscriptionPlanRow[]) {
+        const tier = row.tier as "basic" | "pro";
+
+        // Monthly entry (always present for paid plans)
+        if (row.price_monthly != null) {
+          configs.push({
+            id: row.id,
+            tier,
+            name: tier === "basic" ? "Basic Plan" : "Pro Plan (Monthly)",
+            price_monthly: Math.round(row.price_monthly / 100),
+            billing_cycle: "monthly",
+          });
+        }
+
+        // Yearly entry (only if the plan offers yearly pricing)
+        if (row.price_yearly != null) {
+          configs.push({
+            id: row.id,
+            tier,
+            name: `${row.name} Plan (Yearly)`,
+            price_monthly: Math.round(row.price_yearly / 100 / 12),
+            billing_cycle: "yearly",
+          });
+        }
+      }
+
+      setPlans(configs);
+    };
+
+    fetchPlans();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /**
    * Trigger paywall display with a specific upgrade reason
@@ -58,15 +120,19 @@ export const usePaywall = () => {
   /**
    * Subscribe to a plan via Razorpay checkout flow
    *
-   * @param planId - Razorpay plan ID (e.g., plan_xxx)
+   * @param planId - Supabase UUID of the subscription_plans row
    * @returns Promise<boolean> - true if successful, false otherwise
    */
   const subscribe = async (planId: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Derive billing_cycle from the selected plan config
+      const plan = plans.find((p) => p.id === planId);
+      const billingCycle = plan?.billing_cycle ?? "monthly";
+
       // Step 1: Create subscription on backend
       const { subscription_id, key_id } =
-        await razorpayService.createSubscription(planId);
+        await razorpayService.createSubscription(planId, billingCycle);
 
       // Step 2: Get user info for checkout
       const {
@@ -156,8 +222,7 @@ export const usePaywall = () => {
         return false;
       }
 
-      // Unknown error
-      console.error("[usePaywall] Unexpected error:", error);
+      // Unknown error — surfaced via Alert below
       Alert.alert(
         "Error",
         "An unexpected error occurred. Please try again later.",
@@ -172,7 +237,7 @@ export const usePaywall = () => {
     showPaywall,
     paywallReason,
     currentPlan,
-    plans: PLAN_CONFIGS,
+    plans,
     usage,
     subscribe,
     dismiss,

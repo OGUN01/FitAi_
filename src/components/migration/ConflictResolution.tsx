@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   statNumber: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#4F46E5",
+    color: "#E55A2B",
   },
   statLabel: {
     fontSize: 12,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#E55A2B",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,

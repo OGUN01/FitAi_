@@ -9,6 +9,8 @@ import { Alert } from "react-native";
 import { debounce } from "../../utils/performance";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserStore } from "../../stores/userStore";
+import { useProfileStore } from "../../stores/profileStore";
+import type { WorkoutPreferencesData, DietPreferencesData, PersonalInfoData } from "../../types/onboarding";
 import { useOnboardingIntegration } from "../../utils/integration";
 import { validateEditData } from "./validation";
 import { loadSectionData, createDefaultSectionData } from "./data-loaders";
@@ -30,7 +32,12 @@ export const EditProvider: React.FC<EditProviderProps> = ({
   onEditCancel,
 }) => {
   const { user, isGuestMode } = useAuth();
-  const { getCompleteProfile, profile, setProfile } = useUserStore();
+  const { getCompleteProfile, profile } = useUserStore();
+  const {
+    updatePersonalInfo: updateProfilePersonalInfo,
+    updateWorkoutPreferences: updateProfileWorkoutPreferences,
+    updateDietPreferences: updateProfileDietPreferences,
+  } = useProfileStore();
   const {
     savePersonalInfo,
     saveFitnessGoals,
@@ -195,27 +202,24 @@ export const EditProvider: React.FC<EditProviderProps> = ({
       const saveSuccess = saveResult.success;
 
       if (saveSuccess) {
-        if (isGuestMode && profile) {
-          const updatedProfile = { ...profile };
+        // Update profileStore for guest mode
+        if (isGuestMode) {
           switch (editSection) {
             case "personalInfo":
-              updatedProfile.personalInfo = currentData as PersonalInfo;
+              updateProfilePersonalInfo(currentData as Partial<PersonalInfoData>);
               break;
             case "fitnessGoals":
-              updatedProfile.fitnessGoals = currentData as FitnessGoals;
+              updateProfileWorkoutPreferences(currentData as Partial<WorkoutPreferencesData>);
               break;
             case "dietPreferences":
-              updatedProfile.dietPreferences = currentData as DietPreferences;
+              updateProfileDietPreferences(currentData as Partial<DietPreferencesData>);
               break;
             case "workoutPreferences":
-              updatedProfile.workoutPreferences =
-                currentData as WorkoutPreferences;
+              updateProfileWorkoutPreferences(currentData as Partial<WorkoutPreferencesData>);
               break;
           }
-          updatedProfile.updatedAt = new Date().toISOString();
-          setProfile(updatedProfile);
           console.log(
-            `✅ EditContext: Updated ${editSection} in profile for guest user`,
+            `✅ EditContext: Updated ${editSection} in profileStore for guest user`,
           );
         }
 
@@ -247,13 +251,14 @@ export const EditProvider: React.FC<EditProviderProps> = ({
     currentData,
     validateData,
     isGuestMode,
-    profile,
-    setProfile,
     onEditComplete,
     savePersonalInfo,
     saveFitnessGoals,
     saveDietPreferences,
     saveWorkoutPreferences,
+    updateProfilePersonalInfo,
+    updateProfileWorkoutPreferences,
+    updateProfileDietPreferences,
   ]);
 
   const cancelEdit = useCallback(() => {

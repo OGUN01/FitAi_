@@ -28,8 +28,8 @@ const TIP_STYLES = {
   },
   recovery: {
     icon: "bed" as const,
-    gradient: ["#667eea", "#764ba2"] as [string, string],
-    bgColor: "rgba(102, 126, 234, 0.1)",
+    gradient: ["#FF6B35", "#E55A2B"] as [string, string],
+    bgColor: "rgba(255, 107, 53, 0.1)",
   },
   nutrition: {
     icon: "nutrition" as const,

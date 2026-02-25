@@ -6,7 +6,7 @@
  * - Experience Level (picker)
  * - Time Commitment (picker)
  *
- * Uses useUserStore.updateFitnessGoalsLocal() to save changes.
+ * Uses useProfileStore.updateWorkoutPreferences() to save changes.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -14,7 +14,7 @@ import { View, Text, StyleSheet, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SettingsModalWrapper } from "../SettingsModalWrapper";
 import { GlassFormPicker } from "../../form/GlassFormPicker";
-import { useUserStore } from "../../../stores/userStore";
+import { useProfileStore } from "../../../stores/profileStore";
 import { useUser } from "../../../hooks/useUser";
 import { ResponsiveTheme } from "../../../utils/constants";
 import { rf } from "../../../utils/responsive";
@@ -117,7 +117,7 @@ export const GoalsPreferencesEditModal: React.FC<
   GoalsPreferencesEditModalProps
 > = ({ visible, onClose }) => {
   const { profile } = useUser();
-  const { updateFitnessGoalsLocal } = useUserStore();
+  const { updateWorkoutPreferences } = useProfileStore();
 
   // Form state
   const [primaryGoals, setPrimaryGoals] = useState<string[]>([]);
@@ -176,7 +176,7 @@ export const GoalsPreferencesEditModal: React.FC<
         target_areas: profile?.fitnessGoals?.target_areas,
       };
 
-      updateFitnessGoalsLocal(updatedGoals);
+      updateWorkoutPreferences(updatedGoals);
       haptics.success();
       onClose();
     } catch (error) {
@@ -190,7 +190,7 @@ export const GoalsPreferencesEditModal: React.FC<
     experience,
     timeCommitment,
     profile,
-    updateFitnessGoalsLocal,
+    updateWorkoutPreferences,
     onClose,
     validate,
   ]);

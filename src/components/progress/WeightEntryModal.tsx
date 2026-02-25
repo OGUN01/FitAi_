@@ -214,7 +214,7 @@ export const WeightEntryModal: React.FC<WeightEntryModalProps> = ({
                       <Ionicons
                         name="scale-outline"
                         size={20}
-                        color="#9C27B0"
+                        color="#FF6B35"
                         style={styles.inputIcon}
                       />
                       <TextInput
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#9C27B0",
+    backgroundColor: "#FF6B35",
     borderRadius: 12,
     paddingVertical: 14,
     marginTop: 8,

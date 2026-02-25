@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { CookingVideo } from "../../services/youtubeVideoService";
+import { colors } from "../../theme/aurora-tokens";
 
 interface VideoSectionProps {
   cookingVideo: CookingVideo | null;
@@ -28,7 +29,7 @@ export default function VideoSection({
     return (
       <View style={styles.videoSection}>
         <View style={styles.videoPlaceholder}>
-          <ActivityIndicator size="large" color="#4F46E5" />
+          <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
           <Text style={styles.loadingText}>Loading cooking video...</Text>
         </View>
       </View>
@@ -56,7 +57,11 @@ export default function VideoSection({
               />
             ) : (
               <View style={styles.videoPlaceholderThumb}>
-                <Ionicons name="videocam" size={48} color="#6B7280" />
+                <Ionicons
+                  name="videocam"
+                  size={48}
+                  color={colors.text.secondary}
+                />
               </View>
             )}
             <View style={styles.playButton}>
@@ -79,7 +84,11 @@ export default function VideoSection({
               )
             }
           >
-            <Ionicons name="play-circle" size={20} color="#4F46E5" />
+            <Ionicons
+              name="play-circle"
+              size={20}
+              color={colors.primary.DEFAULT}
+            />
             <Text style={styles.watchVideoText}>Watch Cooking Tutorial</Text>
           </TouchableOpacity>
         </View>
@@ -90,7 +99,7 @@ export default function VideoSection({
   return (
     <View style={styles.videoSection}>
       <View style={styles.videoError}>
-        <Ionicons name="videocam-off" size={48} color="#6B7280" />
+        <Ionicons name="videocam-off" size={48} color={colors.text.secondary} />
         <Text style={styles.errorText}>{videoError}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
           <Text style={styles.retryButtonText}>Try Again</Text>
@@ -102,7 +111,7 @@ export default function VideoSection({
 
 const styles = StyleSheet.create({
   videoSection: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background.secondary,
     marginBottom: 16,
   },
   videoContainer: {
@@ -127,7 +136,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.background.tertiary,
   },
   playButton: {
     position: "absolute",
@@ -156,7 +165,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "rgba(255, 107, 53, 0.12)",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
@@ -165,36 +174,36 @@ const styles = StyleSheet.create({
   watchVideoText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#4F46E5",
+    color: colors.primary.DEFAULT,
     marginLeft: 8,
   },
   videoPlaceholder: {
     height: 200,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.background.tertiary,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#6B7280",
+    color: colors.text.secondary,
   },
   videoError: {
     height: 200,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: colors.background.tertiary,
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: "#6B7280",
+    color: colors.text.secondary,
     textAlign: "center",
     marginTop: 8,
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: colors.primary.DEFAULT,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -207,12 +216,12 @@ const styles = StyleSheet.create({
   videoTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#111827",
+    color: colors.text.primary,
     marginTop: 12,
   },
   videoAuthor: {
     fontSize: 14,
-    color: "#6B7280",
+    color: colors.text.secondary,
     marginTop: 4,
   },
 });

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Modal, Button, THEME } from "../ui";
+import { colors } from "../../theme/aurora-tokens";
 import { HealthScoreIndicator } from "./HealthScoreIndicator";
 import type { ScannedProduct } from "../../services/barcodeService";
 
@@ -553,17 +554,17 @@ const styles = StyleSheet.create({
   },
 
   alertItem: {
-    backgroundColor: "#fef2f2",
+    backgroundColor: "rgba(244, 67, 54, 0.12)",
     padding: THEME.spacing.sm,
     borderRadius: THEME.borderRadius.md,
     borderLeftWidth: 4,
-    borderLeftColor: "#ef4444",
+    borderLeftColor: colors.error.DEFAULT,
     marginBottom: THEME.spacing.sm,
   },
 
   alertText: {
     fontSize: THEME.fontSize.sm,
-    color: "#dc2626",
+    color: colors.error.light,
   },
 
   recommendationsContainer: {
@@ -594,7 +595,7 @@ const styles = StyleSheet.create({
 
   benefitText: {
     fontSize: THEME.fontSize.sm,
-    color: "#059669",
+    color: colors.success.light,
     lineHeight: 20,
   },
 
@@ -610,7 +611,7 @@ const styles = StyleSheet.create({
 
   concernText: {
     fontSize: THEME.fontSize.sm,
-    color: "#dc2626",
+    color: colors.warning.light,
     lineHeight: 20,
   },
 
@@ -667,16 +668,18 @@ const styles = StyleSheet.create({
   },
 
   aiDisclaimer: {
-    backgroundColor: "#FFF3CD",
+    backgroundColor: "rgba(255, 152, 0, 0.12)",
     borderRadius: 8,
     padding: 12,
     marginHorizontal: THEME.spacing.md,
     marginBottom: 12,
     marginTop: THEME.spacing.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255, 152, 0, 0.25)",
   },
 
   aiDisclaimerText: {
-    color: "#856404",
+    color: colors.warning.light,
     fontSize: 13,
     lineHeight: 18,
   },

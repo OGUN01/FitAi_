@@ -1,4 +1,5 @@
 import { useUserStore } from '../stores/userStore';
+import { useProfileStore } from '../stores/profileStore';
 import {
   UserProfile,
   PersonalInfo,
@@ -105,8 +106,8 @@ export const useIsProfileComplete = (): boolean => {
  * Returns personal info or null
  */
 export const usePersonalInfo = (): PersonalInfo | null => {
-  const profile = useUserStore((state) => state.profile);
-  return profile?.personalInfo || null;
+  const personalInfo = useProfileStore((state) => state.personalInfo);
+  return (personalInfo as PersonalInfo) || null;
 };
 
 /**

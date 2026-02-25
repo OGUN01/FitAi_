@@ -76,12 +76,12 @@ const getInsightConfig = (type: InsightType) => {
     case "recommendation":
       return {
         icon: "bulb" as const,
-        color: "#667eea",
+        color: "#FF6B35",
         gradientColors: [
-          "rgba(102,126,234,0.15)",
-          "rgba(102,126,234,0.05)",
+          "rgba(255, 107, 53, 0.15)",
+          "rgba(255, 107, 53, 0.05)",
         ] as [string, string],
-        borderColor: "rgba(102,126,234,0.3)",
+        borderColor: "rgba(255, 107, 53, 0.3)",
       };
     default:
       return {

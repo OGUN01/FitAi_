@@ -1,4 +1,5 @@
 import { Alternative, CurrentData } from "./types";
+import { FALLBACK_DAILY_CALORIES } from "../../constants/diet";
 
 export const calculateGainRateAlternatives = (
   data: CurrentData,
@@ -44,7 +45,7 @@ export const calculateGainRateAlternatives = (
   alternatives.push({
     name: "Strength Focus",
     icon: "barbell-outline",
-    iconColor: "#8B5CF6",
+    iconColor: "#FF8A5C",
     goalType: "strength",
     newTimeline: Math.ceil(weightDiff / moderateGainRate),
     newWorkoutFrequency: Math.min(currentFrequency, 5),
@@ -148,7 +149,7 @@ export const calculateAlternativesForError = (
         iconColor: "#3B82F6",
         goalType: "weight-loss",
         newTimeline: Math.max(currentTimeline * 2, 12),
-        dailyCalories: bmr > 0 ? Math.round(bmr * 1.2) : 1500,
+        dailyCalories: bmr > 0 ? Math.round(bmr * 1.2) : FALLBACK_DAILY_CALORIES,
         weeklyRate: 0.5,
         newWorkoutFrequency: currentFrequency || 3,
         approach: "Safe, gradual approach to your goal",

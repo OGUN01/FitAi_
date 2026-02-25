@@ -9,7 +9,7 @@ const FEATURES = [
   {
     icon: "sparkles",
     text: "AI-powered workout plans",
-    color: "#667eea",
+    color: "#FF6B35",
   },
   {
     icon: "nutrition",

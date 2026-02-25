@@ -118,7 +118,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
             onUpdateWorkoutPreferences={logic.updateWorkoutPreferences}
             onSaveToDatabase={logic.saveToDatabase}
             onNavigateToTab={logic.handleNavigateFromReview}
-            isComplete={logic.isOnboardingComplete()}
+            isComplete={logic.completedTabs.size >= 4}
           />
         );
 
@@ -161,7 +161,7 @@ export const OnboardingContainer: React.FC<OnboardingContainerProps> = (
         backgroundColor="transparent"
         translucent
       />
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <OnboardingHeader
           activeTab={logic.currentTab}
           tabs={logic.getTabConfigs()}

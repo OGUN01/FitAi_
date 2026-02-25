@@ -72,7 +72,7 @@ export const FitnessScreen: React.FC<FitnessScreenProps> = ({ navigation }) => {
               <View style={styles.section}>
                 <TodayWorkoutCard
                   workout={state.selectedDayWorkout as any}
-                  isRestDay={state.isSelectedDayRestDay}
+                  isRestDay={state.isSelectedDayRestDay || (!state.selectedDayWorkout && !!state.weeklyWorkoutPlan)}
                   isCompleted={state.selectedDayProgress === 100}
                   progress={state.selectedDayProgress || 0}
                   onStartWorkout={actions.handleStartSelectedDayWorkout}

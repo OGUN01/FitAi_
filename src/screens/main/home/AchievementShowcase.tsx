@@ -114,7 +114,7 @@ const ProgressBadge: React.FC<{
           style={[
             styles.progressRingFill,
             {
-              borderColor: "#9C27B0",
+              borderColor: "#FF6B35",
               transform: [{ rotate: `${(progress / 100) * 360 - 90}deg` }],
             },
           ]}
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: rw(26),
     borderWidth: 2,
-    borderTopColor: "#9C27B0",
+    borderTopColor: "#FF6B35",
     borderRightColor: "transparent",
     borderBottomColor: "transparent",
     borderLeftColor: "transparent",
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   progressPercent: {
     fontSize: rf(9),
     fontWeight: "700",
-    color: "#9C27B0",
+    color: "#FF6B35",
     marginTop: 2,
   },
   emptyState: {

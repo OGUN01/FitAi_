@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
   },
 
   inputContainerFocused: {
-    borderColor: "#6366F1",
+    borderColor: "#FF6B35",
     borderWidth: 1.5,
-    backgroundColor: "rgba(99, 102, 241, 0.08)",
-    shadowColor: "#6366F1",
+    backgroundColor: "rgba(255, 107, 53, 0.08)",
+    shadowColor: "#FF6B35",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

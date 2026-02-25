@@ -258,7 +258,7 @@ export const GeminiTestComponent: React.FC<GeminiTestComponentProps> = ({
           style={{
             backgroundColor: isRunning
               ? THEME.colors.backgroundSecondary
-              : "#8B5CF6",
+              : "#FF8A5C",
             padding: THEME.spacing.md,
             borderRadius: THEME.borderRadius.md,
             alignItems: "center",

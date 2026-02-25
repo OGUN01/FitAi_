@@ -9,20 +9,21 @@ export const APP_CONFIG = {
   SUPPORTED_IMAGE_TYPES: ["image/jpeg", "image/png", "image/webp"],
 };
 
-// Dark Cosmic Theme - Inspired by CultFit Design
+/** @deprecated Use aurora-tokens from src/theme/aurora-tokens.ts instead. This object has ZERO consumers as of Wave 5. */
+// Dark Cosmic Theme - DEPRECATED (replaced by Aurora Design System)
 // Export with explicit type for better Metro bundler compatibility
 export const THEME = {
   colors: {
-    // Primary Colors - Premium Purple (Cult.fit inspired)
-    primary: "#6366F1", // Vibrant Indigo
-    primaryDark: "#4F46E5",
-    primaryLight: "#818CF8",
-    primaryFaded: "rgba(99, 102, 241, 0.3)", // Primary with transparency
+    // Primary Colors - Aurora Orange (FitAI Brand)
+    primary: "#FF6B35", // Aurora Orange
+    primaryDark: "#E55A2B", // Aurora Dark
+    primaryLight: "#FF8A5C", // Aurora Light
+    primaryFaded: "rgba(255, 107, 53, 0.3)", // Primary with transparency
 
-    // Secondary Colors - Energetic Green (Nike inspired)
-    secondary: "#10B981", // Emerald Green
-    secondaryDark: "#059669",
-    secondaryLight: "#34D399",
+    // Secondary Colors - Aurora Cyan
+    secondary: "#00D4FF", // Cyan
+    secondaryDark: "#00B8D9", // Cyan Dark
+    secondaryLight: "#4DE5FF", // Cyan Light
 
     // Background Colors
     background: "#0a0f1c", // Deep dark blue
@@ -44,7 +45,7 @@ export const THEME = {
     warning: "#ff9800",
     error: "#f44336",
     info: "#2196f3",
-    accent: "#818CF8", // Accent color (same as primaryLight)
+    accent: "#FF8A5C", // Accent color (same as primaryLight)
 
     // Utility Colors
     white: "#ffffff",
@@ -121,7 +122,7 @@ export const THEME = {
 // RESPONSIVE THEME FUNCTIONS
 // ============================================================================
 
-// Create responsive theme function - SAFE: no module-level execution
+/** @deprecated No consumers remain. Use aurora-tokens instead. */
 export const createResponsiveTheme = () => {
   // Import responsive functions lazily to avoid circular dependency
   const { rf, rp, rbr } = require("./responsive");
@@ -163,7 +164,7 @@ export const createResponsiveTheme = () => {
   };
 };
 
-// CRITICAL FIX: Export ResponsiveTheme as base THEME to prevent import crashes
+/** @deprecated No consumers remain. Use aurora-tokens instead. */
 // This prevents the "Cannot read property 'THEME' of undefined" error
 // Components should migrate to useResponsiveTheme hook for true responsive values
 export const ResponsiveTheme = THEME;

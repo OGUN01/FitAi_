@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { rf, rp, rh, rw, rs } from "../../utils/responsive";
 import { ResponsiveTheme } from "../../utils/constants";
+import { colors } from "../../theme/aurora-tokens";
 import { GlassCard } from "../../components/ui/aurora/GlassCard";
 
 interface AchievementsSectionProps {
@@ -214,21 +215,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   rarityCommon: {
-    backgroundColor: "#E5E7EB",
+    backgroundColor: "rgba(176, 176, 176, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(176, 176, 176, 0.3)",
   },
   rarityUncommon: {
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "rgba(33, 150, 243, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(33, 150, 243, 0.3)",
   },
   rarityRare: {
-    backgroundColor: "#EDE9FE",
+    backgroundColor: "rgba(156, 39, 176, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(156, 39, 176, 0.3)",
   },
   rarityEpic: {
-    backgroundColor: "#FEF3C7",
+    backgroundColor: "rgba(255, 152, 0, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 152, 0, 0.3)",
   },
   rarityText: {
     fontSize: rf(8),
     fontWeight: ResponsiveTheme.fontWeight.bold,
-    color: ResponsiveTheme.colors.text,
+    color: colors.text.primary,
   },
   achievementDate: {
     fontSize: ResponsiveTheme.fontSize.xs,

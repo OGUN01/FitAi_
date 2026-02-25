@@ -105,7 +105,7 @@ export const NutritionCard: React.FC<NutritionCardProps> = ({
           label="Fiber"
           value={ingredientData.macros?.fiber || 0}
           unit="g"
-          color="#8B5CF6"
+          color="#FF8A5C"
         />
       </View>
     </View>

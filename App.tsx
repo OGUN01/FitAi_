@@ -7,9 +7,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "./src/theme/gluestack-ui.config";
 import { OnboardingContainer } from "./src/screens/onboarding/OnboardingContainer";
+import { WelcomeScreen } from "./src/screens/onboarding/WelcomeScreen";
 import { MainNavigation } from "./src/components/navigation/MainNavigation";
 import { OnboardingReviewData } from "./src/types/onboarding";
-import { THEME } from "./src/utils/constants";
+import { ThemeProvider } from "./src/theme/ThemeProvider";
+import { colors, spacing, typography } from "./src/theme/aurora-tokens";
 import { initializeBackend } from "./src/utils/integration";
 import { useAuth } from "./src/hooks/useAuth";
 import { ErrorBoundary } from "./src/components/ErrorBoundary";
@@ -85,6 +87,7 @@ export default function App() {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [userData, setUserData] = useState<OnboardingReviewData | null>(null);
   const [isLoadingOnboarding, setIsLoadingOnboarding] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const { user, isLoading, isInitialized, isGuestMode, guestId } = useAuth();
 
@@ -1108,8 +1111,8 @@ export default function App() {
   if (isLoadingOnboarding) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar style="light" backgroundColor={THEME.colors.background} />
-        <ActivityIndicator size="large" color={THEME.colors.primary} />
+        <StatusBar style="light" backgroundColor={colors.background.DEFAULT} />
+        <ActivityIndicator size="large" color={colors.primary.DEFAULT} />
         <Text style={styles.loadingText}>Loading your profile...</Text>
       </View>
     );
@@ -1119,15 +1122,25 @@ export default function App() {
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <GluestackUIProvider config={config}>
+          <ThemeProvider>
           <ErrorBoundary>
             <View style={styles.container}>
               <StatusBar
                 style="light"
-                backgroundColor={THEME.colors.background}
+                backgroundColor={colors.background.DEFAULT}
               />
 
               {isOnboardingComplete ? (
                 <MainNavigation />
+              ) : showWelcome ? (
+                <WelcomeScreen
+                  onGetStarted={() => setShowWelcome(false)}
+                  onSignInSuccess={() => {
+                    console.log('✅ App: Sign-in success from WelcomeScreen, reloading profile...');
+                    setShowWelcome(false);
+                    setIsLoadingOnboarding(true);
+                  }}
+                />
               ) : (
                 <OnboardingContainer
                   onComplete={handleOnboardingComplete}
@@ -1136,6 +1149,7 @@ export default function App() {
               )}
             </View>
           </ErrorBoundary>
+          </ThemeProvider>
         </GluestackUIProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
@@ -1145,18 +1159,18 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: colors.background.DEFAULT,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: colors.background.DEFAULT,
     justifyContent: "center",
     alignItems: "center",
   },
   loadingText: {
-    color: THEME.colors.text,
-    fontSize: THEME.fontSize.md,
-    marginTop: THEME.spacing.md,
+    color: colors.text.primary,
+    fontSize: typography.fontSize.body,
+    marginTop: spacing.md,
     fontWeight: "500" as const,
   },
 });

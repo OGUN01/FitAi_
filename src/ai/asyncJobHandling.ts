@@ -14,10 +14,7 @@ import {
 } from "../services/fitaiWorkersClient";
 import { transformForDietRequest } from "../services/aiRequestTransformers";
 
-declare function transformDietResponseToWeeklyPlan(
-  response: any,
-  weekNumber: number,
-): WeeklyMealPlan | null;
+import { transformDietResponseToWeeklyPlan } from "../services/aiRequestTransformers";
 
 export async function generateWeeklyMealPlanAsync(
   personalInfo: PersonalInfo,

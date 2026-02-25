@@ -61,7 +61,7 @@ export const GlassFormInput: React.FC<GlassFormInputProps> = ({
   const animatedBorderStyle = useAnimatedStyle(() => ({
     borderColor: error
       ? ResponsiveTheme.colors.error
-      : `rgba(102, 126, 234, ${0.2 + borderOpacity.value * 0.3})`,
+      : `rgba(255, 107, 53, ${0.2 + borderOpacity.value * 0.3})`,
   }));
 
   return (

@@ -32,6 +32,26 @@ function validateSupabaseResponse(
   return { valid: true };
 }
 
+
+// Map LocalWorkoutSession camelCase fields to Supabase snake_case columns
+function mapSessionToDb(data: Record<string, unknown>) {
+  return {
+    user_id: data.userId,
+    workout_plan_id: null, // data.workoutId is not a UUID FK to user_workout_plans
+    workout_name: typeof data.notes === 'string' ? data.notes?.split(' - ')[1] || 'Workout' : 'Workout',
+    workout_type: 'general',
+    started_at: data.startedAt,
+    completed_at: data.completedAt,
+    total_duration_minutes: data.duration,
+    calories_burned: data.caloriesBurned,
+    exercises_completed: data.exercises,
+    notes: data.notes || '',
+    enjoyment_rating: data.rating || 0,
+    is_completed: data.isCompleted,
+    completion_percentage: data.isCompleted ? 100 : 0,
+  };
+}
+
 export async function executeAction(action: OfflineAction): Promise<void> {
   const { type, table, data } = action;
   const maxRetries = 3;
@@ -45,7 +65,8 @@ export async function executeAction(action: OfflineAction): Promise<void> {
 
       switch (type) {
         case "CREATE":
-          const createResponse = await supabase.from(table).insert([data]);
+          const insertData = table === 'workout_sessions' ? mapSessionToDb(data as Record<string, unknown>) : data;
+          const createResponse = await supabase.from(table).insert([insertData]);
           const createValidation = validateSupabaseResponse(
             createResponse,
             "CREATE",

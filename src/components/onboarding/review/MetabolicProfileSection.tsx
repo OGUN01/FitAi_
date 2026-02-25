@@ -167,7 +167,7 @@ export const MetabolicProfileSection: React.FC<
               size={72}
               strokeWidth={6}
               gradient={true}
-              gradientColors={["#9C27B0", "#7B1FA2"]}
+              gradientColors={["#FF6B35", "#E55A2B"]}
               duration={800}
               showText={true}
               text={

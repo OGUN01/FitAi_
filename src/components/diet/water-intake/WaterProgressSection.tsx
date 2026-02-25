@@ -31,7 +31,7 @@ export const WaterProgressSection: React.FC<WaterProgressSectionProps> = ({
           colors={
             isGoalReached
               ? ["#10b981", "#059669"]
-              : [ResponsiveTheme.colors.primary, "#8B5CF6"]
+              : [ResponsiveTheme.colors.primary, "#FF8A5C"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}

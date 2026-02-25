@@ -104,7 +104,7 @@ const StreakRing: React.FC<{ days: number; maxDays?: number }> = ({
     if (days >= 30) return ["#FFD700", "#FFA500"]; // Gold for 30+
     if (days >= 14) return ["#FF6B6B", "#FF8E53"]; // Red-orange for 14+
     if (days >= 7) return ["#4CAF50", "#8BC34A"]; // Green for 7+
-    return ["#667eea", "#764ba2"]; // Purple for starting
+    return ["#FF6B35", "#FF8A5C"]; // Aurora primary for starting
   };
 
   const gradientColors = getStreakColor();
@@ -307,7 +307,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
       <SectionHeader
         title="This Period"
         icon="stats-chart"
-        iconColor="#667eea"
+        iconColor="#FF6B35"
       />
 
       {/* Row 1: Weight + Calories */}
@@ -316,7 +316,7 @@ export const MetricSummaryGrid: React.FC<MetricSummaryGridProps> = ({
           title="Weight"
           value={formatWeight(data.weight?.current)}
           icon="scale-outline"
-          color="#9C27B0"
+          color="#FF6B35"
           trend={hasWeightHistory ? data.weight?.trend : undefined}
           trendValue={
             hasWeightHistory && data.weight?.change

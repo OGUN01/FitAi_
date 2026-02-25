@@ -149,6 +149,7 @@ export interface DietPreferences {
   diet_type: "vegetarian" | "vegan" | "non-veg" | "pescatarian"; // REQUIRED (snake_case)
   allergies: string[]; // TEXT[] - REQUIRED (can be empty array)
   restrictions: string[]; // TEXT[] - REQUIRED (can be empty array)
+  cuisine_preferences?: string[];
 
   // Diet readiness toggles (6 specialized diets)
   keto_ready: boolean;
